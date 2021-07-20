@@ -195,7 +195,7 @@ module internal Utilities =
             match errorType with
             | ErrorReportType.Warning -> warning(Error(error, m))
             | ErrorReportType.Error -> errorR(Error(error, m))
-        ResolvingErrorReport (report)
+        ResolvingErrorReport report
 
     let getOutputDir (tcConfigB: TcConfigBuilder) =  tcConfigB.outputDir |> Option.defaultValue ""
 
@@ -246,7 +246,7 @@ type FsiEvaluationSessionHostConfig () =
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FloatingPointFormat: string
     /// Called by the evaluation session to ask the host for parameters to format text for output
-    abstract AddedPrinters : Choice<(System.Type * (obj -> string)), (System.Type * (obj -> obj))>  list
+    abstract AddedPrinters : Choice<System.Type * (obj -> string), System.Type * (obj -> obj)>  list
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowDeclarationValues: bool
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -419,7 +419,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
         | :? ThreadAbortException -> Layout.wordL (TaggedText.tagText "")
         | e ->
 #if DEBUG
-          printf "\n\nPrintValue: x = %+A and ty=%s\n" x (ty.FullName)
+          printf "\n\nPrintValue: x = %+A and ty=%s\n" x ty.FullName
 #endif
           printf "%s" (FSIstrings.SR.fsiExceptionDuringPrettyPrinting(e.ToString()));
           Layout.wordL (TaggedText.tagText "")
@@ -565,7 +565,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     member x.SetError() =
         errorCount <- 1
 
-    member x.ResetErrorCount() = (errorCount <- 0)
+    member x.ResetErrorCount() = errorCount <- 0
 
     override x.DiagnosticSink(err, severity) =
         if (severity = FSharpDiagnosticSeverity.Error) || ReportWarningAsError tcConfigB.errorSeverityOptions err  then
@@ -797,7 +797,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     //----------------------------------------------------------------------------
 
     member _.ShowBanner() =
-        fsiConsoleOutput.uprintnfn "%s" (tcConfigB.productNameForBannerText)
+        fsiConsoleOutput.uprintnfn "%s" tcConfigB.productNameForBannerText
         fsiConsoleOutput.uprintfnn "%s" (FSComp.SR.optsCopyright())
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiBanner3())
 
@@ -928,7 +928,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
             None
 
     // When VFSI is running, there should be no "console", and in particular the console.fs readline code should not to run.
-    do  if fsiOptions.IsInteractiveServer then assert(consoleOpt.IsNone)
+    do  if fsiOptions.IsInteractiveServer then assert consoleOpt.IsNone
 
     /// This threading event gets set after the first-line-reader has finished its work
     let consoleReaderStartupDone = new ManualResetEvent(false)
@@ -1167,7 +1167,7 @@ type internal FsiDynamicCompiler
         // We would save them as resources into the dynamic assembly but there is missing
         // functionality System.Reflection for dynamic modules that means they can't be read back out
         let cenv = { ilg = ilGlobals ; emitTailcalls = tcConfig.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
-        for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do
+        for referencedTypeDefs, bytes in codegenResults.quotationResourceInfo do
             let referencedTypes =
                 [| for tref in referencedTypeDefs do
                       yield ILRuntimeWriter.LookupTypeRef cenv emEnv tref  |]
@@ -1208,7 +1208,7 @@ type internal FsiDynamicCompiler
             // 'Open' the path for the fragment we just compiled for any future printing.
             let denv = denv.AddOpenPath (pathOfLid prefixPath)
 
-            for (TImplFile (_qname,_,mexpr,_,_,_)) in declaredImpls do
+            for TImplFile (_qname,_,mexpr,_,_,_) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr
                 if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
@@ -1899,7 +1899,7 @@ module internal MagicAssemblyResolution =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
                    // once an assembly has been referenced.
-                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName)
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName simpleAssemName
 
                    match searchResult with
                    | Some r -> OkResult ([], Choice1Of2 r)
@@ -2048,7 +2048,7 @@ type internal FsiStdinLexerProvider
     let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     // Create a new lexer to read stdin
-    member _.CreateStdinLexer (errorLogger) =
+    member _.CreateStdinLexer errorLogger =
         let lexbuf =
             match fsiConsoleInput.TryGetConsole() with
             | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
@@ -2260,7 +2260,7 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = not istate.timing}, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", ParsedHashDirectiveArguments [("on" | "off") as v], _), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", ParsedHashDirectiveArguments ["on" | "off" as v], _), _) ->
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
@@ -2354,8 +2354,8 @@ type internal FsiInteractionProcessor
                 Some (ParsedScriptInteraction.Definitions(defsA,m)),Some (ParsedScriptInteraction.Definitions(defsB,m)),istate
 
         match action, lastResult with
-          | None, Some prev -> assert(nextAction.IsNone); istate, prev
-          | None,_ -> assert(nextAction.IsNone); istate, Completed None
+          | None, Some prev -> assert nextAction.IsNone; istate, prev
+          | None,_ -> assert nextAction.IsNone; istate, Completed None
           | Some action, _ ->
               let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, errorLogger)
               match cont with
@@ -2584,7 +2584,7 @@ type internal FsiInteractionProcessor
     // mainForm.Invoke to pipe a message back through the form's main event loop. (The message
     // is a delegate to execute on the main Thread)
     //
-    member processor.StartStdinReadAndProcessThread (errorLogger) =
+    member processor.StartStdinReadAndProcessThread errorLogger =
 
       if progress then fprintfn fsiConsoleOutput.Out "creating stdinReaderThread";
 
@@ -2862,10 +2862,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// on the FsiEvaluationSession.
     let checker = FSharpChecker.Create(legacyReferenceResolver=legacyReferenceResolver)
 
-    let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) =
+    let tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences =
         try
             let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get (tcConfig)
+            checker.FrameworkImportsCache.Get tcConfig
             |> NodeCode.RunImmediateWithoutCancellation
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
@@ -2894,7 +2894,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some assembly -> Some (Choice2Of2 assembly)
         | None ->
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef aref with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
@@ -2958,7 +2958,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.InteractiveChecker = checker
 
     member x.CurrentPartialAssemblySignature =
-        fsiDynamicCompiler.CurrentPartialAssemblySignature (fsiInteractionProcessor.CurrentState)
+        fsiDynamicCompiler.CurrentPartialAssemblySignature fsiInteractionProcessor.CurrentState
 
     member x.DynamicAssembly =
         fsiDynamicCompiler.DynamicAssembly
@@ -3106,7 +3106,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalScript(ctok, filePath, errorLogger)
         |> commitResultNonThrowing errorOptions filePath errorLogger
-        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+        |> function Choice1Of2 _, errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member _.ValueBound = fsiDynamicCompiler.ValueBound

@@ -234,7 +234,7 @@ exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerAr
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
-type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
+type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 type ConstraintSolverState = 
     { 
@@ -251,7 +251,7 @@ type ConstraintSolverState =
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
       /// each time a solution to an index variable is found. 
-      mutable ExtraCxs: HashMultiMap<Stamp, (TraitConstraintInfo * range)>
+      mutable ExtraCxs: HashMultiMap<Stamp, TraitConstraintInfo * range>
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -617,7 +617,7 @@ and SolveTypStaticReq (csenv: ConstraintSolverEnv) trace req ty =
         | TType_measure ms ->
             let vs = ListMeasureVarOccsWithNonZeroExponents ms
             trackErrors {
-                for (tpr, _) in vs do 
+                for tpr, _ in vs do 
                     return! SolveTypStaticReqTypar csenv trace req tpr
             }
         | _ -> 
@@ -722,7 +722,7 @@ let SimplifyMeasure g vars ms =
 // Normalize a type ty that forms part of a unit-of-measure-polymorphic type scheme. 
 //  Generalizable are the unit-of-measure variables that remain to be simplified. Generalized
 // is a list of unit-of-measure variables that have already been generalized. 
-let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as param) ty =
+let rec SimplifyMeasuresInType g resultFirst (generalizable, generalized as param) ty =
     match stripTyparEqns ty with 
     | TType_ucase(_, l)
     | TType_app (_, l) 
@@ -826,7 +826,7 @@ let SimplifyMeasuresInTypeScheme g resultFirst (generalizable: Typar list) ty co
     match uvars with
     | [] -> generalizable
     | _ :: _ ->
-    let (_, generalized) = SimplifyMeasuresInType g resultFirst (SimplifyMeasuresInConstraints g (uvars, []) constraints) ty
+    let _, generalized = SimplifyMeasuresInType g resultFirst (SimplifyMeasuresInConstraints g (uvars, []) constraints) ty
     let generalized' = NormalizeExponentsInTypeScheme generalized ty 
     vars @ List.rev generalized'
 
@@ -1012,9 +1012,9 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
-    | (_, TType_app (tc2, [ms])) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
+    | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
-    | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
+    | TType_app (tc2, [ms]), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
@@ -1110,10 +1110,10 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
-    | (_, TType_app (tc2, [ms])) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
+    | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
 
-    | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
+    | TType_app (tc2, [ms]), _ when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
 
     // Special subsumption rule for byref tags
@@ -1233,7 +1233,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     // Assert the object type if the constraint is for an instance member    
     if memFlags.IsInstance then 
         match tys, traitObjAndArgTys with 
-        | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
+        | [ty], h :: _ -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
@@ -2295,7 +2295,7 @@ and CanMemberSigsMatchUpToCheck
                 for argSet in calledMeth.ArgSets do
                     for arg in argSet.AssignedNamedArgs do
                         do! subsumeArg arg.CalledArg arg.CallerArg
-                for (AssignedItemSetter(_, item, caller)) in assignedItemSetters do
+                for AssignedItemSetter(_, item, caller) in assignedItemSetters do
                     let name, calledArgTy = 
                         match item with
                         | AssignedPropSetter(_, pminfo, pminst) -> 
@@ -2345,7 +2345,7 @@ and private SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintS
             | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m))))
 
 and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
-        SolveTypeSubsumesTypeWithWrappedContextualReport (csenv) ndeep m trace cxsln ty1 ty2 id
+        SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln ty1 ty2 id
         
 // ty1: actual
 // ty2: expected
@@ -2409,7 +2409,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             Error (FSComp.SR.csMemberIsNotAccessible(methodName, (ShowAccessDomain ad)), m)
         else
             Error (FSComp.SR.csMemberIsNotAccessible2(methodName, (ShowAccessDomain ad)), m)
-    | _, ([], (cmeth :: _)), _, _, _ ->  
+    | _, ([], cmeth :: _), _, _, _ ->  
     
         // Check all the argument types.
         if cmeth.CalledObjArgTys(m).Length <> 0 then
@@ -2480,14 +2480,14 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
                     Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m)
 
     // One or more accessible, all the same arity, none correct 
-    | ((cmeth :: cmeths2), _), _, _, _, _ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
+    | (cmeth :: cmeths2, _), _, _, _, _ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
         Error (FSComp.SR.csMemberNotAccessible(methodName, nUnnamedCallerArgs, methodName, cmeth.TotalNumUnnamedCalledArgs), m)
     // Many methods, all with incorrect number of generic arguments
-    | _, _, _, ([], (cmeth :: _)), _ -> 
+    | _, _, _, ([], cmeth :: _), _ -> 
         let msg = FSComp.SR.csIncorrectGenericInstantiation((ShowAccessDomain ad), methodName, cmeth.NumCallerTyArgs)
         Error (msg, m)
     // Many methods of different arities, all incorrect 
-    | _, _, ([], (cmeth :: _)), _, _ -> 
+    | _, _, ([], cmeth :: _), _, _ -> 
         let minfo = cmeth.Method
         Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)), m)
     | _ -> 
@@ -2810,8 +2810,8 @@ and ResolveOverloading
                           | [] -> 
                               match applicableMeths with
                               | [] -> for methodSlot in candidates do yield getMethodSlotsAndErrors methodSlot []
-                              | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors
-                          | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors ]
+                              | m -> for methodSlot, errors, _ in m do yield getMethodSlotsAndErrors methodSlot errors
+                          | m -> for methodSlot, errors, _ in m do yield getMethodSlotsAndErrors methodSlot errors ]
 
                     let methods = List.concat methods
 
@@ -3079,7 +3079,7 @@ let AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
 
 let SolveTypeAsError denv css m ty =
     let ty2 = NewErrorType ()
-    assert((destTyparTy css.g ty2).IsFromError)
+    assert (destTyparTy css.g ty2).IsFromError
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     SolveTypeEqualsTypeKeepAbbrevs csenv 0 m NoTrace ty ty2 |> ignore
     

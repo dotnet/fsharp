@@ -182,7 +182,7 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)).
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
-    let rec loop ndeep ty ((visitedTycon, visited: TyconRefMultiMap<_>, acc) as state) =
+    let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
         let seenThisTycon = 
             match tryTcrefOfAppTy g ty with
@@ -1466,7 +1466,7 @@ type MethInfo =
                                 // Emit a warning, and ignore the DefaultParameterValue argument altogether.
                                 warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
                                 NotOptional
-                            | Some (Expr.Const ((ConstToILFieldInit fi), _, _)) ->
+                            | Some (Expr.Const (ConstToILFieldInit fi, _, _)) ->
                                 // Good case - all is well.
                                 CallerSide (Constant fi)
                             | _ ->
@@ -2056,7 +2056,7 @@ type PropInfo =
         | ILProp ilpinfo -> ilpinfo.IsVirtual
         | FSProp(g, ty, Some vref, _)
         | FSProp(g, ty, _, Some vref) ->
-            isInterfaceTy g ty  || (vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
+            isInterfaceTy g ty  || vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | FSProp _ -> failwith "unreachable"
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->

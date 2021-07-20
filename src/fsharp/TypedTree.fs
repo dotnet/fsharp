@@ -1465,11 +1465,11 @@ type TProvidedTypeInfo =
 
       /// A type read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it does an import on the underlying type
-      UnderlyingTypeOfEnum: (unit -> TType) 
+      UnderlyingTypeOfEnum: unit -> TType 
 
       /// A flag read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it looks at the .BaseType
-      IsDelegate: (unit -> bool) 
+      IsDelegate: unit -> bool 
 
       /// Indicates the type is erased
       IsErased: bool 
@@ -3124,7 +3124,7 @@ type NonLocalEntityRef =
                         let typename = path.[j]
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
+                        | None | Some Tainted.Null -> ()
                         | Some st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
@@ -5061,7 +5061,7 @@ type TypedImplFile =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFileAfterOptimization = 
     { ImplFile: TypedImplFile 
-      OptimizeDuringCodeGen: (bool -> Expr -> Expr) }
+      OptimizeDuringCodeGen: bool -> Expr -> Expr }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5120,11 +5120,11 @@ type CcuData =
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      TryGetILModuleDef: unit -> ILModuleDef option 
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      MemberSignatureEquality: (TType -> TType -> bool) 
+      MemberSignatureEquality: TType -> TType -> bool 
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders: CcuTypeForwarderTable

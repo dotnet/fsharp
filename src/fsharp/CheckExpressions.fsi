@@ -178,7 +178,7 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
+      mutable recUses: ValMultiMap<Expr ref * range * bool>
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
@@ -600,7 +600,7 @@ val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: Paren
 val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
-val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<(Val * TypeScheme)> * NameMap<Val>
+val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option

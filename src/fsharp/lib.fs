@@ -166,20 +166,20 @@ module ListSet =
     let rec private findIndexAux eq x l n =
         match l with
         | [] -> notFound()
-        | (h :: t) -> if eq h x then n else findIndexAux eq x t (n+1)
+        | h :: t -> if eq h x then n else findIndexAux eq x t (n+1)
 
     /// NOTE: O(n)!
     let findIndex eq x l = findIndexAux eq x l 0
 
     let rec remove f x l =
         match l with
-        | (h :: t) -> if f x h then t else h :: remove f x t
+        | h :: t -> if f x h then t else h :: remove f x t
         | [] -> []
 
     /// NOTE: quadratic!
     let rec subtract f l1 l2 =
       match l2 with
-      | (h :: t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
+      | h :: t -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
     let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
@@ -198,7 +198,7 @@ module ListSet =
     /// NOTE: not tail recursive!
     let rec intersect f l1 l2 =
         match l2 with
-        | (h :: t) -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
+        | h :: t -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
         | [] -> []
 
     /// Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -335,7 +335,7 @@ let writeViaBuffer (os: TextWriter) f x =
 type GraphNode<'Data, 'Id> = { nodeId: 'Id; nodeData: 'Data; mutable nodeNeighbours: GraphNode<'Data, 'Id> list }
 
 type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
-         (nodeIdentity: ('Data -> 'Id),
+         (nodeIdentity: 'Data -> 'Id,
           nodes: 'Data list,
           edges: ('Data * 'Data) list) =
 
@@ -474,7 +474,7 @@ module internal AsyncUtil =
             // Run continuations outside the lock
             match grabbedConts with
             |   [] -> ()
-            |   [(sc, cont) as c] ->
+            |   [sc, cont as c] ->
                     if SynchronizationContext.Current = sc then
                         cont res
                     else

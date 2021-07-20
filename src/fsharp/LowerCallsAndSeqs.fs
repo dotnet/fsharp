@@ -31,7 +31,7 @@ let InterceptExpr g cont expr =
         | None -> None
 
     // App (Val v, tys, args)
-    | Expr.App ((Expr.Val (vref, flags, _) as f0), f0ty, tyargsl, argsl, m) ->
+    | Expr.App (Expr.Val (vref, flags, _) as f0, f0ty, tyargsl, argsl, m) ->
         // Only transform if necessary, i.e. there are not enough arguments
         match vref.ValReprInfo with
         | Some(topValInfo) ->
@@ -92,7 +92,7 @@ type LoweredSeqFirstPhaseResult =
      ///     'pcMap' is the mapping from code labels to values for 'pc'
      ///
      /// The phase2 function returns the core of the generate, dispose and checkDispose implementations. 
-     phase2 : ((* pc: *) ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr)
+     phase2 : ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr
 
      /// The labels allocated for one portion of the sequence expression
      entryPoints : int list
@@ -145,7 +145,7 @@ let (|SeqWhile|_|) g expr =
 
 let (|SeqTryFinally|_|) g expr =
     match expr with
-    | ValApp g g.seq_finally_vref (_, [arg1;(Expr.Lambda (_, _, _, [dummyv], compensation, _, _) as arg2)], m) 
+    | ValApp g g.seq_finally_vref (_, [arg1;Expr.Lambda (_, _, _, [dummyv], compensation, _, _) as arg2], m) 
         when not (isVarFreeInExpr dummyv compensation) ->
 
         // The debug point for 'try' and 'finally' are attached to the first and second arguments
@@ -188,7 +188,7 @@ let (|SeqDelay|_|) g expr =
 
 let (|SeqEmpty|_|) g expr =
     match expr with
-    | ValApp g g.seq_empty_vref (_, [], m) -> Some (m)
+    | ValApp g g.seq_empty_vref (_, [], m) -> Some m
     | _ -> None
 
 let (|SeqToList|_|) g expr =
@@ -409,7 +409,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             match resBody with
             | Some res1  ->
                 let asyncVars = unionFreeVars res1.asyncVars (freeInExpr CollectLocals compensation)
-                Some { phase2 = (fun ((pcVar, _currv, _, pcMap) as ctxt) ->
+                Some { phase2 = (fun (pcVar, _currv, _, pcMap as ctxt) ->
                             let generate1, dispose1, checkDispose1 = res1.phase2 ctxt
                             let generate =
                                 // copy the compensation expression - one copy for the success continuation and one for the exception
@@ -536,7 +536,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
                 let asyncVars =
                     (emptyFreeVars, Array.zip targets tglArray)
-                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
+                    ||> Array.fold (fun fvs (TTarget(_vs, _, _spTarget, _), res) ->
                         if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
 
                 let stateVars = 

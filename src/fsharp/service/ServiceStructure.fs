@@ -252,7 +252,7 @@ module Structure =
             | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
                 [
                     yield eLet
-                    for (_,_,_,_,eAndBang,_) in es do 
+                    for _,_,_,_,eAndBang,_ in es do 
                         yield eAndBang
                 ]
                 |> List.iter (fun e ->
@@ -420,7 +420,7 @@ module Structure =
         and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
-                    let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
+                    let range = Range.startToEnd attrs.[0].Range attrs.[attrs.Length-1].ArgExpr.Range
                     rcheck Scope.Attribute Collapse.Same range range
 
             match  attrs with
@@ -642,7 +642,7 @@ module Structure =
             else None
 
         let getCommentRanges (lines: string[]) =
-            let rec loop ((lastLineNum, currentComment: CommentList option, result) as state) (lines: string list) lineNum =
+            let rec loop (lastLineNum, currentComment: CommentList option, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
                 | lineStr :: rest ->
@@ -825,7 +825,7 @@ module Structure =
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
-            | SynModuleSigDecl.Val ((SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange)), r) ->
+            | SynModuleSigDecl.Val (SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange), r) ->
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs

@@ -216,7 +216,7 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
 // delay the realization of 'item' in case it is unresolved
-type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -> CcuThunk -> AccessorDomain -> bool)) =
+type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> CcuThunk -> AccessorDomain -> bool) =
 
     member x.Assembly = 
         let ccu = defaultArg (SymbolHelpers.ccuOfItem cenv.g x.Item) cenv.thisCcu 
@@ -416,7 +416,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.CompilationPathOpt with 
         | None -> None
         | Some (CompPath(_, [])) -> None
-        | Some cp when cp.AccessPath |> List.forall (function (_, ModuleOrNamespaceKind.Namespace) -> true | _  -> false) -> 
+        | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace -> true | _  -> false) -> 
             Some (buildAccessPath (Some cp))
         | Some _ -> None
 
@@ -750,7 +750,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     match kind with
                     | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
                         [ yield! loop (mapEachCurrentPath currentPaths name) rest
-                          yield! loop (mapEachCurrentPath currentPaths (name.[..name.Length - 7])) rest ]
+                          yield! loop (mapEachCurrentPath currentPaths name.[..name.Length - 7]) rest ]
                     | _ -> 
                        loop (mapEachCurrentPath currentPaths name) rest
             loop [] parts |> List.map (List.rev >> String.concat ".")
@@ -2000,7 +2000,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         checkIsResolved()
         match d with 
         | P p -> 
-            [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
+            [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
                     let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
@@ -2012,7 +2012,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> 
             [ for argtys in m.GetParamDatas(cenv.amap, range0, m.FormalMethodInst) do 
                  yield
-                   [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in argtys do 
+                   [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argtys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
                         let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }

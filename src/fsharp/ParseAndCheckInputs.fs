@@ -117,7 +117,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
         let lower = String.lowercase filename
         if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)) then
             match defs with
-            | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), trimRangeToLine m))
+            | SynModuleDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
@@ -147,7 +147,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
         let lower = String.lowercase filename
         if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (FileSystemUtils.checkSuffix lower)) then
             match defs with
-            | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), m))
+            | SynModuleSigDecl.NestedModule _ :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
 
         let modname = ComputeAnonModuleName (not (isNil defs)) defaultNamespace filename (trimRangeToLine m)
@@ -189,7 +189,7 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
     let isScript = IsScript filename
 
     let scopedPragmas =
-        [ for (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) in impls do
+        [ for SynModuleOrNamespace(_, _, _, decls, _, _, _, _) in impls do
             for d in decls do
                 match d with
                 | SynModuleDecl.HashDirective (hd, _) -> yield! GetScopedPragmasForHashDirective hd
@@ -209,7 +209,7 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     let specs = specs |> List.mapi (fun i x -> PostParseModuleSpec(i, defaultNamespace, isLastCompiland, filename, x))
     let qualName = QualFileNameOfSpecs filename specs
     let scopedPragmas =
-        [ for (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) in specs do
+        [ for SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _) in specs do
             for d in decls do
                 match d with
                 | SynModuleSigDecl.HashDirective(hd, _) -> yield! GetScopedPragmasForHashDirective hd
@@ -313,9 +313,9 @@ let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>)
 // Report the statistics for testing purposes
 let ReportParsingStatistics res =
     let rec flattenSpecs specs =
-            specs |> List.collect (function (SynModuleSigDecl.NestedModule (_, _, subDecls, _)) -> flattenSpecs subDecls | spec -> [spec])
+            specs |> List.collect (function SynModuleSigDecl.NestedModule (_, _, subDecls, _) -> flattenSpecs subDecls | spec -> [spec])
     let rec flattenDefns specs =
-            specs |> List.collect (function (SynModuleDecl.NestedModule (_, _, subDecls, _, _)) -> flattenDefns subDecls | defn -> [defn])
+            specs |> List.collect (function SynModuleDecl.NestedModule (_, _, subDecls, _, _) -> flattenDefns subDecls | defn -> [defn])
 
     let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
     let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
@@ -433,7 +433,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
         EmptyParsedInput(filename, isLastCompiland)
 
 /// Parse multiple input files from disk
-let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: (Exiter -> CapturingErrorLogger), retryLocked) =
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, sourceFiles, errorLogger: ErrorLogger, exiter: Exiter, createErrorLogger: Exiter -> CapturingErrorLogger, retryLocked) =
     try
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
@@ -499,7 +499,7 @@ let ProcessMetaCommandsFromInput
 
     let canHaveScriptMetaCommands =
         match inp with
-        | ParsedInput.SigFile (_) -> false
+        | ParsedInput.SigFile _ -> false
         | ParsedInput.ImplFile (ParsedImplFileInput (isScript = isScript)) -> isScript
 
     let ProcessDependencyManagerDirective directive args m state =
@@ -540,7 +540,7 @@ let ProcessMetaCommandsFromInput
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective(("i"), ParsedHashDirectiveArguments args, m) ->
+            | ParsedHashDirective("i", ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Include args m state
 
@@ -785,10 +785,10 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                   errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
 
               let conditionalDefines =
-                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+                  if tcConfig.noConditionalErasure then None else Some tcConfig.conditionalCompilationDefines
 
               // Typecheck the signature file
-              let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) =
+              let! tcEnv, sigFileType, createsGeneratedProvidedTypes =
                   TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcState.tcsTcSigEnv file
 
               let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
@@ -825,7 +825,7 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
               let tcImplEnv = tcState.tcsTcImplEnv
 
               let conditionalDefines =
-                  if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
+                  if tcConfig.noConditionalErasure then None else Some tcConfig.conditionalCompilationDefines
 
               let hadSig = rootSigOpt.IsSome
 

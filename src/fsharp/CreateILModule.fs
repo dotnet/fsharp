@@ -36,7 +36,7 @@ module AttributeHelpers =
       | None -> None
       | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
-        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some (s)
+        | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some s
         | _ -> None
 
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
@@ -44,7 +44,7 @@ module AttributeHelpers =
       | None -> None
       | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
-        | Some (Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some (i)
+        | Some (Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some i
         | _ -> None
 
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
@@ -52,7 +52,7 @@ module AttributeHelpers =
       | None -> None
       | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
-        | Some (Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some (p)
+        | Some (Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some p
         | _ -> None
 
     let (|ILVersion|_|) (versionString: string) =
@@ -101,7 +101,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     let container =
         match containerAttrib with
         | Some container ->
-            if not (FSharpEnvironment.isRunningOnCoreClr) then
+            if not FSharpEnvironment.isRunningOnCoreClr then
                 warning(Error(FSComp.SR.containerDeprecated(), rangeCmdArgs))
             if tcConfig.container.IsSome && tcConfig.container <> Some container then
               warning(Error(FSComp.SR.fscKeyNameWarning(), rangeCmdArgs))
@@ -168,7 +168,7 @@ module MainModuleBuilder =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public )
+          Seq.map (fun t -> mkTypeForwarder tcGlobals.ilg.primaryAssemblyScopeRef t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public )
           |> Seq.toList
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports: TcImports) =
@@ -229,8 +229,8 @@ module MainModuleBuilder =
                         | _ -> true, v)
                     |> snd
             match System.UInt16.TryParse v with
-            | (true, i) -> i
-            | (false, _) -> 0us
+            | true, i -> i
+            | false, _ -> 0us
         let validParts =
             version.Split('.')
             |> Array.mapi(fun i v -> parseOrZero i v)

@@ -41,7 +41,7 @@ open FSharp.Compiler.ExtensionTyping
 type NameResolver(g: TcGlobals,
                   amap: Import.ImportMap,
                   infoReader: InfoReader,
-                  instantiationGenerator: (range -> Typars -> TypeInst)) =
+                  instantiationGenerator: range -> Typars -> TypeInst) =
 
     /// Used to transform typars into new inference typars
     // instantiationGenerator is a function to help us create the
@@ -258,7 +258,7 @@ type Item =
         | Item.Property(_, FSProp(_, _, Some v, _) :: _)
         | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayName
         | Item.Property(nm, _) -> DemangleOperatorName nm
-        | Item.MethodGroup(_, (FSMeth(_, _, v, _) :: _), _) -> v.DisplayName
+        | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayName
         | Item.MethodGroup(nm, _, _) -> DemangleOperatorName nm
         | Item.CtorGroup(nm, _) -> DemangleGenericTypeName nm
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
@@ -1134,7 +1134,7 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
                 match nenv.eUnqualifiedItems.TryFind pair.Key with
                 // First method of the found group must be an extension and have the same enclosing type as the type we are opening.
                 // If the first method is an extension, we are assuming the rest of the methods in the group are also extensions.
-                | Some(Item.MethodGroup(_, ((methInfo :: _) as methInfos2), _)) when methInfo.IsExtensionMember && typeEquiv g methInfo.ApparentEnclosingType ty ->
+                | Some(Item.MethodGroup(_, (methInfo :: _ as methInfos2), _)) when methInfo.IsExtensionMember && typeEquiv g methInfo.ApparentEnclosingType ty ->
                     KeyValuePair (pair.Key, Item.MethodGroup(name, methInfos @ methInfos2, orig))
                 | _ ->
                     pair
@@ -1792,7 +1792,7 @@ let ItemsAreEffectivelyEqual g orig other =
     | Item.ArgName (id1, _, _), Item.ArgName (id2, _, _) ->
         (id1.idText = id2.idText && Range.equals id1.idRange id2.idRange)
 
-    | (Item.ArgName (id, _, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) ->
+    | Item.ArgName (id, _, _), ValUse vref | ValUse vref, Item.ArgName (id, _, _) ->
         ((Range.equals id.idRange vref.DefinitionRange || Range.equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
     | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> anonInfoEquiv anon1 anon2 && i1 = i2
@@ -2199,7 +2199,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 
     let tcrefs =
         match tcrefs with
-        | ((resInfo, tcref) :: _) when
+        | (resInfo, tcref) :: _ when
                 // multiple types
                 tcrefs.Length > 1 &&
                 // no explicit type instantiation
@@ -2208,7 +2208,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 ((tcref.Typars m).Length - resInfo.EnclosingTypeInst.Length) > 0 &&
                 // plausible types have different arities
                 (tcrefs |> Seq.distinctBy (fun (_, tcref) -> tcref.Typars(m).Length) |> Seq.length > 1)  ->
-            [ for (resInfo, tcref) in tcrefs do
+            [ for resInfo, tcref in tcrefs do
                 let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
                 yield (resInfo, tcref) ]
 
@@ -2223,7 +2223,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
             tcrefs
 
 #if !NO_EXTENSIONTYPING
-    for (_, tcref) in tcrefs do
+    for _, tcref in tcrefs do
         // Type generators can't be returned by name resolution, unless PermitDirectReferenceToGeneratedType.Yes
         CheckForDirectReferenceToGeneratedType (tcref, genOk, m)
 #else
@@ -2673,7 +2673,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
                 let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
                 match typeNameResInfo.ResolutionFlag with
                 | ResolveTypeNamesToTypeRefs ->
-                    success [ for (resInfo, tcref) in tcrefs do
+                    success [ for resInfo, tcref in tcrefs do
                                     let ty = FreshenTycon ncenv m tcref
                                     let item = (resInfo, Item.Types(id.idText, [ty]), [])
                                     yield item ]
@@ -2815,7 +2815,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match fresh with
                     | Item.Value value ->
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
-                        if isNameOfOperator && not (ncenv.languageSupportsNameOf) then
+                        if isNameOfOperator && not ncenv.languageSupportsNameOf then
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
@@ -3393,7 +3393,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv: NameResolver) nenv ad (resInfo: 
             let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
             let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField  (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
             // choose only fields
-            let tyconSearch = tyconSearch |?> List.choose (function (resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest) -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
+            let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
             tyconSearch
         | _ ->
             NoResultsOrUsefulErrors
@@ -3523,7 +3523,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                 let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
                 let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad id2 rest2 typeNameResInfo tn.idRange tcrefs
                 // choose only fields
-                let tyconSearch = tyconSearch |?> List.choose (function (resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest) -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
+                let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m rfref, false), rest) | _ -> None)
                 tyconSearch
             | _ -> NoResultsOrUsefulErrors
 
@@ -4042,7 +4042,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
         else
             match tryDestAnonRecdTy g ty with
             | ValueSome (anonInfo, tys) ->
-                [ for (i, id) in Array.indexed anonInfo.SortedIds do
+                [ for i, id in Array.indexed anonInfo.SortedIds do
                     yield Item.AnonRecdField(anonInfo, tys, i, id.idRange) ]
             | _ -> []
 
@@ -4593,7 +4593,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
             if not statics then
                 match tryDestAnonRecdTy g ty with
                 | ValueSome (anonInfo, tys) ->
-                    for (i, id) in Array.indexed anonInfo.SortedIds do
+                    for i, id in Array.indexed anonInfo.SortedIds do
                         yield Item.AnonRecdField(anonInfo, tys, i, id.idRange)
                 | _ -> ()
 

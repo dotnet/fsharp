@@ -187,7 +187,7 @@ module DeclarationListHelpers =
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
             let items = apinfo.ActiveTags
             let layout = 
-                wordL (tagText ((FSComp.SR.typeInfoActivePatternResult()))) ^^
+                wordL (tagText (FSComp.SR.typeInfoActivePatternResult())) ^^
                 wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
@@ -366,7 +366,7 @@ module DeclarationListHelpers =
            ToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, ((TType_app(tcref, _)) :: _))
+        | Item.Types(_, TType_app(tcref, _) :: _)
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with
                             // tooltips are space-constrained, so use shorter names
@@ -382,7 +382,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, remarks=remarks)
 
         // F# Modules and namespaces
-        | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
+        | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             //let os = StringBuilder()
             let modrefs = modrefs |> RemoveDuplicateModuleRefs
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
@@ -657,7 +657,7 @@ module internal DescriptionListsImpl =
             | Some valRefInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let (_, argInfos,  lastRetTy, _) = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
@@ -738,8 +738,8 @@ module internal DescriptionListsImpl =
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
-        | Item.CtorGroup(_, (minfo :: _)) 
-        | Item.MethodGroup(_, (minfo :: _), _) -> 
+        | Item.CtorGroup(_, minfo :: _) 
+        | Item.MethodGroup(_, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
             let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
@@ -956,7 +956,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility: (Item -> FSharpAccessibility), items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
@@ -973,12 +973,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, (TType_app(tcref, _) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, TType_app(tcref, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                 | Item.FakeInterfaceCtor (TType_app(tcref, _)) 
                 | Item.DelegateCtor (TType_app(tcref, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
+                | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
                 | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }

@@ -411,7 +411,7 @@ module internal ExtensionTyping =
         abstract GetAttributeConstructorArgs: provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
 
     and ProvidedCustomAttributeProvider =
-        static member Create (attributes :(ITypeProvider -> seq<CustomAttributeData>)): IProvidedCustomAttributeProvider = 
+        static member Create (attributes :ITypeProvider -> seq<CustomAttributeData>): IProvidedCustomAttributeProvider = 
             let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
             let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> None | v -> Some v
             let findAttribByName tyFullName (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
@@ -493,7 +493,7 @@ module internal ExtensionTyping =
         member _.GetName() = x.GetName()
         member _.FullName = x.FullName
         member _.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
-        static member Create (x: System.Reflection.Assembly) = match x with null -> null | t -> ProvidedAssembly (t)
+        static member Create (x: System.Reflection.Assembly) = match x with null -> null | t -> ProvidedAssembly t
         member _.Handle = x
         override _.Equals y = assert false; match y with :? ProvidedAssembly as y -> x.Equals y.Handle | _ -> false
         override _.GetHashCode() = assert false; x.GetHashCode()
@@ -754,7 +754,7 @@ module internal ExtensionTyping =
 
     /// Get the provided invoker expression for a particular use of a method.
     let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
-        provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var (p.Handle) |]) |> ProvidedExpr.Create methodBase.Context
+        provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
 
     /// Compute the Name or FullName property of a provided type, reporting appropriate errors
     let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
@@ -837,7 +837,7 @@ module internal ExtensionTyping =
                     let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, ProvidedType.CreateNoContext(typeof<obj>), fun mi -> mi.DeclaringType)
                     match miDeclaringType with 
                         // Generated nested types may have null DeclaringType
-                    | Tainted.Null when (mi.OfType<ProvidedType>().IsSome) -> ()
+                    | Tainted.Null when mi.OfType<ProvidedType>().IsSome -> ()
                     | Tainted.Null -> 
                         errorR(Error(FSComp.SR.etNullMemberDeclaringType(fullName, memberName), m))   
                     | _ ->     

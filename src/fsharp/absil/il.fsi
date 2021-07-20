@@ -603,7 +603,7 @@ type internal ILExceptionClause =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILExceptionSpec =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       Clause: ILExceptionClause }
 
 /// Indicates that a particular local variable has a particular source
@@ -616,7 +616,7 @@ type internal ILLocalDebugMapping =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILLocalDebugInfo =
-    { Range: (ILCodeLabel * ILCodeLabel);
+    { Range: ILCodeLabel * ILCodeLabel;
       DebugMappings: ILLocalDebugMapping list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1927,7 +1927,7 @@ val emptyILResources: ILResources
 val internal mkILResources: ILResource list -> ILResources
 
 /// Making modules.
-val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
+val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: int * int -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
 
 /// Generate references to existing type definitions, method definitions
 /// etc.  Useful for generating references, e.g. to a  class we're processing

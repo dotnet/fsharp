@@ -368,7 +368,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkForallTyIfNeeded d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
       // A table of all intrinsics that the compiler cares about
-  let v_knownIntrinsics = ConcurrentDictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
+  let v_knownIntrinsics = ConcurrentDictionary<string * string option * string * int, ValRef>(HashIdentity.Structural)
 
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
@@ -1575,7 +1575,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.mkDebuggerStepThroughAttribute() =
       mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
 
-  member _.mkDebuggableAttribute (jitOptimizerDisabled) =
+  member _.mkDebuggableAttribute jitOptimizerDisabled =
       mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
   member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
@@ -1627,7 +1627,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
     match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
-    | "get_Sign", [aty], _, (objExpr :: _) ->
+    | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
         let tyargs = [aty]
