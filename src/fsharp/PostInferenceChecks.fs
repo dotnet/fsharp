@@ -1618,7 +1618,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // allow args to be byref here 
         CheckExprsPermitByRefLike cenv env args
         
-    | TOp.Recd (_, _), _, _ ->
+    | TOp.Recd _, _, _ ->
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsPermitByRefLike cenv env args
 

@@ -236,7 +236,7 @@ let RefuteDiscrimSet g m path discrims =
         match discrims with
         | [DecisionTreeTest.IsNull] ->
             snd(mkCompGenLocal m notNullText ty), false
-        | [DecisionTreeTest.IsInst (_, _)] ->
+        | [DecisionTreeTest.IsInst _] ->
             snd(mkCompGenLocal m otherSubtypeText ty), false
         | (DecisionTreeTest.Const c :: rest) ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const c -> Some c | _ -> None) rest)

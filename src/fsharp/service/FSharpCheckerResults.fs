@@ -1297,7 +1297,7 @@ type internal TypeCheckInfo
                                     |   _ -> false, None, None)
                                 (true,None,None) items
                         match allTypes, constr, ty with
-                        |   true, Some (Item.CtorGroup(_, _) as item), _
+                        |   true, Some (Item.CtorGroup _ as item), _
                                 -> GetF1Keyword g item
                         |   true, _, Some ty
                                 -> GetF1Keyword g ty

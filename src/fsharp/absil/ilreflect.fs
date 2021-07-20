@@ -1030,7 +1030,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
     | AI_ldc (DT_I8, ILConst.I8 i64) -> ilG.Emit(OpCodes.Ldc_I8, i64)
     | AI_ldc (DT_R4, ILConst.R4 r32) -> ilG.Emit(OpCodes.Ldc_R4, r32)
     | AI_ldc (DT_R8, ILConst.R8 r64) -> ilG.Emit(OpCodes.Ldc_R8, r64)
-    | AI_ldc (_, _ ) -> failwith "emitInstrI_arith (AI_ldc (ty, const)) iltyped"
+    | AI_ldc _ -> failwith "emitInstrI_arith (AI_ldc (ty, const)) iltyped"
     | I_ldarg u16 -> ilG.EmitAndLog (OpCodes.Ldarg, int16 u16)
     | I_ldarga u16 -> ilG.EmitAndLog (OpCodes.Ldarga, int16 u16)
     | I_ldind (align, vol, dt) ->

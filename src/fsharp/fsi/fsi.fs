@@ -2317,7 +2317,7 @@ type internal FsiInteractionProcessor
                 Some (ParsedScriptInteraction.HashDirective(hash,mh)),Some (ParsedScriptInteraction.Definitions(defs,m)),istate
 
             | Some (ParsedScriptInteraction.Definitions (defs,m))                    ->
-                let isDefHash = function SynModuleDecl.HashDirective(_,_) -> true | _ -> false
+                let isDefHash = function SynModuleDecl.HashDirective _ -> true | _ -> false
                 let isBreakable def =
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with

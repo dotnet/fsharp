@@ -4573,7 +4573,7 @@ module TcDeclarations =
     let private isAbstractSlot = function SynMemberDefn.AbstractSlot _ -> true | _ -> false
     let private isInterface = function SynMemberDefn.Interface _ -> true | _ -> false
     let private isInherit = function SynMemberDefn.Inherit _ -> true | _ -> false
-    let private isField = function SynMemberDefn.ValField (_, _) -> true | _ -> false
+    let private isField = function SynMemberDefn.ValField _ -> true | _ -> false
     let private isTycon = function SynMemberDefn.NestedType _ -> true | _ -> false
 
     let private allFalse ps x = List.forall (fun p -> not (p x)) ps

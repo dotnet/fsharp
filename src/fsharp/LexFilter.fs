@@ -1271,7 +1271,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     | _ :: (CtxtNamespaceBody _ | CtxtModuleBody _) :: _ -> true
                     // The context pair below is created a namespace/module scope when user explicitly uses 'begin'...'end',
                     // and these can legally contain type definitions, so ignore this combo as uninteresting and recurse deeper
-                    | _ :: CtxtParen((BEGIN|STRUCT), _) :: CtxtSeqBlock(_, _, _) :: _ -> nextOuterMostInterestingContextIsNamespaceOrModule(offsideStack.Tail.Tail) 
+                    | _ :: CtxtParen((BEGIN|STRUCT), _) :: CtxtSeqBlock _ :: _ -> nextOuterMostInterestingContextIsNamespaceOrModule(offsideStack.Tail.Tail) 
                     // at the top of the stack there is an implicit module
                     | _ :: [] -> true 
                     // anything else is a non-namespace/module

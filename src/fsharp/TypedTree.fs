@@ -4645,7 +4645,7 @@ type Expr =
         | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
         | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
         | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
-        | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
+        | StaticOptimization _ -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
         | Quote _ -> "Quote(..)"
         | WitnessArg _  -> "WitnessArg(..)"

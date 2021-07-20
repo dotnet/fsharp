@@ -374,7 +374,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 | _ ->
                     match minfo.Range with
                     | None -> Array.empty
-                    | Some (_,_) -> minfo.SequencePoints
+                    | Some _ -> minfo.SequencePoints
 
             let builder = new BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)

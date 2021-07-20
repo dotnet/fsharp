@@ -480,7 +480,7 @@ let FilterEachThenUndo f meths =
 let ShowAccessDomain ad =
     match ad with 
     | AccessibleFromEverywhere -> "public" 
-    | AccessibleFrom(_, _) -> "accessible"
+    | AccessibleFrom _ -> "accessible"
     | AccessibleFromSomeFSharpCode -> "public, protected or internal" 
     | AccessibleFromSomewhere -> ""
 
@@ -1018,7 +1018,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
-    | TType_app (_, _), TType_app (_, _)   ->  localAbortD
+    | TType_app _, TType_app _   ->  localAbortD
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
@@ -1889,7 +1889,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
         | TyparConstraint.IsUnmanaged _, TyparConstraint.IsUnmanaged _
         | TyparConstraint.IsReferenceType _, TyparConstraint.IsReferenceType _ 
         | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ 
-        | TyparConstraint.SimpleChoice (_, _), TyparConstraint.SimpleChoice (_, _) -> 
+        | TyparConstraint.SimpleChoice _, TyparConstraint.SimpleChoice _ -> 
             CompleteD
             
         | _ -> CompleteD
@@ -2505,11 +2505,11 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     |> ErrorD
 
 and ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup =
-    let isSequential e = match e with | Expr.Sequential (_, _, _, _, _) -> true | _ -> false
+    let isSequential e = match e with | Expr.Sequential _ -> true | _ -> false
     ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup =
-    let isSequential e = match e with | SynExpr.Sequential (_, _, _, _, _) -> true | _ -> false
+    let isSequential e = match e with | SynExpr.Sequential _ -> true | _ -> false
     ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 // Resolve the overloading of a method 
