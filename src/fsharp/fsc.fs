@@ -256,7 +256,7 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
 
 let SetProcessThreadLocals tcConfigB =
     match tcConfigB.preferredUiLang with
-    | Some s -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(s)
+    | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
     | None -> ()
     if tcConfigB.utf8output then
         Console.OutputEncoding <- Encoding.UTF8
@@ -422,7 +422,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
-                Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
+                Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
                 Some 1033
         else
             None
@@ -456,7 +456,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
 
     // Share intern'd strings across all lexing/parsing
-    let lexResourceManager = new Lexhelp.LexResourceManager()
+    let lexResourceManager = Lexhelp.LexResourceManager()
 
     let dependencyProvider = new DependencyProvider()
 

@@ -26,7 +26,7 @@ module FSharpDependencyManager =
     let validateAndFormatRestoreSources (sources:string) = [|
             let items = sources.Split(';')
             for item in items do
-                let uri = new Uri(item)
+                let uri = Uri(item)
                 if uri.IsFile then
                     let directoryName = uri.LocalPath
                     if Directory.Exists(directoryName) then
@@ -182,7 +182,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
         | None -> path
         | Some v -> Path.Combine(path, v)
 
-    let generatedScripts = new ConcurrentDictionary<string,string>()
+    let generatedScripts = ConcurrentDictionary<string,string>()
 
     let deleteScripts () =
         try

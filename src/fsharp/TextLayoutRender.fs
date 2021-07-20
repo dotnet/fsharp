@@ -91,7 +91,7 @@ type NoResult = NoResult
 module LayoutRender =
     let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
-    let spaces n = new String(' ', n)
+    let spaces n = String(' ', n)
       
     let renderL (rr: LayoutRenderer<_, _>) layout =
         let rec addL z pos i layout k = 

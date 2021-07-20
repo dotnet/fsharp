@@ -164,7 +164,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
-    let diagnostics = new ResizeArray<_>()
+    let diagnostics = ResizeArray<_>()
 
     override x.DiagnosticSink(exn, severity) = 
         if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then

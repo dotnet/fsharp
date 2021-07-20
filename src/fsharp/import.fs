@@ -455,7 +455,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
     // Find all the items with a non-empty key list. Bucket them together by
     // the first key. For each bucket, call 'nodef' on that head key and the bucket.
     let nodes = 
-        let buckets = new Dictionary<_, _>(10)
+        let buckets = Dictionary<_, _>(10)
         for keylist, v in items do
             match keylist with 
             | [] -> ()

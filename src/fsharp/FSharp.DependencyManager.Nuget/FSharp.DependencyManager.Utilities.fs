@@ -105,7 +105,7 @@ module internal Utilities =
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
+                    raise (TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
                 else
                     p.WaitForExit()
             p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()

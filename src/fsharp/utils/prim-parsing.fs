@@ -205,9 +205,9 @@ module internal Implementation =
 #if DEBUG
         if Flags.debug then Console.WriteLine("\nParser: interpret tables")
 #endif
-        let stateStack : Stack<int> = new Stack<_>(100)
+        let stateStack : Stack<int> = Stack<_>(100)
         stateStack.Push(initialState)
-        let valueStack = new Stack<ValueInfo>(100)
+        let valueStack = Stack<ValueInfo>(100)
         let mutable haveLookahead = false                                                                              
         let mutable lookaheadToken = Unchecked.defaultof<'tok>
         let mutable lookaheadEndPos = Unchecked.defaultof<Position>
@@ -246,10 +246,10 @@ module internal Implementation =
                     ArrayPool<int>.Shared.Return gotoTableCache }
         let actionTable = AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
         let gotoTable = AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
-        let stateToProdIdxsTable = new IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
+        let stateToProdIdxsTable = IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
 
         let parseState =                                                                                            
-            new IParseState(ruleStartPoss,ruleEndPoss,lhsPos,ruleValues,lexbuf)
+            IParseState(ruleStartPoss,ruleEndPoss,lhsPos,ruleValues,lexbuf)
 
 #if DEBUG
         let report haveLookahead lookaheadToken = 

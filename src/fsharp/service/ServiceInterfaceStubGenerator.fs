@@ -157,7 +157,7 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _)  -> 
                     Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
-                    Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
+                    Some (sprintf "%s [%s]" typeName (String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
                     Some (sprintf "%s^%s" typeName power)
                 | SynType.MeasureDivide(TypeIdent numerator, TypeIdent denominator, _) ->

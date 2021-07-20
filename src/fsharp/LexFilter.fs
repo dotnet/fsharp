@@ -485,7 +485,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
     if List.isEmpty angles then None else
 
     let afterOp = 
-        match (new System.String(Array.ofSeq afterAngles)) with 
+        match (System.String(Array.ofSeq afterAngles)) with 
          | "." -> Some DOT
          | "]" -> Some RBRACK
          | "-" -> Some MINUS
@@ -564,10 +564,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Make sure we don't report 'eof' when inserting a token, and set the positions to the 
     // last reported token position 
     let lexbufStateForInsertedDummyTokens (lastTokenStartPos, lastTokenEndPos) =
-        new LexbufState(lastTokenStartPos, lastTokenEndPos, false) 
+        LexbufState(lastTokenStartPos, lastTokenEndPos, false) 
 
     let getLexbufState() = 
-        new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
+        LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
 
     let setLexbufState (p: LexbufState) =
         lexbuf.StartPos <- p.StartPos  
@@ -2237,10 +2237,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
           | HASH_IDENT ident ->
-              let hashPos = new LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
-              let identPos = new LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
-              delayToken(new TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
-              delayToken(new TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
+              let hashPos = LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
+              let identPos = LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
+              delayToken(TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
+              delayToken(TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
               true
 
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
@@ -2271,7 +2271,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
           // ..^1 will get parsed as DOT_DOT_HAT 1 while 1..^2 will get parsed as 1 DOT_DOT HAT 2
           // because of processing rule underneath this.
           | DOT_DOT_HAT -> 
-              let hatPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+              let hatPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- INFIX_AT_HAT_OP("^"); rented.LexbufState <- hatPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, DOT_DOT, 0, -1))
               pool.Return tokenTup
@@ -2279,14 +2279,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
           // Split this token to allow "1..2" for range specification 
           | INT32_DOT_DOT (i, v) ->
-              let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
+              let dotDotPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT_DOT; rented.LexbufState <- dotDotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, INT32(i, v), 0, -2))
               pool.Return tokenTup
               true
           // Split @>. and @@>. into two 
           | RQUOTE_DOT (s, raw) ->
-              let dotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+              let dotPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT; rented.LexbufState <- dotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, RQUOTE(s, raw), 0, -1))
               pool.Return tokenTup
@@ -2315,7 +2315,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               let delayMergedToken tok = 
                   let rented = pool.Rent()
                   rented.Token <- tok
-                  rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
+                  rented.LexbufState <- LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
                   rented.LastTokenPos <- tokenTup.LastTokenPos
                   delayToken(rented)
                   pool.Return nextTokenTup
@@ -2391,7 +2391,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
 type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
-    let inner = new LexFilterImpl (lightStatus, compilingFsLib, lexer, lexbuf)
+    let inner = LexFilterImpl(lightStatus, compilingFsLib, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.

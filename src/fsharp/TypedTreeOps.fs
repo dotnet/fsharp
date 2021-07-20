@@ -1198,7 +1198,7 @@ let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, 
 
 type MatchBuilder(spBind, inpRange: range) = 
 
-    let targets = new ResizeArray<_>(10) 
+    let targets = ResizeArray<_>(10) 
     member x.AddTarget tg = 
         let n = targets.Count 
         targets.Add tg
@@ -1213,7 +1213,7 @@ type MatchBuilder(spBind, inpRange: range) =
 let mkBoolSwitch m g t e = TDSwitch(g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
 
 let primMkCond spBind spTarget1 spTarget2 m ty e1 e2 e3 = 
-    let mbuilder = new MatchBuilder(spBind, m)
+    let mbuilder = MatchBuilder(spBind, m)
     let dtree = mkBoolSwitch m e1 (mbuilder.AddResultTarget(e2, spTarget1)) (mbuilder.AddResultTarget(e3, spTarget2)) 
     mbuilder.Close(dtree, m, ty)
 
@@ -5179,7 +5179,7 @@ and remapParentRef tyenv p =
 and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) = 
     let vals = x.AllValsAndMembers |> QueueList.map fv
     let tycons = x.AllEntities |> QueueList.map ft
-    new ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
+    ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
     
 and copyVal compgen (v: Val) = 
     match compgen with 
@@ -8446,7 +8446,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
     
     if canUseTypeTestFast g tgty then 
 
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
@@ -8454,7 +8454,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No, None)))
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
@@ -8465,7 +8465,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 //    1. The compilation of array patterns in the pattern match compiler
 //    2. The compilation of string patterns in the pattern match compiler
 let mkNullTest g m e1 e2 e3 =
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)            
         let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
