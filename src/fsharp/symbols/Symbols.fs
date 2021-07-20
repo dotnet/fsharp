@@ -1527,7 +1527,6 @@ type FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
     override x.ToString() = "<type constraint>"
 
 type FSharpInlineAnnotation = 
-   | PseudoValue
    | AlwaysInline 
    | OptionalInline 
    | NeverInline 
@@ -1747,7 +1746,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | None -> FSharpInlineAnnotation.OptionalInline
         | Some v -> 
         match v.InlineInfo with 
-        | ValInline.PseudoVal -> FSharpInlineAnnotation.PseudoValue
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
         | ValInline.Never -> FSharpInlineAnnotation.NeverInline
