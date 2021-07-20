@@ -3486,8 +3486,8 @@ declExpr:
         SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally) }
 
   | IF declExpr ifExprCases %prec expr_if 
-      { let mIf = SynIfThenElseStart.If (rhs parseState 1)
-        $3 $2 mIf }
+      { let mIf = rhs parseState 1
+        $3 $2 mIf false }
 
   | IF declExpr recover %prec expr_if 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsIncompleteIf()) 
@@ -3504,7 +3504,7 @@ declExpr:
         let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
-        exprFromParseError (SynExpr.IfThenElse ((SynIfThenElseStart.If m), arbExpr("ifGuard1", mEnd), m, arbExpr("thenBody1", mEnd), None, None, spIfToThen, true, m, m)) }
+        exprFromParseError (SynExpr.IfThenElse (m, false, arbExpr("ifGuard1", mEnd), m, arbExpr("thenBody1", mEnd), None, None, spIfToThen, true, m, m)) }
 
   | LAZY declExpr %prec expr_lazy 
       { SynExpr.Lazy ($2, unionRanges (rhs parseState 1) $2.Range) }
@@ -3988,12 +3988,12 @@ ifExprCases:
   | ifExprThen ifExprElifs 
       { let exprThen, mThen = $1
         let mElse, elseExpr = $2
-        (fun exprGuard ifStart ->
-            let mIfToThen = unionRanges ifStart.Range mThen
+        (fun exprGuard mIf isElif ->
+            let mIfToThen = unionRanges mIf mThen
             let lastBranch : SynExpr = match elseExpr with None -> exprThen | Some e -> e
-            let mIfToEndOfLastBranch = unionRanges ifStart.Range lastBranch.Range
+            let mIfToEndOfLastBranch = unionRanges mIf lastBranch.Range
             let spIfToThen = DebugPointAtBinding.Yes(mIfToThen)
-            SynExpr.IfThenElse (ifStart, exprGuard, mThen, exprThen, mElse, elseExpr, spIfToThen, false, mIfToThen, mIfToEndOfLastBranch)) }
+            SynExpr.IfThenElse (mIf, isElif, exprGuard, mThen, exprThen, mElse, elseExpr, spIfToThen, false, mIfToThen, mIfToEndOfLastBranch)) }
 
 ifExprThen: 
   | THEN  declExpr %prec prec_then_if 
@@ -4025,7 +4025,7 @@ ifExprElifs:
 
   | ELIF declExpr ifExprCases 
       { let mElif = rhs parseState 1
-        None, Some ($3 $2 (SynIfThenElseStart.Elif mElif)) }
+        None, Some ($3 $2 mElif true) }
 
   | ELIF declExpr recover 
       { None, Some (exprFromParseError $2) }
