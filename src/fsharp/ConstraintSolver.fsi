@@ -129,7 +129,7 @@ type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 [<Sealed>]
 type ConstraintSolverState =
-    static member New: TcGlobals * Import.ImportMap * InfoReader * TcValF -> ConstraintSolverState
+    static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
 val BakedInTraitConstraintNames: Set<string>
 

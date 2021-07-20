@@ -86,9 +86,9 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             let r = if schange then r.WithStart(mkPos startline lastLength) else r
             if echange then r.WithEnd(mkPos endline (1 + lastLength)) else r
 
-    static member NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString(message)
+    static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
 
-    static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
+    static member NormalizeErrorString(text) = NormalizeErrorString(text)
     
     static member Create(severity: FSharpDiagnosticSeverity, message: string, number: int, range: range, ?numberPrefix: string, ?subcategory: string) =
         let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
@@ -769,7 +769,7 @@ module internal SymbolHelpers =
             | Item.Types(_, TType_app(tcref, _) :: _)
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
-                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+                ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
 

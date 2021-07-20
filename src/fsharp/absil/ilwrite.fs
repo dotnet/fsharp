@@ -45,8 +45,8 @@ let dw2 n = byte ((n >>> 16) &&& 0xFFL)
 let dw1 n = byte ((n >>> 8) &&& 0xFFL)
 let dw0 n = byte (n &&& 0xFFL)
 
-let bitsOfSingle (x: float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes x, 0)
-let bitsOfDouble (x: float) = System.BitConverter.DoubleToInt64Bits x
+let bitsOfSingle (x: float32) = BitConverter.ToInt32(BitConverter.GetBytes x, 0)
+let bitsOfDouble (x: float) = BitConverter.DoubleToInt64Bits x
 
 /// Arbitrary value
 [<Literal>]
@@ -350,7 +350,7 @@ type UnsharedRow(elems: RowElement[]) =
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
 let envForTypeDef (td: ILTypeDef) = { EnclosingTyparCount=td.GenericParams.Length }
 let envForMethodRef env (ty: ILType) = { EnclosingTyparCount=(match ty with ILType.Array _ -> env.EnclosingTyparCount | _ -> ty.GenericArgs.Length) }
-let envForNonGenericMethodRef _mref = { EnclosingTyparCount=System.Int32.MaxValue }
+let envForNonGenericMethodRef _mref = { EnclosingTyparCount=Int32.MaxValue }
 let envForFieldSpec (fspec: ILFieldSpec) = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
 let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.DeclaringType.GenericArgs.Length }
 
@@ -3006,7 +3006,7 @@ module FileSystemUtilities =
     open System
     open System.Reflection
     open System.Globalization
-    let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
+    let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission (filename: string) =
 
 #if ENABLE_MONO_SUPPORT

@@ -361,7 +361,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list
           StringLimit: int
 #endif
-          FormatProvider: System.IFormatProvider
+          FormatProvider: IFormatProvider
           BindingFlags: System.Reflection.BindingFlags
           PrintWidth: int 
           PrintDepth: int 

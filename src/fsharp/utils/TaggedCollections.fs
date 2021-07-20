@@ -699,7 +699,7 @@ namespace Internal.Utilities.Collections.Tagged
                     elif c = 0 then MapTree(k,v)
                     else            MapTreeNode (k,v,m,empty,2) :> MapTree<'Key, 'Value> 
 
-        let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+        let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
         let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =                     
             if isEmpty m then false

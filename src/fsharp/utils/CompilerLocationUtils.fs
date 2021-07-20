@@ -259,7 +259,7 @@ module internal FSharpEnvironment =
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [| "net5.0"; "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
         else
-            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
 
     let toolPaths = [| "tools"; "typeproviders" |]

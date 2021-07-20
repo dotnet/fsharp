@@ -86,7 +86,7 @@ type Table<'T> =
 
     static member Create n =
       { name = n
-        tbl = new System.Collections.Generic.Dictionary<_, _>(1000, HashIdentity.Structural)
+        tbl = new Dictionary<_, _>(1000, HashIdentity.Structural)
         rows= new ResizeArray<_>(1000)
         count=0 }
 

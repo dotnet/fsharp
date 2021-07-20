@@ -203,7 +203,7 @@ type PreXmlDoc =
                 XmlDoc.Empty
             else
                 let lines = Array.map fst preLines
-                let m = Array.reduce Range.unionRanges (Array.map snd preLines)
+                let m = Array.reduce unionRanges (Array.map snd preLines)
                 let doc = XmlDoc (lines, m)
                 if check then
                    doc.Check(paramNamesOpt)

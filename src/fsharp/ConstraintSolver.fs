@@ -240,7 +240,7 @@ type ConstraintSolverState =
     { 
       g: TcGlobals
 
-      amap: Import.ImportMap 
+      amap: ImportMap 
 
       InfoReader: InfoReader
 
@@ -1677,7 +1677,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         match callMethInfoOpt, callExpr with 
         | Some methInfo, Expr.Op (TOp.ILCall (_, _, _, _, NormalValUse, _, _, ilMethRef, _, methInst, _), [], args, m)
              when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val (v, _, _) -> valEq v.Deref b | _ -> false) ->
-                let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
+                let declaringType = ImportProvidedType amap m (methInfo.PApply((fun x -> x.DeclaringType), m))
                 if isILAppTy g declaringType then 
                     let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
                     ILMethSln(declaringType, extOpt, ilMethRef, methInst)
@@ -2665,7 +2665,7 @@ and ResolveOverloading
                                 true
 
                             // T is always better than Nullable<T> from F# 5.0 onwards
-                            | _ when g.langVersion.SupportsFeature(Features.LanguageFeature.NullableOptionalInterop) &&
+                            | _ when g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) &&
                                      isNullableTy csenv.g ty2 &&
                                      typeEquiv csenv.g ty1 (destNullableTy csenv.g ty2) -> 
                                 true
@@ -2758,7 +2758,7 @@ and ResolveOverloading
                     // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
                     // optional or not) as an additional comparison technique.
                     let c = 
-                        if g.langVersion.SupportsFeature(Features.LanguageFeature.NullableOptionalInterop) then
+                        if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
                             let cs = 
                                 let args1 = candidate.AllCalledArgs |> List.concat
                                 let args2 = other.AllCalledArgs |> List.concat
@@ -3121,7 +3121,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let ftps, _renaming, tinst = FreshenTypeInst m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
-    return MethodCalls.GenWitnessArgs amap g m traitInfos
+    return GenWitnessArgs amap g m traitInfos
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
@@ -3129,7 +3129,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    return MethodCalls.GenWitnessExprLambda amap g m traitInfo
+    return GenWitnessExprLambda amap g m traitInfo
   }
 
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter

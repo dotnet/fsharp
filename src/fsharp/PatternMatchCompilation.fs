@@ -119,11 +119,11 @@ let BindSubExprOfInput g amap gtps (PBind(v, tyscheme)) m (SubExpr(accessf, (ve2
                         mkTyparTy gtp
                     else
                         someSolved <- true
-                        TypeRelations.ChooseTyparSolution g amap gtp
+                        ChooseTyparSolution g amap gtp
 
                 let solutions = List.map freezeVar gtps
                 if someSolved then
-                    TypeRelations.IterativelySubstituteTyparSolutions g gtps solutions
+                    IterativelySubstituteTyparSolutions g gtps solutions
                 else
                     solutions
 
@@ -1422,7 +1422,7 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
             // If the remainder of the match boiled away to nothing interesting.
             // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
             let spTarget =
-                if Range.equals expr.Range matchm then DebugPointForTarget.No
+                if equals expr.Range matchm then DebugPointForTarget.No
                 else DebugPointForTarget.Yes
 
             // Make the clause that represents the remaining cases of the pattern match

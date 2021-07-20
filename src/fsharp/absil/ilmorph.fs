@@ -138,7 +138,7 @@ let cattr_ty2ty f (c: ILAttribute) =
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
         try 
-           let elems,namedArgs = IL.decodeILAttribData c 
+           let elems,namedArgs = decodeILAttribData c 
            let elems = elems |> List.map (celem_ty2ty f)
            let namedArgs = namedArgs |> List.map (cnamedarg_ty2ty f)
            mkILCustomAttribMethRef (meth, elems, namedArgs)

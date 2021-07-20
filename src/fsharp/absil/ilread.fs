@@ -35,13 +35,13 @@ open FSharp.NativeInterop
 let checking = false
 let logging = false
 let _ = if checking then dprintn "warning: ILBinaryReader.checking is on"
-let noStableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
-let alwaysMemoryMapFSC = try (System.Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
+let noStableFileHeuristic = try (Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
+let alwaysMemoryMapFSC = try (Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
 let stronglyHeldReaderCacheSizeDefault = 30
-let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
+let stronglyHeldReaderCacheSize = try (match Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
 
-let singleOfBits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes x, 0)
-let doubleOfBits (x: int64) = System.BitConverter.Int64BitsToDouble x
+let singleOfBits (x: int32) = BitConverter.ToSingle(BitConverter.GetBytes x, 0)
+let doubleOfBits (x: int64) = BitConverter.Int64BitsToDouble x
 
 //---------------------------------------------------------------------
 // Utilities.
@@ -391,7 +391,7 @@ let sigptrGetBytes n (bytes: byte[]) sigptr =
 
 let sigptrGetString n bytes sigptr =
     let bytearray, sigptr = sigptrGetBytes n bytes sigptr
-    (System.Text.Encoding.UTF8.GetString(bytearray, 0, bytearray.Length)), sigptr
+    (Encoding.UTF8.GetString(bytearray, 0, bytearray.Length)), sigptr
 
 
 // --------------------------------------------------------------------
@@ -2515,7 +2515,7 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
   match kind with
   | x when x = uint16 et_STRING ->
     let blobHeap = readBlobHeap ctxt vidx
-    let s = System.Text.Encoding.Unicode.GetString(blobHeap, 0, blobHeap.Length)
+    let s = Encoding.Unicode.GetString(blobHeap, 0, blobHeap.Length)
     ILFieldInit.String s
   | x when x = uint16 et_BOOLEAN -> ILFieldInit.Bool (readBlobHeapAsBool ctxt vidx)
   | x when x = uint16 et_CHAR -> ILFieldInit.Char (readBlobHeapAsUInt16 ctxt vidx)
@@ -3624,7 +3624,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
           tableBigness=tableBigness }
     ctxtH := Some ctxt
 
-    let ilModule = seekReadModule ctxt reduceMemoryUsage pectxtEager pevEager peinfo (System.Text.Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
+    let ilModule = seekReadModule ctxt reduceMemoryUsage pectxtEager pevEager peinfo (Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
     let ilAssemblyRefs = lazy [ for i in 1 .. getNumRows TableNames.AssemblyRef do yield seekReadAssemblyRef ctxt i ]
 
     ilModule, ilAssemblyRefs
@@ -3851,7 +3851,7 @@ let ClosePdbReader pdb =
 #endif
 
 type ILReaderMetadataSnapshot = obj * nativeint * int
-type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
 type MetadataOnlyFlag = Yes | No
@@ -3870,7 +3870,7 @@ type ILModuleReader =
     abstract ILAssemblyRefs: ILAssemblyRef list
 
     /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
-    inherit System.IDisposable
+    inherit IDisposable
 
 [<Sealed>]
 type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
@@ -3953,8 +3953,8 @@ let OpenILModuleReader fileName opts =
            let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn ->
-            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString()))
-            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString()))
+            let fakeKey = ILModuleReaderCacheKey(fileName, DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
     let cacheResult1 =

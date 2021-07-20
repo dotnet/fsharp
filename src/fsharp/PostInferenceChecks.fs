@@ -518,7 +518,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
                 let tyconAcc = tcref.Accessibility |> AccessInternalsVisibleToAsInternal thisCompPath cenv.internalsVisibleToPaths
                 if isLessAccessible tyconAcc valAcc then
                     let errorText = FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())) |> snd
-                    let warningText = errorText + System.Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
+                    let warningText = errorText + Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
                     warning(AttributeChecking.ObsoleteWarning(warningText, m))
 
         CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env false ty 
@@ -1503,7 +1503,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         NoLimit
 
     | TOp.Coerce, [tgty;srcty], [x] ->
-        if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty then
+        if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty then
             CheckExpr cenv env x context
         else
             CheckTypeInstNoByrefs cenv env m tyargs
@@ -2236,7 +2236,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 let methods = hashOfImmediateMeths.[minfo.LogicalName]
                 for m in methods do
                     // use referential identity to filter out 'minfo' method
-                    if not(System.Object.ReferenceEquals(m, minfo)) then 
+                    if not(Object.ReferenceEquals(m, minfo)) then 
                         yield m
             ]
 

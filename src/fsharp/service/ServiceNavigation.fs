@@ -77,8 +77,8 @@ type NavigationItems(declarations:NavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if Range.equals r1 range.Zero then r2
-        elif Range.equals r2 range.Zero then r1
+        if equals r1 range.Zero then r2
+        elif equals r2 range.Zero then r1
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 

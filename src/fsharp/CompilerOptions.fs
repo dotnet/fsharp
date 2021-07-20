@@ -99,7 +99,7 @@ let PrintCompilerOption (CompilerOption(_s, _tag, _spec, _, help) as compilerOpt
     let defaultLineWidth = 80 // the fallback width
     let lineWidth =
         try
-            System.Console.BufferWidth
+            Console.BufferWidth
         with e -> defaultLineWidth
     let lineWidth = if lineWidth=0 then defaultLineWidth else lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
     // Lines have this form: <flagWidth><space><description>
@@ -439,7 +439,7 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
     let fail() = error(Error(FSComp.SR.optsInvalidSubSystemVersion text, rangeCmdArgs))
 
     // per spec for 357994: Validate input string, should be two positive integers x.y when x>=4 and y>=0 and both <= 65535
-    if System.String.IsNullOrEmpty text then
+    if String.IsNullOrEmpty text then
        fail()
     else
         match text.Split('.') with
@@ -883,7 +883,7 @@ let codePageFlag (tcConfigB: TcConfigBuilder) =
          OptionInt (fun n ->
             try
                 System.Text.Encoding.GetEncoding n |> ignore
-            with :? System.ArgumentException as err ->
+            with :? ArgumentException as err ->
                 error(Error(FSComp.SR.optsProblemWithCodepage(n, err.Message), rangeCmdArgs))
 
             tcConfigB.inputCodePage <- Some n), None,
@@ -1655,27 +1655,27 @@ let ReportTime (tcConfig:TcConfig) descr =
     | Some prevDescr ->
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
-            System.Console.ReadLine() |> ignore
+            Console.ReadLine() |> ignore
         // Intentionally putting this right after the pause so a debugger can be attached.
         match tcConfig.simulateException with
-        | Some("fsc-oom") -> raise(System.OutOfMemoryException())
-        | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
-        | Some("fsc-invop") -> raise(System.InvalidOperationException())
-        | Some("fsc-av") -> raise(System.AccessViolationException())
-        | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
-        | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-        | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-        | Some("fsc-oe") -> raise(System.OverflowException())
-        | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
-        | Some("fsc-bif") -> raise(System.BadImageFormatException())
+        | Some("fsc-oom") -> raise(OutOfMemoryException())
+        | Some("fsc-an") -> raise(ArgumentNullException("simulated"))
+        | Some("fsc-invop") -> raise(InvalidOperationException())
+        | Some("fsc-av") -> raise(AccessViolationException())
+        | Some("fsc-aor") -> raise(ArgumentOutOfRangeException())
+        | Some("fsc-dv0") -> raise(DivideByZeroException())
+        | Some("fsc-nfn") -> raise(NotFiniteNumberException())
+        | Some("fsc-oe") -> raise(OverflowException())
+        | Some("fsc-atmm") -> raise(ArrayTypeMismatchException())
+        | Some("fsc-bif") -> raise(BadImageFormatException())
         | Some("fsc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
-        | Some("fsc-ior") -> raise(System.IndexOutOfRangeException())
-        | Some("fsc-ic") -> raise(System.InvalidCastException())
-        | Some("fsc-ip") -> raise(System.InvalidProgramException())
-        | Some("fsc-ma") -> raise(System.MemberAccessException())
-        | Some("fsc-ni") -> raise(System.NotImplementedException())
-        | Some("fsc-nr") -> raise(System.NullReferenceException())
-        | Some("fsc-oc") -> raise(System.OperationCanceledException())
+        | Some("fsc-ior") -> raise(IndexOutOfRangeException())
+        | Some("fsc-ic") -> raise(InvalidCastException())
+        | Some("fsc-ip") -> raise(InvalidProgramException())
+        | Some("fsc-ma") -> raise(MemberAccessException())
+        | Some("fsc-ni") -> raise(NotImplementedException())
+        | Some("fsc-nr") -> raise(NullReferenceException())
+        | Some("fsc-oc") -> raise(OperationCanceledException())
         | Some("fsc-fail") -> failwith "simulated"
         | _ -> ()
 
@@ -1686,14 +1686,14 @@ let ReportTime (tcConfig:TcConfig) descr =
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let timeNow = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-        let maxGen = System.GC.MaxGeneration
-        let gcNow = [| for i in 0 .. maxGen -> System.GC.CollectionCount i |]
+        let maxGen = GC.MaxGeneration
+        let gcNow = [| for i in 0 .. maxGen -> GC.CollectionCount i |]
         let ptime = System.Diagnostics.Process.GetCurrentProcess()
         let wsNow = ptime.WorkingSet64/1000000L
 
         match tPrev, nPrev with
         | Some (timePrev, gcPrev:int []), Some prevDescr ->
-            let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount i - gcPrev.[i] |]
+            let spanGC = [| for i in 0 .. maxGen -> GC.CollectionCount i - gcPrev.[i] |]
             dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d"
                 timeNow (timeNow - timePrev)
                 wsNow

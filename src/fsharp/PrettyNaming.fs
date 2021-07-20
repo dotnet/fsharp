@@ -176,7 +176,7 @@ let private compileCustomOpName =
         // Has this operator already been compiled?
         compiledOperators.GetOrAdd(opp, fun (op: string) ->
             let opLength = op.Length
-            let sb = new Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+            let sb = new StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
             for i = 0 to opLength - 1 do
                 let c = op.[i]
                 match t2.TryGetValue c with

@@ -175,7 +175,7 @@ module internal TokenClassifications =
                 // This is related to 4783. Recover by treating as lower case identifier.
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
-                if System.Char.ToUpperInvariant s.[0] = s.[0] then
+                if Char.ToUpperInvariant s.[0] = s.[0] then
                     (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
                 else
                     (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
@@ -927,7 +927,7 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
     let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     let reportLibraryOnlyFeatures = true
 
-    let lexResourceManager = new Lexhelp.LexResourceManager()
+    let lexResourceManager = new LexResourceManager()
 
     let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
@@ -950,7 +950,7 @@ module FSharpKeywords =
 
     let KeywordsWithDescription = keywordsWithDescription
 
-    let KeywordNames = Lexhelp.Keywords.keywordNames
+    let KeywordNames = keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =
@@ -1157,7 +1157,7 @@ type FSharpTokenKind =
 [<Struct;NoComparison;NoEquality>]
 type FSharpToken =
 
-    val private tok: Parser.token
+    val private tok: token
     val private tokRange: range
 
     new (tok, tokRange) = { tok = tok; tokRange = tokRange }
@@ -1524,7 +1524,7 @@ module FSharpLexerImpl =
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, text)
         let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
-        let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, Lexhelp.LexResourceManager(0), [], errorLogger, pathMap)
+        let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
 
         let getNextToken =

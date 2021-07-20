@@ -92,7 +92,7 @@ type internal DelayedILModuleReader =
                                             metadataOnly = MetadataOnlyFlag.Yes
                                             tryGetMetadataSnapshot = fun _ -> None
                                         }
-                                    let ilReader = ILBinaryReader.OpenILModuleReaderFromStream this.name stream ilReaderOptions
+                                    let ilReader = OpenILModuleReaderFromStream this.name stream ilReaderOptions
                                     this.result <- ilReader
                                     this.getStream <- Unchecked.defaultof<_> // clear out the function so we do not hold onto anything
                                     Some ilReader
@@ -158,7 +158,7 @@ and FSharpProjectOptions =
       ReferencedProjects: FSharpReferencedProject[]
       IsIncompleteTypeCheckEnvironment : bool
       UseScriptResolutionRules : bool
-      LoadTime : System.DateTime
+      LoadTime : DateTime
       UnresolvedReferences : FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
       Stamp : int64 option
@@ -193,7 +193,7 @@ and FSharpProjectOptions =
                 false) &&
         options1.LoadTime = options2.LoadTime
 
-    member po.ProjectDirectory = System.IO.Path.GetDirectoryName(po.ProjectFileName)
+    member po.ProjectDirectory = Path.GetDirectoryName(po.ProjectFileName)
 
     override this.ToString() = "FSharpProjectOptions(" + this.ProjectFileName + ")"
 
@@ -323,7 +323,7 @@ type internal TypeCheckInfo
 
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g,amap)
-    let ncenv = NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
+    let ncenv = NameResolver(g,amap,infoReader,FakeInstantiationGenerator)
     let cenv = SymbolEnv(g, thisCcu, Some ccuSigForFile, tcImports, amap, infoReader)
 
     /// Find the most precise naming environment for the given line and column
@@ -462,7 +462,7 @@ type internal TypeCheckInfo
                     // check that type of value is the same or subtype of tcref
                     // yes - allow access to protected members
                     // no - strip ability to access protected members
-                    if FSharp.Compiler.TypeRelations.TypeFeasiblySubsumesType 0 g amap m tcref FSharp.Compiler.TypeRelations.CanCoerce ty then
+                    if TypeRelations.TypeFeasiblySubsumesType 0 g amap m tcref TypeRelations.CanCoerce ty then
                         ad
                     else
                         AccessibleFrom(paths, None)
@@ -570,7 +570,7 @@ type internal TypeCheckInfo
                                             posEq r.Start rq.Start)
         match bestQual with
         | Some (ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
-            let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
+            let items = ResolveRecordOrClassFieldsOfType ncenv m ad ty false
             Some (items, nenv.DisplayEnv, m)
         | _ -> None
 
@@ -621,7 +621,7 @@ type internal TypeCheckInfo
 
     /// Find items in the best naming environment.
     let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) =
-        let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+        let items = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         let items = items |> RemoveExplicitlySuppressed g
@@ -636,7 +636,7 @@ type internal TypeCheckInfo
     /// Find record fields in the best naming environment.
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid) =
         let (nenv, ad),m = GetBestEnvForPos cursorPos
-        let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
         let items = items |> RemoveExplicitlySuppressed g
@@ -715,7 +715,7 @@ type internal TypeCheckInfo
         if i >= lineStr.Length then None
         else
         let mutable p = i
-        while p >= 0 && System.Char.IsWhiteSpace(lineStr.[p]) do
+        while p >= 0 && Char.IsWhiteSpace(lineStr.[p]) do
             p <- p - 1
         if p >= 0 then Some p else None
 
@@ -778,7 +778,7 @@ type internal TypeCheckInfo
                 | None, _ -> [], None
                 | Some(origLongIdent), Some _ -> origLongIdent, None
                 | Some(origLongIdent), None ->
-                    System.Diagnostics.Debug.Assert(not (isNil origLongIdent), "origLongIdent is empty")
+                    Debug.Assert(not (isNil origLongIdent), "origLongIdent is empty")
                     // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
                     let plid, residue = List.frontAndBack origLongIdent
                     plid, Some residue
@@ -787,7 +787,7 @@ type internal TypeCheckInfo
             let (nenv, ad), m = GetBestEnvForPos pos
 
             let getType() =
-                match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
+                match TryToResolveLongIdentAsType ncenv nenv m plid with
                 | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
@@ -1064,16 +1064,16 @@ type internal TypeCheckInfo
 
     member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
-        NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
+        GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     /// Determines if a long ident is resolvable at a specific point.
     member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
         ErrorScope.Protect
-            Range.range0
+            range0
             (fun () ->
                 /// Find items in the best naming environment.
                 let (nenv, ad), m = GetBestEnvForPos cursorPos
-                NameResolution.IsItemResolvable ncenv nenv m ad plid item)
+                IsItemResolvable ncenv nenv m ad plid item)
             (fun msg ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in IsRelativeNameResolvable: '%s'" msg)
                 false)
@@ -1085,7 +1085,7 @@ type internal TypeCheckInfo
     /// Get the auto-complete items at a location
     member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1112,7 +1112,7 @@ type internal TypeCheckInfo
     /// Get the symbols for auto-complete items at a location
     member _.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1197,8 +1197,8 @@ type internal TypeCheckInfo
 
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool =
-            let isRangeMatch = (Range.rangeContainsPos ar.Range pos)
-            let isNotSpecialRange = not (Range.equals ar.Range rangeStartup) && not (Range.equals ar.Range range0) && not (Range.equals ar.Range rangeCmdArgs)
+            let isRangeMatch = (rangeContainsPos ar.Range pos)
+            let isNotSpecialRange = not (equals ar.Range rangeStartup) && not (equals ar.Range range0) && not (equals ar.Range rangeCmdArgs)
             let isMatch = isRangeMatch && isNotSpecialRange
             isMatch
 
@@ -1224,7 +1224,7 @@ type internal TypeCheckInfo
                     | None -> None
                     | Some(loadClosure) ->
                         loadClosure.PackageReferences
-                        |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
+                        |> Array.tryFind (fun (m, _) -> rangeContainsPos m pos)
                 match matches with
                 | None -> ToolTipText.ToolTipText []
                 | Some (_, lines) ->
@@ -1235,7 +1235,7 @@ type internal TypeCheckInfo
                             let tip = LayoutRender.toArray tip
                             ToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             dataTipOfReferences
             (fun err ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
@@ -1244,7 +1244,7 @@ type internal TypeCheckInfo
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
         let Compute() =
-            ErrorScope.Protect Range.range0
+            ErrorScope.Protect range0
                 (fun () ->
                     let declItemsOpt =
                         GetDeclItemsForNamesAtPosition(None, Some names, None, None,
@@ -1270,7 +1270,7 @@ type internal TypeCheckInfo
              res
 
     member _.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1308,7 +1308,7 @@ type internal TypeCheckInfo
                 None)
 
     member _.GetMethods (line, lineStr, colAtEndOfNames, namesOpt) =
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1332,7 +1332,7 @@ type internal TypeCheckInfo
                 MethodGroup(msg,[| |]))
 
     member _.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None,
@@ -1343,7 +1343,7 @@ type internal TypeCheckInfo
                 match declItemsOpt with
                 | None | Some ([],_,_,_) -> None
                 | Some (items, denv, _, m) ->
-                    let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
+                    let allItems = items |> List.collect (fun item -> FlattenItems g m item.Item)
                     let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item))
                     Some (symbols, denv, m)
             )
@@ -1352,7 +1352,7 @@ type internal TypeCheckInfo
                 None)
 
     member _.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
 
                 let declItemsOpt =
@@ -1451,7 +1451,7 @@ type internal TypeCheckInfo
                     | Item.Property   (name, ProvidedProp _::_   ) -> FindDeclFailureReason.ProvidedMember name
                     | Item.Event      (      ProvidedEvent _ as e ) -> FindDeclFailureReason.ProvidedMember e.EventName
                     | Item.ILField    (      ProvidedField _ as f ) -> FindDeclFailureReason.ProvidedMember f.FieldName
-                    | SymbolHelpers.ItemIsProvidedType g tcref     -> FindDeclFailureReason.ProvidedType   tcref.DisplayName
+                    | ItemIsProvidedType g tcref     -> FindDeclFailureReason.ProvidedType   tcref.DisplayName
 #endif
                     | _                                              -> FindDeclFailureReason.Unknown ""
                     |> FindDeclResult.DeclNotFound
@@ -1461,7 +1461,7 @@ type internal TypeCheckInfo
                 FindDeclResult.DeclNotFound (FindDeclFailureReason.Unknown msg))
 
     member _.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
-        ErrorScope.Protect Range.range0
+        ErrorScope.Protect range0
             (fun () ->
                 let declItemsOpt =
                     GetDeclItemsForNamesAtPosition (None, Some names, None, None,
@@ -1626,7 +1626,7 @@ module internal ParseAndCheckFile =
         let defines = (SourceFileImpl.AdditionalDefinesForUseInEditor options.IsInteractive) @ options.ConditionalCompilationDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
-        let lexResourceManager = new Lexhelp.LexResourceManager()
+        let lexResourceManager = new LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
@@ -1657,7 +1657,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1691,7 +1691,7 @@ module internal ParseAndCheckFile =
                         match tok2 with
                         | INTERP_STRING_PART _
                         | INTERP_STRING_END _ ->
-                           Range.mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column+1))
+                           mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column+1))
                         | _ -> m2
 
                     matchingBraces.Add(m1, m2Start)
@@ -1701,7 +1701,7 @@ module internal ParseAndCheckFile =
                     let stackAfterMatch =
                         match tok2 with
                         | INTERP_STRING_PART _ ->
-                           let m2End = Range.mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column-1) 0)) m2.End
+                           let m2End = mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column-1) 0)) m2.End
                            (tok2, m2End) :: stackAfterMatch
                         | _ -> stackAfterMatch
 
@@ -1719,7 +1719,7 @@ module internal ParseAndCheckFile =
                 // Either way we start a new potential match at the last character
                 | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                      let m = lexbuf.LexemeRange
-                     let m2 = Range.mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column-1) 0)) m.End
+                     let m2 = mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column-1) 0)) m.End
                      matchBraces ((tok, m2) :: stack)
 
                 | (EOF _ | LEX_FAILURE _), _ -> ()
@@ -1734,18 +1734,18 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
-                    ParseAndCheckInputs.IsScript(fileName)
+                    IsScript(fileName)
                 let isExe = options.IsExe
 
                 try
                     ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
-                    errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
+                    errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
@@ -2353,7 +2353,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
-                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),
+                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
                     tryGetMetadataSnapshot=(fun _ -> None),
                     reduceMemoryUsage=reduceMemoryUsage,
@@ -2368,7 +2368,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                   ReferencedProjects=[||]
                   IsIncompleteTypeCheckEnvironment=false
                   UseScriptResolutionRules =false
-                  LoadTime=System.DateTime.Now
+                  LoadTime=DateTime.Now
                   UnresolvedReferences =None
                   OriginalLoadReferences = []
                   Stamp = None

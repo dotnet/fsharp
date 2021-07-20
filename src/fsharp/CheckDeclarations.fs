@@ -259,7 +259,7 @@ let TryStripPrefixPath (g: TcGlobals) (enclosingNamespacePath: Ident list) =
         g.isInteractive &&
         not (isNil rest) &&
         p.idText.StartsWithOrdinal FsiDynamicModulePrefix && 
-        p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit 
+        p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall Char.IsDigit 
         -> Some(p, rest)
     | _ -> None
 
@@ -2328,7 +2328,7 @@ module MutRecBindingChecking =
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
             //printfn "solving unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" tp.DisplayName tp.Stamp
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp
+                ChooseTyparSolutionAndSolve cenv.css denv tp
           
         // Now that we know what we've generalized we can adjust the recursive references 
         let defnsCs = TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
@@ -3413,7 +3413,7 @@ module EstablishTypeDefinitionCores =
                         | TProvidedTypeExtensionPoint info -> info.ProvidedType
                         | _ -> failwith "unreachable"
 
-                    if ExtensionTyping.IsGeneratedTypeDirectReference (typeBeforeArguments, m) then 
+                    if IsGeneratedTypeDirectReference (typeBeforeArguments, m) then 
                         let optGeneratedTypePath = Some (tcref.CompilationPath.MangledPath @ [ tcref.LogicalName ])
                         let _hasNoArgs, providedTypeAfterStaticArguments, checkTypeName = TcProvidedTypeAppToStaticConstantArgs cenv envinner optGeneratedTypePath tpenv tcrefBeforeStaticArguments args m
                         let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased), m)
@@ -5703,9 +5703,9 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) =
 // Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
 let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs = 
     try
-        let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+        let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
+        CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
 
         // The priority order comes from the order of declaration of the defaults in FSharp.Core.
         for priority = 10 downto 0 do
@@ -5713,13 +5713,13 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
                 if not tp.IsSolved then 
                     // Apply the first default. If we're defaulting one type variable to another then 
                     // the defaults will be propagated to the new type variable. 
-                    ConstraintSolver.ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
+                    ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
         // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
         unsolved |> List.iter (fun tp ->     
             if not tp.IsSolved then 
                 if (tp.StaticReq <> TyparStaticReq.None) then
-                    ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+                    ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with e -> errorRecovery e m
 
 let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
@@ -5743,11 +5743,11 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
 
 
 let SolveInternalUnknowns g (cenv: cenv) denvAtEnd mexpr extraAttribs =
-    let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+    let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
     unsolved |> List.iter (fun tp -> 
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+                ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
 
 let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr =
     match rootSigOpt with 
@@ -5890,7 +5890,7 @@ let TypeCheckOneImplFile
        | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String version, range, _), _) ], _, _, _, _) ->
             let attrName = tref.CompiledRepresentationForNamedType.FullName
             let isValid() =
-                try IL.parseILVersion version |> ignore; true
+                try parseILVersion version |> ignore; true
                 with _ -> false
             match attrName with
             | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?

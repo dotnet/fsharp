@@ -525,7 +525,7 @@ type ExtensionMethodPriority = uint64
 
 /// The caller-side value for the optional arg, if any
 type OptionalArgCallerSideValue =
-    | Constant of IL.ILFieldInit
+    | Constant of ILFieldInit
     | DefaultValue
     | MissingValue
     | WrapperForIDispatch
@@ -975,7 +975,7 @@ type MethInfo =
     /// Get the extension method priority of the method. If it is not an extension method
     /// then use the highest possible value since non-extension methods always take priority
     /// over extension members.
-    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue
+    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption UInt64.MaxValue
 
     /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =

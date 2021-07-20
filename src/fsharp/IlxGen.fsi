@@ -107,7 +107,7 @@ type public IlxAssemblyGenerator =
     member ForceSetGeneratedValue: ExecutionContext * Val * obj -> unit
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type
-    member LookupGeneratedValue: ExecutionContext * Val -> (obj * System.Type) option
+    member LookupGeneratedValue: ExecutionContext * Val -> (obj * Type) option
 
 val ReportStatistics: TextWriter -> unit
 

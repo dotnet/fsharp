@@ -70,7 +70,7 @@ module Structure =
                  | SynSimplePat.Attrib(range = r)
                  | SynSimplePat.Id(range = r)
                  | SynSimplePat.Typed(range = r) -> r)
-            |> List.reduce Range.unionRanges
+            |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
     /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions

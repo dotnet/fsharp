@@ -104,7 +104,7 @@ type TcEnv =
     } 
 
     member DisplayEnv : DisplayEnv
-    member NameEnv : NameResolution.NameResolutionEnv
+    member NameEnv : NameResolutionEnv
     member AccessRights : AccessorDomain
 
 //-------------------------------------------------------------------------
@@ -190,7 +190,7 @@ type TcFileState =
       isScript: bool 
 
       /// Environment needed to convert IL types to F# types in the importer. 
-      amap: Import.ImportMap 
+      amap: ImportMap 
 
       /// Used to generate new syntactic argument names in post-parse syntactic processing
       synArgNameGenerator: SynArgNameGenerator
@@ -511,7 +511,7 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: g: TcGlobals -> NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
 val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv

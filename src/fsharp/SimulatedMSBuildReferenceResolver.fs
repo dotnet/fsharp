@@ -93,7 +93,7 @@ let private SimulatedMSBuildResolver =
             | None -> "v4.5"
 
         member _.DotNetFrameworkReferenceAssembliesRootDirectory =
-            if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
+            if Environment.OSVersion.Platform = PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
                     | null -> Environment.GetEnvironmentVariable("ProgramFiles")  // if PFx86 is null, then we are 32-bit and just get PF
