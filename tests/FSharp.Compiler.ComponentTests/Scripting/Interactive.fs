@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.Scripting
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module ``Interactive tests`` =
     [<Fact>]

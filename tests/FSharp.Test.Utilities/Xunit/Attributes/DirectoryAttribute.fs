@@ -1,4 +1,4 @@
-﻿namespace FSharp.Test.Utilities.Xunit.Attributes
+﻿namespace FSharp.Test.Xunit.Attributes
 
 open System
 open System.IO
@@ -7,8 +7,8 @@ open Xunit.Sdk
 
 open FSharp.Compiler.IO
 
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test
+open FSharp.Test.Compiler
 
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a directory, relative to current test suite's root.
