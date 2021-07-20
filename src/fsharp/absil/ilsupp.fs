@@ -8,14 +8,10 @@ open System.Reflection
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
-open System.Runtime.InteropServices
-open System.Runtime.CompilerServices
-open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
 #if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.StrongNameSign
 #endif
 
 let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)

@@ -3,8 +3,6 @@
 /// Logic associated with resolving method calls.
 module internal FSharp.Compiler.MethodCalls
 
-open Internal.Utilities
-
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import

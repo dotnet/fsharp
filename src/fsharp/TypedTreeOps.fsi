@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
 open Internal.Utilities.Rational
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax

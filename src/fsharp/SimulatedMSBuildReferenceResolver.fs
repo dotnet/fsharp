@@ -5,7 +5,6 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 open System
 open System.IO
 open System.Reflection
-open Microsoft.Win32
 open Microsoft.Build.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.IO

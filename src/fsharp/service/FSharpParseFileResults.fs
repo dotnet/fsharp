@@ -8,7 +8,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax

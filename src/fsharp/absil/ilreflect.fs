@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter
 
 open System
-open System.IO
 open System.Reflection
 open System.Reflection.Emit
 open System.Runtime.InteropServices

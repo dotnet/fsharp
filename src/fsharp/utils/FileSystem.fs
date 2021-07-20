@@ -5,7 +5,6 @@ open System.IO
 open System.IO.MemoryMappedFiles
 open System.Buffers
 open System.Reflection
-open System.Threading
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Internal.Utilities.Library

@@ -7,10 +7,8 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
@@ -3003,7 +3001,6 @@ let count f arr =
     Array.fold (fun x y -> x + f y) 0x0 arr
 
 module FileSystemUtilities =
-    open System
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false

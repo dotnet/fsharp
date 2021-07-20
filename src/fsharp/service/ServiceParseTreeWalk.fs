@@ -7,7 +7,6 @@
 
 namespace FSharp.Compiler.Syntax
 
-open FSharp.Compiler
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text

@@ -3,9 +3,7 @@
 namespace FSharp.Compiler.Text
 
 open System
-open System.Collections.Immutable
 open System.IO
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Core.Printf

@@ -15,7 +15,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
-open System.IO.MemoryMappedFiles
 open System.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Diagnostics

@@ -17,7 +17,6 @@ open FSharp.Compiler
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Xml
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -207,7 +206,6 @@ module DiagnosticHelpers =
 
 namespace FSharp.Compiler.Symbols
 
-open System
 open System.IO
 
 open Internal.Utilities.Library  

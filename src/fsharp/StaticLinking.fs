@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.StaticLinking
 
 open System
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras

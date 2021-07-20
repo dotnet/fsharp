@@ -47,12 +47,10 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.StaticLinking
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter

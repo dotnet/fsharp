@@ -5,7 +5,6 @@ namespace FSharp.Compiler.DependencyManager
 open System
 open System.IO
 open System.Reflection
-open System.Runtime.Loader
 open Internal.Utilities.FSharpEnvironment
 
 /// Signature for ResolutionProbe callback

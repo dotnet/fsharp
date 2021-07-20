@@ -6,7 +6,6 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open FSDependencyManager
-open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]

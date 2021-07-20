@@ -8,17 +8,13 @@ open System
 open System.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text

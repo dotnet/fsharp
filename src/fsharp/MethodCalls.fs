@@ -6,7 +6,6 @@ module internal FSharp.Compiler.MethodCalls
 open Internal.Utilities
 
 open Internal.Utilities.Library 
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AccessibilityLogic
@@ -23,7 +22,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

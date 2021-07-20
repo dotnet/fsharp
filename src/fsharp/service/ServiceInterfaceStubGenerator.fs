@@ -7,7 +7,6 @@ open System.Diagnostics
 open Internal.Utilities.Library 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpSymbolPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text

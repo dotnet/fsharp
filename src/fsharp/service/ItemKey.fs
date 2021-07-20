@@ -12,8 +12,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 

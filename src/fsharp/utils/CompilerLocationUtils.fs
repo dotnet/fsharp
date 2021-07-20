@@ -7,7 +7,6 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.Win32
 open Microsoft.FSharp.Core
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.

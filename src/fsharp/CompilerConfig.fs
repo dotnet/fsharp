@@ -28,7 +28,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
 #if !NO_EXTENSIONTYPING
-open FSharp.Compiler.ExtensionTyping
 open FSharp.Core.CompilerServices
 #endif
 

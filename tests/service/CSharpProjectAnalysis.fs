@@ -12,7 +12,6 @@ module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 open NUnit.Framework
 open FsUnit
 open System.IO
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
