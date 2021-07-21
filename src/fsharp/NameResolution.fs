@@ -553,7 +553,7 @@ let SelectPropInfosFromExtMembers (infoReader: InfoReader) ad optFilter declarin
     let amap = infoReader.amap
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence use a set.
     let seen = HashSet(ExtensionMember.Comparer g)
-    let propCollector = new PropertyCollector(g, amap, m, declaringTy, optFilter, ad)
+    let propCollector = PropertyCollector(g, amap, m, declaringTy, optFilter, ad)
     for emem in extMemInfos do
         if seen.Add emem then
             match emem with
@@ -1915,13 +1915,13 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let capturedNameResolutionIdentifiers =
-        new HashSet<pos * string>
+        HashSet<pos * string>
             ( { new IEqualityComparer<_> with
                     member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
                     member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
 
     let capturedModulesAndNamespaces =
-        new HashSet<range * Item>
+        HashSet<range * Item>
             ( { new IEqualityComparer<range * Item> with
                     member _.GetHashCode ((m, _)) = hash m
                     member _.Equals ((m1, item1), (m2, item2)) = equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )

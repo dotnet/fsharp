@@ -97,7 +97,7 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
     if isNil dependentILModules then
         ilxMainModule, (fun x -> x)
     else
-        let typeForwarding = new TypeForwarding(tcImports)
+        let typeForwarding = TypeForwarding(tcImports)
 
         // Check no dependent assemblies use quotations
         let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function Some ccu, _ when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)

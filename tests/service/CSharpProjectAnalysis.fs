@@ -46,7 +46,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
                yield fileName1 |])
     let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     if results.HasCriticalErrors then
-        let builder = new System.Text.StringBuilder()
+        let builder = System.Text.StringBuilder()
         for err in results.Diagnostics do
             builder.AppendLine(sprintf "**** %s: %s" (if err.Severity = FSharpDiagnosticSeverity.Error then "error" else "warning") err.Message)
             |> ignore

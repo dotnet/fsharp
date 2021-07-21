@@ -260,7 +260,7 @@ val inline tryGetCacheValue: cache:cache<'a> -> NonNullSlot<'a> voption
 module AsyncUtil =
 
     /// Represents the reified result of an asynchronous computation.
-    [<NoEqualityAttribute; NoComparisonAttribute>]
+    [<NoEquality; NoComparison>]
     type AsyncResult<'T> =
         | AsyncOk of 'T
         | AsyncException of exn
@@ -268,7 +268,7 @@ module AsyncUtil =
         static member Commit: res:AsyncResult<'T> -> Async<'T>
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<SealedAttribute>]
+    [<Sealed>]
     type AsyncResultCell<'T> =
 
         new: unit -> AsyncResultCell<'T>
@@ -281,7 +281,7 @@ module UnmanagedProcessExecutionOptions =
 module StackGuard =
     val EnsureSufficientExecutionStack: recursionDepth:int -> unit
 
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of System.Lazy<'T>

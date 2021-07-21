@@ -311,7 +311,7 @@ module NavigationImpl =
                 nest |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
                 { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nest } )                  
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
-        new NavigationItems(items)
+        NavigationItems(items)
 
     /// Get information for signature file      
     let getNavigationFromSigFile (modules: SynModuleOrNamespaceSig list) =
@@ -455,7 +455,7 @@ module NavigationImpl =
                 
                 { Declaration = d.WithUniqueName(uniqueName d.Name idx); Nested = nest } )                  
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
-        new NavigationItems(items)
+        NavigationItems(items)
 
 [<RequireQualifiedAccess>]
 module Navigation =

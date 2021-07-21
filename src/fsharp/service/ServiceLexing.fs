@@ -620,7 +620,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     // so we need to split it into tokens that are used by VS for colorization
 
     // Stack for tokens that are split during postprocessing
-    let mutable tokenStack = new Stack<_>()
+    let mutable tokenStack = Stack<_>()
     let delayToken tok = tokenStack.Push tok
 
     // Process: anywhite* #<directive>
@@ -640,7 +640,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 
     // Split a directive line from lexer into tokens usable in VS
     let processDirectiveLine ofs f =
-        let delayed = new ResizeArray<_>()
+        let delayed = ResizeArray<_>()
         f (fun (tok, s, e) -> delayed.Add (tok, s + ofs, e + ofs) )
         // delay all the tokens and return the remaining one
         for i = delayed.Count - 1 downto 1 do delayToken delayed.[i]
@@ -927,7 +927,7 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
     let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     let reportLibraryOnlyFeatures = true
 
-    let lexResourceManager = new LexResourceManager()
+    let lexResourceManager = LexResourceManager()
 
     let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 

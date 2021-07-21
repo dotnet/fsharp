@@ -18,7 +18,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.StrongNameSign
 #endif
 
-let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
+let DateTime1970Jan01 = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
@@ -588,7 +588,7 @@ let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
            Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId,
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
-   let bb = new System.Reflection.Metadata.BlobBuilder()
+   let bb = System.Reflection.Metadata.BlobBuilder()
    NativeResourceWriter.SerializeWin32Resources(bb, resources, rva)
    bb.ToArray()
 

@@ -414,7 +414,7 @@ type LowerStateMachine(g: TcGlobals) =
             expr
         else
             let initLabel = IL.generateCodeLabel()
-            let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
+            let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
             let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
             let dtree =
                 TDSwitch(pcExpr,

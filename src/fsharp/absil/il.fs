@@ -68,10 +68,10 @@ let rec splitNamespaceAux (nm: string) =
 
 /// Global State. All namespace splits ever seen
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
-let memoizeNamespaceTable = new ConcurrentDictionary<string, string list>()
+let memoizeNamespaceTable = ConcurrentDictionary<string, string list>()
 
 //  ++GLOBAL MUTABLE STATE (concurrency-safe)
-let memoizeNamespaceRightTable = new ConcurrentDictionary<string, string option * string>()
+let memoizeNamespaceRightTable = ConcurrentDictionary<string, string option * string>()
 
 
 let splitNamespace nm =
@@ -147,7 +147,7 @@ type LazyOrderedMultiMap<'Key, 'Data when 'Key : equality>(keyf : 'Data -> 'Key,
 
     let quickMap =
         lazyItems |> lazyMap (fun entries ->
-            let t = new Dictionary<_, _>(entries.Length, HashIdentity.Structural)
+            let t = Dictionary<_, _>(entries.Length, HashIdentity.Structural)
             do entries |> List.iter (fun y ->
                 let key = keyf y
                 let v =
@@ -344,7 +344,7 @@ type AssemblyRefData =
       assemRefLocale: Locale option }
 
 /// Global state: table of all assembly references keyed by AssemblyRefData.
-let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
+let AssemblyRefUniqueStampGenerator = UniqueStampGenerator<AssemblyRefData>()
 
 let isMscorlib data =
     data.assemRefName = "mscorlib"

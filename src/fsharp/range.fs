@@ -156,8 +156,8 @@ module RangeImpl =
 
 /// A unique-index table for file names.
 type FileIndexTable() =
-    let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new ConcurrentDictionary<string, int>()
+    let indexToFileTable = ResizeArray<_>(11)
+    let fileToIndexTable = ConcurrentDictionary<string, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -211,7 +211,7 @@ module FileIndex =
 
     // ++GLOBAL MUTABLE STATE
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
-    let fileIndexTable = new FileIndexTable()
+    let fileIndexTable = FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex

@@ -86,8 +86,8 @@ type Table<'T> =
 
     static member Create n =
       { name = n
-        tbl = new Dictionary<_, _>(1000, HashIdentity.Structural)
-        rows= new ResizeArray<_>(1000)
+        tbl = Dictionary<_, _>(1000, HashIdentity.Structural)
+        rows= ResizeArray<_>(1000)
         count=0 }
 
 [<NoEquality; NoComparison>]
@@ -2210,7 +2210,7 @@ and u_tcaug st =
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false
-     tcaug_adhoc_list= new ResizeArray<_> (c |> List.map (fun (_, vref) -> (false, vref)))
+     tcaug_adhoc_list= ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
      tcaug_adhoc=NameMultiMap.ofList c
      tcaug_interfaces=d
      tcaug_super=e
