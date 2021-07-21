@@ -567,6 +567,9 @@ let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId)
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some stream) embeddedPdb deterministic
 
 #if !FX_NO_PDB_WRITER
+
+open FSharp.Compiler.AbstractIL.Support
+
 //---------------------------------------------------------------------
 // PDB Writer.  The function [WritePdbInfo] abstracts the
 // imperative calls to the Symbol Writer API.
