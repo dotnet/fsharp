@@ -1210,7 +1210,7 @@ type internal FsiDynamicCompiler
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr
                 if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
-                    colorPrintL outWriter opts responseL |> ignore
+                    colorPrintL outWriter opts responseL
 
         // Build the new incremental state.
         let istate = {istate with  optEnv    = optEnv;

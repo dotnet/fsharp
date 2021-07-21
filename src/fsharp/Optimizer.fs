@@ -162,7 +162,7 @@ type ValInfos(entries) =
                 let vkey = (vref, vref.Deref.GetLinkageFullKey())
                 if dict.ContainsKey vkey then 
                     failwithf "dictionary already contains key %A" vkey
-                dict.Add(vkey, p) |> ignore
+                dict.Add(vkey, p)
             ReadOnlyDictionary dict), id)
 
     member x.Entries = valInfoTable.Force().Values

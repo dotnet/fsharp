@@ -1571,7 +1571,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                                 RequireTcImportsLock(tcitok, ccuThunks)
                                 for ccuThunk in data.FixupThunks do
                                     if ccuThunk.IsUnresolvedReference then
-                                        ccuThunks.Add(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+                                        ccuThunks.Add(ccuThunk, fun () -> fixupThunk () |> ignore)
                             )
 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName
@@ -1613,7 +1613,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     if ccuThunk.IsUnresolvedReference then
                       tciLock.AcquireLock <| fun tcitok ->
                         RequireTcImportsLock(tcitok, ccuThunks)
-                        ccuThunks.Add(ccuThunk, fixupThunk) |> ignore
+                        ccuThunks.Add(ccuThunk, fixupThunk)
                 )
 #if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())

@@ -369,7 +369,7 @@ module internal FileSystemUtils =
     let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
 
     let hasExtensionWithValidate (validate:bool) (s:string) =
-        if validate then (checkPathForIllegalChars s) |> ignore
+        if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
         (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
@@ -388,7 +388,7 @@ module internal FileSystemUtils =
         Path.GetFileName(s)
 
     let fileNameWithoutExtensionWithValidate (validate:bool) s =
-        if validate then checkPathForIllegalChars s |> ignore
+        if validate then checkPathForIllegalChars s
         Path.GetFileNameWithoutExtension(s)
 
     let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s

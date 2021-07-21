@@ -320,9 +320,9 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     builder.WriteInt32 0
                     builder.TryWriteBytes(stream, length) |> ignore
                 else
-                    builder.WriteInt32 length |>ignore
+                    builder.WriteInt32 length
                     use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
-                    stream.CopyTo deflater |> ignore
+                    stream.CopyTo deflater
                 Some (builder.ToImmutableArray())
 
         let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
