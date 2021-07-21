@@ -273,7 +273,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
     let metadata = MetadataBuilder()
     let serializeDocumentName (name: string) =
         let name = PathMap.apply pathMap name
-        let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
+        let count s c = s |> Seq.filter(fun ch -> c = ch) |> Seq.length
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2

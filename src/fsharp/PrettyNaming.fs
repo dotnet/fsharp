@@ -138,7 +138,7 @@ let IsOperatorName (name: string) =
             else
                 isOperatorName name (idx + 1) endIndex
 
-    let skipParens = if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then true else false
+    let skipParens = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
     let startIndex = if skipParens then 2 else 0
     let endIndex = if skipParens then name.Length - 2 else name.Length
 
