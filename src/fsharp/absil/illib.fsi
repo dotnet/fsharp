@@ -5,7 +5,6 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 open System.Collections.Generic
-open System.Diagnostics
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]

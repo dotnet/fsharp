@@ -14,7 +14,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 
 //------------------------------------------------------------------------

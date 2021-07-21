@@ -4,7 +4,6 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.IO
 open System.Threading
 open Internal.Utilities.Library

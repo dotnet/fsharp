@@ -5,10 +5,13 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 open System
 open System.IO
 open System.Reflection
-open Microsoft.Win32
 open Microsoft.Build.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.IO
+
+#if !FX_NO_WIN_REGISTRY
+open Microsoft.Win32
+#endif
 
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks

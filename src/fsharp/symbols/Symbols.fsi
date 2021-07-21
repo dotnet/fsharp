@@ -3,7 +3,6 @@
 namespace rec FSharp.Compiler.Symbols
 
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
@@ -13,7 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps

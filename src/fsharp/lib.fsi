@@ -4,7 +4,6 @@ module internal Internal.Utilities.Library.Extras
 
 open System.IO
 open System.Text
-open System.Globalization
 open System.Collections.Generic
 open Internal.Utilities.Collections
 

@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection

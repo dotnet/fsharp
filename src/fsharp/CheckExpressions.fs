@@ -15,7 +15,6 @@ open Internal.Utilities.Library.ResultOrException
 open Internal.Utilities.Rational
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState

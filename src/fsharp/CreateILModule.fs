@@ -8,7 +8,6 @@ open System.Reflection
 
 open Internal.Utilities
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.NativeRes

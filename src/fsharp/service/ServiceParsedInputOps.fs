@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open Internal.Utilities.Library  
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming

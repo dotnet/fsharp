@@ -29,11 +29,8 @@ module Tests.Service.Editor
 
 open NUnit.Framework
 open FsUnit
-open System
-open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text

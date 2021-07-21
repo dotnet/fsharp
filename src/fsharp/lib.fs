@@ -7,12 +7,9 @@ open System.IO
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open System.Globalization
 open System.Runtime.InteropServices
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open FSharp.Compiler.IO
 
 let debug = false
 
@@ -424,8 +421,6 @@ type Dumper(x:obj) =
 //---------------------------------------------------------------------------
 
 module internal AsyncUtil =
-    open System
-    open System.Threading
     open Microsoft.FSharp.Control
 
     /// Represents the reified result of an asynchronous computation.
@@ -513,8 +508,6 @@ module internal AsyncUtil =
 // USAGE: call UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() from "main()".
 // Note: This is not SDL required but recommended.
 module UnmanagedProcessExecutionOptions =
-    open System
-    open System.Runtime.InteropServices
 
     [<DllImport("kernel32.dll")>]
     extern UIntPtr private GetProcessHeap()

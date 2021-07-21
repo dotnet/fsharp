@@ -20,7 +20,6 @@ open System.Text
 open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.FSharpEnvironment
@@ -61,7 +60,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization

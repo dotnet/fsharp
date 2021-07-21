@@ -7,13 +7,11 @@
 
 namespace FSharp.Compiler.EditorServices
 
-open System.Collections.Immutable
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
@@ -24,7 +22,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.SymbolHelpers
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender

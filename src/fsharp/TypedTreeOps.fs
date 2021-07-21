@@ -12,7 +12,6 @@ open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
@@ -23,7 +22,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText

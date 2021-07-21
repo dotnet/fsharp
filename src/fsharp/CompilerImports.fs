@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -19,7 +18,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState

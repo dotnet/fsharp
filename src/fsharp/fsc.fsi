@@ -12,8 +12,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeOps
 
 [<AbstractClass>]
 type ErrorLoggerProvider =

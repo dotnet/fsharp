@@ -39,23 +39,18 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.SymbolHelpers
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AbstractIL
-open System.Reflection.PortableExecutable
 open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list

@@ -6,7 +6,6 @@ open System.IO
 open System.Reflection
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Library
 
 open FSharp.Compiler.AbstractIL.AsciiConstants
