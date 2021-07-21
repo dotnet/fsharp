@@ -210,7 +210,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 #endif
 
 #if DEBUG
-[<DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
+[<DebuggerDisplay("AssemblyResolution({resolvedPath})")>]
 #endif
 type AssemblyResolution =
     {  /// The original reference to the assembly.

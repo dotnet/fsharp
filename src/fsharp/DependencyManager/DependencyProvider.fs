@@ -117,7 +117,7 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
