@@ -3,6 +3,7 @@
 /// This namespace contains FSharp.PowerPack extensions for the F# collection types
 namespace Internal.Utilities.Collections.Tagged
 
+    open System
     open System.Collections.Generic
 
     /// Immutable sets based on binary trees, default tag

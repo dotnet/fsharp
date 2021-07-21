@@ -8,6 +8,7 @@ open System.Reflection
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
+open System.Runtime.InteropServices
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
