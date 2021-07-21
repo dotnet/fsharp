@@ -320,7 +320,7 @@ module Layout =
 
     let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL semicolon) layouts
 
-    let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+    let spaceListL layouts = tagListL id layouts
 
     let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
 

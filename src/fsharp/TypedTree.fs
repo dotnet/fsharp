@@ -1201,7 +1201,7 @@ type Entity =
                         match isType with 
                         | FSharpModuleWithSuffix | ModuleOrType -> 
                             let outerTypeName = (textOfPath (List.rev (h :: racc)))
-                            ILTypeRef.Create(sref, (outerTypeName :: List.map (fun (nm, _) -> nm) t), item)
+                            ILTypeRef.Create(sref, (outerTypeName :: List.map fst t), item)
                         | _ -> 
                           top (h :: racc) t
                 top [] p 
@@ -5468,7 +5468,7 @@ type Construct() =
                 st.PApplyWithProvider((fun (st, provider) ->
                     ignore provider
                     st.IsMeasure), m)
-                  .PUntaintNoFailure(fun x -> x)
+                  .PUntaintNoFailure(Operators.id)
             if isMeasure then TyparKind.Measure else TyparKind.Type
 
         let access = 
@@ -5704,11 +5704,11 @@ type Construct() =
 
     /// Create a new module or namespace node by cloning an existing one
     static member NewClonedModuleOrNamespace orig =
-        Construct.NewModifiedModuleOrNamespace (fun mty -> mty) orig
+        Construct.NewModifiedModuleOrNamespace id orig
 
     /// Create a new type definition node by cloning an existing one
     static member NewClonedTycon orig =
-        Construct.NewModifiedTycon (fun d -> d) orig
+        Construct.NewModifiedTycon id orig
 
 #if !NO_EXTENSIONTYPING
     /// Compute the definition location of a provided item

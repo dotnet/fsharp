@@ -256,7 +256,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                                     box scriptName
                                     box (packageManagerTextLines
                                          |> Seq.filter(fun (dv, _) -> dv = "r") 
-                                         |> Seq.map(fun (_, line) -> line))
+                                         |> Seq.map snd)
                                     box tfm |]
                 else
                     None, [||]
