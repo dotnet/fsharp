@@ -12,7 +12,6 @@ open System.Collections.Concurrent
 open System.Diagnostics
 
 open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.CompilerGlobalState
