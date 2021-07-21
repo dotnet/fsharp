@@ -78,7 +78,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
+                    raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
                     p.WaitForExit()
 #if DEBUG
@@ -466,7 +466,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     let tryGetSdkRefsPackDirectory() = trySdkRefsPackDirectory.Force()
 
     let getDependenciesOf assemblyReferences =
-        let assemblies = new Dictionary<string, string>()
+        let assemblies = Dictionary<string, string>()
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =

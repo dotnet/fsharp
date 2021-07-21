@@ -842,7 +842,7 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
 /// LanguageVersion management
 let setLanguageVersion specifiedVersion =
 
-    let languageVersion = new LanguageVersion(specifiedVersion)
+    let languageVersion = LanguageVersion(specifiedVersion)
     let dumpAllowedValues () =
         printfn "%s" (FSComp.SR.optsSupportedLangVersions())
         for v in languageVersion.ValidOptions do printfn "%s" v

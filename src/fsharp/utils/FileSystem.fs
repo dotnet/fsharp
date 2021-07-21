@@ -361,7 +361,7 @@ module MemoryMappedFileExtensions =
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =
-        let chars = new System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
+        let chars = System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
         (fun (path:string) ->
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
@@ -626,7 +626,7 @@ type DefaultFileSystem() as this =
 
 [<AutoOpen>]
 module public StreamExtensions =
-    let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
+    let utf8noBOM = UTF8Encoding(false, true) :> Encoding
     type Stream with
         member s.GetWriter(?encoding: Encoding) : TextWriter =
             let encoding = defaultArg encoding utf8noBOM

@@ -3644,7 +3644,7 @@ and OptimizeModuleExpr cenv env x =
             // probably more costly than copying specs anyway.
             let rec elimModTy (mtyp: ModuleOrNamespaceType) =                  
                 let mty = 
-                    new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
+                    ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
                                               entities= mtyp.AllEntities)
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
@@ -3771,7 +3771,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=new Dictionary<Stamp, bool>() }
+          casApplied=Dictionary<Stamp, bool>() }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
 

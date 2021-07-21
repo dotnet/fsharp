@@ -86,7 +86,7 @@ let GetWarningNumber(m, warningNumber: string) =
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
         if Char.IsDigit(warningNumber.[0]) then Some (int32 warningNumber)
-        elif warningNumber.StartsWithOrdinal("FS") = true then raise (new ArgumentException())
+        elif warningNumber.StartsWithOrdinal("FS") = true then raise (ArgumentException())
         else None
     with _ ->
         warning(Error(FSComp.SR.buildInvalidWarningNumber warningNumber, m))

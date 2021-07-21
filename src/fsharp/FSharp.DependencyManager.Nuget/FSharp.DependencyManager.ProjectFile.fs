@@ -96,7 +96,7 @@ module internal ProjectFile =
 
         [| for line in lines do
             let fields = line.Split(',')
-            if fields.Length < 8 then raise (new InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+            if fields.Length < 8 then raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
                 { NugetPackageId = fields.[0]
                   NugetPackageVersion = fields.[1]

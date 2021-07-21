@@ -59,7 +59,7 @@ module internal FSharpEnvironment =
     // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0".
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
-    let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+    let maxDataLength = (System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
 #if !FX_NO_WIN_REGISTRY
     let KEY_WOW64_DEFAULT = 0x0000
