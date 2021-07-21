@@ -569,6 +569,7 @@ let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId)
 #if !FX_NO_PDB_WRITER
 
 open Microsoft.Win32
+open FSharp.Compiler.AbstractIL.Support
 
 //---------------------------------------------------------------------
 // PDB Writer.  The function [WritePdbInfo] abstracts the
