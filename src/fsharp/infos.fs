@@ -900,7 +900,7 @@ type ILMethInfo =
 
 
 /// Describes an F# use of a method
-[<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
+[<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
 [<NoComparison; NoEquality>]
 type MethInfo =
     /// Describes a use of a method declared in F# code and backed by F# metadata.

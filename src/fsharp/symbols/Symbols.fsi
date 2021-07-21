@@ -606,7 +606,7 @@ type FSharpStaticParameter =
     /// Indicates if the static parameter is optional
     member IsOptional: bool
 
-    [<System.ObsoleteAttribute("This member is no longer used, use IsOptional instead")>]
+    [<System.Obsolete("This member is no longer used, use IsOptional instead")>]
     member HasDefaultValue: bool
 #endif
 

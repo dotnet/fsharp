@@ -13,7 +13,7 @@ open FSDependencyManager
 
 module FSharpDependencyManager =
     
-    [<assembly: DependencyManagerAttribute()>]
+    [<assembly: DependencyManager>]
     do ()
 
     let private concat (s:string) (v:string) : string =
@@ -171,7 +171,7 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member _.Roots = roots
 
-[<DependencyManagerAttribute>] 
+[<DependencyManager>] 
 type FSharpDependencyManager (outputDirectory:string option) =
 
     let key = "nuget"
