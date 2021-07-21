@@ -93,7 +93,7 @@ module CompileHelpers =
 
         let errorSink isError exn = 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn
-            let oneError e = errors.Add(FSharpDiagnostic.CreateFromException (e, isError, Range.range0, true)) // Suggest names for errors
+            let oneError e = errors.Add(FSharpDiagnostic.CreateFromException (e, isError, range0, true)) // Suggest names for errors
             oneError mainError
             List.iter oneError relatedErrors
 
@@ -115,7 +115,7 @@ module CompileHelpers =
             f exiter
             0
         with e -> 
-            stopProcessingRecovery e Range.range0
+            stopProcessingRecovery e range0
             1
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
@@ -144,7 +144,7 @@ module CompileHelpers =
     let createDynamicAssembly (debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
 
         // Create an assembly builder
-        let assemblyName = System.Reflection.AssemblyName(System.IO.Path.GetFileNameWithoutExtension outfile)
+        let assemblyName = AssemblyName(Path.GetFileNameWithoutExtension outfile)
         let flags = System.Reflection.Emit.AssemblyBuilderAccess.Run
 #if FX_NO_APP_DOMAINS
         let assemblyBuilder = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(assemblyName, flags)
@@ -192,8 +192,8 @@ module CompileHelpers =
         // Set the output streams, if requested
         match execute with
         | Some (writer,error) -> 
-            System.Console.SetOut writer
-            System.Console.SetError error
+            Console.SetOut writer
+            Console.SetError error
         | None -> ()
 
 type SourceTextHash = int64
@@ -812,7 +812,7 @@ type BackgroundCompiler(
         | Some builder -> 
             let! tcProj, ilAssemRef, _, tcAssemblyExprOpt = builder.GetFullCheckResultsAndImplementationsForProject()
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
-            let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
+            let fileName = DummyFileNameForRangesWithoutASpecificLocation
 
             // Although we do not use 'tcInfoExtras', computing it will make sure we get an extra info.
             let! tcInfo, _tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
@@ -892,8 +892,8 @@ type BackgroundCompiler(
 #endif
             let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
             let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
+                let fsiCompilerOptions = GetCoreFsiCompilerOptions tcConfigB 
+                ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
@@ -1149,7 +1149,7 @@ type FSharpChecker(legacyReferenceResolver,
         let assemblyOpt = 
             match assemblyBuilderRef.Value with 
             | None -> None
-            | Some a ->  Some (a :> System.Reflection.Assembly)
+            | Some a ->  Some (a :> Assembly)
 
         return errorsAndWarnings, result, assemblyOpt
       }
@@ -1183,7 +1183,7 @@ type FSharpChecker(legacyReferenceResolver,
         let assemblyOpt = 
             match assemblyBuilderRef.Value with 
             | None -> None
-            | Some a ->  Some (a :> System.Reflection.Assembly)
+            | Some a ->  Some (a :> Assembly)
 
         return errorsAndWarnings, result, assemblyOpt
       }
@@ -1199,7 +1199,7 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.ClearCaches() 
 
     member _.CheckMaxMemoryReached() =
-        if not maxMemoryReached && System.GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
+        if not maxMemoryReached && GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
             Trace.TraceWarning("!!!!!!!! MAX MEMORY REACHED, DOWNSIZING F# COMPILER CACHES !!!!!!!!!!!!!!!")
             // If the maxMB limit is reached, drastic action is taken
             //   - reduce strong cache sizes to a minimum
@@ -1211,8 +1211,8 @@ type FSharpChecker(legacyReferenceResolver,
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         ic.ClearCaches()
-        System.GC.Collect()
-        System.GC.WaitForPendingFinalizers() 
+        GC.Collect()
+        GC.WaitForPendingFinalizers() 
         FxResolver.ClearStaticCaches()
             
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
@@ -1411,7 +1411,7 @@ type CompilerEnvironment() =
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
     static member GetDebuggerLanguageID() =
-        System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
+        Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
         
     static member IsScriptFile (fileName: string) = ParseAndCheckInputs.IsScript fileName
 

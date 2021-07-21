@@ -12,7 +12,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
     open FSharp.Compiler.IO
 
     // Reflection wrapper for properties
-    type System.Object with
+    type Object with
         member this.GetPropertyValue(propName) =
             this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
@@ -303,7 +303,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             
         let assemblies = 
             [| for referenceName,baggage in references -> 
-               let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
+               let item = new TaskItem(referenceName) :> ITaskItem
                item.SetMetadata("Baggage", baggage)
                item |]
         let rar = 

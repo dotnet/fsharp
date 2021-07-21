@@ -72,7 +72,7 @@ module TcResolutionsExtensions =
 
     type TcResolutions with
         member sResolutions.GetSemanticClassification(g: TcGlobals, amap: ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : SemanticClassificationItem [] =
-            ErrorScope.Protect Range.range0 (fun () ->
+            ErrorScope.Protect range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
                     | ItemOccurence.UseInAttribute
@@ -153,7 +153,7 @@ module TcResolutionsExtensions =
                     (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
                     || isRefCellTy g rfinfo.RecdField.FormalType
 
-                let duplicates = HashSet<range>(Range.comparer)
+                let duplicates = HashSet<range>(comparer)
 
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m (typ: SemanticClassificationType) =

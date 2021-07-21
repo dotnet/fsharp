@@ -525,10 +525,10 @@ module Display =
     
     let string_of_int (i:int) = i.ToString()
 
-    let typeUsesSystemObjectToString (ty:System.Type) =
+    let typeUsesSystemObjectToString (ty:Type) =
         try
             let methInfo = ty.GetMethod("ToString", BindingFlags.Public ||| BindingFlags.Instance, null, [| |], null)
-            methInfo.DeclaringType = typeof<System.Object>
+            methInfo.DeclaringType = typeof<Object>
         with _e -> false
 
     let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
@@ -816,7 +816,7 @@ module Display =
         | '\"' when not isChar -> "\\\""
         | '\\' -> "\\\\"
         | '\b' -> "\\b"
-        | _ when System.Char.IsControl(c) -> 
+        | _ when Char.IsControl(c) -> 
                 let d1 = (int c / 100) % 10 
                 let d2 = (int c / 10) % 10 
                 let d3 = int c % 10 
@@ -824,7 +824,7 @@ module Display =
         | _ -> c.ToString()
             
     let formatString (s:string) =
-        let rec check i = i < s.Length && not (System.Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
+        let rec check i = i < s.Length && not (Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
         let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
         "\"" + s + "\""
 
@@ -1137,7 +1137,7 @@ module Display =
                 (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
             finally 
                 match it with 
-                | :? System.IDisposable as e -> e.Dispose()
+                | :? IDisposable as e -> e.Dispose()
                 | _ -> ()
 
         and sequenceValueL showMode depthLim prec (ie: System.Collections.IEnumerable) =
@@ -1155,7 +1155,7 @@ module Display =
                     (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                 finally 
                     match it with 
-                    | :? System.IDisposable as e -> e.Dispose()
+                    | :? IDisposable as e -> e.Dispose()
                     | _ -> ()
                              
             else
@@ -1270,23 +1270,23 @@ module Display =
         | :? double as d -> 
             let s = d.ToString(opts.FloatingPointFormat,opts.FormatProvider)
             let t = 
-                if System.Double.IsNaN(d) then "nan"
-                elif System.Double.IsNegativeInfinity(d) then "-infinity"
-                elif System.Double.IsPositiveInfinity(d) then "infinity"
-                elif opts.FloatingPointFormat.[0] = 'g'  && String.forall(fun c -> System.Char.IsDigit(c) || c = '-')  s
+                if Double.IsNaN(d) then "nan"
+                elif Double.IsNegativeInfinity(d) then "-infinity"
+                elif Double.IsPositiveInfinity(d) then "infinity"
+                elif opts.FloatingPointFormat.[0] = 'g'  && String.forall(fun c -> Char.IsDigit(c) || c = '-')  s
                 then s + ".0" 
                 else s
             tagNumericLiteral t
 
         | :? single as d -> 
             let t =
-                (if System.Single.IsNaN(d) then "nan"
-                    elif System.Single.IsNegativeInfinity(d) then "-infinity"
-                    elif System.Single.IsPositiveInfinity(d) then "infinity"
+                (if Single.IsNaN(d) then "nan"
+                    elif Single.IsNegativeInfinity(d) then "-infinity"
+                    elif Single.IsPositiveInfinity(d) then "infinity"
                     elif opts.FloatingPointFormat.Length >= 1 && opts.FloatingPointFormat.[0] = 'g' 
-                    && float32(System.Int32.MinValue) < d && d < float32(System.Int32.MaxValue) 
+                    && float32(Int32.MinValue) < d && d < float32(Int32.MaxValue) 
                     && float32(int32(d)) = d 
-                    then (System.Convert.ToInt32 d).ToString(opts.FormatProvider) + ".0"
+                    then (Convert.ToInt32 d).ToString(opts.FormatProvider) + ".0"
                     else d.ToString(opts.FloatingPointFormat,opts.FormatProvider)) 
                 + "f"
             tagNumericLiteral t

@@ -212,7 +212,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         // Recursively find all referenced modules and add them to a module graph
         let depModuleTable = HashMultiMap(0, HashIdentity.Structural)
         let dummyEntry nm =
-            { refs = IL.emptyILRefs
+            { refs = emptyILRefs
               name=nm
               ccu=None
               data=ilxMainModule // any old module
@@ -229,10 +229,10 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                     depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                 else
                     if not (depModuleTable.ContainsKey ilAssemRef.Name) then
-                        match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with
+                        match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly=false) with
                         | Some dllInfo ->
                             let ccu =
-                                match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with
+                                match tcImports.FindCcuFromAssemblyRef (ctok, rangeStartup, ilAssemRef) with
                                 | ResolvedCcu ccu -> Some ccu
                                 | UnresolvedCcu(_ccuName) -> None
 
@@ -257,15 +257,15 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                                       pdbDirPath = pdbDirPathOption
                                       tryGetMetadataSnapshot = (fun _ -> None) }
 
-                                let reader = ILBinaryReader.OpenILModuleReader dllInfo.FileName opts
+                                let reader = OpenILModuleReader dllInfo.FileName opts
                                 reader.ILModuleDef
 
                             let refs =
                                 if ilAssemRef.Name = GetFSharpCoreLibraryName() then
-                                    IL.emptyILRefs
+                                    emptyILRefs
                                 elif not modul.IsILOnly then
                                     warning(Error(FSComp.SR.fscIgnoringMixedWhenLinking ilAssemRef.Name, rangeStartup))
-                                    IL.emptyILRefs
+                                    emptyILRefs
                                 else
                                     { AssemblyReferences = dllInfo.ILAssemblyRefs
                                       ModuleReferences = [] }
@@ -322,10 +322,10 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
             | ILScopeRef.Assembly aref -> aref
             | _ -> failwith "Invalid ILScopeRef, expected ILScopeRef.Assembly"
         if debugStaticLinking then printfn "adding provider-generated assembly '%s' into static linking set" ilAssemRef.Name
-        match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with
+        match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly=false) with
         | Some dllInfo ->
             let ccu =
-                match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with
+                match tcImports.FindCcuFromAssemblyRef (ctok, rangeStartup, ilAssemRef) with
                 | ResolvedCcu ccu -> Some ccu
                 | UnresolvedCcu(_ccuName) -> None
 

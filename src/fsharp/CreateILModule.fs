@@ -228,7 +228,7 @@ module MainModuleBuilder =
                         | false when Char.IsDigit(c) -> false, v + c.ToString()
                         | _ -> true, v)
                     |> snd
-            match System.UInt16.TryParse v with
+            match UInt16.TryParse v with
             | true, i -> i
             | false, _ -> 0us
         let validParts =
@@ -455,7 +455,7 @@ module MainModuleBuilder =
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
             // otherwise, include the default manifest
             else
-                let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
+                let path = Path.Combine(AppContext.BaseDirectory, @"default.win32manifest")
                 if FileSystem.FileExistsShim(path) then path
                 else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 

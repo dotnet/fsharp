@@ -34,11 +34,11 @@ module internal PrintUtilities =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
-    let angleL x = sepL TaggedText.leftAngle ^^ x ^^ rightL TaggedText.rightAngle
+    let angleL x = sepL leftAngle ^^ x ^^ rightL rightAngle
 
-    let braceL x = wordL TaggedText.leftBrace ^^ x ^^ wordL TaggedText.rightBrace
+    let braceL x = wordL leftBrace ^^ x ^^ wordL rightBrace
 
-    let braceBarL x = wordL TaggedText.leftBraceBar ^^ x ^^ wordL TaggedText.rightBraceBar
+    let braceBarL x = wordL leftBraceBar ^^ x ^^ wordL rightBraceBar
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
@@ -211,7 +211,7 @@ module internal PrintUtilities =
 module private PrintIL = 
 
     let fullySplitILTypeRef (tref: ILTypeRef) = 
-        (List.collect IL.splitNamespace (tref.Enclosing @ [DemangleGenericTypeName tref.Name])) 
+        (List.collect splitNamespace (tref.Enclosing @ [DemangleGenericTypeName tref.Name])) 
 
     let layoutILTypeRefName denv path =
         let path = 
@@ -253,7 +253,7 @@ module private PrintIL =
         match ps with
         | [] -> emptyL
         | _ -> 
-            let body = Layout.commaListL ps
+            let body = commaListL ps
             SepL.leftAngle ^^ body ^^ RightL.rightAngle
 
     let pruneParams (className: string) (ilTyparSubst: Layout list) =
@@ -305,8 +305,8 @@ module private PrintIL =
                 match init with
                 | ILFieldInit.Bool x -> 
                     if x
-                    then Some TaggedText.keywordTrue
-                    else Some TaggedText.keywordFalse
+                    then Some keywordTrue
+                    else Some keywordFalse
                 | ILFieldInit.Char c -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
                 | ILFieldInit.Int8 x -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
@@ -344,7 +344,7 @@ module private PrintTypes =
     let layoutConst g ty c =
         let str = 
             match c with
-            | Const.Bool x -> if x then TaggedText.keywordTrue else TaggedText.keywordFalse
+            | Const.Bool x -> if x then keywordTrue else keywordFalse
             | Const.SByte x -> (x |> string)+"y" |> tagNumericLiteral
             | Const.Byte x -> (x |> string)+"uy" |> tagNumericLiteral
             | Const.Int16 x -> (x |> string)+"s" |> tagNumericLiteral
@@ -1025,7 +1025,7 @@ module private PrintTastMemberOrVals =
     let private prettyLayoutOfMemberShortOption denv typarInst (v:Val) short =
         let v = mkLocalValRef v
         let membInfo = Option.get v.MemberInfo
-        let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
+        let stat = layoutMemberFlags membInfo.MemberFlags
         let _tps, argInfos, rty, _ = GetTypeOfMemberInFSharpForm denv.g v
         
         if short then
@@ -1972,7 +1972,7 @@ module private TastDefinitionPrinting =
                         (wordL (tagKeyword "module") ^^ nmL ^^ WordL.equals)
 
         let headerL =
-            PrintTypes.layoutAttribs denv false (generalizedTyconRef(mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs headerL
+            layoutAttribs denv false (generalizedTyconRef(mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs headerL
 
         let shouldShow (v: Val) =
             (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs)) &&

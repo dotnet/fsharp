@@ -57,7 +57,7 @@ type Context =
     | CtxtModuleBody of Position * bool 
     | CtxtNamespaceBody of Position 
     | CtxtException of Position 
-    | CtxtParen of Parser.token * Position 
+    | CtxtParen of token * Position 
     // Position is position of following token 
     | CtxtSeqBlock of FirstInSequence * Position * AddBlockEnd   
     // first bool indicates "was this 'with' followed immediately by a '|'"? 
@@ -250,7 +250,7 @@ let rec isNamespaceContinuator token =
     //     ...
     //     namespace <-- here
     //     .... 
-    | Parser.EOF _ | NAMESPACE -> false 
+    | EOF _ | NAMESPACE -> false 
     | ODUMMY token -> isNamespaceContinuator token
     | _ -> true // anything else is a namespace continuator 
 
@@ -578,7 +578,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         match tokenTup.Token with
         // EOF token is processed as if on column -1 
         // This forces the closure of all contexts. 
-        | Parser.EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
+        | EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
         | _ -> tokenTup.LexbufState.StartPos 
 
     //----------------------------------------------------------------------------
@@ -929,7 +929,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     stack <- (lookaheadTokenTup, true) :: stack
                     let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
                     match lookaheadToken with 
-                    | Parser.EOF _ | SEMICOLON_SEMICOLON -> false 
+                    | EOF _ | SEMICOLON_SEMICOLON -> false 
                     | _ when indentation && lookaheadTokenStartPos < tokenEndPos -> false
                     | RPAREN | RBRACK ->
                         let nParen = nParen - 1
@@ -1115,12 +1115,12 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         let isSameLine() = 
             match token with 
-            | Parser.EOF _ -> false
+            | EOF _ -> false
             | _ -> (startPosOfTokenTup (peekNextTokenTup())).OriginalLine = tokenStartPos.OriginalLine
 
         let isControlFlowOrNotSameLine() = 
             match token with 
-            | Parser.EOF _ -> false
+            | EOF _ -> false
             | _ -> 
                 not (isSameLine()) ||  
                 (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE -> true | _ -> false) 
@@ -1128,18 +1128,18 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // Look for '=' or '.Id.id.id = ' after an identifier
         let rec isLongIdentEquals token = 
             match token with 
-            | Parser.GLOBAL
-            | Parser.IDENT _ -> 
+            | GLOBAL
+            | IDENT _ -> 
                 let rec loop() = 
                     let tokenTup = popNextTokenTup()
                     let res = 
                         match tokenTup.Token with 
-                        | Parser.EOF _ -> false
+                        | EOF _ -> false
                         | DOT -> 
                             let tokenTup = popNextTokenTup()
                             let res = 
                                 match tokenTup.Token with 
-                                | Parser.EOF _ -> false
+                                | EOF _ -> false
                                 | IDENT _ -> loop()
                                 | _ -> false
                             delayToken tokenTup
@@ -1228,7 +1228,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         let tokenForcesHeadContextClosure token stack = 
             not (isNil stack) &&
             match token with 
-            | Parser.EOF _ -> true
+            | EOF _ -> true
             | SEMICOLON_SEMICOLON -> not (tokenBalancesHeadContext token stack) 
             | END 
             | ELSE 
@@ -1417,7 +1417,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popCtxt()
                 // Don't push a new context if next token is EOF, since that raises an offside warning
                 match tokenTup.Token with 
-                | Parser.EOF _ -> 
+                | EOF _ -> 
                     returnToken tokenLexbufState token
                 | _ -> 
                     delayToken tokenTup
@@ -1460,7 +1460,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popCtxt()
                 // Don't push a new context if next token is EOF, since that raises an offside warning
                 match tokenTup.Token with 
-                | Parser.EOF _ -> 
+                | EOF _ -> 
                     returnToken tokenLexbufState token
                 | _ ->
                     // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file

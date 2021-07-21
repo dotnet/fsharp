@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 
-module QP = FSharp.Compiler.QuotationPickler
+module QP = QuotationPickler
 
 let verboseCReflect = condition "VERBOSE_CREFLECT"
 

@@ -29,7 +29,7 @@ type IStream = System.Runtime.InteropServices.ComTypes.IStream
 
 let check _action hresult =
   if uint32 hresult >= 0x80000000ul then
-    System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+    Marshal.ThrowExceptionForHR hresult
   //printf "action = %s, hresult = 0x%nx \n" action hresult
 
 let MAX_PATH = 260
@@ -656,7 +656,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
 
                         if pirdeLang.DataIsDirectory then
                             // Resource hierarchy exceeds three levels
-                            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
+                            Marshal.ThrowExceptionForHR(E_FAIL)
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)

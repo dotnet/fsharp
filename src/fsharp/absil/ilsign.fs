@@ -44,7 +44,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     let getResourceString (_, str) = str
     let check _action hresult =
       if uint32 hresult >= 0x80000000ul then
-        System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+        Marshal.ThrowExceptionForHR hresult
 
     [<Struct; StructLayout(LayoutKind.Explicit)>]
     type ByteArrayUnion =

@@ -294,7 +294,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                  //curr <- e
                  //return true
                  //NEXT:
-            let label = IL.generateCodeLabel()
+            let label = generateCodeLabel()
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
                             mkSequential DebugPointAtSequential.SuppressNeither m
@@ -404,7 +404,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
         | SeqTryFinally g (e1, compensation, mTry, mFinally, m) ->
             // printfn "found Seq.try/finally"
-            let innerDisposeContinuationLabel = IL.generateCodeLabel()
+            let innerDisposeContinuationLabel = generateCodeLabel()
             let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel innerDisposeContinuationLabel e1
             match resBody with
             | Some res1  ->
@@ -595,7 +595,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                              //nextEnumerator <- e
                              //return 2
                              //NEXT:
-                        let label = IL.generateCodeLabel()
+                        let label = generateCodeLabel()
                         Some { phase2 = (fun (pcVar, _currv, nextVar, pcMap) ->
                                     let generate =
                                         mkSequential DebugPointAtSequential.SuppressStmt m
@@ -626,8 +626,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
     | Seq g (e, ty) ->
         // printfn "found seq { ... } or Seq.delay (fun () -> ...) in FSharp.Core.dll"
         let m = e.Range
-        let initLabel = IL.generateCodeLabel()
-        let noDisposeContinuationLabel = IL.generateCodeLabel()
+        let initLabel = generateCodeLabel()
+        let noDisposeContinuationLabel = generateCodeLabel()
 
         // Perform phase1
         match ConvertSeqExprCode true true noDisposeContinuationLabel noDisposeContinuationLabel e with
@@ -717,8 +717,8 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let handleExceptionsInDispose disposalExpr =
                 let exnV, exnE = mkMutableCompGenLocal m "exn" g.exn_ty
                 let exnVref = mkLocalValRef exnV
-                let startLabel = IL.generateCodeLabel()
-                let doneDisposeLabel = IL.generateCodeLabel ()
+                let startLabel = generateCodeLabel()
+                let doneDisposeLabel = generateCodeLabel ()
                 // try ``disposalExpr'' with e -> exn <- e
                 let eV, eE = mkLocal m "e" g.exn_ty
                 let efV, _ = mkLocal m "ef" g.exn_ty

@@ -81,7 +81,7 @@ let splitNamespaceMemoized nm = splitNamespace nm
 
 // ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable =
-    Concurrent.ConcurrentDictionary<string, string[]>()
+    ConcurrentDictionary<string, string[]>()
 
 let splitNamespaceToArray nm =
     memoizeNamespaceArrayTable.GetOrAdd (nm, fun nm ->
@@ -3681,7 +3681,7 @@ let parseILVersion (vstr : string) =
         versionComponents.[3] <- defaultRevision.ToString()
         vstr <- String.Join (".", versionComponents)
 
-    let version = System.Version vstr
+    let version = Version vstr
     let zero32 n = if n < 0 then 0us else uint16 n
     // since the minor revision will be -1 if none is specified, we need to truncate to 0 to not break existing code
     let minorRevision = if version.Revision = -1 then 0us else uint16 version.MinorRevision

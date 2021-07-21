@@ -142,7 +142,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
         | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
         | None -> fun _ -> Array.empty<string>
 
-    static member InstanceMaker (theType: System.Type, outputDir: string option) =
+    static member InstanceMaker (theType: Type, outputDir: string option) =
         match getAttributeNamed theType dependencyManagerAttributeName,
               getInstanceProperty<string> theType namePropertyName,
               getInstanceProperty<string> theType keyPropertyName,
@@ -269,7 +269,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                 //     1 - object with properties
                 //     3 - (bool * string list * string list)
                 // Support legacy api return shape (bool, string seq, string seq) --- original paket packagemanager
-                if Microsoft.FSharp.Reflection.FSharpType.IsTuple (result.GetType()) then
+                if FSharpType.IsTuple (result.GetType()) then
                     // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                     //     3 - (bool * string list * string list)
                     let success, sourceFiles, packageRoots =

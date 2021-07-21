@@ -70,7 +70,7 @@ type ILVersionInfo =
 type ILAssemblyRef =
     static member Create: name: string * hash: byte[] option * publicKey: PublicKey option * retargetable: bool * version: ILVersionInfo option * locale: string option -> ILAssemblyRef
 
-    static member FromAssemblyName: System.Reflection.AssemblyName -> ILAssemblyRef
+    static member FromAssemblyName: AssemblyName -> ILAssemblyRef
 
     member Name: string
 

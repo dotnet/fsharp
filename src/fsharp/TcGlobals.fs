@@ -65,14 +65,14 @@ module FSharpLib =
 
     let QuotationsName             = FSharpLib.Root + ".Quotations"
 
-    let ControlPath                 = IL.splitNamespace ControlName
-    let LinqPath                    = IL.splitNamespace LinqName
-    let CollectionsPath             = IL.splitNamespace CollectionsName
-    let NativeInteropPath           = IL.splitNamespace NativeInteropName |> Array.ofList
-    let CompilerServicesPath        = IL.splitNamespace CompilerServicesName |> Array.ofList
-    let LinqRuntimeHelpersPath      = IL.splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath          = IL.splitNamespace RuntimeHelpersName |> Array.ofList
-    let QuotationsPath              = IL.splitNamespace QuotationsName |> Array.ofList
+    let ControlPath                 = splitNamespace ControlName
+    let LinqPath                    = splitNamespace LinqName
+    let CollectionsPath             = splitNamespace CollectionsName
+    let NativeInteropPath           = splitNamespace NativeInteropName |> Array.ofList
+    let CompilerServicesPath        = splitNamespace CompilerServicesName |> Array.ofList
+    let LinqRuntimeHelpersPath      = splitNamespace LinqRuntimeHelpersName |> Array.ofList
+    let RuntimeHelpersPath          = splitNamespace RuntimeHelpersName |> Array.ofList
+    let QuotationsPath              = splitNamespace QuotationsName |> Array.ofList
 
     let RootPathArray                    = FSharpLib.RootPath |> Array.ofList
     let CorePathArray                    = FSharpLib.CorePath |> Array.ofList

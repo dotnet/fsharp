@@ -67,7 +67,7 @@ module internal Utils =
 
     /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
     let cleanupTempFiles files =
-        { new System.IDisposable with
+        { new IDisposable with
             member _.Dispose() =
                 for fileName in files do
                     try
@@ -1005,7 +1005,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     begin
         use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
         createTempDir()
-        let source = System.String.Format(Project1.operatorTests, dnName, fsName)
+        let source = String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
         FileSystem.OpenFileForWriteShim(filePath).Write(fileSource)

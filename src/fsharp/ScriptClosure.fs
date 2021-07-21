@@ -86,7 +86,7 @@ module ScriptPreprocessClosure =
     type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
-        let seen = System.Collections.Generic.Dictionary<_, bool>()
+        let seen = Dictionary<_, bool>()
         member ob.SetSeen check =
             if not(seen.ContainsKey check) then
                 seen.Add(check, true)
@@ -401,7 +401,7 @@ module ScriptPreprocessClosure =
             match GetRangeOfDiagnostic exn with
             | Some m ->
                 // Return true if the error was *not* from a #load-ed file.
-                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (Range.equals m range0 || Range.equals m rangeStartup || Range.equals m rangeCmdArgs)
+                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (equals m range0 || equals m rangeStartup || equals m rangeCmdArgs)
                 let isThisFileName = (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true

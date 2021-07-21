@@ -100,7 +100,7 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
         then Path.Combine (implicitIncludeDir, path)
         else path
     with
-        :? System.ArgumentException -> path
+        :? ArgumentException -> path
 
 //----------------------------------------------------------------------------
 // Configuration
@@ -128,8 +128,8 @@ type VersionFlag =
     member x.GetVersionInfo implicitIncludeDir =
         let vstr = x.GetVersionString implicitIncludeDir
         try
-            IL.parseILVersion vstr
-        with _ -> errorR(Error(FSComp.SR.buildInvalidVersionString vstr, rangeStartup)); IL.parseILVersion "0.0.0.0"
+            parseILVersion vstr
+        with _ -> errorR(Error(FSComp.SR.buildInvalidVersionString vstr, rangeStartup)); parseILVersion "0.0.0.0"
 
     member x.GetVersionString implicitIncludeDir =
          match x with
@@ -221,7 +221,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> DateTime option
 
 type AssemblyReference =
     | AssemblyReference of range * string * IProjectReference option
@@ -255,7 +255,7 @@ type ImportedAssembly =
       AssemblyInternalsVisibleToAttributes: string list
 #if !NO_EXTENSIONTYPING
       IsProviderGenerated: bool
-      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list
+      mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
       FSharpOptimizationData: Microsoft.FSharp.Control.Lazy<Option<Optimizer.LazyModuleInfo>> }
 
@@ -724,12 +724,12 @@ type TcConfigBuilder =
         let pdbfile =
             if tcConfigB.debuginfo then
               Some (match tcConfigB.debugSymbolFile with
-                    | None -> FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                    | None -> getDebugFileName outfile tcConfigB.portablePDB
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(), rangeCmdArgs))
-                        FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
+                        getDebugFileName outfile tcConfigB.portablePDB
 #endif
                     | Some f -> f)
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -801,7 +801,7 @@ type TcConfigBuilder =
     member tcConfigB.AddReferencedAssemblyByPath (m, path) =
         if FileSystem.IsInvalidPathShim path then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path), m))
-        elif not (tcConfigB.referencedDLLs |> List.exists (fun ar2 -> Range.equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
+        elif not (tcConfigB.referencedDLLs |> List.exists (fun ar2 -> equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
 
@@ -835,7 +835,7 @@ type TcConfigBuilder =
             tcConfigB.AddReferencedAssemblyByPath (m, path)
 
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
-        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
+        tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (equals ar.Range m) || ar.Text <> path)
 
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
@@ -881,7 +881,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 r, Some filename
             else
                 // If the file doesn't exist, let reference resolution logic report the error later...
-                defaultCoreLibraryReference, if Range.equals r.Range rangeStartup then Some(filename) else None
+                defaultCoreLibraryReference, if equals r.Range rangeStartup then Some(filename) else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [] -> defaultCoreLibraryReference, None
         | [r]
@@ -1081,7 +1081,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             | None ->
 // "there is no really good notion of runtime directory on .NETCore"
 #if NETSTANDARD
-                let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
+                let runtimeRoot = Path.GetDirectoryName(typeof<Object>.Assembly.Location)
 #else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 #endif

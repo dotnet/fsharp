@@ -21,7 +21,7 @@ open Checked
 
 type BYTE = byte
 type DWORD = uint32
-type WCHAR = System.Char
+type WCHAR = Char
 type WORD = uint16
 
 let inline WORD s = uint16 s
@@ -467,7 +467,7 @@ type VersionResourceSerializer () =
             this._productNameContents <- productName
             this._productVersionContents <- productVersion
             this._assemblyVersionContents <- assemblyVersion
-            this._langIdAndCodePageKey <- System.String.Format ("{0:x4}{1:x4}", 0, VersionResourceSerializer.CP_WINUNICODE)
+            this._langIdAndCodePageKey <- String.Format ("{0:x4}{1:x4}", 0, VersionResourceSerializer.CP_WINUNICODE)
 
     static member val private VFT_APP = 0x00000001u
     static member val private VFT_DLL = 0x00000002u

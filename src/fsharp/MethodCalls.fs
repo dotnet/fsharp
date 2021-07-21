@@ -1289,7 +1289,7 @@ let AdjustOutCallerArgs g (calledMeth: CalledMeth<_>) mMethExpr =
     calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> 
         let calledArgTy = calledArg.CalledArgumentType
         let outArgTy = destByrefTy g calledArgTy
-        let outv, outArgExpr = mkMutableCompGenLocal mMethExpr PrettyNaming.outArgCompilerGeneratedName outArgTy // mutable! 
+        let outv, outArgExpr = mkMutableCompGenLocal mMethExpr outArgCompilerGeneratedName outArgTy // mutable! 
         let expr = mkDefault (mMethExpr, outArgTy)
         let callerArg = CallerArg (calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
         let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
@@ -1691,7 +1691,7 @@ module ProvidedMethodCalls =
             match varConv.TryGetValue vRaw with
             | true, v -> v
             | _ ->
-                let typeProviderDesignation = ExtensionTyping.DisplayNameOfTypeProvider (pe.TypeProvider, m)
+                let typeProviderDesignation = DisplayNameOfTypeProvider (pe.TypeProvider, m)
                 error(Error(FSComp.SR.etIncorrectParameterExpression(typeProviderDesignation, vRaw.Name), m))
                 
         and exprToExpr expr =
@@ -1726,7 +1726,7 @@ module ProvidedMethodCalls =
             | [] -> None, paramVars
             | _ -> failwith "multiple objArgs?"
             
-        let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
+        let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
 
         convertProvidedExpressionToExprAndWitness tcVal (thisArg, allArgs, paramVars, g, amap, mut, isProp, isSuperInit, m, ea)
 

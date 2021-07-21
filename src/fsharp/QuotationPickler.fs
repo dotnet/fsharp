@@ -343,9 +343,9 @@ module SimplePickle =
         p_int32 (int32 (i &&& 0xFFFFFFFFL)) st
         p_int32 (int32 (i >>> 32)) st
 
-    let bits_of_float32 (x:float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float32 (x:float32) = BitConverter.ToInt32(BitConverter.GetBytes(x), 0)
 
-    let bits_of_float (x:float) = System.BitConverter.ToInt64(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float (x:float) = BitConverter.ToInt64(BitConverter.GetBytes(x), 0)
 
     let p_uint64 x st = p_int64 (int64 x) st
 

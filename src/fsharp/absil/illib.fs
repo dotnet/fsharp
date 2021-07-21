@@ -50,7 +50,7 @@ module internal PervasiveAutoOpens =
         // See http://www.mono-project.com/FAQ:_Technical
         // "How can I detect if am running in Mono?" section
         try
-            System.Type.GetType "Mono.Runtime" <> null
+            Type.GetType "Mono.Runtime" <> null
         with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.

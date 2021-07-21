@@ -88,7 +88,7 @@ let PrependPathToInput x inp =
 
 let ComputeAnonModuleName check defaultNamespace filename (m: range) =
     let modname = CanonicalizeFilename filename
-    if check && not (modname |> String.forall (fun c -> System.Char.IsLetterOrDigit c || c = '_')) then
+    if check && not (modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')) then
           if not (filename.EndsWith("fsx", StringComparison.OrdinalIgnoreCase) || filename.EndsWith("fsscript", StringComparison.OrdinalIgnoreCase)) then
               warning(Error(FSComp.SR.buildImplicitModuleIsNotLegalIdentifier(modname, (FileSystemUtils.fileNameOfPath filename)), m))
     let combined =
@@ -280,7 +280,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
                 let intfs = Parser.signatureFile lexer lexbuf
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else
-                delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, Range.rangeStartup))
+                delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))
 
         scopedPragmas <- GetScopedPragmasForInput input
         input
@@ -368,7 +368,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir
 
         let input =
-            Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
+            usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
 
                 // Set up the LexFilter over the token stream
                 let tokenizer,tokenizeOnly =
@@ -649,7 +649,7 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
     let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
 
     if tcConfig.checkOverflow then
-        try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName), initm)
+        try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (pathToSynLid initm (splitNamespace CoreOperatorsCheckedName), initm)
         with e -> errorRecovery e initm; tcEnv
     else
         tcEnv
@@ -657,24 +657,24 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
 /// Inject faults into checking
 let CheckSimulateException(tcConfig: TcConfig) =
     match tcConfig.simulateException with
-    | Some("tc-oom") -> raise(System.OutOfMemoryException())
-    | Some("tc-an") -> raise(System.ArgumentNullException("simulated"))
-    | Some("tc-invop") -> raise(System.InvalidOperationException())
-    | Some("tc-av") -> raise(System.AccessViolationException())
-    | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
-    | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
-    | Some("tc-dv0") -> raise(System.DivideByZeroException())
-    | Some("tc-oe") -> raise(System.OverflowException())
-    | Some("tc-atmm") -> raise(System.ArrayTypeMismatchException())
-    | Some("tc-bif") -> raise(System.BadImageFormatException())
+    | Some("tc-oom") -> raise(OutOfMemoryException())
+    | Some("tc-an") -> raise(ArgumentNullException("simulated"))
+    | Some("tc-invop") -> raise(InvalidOperationException())
+    | Some("tc-av") -> raise(AccessViolationException())
+    | Some("tc-nfn") -> raise(NotFiniteNumberException())
+    | Some("tc-aor") -> raise(ArgumentOutOfRangeException())
+    | Some("tc-dv0") -> raise(DivideByZeroException())
+    | Some("tc-oe") -> raise(OverflowException())
+    | Some("tc-atmm") -> raise(ArrayTypeMismatchException())
+    | Some("tc-bif") -> raise(BadImageFormatException())
     | Some("tc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
-    | Some("tc-ior") -> raise(System.IndexOutOfRangeException())
-    | Some("tc-ic") -> raise(System.InvalidCastException())
-    | Some("tc-ip") -> raise(System.InvalidProgramException())
-    | Some("tc-ma") -> raise(System.MemberAccessException())
-    | Some("tc-ni") -> raise(System.NotImplementedException())
-    | Some("tc-nr") -> raise(System.NullReferenceException())
-    | Some("tc-oc") -> raise(System.OperationCanceledException())
+    | Some("tc-ior") -> raise(IndexOutOfRangeException())
+    | Some("tc-ic") -> raise(InvalidCastException())
+    | Some("tc-ip") -> raise(InvalidProgramException())
+    | Some("tc-ma") -> raise(MemberAccessException())
+    | Some("tc-ni") -> raise(NotImplementedException())
+    | Some("tc-nr") -> raise(NullReferenceException())
+    | Some("tc-oc") -> raise(OperationCanceledException())
     | Some("tc-fail") -> failwith "simulated"
     | _ -> ()
 
