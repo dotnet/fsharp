@@ -238,7 +238,7 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () =
-    let evaluationEvent = new Event<EvaluationEventArgs> ()
+    let evaluationEvent = Event<EvaluationEventArgs>()
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: IFormatProvider
     /// Called by the evaluation session to ask the host for parameters to format text for output

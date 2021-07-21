@@ -1100,7 +1100,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let ccuData: CcuData =
               { IsFSharp=false
                 UsesFSharp20PlusQuotations=false
-                InvalidateEvent=(new Event<_>()).Publish
+                InvalidateEvent=(Event<_>()).Publish
                 IsProviderGenerated = true
                 QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m))
                 Contents = ccuContents
@@ -1482,7 +1482,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let nm = aref.Name
         if verbose then dprintn ("Converting IL assembly to F# data structures "+nm)
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
-        let invalidateCcu = new Event<_>()
+        let invalidateCcu = Event<_>()
         let ccu = ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
 
         let ccuinfo =
@@ -1527,7 +1527,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 let mspec = minfo.mspec
 
 #if !NO_EXTENSIONTYPING
-                let invalidateCcu = new Event<_>()
+                let invalidateCcu = Event<_>()
 #endif
 
                 let codeDir = minfo.compileTimeWorkingDir
