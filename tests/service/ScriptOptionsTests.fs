@@ -30,7 +30,7 @@ let ``can generate options for different frameworks regardless of execution envi
     let path = Path.GetTempPath()
     let file = tryCreateTemporaryFileName ()
     let tempFile = Path.Combine(path, file)
-    let (_, errors) =
+    let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunImmediate
     match errors with
@@ -42,7 +42,7 @@ let ``can generate options for different frameworks regardless of execution envi
 [<Test>]
 let ``all default assembly references are system assemblies``(assumeNetFx, useSdkRefs, flags) =
     let tempFile = tryCreateTemporaryFileName () + ".fsx"
-    let (options, errors) =
+    let options, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdkRefs, otherFlags = flags)
         |> Async.RunImmediate
     match errors with
@@ -75,7 +75,7 @@ let ``sdk dir with dodgy global json gives warning``() =
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
     FileSystem.OpenFileForWriteShim(globalJsonPath).Write("""{ "sdk": { "version": "666.666.666" } }""")
-    let (options, errors) =
+    let options, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
         |> Async.RunImmediate
     FileSystem.FileDeleteShim(globalJsonPath)

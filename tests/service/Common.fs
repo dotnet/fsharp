@@ -35,7 +35,7 @@ type Async with
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
-        let psi = System.Diagnostics.ProcessStartInfo()
+        let psi = ProcessStartInfo()
         psi.FileName <- exePath
         psi.WorkingDirectory <- workingDir
         psi.RedirectStandardOutput <- false
@@ -44,7 +44,7 @@ let readRefs (folder : string) (projectFile: string) =
         psi.CreateNoWindow <- true
         psi.UseShellExecute <- false
 
-        use p = new System.Diagnostics.Process()
+        use p = new Process()
         p.StartInfo <- psi
         p.Start() |> ignore
         p.WaitForExit()
@@ -72,7 +72,7 @@ type TempFile(ext, contents: string) =
     let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
-    interface System.IDisposable with
+    interface IDisposable with
         member x.Dispose() = try FileSystem.FileDeleteShim tmpFile with _ -> ()
     member x.Name = tmpFile
 
@@ -97,8 +97,8 @@ let sysLib nm =
         programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-        let sysDir = System.AppContext.BaseDirectory
-        let (++) a b = System.IO.Path.Combine(a,b)
+        let sysDir = AppContext.BaseDirectory
+        let (++) a b = Path.Combine(a,b)
         sysDir ++ nm + ".dll"
 
 [<AutoOpen>]
