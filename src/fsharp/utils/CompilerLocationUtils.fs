@@ -9,6 +9,10 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
 
+#if !FX_NO_WIN_REGISTRY
+open Microsoft.Win32
+#endif
+
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
