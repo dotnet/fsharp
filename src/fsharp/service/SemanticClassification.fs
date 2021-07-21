@@ -18,7 +18,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-[<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1

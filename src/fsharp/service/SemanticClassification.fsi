@@ -10,7 +10,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
 
 /// A kind that determines what range in a source's text is semantically classified as after type-checking.
-[<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1
