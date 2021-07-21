@@ -577,7 +577,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let raiseExpr = mkCallRaise g m (tyOfExpr g expr) arg1
             ConvExpr cenv env raiseExpr
 
-        | TOp.ILAsm (_, _), _, _                         ->
+        | TOp.ILAsm _, _, _                         ->
             wfail(Error(FSComp.SR.crefQuotationsCantContainInlineIL(), m))
 
         | TOp.ExnConstr tcref, _, args              ->

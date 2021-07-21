@@ -235,7 +235,7 @@ let mkMethodCallW (d1, d2, d3, tyargs, args) = CombExpr(MethodCallWOp(d1, d2, d3
 
 let mkAttributedExpression(e, attr) = AttrExpr(e, [attr])
 
-let isAttributedExpression e = match e with AttrExpr(_, _) -> true | _ -> false
+let isAttributedExpression e = match e with AttrExpr _ -> true | _ -> false
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle expression and type specifications in a stable format

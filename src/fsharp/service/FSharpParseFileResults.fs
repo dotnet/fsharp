@@ -656,7 +656,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (SynTypeDefn(SynComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, implicitCtor, m)) =
+            let rec walkTycon (SynTypeDefn(SynComponentInfo _, repr, membDefns, implicitCtor, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with
@@ -698,7 +698,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) when isMatchRange m -> 
                       for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr(_, _, _, _, _, _), membDefns, _), m) 
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr _, membDefns, _), m) 
                         when isMatchRange m ->
                       for m in membDefns do yield! walkMember m
                   | _ -> () ] 

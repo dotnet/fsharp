@@ -577,7 +577,7 @@ type OptionalArgInfo =
     static member ValueOfDefaultParameterValueAttrib (Attrib (_, _, exprs, _, _, _, _)) =
         let (AttribExpr (_, defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
-        | Expr.Const (_, _, _) -> Some defaultValueExpr
+        | Expr.Const _ -> Some defaultValueExpr
         | _ -> None
     static member FieldInitForDefaultParameterValueAttrib attrib =
         match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
@@ -1053,7 +1053,7 @@ type MethInfo =
     /// Get the XML documentation associated with the method
     member x.XmlDoc =
         match x with
-        | ILMeth(_, _, _) -> XmlDoc.Empty
+        | ILMeth _ -> XmlDoc.Empty
         | FSMeth(_, _, vref, _) -> vref.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
 #if !NO_EXTENSIONTYPING

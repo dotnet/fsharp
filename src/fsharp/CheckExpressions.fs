@@ -7722,7 +7722,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
                                     error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.Name, id.idText), id.idRange))
                                 | Item.ExnCase tcref ->
                                     error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
-                                | Item.ActivePatternResult(_,_,_,_) ->
+                                | Item.ActivePatternResult _ ->
                                     error(Error(FSComp.SR.tcActivePatternsDoNotHaveFields(), id.idRange))
                                 | _ ->
                                     error(Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName(id.idText), id.idRange))
@@ -7979,9 +7979,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.LibraryOnlyStaticOptimization _
             | SynExpr.LibraryOnlyUnionCaseFieldGet _
             | SynExpr.LibraryOnlyUnionCaseFieldSet _
-            | SynExpr.ArbitraryAfterError (_, _)
-            | SynExpr.FromParseError (_, _)
-            | SynExpr.DiscardAfterMissingQualificationAfterDot (_, _)
+            | SynExpr.ArbitraryAfterError _
+            | SynExpr.FromParseError _
+            | SynExpr.DiscardAfterMissingQualificationAfterDot _
             | SynExpr.ImplicitZero _
             | SynExpr.YieldOrReturn _
             | SynExpr.YieldOrReturnFrom _

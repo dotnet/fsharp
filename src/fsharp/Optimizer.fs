@@ -3457,7 +3457,7 @@ and OptimizeDecisionTree cenv env m x =
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test, vinfo with 
     | DecisionTreeTest.UnionCase (c1, _), StripUnionCaseValue(c2, _) -> Some(cenv.g.unionCaseRefEq c1 c2)
-    | DecisionTreeTest.ArrayLength (_, _), _ -> None
+    | DecisionTreeTest.ArrayLength _, _ -> None
     | DecisionTreeTest.Const c1, StripConstValue c2 -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
     | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None

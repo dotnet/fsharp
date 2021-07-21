@@ -415,7 +415,7 @@ module SyntaxTraversal =
                     // note: sequence expressions use SynExpr.CompExpr too - they need to be filtered out
                     let isPartOfArrayOrList = 
                         match origPath with
-                        | SyntaxNode.SynExpr(SynExpr.ArrayOrListOfSeqExpr (_, _, _)) :: _ -> true
+                        | SyntaxNode.SynExpr(SynExpr.ArrayOrListOfSeqExpr _) :: _ -> true
                         | _ -> false
                     let ok = 
                         match isPartOfArrayOrList, synExpr with

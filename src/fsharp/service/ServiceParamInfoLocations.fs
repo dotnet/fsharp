@@ -291,7 +291,7 @@ module internal SynExprAppLocationsImpl =
             let res = loop exprs ranges
             Some res, None
 
-        | SynExpr.Paren(SynExpr.Paren(_, _, _, _) as synExpr, _, _, _parenRange) -> 
+        | SynExpr.Paren(SynExpr.Paren _ as synExpr, _, _, _parenRange) -> 
             let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
             r, None
 
