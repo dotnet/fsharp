@@ -274,8 +274,8 @@ type LowerStateMachine(g: TcGlobals) =
                     // type in the IL
                     let targetExpr2Opt = 
                         match targetExpr, newTyOpt with 
-                        | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_oldTy]), a, b, c), Some newTy -> 
-                            let targetExpr2 = Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [newTy]), a, b, c) 
+                        | Expr.Op (TOp.ILAsm ([ I_throw ], [_oldTy]), a, b, c), Some newTy -> 
+                            let targetExpr2 = Expr.Op (TOp.ILAsm ([ I_throw ], [newTy]), a, b, c) 
                             Some targetExpr2
                         | Expr.Sequential (Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1, Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
                             let targetExpr2 = Expr.Sequential (e1, Expr.Const (Const.Zero, m, newTy), a, b, c)
@@ -411,7 +411,7 @@ type LowerStateMachine(g: TcGlobals) =
         if pcs.IsEmpty then 
             expr
         else
-            let initLabel = IL.generateCodeLabel()
+            let initLabel = generateCodeLabel()
             let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
             let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
             let dtree =
@@ -536,7 +536,7 @@ type LowerStateMachine(g: TcGlobals) =
             let resumableVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.resumableVars 
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
-                let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
+                let lab = (match reenterLabOpt with Some l -> l | _ -> generateCodeLabel())
                 mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
             { phase1 = recreate None resNone.phase1 resSome.phase1
               phase2 = (fun ctxt ->
@@ -558,7 +558,7 @@ type LowerStateMachine(g: TcGlobals) =
         match pcExprVal with
         | Int32Expr contIdPC ->
             let recreate contLabOpt =
-                Expr.Op (TOp.Goto (match contLabOpt with Some l -> l | _ -> IL.generateCodeLabel()), [], [], m)
+                Expr.Op (TOp.Goto (match contLabOpt with Some l -> l | _ -> generateCodeLabel()), [], [], m)
 
             { phase1 = recreate None 
               phase2 = (fun ctxt ->
@@ -713,7 +713,7 @@ type LowerStateMachine(g: TcGlobals) =
                     let innerPcSet = innerPcs |> Set.ofList
                     let outerLabsForInnerPcs = pcsAndLabs |> List.filter (fun (pc, _outerLab) -> innerPcSet.Contains pc) |> List.map snd
                     // generate the inner labels
-                    let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then IL.generateCodeLabel() else l))
+                    let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then generateCodeLabel() else l))
                     let innerPc2Lab = Map.ofList pcsAndInnerLabs
 
                     let vBodyR = resBody.phase2 innerPc2Lab
@@ -866,7 +866,7 @@ type LowerStateMachine(g: TcGlobals) =
 
                 // Work out the initial mapping of pcs to labels
                 let pcs = [ 1 .. pcCount ]
-                let labs = pcs |> List.map (fun _ -> IL.generateCodeLabel())
+                let labs = pcs |> List.map (fun _ -> generateCodeLabel())
                 let pc2lab  = Map.ofList (List.zip pcs labs)
 
                 // Execute phase2, building the core of the method
