@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
-        <target state="new">resumable state machines</target>
+        <target state="translated">máquinas de estado retomável</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -249,12 +249,12 @@
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
-        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</target>
+        <target state="translated">A construção de código retomável '{0}' só pode ser usada em código delimitado protegido por 'se __useResumableCode então ...' e a composição geral deve formar um código retomável válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="implMissingInlineIfLambda">
         <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
-        <target state="new">The 'InlineIfLambda' attribute is present in the signature but not the implementation.</target>
+        <target state="translated">O atributo 'InlineIfLambda' está presente na assinatura, mas não na implementação.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
         <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
-        <target state="new">The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</target>
+        <target state="translated">O valor '{0}' foi marcado como 'InlineIfLambda' mas não foi determinado como tendo um valor lambda. Este aviso é apenas para fins informativos.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsAllSigs">
@@ -379,42 +379,42 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
-        <target state="new">A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
+        <target state="translated">Uma etiqueta de destino para __resumeAt não foi estaticamente determinada. Um __resumeAt com uma etiqueta de destino não estática só pode aparecer no início de um método de código retomável.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
         <source>A fast integer for loop may not contain resumption points</source>
-        <target state="new">A fast integer for loop may not contain resumption points</target>
+        <target state="translated">Um inteiro rápido para loop pode não conter pontos de retomada</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occured in the resumable code specification</source>
-        <target state="new">A 'let rec' occured in the resumable code specification</target>
+        <target state="translated">Ocorreu um "let rec" na especificação do código retomável</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
         <source>The 'with' block of a try/with may not contain resumption points</source>
-        <target state="new">The 'with' block of a try/with may not contain resumption points</target>
+        <target state="translated">O bloco "com" de uma try/with não pode conter pontos de retomada</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
         <source>A try/finally may not contain resumption points</source>
-        <target state="new">A try/finally may not contain resumption points</target>
+        <target state="translated">Uma try/finally pode não conter pontos de retomada</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeDefinitionWasGeneric">
         <source>A delegate or function producing resumable code in a state machine has type parameters</source>
-        <target state="new">A delegate or function producing resumable code in a state machine has type parameters</target>
+        <target state="translated">Um delegado ou função que produz código retomável em uma máquina de estado tem parâmetros de tipo</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeInvokeNotReduced">
         <source>A resumable code invocation at '{0}' could not be reduced</source>
-        <target state="new">A resumable code invocation at '{0}' could not be reduced</target>
+        <target state="translated">Uma invocação de código retomável em '{0}' não pôde ser reduzida</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeValueHasNoDefinition">
         <source>The resumable code value(s) '{0}' does not have a definition</source>
-        <target state="new">The resumable code value(s) '{0}' does not have a definition</target>
+        <target state="translated">O valor(es) de código retomável '{0}' não tem uma definição</target>
         <note />
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
@@ -424,17 +424,17 @@
       </trans-unit>
       <trans-unit id="reprStateMachineInvalidForm">
         <source>The state machine has an unexpected form</source>
-        <target state="new">The state machine has an unexpected form</target>
+        <target state="translated">A máquina estato tem uma forma inesperada</target>
         <note />
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilable">
         <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
-        <target state="new">This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</target>
+        <target state="translated">Esta máquina de estado não é estaticamente compilável. {0}. Será usada uma implementação dinâmica alternativa, que poderá ser mais lenta. Considere ajustar seu código para garantir que esta máquina de estado seja compilável estaticamente, ou então suprima este aviso.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="new">This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</target>
+        <target state="translated">Esta máquina de estado não é estaticamente compilável e não há nenhuma alternativa disponível. {0}. Usar um 'se __useResumableCode então &lt;estado-máquina&gt;outra &lt;alternative&gt;' para dar uma alternativa.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -489,7 +489,7 @@
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
-        <target state="new">The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</target>
+        <target state="translated">O atributo 'InlineIfLambda' só pode ser usado em parâmetros de funções de métodos em linha cujo tipo seja uma função ou F# tipo delegado.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -504,7 +504,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
-        <target state="new">The construct '{0}' may only be used in valid resumable code.</target>
+        <target state="translated">A construção '{0}' só pode ser usada em código válido e retomável.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -539,32 +539,32 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
         <source>Invalid resumable code. A resumable code parameter must be of delegate or function type</source>
-        <target state="new">Invalid resumable code. A resumable code parameter must be of delegate or function type</target>
+        <target state="translated">Código inválido retomável. O parâmetro de um código retomável deve ser do tipo delegado ou função</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightName">
         <source>Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</source>
-        <target state="new">Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</target>
+        <target state="translated">Código inválido retomável. O parâmetro de código resumível deve ter nome começando com '__expandir'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
-        <target state="new">Invalid resumable code. A 'let rec' occured in the resumable code specification</target>
+        <target state="translated">Código inválido retomável. Ocorreu um "let rec" na especificação do código retomável</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
         <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
-        <target state="new">Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</target>
+        <target state="translated">Código inválido retomável. Qualquer método de função que aceite ou retorne um código de retomável deve ser marcado "embutido".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
-        <target state="new">Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</target>
+        <target state="translated">Invocação de código retomável. Suprima esta aviso se você estiver definindo um novo código de baixo nível de código retomável em termos de código retomável existente.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="new">Using resumable code or resumable state machines requires /langversion:preview</target>
+        <target state="translated">Usar código retomável ou máquinas de estado retomável requer /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
