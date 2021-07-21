@@ -55,7 +55,7 @@ module ReflectionHelper =
                 None
             else
                 let getMethod = property.GetGetMethod()
-                if not (isNull getMethod) && not (getMethod.IsStatic) then
+                if not (isNull getMethod) && not getMethod.IsStatic then
                     Some property
                 else
                     None
@@ -380,7 +380,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
                 match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
                 | None ->
-                    let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
+                    let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, path.Split(':').[0], reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
                     null, Unchecked.defaultof<IDependencyManagerProvider>
 

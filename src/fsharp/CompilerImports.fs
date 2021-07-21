@@ -165,7 +165,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
             use fileStream = FileSystem.OpenFileForWriteShim(optDataFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.None)
             fileStream.Write(bytes)
 
-        let (ccu, optData) =
+        let ccu, optData =
             if tcConfig.onlyEssentialOptimizationData then
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data
             else
@@ -531,13 +531,13 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     member _.TryFindByOriginalReference(assemblyReference: AssemblyReference) = originalReferenceToResolution.TryFind assemblyReference.Text
 
     /// Only used by F# Interactive
-    member _.TryFindByExactILAssemblyRef (assemblyRef) =
+    member _.TryFindByExactILAssemblyRef assemblyRef =
         results |> List.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot)
             r = assemblyRef)
 
     /// Only used by F# Interactive
-    member _.TryFindBySimpleAssemblyName (simpleAssemName) =
+    member _.TryFindBySimpleAssemblyName simpleAssemName =
         results |> List.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(tcConfig.reduceMemoryUsage, tcConfig.tryGetMetadataSnapshot)
             r.Name = simpleAssemName)
@@ -604,7 +604,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         let mutable itFailed = false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
 
-        for (UnresolvedAssemblyReference(referenceText, _ranges)) in unresolved do
+        for UnresolvedAssemblyReference(referenceText, _ranges) in unresolved do
             if referenceText.Contains("mscorlib") then
                 System.Diagnostics.Debug.Assert(false, sprintf "whoops, did not resolve mscorlib: '%s'%s" referenceText addedText)
                 itFailed <- true
@@ -889,12 +889,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         RequireTcImportsLock(tcitok, ccuThunks)
         let contents = ccuThunks |> Seq.toArray
         let unsuccessful =
-            [ for (ccuThunk, func) in contents do
+            [ for ccuThunk, func in contents do
                 if ccuThunk.IsUnresolvedReference then
                     func()
                 if ccuThunk.IsUnresolvedReference then
                     yield (ccuThunk, func) ]
-        ccuThunks <- ResizeArray (unsuccessful)
+        ccuThunks <- ResizeArray unsuccessful
 
     let availableToOptionalCcu = function
         | ResolvedCcu ccu -> Some ccu
@@ -943,7 +943,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         RequireTcImportsLock(tcitok, ccuTable)
         ccuInfos <- ccuInfos ++ ccuInfo
         // Assembly Ref Resolution: remove this use of ccu.AssemblyName
-        ccuTable <- NameMap.add (ccuInfo.FSharpViewOfMetadata.AssemblyName) ccuInfo ccuTable
+        ccuTable <- NameMap.add ccuInfo.FSharpViewOfMetadata.AssemblyName ccuInfo ccuTable
 
     member tcImports.RegisterDll dllInfo =
       tciLock.AcquireLock <| fun tcitok ->
@@ -1235,7 +1235,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                  member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
 
-                 member x.TryFindXmlDocumentationInfo (assemblyName) =
+                 member x.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
 
 #if !NO_EXTENSIONTYPING
@@ -1329,7 +1329,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
         let designTimeAssemblyNames =
             runtimeAssemblyAttributes
-            |> List.choose (TryDecodeTypeProviderAssemblyAttr)
+            |> List.choose TryDecodeTypeProviderAssemblyAttr
             // If no design-time assembly is specified, use the runtime assembly
             |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are
@@ -1405,7 +1405,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
                     let capturedInvalidateCcu = invalidateCcu
                     let capturedMessage = "The provider '" + fileNameOfRuntimeAssembly + "' reported a change"
-                    let handler = tp.Invalidate.Subscribe(fun _ -> capturedInvalidateCcu.Trigger (capturedMessage))
+                    let handler = tp.Invalidate.Subscribe(fun _ -> capturedInvalidateCcu.Trigger capturedMessage)
 
                     // When the TcImports is disposed we detach the invalidation callback
                     tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> try handler.Dispose() with _ -> ())), m)
@@ -1745,16 +1745,16 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
 
     /// Only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (simpleAssemName) : string option =
+    member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName simpleAssemName : string option =
       tciLock.AcquireLock <| fun tcitok ->
         RequireTcImportsLock(tcitok, resolutions)
-        resolutions.TryFindBySimpleAssemblyName (simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
+        resolutions.TryFindBySimpleAssemblyName simpleAssemName |> Option.map (fun r -> r.resolvedPath)
 
     /// Only used by F# Interactive
     member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(assemblyRef: ILAssemblyRef) : string option =
       tciLock.AcquireLock <| fun tcitok ->
         RequireTcImportsLock(tcitok, resolutions)
-        resolutions.TryFindByExactILAssemblyRef (assemblyRef) |> Option.map (fun r -> r.resolvedPath)
+        resolutions.TryFindByExactILAssemblyRef assemblyRef |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference: AssemblyReference, mode: ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> =
       tciLock.AcquireLock <| fun tcitok ->
@@ -1793,10 +1793,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     // But don't cache resolution failures because the assembly may appear on the disk later.
                     let resolved, unresolved = TcConfig.TryResolveLibsUsingMSBuildRules(tcConfig, [ assemblyReference ], assemblyReference.Range, mode)
                     match resolved, unresolved with
-                    | (assemblyResolution :: _, _) ->
+                    | assemblyResolution :: _, _ ->
                         resolutions <- resolutions.AddResolutionResults resolved
                         ResultD [assemblyResolution]
-                    | (_, _ :: _) ->
+                    | _, _ :: _ ->
                         resolutions <- resolutions.AddUnresolvedReferences unresolved
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
                     | [], [] ->
@@ -1831,7 +1831,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let! primaryAssem = frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)
         let primaryScopeRef =
             match primaryAssem with
-              | (_, [ResolvedImportedAssembly ccu]) -> ccu.FSharpViewOfMetadata.ILScopeRef
+              | _, [ResolvedImportedAssembly ccu] -> ccu.FSharpViewOfMetadata.ILScopeRef
               | _ -> failwith "unexpected"
 
         let primaryAssemblyResolvedPath =
@@ -1886,12 +1886,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             // Are we using a "non-canonical" FSharp.Core?
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
-                            | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
+                            | _ -> tcResolutions.TryFindByOriginalReferenceText getFSharpCoreLibraryName  // was the ".dll" elided?
 
                     match resolvedAssemblyRef with
                     | Some coreLibraryResolution ->
                         match! frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [coreLibraryResolution]) with
-                        | (_, [ResolvedImportedAssembly fslibCcuInfo ]) -> return fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
+                        | _, [ResolvedImportedAssembly fslibCcuInfo ] -> return fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
                         | _ ->
                             return error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
                     | None ->

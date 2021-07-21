@@ -64,7 +64,7 @@ module internal PrintUtilities =
     let shrinkOverloads layoutFunction resultFunction group = 
         match group with 
         | [x] -> [resultFunction x (layoutFunction x)] 
-        | (x :: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
+        | x :: rest -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) =
@@ -484,7 +484,7 @@ module private PrintTypes =
         | ILAttribElem.Char x -> wordL (tagStringLiteral ("'" + x.ToString() + "'" ))
         | ILAttribElem.SByte x -> wordL (tagNumericLiteral ((x |> string)+"y"))
         | ILAttribElem.Int16 x -> wordL (tagNumericLiteral ((x |> string)+"s"))
-        | ILAttribElem.Int32 x -> wordL (tagNumericLiteral ((x |> string)))
+        | ILAttribElem.Int32 x -> wordL (tagNumericLiteral (x |> string))
         | ILAttribElem.Int64 x -> wordL (tagNumericLiteral ((x |> string)+"L"))
         | ILAttribElem.Byte x -> wordL (tagNumericLiteral ((x |> string)+"uy"))
         | ILAttribElem.UInt16 x -> wordL (tagNumericLiteral ((x |> string)+"us"))
@@ -571,7 +571,7 @@ module private PrintTypes =
         let varL = if denv.showAttributes then layoutTyparAttribs denv typar.Kind typar.Attribs varL else varL
 
         match Zmap.tryFind typar env.inplaceConstraints with
-        | Some (typarConstraintTy) ->
+        | Some typarConstraintTy ->
             if Zset.contains typar env.singletons then
                 leftL (tagPunctuation "#") ^^ layoutTypeWithInfo denv env typarConstraintTy
             else
@@ -641,7 +641,7 @@ module private PrintTypes =
             if denv.shortConstraints then 
                 [WordL.keywordDelegate]
             else
-                [layoutTypeAppWithInfoAndPrec denv env (WordL.keywordDelegate) 2 true [aty;bty] |> longConstraintPrefix]
+                [layoutTypeAppWithInfoAndPrec denv env WordL.keywordDelegate 2 true [aty;bty] |> longConstraintPrefix]
 
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
@@ -785,7 +785,7 @@ module private PrintTypes =
             match tps with 
             | [] -> tauL
             | [h] -> layoutTyparRefWithInfo denv env h ^^ rightL (tagPunctuation ".") --- tauL
-            | (h :: t) -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
+            | h :: t -> spaceListL (List.map (layoutTyparRefWithInfo denv env) (h :: t)) ^^ rightL (tagPunctuation ".") --- tauL
 
         // Layout a function type. 
         | TType_fun _ ->
@@ -963,7 +963,7 @@ module private PrintTypes =
     let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =
         let _niceMethodTypars, typarInst =
             let memberToParentInst = List.empty
-            let typars = argInfos |> List.choose (function (TType.TType_var typar,_) -> Some typar | _ -> None)
+            let typars = argInfos |> List.choose (function TType.TType_var typar,_ -> Some typar | _ -> None)
             let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
             PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
         let retTy = instType typarInst retTy
@@ -981,14 +981,14 @@ module private PrintTypes =
                         yield 2, ty
                 ]
             let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
-            let retTy = typesWithDiscrimants |> List.find (function (0, _) -> true | _ -> false) |> snd
+            let retTy = typesWithDiscrimants |> List.find (function 0, _ -> true | _ -> false) |> snd
             let argInfos = 
                 typesWithDiscrimants
-                |> List.choose (function (1,ty) -> Some ty | _ -> None)
+                |> List.choose (function 1,ty -> Some ty | _ -> None)
                 |> List.map2 (fun (_, argInfo) tTy -> tTy, argInfo) argInfos
             let genParamTys = 
                 typesWithDiscrimants
-                |> List.choose (function (2,ty) -> Some ty | _ -> None)
+                |> List.choose (function 2,ty -> Some ty | _ -> None)
               
             argInfos, retTy, genParamTys, typarsAndCxs
 
@@ -1418,13 +1418,13 @@ module InfoMemberPrinting =
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
         let getterSetter =
             match pinfo.HasGetter, pinfo.HasSetter with
-            | (true, false) ->
+            | true, false ->
                 wordL (tagKeyword "with") ^^ wordL (tagText "get")
-            | (false, true) ->
+            | false, true ->
                 wordL (tagKeyword "with") ^^ wordL (tagText "set")
-            | (true, true) ->
+            | true, true ->
                 wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
-            | (false, false) ->
+            | false, false ->
                 emptyL
 
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
@@ -2158,17 +2158,17 @@ module private PrintData =
 
         | Expr.Link rX -> dataExprWrapL denv isAtomic (!rX)
 
-        | Expr.Op (TOp.UnionCase (c), _, args, _) -> 
+        | Expr.Op (TOp.UnionCase c, _, args, _) -> 
             if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")
             elif denv.g.unionCaseRefEq c denv.g.cons_ucref then 
-                let rec strip = function (Expr.Op (TOp.UnionCase _, _, [h;t], _)) -> h :: strip t | _ -> []
+                let rec strip = function Expr.Op (TOp.UnionCase _, _, [h;t], _) -> h :: strip t | _ -> []
                 listL (dataExprL denv) (strip expr)
             elif isNil args then 
                 wordL (tagUnionCase c.CaseName)
             else 
                 (wordL (tagUnionCase c.CaseName) ++ bracketL (commaListL (dataExprsL denv args)))
             
-        | Expr.Op (TOp.ExnConstr (c), _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
+        | Expr.Op (TOp.ExnConstr c, _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
 
         | Expr.Op (TOp.Tuple _, _, xs, _) -> tupleL (dataExprsL denv xs)
 

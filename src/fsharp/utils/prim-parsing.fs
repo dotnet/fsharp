@@ -108,7 +108,7 @@ type Stack<'a>(n)  =
     member buf.IsEmpty = (count = 0)
     member buf.PrintStack() = 
         for i = 0 to (count - 1) do 
-            System.Console.Write("{0}{1}",(contents.[i]),if i=count-1 then ":" else "-") 
+            System.Console.Write("{0}{1}",contents.[i],if i=count-1 then ":" else "-") 
           
 
 #if DEBUG
@@ -260,7 +260,7 @@ module internal Implementation =
         // Pop the stack until we can shift the 'error' token. If 'tokenOpt' is given
         // then keep popping until we can shift both the 'error' token and the token in 'tokenOpt'.
         // This is used at end-of-file to make sure we can shift both the 'error' token and the 'EOF' token.
-        let rec popStackUntilErrorShifted(tokenOpt) =
+        let rec popStackUntilErrorShifted tokenOpt =
             // Keep popping the stack until the "error" terminal is shifted
 #if DEBUG
             if Flags.debug then System.Console.WriteLine("popStackUntilErrorShifted")
@@ -454,10 +454,10 @@ module internal Implementation =
 
                         let currentToken = if haveLookahead then Some(lookaheadToken) else None
                         let actions,defaultAction = actionTable.ReadAll(state) 
-                        let explicit = Set.ofList [ for (tag,_action) in actions -> tag ]
+                        let explicit = Set.ofList [ for tag,_action in actions -> tag ]
                         
                         let shiftableTokens = 
-                           [ for (tag,action) in actions do
+                           [ for tag,action in actions do
                                  if (actionKind action) = shiftFlag then 
                                      yield tag
                              if actionKind defaultAction = shiftFlag  then
@@ -471,7 +471,7 @@ module internal Implementation =
                                yield stateToProdIdxsTable.ReadAll(state)  ]
 
                         let reduceTokens = 
-                           [ for (tag,action) in actions do
+                           [ for tag,action in actions do
                                 if actionKind(action) = reduceFlag then
                                     yield tag
                              if actionKind(defaultAction) = reduceFlag  then

@@ -345,7 +345,7 @@ module InterfaceFileWriter =
                 ".fsi"
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
-            for (TImplFile (name, _, _, _, _, _) as impl) in declaredImpls do
+            for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
                 let filename = System.IO.Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
                 use os = FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
@@ -541,7 +541,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     // Print the AST if requested
     if tcConfig.printAst then
-        for (input, _filename) in inputs do
+        for input, _filename in inputs do
             printf "AST:\n"
             printfn "%+A" input
             printf "\n"
@@ -680,7 +680,7 @@ let main1OfAst
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
     let meta = Directory.GetCurrentDirectory()
     let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp, meta, dependencyProvider))
@@ -698,7 +698,7 @@ let main1OfAst
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
@@ -727,7 +727,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger =
-        let scopedPragmas = [ for (TImplFile (_, pragmas, _, _, _, _)) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for TImplFile (_, pragmas, _, _, _, _) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -742,15 +742,15 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
         | _ -> None
 
     // write interface, xmldoc
-    ReportTime tcConfig ("Write Interface File")
+    ReportTime tcConfig "Write Interface File"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then InterfaceFileWriter.WriteInterfaceFile (tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
 
-    ReportTime tcConfig ("Write XML document signatures")
+    ReportTime tcConfig "Write XML document signatures"
     if tcConfig.xmlDocOutputFile.IsSome then
         XmlDocWriter.ComputeXmlDocSigs (tcGlobals, generatedCcu)
 
-    ReportTime tcConfig ("Write XML docs")
+    ReportTime tcConfig "Write XML docs"
     tcConfig.xmlDocOutputFile |> Option.iter (fun xmlFile ->
         let xmlFile = tcConfig.MakePathAbsolute xmlFile
         XmlDocWriter.WriteXmlDocFile (assemblyName, generatedCcu, xmlFile))
@@ -768,7 +768,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
                  topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) =
 
     // Encode the signature data
-    ReportTime tcConfig ("Encode Interface Data")
+    ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
     let sigDataAttributes, sigDataResources =
@@ -801,7 +801,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
     AbortOnError(errorLogger, exiter)
 
     // Encode the optimization data
-    ReportTime tcConfig ("Encoding OptData")
+    ReportTime tcConfig "Encoding OptData"
 
     let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 

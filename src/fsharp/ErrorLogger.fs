@@ -398,7 +398,7 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
-            | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException), _) ->  ()
+            | :? System.Threading.ThreadAbortException | WrappedError(:? System.Threading.ThreadAbortException, _) ->  ()
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
                 PreserveStackTrace exn
@@ -668,7 +668,7 @@ let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeatu
 
 let internal checkLanguageFeatureError langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
-    | Some e -> error (e)
+    | Some e -> error e
     | None -> ()
 
 let internal checkLanguageFeatureErrorRecover langVersion langFeature m =

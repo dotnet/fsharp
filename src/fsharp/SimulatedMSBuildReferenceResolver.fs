@@ -51,7 +51,7 @@ let private SimulatedMSBuildResolver =
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies v =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -72,7 +72,7 @@ let private SimulatedMSBuildResolver =
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssemblies(version) =
+    let GetPathToDotNetFrameworkReferenceAssemblies version =
 #if NETSTANDARD
         ignore version
         let r : string list = []
@@ -148,7 +148,7 @@ let private SimulatedMSBuildResolver =
                 yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
               ]
 
-            for (r, baggage) in references do
+            for r, baggage in references do
                 //printfn "resolving %s" r
                 let mutable found = false
                 let success path =

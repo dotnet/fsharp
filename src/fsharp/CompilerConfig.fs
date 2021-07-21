@@ -197,7 +197,7 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
     member cache.GetProjectReferenceTimeStamp (pr: IProjectReference) =
         let ok, v = projects.TryGetValue pr
         if ok then v else
-        let v = defaultArg (pr.TryGetLogicalTimeStamp (cache)) defaultTimeStamp
+        let v = defaultArg (pr.TryGetLogicalTimeStamp cache) defaultTimeStamp
         projects.[pr] <- v
         v
 
@@ -704,7 +704,7 @@ type TcConfigBuilder =
         ResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom], m, nm)
 
     /// Decide names of output file, pdb and assembly
-    member tcConfigB.DecideNames (sourceFiles) =
+    member tcConfigB.DecideNames sourceFiles =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(), rangeCmdArgs))
         let ext() = match tcConfigB.target with CompilerTarget.Dll -> ".dll" | CompilerTarget.Module -> ".netmodule" | CompilerTarget.ConsoleExe | CompilerTarget.WinExe -> ".exe"
@@ -732,7 +732,7 @@ type TcConfigBuilder =
                         FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #endif
                     | Some f -> f)
-            elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
+            elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
                 error(Error(FSComp.SR.buildPdbRequiresDebug(), rangeStartup))
             else
                 None
@@ -786,13 +786,13 @@ type TcConfigBuilder =
             if not (List.contains path (List.map (fun (_, _, path) -> path) tcConfigB.loadedSources)) then
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m, originalPath, path)
 
-    member tcConfigB.AddEmbeddedSourceFile (file) =
+    member tcConfigB.AddEmbeddedSourceFile file =
         tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
     member tcConfigB.AddEmbeddedResource filename =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
 
-    member tcConfigB.AddCompilerToolsByPath (path) =
+    member tcConfigB.AddCompilerToolsByPath path =
         if not (tcConfigB.compilerToolPaths  |> List.exists (fun text -> path = text)) then // NOTE: We keep same paths if range is different.
             let compilerToolPath = tcConfigB.compilerToolPaths |> List.tryPick (fun text -> if text = path then Some text else None)
             if compilerToolPath.IsNone then
@@ -1176,7 +1176,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // that is special to F# (as compared to MSBuild resolution)
     member tcConfig.GetSearchPathsForLibraryFiles() =
         [ yield! tcConfig.GetTargetFrameworkDirectories()
-          yield! List.map (tcConfig.MakePathAbsolute) tcConfig.includes
+          yield! List.map tcConfig.MakePathAbsolute tcConfig.includes
           yield tcConfig.implicitIncludeDir
           yield tcConfig.fsharpBinariesDir ]
 

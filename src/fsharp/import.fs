@@ -447,7 +447,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
 let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) = 
     // Find all the items with an empty key list and call 'tipf' 
     let tips = 
-        [ for (keylist, v) in items do 
+        [ for keylist, v in items do 
              match keylist with 
              | [] -> yield tipf v
              | _ -> () ]
@@ -456,7 +456,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
     // the first key. For each bucket, call 'nodef' on that head key and the bucket.
     let nodes = 
         let buckets = new Dictionary<_, _>(10)
-        for (keylist, v) in items do
+        for keylist, v in items do
             match keylist with 
             | [] -> ()
             | key :: rest ->
@@ -465,7 +465,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []
 
-        [ for (KeyValue(key, items)) in buckets -> nodef key items ]
+        [ for KeyValue(key, items) in buckets -> nodef key items ]
 
     tips @ nodes
 
@@ -583,7 +583,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 

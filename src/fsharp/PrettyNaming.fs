@@ -117,7 +117,7 @@ let private opCharTranslateTable =
 /// The set of characters usable in custom operators.
 let private opCharSet =
     let t = new HashSet<_>()
-    for (c, _) in opCharTranslateTable do
+    for c, _ in opCharTranslateTable do
         t.Add(c) |> ignore
     t
         
@@ -156,7 +156,7 @@ let IsMangledOpName (n: string) =
 /// use the 'CompileOpName' function instead.
 let private compileCustomOpName =
     let t2 =
-        let t2 = Dictionary<_, _> (opCharTranslateTable.Length)
+        let t2 = Dictionary<_, _> opCharTranslateTable.Length
         for x, y in opCharTranslateTable do
             t2.Add (x, y)
         t2
@@ -170,7 +170,7 @@ let private compileCustomOpName =
 
     /// Memoize compilation of custom operators.
     /// They're typically used more than once so this avoids some CPU and GC overhead.
-    let compiledOperators = ConcurrentDictionary<_, string> (StringComparer.Ordinal)
+    let compiledOperators = ConcurrentDictionary<_, string> StringComparer.Ordinal
 
     fun opp ->
         // Has this operator already been compiled?
@@ -217,7 +217,7 @@ let CompileOpName op =
 let private decompileCustomOpName =
     // Memoize this operation. Custom operators are typically used more than once
     // so this avoids repeating decompilation.
-    let decompiledOperators = ConcurrentDictionary<_, _> (StringComparer.Ordinal)
+    let decompiledOperators = ConcurrentDictionary<_, _> StringComparer.Ordinal
 
     /// The minimum length of the name for a custom operator character.
     /// This value is used when initializing StringBuilders to avoid resizing.
@@ -273,7 +273,7 @@ let private decompileCustomOpName =
                 /// The maximum number of operator characters that could be contained in the
                 /// decompiled operator given the length of the mangled custom operator name.
                 let maxPossibleOpCharCount = (opNameLen - opNamePrefixLen) / minOperatorNameLength
-                StringBuilder (maxPossibleOpCharCount)
+                StringBuilder maxPossibleOpCharCount
 
             // Start decompiling just after the operator prefix.
             decompile sb opNamePrefixLen
@@ -594,7 +594,7 @@ let private splitAroundQuotationWithCount (text: string) (separator: char) (coun
     if count <= 1 then [| text |] else
     let mangledText  = splitAroundQuotation text separator
     match mangledText.Length > count with
-    | true -> Array.append (mangledText.[0..(count-2)]) ([| mangledText.[(count-1)..] |> String.concat (Char.ToString separator) |])
+    | true -> Array.append mangledText.[0..(count-2)] [| mangledText.[(count-1)..] |> String.concat (Char.ToString separator) |]
     | false -> mangledText
 
 let [<Literal>] FSharpModuleSuffix = "Module"

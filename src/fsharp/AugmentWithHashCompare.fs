@@ -371,7 +371,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
-        let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
+        let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
@@ -432,7 +432,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
-        let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
+        let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
@@ -492,7 +492,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
-        let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
+        let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No)))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
@@ -554,7 +554,7 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
-        let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
+        let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
@@ -654,7 +654,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
     let nullary, nonNullary = ucases
                              |> List.mapi mkCase
                              |> List.partition (fun i -> i.IsNone)
-    let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionHash")
+    let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionHash")
     let dflt = if isNil nullary then None 
                else 
                    let tag = mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m)

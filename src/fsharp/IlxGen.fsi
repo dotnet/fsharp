@@ -79,10 +79,10 @@ type public IlxGenResults =
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
     {
-      LookupFieldRef: (ILFieldRef -> FieldInfo)
-      LookupMethodRef: (ILMethodRef -> MethodInfo)
-      LookupTypeRef: (ILTypeRef -> Type)
-      LookupType: (ILType -> Type)
+      LookupFieldRef: ILFieldRef -> FieldInfo
+      LookupMethodRef: ILMethodRef -> MethodInfo
+      LookupTypeRef: ILTypeRef -> Type
+      LookupType: ILType -> Type
     } 
 
 /// An incremental ILX code generator for a single assembly

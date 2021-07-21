@@ -283,7 +283,7 @@ module Layout =
         elif isEmptyL r then l 
         else f l r
 
-    let (^^)  layout1 layout2 = mkNode layout1 layout2 (Unbreakable)
+    let (^^)  layout1 layout2 = mkNode layout1 layout2 Unbreakable
 
     let (++)  layout1 layout2 = mkNode layout1 layout2 (Breakable 0)
 
@@ -370,7 +370,7 @@ module Layout =
 [<NoEquality; NoComparison>]
 type FormatOptions =
     { FloatingPointFormat: string
-      AttributeProcessor: (string -> (string * string) list -> bool -> unit)
+      AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
       PrintIntercepts: (IEnvironment -> obj -> Layout option) list
       StringLimit: int
@@ -424,16 +424,16 @@ module ReflectUtils =
 
     let option = typedefof<obj option>
 
-    let func = typedefof<(obj -> obj)>
+    let func = typedefof<obj -> obj>
 
-    let isOptionTy ty = equivHeadTypes ty (typeof<int option>)
+    let isOptionTy ty = equivHeadTypes ty typeof<int option>
 
-    let isUnitType ty = equivHeadTypes ty (typeof<unit>)
+    let isUnitType ty = equivHeadTypes ty typeof<unit>
 
     let isListType ty = 
         FSharpType.IsUnion ty && 
         (let cases = FSharpType.GetUnionCases ty 
-         cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
+         cases.Length > 0 && equivHeadTypes typedefof<list<_>> cases.[0].DeclaringType)
 
     [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
     type TupleType =
@@ -518,7 +518,7 @@ module ReflectUtils =
                 elif isUnitType ty then UnitValue
                 else NullValue
             | _ -> 
-                GetValueInfoOfObject bindingFlags (obj) 
+                GetValueInfoOfObject bindingFlags obj 
 
 module Display = 
     open ReflectUtils
@@ -953,7 +953,7 @@ module Display =
                     let illFormedMatch = System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
                     if illFormedMatch then 
                         None // there are mismatched brackets, bail out
-                    elif layouts.Length > 1 then Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt))) :: layouts))))
+                    elif layouts.Length > 1 then Some (spaceListL (List.rev (wordL (tagText(replaceEscapedBrackets(txt))) :: layouts)))
                     else Some (wordL (tagText(replaceEscapedBrackets(txt))))
                 else
                     // we have a hit on a property reference
@@ -1047,7 +1047,7 @@ module Display =
         and listValueL depthLim constr recd =
             match constr with 
             | "Cons" -> 
-                let (x,xs) = unpackCons recd
+                let x,xs = unpackCons recd
                 let project xs = getListValueInfo bindingFlags xs
                 let itemLs = nestedObjL depthLim Precedence.BracketIfTuple x :: boundedUnfoldL (nestedObjL depthLim Precedence.BracketIfTuple) project stopShort xs (opts.PrintLength - 1)
                 makeListL itemLs
@@ -1184,7 +1184,7 @@ module Display =
             // massively reign in deep printing of properties 
             let nDepth = depthLim/10
 #if NETSTANDARD
-            Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } )
+            Array.Sort(propsAndFields,{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare p1.Name p2.Name } )
 #else
             Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } )
 #endif

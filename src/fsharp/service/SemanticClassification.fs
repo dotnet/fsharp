@@ -172,7 +172,7 @@ module TcResolutionsExtensions =
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.IntrinsicFunction
 
-                    | (Item.Value vref), _, _, _, _, m when isForallFunctionTy g vref.Type ->
+                    | Item.Value vref, _, _, _, _, m when isForallFunctionTy g vref.Type ->
                         if isDiscard vref.DisplayName then
                             add m SemanticClassificationType.Plaintext
                         elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
@@ -186,7 +186,7 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.Function
 
-                    | (Item.Value vref), _, _, _, _, m ->
+                    | Item.Value vref, _, _, _, _, m ->
                         if isValRefDisposable vref then
                             if vref.IsCompiledAsTopLevel then
                                 add m SemanticClassificationType.DisposableTopLevelValue
@@ -309,7 +309,7 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.TypeDef                            
 
-                    | (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m ->
+                    | Item.TypeVar _, LegitTypeOccurence, _, _, _, m ->
                         add m SemanticClassificationType.TypeArgument
 
                     | Item.ExnCase _, LegitTypeOccurence, _, _, _, m ->

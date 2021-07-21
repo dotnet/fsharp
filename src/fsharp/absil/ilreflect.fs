@@ -315,7 +315,7 @@ type cenv =
       emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
-      resolveAssemblyRef: (ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option) }
+      resolveAssemblyRef: ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option }
 
     override x.ToString() = "<cenv>"
 
@@ -604,8 +604,8 @@ let rec convParamModifiersOfType cenv emEnv (pty: ILType) =
         | _ -> () |]
 
 let splitModifiers mods =
-    let reqd = mods |> Array.choose (function (true, ty) -> Some ty | _ -> None)
-    let optional = mods |> Array.choose (function (false, ty) -> Some ty | _ -> None)
+    let reqd = mods |> Array.choose (function true, ty -> Some ty | _ -> None)
+    let optional = mods |> Array.choose (function false, ty -> Some ty | _ -> None)
     reqd, optional
 
 let convParamModifiers cenv emEnv (p: ILParameter) =
@@ -1211,7 +1211,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
             let ety = aty.GetElementType()
             let rty = ety.MakeByRefType()
-            let meth = modB.GetArrayMethodAndLog (aty, "Address", System.Reflection.CallingConventions.HasThis, rty, Array.create shape.Rank (typeof<int>) )
+            let meth = modB.GetArrayMethodAndLog (aty, "Address", System.Reflection.CallingConventions.HasThis, rty, Array.create shape.Rank typeof<int> )
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_ldelem_any (shape, ty) ->
@@ -1226,7 +1226,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     getArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Get", System.Reflection.CallingConventions.HasThis, ety, Array.create shape.Rank (typeof<int>) )
+                    modB.GetArrayMethodAndLog (aty, "Get", System.Reflection.CallingConventions.HasThis, ety, Array.create shape.Rank typeof<int> )
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_stelem_any (shape, ty) ->
@@ -1241,7 +1241,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Set", System.Reflection.CallingConventions.HasThis, (null: Type), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog (aty, "Set", System.Reflection.CallingConventions.HasThis, (null: Type), Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
@@ -1249,7 +1249,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
             let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null: Type), Array.create shape.Rank (typeof<int>))
+            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null: Type), Array.create shape.Rank typeof<int>)
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
@@ -1311,7 +1311,7 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
             | _ -> [action]
 
     for e in code.Exceptions do
-        let (startTry, _endTry) = e.Range
+        let startTry, _endTry = e.Range
 
         add startTry (fun () -> ilG.BeginExceptionBlockAndLog () |> ignore)
 
@@ -2109,7 +2109,7 @@ let emitModuleFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilder, modB: 
        // REVIEW: remainder of manifest
        emitCustomAttrs cenv emEnv asmB.SetCustomAttributeAndLog mani.CustomAttrs
     // invoke entry point methods
-    let execEntryPtFun ((typB: TypeBuilder), methodName) () =
+    let execEntryPtFun (typB: TypeBuilder, methodName) () =
       try
         ignore (typB.InvokeMemberAndLog (methodName, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.Static, [| |]))
         None

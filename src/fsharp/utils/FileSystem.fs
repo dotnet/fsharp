@@ -176,7 +176,7 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.CanRead = viewStream.CanRead
     override x.CanWrite = viewStream.CanWrite
     override x.CanSeek = viewStream.CanSeek
-    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Position with get() = viewStream.Position and set v = viewStream.Position <- v
     override x.Length = viewStream.Length
     override x.Flush() = viewStream.Flush()
     override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
@@ -663,7 +663,7 @@ module public StreamExtensions =
                        //   FileLoadException
                        //   PathTooLongException
                        if retryNumber < numRetries then
-                           System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                           System.Threading.Thread.Sleep retryDelayMilliseconds
                            getSource (retryNumber + 1)
                        else
                            reraise()

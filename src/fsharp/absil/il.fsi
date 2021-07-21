@@ -603,7 +603,7 @@ type internal ILExceptionClause =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILExceptionSpec =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       Clause: ILExceptionClause }
 
 /// Indicates that a particular local variable has a particular source
@@ -616,7 +616,7 @@ type internal ILLocalDebugMapping =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILLocalDebugInfo =
-    { Range: (ILCodeLabel * ILCodeLabel);
+    { Range: ILCodeLabel * ILCodeLabel;
       DebugMappings: ILLocalDebugMapping list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]

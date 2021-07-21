@@ -168,7 +168,7 @@ and FSharpProjectOptions =
         match options1.ProjectId, options2.ProjectId with
         | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) ->
             projectId1 = projectId2
-        | Some(_), Some(_)
+        | Some _, Some _
         | None, None -> options1.ProjectFileName = options2.ProjectFileName
         | _ -> false
 
@@ -229,7 +229,7 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member _.IsFromComputationExpression =
         match symbol.Item, itemOcc with
         // 'seq' in 'seq { ... }' gets colored as keywords
-        | (Item.Value vref), ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
+        | Item.Value vref, ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
         // custom builders, custom operations get colored as keywords
         | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
         | _ -> false
@@ -388,7 +388,7 @@ type internal TypeCheckInfo
     ///
     /// e.g. prefer types to constructors for ToolTipText
     let FilterItemsForCtors filterCtors (items: ItemWithInst list) =
-        let items = items |> List.filter (fun item -> match item.Item with (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true)
+        let items = items |> List.filter (fun item -> match item.Item with Item.CtorGroup _ when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true)
         items
 
     // Filter items to show only valid & return Some if there are any
@@ -434,7 +434,7 @@ type internal TypeCheckInfo
 
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ ->
+        | CNR(Item.Types(_,ty::_), _, denv, nenv, ad, m)::_, Some _ ->
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors
@@ -488,7 +488,7 @@ type internal TypeCheckInfo
         let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
 
         match items, membersByResidue with
-        | CNR(Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
+        | CNR(Item.Types(_,ty::_),_,_,_,_,_)::_, Some _ -> Some ty
         | CNR(Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
@@ -510,7 +510,7 @@ type internal TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
+            | CNR(Item.CtorGroup(_, (ctor::_ as ctors)), _, denv, nenv, ad, m) ::_ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
@@ -535,7 +535,7 @@ type internal TypeCheckInfo
             ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs
 
     /// finds captured typing for the given position
-    let GetExprTypingForPosition(endOfExprPos) =
+    let GetExprTypingForPosition endOfExprPos =
         let quals =
             sResolutions.CapturedExpressionTypings
             |> Seq.filter (fun (ty,nenv,_,m) ->
@@ -608,7 +608,7 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (ty,nenv,ad,m) = bestQual
+                let ty,nenv,ad,m = bestQual
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
@@ -1023,7 +1023,7 @@ type internal TypeCheckInfo
                         | _ -> false), denv, m)
 
             // Completion at '(x: ...)"
-            | Some (CompletionContext.PatternType) ->
+            | Some CompletionContext.PatternType ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items
@@ -1046,7 +1046,7 @@ type internal TypeCheckInfo
                     // because providing generic parameters list is context aware, which we don't have here (yet).
                     None
                 | _ ->
-                    let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
+                    let isInRangeOperator = (match cc with Some CompletionContext.RangeOperator -> true | _ -> false)
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
                         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
                         isInRangeOperator, getAllSymbols)
@@ -1136,12 +1136,12 @@ type internal TypeCheckInfo
                         items |> List.sortBy (fun d ->
                             let n =
                                 match d.Item with
-                                | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
+                                | Item.Types (_,TType_app(tcref,_) :: _) -> 1 + tcref.TyparsNoRange.Length
                                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                                 | Item.FakeInterfaceCtor (TType_app(tcref,_))
                                 | Item.DelegateCtor (TType_app(tcref,_)) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                                | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
+                                | Item.CtorGroup (_, cinfo :: _) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length
                                 | _ -> 0
                             (d.Item.DisplayName, n))
 
@@ -1153,12 +1153,12 @@ type internal TypeCheckInfo
                     let items =
                         items |> List.groupBy (fun d ->
                             match d.Item with
-                            | Item.Types (_,(TType_app(tcref,_) :: _))
+                            | Item.Types (_,TType_app(tcref,_) :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
                             | Item.UnqualifiedType(tcref :: _)
                             | Item.FakeInterfaceCtor (TType_app(tcref,_))
                             | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
-                            | Item.CtorGroup (_, (cinfo :: _)) ->
+                            | Item.CtorGroup (_, cinfo :: _) ->
                                 cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 
@@ -1291,9 +1291,9 @@ type internal TypeCheckInfo
                             List.fold
                                 (fun (allTypes,constr,ty) (item: CompletionItem) ->
                                     match item.Item, constr, ty with
-                                    |   (Item.Types _) as t, _, None  -> allTypes, constr, Some t
-                                    |   (Item.Types _), _, _ -> allTypes, constr, ty
-                                    |   (Item.CtorGroup _), None, _ -> allTypes, Some item.Item, ty
+                                    |   Item.Types _ as t, _, None  -> allTypes, constr, Some t
+                                    |   Item.Types _, _, _ -> allTypes, constr, ty
+                                    |   Item.CtorGroup _, None, _ -> allTypes, Some item.Item, ty
                                     |   _ -> false, None, None)
                                 (true,None,None) items
                         match allTypes, constr, ty with
@@ -1371,7 +1371,7 @@ type internal TypeCheckInfo
 
                 let result =
                     match item.Item with
-                    | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
+                    | Item.CtorGroup (_, ILMeth (_,ilinfo,_) :: _) ->
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
@@ -1381,7 +1381,7 @@ type internal TypeCheckInfo
                                 FindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
-                    | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
+                    | Item.MethodGroup (name, ILMeth (_,ilinfo,_) :: _, _) ->
                         match ilinfo.MetadataScope with
                         | ILScopeRef.Assembly assemblyRef ->
                             let typeVarNames = getTypeVarNames ilinfo
@@ -1446,12 +1446,12 @@ type internal TypeCheckInfo
                     match item.Item with
 #if !NO_EXTENSIONTYPING
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
-                    | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
-                    | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
-                    | Item.Property   (name, ProvidedProp (_)::_   ) -> FindDeclFailureReason.ProvidedMember name
-                    | Item.Event      (      ProvidedEvent(_) as e ) -> FindDeclFailureReason.ProvidedMember e.EventName
-                    | Item.ILField    (      ProvidedField(_) as f ) -> FindDeclFailureReason.ProvidedMember f.FieldName
-                    | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FindDeclFailureReason.ProvidedType   tcref.DisplayName
+                    | Item.CtorGroup  (name, ProvidedMeth _::_   )
+                    | Item.MethodGroup(name, ProvidedMeth _::_, _)
+                    | Item.Property   (name, ProvidedProp _::_   ) -> FindDeclFailureReason.ProvidedMember name
+                    | Item.Event      (      ProvidedEvent _ as e ) -> FindDeclFailureReason.ProvidedMember e.EventName
+                    | Item.ILField    (      ProvidedField _ as f ) -> FindDeclFailureReason.ProvidedMember f.FieldName
+                    | SymbolHelpers.ItemIsProvidedType g tcref     -> FindDeclFailureReason.ProvidedType   tcref.DisplayName
 #endif
                     | _                                              -> FindDeclFailureReason.Unknown ""
                     |> FindDeclResult.DeclNotFound
@@ -1592,7 +1592,7 @@ module internal ParseAndCheckFile =
 
                 match exn with
 #if !NO_EXTENSIONTYPING
-                | { Exception = (:? TypeProviderError as tpe) } -> tpe.Iter(fun e -> report { exn with Exception = e })
+                | { Exception = :? TypeProviderError as tpe } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e
 
@@ -1662,27 +1662,27 @@ module internal ParseAndCheckFile =
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
                 match t1, t2 with
-                | (LPAREN, RPAREN)
-                | (LPAREN, RPAREN_IS_HERE)
-                | (LBRACE _, RBRACE _)
-                | (LBRACE_BAR, BAR_RBRACE)
-                | (LBRACE _, RBRACE_IS_HERE)
-                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
-                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
-                | (INTERP_STRING_PART _, INTERP_STRING_PART _)
-                | (INTERP_STRING_PART _, INTERP_STRING_END _)
-                | (SIG, END)
-                | (STRUCT, END)
-                | (LBRACK_BAR, BAR_RBRACK)
-                | (LBRACK, RBRACK)
-                | (LBRACK_LESS, GREATER_RBRACK)
-                | (BEGIN, END) -> true
-                | (LQUOTE q1, RQUOTE q2) -> q1 = q2
+                | LPAREN, RPAREN
+                | LPAREN, RPAREN_IS_HERE
+                | LBRACE _, RBRACE _
+                | LBRACE_BAR, BAR_RBRACE
+                | LBRACE _, RBRACE_IS_HERE
+                | INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _
+                | INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _
+                | INTERP_STRING_PART _, INTERP_STRING_PART _
+                | INTERP_STRING_PART _, INTERP_STRING_END _
+                | SIG, END
+                | STRUCT, END
+                | LBRACK_BAR, BAR_RBRACK
+                | LBRACK, RBRACK
+                | LBRACK_LESS, GREATER_RBRACK
+                | BEGIN, END -> true
+                | LQUOTE q1, RQUOTE q2 -> q1 = q2
                 | _ -> false
 
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, ((tok1, m1) :: stackAfterMatch) when parenTokensBalance tok1 tok2 ->
+                | tok2, (tok1, m1) :: stackAfterMatch when parenTokensBalance tok1 tok2 ->
                     let m2 = lexbuf.LexemeRange
 
                     // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
@@ -1707,7 +1707,7 @@ module internal ParseAndCheckFile =
 
                     matchBraces stackAfterMatch
 
-                | ((LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
+                | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
                      matchBraces ((tok, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
@@ -1717,7 +1717,7 @@ module internal ParseAndCheckFile =
                 //   interpolation expression)
                 //
                 // Either way we start a new potential match at the last character
-                | ((INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _) as tok), _ ->
+                | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
                      let m = lexbuf.LexemeRange
                      let m2 = Range.mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column-1) 0)) m.End
                      matchBraces ((tok, m2) :: stack)
@@ -1886,7 +1886,7 @@ module internal ParseAndCheckFile =
 
         let res =
             match resOpt with
-            | ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
+            | (tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState ->
                 TypeCheckInfo(tcConfig, tcGlobals,
                               List.head ccuSigsForFiles,
                               tcState.Ccu,
@@ -2202,12 +2202,12 @@ type FSharpCheckProjectResults
     member _.HasCriticalErrors = details.IsNone
 
     member _.AssemblySignature =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, _ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2216,7 +2216,7 @@ type FSharpCheckProjectResults
 
     member info.AssemblyContents =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2225,7 +2225,7 @@ type FSharpCheckProjectResults
 
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2244,7 +2244,7 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
-        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, _tcImports, _thisCcu, _ccuSig, builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
 
         let results =
             match builderOrSymbolUses with
@@ -2275,7 +2275,7 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         let tcSymbolUses =
@@ -2306,18 +2306,18 @@ type FSharpCheckProjectResults
                       yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
 
     member _.ProjectContext =
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles, projectOptions) = getDetails()
+        let tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles, projectOptions = getDetails()
         let assemblies =
             tcImports.GetImportedAssemblies()
             |> List.map (fun x -> FSharpAssembly(tcGlobals, tcImports, x.FSharpViewOfMetadata))
         FSharpProjectContext(thisCcu, assemblies, ad, projectOptions)
 
     member _.DependencyFiles =
-        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, dependencyFiles, _projectOptions) = getDetails()
+        let _tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _ilAssemRef, _ad, _tcAssemblyExpr, dependencyFiles, _projectOptions = getDetails()
         dependencyFiles
 
     member _.AssemblyFullName =
-        let (_tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let _tcGlobals, _tcImports, _thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions = getDetails()
         ilAssemRef.QualifiedName
 
     override _.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"

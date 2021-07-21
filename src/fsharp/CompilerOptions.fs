@@ -82,7 +82,7 @@ let FilterCompilerOptionBlock pred block =
 let compilerOptionUsage (CompilerOption(s, tag, spec, _, _)) =
     let s = if s="--" then "" else s (* s="flag" for "--flag" options. s="--" for "--" option. Adjust printing here for "--" case. *)
     match spec with
-    | (OptionUnit _ | OptionSet _ | OptionClear _ | OptionHelp _) -> sprintf "--%s" s
+    | OptionUnit _ | OptionSet _ | OptionClear _ | OptionHelp _ -> sprintf "--%s" s
     | OptionStringList _ -> sprintf "--%s:%s" s tag
     | OptionIntList _ -> sprintf "--%s:%s" s tag
     | OptionSwitch _ -> sprintf "--%s[+|-]" s
@@ -249,7 +249,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
   let rec processArg args =
     match args with
     | [] -> ()
-    | ((rsp: string) :: t) when rsp.StartsWithOrdinal("@") ->
+    | rsp: string :: t when rsp.StartsWithOrdinal("@") ->
         let responseFileOptions =
             let fullpath =
                 try
@@ -287,51 +287,51 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
         let rec attempt l =
           match l with
-          | (CompilerOption(s, _, OptionHelp f, d, _) :: _) when optToken = s  && argString = "" ->
+          | CompilerOption(s, _, OptionHelp f, d, _) :: _ when optToken = s  && argString = "" ->
               reportDeprecatedOption d
               f blocks; t
-          | (CompilerOption(s, _, OptionUnit f, d, _) :: _) when optToken = s  && argString = "" ->
+          | CompilerOption(s, _, OptionUnit f, d, _) :: _ when optToken = s  && argString = "" ->
               reportDeprecatedOption d
               f (); t
-          | (CompilerOption(s, _, OptionSwitch f, d, _) :: _) when getSwitchOpt optToken = s && argString = "" ->
+          | CompilerOption(s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && argString = "" ->
               reportDeprecatedOption d
               f (getSwitch opt); t
-          | (CompilerOption(s, _, OptionSet f, d, _) :: _) when optToken = s && argString = "" ->
+          | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
               f := true; t
-          | (CompilerOption(s, _, OptionClear f, d, _) :: _) when optToken = s && argString = "" ->
+          | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
               f := false; t
-          | (CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (getOptionArg compilerOption oa)
               t
-          | (CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (try int32 oa with _ ->
                       errorR(Error(FSComp.SR.buildArgInvalidInt(getOptionArg compilerOption argString), rangeCmdArgs)); 0)
               t
-          | (CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (try float oa with _ ->
                       errorR(Error(FSComp.SR.buildArgInvalidFloat(getOptionArg compilerOption argString), rangeCmdArgs)); 0.0)
               t
-          | (CompilerOption(s, _, OptionRest f, d, _) :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionRest f, d, _) :: _ when optToken = s ->
               reportDeprecatedOption d
               List.iter f t; []
-          | (CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0)) al
               t
-          | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s ->
+          | CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
@@ -339,28 +339,28 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                   List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0) switch) al
               t
               // here
-          | (CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   List.iter f (getOptionArgList compilerOption argString)
               t
-          | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s ->
+          | CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   let switch = getSwitch opt
                   List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
               t
-          | (CompilerOption(_, _, OptionGeneral (pred, exec), d, _) :: _) when pred args ->
+          | CompilerOption(_, _, OptionGeneral (pred, exec), d, _) :: _ when pred args ->
               reportDeprecatedOption d
               let rest = exec args in rest // arguments taken, rest remaining
-          | (_ :: more) -> attempt more
+          | _ :: more -> attempt more
           | [] ->
               if opt.Length = 0 || opt.[0] = '-' || isSlashOpt opt
                then
                   // want the whole opt token - delimiter and all
-                  let unrecOpt = (opt.Split([|':'|]).[0])
+                  let unrecOpt = opt.Split([|':'|]).[0]
                   errorR(Error(FSComp.SR.buildUnrecognizedOption unrecOpt, rangeCmdArgs))
                   t
               else
@@ -840,7 +840,7 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some (FSComp.SR.optsMlcompatibility()))
 
 /// LanguageVersion management
-let setLanguageVersion (specifiedVersion) =
+let setLanguageVersion specifiedVersion =
 
     let languageVersion = new LanguageVersion(specifiedVersion)
     let dumpAllowedValues () =
@@ -1110,7 +1110,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption
        ("stackReserveSize", tagNone,
         OptionString (fun s -> tcConfigB.stackReserveSize <- Some(int32 s)),
-        Some(InternalCommandLineOption("--stackReserveSize", rangeCmdArgs)), Some ("for an exe, set stack reserve size"))
+        Some(InternalCommandLineOption("--stackReserveSize", rangeCmdArgs)), Some "for an exe, set stack reserve size")
 
     CompilerOption
        ("tlr", tagInt,
@@ -1328,12 +1328,12 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("jit-tracking", tagNone,
-        OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ),
+        OptionUnit (fun _ -> tcConfigB.jitTracking <- true ),
         Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
 
     CompilerOption
        ("no-jit-tracking", tagNone,
-        OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ),
+        OptionUnit (fun _ -> tcConfigB.jitTracking <- false ),
         Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
 
     CompilerOption
