@@ -22,7 +22,7 @@ type StateMachineConversionFirstPhaseResult =
 
      /// The second phase of the transformation.  It is run after all code labels and their mapping to program counters have been determined
      /// after the first phase. 
-     phase2: (Map<int, ILCodeLabel> -> Expr)
+     phase2: Map<int, ILCodeLabel> -> Expr
 
      /// The labels allocated for this portion of the computation
      entryPoints: int list
@@ -277,7 +277,7 @@ type LowerStateMachine(g: TcGlobals) =
                         | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_oldTy]), a, b, c), Some newTy -> 
                             let targetExpr2 = Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [newTy]), a, b, c) 
                             Some targetExpr2
-                        | Expr.Sequential ((Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1), Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
+                        | Expr.Sequential (Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1, Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
                             let targetExpr2 = Expr.Sequential (e1, Expr.Const (Const.Zero, m, newTy), a, b, c)
                             Some targetExpr2
                         | _ ->
@@ -751,7 +751,7 @@ type LowerStateMachine(g: TcGlobals) =
             let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
             let resumableVars =
                 (emptyFreeVars, Array.zip targets tglArray)
-                ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
+                ||> Array.fold (fun fvs (TTarget(_vs, _, _spTarget, _), res) ->
                     if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.resumableVars)
             let stateVars = 
                 (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 

@@ -4743,7 +4743,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
           ([mkLocalValRef setDataThisVar], [setDataValueVar], g.mk_IResumableStateMachine_ty dataTy, "set_Data", setDataBody); ]
 
     let mdefs =
-        [ for (thisVals, argVals, interfaceTy, imethName, bodyR) in methods do
+        [ for thisVals, argVals, interfaceTy, imethName, bodyR in methods do
             let eenvinner = eenvinner |> AddStorageForLocalVals g [(moveNextThisVar, Arg 0) ] 
             let m = bodyR.Range
             let implementedMeth = 
@@ -4764,7 +4764,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
             mkILNonGenericVirtualMethod(imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL (notlazy ilCode)) ]
 
     let mimpls =
-        [ for ((_thisVals, _argVals, interfaceTy, imethName, bodyR), mdef) in (List.zip methods mdefs) do
+        [ for (_thisVals, _argVals, interfaceTy, imethName, bodyR), mdef in (List.zip methods mdefs) do
             let m = bodyR.Range
             let implementedMeth = 
                 match InfoReader.TryFindIntrinsicMethInfo infoReader m AccessibilityLogic.AccessorDomain.AccessibleFromSomewhere imethName interfaceTy with
@@ -4844,7 +4844,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
-        for (fv, ilv) in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
+        for fv, ilv in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
             if stateVarsSet.Contains fv then
                 // zero-initialize the state var
                 if realloc then 
@@ -5674,7 +5674,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         targetInfos, genTargetInfoOpt
 
 and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
-    let (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope) = targetInfo
+    let targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope = targetInfo
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
     let spExpr = (match spTarget with DebugPointForTarget.Yes -> SPAlways | DebugPointForTarget.No _ -> SPSuppress)
 
