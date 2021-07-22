@@ -1379,3 +1379,101 @@ namespace Microsoft.FSharp.Collections
                         iFalse <- iFalse + 1
 
                 res1, res2
+
+            /// Return a new array with the item at a given index removed
+            /// If the index is outside the range of the array then it is ignored.
+            [<CompiledName("RemoveAt")>]
+            let removeAt (index: int) (source: 'T[]) : 'T[] =
+                checkNonNull "source" source
+                if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+                
+                let length = source.Length - 1
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <-
+                        if i < index then source.[i]
+                        else source.[i + 1]) |> ignore
+            
+                result
+
+            /// Return a new array with the number of items starting at a given index removed.
+            /// If an implied item index is outside the range of the array then it is ignored.
+            [<CompiledName("RemoveManyAt")>]
+            let removeManyAt (index: int) (count: int) (source: 'T[]) : 'T[] =
+                checkNonNull "source" source
+                if index < 0 || index > source.Length - count then invalidArg "index" "index must be within bounds of the array"
+                
+                let length = source.Length - count
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <-
+                        if i < index then source.[i]
+                        else source.[i + count]) |> ignore
+                
+                result
+            
+            /// Return a new array with the item at a given index set to the new value. The index may also be -1 or source.Length to return a new array with       increased  size.    If 
+            /// index is below -1 or greater than source. Length an exception is raised.
+            [<CompiledName("UpdateAt")>]
+            let updateAt (index: int) (value: 'T) (source: 'T[]) : 'T[] =
+                checkNonNull "source" source
+                if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+                
+                let length = source.Length
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <-
+                        if i = index then value
+                        else source.[i]) |> ignore
+                result
+            
+            /// Return a new array with the items starting at a given index set to the new values. The index may also be -count or source.Length to return anew       array  with     increased size, where count is the number of elements
+            /// in values. If index is below -count or greater than source.Length an exception is raised.
+            [<CompiledName("UpdateManyAt")>]
+            let updateManyAt (index: int) (values: seq< 'T>) (source: 'T[]) : 'T[] = 
+                checkNonNull "source" source
+                if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+                
+                let valuesArray = ofSeq values
+                let length = source.Length
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <-
+                        if i >= index && i < index + valuesArray.Length then valuesArray.[i - index]
+                        else source.[i]) |> ignore
+                result
+            
+            /// Return a new array with a new item inserted before the given index. The index may be 0 or source.Length to
+            /// return a new array with increased size.   If 
+            /// index is below 0 or greater than source.Length an exception is raised.
+            [<CompiledName("InsertAt")>]
+            let insertAt (index: int) (value: 'T) (source: 'T[]) : 'T[] =
+                checkNonNull "source" source
+                if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+                
+                let length = source.Length + 1
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <- 
+                        if i < index then source.[i]
+                        elif i = index then value
+                        else source.[i - 1]) |> ignore
+                result
+            
+            /// Return a new array with new items inserted before the given index. The index may be 0 or source.Length to
+            /// return a new list with increased size. If index is below 0 or greater
+            /// than source.Length an exception is raised.
+            [<CompiledName("InsertManyAt")>]
+            let insertManyAt (index: int) (values: seq<'T>) (source: 'T[]) : 'T[] =
+                checkNonNull "source" source
+                if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+                
+                let valuesArray = ofSeq values
+                let length = source.Length + valuesArray.Length
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                Parallel.For(0, length, fun i ->
+                    result.[i] <- 
+                        if i < index then source.[i]
+                        elif i < index + valuesArray.Length then valuesArray.[i - index]
+                        else source.[i - valuesArray.Length]) |> ignore
+                result
