@@ -270,7 +270,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' */
+%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */ 
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */ 
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
@@ -4025,7 +4025,14 @@ ifExprElifs:
 
   | ELIF declExpr ifExprCases 
       { let mElif = rhs parseState 1
-        None, Some ($3 $2 mElif true) }
+        // verify if `ELIF` is not a merged token
+        let length = mElif.EndColumn - mElif.StartColumn
+        if length > 4 then
+            let mElse = mkRange mElif.FileName (mkPos mElif.StartLine mElif.StartColumn) (mkPos mElif.StartLine (mElif.StartColumn + 4))
+            let mIf = mkRange mElif.FileName (mkPos mElif.StartLine (mElif.EndColumn - 2)) (mkPos mElif.StartLine mElif.EndColumn)
+            Some mElse, (Some ($3 $2 mIf false))
+        else
+            None, Some ($3 $2 mElif true) }
 
   | ELIF declExpr recover 
       { None, Some (exprFromParseError $2) }
