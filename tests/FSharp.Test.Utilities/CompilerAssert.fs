@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open System
 open System.IO
@@ -15,20 +15,17 @@ open FSharp.Compiler.Text
 open System.Runtime.Loader
 #endif
 open NUnit.Framework
-open FSharp.Test.Utilities.Utilities
+open FSharp.Test.Utilities
 open TestFramework
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (qualifiedItemName: string, expectedIL: string) =
-        ILChecker.checkILItem qualifiedItemName dllFilePath [ expectedIL ]
-
     member this.VerifyIL (expectedIL: string list) =
         ILChecker.checkIL dllFilePath expectedIL
 
-    member this.VerifyILWithLineNumbers (qualifiedItemName: string, expectedIL: string) =
-        ILChecker.checkILItemWithLineNumbers qualifiedItemName dllFilePath [ expectedIL ]
+    //member this.VerifyILWithDebugPoints (expectedIL: string list) =
+    //    ILChecker.checkILWithDebugPoints dllFilePath expectedIL
 
 type Worker () =
     inherit MarshalByRefObject()
@@ -129,9 +126,14 @@ type CompilerAssert private () =
     static let rawCompile inputFilePath outputFilePath isExe options source =
         File.WriteAllText (inputFilePath, source)
         let args =
-            options
-            |> Array.append defaultProjectOptions.OtherOptions
-            |> Array.append [| "fsc.dll"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
+            [| yield "fsc.dll"; 
+               yield inputFilePath; 
+               yield "-o:" + outputFilePath; 
+               yield (if isExe then "--target:exe" else "--target:library"); 
+               yield "--nowin32manifest" 
+               yield! defaultProjectOptions.OtherOptions
+               yield! options
+             |]
         let errors, _ = checker.Compile args |> Async.RunImmediate
         errors, outputFilePath
 

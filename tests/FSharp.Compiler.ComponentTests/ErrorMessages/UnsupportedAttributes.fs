@@ -4,7 +4,7 @@ namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 #if NETCOREAPP
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module ``Unsupported Attributes`` =
 

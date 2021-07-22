@@ -6,10 +6,9 @@ open System
 open System.IO
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp

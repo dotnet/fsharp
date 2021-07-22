@@ -8,11 +8,8 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -268,7 +265,7 @@ let tester2: int Group = []
                 let symbolUse = findSymbolUseByName entityName checkResults
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as v ->
-                        v.FullType.Format (symbolUse.DisplayContext)
+                        v.FullType.Format symbolUse.DisplayContext
                         |> should equal expectedTypeFormat
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
