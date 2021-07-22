@@ -1396,6 +1396,39 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Zip3")>]
         val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
 
+
+        /// Return a new array with the item at a given index removed
+        /// If the index is outside the range of the array then it is ignored.
+        [<CompiledName("RemoveAt")>]
+        val removeAt : index: int -> source: 'T[] -> 'T[]
+        
+        /// Return a new array with the number of items starting at a given index removed.
+        /// If an implied item index is outside the range of the array then it is ignored.
+        [<CompiledName("RemoveManyAt")>]
+        val removeManyAt : index: int -> count: int -> source: 'T[] -> 'T[]
+        
+        /// Return a new array with the item at a given index set to the new value. The index may also be -1 or source.Length to return a new array with increased size. If 
+        /// index is below -1 or greater than source.Length an exception is raised.
+        [<CompiledName("UpdateAt")>]
+        val updateAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+        
+        /// Return a new array with the items starting at a given index set to the new values. The index may also be -count or source.Length to return a new array with increased size, where count is the   number of elements
+        /// in values. If index is below -count or greater than source.Length an exception is raised.
+        [<CompiledName("UpdateManyAt")>]
+        val updateManyAt : index: int -> values:seq< 'T> -> source: 'T[] -> 'T[]
+        
+        /// Return a new array with a new item inserted before the given index. The index may be 0 or source.Length to
+        /// return a new array with increased size.   If 
+        /// index is below 0 or greater than source.Length an exception is raised.
+        [<CompiledName("InsertAt")>]
+        val insertAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+        
+        /// Return a new array with new items inserted before the given index. The index may be 0 or source.Length to
+        /// return a new list with increased size.   If index is below 0 or greater
+        /// than source.Length an exception is raised.
+        [<CompiledName("InsertManyAt")>]
+        val insertManyAt : index: int -> values: seq<'T> -> source: 'T[] -> 'T[]
+
         /// <summary>Provides parallel operations on arrays </summary>
         module Parallel =
 
@@ -1512,35 +1545,3 @@ namespace Microsoft.FSharp.Collections
             /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Partition")>]
             val partition : predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
-
-            /// Return a new array with the item at a given index removed
-            /// If the index is outside the range of the array then it is ignored.
-            [<CompiledName("RemoveAt")>]
-            val removeAt: index: int -> source: 'T[] -> 'T[]
-
-            /// Return a new array with the number of items starting at a given index removed.
-            /// If an implied item index is outside the range of the array then it is ignored.
-            [<CompiledName("RemoveManyAt")>]
-            val removeManyAt: index: int -> count: int -> source: 'T[] -> 'T[]
-
-            /// Return a new array with the item at a given index set to the new value. The index may also be -1 or source.Length to return a new array with increased size. If 
-            /// index is below -1 or greater than source.Length an exception is raised.
-            [<CompiledName("UpdateAt")>]
-            val updateAt: index: int -> value: 'T -> source: 'T[] -> 'T[]
-
-            /// Return a new array with the items starting at a given index set to the new values. The index may also be -count or source.Length to return a new array with increased size, where count is the number of elements
-            /// in values. If index is below -count or greater than source.Length an exception is raised.
-            [<CompiledName("UpdateManyAt")>]
-            val updateManyAt: index: int -> values:seq< 'T> -> source: 'T[] -> 'T[]
-
-            /// Return a new array with a new item inserted before the given index. The index may be 0 or source.Length to
-            /// return a new array with increased size.   If 
-            /// index is below 0 or greater than source.Length an exception is raised.
-            [<CompiledName("InsertAt")>]
-            val insertAt: index: int -> value: 'T -> source: 'T[] -> 'T[]
-
-            /// Return a new array with new items inserted before the given index. The index may be 0 or source.Length to
-            /// return a new list with increased size.   If index is below 0 or greater
-            /// than source.Length an exception is raised.
-            [<CompiledName("InsertManyAt")>]
-            val insertManyAt: index: int -> values: seq<'T> -> source: 'T[] -> 'T[]

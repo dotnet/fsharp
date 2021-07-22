@@ -687,6 +687,10 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.ToArray() =
         MapTree.toArray tree
 
+    member m.Keys = seq { for kvp in m -> kvp.Key }
+    
+    member m.Values = seq { for kvp in m -> kvp.Value }
+
     static member ofList l : Map<'Key, 'Value> = 
        let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
        new Map<_, _>(comparer, MapTree.ofList comparer l)
@@ -933,3 +937,11 @@ module Map =
     [<CompiledName("Count")>]
     let count (table: Map<_, _>) =
         table.Count
+
+    [<CompiledName("Keys")>]
+    let keys (table: Map<_, _>) = 
+        seq { for kvp in table -> kvp.Key }
+
+    [<CompiledName("Values")>]
+    let values (table: Map<_, _>) = 
+        seq { for kvp in table -> kvp.Value }
