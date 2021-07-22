@@ -74,7 +74,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
