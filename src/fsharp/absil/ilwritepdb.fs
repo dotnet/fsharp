@@ -274,7 +274,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
     let metadata = MetadataBuilder()
     let serializeDocumentName (name: string) =
         let name = PathMap.apply pathMap name
-        let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
+        let count s c = s |> Seq.filter(fun ch -> c = ch) |> Seq.length
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
@@ -321,9 +321,9 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     builder.WriteInt32 0
                     builder.TryWriteBytes(stream, length) |> ignore
                 else
-                    builder.WriteInt32 length |>ignore
+                    builder.WriteInt32 length
                     use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
-                    stream.CopyTo deflater |> ignore
+                    stream.CopyTo deflater
                 Some (builder.ToImmutableArray())
 
         let mutable index = Dictionary<string, DocumentHandle>(docs.Length)

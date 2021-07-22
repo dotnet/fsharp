@@ -16,7 +16,6 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -94,7 +93,7 @@ let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 
 let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) =
     if isNil dependentILModules then
-        ilxMainModule, (fun x -> x)
+        ilxMainModule, id
     else
         let typeForwarding = TypeForwarding(tcImports)
 
@@ -352,7 +351,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
             && providerGeneratedAssemblies.IsEmpty
 #endif
             then
-        (fun ilxMainModule -> ilxMainModule)
+        id
     else
         (fun ilxMainModule  ->
             ReportTime tcConfig "Find assembly references"

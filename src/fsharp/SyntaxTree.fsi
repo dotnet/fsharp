@@ -321,7 +321,6 @@ type RecordFieldName = LongIdentWithDots * bool
 /// 1, "3", ident, ident.[expr] and (expr). If an atomic expression has type T,
 /// then the largest expression ending at the same range as the atomic expression
 /// also has type T.
-[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1

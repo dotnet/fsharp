@@ -1021,7 +1021,7 @@ type FSharpChecker(legacyReferenceResolver,
 
     let mutable maxMB = maxMBDefault
 
-    let maxMemEvent = new Event<unit>()
+    let maxMemEvent = Event<unit>()
 
     /// Instantiate an interactive checker.    
     static member Create(

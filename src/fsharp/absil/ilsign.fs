@@ -123,7 +123,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
-            Array.Copy(x._blob, x._offset, arr, 0, length) |> ignore
+            Array.Copy(x._blob, x._offset, arr, 0, length)
             x._offset <- x._offset  + length
             arr |> Array.rev
 

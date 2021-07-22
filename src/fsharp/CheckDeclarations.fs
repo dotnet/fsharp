@@ -10,7 +10,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library.ResultOrException
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
@@ -1268,7 +1267,7 @@ module IncrClassChecking =
                 // Replace the type parameters that used to be on the rhs with 
                 // the full set of type parameters including the type parameters of the enclosing class
                 let rhsExpr = mkTypeLambda m methodVal.Typars (mkTypeChoose m chooseTps tauExpr, tauTy)
-                (isPriorToSuperInit, (fun e -> e)), [TBind (methodVal, rhsExpr, spBind)]
+                (isPriorToSuperInit, id), [TBind (methodVal, rhsExpr, spBind)]
             
             // If it's represented as a non-escaping local variable then just bind it to its value
             // If it's represented as a non-escaping local arg then no binding necessary (ctor args are already bound)
@@ -1410,7 +1409,7 @@ module IncrClassChecking =
             //     <super init>
             //     <let/do bindings>
             //     return ()
-            let ctorInitActionsPre, ctorInitActionsPost = ctorInitActions |> List.partition (fun (isPriorToSuperInit, _) -> isPriorToSuperInit)
+            let ctorInitActionsPre, ctorInitActionsPost = ctorInitActions |> List.partition fst
 
             // This is the return result
             let ctorBody = mkUnit g m
@@ -3447,7 +3446,7 @@ module EstablishTypeDefinitionCores =
             // Build up a mapping from System.Type --> TyconRef/ILTypeRef, to allow reverse-mapping
             // of types
 
-            let previousContext = (theRootType.PApply ((fun x -> x.Context), m)).PUntaint ((fun x -> x), m)
+            let previousContext = (theRootType.PApply ((fun x -> x.Context), m)).PUntaint (id, m)
             let lookupILTypeRef, lookupTyconRef = previousContext.GetDictionaries()
                     
             let ctxt = ProvidedTypeContext.Create(lookupILTypeRef, lookupTyconRef)
@@ -5300,7 +5299,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.ModuleAbbrev (id, p, m) -> 
           let env = MutRecBindingChecking.TcModuleAbbrevDecl cenv scopem env (id, p, m)
-          return ((fun e -> e), []), env, env
+          return (Operators.id, []), env, env
 
       | SynModuleDecl.Exception (edef, m) -> 
           let binds, decl, env = TcExceptionDeclarations.TcExnDefn cenv env parent (edef, scopem)
@@ -5320,7 +5319,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
           let env = TcOpenDecl cenv m scopem env target
-          return ((fun e -> e), []), env, env
+          return (id, []), env, env
 
       | SynModuleDecl.Let (letrec, binds, m) -> 
 
@@ -5347,7 +5346,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           return ((fun e -> e), attrs), env, env
 
       | SynModuleDecl.HashDirective _ -> 
-          return ((fun e -> e), []), env, env
+          return (id, []), env, env
 
       | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m) ->
 
@@ -5466,7 +5465,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
     with exn -> 
         errorRecovery exn synDecl.Range 
-        return ((fun e -> e), []), env, env
+        return (id, []), env, env
  }
  
 /// The non-mutually recursive case for a sequence of declarations

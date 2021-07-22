@@ -277,7 +277,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             |> Array.map (fun di -> computeVersion di.Name, di)
             |> Array.filter(fun (v, _) -> (compareVersion v targetVersion) <= 0)
             |> Array.sortWith (fun (v1,_) (v2,_) -> compareVersion v1 v2)
-            |> Array.map (fun (_, di) -> di)
+            |> Array.map snd
             |> Array.tryLast
         else
             None

@@ -11,7 +11,6 @@ open System.Collections.Generic
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger

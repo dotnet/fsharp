@@ -1615,7 +1615,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | _ -> true
 
     let basicSynExpr = 
-        trans CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp (fun holeFill -> holeFill)
+        trans CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp id
 
     let delayedExpr = 
         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with 
@@ -1837,7 +1837,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 tpenv 
                 true
                 comp 
-                (fun x -> x) |> Some
+                id |> Some
 
         // 'use x = expr in expr'
         | SynExpr.LetOrUse (_isRec, true, [SynBinding (_vis, SynBindingKind.Normal, _, _, _, _, _, pat, _, rhsExpr, _, spBind)], innerComp, wholeExprMark) ->

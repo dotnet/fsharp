@@ -232,7 +232,6 @@ type BlockSeparator = range * pos option
 
 type RecordFieldName = LongIdentWithDots * bool
 
-[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
