@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.Threading
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
@@ -47,7 +46,6 @@ type internal FSharpGoToDefinitionService
 
             let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
-            JoinableTaskFactory.
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
             // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
             try
