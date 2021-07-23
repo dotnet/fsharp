@@ -574,6 +574,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         lexbuf.EndPos <- p.EndPos
         lexbuf.IsPastEndOfStream <- p.PastEOF
 
+    let posOfTokenTup (tokenTup: TokenTup) = 
+        match tokenTup.Token with
+        // EOF token is processed as if on column -1 
+        // This forces the closure of all contexts. 
+        | EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne, tokenTup.LexbufState.EndPos.ColumnMinusOne 
+        | _ -> tokenTup.LexbufState.StartPos, tokenTup.LexbufState.EndPos
+
     let startPosOfTokenTup (tokenTup: TokenTup) = 
         match tokenTup.Token with
         // EOF token is processed as if on column -1 
@@ -2127,7 +2134,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         | ELSE, _ -> 
             let lookaheadTokenTup = peekNextTokenTup()
-            let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
+            let lookaheadTokenStartPos, lookaheadTokenEndPos = posOfTokenTup lookaheadTokenTup
             match peekNextToken() with 
             | IF when isSameLine() ->
                 // We convert ELSE IF to ELIF since it then opens the block at the right point,
@@ -2138,8 +2145,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popNextTokenTup() |> pool.Return
                 if debug then dprintf "ELSE IF: replacing ELSE IF with ELIF, pushing CtxtIf, CtxtVanilla(%a)\n" outputPos tokenStartPos
                 pushCtxt tokenTup (CtxtIf tokenStartPos)
-                returnToken tokenLexbufState ELIF
-                  
+                // Combine the original range of both tokens as the range for the ELIF keyword.
+                let correctedTokenLexbufState = LexbufState(tokenStartPos, lookaheadTokenEndPos, false)
+                returnToken correctedTokenLexbufState ELIF
+
             | _ -> 
                 if debug then dprintf "ELSE: replacing ELSE with OELSE, pushing CtxtSeqBlock, CtxtElse(%a)\n" outputPos lookaheadTokenStartPos
                 pushCtxt tokenTup (CtxtElse tokenStartPos)
