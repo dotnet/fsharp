@@ -107,7 +107,7 @@ type PropertyCollector(g, amap, m, ty, optFilter, ad) =
                 PropInfosEquivByNameAndPartialSig EraseNone g amap m pinfo1 pinfo2 &&
                 pinfo1.IsDefiniteFSharpOverride = pinfo2.IsDefiniteFSharpOverride )
 
-    let props = new ConcurrentDictionary<PropInfo, PropInfo>(hashIdentity)
+    let props = ConcurrentDictionary<PropInfo, PropInfo>(hashIdentity)
 
     let add pinfo =
         match props.TryGetValue pinfo, pinfo with
@@ -173,7 +173,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
                 | ValueSome tcref ->
-                    let propCollector = new PropertyCollector(g, amap, m, origTy, optFilter, ad)
+                    let propCollector = PropertyCollector(g, amap, m, origTy, optFilter, ad)
                     SelectImmediateMemberVals g None (fun membInfo vref -> propCollector.Collect(membInfo, vref); None) tcref |> ignore
                     propCollector.Close()
 
@@ -403,7 +403,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, ad) m ty 
              match acc with 
              | Some(MethodItem(inheritedMethSets)) when not (isNil minfos) -> Some(MethodItem (minfos :: inheritedMethSets))
-             | _ when not (isNil minfos) -> Some(MethodItem ([minfos]))
+             | _ when not (isNil minfos) -> Some(MethodItem [minfos])
              | Some(PropertyItem(inheritedPropSets)) when not (isNil pinfos) -> Some(PropertyItem(pinfos :: inheritedPropSets))
              | _ when not (isNil pinfos) -> Some(PropertyItem([pinfos]))
              | _ when not (isNil finfos) -> Some(ILFieldItem(finfos))
@@ -615,12 +615,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     /// caches computations for monomorphic types.
 
     let MakeInfoCache f (flagsEq : System.Collections.Generic.IEqualityComparer<_>) = 
-        new MemoizationTable<_, _>
+        MemoizationTable<_, _>
              (compute=f,
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
-              canMemoize=(fun (_flags, (_: range), ty) -> 
+              canMemoize=(fun (_flags, _: range, ty) -> 
                                     match stripTyEqns g ty with 
                                     | TType_app(tcref, []) -> tcref.TypeContents.tcaug_closed 
                                     | _ -> false),

@@ -9,7 +9,6 @@ open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.Xml
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -86,7 +85,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> DateTime option
 
 type AssemblyReference =
     | AssemblyReference of range * string  * IProjectReference option

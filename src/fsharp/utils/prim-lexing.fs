@@ -174,11 +174,11 @@ namespace Internal.Utilities.Text.Lexing
                       0,
                       0)
 
-    type internal LexBufferFiller<'Char> = (LexBuffer<'Char> -> unit)
+    type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
     and [<Sealed>]
         internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, supportsFeature:LanguageFeature -> bool, checkLanguageFeatureErrorRecover:LanguageFeature -> range -> unit) =
-        let context = new Dictionary<string,obj>(1)
+        let context = Dictionary<string,obj>(1)
         let mutable buffer = [||]
         /// number of valid characters beyond bufferScanStart.
         let mutable bufferMaxScanLength = 0
@@ -231,11 +231,11 @@ namespace Internal.Utilities.Text.Lexing
         member lexbuf.BufferAcceptAction  with get() = bufferAcceptAction  and set v = bufferAcceptAction <- v
         member lexbuf.RefillBuffer () = filler lexbuf
         static member LexemeString(lexbuf:LexBuffer<char>) = 
-            new System.String(lexbuf.Buffer,lexbuf.BufferScanStart,lexbuf.LexemeLength)
+            System.String(lexbuf.Buffer,lexbuf.BufferScanStart,lexbuf.LexemeLength)
 
         member lexbuf.IsPastEndOfStream 
            with get() = eof
-           and  set(b) =  eof <- b
+           and  set b =  eof <- b
 
         member lexbuf.DiscardInput () = discardInput ()
 
@@ -390,4 +390,4 @@ namespace Internal.Utilities.Text.Lexing
             startInterpret(lexBuffer)
             scanUntilSentinel lexBuffer initialState
 
-        static member Create(trans,accept) = new UnicodeTables(trans,accept)
+        static member Create(trans,accept) = UnicodeTables(trans,accept)
