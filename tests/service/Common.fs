@@ -5,14 +5,11 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FsUnit

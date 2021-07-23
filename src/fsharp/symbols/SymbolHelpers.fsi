@@ -105,7 +105,6 @@ namespace FSharp.Compiler.Symbols
     open FSharp.Compiler.Infos
     open FSharp.Compiler.NameResolution
     open FSharp.Compiler.InfoReader
-    open FSharp.Compiler.Syntax
     open FSharp.Compiler.Text
     open FSharp.Compiler.Xml
     open FSharp.Compiler.TypedTree

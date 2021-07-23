@@ -57,7 +57,7 @@ type internal ILegacyReferenceResolver =
         logDiagnostic:(bool -> string -> string -> unit)
             -> LegacyResolvedFile[]
 
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type LegacyReferenceResolver(impl:ILegacyReferenceResolver)  = 
     member internal _.Impl = impl
 

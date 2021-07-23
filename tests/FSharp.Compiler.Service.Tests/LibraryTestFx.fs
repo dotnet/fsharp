@@ -3,7 +3,6 @@
 module Tests.Service.SurfaceArea.LibraryTestFx
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Text.RegularExpressions

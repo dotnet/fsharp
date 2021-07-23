@@ -15,7 +15,6 @@ open Internal.Utilities.Library.ResultOrException
 open Internal.Utilities.Rational
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
@@ -418,9 +417,9 @@ type TcFileState =
     static member Create
          (g, isScript, niceNameGen, amap, topCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
           tcSequenceExpressionEntry, tcArrayOrListSequenceExpression, tcComputationExpression) =
-        let infoReader = new InfoReader(g, amap)
+        let infoReader = InfoReader(g, amap)
         let instantiationGenerator m tpsorig = FreshenTypars m tpsorig
-        let nameResolver = new NameResolver(g, amap, infoReader, instantiationGenerator)
+        let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
@@ -9114,7 +9113,7 @@ and bindLetRec (binds: Bindings) m e =
 
 /// Check for duplicate bindings in simple recursive patterns
 and CheckRecursiveBindingIds binds =
-    let hashOfBinds = new HashSet<string>()
+    let hashOfBinds = HashSet<string>()
 
     for SynBinding.SynBinding(_, _, _, _, _, _, _, b, _, _, m, _) in binds do
         let nm =

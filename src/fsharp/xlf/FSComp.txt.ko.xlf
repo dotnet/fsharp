@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
-        <target state="new">resumable state machines</target>
+        <target state="translated">다시 시작 가능한 상태 시스템</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -244,12 +244,12 @@
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
-        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</target>
+        <target state="translated">다시 시작 가능한 코드 구문 '{0}'은 'if __useResumableCode then ...'로 보호되는 인라인 코드에서만 사용할 수 있습니다. 전반적인 구성은 유효한 다시 시작 가능한 코드를 형성해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="implMissingInlineIfLambda">
         <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
-        <target state="new">The 'InlineIfLambda' attribute is present in the signature but not the implementation.</target>
+        <target state="translated">'InlineIfLambda' 특성이 서명에 있지만 구현에는 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
         <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
-        <target state="new">The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</target>
+        <target state="translated">'{0}' 값이 'InlineIfLambda'로 표시되었지만 람다 값이 없는 것으로 확인되지 않았습니다. 이 경고는 정보 제공용입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsAllSigs">
@@ -374,42 +374,42 @@
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
         <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
-        <target state="new">A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
+        <target state="translated">__resumeAt 대한 대상 레이블이 정적으로 결정되지 않았습니다. 비정적 대상 레이블이 있는 __resumeAt은 다시 시작 가능한 코드 메서드의 시작 부분에만 나타날 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
         <source>A fast integer for loop may not contain resumption points</source>
-        <target state="new">A fast integer for loop may not contain resumption points</target>
+        <target state="translated">루프의 빠른 정수에는 다시 시작 지점이 포함될 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsLetRec">
         <source>A 'let rec' occured in the resumable code specification</source>
-        <target state="new">A 'let rec' occured in the resumable code specification</target>
+        <target state="translated">다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
         <source>The 'with' block of a try/with may not contain resumption points</source>
-        <target state="new">The 'with' block of a try/with may not contain resumption points</target>
+        <target state="translated">try/with의 'with' 블록에 다시 시작 포인트가 포함될 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
         <source>A try/finally may not contain resumption points</source>
-        <target state="new">A try/finally may not contain resumption points</target>
+        <target state="translated">try/finally에는 다시 시작 지점이 포함될 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeDefinitionWasGeneric">
         <source>A delegate or function producing resumable code in a state machine has type parameters</source>
-        <target state="new">A delegate or function producing resumable code in a state machine has type parameters</target>
+        <target state="translated">상태 시스템에서 다시 시작 가능한 코드를 생성하는 대리자 또는 함수에 형식 매개 변수가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeInvokeNotReduced">
         <source>A resumable code invocation at '{0}' could not be reduced</source>
-        <target state="new">A resumable code invocation at '{0}' could not be reduced</target>
+        <target state="translated">'{0}'에서 다시 시작 가능한 코드 호출을 줄일 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprResumableCodeValueHasNoDefinition">
         <source>The resumable code value(s) '{0}' does not have a definition</source>
-        <target state="new">The resumable code value(s) '{0}' does not have a definition</target>
+        <target state="translated">다시 시작 가능한 코드 값 '{0}'에 정의가 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
@@ -419,17 +419,17 @@
       </trans-unit>
       <trans-unit id="reprStateMachineInvalidForm">
         <source>The state machine has an unexpected form</source>
-        <target state="new">The state machine has an unexpected form</target>
+        <target state="translated">상태 시스템에 예기치 않은 형식이 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilable">
         <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
-        <target state="new">This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</target>
+        <target state="translated">이 상태 시스템은 정적으로 컴파일할 수 없습니다. {0}. 대체 동적 구현이 사용되며 속도가 느려질 수 있습니다. 이 상태 시스템을 정적으로 컴파일할 수 있도록 코드를 조정하거나 이 경고를 표시하지 않는 것이 좋습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="new">This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</target>
+        <target state="translated">이 상태 시스템은 정적으로 컴파일할 수 없으며 다른 대안을 사용할 수 없습니다. {0}. 대안을 제공하려면 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
-        <target state="new">The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</target>
+        <target state="translated">'InlineIfLambda' 특성은 형식이 함수 또는 F# 대리자 형식인 메서드의 인라인 함수 매개 변수에만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
-        <target state="new">The construct '{0}' may only be used in valid resumable code.</target>
+        <target state="translated">'{0}' 구문은 유효한 다시 시작 가능한 코드에서만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -534,32 +534,32 @@
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightKind">
         <source>Invalid resumable code. A resumable code parameter must be of delegate or function type</source>
-        <target state="new">Invalid resumable code. A resumable code parameter must be of delegate or function type</target>
+        <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 매개 변수는 대리자 또는 함수 형식이어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeArgMustHaveRightName">
         <source>Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</source>
-        <target state="new">Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</target>
+        <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 매개 변수의 이름은 '__expand'로 시작해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeContainsLetRec">
         <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
-        <target state="new">Invalid resumable code. A 'let rec' occured in the resumable code specification</target>
+        <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드 사양에서 'let rec'가 발생했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeFunctionMustBeInline">
         <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
-        <target state="new">Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</target>
+        <target state="translated">다시 시작 가능한 코드가 잘못되었습니다. 다시 시작 가능한 코드를 수락하거나 반환하는 함수 메서드는 'inline'으로 표시되어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
-        <target state="new">Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</target>
+        <target state="translated">다시 시작 가능한 코드 호출입니다. 기존 다시 시작 가능한 코드와 관련하여 하위 수준의 새 다시 시작 가능 코드를 정의하는 경우 이 경고를 표시하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="new">Using resumable code or resumable state machines requires /langversion:preview</target>
+        <target state="translated">다시 시작 가능한 코드 또는 다시 시작 가능한 상태 시스템을 사용하려면 /langversion:preview가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">

@@ -13,7 +13,7 @@ open FSDependencyManager
 
 module FSharpDependencyManager =
     
-    [<assembly: DependencyManagerAttribute()>]
+    [<assembly: DependencyManager>]
     do ()
 
     let private concat (s:string) (v:string) : string =
@@ -26,7 +26,7 @@ module FSharpDependencyManager =
     let validateAndFormatRestoreSources (sources:string) = [|
             let items = sources.Split(';')
             for item in items do
-                let uri = new Uri(item)
+                let uri = Uri(item)
                 if uri.IsFile then
                     let directoryName = uri.LocalPath
                     if Directory.Exists(directoryName) then
@@ -171,7 +171,7 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member _.Roots = roots
 
-[<DependencyManagerAttribute>] 
+[<DependencyManager>] 
 type FSharpDependencyManager (outputDirectory:string option) =
 
     let key = "nuget"
@@ -182,7 +182,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
         | None -> path
         | Some v -> Path.Combine(path, v)
 
-    let generatedScripts = new ConcurrentDictionary<string,string>()
+    let generatedScripts = ConcurrentDictionary<string,string>()
 
     let deleteScripts () =
         try

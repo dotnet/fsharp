@@ -7,13 +7,11 @@
 
 namespace FSharp.Compiler.EditorServices
 
-open System.Collections.Immutable
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
@@ -24,7 +22,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.SymbolHelpers
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
@@ -1103,10 +1100,10 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
-        new DeclarationListInfo(Array.ofList decls, isForType, false)
+        DeclarationListInfo(Array.ofList decls, isForType, false)
     
     static member Error message = 
-        new DeclarationListInfo(
+        DeclarationListInfo(
                 [| DeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (ToolTipText [ToolTipElement.CompositionError message]),
                                              FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None) |], false, true)
     
@@ -1176,7 +1173,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
     static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
-        if isNil items then new MethodGroup("", [| |]) else
+        if isNil items then MethodGroup("", [| |]) else
         let name = items.Head.Item.DisplayName 
 
         let methods = 
@@ -1230,7 +1227,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                 yield! methods 
            |]
 
-        new MethodGroup(name, methods)
+        MethodGroup(name, methods)
 
 
 

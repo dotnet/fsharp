@@ -1362,7 +1362,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(f((NicePrint.stringOfRecdField denv infoReader enclosingTcref v1), (NicePrint.stringOfRecdField denv infoReader enclosingTcref v2))) |> ignore
 
       | RequiredButNotSpecified (_, mref, k, name, _) ->
-          let nsb = new StringBuilder()
+          let nsb = StringBuilder()
           name nsb;
           os.Append(RequiredButNotSpecifiedE().Format (fullDisplayTextOfModRef mref) k (nsb.ToString())) |> ignore
 
@@ -1410,7 +1410,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(LetRecUnsound1E().Format v.DisplayName) |> ignore
 
       | LetRecUnsound (_, path, _) ->
-          let bos = new StringBuilder()
+          let bos = StringBuilder()
           (path.Tail @ [path.Head]) |> List.iter (fun (v: ValRef) -> bos.Append(LetRecUnsoundInnerE().Format v.DisplayName) |> ignore)
           os.Append(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString())) |> ignore
 
@@ -1659,7 +1659,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
 // remove any newlines and tabs
 let OutputPhasedDiagnostic (os: StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
-    let buf = new StringBuilder()
+    let buf = StringBuilder()
 
     OutputPhasedErrorR buf err suggestNames
     let s = if flattenErrors then NormalizeErrorString (buf.ToString()) else buf.ToString()

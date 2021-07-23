@@ -5,7 +5,6 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
 open System.IO
-open System.Threading
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library

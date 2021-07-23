@@ -16,7 +16,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types
@@ -1460,7 +1459,7 @@ let AddPropertyDefToHash (m: range) (ht: Dictionary<PropKey, int * ILPropertyDef
 
 /// Merge a whole group of properties all at once
 let MergePropertyDefs m ilPropertyDefs =
-    let ht = new Dictionary<_, _>(3, HashIdentity.Structural)
+    let ht = Dictionary<_, _>(3, HashIdentity.Structural)
     ilPropertyDefs |> List.iter (AddPropertyDefToHash m ht)
     HashRangeSorted ht
 
@@ -1470,11 +1469,11 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
-    let gmethods = new ResizeArray<ILMethodDef>(0)
-    let gfields = new ResizeArray<ILFieldDef>(0)
-    let gproperties: Dictionary<PropKey, int * ILPropertyDef> = new Dictionary<_, _>(3, HashIdentity.Structural)
-    let gevents = new ResizeArray<ILEventDef>(0)
-    let gnested = new TypeDefsBuilder()
+    let gmethods = ResizeArray<ILMethodDef>(0)
+    let gfields = ResizeArray<ILFieldDef>(0)
+    let gproperties: Dictionary<PropKey, int * ILPropertyDef> = Dictionary<_, _>(3, HashIdentity.Structural)
+    let gevents = ResizeArray<ILEventDef>(0)
+    let gnested = TypeDefsBuilder()
 
     member b.Close() =
         tdef.With(methods = mkILMethods (tdef.Methods.AsList @ ResizeArray.toList gmethods),
@@ -1547,7 +1546,7 @@ and TypeDefsBuilder() =
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         let idx = if addAtEnd then (countDown <- countDown - 1; countDown) else tdefs.Count
-        tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
+        tdefs.Add (tdef.Name, (idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
 type AnonTypeGenerationTable() =
     // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
@@ -1558,7 +1557,7 @@ type AnonTypeGenerationTable() =
 type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf =
     let g = cenv.g
     // The Abstract IL table of types
-    let gtdefs= new TypeDefsBuilder()
+    let gtdefs= TypeDefsBuilder()
 
     // The definitions of top level values, as quotations.
     // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
@@ -1567,8 +1566,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =
-         new MemoizationTable<CompileLocation * int, ILTypeSpec>
-              ((fun (cloc, size) ->
+         MemoizationTable<CompileLocation * int, ILTypeSpec>(
+            (fun (cloc, size) ->
                  let name = CompilerGeneratedName ("T" + string(newUnique()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
                  let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
                  let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
@@ -1834,9 +1833,9 @@ type CodeGenBuffer(m: range,
                    alreadyUsedArgs: int) =
 
     let g = mgbuf.cenv.g
-    let locals = new ResizeArray<(string * (Mark * Mark)) list * ILType * bool>(10)
-    let codebuf = new ResizeArray<ILInstr>(200)
-    let exnSpecs = new ResizeArray<ILExceptionSpec>(10)
+    let locals = ResizeArray<(string * (Mark * Mark)) list * ILType * bool>(10)
+    let codebuf = ResizeArray<ILInstr>(200)
+    let exnSpecs = ResizeArray<ILExceptionSpec>(10)
 
     // Keep track of the current stack so we can spill stuff when we hit a "try" when some stuff
     // is on the stack.
@@ -1846,8 +1845,8 @@ type CodeGenBuffer(m: range,
     let mutable hasDebugPoints = false
     let mutable anyDocument = None // we collect an arbitrary document in order to emit the header FeeFee if needed
 
-    let codeLabelToPC: Dictionary<ILCodeLabel, int> = new Dictionary<_, _>(10)
-    let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> = new Dictionary<_, _>(10)
+    let codeLabelToPC: Dictionary<ILCodeLabel, int> = Dictionary<_, _>(10)
+    let codeLabelToCodeLabel: Dictionary<ILCodeLabel, ILCodeLabel> = Dictionary<_, _>(10)
 
     let rec lab2pc n lbl =
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph", m))
@@ -2090,7 +2089,7 @@ let GenConstArray cenv (cgbuf: CodeGenBuffer) eenv ilElementType (data:'a[]) (wr
 //-------------------------------------------------------------------------
 
 let CodeGenThen cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, codeGenFunction, m) =
-    let cgbuf = new CodeGenBuffer(m, mgbuf, methodName, alreadyUsedArgs)
+    let cgbuf = CodeGenBuffer(m, mgbuf, methodName, alreadyUsedArgs)
     let start = CG.GenerateMark cgbuf "mstart"
     let innerVals = entryPointInfo |> List.map (fun (v, kind) -> (v, (kind, start)))
 
@@ -7463,7 +7462,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     //    - static "let" bindings in types
     // These functions only get executed/committed if we actually end up producing some code for the .cctor for the storage module.
     // The existence of .cctors adds costs to execution, so this is a half-sensible attempt to avoid adding them when possible.
-    let lazyInitInfo = new ResizeArray<ILFieldSpec -> ILInstr list -> ILInstr list -> unit>()
+    let lazyInitInfo = ResizeArray<ILFieldSpec -> ILInstr list -> ILInstr list -> unit>()
 
     // codegen .cctor/main for outer module
     let clocCcu = CompLocForCcu cenv.viewCcu
@@ -8510,7 +8509,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
     let g = cenv.g
 
     // Generate the implementations into the mgbuf
-    let mgbuf = new AssemblyBuilder(cenv, anonTypeTable)
+    let mgbuf = AssemblyBuilder(cenv, anonTypeTable)
     let eenv = { eenv with cloc = CompLocForFragment cenv.opts.fragName cenv.viewCcu }
 
     // Generate the PrivateImplementationDetails type
@@ -8553,7 +8552,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
 
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
-    let casApplied = new Dictionary<Stamp, bool>()
+    let casApplied = Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute g cenv.amap casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
     let permissionSets = CreatePermissionSets cenv eenv securityAttrs
@@ -8689,8 +8688,8 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
     let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals ccu
     let anonTypeTable = AnonTypeGenerationTable()
     // Dictionaries are safe here as they will only be used during the codegen stage - will happen on a single thread.
-    let intraAssemblyInfo = { StaticFieldInfo = new Dictionary<_, _>(HashIdentity.Structural) }
-    let casApplied = new Dictionary<Stamp, bool>()
+    let intraAssemblyInfo = { StaticFieldInfo = Dictionary<_, _>(HashIdentity.Structural) }
+    let casApplied = Dictionary<Stamp, bool>()
 
     /// Register a set of referenced assemblies with the ILX code generator
     member _.AddExternalCcus ccus =

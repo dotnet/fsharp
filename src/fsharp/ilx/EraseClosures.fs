@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
 open Internal.Utilities.Library 
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 

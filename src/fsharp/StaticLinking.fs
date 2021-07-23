@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.StaticLinking
 
 open System
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -97,7 +96,7 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
     if isNil dependentILModules then
         ilxMainModule, (fun x -> x)
     else
-        let typeForwarding = new TypeForwarding(tcImports)
+        let typeForwarding = TypeForwarding(tcImports)
 
         // Check no dependent assemblies use quotations
         let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function Some ccu, _ when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)

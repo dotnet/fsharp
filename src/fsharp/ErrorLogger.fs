@@ -626,7 +626,7 @@ module OperationResult =
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
-let stringThatIsAProxyForANewlineInFlatErrors = new String [|char 29 |]
+let stringThatIsAProxyForANewlineInFlatErrors = String [|char 29 |]
 
 let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine)
 

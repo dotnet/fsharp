@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -19,7 +18,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
@@ -210,7 +208,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 #endif
 
 #if DEBUG
-[<DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
+[<DebuggerDisplay("AssemblyResolution({resolvedPath})")>]
 #endif
 type AssemblyResolution =
     {  /// The original reference to the assembly.
@@ -862,7 +860,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let disposeTypeProviderActions = ResizeArray()
 
 #if !NO_EXTENSIONTYPING
-    let mutable generatedTypeRoots = new Dictionary<ILTypeRef, int * ProviderGeneratedType>()
+    let mutable generatedTypeRoots = Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let tcImportsWeak = TcImportsWeakHack (tciLock, WeakReference<_> this)
 #endif
 
@@ -1243,7 +1241,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
 #endif
              }
-        new ImportMap (tcImports.GetTcGlobals(), loaderInterface)
+        ImportMap(tcImports.GetTcGlobals(), loaderInterface)
 
     // Note the tcGlobals are only available once mscorlib and fslib have been established. For TcImports,
     // they are logically only needed when converting AbsIL data structures into F# data structures, and

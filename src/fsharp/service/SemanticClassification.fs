@@ -158,7 +158,7 @@ module TcResolutionsExtensions =
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m (typ: SemanticClassificationType) =
                     if duplicates.Add m then
-                        results.Add (new SemanticClassificationItem((m, typ)))
+                        results.Add (SemanticClassificationItem((m, typ)))
 
                 resolutions
                 |> Array.iter (fun cnr ->
@@ -375,7 +375,7 @@ module TcResolutionsExtensions =
 
                     | _, _, _, _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new SemanticClassificationItem((m, SemanticClassificationType.Printf))))
+                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf))))
                 results.ToArray()
                ) 
                (fun msg -> 
