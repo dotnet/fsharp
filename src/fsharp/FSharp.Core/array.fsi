@@ -1399,6 +1399,8 @@ namespace Microsoft.FSharp.Collections
 
         /// Return a new array with the item at a given index removed
         /// If the index is outside the range of the array then it is ignored.
+        
+        /// <summary></summary>
         [<CompiledName("RemoveAt")>]
         val removeAt : index: int -> source: 'T[] -> 'T[]
         

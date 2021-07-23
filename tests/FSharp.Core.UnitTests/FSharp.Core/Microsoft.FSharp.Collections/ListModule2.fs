@@ -1122,3 +1122,39 @@ type ListModule02() =
         // Index equals to length
         let resultIndexGreater = List.tryItem 4 [3;1;6;2]
         Assert.AreEqual(None, resultIndexGreater)
+
+    [<Fact>]
+    member this.removeAt() =
+        Assert.AreEqual([2..10], (List.removeAt 0 [1..10]))
+        Assert.AreEqual([1..9], (List.removeAt 9 [1..10]))
+        Assert.AreEqual([1; 2; 4; 5], (List.removeAt 2 [1..5]))
+        
+    [<Fact>]
+    member this.removeManyAt() =
+        Assert.AreEqual([3..10], (List.removeManyAt 0 2 [1..10]))
+        Assert.AreEqual([1..8], (List.removeManyAt 9 2 [1..10]))
+        Assert.AreEqual([1; 2; 5], (List.removeManyAt 2 2 [1..5]))
+        
+    [<Fact>]
+    member this.updateAt() =
+        Assert.AreEqual([-1; 2; 3], (List.updateAt 0 -1 [1..3]))
+        Assert.AreEqual([1; -1; 3], (List.updateAt 1 -1 [1..3]))
+        Assert.AreEqual([1; 2; -1], (List.updateAt 2 -1 [1..3]))
+    
+    [<Fact>]
+    member this.updateManyAt() =
+        Assert.AreEqual([-1; -2; 3; 4; 5], (List.updateManyAt 0 [-1; -2] [1..5]))
+        Assert.AreEqual([1; 2; 3; -1; -2], (List.updateManyAt 3 [-1; -2] [1..5]))
+        Assert.AreEqual([1; 2; -1; -2; 5], (List.updateManyAt 2 [-1; -2] [1..5]))
+        
+    [<Fact>]
+    member this.insertAt() =
+        Assert.AreEqual([-1; 1; 2; 3], (List.insertAt 0 -1 [1..3]))
+        Assert.AreEqual([1; -1; 2; 3], (List.insertAt 1 -1 [1..3]))
+        Assert.AreEqual([1; 2; 3; -1], (List.insertAt 3 -1 [1..3]))
+        
+    [<Fact>]
+    member this.insertManyAt() =
+        Assert.AreEqual([-1; -2; 1; 2; 3], (List.insertManyAt 0 [-1; -2] [1..3]))
+        Assert.AreEqual([1; -1; -2; 2; 3], (List.insertManyAt 1 [-1; -2] [1..3]))
+        Assert.AreEqual([1; 2; 3; -1; -2], (List.insertManyAt 3 [-1; -2] [1..3]))

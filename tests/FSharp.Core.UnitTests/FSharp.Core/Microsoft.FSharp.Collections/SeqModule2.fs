@@ -1985,3 +1985,39 @@ type SeqModule2() =
         // Index greater than length
         let resultIndexGreater = Seq.tryItem 31 { 10..20 }
         Assert.AreEqual(None, resultIndexGreater)
+        
+    [<Fact>]
+    member this.removeAt() =
+        Assert.AreEqual([|2..10|], (Seq.removeAt 0 [|1..10|]))
+        Assert.AreEqual([|1..9|], (Seq.removeAt 9 [|1..10|]))
+        Assert.AreEqual([|1; 2; 4; 5|], (Seq.removeAt 2 [|1..5|]))
+        
+    [<Fact>]
+    member this.removeManyAt() =
+        Assert.AreEqual([|3..10|], (Seq.removeManyAt 0 2 [|1..10|]))
+        Assert.AreEqual([|1..8|], (Seq.removeManyAt 9 2 [|1..10|]))
+        Assert.AreEqual([|1; 2; 5|], (Seq.removeManyAt 2 2 [|1..5|]))
+        
+    [<Fact>]
+    member this.updateAt() =
+        Assert.AreEqual([|-1; 2; 3|], (Seq.updateAt 0 -1 [|1..3|]))
+        Assert.AreEqual([|1; -1; 3|], (Seq.updateAt 1 -1 [|1..3|]))
+        Assert.AreEqual([|1; 2; -1|], (Seq.updateAt 2 -1 [|1..3|]))
+    
+    [<Fact>]
+    member this.updateManyAt() =
+        Assert.AreEqual([|-1; -2; 3; 4; 5|], (Seq.updateManyAt 0 [-1; -2] [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; -1; -2|], (Seq.updateManyAt 3 [-1; -2] [|1..5|]))
+        Assert.AreEqual([|1; 2; -1; -2; 5|], (Seq.updateManyAt 2 [-1; -2] [|1..5|]))
+        
+    [<Fact>]
+    member this.insertAt() =
+        Assert.AreEqual([|-1; 1; 2; 3|], (Seq.insertAt 0 -1 [|1..3|]))
+        Assert.AreEqual([|1; -1; 2; 3|], (Seq.insertAt 1 -1 [|1..3|]))
+        Assert.AreEqual([|1; 2; 3; -1|], (Seq.insertAt 3 -1 [|1..3|]))
+        
+    [<Fact>]
+    member this.insertManyAt() =
+        Assert.AreEqual([|-1; -2; 1; 2; 3|], (Seq.insertManyAt 0 [-1; -2] [|1..3|]))
+        Assert.AreEqual([|1; -1; -2; 2; 3|], (Seq.insertManyAt 1 [-1; -2] [|1..3|]))
+        Assert.AreEqual([|1; 2; 3; -1; -2|], (Seq.insertManyAt 3 [-1; -2] [|1..3|]))

@@ -692,3 +692,51 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold<'T, 'State> (generator:'State -> ('T*'State) option) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold generator state
+
+        [<CompiledName("RemoveAt")>]
+        let removeAt (index: int) (source: 'T list) : 'T list =
+            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+
+            let before, tail = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            let _, after = Microsoft.FSharp.Primitives.Basics.List.splitAt 1 tail
+            before @ after
+    
+        [<CompiledName("RemoveManyAt")>]
+        let removeManyAt (index: int) (count: int) (source: 'T list) : 'T list =
+            if index < 0 || index > source.Length - count then invalidArg "index" "index must be within bounds of the array"
+
+            let before, tail = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            let _, after = Microsoft.FSharp.Primitives.Basics.List.splitAt count tail
+            before @ after
+    
+        [<CompiledName("UpdateAt")>]
+        let updateAt (index: int) (value: 'T) (source: 'T list) : 'T list =
+            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+
+            let before, tail = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            let _, after = Microsoft.FSharp.Primitives.Basics.List.splitAt 1 tail
+            before @ [ value ] @ after
+    
+        [<CompiledName("UpdateManyAt")>]
+        let updateManyAt (index: int) (values: seq< 'T>) (source: 'T list) : 'T list =
+            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+
+            let valuesList = Microsoft.FSharp.Primitives.Basics.List.ofSeq values
+            let before, tail = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            let _, after = Microsoft.FSharp.Primitives.Basics.List.splitAt valuesList.Length tail
+            before @ valuesList @ after
+    
+        [<CompiledName("InsertAt")>]
+        let insertAt (index: int) (value: 'T) (source: 'T list) : 'T list =
+            if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+
+            let before, after = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            before @ [ value ] @ after
+    
+        [<CompiledName("InsertManyAt")>]
+        let insertManyAt (index: int) (values: seq<'T>) (source: 'T list) : 'T list =
+            if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+
+            let before, after = Microsoft.FSharp.Primitives.Basics.List.splitAt index source
+            let valuesList = Microsoft.FSharp.Primitives.Basics.List.ofSeq values
+            before @ valuesList @ after

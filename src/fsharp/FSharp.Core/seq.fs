@@ -1488,3 +1488,72 @@ namespace Microsoft.FSharp.Collections
                                 [|SR.GetString SR.inputMustBePositive; count|]
             mkDelayedSeq (fun () ->
                 source |> toArray |> Array.splitInto count :> seq<_>)
+
+        [<CompiledName("RemoveAt")>]
+        let removeAt (index: int) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i <> index then 
+                        yield item
+                    i <- i + 1
+            }
+    
+        [<CompiledName("RemoveManyAt")>]
+        let removeManyAt (index: int) (count: int) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i < index || i >= index + count then 
+                        yield item
+                    i <- i + 1
+            }
+    
+        [<CompiledName("UpdateAt")>]
+        let updateAt (index: int) (value: 'T) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i <> index then
+                        yield item
+                    else yield value
+                    i <- i + 1
+            }
+    
+        [<CompiledName("UpdateManyAt")>]
+        let updateManyAt (index: int) (values: seq< 'T>) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                let mutable valueCount = 0
+                for item in source do
+                    if i < index then
+                        yield item
+                    elif i = index then
+                        for value in values do
+                            valueCount <- valueCount + 1
+                            yield value
+                    else yield item
+                    i <- i + 1
+            }
+    
+        [<CompiledName("InsertAt")>]
+        let insertAt (index: int) (value: 'T) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i = index then
+                        yield value
+                    yield item
+                    i <- i + 1
+            }
+    
+        [<CompiledName("InsertManyAt")>]
+        let insertManyAt (index: int) (values: seq<'T>) (source: 'T seq) : 'T seq =
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i = index then 
+                        for v in values do yield v
+                    yield item 
+                    i <- i + 1
+            }
