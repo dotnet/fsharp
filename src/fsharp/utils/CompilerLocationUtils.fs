@@ -375,10 +375,7 @@ module internal FSharpEnvironment =
 
     let fileExists pathToFile =
         try
-            if File.Exists(pathToFile) then
-                true
-            else
-                false
+            File.Exists(pathToFile)
         with | _ -> false
 
     // Look for global install of dotnet sdk

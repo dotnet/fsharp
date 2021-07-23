@@ -232,7 +232,6 @@ type BlockSeparator = range * pos option
 
 type RecordFieldName = LongIdentWithDots * bool
 
-[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
@@ -622,8 +621,12 @@ type SynExpr =
         range: range
 
     | IfThenElse of
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
+        thenKeyword: range *
         thenExpr: SynExpr *
+        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *

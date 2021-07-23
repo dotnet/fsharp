@@ -238,7 +238,7 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () =
-    let evaluationEvent = new Event<EvaluationEventArgs> ()
+    let evaluationEvent = Event<EvaluationEventArgs>()
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: IFormatProvider
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -734,13 +734,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerMisc(),
         [   CompilerOption("help", tagNone,
-                                 OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks),None,
-                                 Some (FSIstrings.SR.fsiHelp()))
+                                 OptionHelp (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("full-help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("full-help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
@@ -1210,7 +1209,7 @@ type internal FsiDynamicCompiler
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr
                 if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
-                    colorPrintL outWriter opts responseL |> ignore
+                    colorPrintL outWriter opts responseL
 
         // Build the new incremental state.
         let istate = {istate with  optEnv    = optEnv;

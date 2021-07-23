@@ -3,7 +3,6 @@
 /// Solves constraints using a mutable constraint-solver state
 module internal FSharp.Compiler.ConstraintSolver
 
-open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import

@@ -9,7 +9,6 @@ open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CheckExpressions
@@ -1523,11 +1522,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             // Start importing
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
-            let beforeFileChecked = new Event<string>()
-            let fileChecked = new Event<string>()
+            let beforeFileChecked = Event<string>()
+            let fileChecked = Event<string>()
 
 #if !NO_EXTENSIONTYPING
-            let importsInvalidatedByTypeProvider = new Event<unit>()
+            let importsInvalidatedByTypeProvider = Event<unit>()
 #endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.

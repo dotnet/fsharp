@@ -21,7 +21,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
@@ -163,7 +162,7 @@ type ValInfos(entries) =
                 let vkey = (vref, vref.Deref.GetLinkageFullKey())
                 if dict.ContainsKey vkey then 
                     failwithf "dictionary already contains key %A" vkey
-                dict.Add(vkey, p) |> ignore
+                dict.Add(vkey, p)
             ReadOnlyDictionary dict), id)
 
     member x.Entries = valInfoTable.Force().Values
@@ -1278,7 +1277,7 @@ let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1983,7 +1982,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | LinearMatchExpr _
     | Expr.Sequential _ 
     | Expr.Let _ ->  
-        OptimizeLinearExpr cenv env expr (fun x -> x)
+        OptimizeLinearExpr cenv env expr id
 
     | Expr.Const (c, m, ty) -> 
         OptimizeConst cenv env expr (c, m, ty)

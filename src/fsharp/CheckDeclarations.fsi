@@ -2,7 +2,6 @@
 
 module internal FSharp.Compiler.CheckDeclarations
 
-open FSharp.Compiler 
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState

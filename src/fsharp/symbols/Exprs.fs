@@ -539,11 +539,11 @@ module FSharpExprConvert =
         | Expr.Let _   // big linear sequences of 'let'
         | Expr.Match _   // big linear sequences of 'match ... -> ....' 
         | Expr.Sequential _ ->
-            ConvExprPrimLinear cenv env expr (fun e -> e)
+            ConvExprPrimLinear cenv env expr id
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (* (nonNil tyargs || nonNil curriedArgs) && *) vref.IsMemberOrModuleBinding ->
             // Process applications of top-level values in a tail-recursive way
-            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) (fun e -> e)
+            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) id
 
         | Expr.Val (vref, _vFlags, m) -> 
             ConvValRef cenv env m vref 

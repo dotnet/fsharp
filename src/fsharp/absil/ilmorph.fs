@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.AbstractIL.Morphs 
 
 open System.Collections.Generic
-open FSharp.Compiler.AbstractIL 
 open Internal.Utilities.Library 
 open FSharp.Compiler.AbstractIL.IL 
 

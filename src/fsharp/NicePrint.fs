@@ -8,7 +8,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger

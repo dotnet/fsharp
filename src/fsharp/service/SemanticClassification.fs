@@ -18,7 +18,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-[<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1
@@ -166,7 +165,7 @@ module TcResolutionsExtensions =
                     | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.ComputationExpression
 
-                    | (Item.Value vref), _, _, _, _, m when isValRefMutable vref ->
+                    | Item.Value vref, _, _, _, _, m when isValRefMutable vref ->
                         add m SemanticClassificationType.MutableVar
 
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
