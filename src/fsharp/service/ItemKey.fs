@@ -12,7 +12,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -127,7 +126,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         checkDispose ()
 
         let builder = ItemKeyStoreBuilder()
-        builder.Write(Range.range0, item)
+        builder.Write(range0, item)
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
         | Some(singleStore : ItemKeyStore) ->

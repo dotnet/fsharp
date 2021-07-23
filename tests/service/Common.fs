@@ -5,14 +5,11 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FsUnit
@@ -34,7 +31,7 @@ type Async with
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
-        let psi = System.Diagnostics.ProcessStartInfo()
+        let psi = ProcessStartInfo()
         psi.FileName <- exePath
         psi.WorkingDirectory <- workingDir
         psi.RedirectStandardOutput <- false
@@ -43,7 +40,7 @@ let readRefs (folder : string) (projectFile: string) =
         psi.CreateNoWindow <- true
         psi.UseShellExecute <- false
 
-        use p = new System.Diagnostics.Process()
+        use p = new Process()
         p.StartInfo <- psi
         p.Start() |> ignore
         p.WaitForExit()
@@ -68,10 +65,10 @@ let readRefs (folder : string) (projectFile: string) =
 let checker = FSharpChecker.Create()
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(System.IO.Path.GetTempFileName() , ext)
+    let tmpFile =  Path.ChangeExtension(Path.GetTempFileName() , ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
-    interface System.IDisposable with
+    interface IDisposable with
         member x.Dispose() = try FileSystem.FileDeleteShim tmpFile with _ -> ()
     member x.Name = tmpFile
 
@@ -96,8 +93,8 @@ let sysLib nm =
         programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-        let sysDir = System.AppContext.BaseDirectory
-        let (++) a b = System.IO.Path.Combine(a,b)
+        let sysDir = AppContext.BaseDirectory
+        let (++) a b = Path.Combine(a,b)
         sysDir ++ nm + ".dll"
 
 [<AutoOpen>]

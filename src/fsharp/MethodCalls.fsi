@@ -3,8 +3,6 @@
 /// Logic associated with resolving method calls.
 module internal FSharp.Compiler.MethodCalls
 
-open Internal.Utilities
-
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
@@ -93,7 +91,7 @@ type CallerNamedArg<'T> =
 /// Represents the list of unnamed / named arguments at method call site
 /// remark: The usage of list list is due to tupling and currying of arguments,
 /// stemming from SynValInfo in the AST.
-[<StructAttribute>]
+[<Struct>]
 type CallerArgs<'T> =
     { Unnamed: CallerArg<'T> list list
       Named: CallerNamedArg<'T> list list }

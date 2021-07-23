@@ -7,7 +7,6 @@ open System.Reflection
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IO
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
@@ -99,10 +98,10 @@ module XmlDocWriter =
 
         use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.OpenOrCreate).GetWriter()
 
-        fprintfn os ("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
-        fprintfn os ("<doc>")
-        fprintfn os ("<assembly><name>%s</name></assembly>") assemblyName
-        fprintfn os ("<members>")
+        fprintfn os "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        fprintfn os "<doc>"
+        fprintfn os "<assembly><name>%s</name></assembly>" assemblyName
+        fprintfn os "<members>"
         members |> List.iter (fun (id, doc) ->
             fprintfn os  "<member name=\"%s\">" id
             fprintfn os  "%s" doc

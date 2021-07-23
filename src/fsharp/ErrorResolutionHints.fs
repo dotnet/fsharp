@@ -42,7 +42,7 @@ type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) 
             with get () = 
                 let kvpr = &data.[current]
                 kvpr.Value
-    interface System.Collections.IEnumerator with
+    interface IEnumerator with
         member _.Current with get () = box data.[current].Value
         member _.MoveNext() =
             current <- current - 1
@@ -88,7 +88,7 @@ type SuggestionBuffer(idText: string) =
                     suggestion.EndsWithOrdinal dotIdText ||
                     (similarity >= minThresholdForSuggestions && IsInEditDistanceProximity uppercaseText suggestedText)
                 then
-                    insert(similarity, suggestion) |> ignore
+                    insert(similarity, suggestion)
     
     member _.Disabled with get () = disableSuggestions
 

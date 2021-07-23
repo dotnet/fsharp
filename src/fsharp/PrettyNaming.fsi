@@ -5,22 +5,21 @@
 module public FSharp.Compiler.Syntax.PrettyNaming
 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal parenGet: string = ".()"
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal parenSet: string = ".()<-"
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal qmark: string = "?"
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal qmarkSet: string = "?<-"
 
 /// Prefix for compiled (mangled) operator names.
-[<LiteralAttribute>]
+[<Literal>]
 val internal opNamePrefix: string = "op_"
 
 /// Returns `true` if given string is an operator or double backticked name, e.g. ( |>> ) or ( long identifier ).
@@ -113,10 +112,10 @@ val internal ChopPropertyName: s:string -> string
 
 val internal SplitNamesForILPath: s:string -> string list
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal FSharpModuleSuffix: string = "Module"
 
-[<LiteralAttribute>]
+[<Literal>]
 val internal MangledGlobalName: string = "`global`"
 
 val internal IllegalCharactersInTypeAndNamespaceNames: char []
@@ -163,7 +162,7 @@ module internal FSharpLib =
     val CorePath: string list
 
 module internal CustomOperations =
-    [<LiteralAttribute>]
+    [<Literal>]
     val Into: string = "into"
 
 val internal unassignedTyparName: string
@@ -179,4 +178,17 @@ val internal FSharpSignatureDataResourceName2: string
 val GetLongNameFromString: string -> string list
 
 val FormatAndOtherOverloadsString: int -> string
+
+val FSharpSignatureDataResourceName2: string
+
+/// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+[<Literal>] 
+val internal suffixForVariablesThatMayNotBeEliminated : string = "$cont"
+
+/// Indicates a ValRef generated to facilitate tuple eliminations
+[<Literal>] 
+val internal suffixForTupleElementAssignmentTarget : string = "$tupleElem"
+
+[<Literal>] 
+val internal stackVarPrefix : string = "__stack_"
 
