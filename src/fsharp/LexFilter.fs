@@ -179,19 +179,21 @@ let infixTokenLength token =
     | COLON_QMARK_GREATER -> 3
     | _ -> assert false; 1
     
+/// Matches against a left-parenthesis-like token that is valid in expressions.
+//
 // LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
 // causes more offside warnings, while removing them doesn't add offside warnings in attributes.
-/// Matches against a left-parenthesis-like token that is valid in expressions.
-let (|TokenLExprParen|_|) =
-    function
+let (|TokenLExprParen|_|) tok =
+    match tok with
     | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
-        -> Some TokenLExprParen
+        -> Some ()
     | _ -> None
+
 /// Matches against a right-parenthesis-like token that is valid in expressions.
-let (|TokenRExprParen|_|) =
-    function
+let (|TokenRExprParen|_|) tok =
+    match tok with
     | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
-        -> Some TokenRExprParen
+        -> Some ()
     | _ -> None
 
 /// Determine the tokens that may align with the 'if' of an 'if/then/elif/else' without closing
@@ -712,7 +714,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Undentation rules
     //--------------------------------------------------------------------------
     
-    let (|RelaxWhitespace2|_|) x = if lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2 then Some x else None
+    let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
+
     let pushCtxt tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack = 
             match newCtxt, stack with 
@@ -745,7 +748,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                       -> undentationLimit false rest
 
             // 'try ... with' limited by 'try'  
-            | _, (CtxtMatchClauses _ :: (CtxtTry _ | RelaxWhitespace2 (CtxtMatch _) as limitCtxt) :: _rest)
+            | _, (CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest)
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
+            // 'try ... with' limited by 'try'  (updated rule)
+            | _, (CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest) when relaxWhitespace2
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
@@ -762,10 +769,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'let (ActivePattern <@'  limited by 'let' (given RelaxWhitespace2)
             // 'let (ActivePattern <@@' limited by 'let' (given RelaxWhitespace2)
             // Same for 'match', 'if', 'then', 'else', 'for', 'while', 'member', 'when', and everything: No need to specify rules like the 'then' and 'else's below over and over again
-            | _, RelaxWhitespace2 (CtxtParen (TokenLExprParen, _) :: rest)
+            | _, CtxtParen (TokenLExprParen, _) :: rest
             // 'let x = { y =' limited by 'let'  (given RelaxWhitespace2) etc.
             // 'let x = {| y =' limited by 'let' (given RelaxWhitespace2) etc.
-            | _, RelaxWhitespace2 (CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest)
+            | _, CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest when relaxWhitespace2
+                      -> undentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
@@ -1253,7 +1261,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // ) = ...
             // ODUMMY is a context closer token, after its context is closed
             match token with
-            | ODUMMY TokenRExprParen -> lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
+            | ODUMMY TokenRExprParen -> relaxWhitespace2
             | _ -> false
 
         // If you see a 'member' keyword while you are inside the body of another member, then it usually means there is a syntax error inside this method
@@ -1771,7 +1779,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             insertToken ODECLEND 
                 
         | _, CtxtMatch offsidePos :: _
-                    when isSemiSemi || (if relaxWhitespace2OffsideRule || lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2 && isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || relaxWhitespace2 && isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtMatch\n"
             popCtxt()
             reprocess()
