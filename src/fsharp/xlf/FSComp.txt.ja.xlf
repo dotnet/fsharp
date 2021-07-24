@@ -88,8 +88,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional type-directed conversions</source>
+        <target state="new">additional type-directed conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
