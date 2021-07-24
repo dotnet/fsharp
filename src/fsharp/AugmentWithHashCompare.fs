@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.AugmentWithHashCompare
  
 open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
@@ -67,9 +66,9 @@ let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> 
 
 let mkRelBinOp (g: TcGlobals) op m e1 e2 = mkAsmExpr ([ op  ], [], [e1; e2], [g.bool_ty], m)
 
-let mkClt g m e1 e2 = mkRelBinOp g IL.AI_clt m e1 e2 
+let mkClt g m e1 e2 = mkRelBinOp g AI_clt m e1 e2 
 
-let mkCgt g m e1 e2 = mkRelBinOp g IL.AI_cgt m e1 e2
+let mkCgt g m e1 e2 = mkRelBinOp g AI_cgt m e1 e2
 
 //-------------------------------------------------------------------------
 // REVIEW: make this a .constrained call, not a virtual call.
@@ -83,20 +82,20 @@ let mkILLangPrimTy (g: TcGlobals) = mkILNonGenericBoxedTy g.tcref_LanguagePrimit
 let mkILCallGetComparer (g: TcGlobals) m = 
     let ty = mkILNonGenericBoxedTy g.tcref_System_Collections_IComparer.CompiledRepresentationForNamedType
     let mspec = mkILNonGenericStaticMethSpecInTy (mkILLangPrimTy g, "get_GenericComparer", [], ty)
-    mkAsmExpr ([IL.mkNormalCall mspec], [], [], [g.IComparer_ty], m)
+    mkAsmExpr ([mkNormalCall mspec], [], [], [g.IComparer_ty], m)
 
 let mkILCallGetEqualityComparer (g: TcGlobals) m = 
     let ty = mkILNonGenericBoxedTy g.tcref_System_Collections_IEqualityComparer.CompiledRepresentationForNamedType
     let mspec = mkILNonGenericStaticMethSpecInTy (mkILLangPrimTy g, "get_GenericEqualityComparer", [], ty)
-    mkAsmExpr ([IL.mkNormalCall mspec], [], [], [g.IEqualityComparer_ty], m)
+    mkAsmExpr ([mkNormalCall mspec], [], [], [g.IEqualityComparer_ty], m)
 
 let mkThisVar g m ty = mkCompGenLocal m "this" (mkThisTy g ty)  
 
-let mkShl g m acce n = mkAsmExpr ([ IL.AI_shl ], [], [acce; mkInt g m n], [g.int_ty], m)
+let mkShl g m acce n = mkAsmExpr ([ AI_shl ], [], [acce; mkInt g m n], [g.int_ty], m)
 
-let mkShr g m acce n = mkAsmExpr ([ IL.AI_shr ], [], [acce; mkInt g m n], [g.int_ty], m)
+let mkShr g m acce n = mkAsmExpr ([ AI_shr ], [], [acce; mkInt g m n], [g.int_ty], m)
 
-let mkAdd (g: TcGlobals) m e1 e2 = mkAsmExpr ([ IL.AI_add ], [], [e1;e2], [g.int_ty], m)
+let mkAdd (g: TcGlobals) m e1 e2 = mkAsmExpr ([ AI_add ], [], [e1;e2], [g.int_ty], m)
                    
 let mkAddToHashAcc g m e accv acce =
     mkValSet m accv (mkAdd g m (mkInt g m 0x9e3779b9) 
@@ -301,7 +300,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
           (mkExnCaseFieldGet(thate, exnref, i, m)) 
     let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let cases = 
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
                      mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
@@ -324,7 +323,7 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
           (mkExnCaseFieldGet(thataddre, exnref, i, m))
     let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let cases =
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
                      mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
@@ -347,7 +346,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
     let compe = mkILCallGetComparer g m
 
     let expr = 
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -371,7 +370,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
-        let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
+        let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
@@ -382,7 +381,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
             mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
-              (mkAsmExpr ([ IL.AI_sub  ], [], [thistage; thattage], [g.int_ty], m))in 
+              (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))in 
         mkCompGenLet m thistagv
           (mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m))
           (mkCompGenLet m thattagv
@@ -405,7 +404,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
     let thattagv, thattage = mkCompGenLocal m "thatTag" g.int_ty  
 
     let expr = 
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -432,7 +431,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
-        let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
+        let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
@@ -443,7 +442,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
             mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
-              (mkAsmExpr ([ IL.AI_sub  ], [], [thistage; thattage], [g.int_ty], m))
+              (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))
         mkCompGenLet m thistagv
           (mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m))
           (mkCompGenLet m thattagv
@@ -466,7 +465,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
     let thattagv, thattage = mkCompGenLocal m "thatTag" g.int_ty  
 
     let expr = 
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -492,7 +491,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
-        let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
+        let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No)))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
@@ -525,7 +524,7 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
     let thataddrv, thataddre = mkThatAddrLocal g m ty
 
     let expr = 
-        let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+        let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -554,7 +553,7 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
-        let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
+        let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
@@ -625,7 +624,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
     let ucases = tycon.UnionCasesAsList
     let tinst, ty = mkMinimalTy g tcref
     let thisv, thise = mkThisVar g m ty
-    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
+    let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m ) 
     let accv, acce = mkMutableCompGenLocal m "i" g.int_ty                  
     let mkCase i ucase1 = 
         let c1ref = tcref.MakeNestedUnionCaseRef ucase1 
@@ -654,7 +653,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
     let nullary, nonNullary = ucases
                              |> List.mapi mkCase
                              |> List.partition (fun i -> i.IsNone)
-    let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionHash")
+    let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionHash")
     let dflt = if isNil nullary then None 
                else 
                    let tag = mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m)

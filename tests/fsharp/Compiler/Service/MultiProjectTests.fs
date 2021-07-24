@@ -6,10 +6,9 @@ open System
 open System.IO
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -63,7 +62,7 @@ let test() =
             |> SourceText.ofString
         let _, checkAnswer = 
             CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
 
 
         match checkAnswer with
@@ -76,7 +75,7 @@ let test() =
         try
             let result, _ =
                 checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
 
             if result.Length > 0 then
                 failwith "Compilation has errors."
@@ -162,7 +161,7 @@ let x = Script1.x
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
 
             Assert.IsEmpty(checkProjectResults.Diagnostics)
 
@@ -176,7 +175,7 @@ let y = Script1.y
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
 
             Assert.IsNotEmpty(checkProjectResults.Diagnostics)
 
@@ -190,7 +189,7 @@ let y = 1
 
             let checkProjectResults = 
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
 
             Assert.IsEmpty(checkProjectResults.Diagnostics)
 

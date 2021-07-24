@@ -3,7 +3,6 @@
 /// DSL to create structured layout objects with optional breaks and render them
 namespace FSharp.Compiler.Text
 
-open System.Collections.Immutable
 open System.Text
 open System.IO
 open FSharp.Compiler.Text

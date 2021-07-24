@@ -183,7 +183,6 @@ module Commands =
         Directory.CreateDirectory path |> ignore
         path
 
-
 type TestConfig =
     { EnvironmentVariables : Map<string, string>
       CSC : string

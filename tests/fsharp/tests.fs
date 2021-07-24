@@ -17,6 +17,7 @@ open TestFramework
 open Scripting
 open SingleTest
 open HandleExpects
+open FSharp.Test
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
@@ -31,7 +32,7 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
+let inline getTestsDirectory dir = FSharp.Test.Utilities.getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
@@ -459,6 +460,45 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines-non-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines neg-resumable-01`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-01"
+
+
+    [<Test>]
+    let ``state-machines neg-resumable-02`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-02"
 
     [<Test>]
     let ``lots-of-conditionals``() =

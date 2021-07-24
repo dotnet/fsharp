@@ -8,7 +8,6 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
