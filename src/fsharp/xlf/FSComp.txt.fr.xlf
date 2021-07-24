@@ -182,8 +182,6 @@
         <target state="new">whitespace relaxation v2</target>
         <note />
       </trans-unit>
-        <note />
-      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="translated">modèle de trait de soulignement unique</target>
