@@ -534,12 +534,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Contains")>]
         let inline contains value (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable state = false
-            while (not state && e.MoveNext()) do
-                state <- value = e.Current
-            state
+            match source with
+            | :? ICollection<'T> as ic -> ic.Contains value
+            | _ ->
+                checkNonNull "source" source
+                use e = source.GetEnumerator()
+                let mutable state = false
+                while (not state && e.MoveNext()) do
+                    state <- value = e.Current
+                state
 
         [<CompiledName("ForAll")>]
         let forall predicate (source : seq<'T>) =
