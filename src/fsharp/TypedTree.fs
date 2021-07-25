@@ -3970,6 +3970,9 @@ type TType =
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
     | TType_var of typar: Typar 
+    
+    /// Indicates the type is a union type, containing common ancestor type and the disjoint cases
+    | TType_erased_union of unionInfo: ErasedUnionInfo * choices: TTypes
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
@@ -3988,6 +3991,7 @@ type TType =
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
+        | TType_erased_union _ -> ""
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4013,6 +4017,7 @@ type TType =
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"
         | TType_measure ms -> ms.ToString()
+        | TType_erased_union (_, l) -> "( " + String.concat " | " (List.map string l) +  " )"
 
 type TypeInst = TType list 
 
@@ -4069,6 +4074,17 @@ type AnonRecdTypeInfo =
         x.SortedNames <- sortedNames
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    
+[<RequireQualifiedAccess>]
+type ErasedUnionInfo =
+    { /// Common ancestor type for all cases in this union, used for ILgen
+      CommonAncestorTy: TType
+
+      /// Indices representing order of cases they were defined in
+      UnsortedCaseSourceIndices: int [] }
+    static member Create(commonAncestorTy: TType, unsortedCaseSourceIndices: int[]) =
+        { CommonAncestorTy = commonAncestorTy
+          UnsortedCaseSourceIndices = unsortedCaseSourceIndices }
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 

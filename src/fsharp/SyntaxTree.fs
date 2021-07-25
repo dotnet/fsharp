@@ -371,6 +371,11 @@ type SynType =
         isStruct: bool *
         fields:(Ident * SynType) list *
         range: range
+    
+    /// Erased union type definition, type X = (A | B)
+    | ErasedUnion of
+        erasedUnionCases: SynErasedUnionCase list *
+        range: range/// 
 
     | Array of
         rank: int *
@@ -431,6 +436,7 @@ type SynType =
         | SynType.Tuple (range=m)
         | SynType.Array (range=m)
         | SynType.AnonRecd (range=m)
+        | SynType.ErasedUnion (range=m)
         | SynType.Fun (range=m)
         | SynType.Var (range=m)
         | SynType.Anon (range=m)
@@ -1383,6 +1389,18 @@ type SynUnionCase =
     member this.Range =
         match this with
         | SynUnionCase (range=m) -> m
+
+[<NoEquality; NoComparison>]
+type SynErasedUnionCase =
+
+    | SynErasedUnionCase of
+        typ: SynType *
+        xmlDoc: PreXmlDoc *
+        range: range
+
+    member this.Range =
+        match this with
+        | SynErasedUnionCase (range=m) -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynUnionCaseKind =
