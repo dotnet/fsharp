@@ -212,13 +212,13 @@ type OverallTy =
     | MustEqual of TType
 
     /// Each branch of the expression must convert to the type indicated
-    | MustConvertTo of ty: TType
+    | MustConvertTo of isMethodArg: bool * ty: TType
 
     /// Represents a point where no subsumption/widening is possible
     member x.Commit = 
         match x with 
         | MustEqual ty -> ty
-        | MustConvertTo ty -> ty
+        | MustConvertTo (_, ty) -> ty
 
 exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
 
@@ -2354,7 +2354,7 @@ and CanMemberSigsMatchUpToCheck
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
                         ResultD TypeDirectedConversionUsed.No
-                    | Some (MustConvertTo(reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                    | Some (MustConvertTo(_, reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         subsumeOrConvertTypes reqdTy methodRetTy
                     | Some reqdRetTy ->
@@ -2464,9 +2464,9 @@ and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgT
         return TypeDirectedConversionUsed.No
     }
 
-and TypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m reqdTy actualTy = 
+and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m reqdTy actualTy = 
     trackErrors {
-        let reqdTy, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions csenv.InfoReader ad isConstraint reqdTy actualTy m
+        let reqdTy, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions csenv.InfoReader ad false isConstraint reqdTy actualTy m
         match eqn with 
         | Some (ty1, ty2, msg) ->
             do! SolveTypeEqualsType csenv ndeep m trace cxsln ty1 ty2 
@@ -2674,7 +2674,7 @@ and ResolveOverloading
                          alwaysCheckReturn
                          (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
                          (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                         (TypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                         (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
                          (ArgsEquivOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome)  // args exact
                          reqdRetTyOpt 
                          calledMeth)
@@ -2695,7 +2695,7 @@ and ResolveOverloading
                         alwaysCheckReturn
                         (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln)  // instantiations equivalent
                         (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m) // obj can subsume
-                        (TypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
+                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m) // return can subsume or convert
                         (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome candidate)  // args can subsume
                         reqdRetTyOpt 
                         candidate)
@@ -2732,7 +2732,7 @@ and ResolveOverloading
                                              alwaysCheckReturn
                                              (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
                                              (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
-                                             (TypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
+                                             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
                                              (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
                                              reqdRetTyOpt 
                                              calledMeth) with 
@@ -2961,7 +2961,7 @@ and ResolveOverloading
                                  true
                                  (TypesEquiv csenv ndeep trace cxsln) // instantiations equal
                                  (TypesMustSubsume csenv ndeep trace cxsln m) // obj can subsume
-                                 (TypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
+                                 (ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
                                  (ArgsMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
                                  reqdRetTyOpt 
                                  calledMeth
@@ -2980,8 +2980,8 @@ and ResolveOverloading
                                     return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
                                 else
                                     match reqdRetTy with
-                                    | MustConvertTo(reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-                                        let! _usesTDC = TypesMustSubsumeOrConvert csenv ad ndeep trace cxsln true m reqdRetTy actualRetTy
+                                    | MustConvertTo(isMethodArg, reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                                        let! _usesTDC = ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln isMethodArg m reqdRetTy actualRetTy
                                         return ()
                                     | _ ->
                                         let! _usesTDC = TypesEquiv csenv ndeep trace cxsln reqdRetTy.Commit actualRetTy
@@ -3022,7 +3022,7 @@ let UnifyUniqueOverloading
             true // always check return type
             (TypesEquiv csenv ndeep NoTrace None) 
             (TypesMustSubsume csenv ndeep NoTrace None m)
-            (TypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
+            (ReturnTypesMustSubsumeOrConvert csenv ad ndeep NoTrace None false m)
             (ArgsMustSubsumeOrConvert csenv ad ndeep NoTrace None false false)
             (Some reqdRetTy)
             calledMeth

@@ -124,7 +124,8 @@ val MapCombineTDC2D: mapper:('a -> 'b -> OperationResult<TypeDirectedConversionU
 val AdjustRequiredTypeForTypeDirectedConversions:
     infoReader:InfoReader ->
     ad: AccessorDomain ->
-    isConstraint:bool ->
+    isMethodArg: bool ->
+    isConstraint: bool ->
     reqdTy: TType ->
     actualTy:TType ->
     m: range 

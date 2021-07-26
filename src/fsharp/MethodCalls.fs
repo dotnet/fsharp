@@ -244,7 +244,7 @@ let MapCombineTDCD mapper xs =
 let MapCombineTDC2D mapper xs ys =
     MapReduce2D mapper TypeDirectedConversionUsed.No TypeDirectedConversionUsed.Combine xs ys
 
-let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad isConstraint (reqdTy: TType) actualTy m =
+let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad isMethodArg isConstraint (reqdTy: TType) actualTy m =
     let g = infoReader.g
 
     let warn info denv =
@@ -254,10 +254,10 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
             Error(FSComp.SR.tcBuiltInImplicitConversionUsed(actualTyText, reqdTyText), m)
         | TypeDirectedConversion.Implicit convMeth ->
             let methText = NicePrint.stringOfMethInfo infoReader m denv convMeth
-            if convMeth.IsILMethod then
-                Error(FSComp.SR.tcLibDefinedImplicitConversionUsed(methText, actualTyText, reqdTyText), m)
+            if isMethodArg then
+                Error(FSComp.SR.tcImplicitConversionUsedForMethodArg(methText, actualTyText, reqdTyText), m)
             else
-                Error(FSComp.SR.tcFSharpDefinedImplicitConversionUsed(methText, actualTyText, reqdTyText), m)
+                Error(FSComp.SR.tcImplicitConversionUsedForNonMethodArg(methText, actualTyText, reqdTyText), m)
 
     if isConstraint then 
         reqdTy, TypeDirectedConversionUsed.No, None
@@ -270,7 +270,7 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
     // (T -> U) --> Expression<T -> U> LINQ-style quotation
     elif isLinqExpressionTy g reqdTy && isDelegateTy g (destLinqExpressionTy g reqdTy) && isFunTy g actualTy then 
         let delegateTy = destLinqExpressionTy g reqdTy
-        AdjustRequiredTypeForTypeDirectedConversions infoReader ad isConstraint delegateTy actualTy m
+        AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint delegateTy actualTy m
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
@@ -302,7 +302,7 @@ let AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote (infoReader: InfoR
     if calledArg.ReflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
         destQuotedExprTy g calledArgTy, TypeDirectedConversionUsed.No, None
     else
-        AdjustRequiredTypeForTypeDirectedConversions infoReader ad false calledArgTy callerArgTy m
+        AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy callerArgTy m
 
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
 let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
@@ -348,7 +348,7 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                 // If inference has worked out it's a struct (e.g. an int) then use this
                 elif isStructTy g callerArgTy then
                     let calledArgTy2 = destNullableTy g calledArgTy
-                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad false calledArgTy2 callerArgTy m
+                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy2 callerArgTy m
 
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 

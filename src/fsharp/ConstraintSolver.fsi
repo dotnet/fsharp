@@ -112,7 +112,7 @@ type OverallTy =
     | MustEqual of TType
 
     /// Each branch of the expression must convert to the type indicated
-    | MustConvertTo of ty: TType
+    | MustConvertTo of isMethodArg: bool * ty: TType
 
     /// Represents a point where no subsumption/widening is possible
     member Commit: TType 

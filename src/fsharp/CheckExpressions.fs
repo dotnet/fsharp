@@ -462,14 +462,14 @@ let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
 // to actually build the expression for any conversion applied.
 let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo(isMethodArg, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let actualTy = tryNormalizeMeasureInType cenv.g actualTy
         let reqdTy = tryNormalizeMeasureInType cenv.g reqdTy
         if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
             ()
         else
             // try adhoc type-directed conversions
-            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights false reqdTy actualTy m
+            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights isMethodArg false reqdTy actualTy m
             match eqn with
             | Some (ty1, ty2, msg) ->
                 UnifyTypes cenv env m ty1 ty2
@@ -5335,14 +5335,14 @@ and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (synExpr: 
         if compat then
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argty
-        let expr2, tpenv = TcExprFlex2 cenv argty env tpenv synExpr
+        let expr2, tpenv = TcExprFlex2 cenv argty env false tpenv synExpr
         let expr3 = mkCoerceIfNeeded cenv.g desiredTy argty expr2
         expr3, tpenv
     else
-        TcExprFlex2 cenv desiredTy env tpenv synExpr
+        TcExprFlex2 cenv desiredTy env false tpenv synExpr
 
-and TcExprFlex2 cenv desiredTy env tpenv synExpr =
-    TcExpr cenv (MustConvertTo desiredTy) env tpenv synExpr
+and TcExprFlex2 cenv desiredTy env isMethodArg tpenv synExpr =
+    TcExpr cenv (MustConvertTo (isMethodArg, desiredTy)) env tpenv synExpr
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
     // Start an error recovery handler
@@ -5510,12 +5510,12 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 ///
 and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo _ when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         assert (cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
         //if not canAdhoc then
         //    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy actualTy
         // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
-        UnifyOverallType cenv env m (MustConvertTo reqdTy) actualTy
+        UnifyOverallType cenv env m overallTy actualTy
         // Process the construct
         let expr, tpenv = f ()
         // Build the conversion
@@ -5539,7 +5539,7 @@ and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* can
 ///  - record (exception is (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty), similarly)
 and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+    | MustConvertTo(_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
             let exprTy = NewInferenceType()
             // Here 'processExpr' will do the unification with exprTy.
@@ -5567,7 +5567,7 @@ and TcNonPropagatingExprLeafThenConvert cenv (overallTy: OverallTy) (env: TcEnv)
 
 and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy (env: TcEnv) (* canAdhoc *) m expr =
     match overallTy with
-    | MustConvertTo(reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo (_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
         AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
@@ -5627,7 +5627,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let idv1, idve1 = mkCompGenLocal mArg (cenv.synArgNameGenerator.New()) domainTy
         let envinner = ExitFamilyRegion env
-        let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo resultTy) envinner tpenv clauses
+        let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
         let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
         overallExpr, tpenv
 
@@ -5641,7 +5641,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Typed (synBodyExpr, synType, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
         UnifyOverallType cenv env m overallTy tgtTy
-        let bodyExpr, tpenv = TcExpr cenv (MustConvertTo tgtTy) env tpenv synBodyExpr
+        let bodyExpr, tpenv = TcExpr cenv (MustConvertTo (false, tgtTy)) env tpenv synBodyExpr
         let bodyExpr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy tgtTy env (* true  *) m bodyExpr
         bodyExpr2, tpenv
 
@@ -6047,7 +6047,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
                  { envinner with eLambdaArgInfos = rest }
             | [] -> envinner
                    
-        let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo resultTy) takenNames tpenv bodyExpr
+        let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo (false, resultTy)) takenNames tpenv bodyExpr
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) ->
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
@@ -7732,7 +7732,7 @@ and TcFunctionApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg 
                      | _ -> false)
             | _ -> ()
 
-            let arg, tpenv = TcExprFlex2 cenv domainTy env tpenv synArg
+            let arg, tpenv = TcExprFlex2 cenv domainTy env false tpenv synArg
             let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
@@ -9242,7 +9242,7 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                                 | _ -> ()
                     loop argTy 0
 
-    let e', tpenv = TcExprFlex2 cenv argTy env tpenv argExpr
+    let e', tpenv = TcExprFlex2 cenv argTy env true tpenv argExpr
 
     // After we have checked, propagate the info from argument into the overloads that receive it.
     //
@@ -9675,7 +9675,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 let envinner = { envinner with eLambdaArgInfos = argInfos }
 
                 if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
-                else TcExprThatCantBeCtorBody cenv (MustConvertTo overallExprTy) envinner tpenv rhsExpr)
+                else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
 
         if bkind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>

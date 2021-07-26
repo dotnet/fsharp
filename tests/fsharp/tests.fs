@@ -87,6 +87,12 @@ module CoreTests =
         singleVersionedNegTest cfg "preview" "test"
 
     [<Test>]
+    let ``auto-widen-version-preview-default-warns``() = 
+        let cfg = testConfig "core/auto-widen/preview-default-warns"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnaserror+ --define:NEGATIVE" }
+        singleVersionedNegTest cfg "preview" "test"
+
+    [<Test>]
     let ``comprehensions-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC_OPT_MINUS
 
     [<Test>]
