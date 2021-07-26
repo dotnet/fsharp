@@ -251,10 +251,13 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
         let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy actualTy
         match info with
         | TypeDirectedConversion.BuiltIn ->
-            Error(FSComp.SR.tcImplicitConversionUsed(actualTyText, reqdTyText), m)
+            Error(FSComp.SR.tcBuiltInImplicitConversionUsed(actualTyText, reqdTyText), m)
         | TypeDirectedConversion.Implicit convMeth ->
             let methText = NicePrint.stringOfMethInfo infoReader m denv convMeth
-            Error(FSComp.SR.tcImplicitConversionUsed2(methText, actualTyText, reqdTyText), m)
+            if convMeth.IsILMethod then
+                Error(FSComp.SR.tcLibDefinedImplicitConversionUsed(methText, actualTyText, reqdTyText), m)
+            else
+                Error(FSComp.SR.tcFSharpDefinedImplicitConversionUsed(methText, actualTyText, reqdTyText), m)
 
     if isConstraint then 
         reqdTy, TypeDirectedConversionUsed.No, None

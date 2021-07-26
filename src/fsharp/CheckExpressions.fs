@@ -479,7 +479,8 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
             | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
             | TypeDirectedConversionUsed.No -> ()
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
-                ()
+                let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
+                warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
             else
                 // report the error
                 UnifyTypes cenv env m reqdTy actualTy
