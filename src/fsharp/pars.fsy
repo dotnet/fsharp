@@ -4116,22 +4116,7 @@ minusExpr:
 
 appExpr:
   | appExpr argExpr %prec expr_app
-      { 
-        // This takes '(f x)[3]' and similar forms and makes them Atomic,
-        // but only if they are actual applications.  It doesn't effect
-        // the parsing precedence of this:
-        //      g (f x)[3] 
-        // which is still parsed as a curried application for legacy reasons
-        //      1111111222
-        //      g (f x)[3]
-        //      1111111222
-        // This lack of spacing in curried application is given a separate warning in CheckExpressions.fs
-        match $2 with 
-        | SynExpr.ArrayOrListComputed (false, _, _)
-        | SynExpr.ArrayOrList (false, _, _) when $1.Range.IsAdjacentTo $2.Range ->
-            SynExpr.App (ExprAtomicFlag.Atomic, false, $1, $2, unionRanges $1.Range $2.Range)  
-        | _ ->
-            SynExpr.App (ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range)  }
+      { SynExpr.App (ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range)  }
 
   | atomicExpr 
       { let arg, _ = $1 

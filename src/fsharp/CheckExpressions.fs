@@ -3692,7 +3692,7 @@ type DelayedItem =
   | DelayedTypeApp of typeArgs: SynType list * mTypeArgs: range * mExprAndTypeArgs: range
 
   /// Represents the args in "item args", or "item.Property(args)".
-  | DelayedApp of isAtomic: ExprAtomicFlag * funcExprForIndexer: SynExpr option * argExpr: SynExpr * mFuncAndArg: range
+  | DelayedApp of isAtomic: ExprAtomicFlag * synLeftExprOpt: SynExpr option * argExpr: SynExpr * mFuncAndArg: range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
   | DelayedDotLookup of Ident list * range
@@ -5322,8 +5322,7 @@ and TcExprNoRecover cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
         if GetCtorShapeCounter env > 0 then AdjustCtorShapeCounter (fun x -> x - 1) env
         else env
 
-    TcExprThen cenv ty env tpenv expr []
-
+    TcExprThen cenv ty env tpenv false expr []
 
 // This recursive entry is only used from one callsite (DiscardAfterMissingQualificationAfterDot)
 // and has been added relatively late in F# 4.0 to preserve the structure of previous code. It pushes a 'delayed' parameter
@@ -5332,7 +5331,7 @@ and TcExprOfUnknownTypeThen cenv env tpenv expr delayed =
     let exprty = NewInferenceType ()
     let expr', tpenv =
       try
-        TcExprThen cenv exprty env tpenv expr delayed
+        TcExprThen cenv exprty env tpenv false expr delayed
       with e ->
         let m = expr.Range
         errorRecovery e m
@@ -5381,36 +5380,64 @@ and TryTcStmt cenv env tpenv synExpr =
 /// During checking of expressions of the form (x(y)).z(w1, w2)
 /// keep a stack of things on the right. This lets us recognize
 /// method applications and other item-based syntax.
-and TcExprThen cenv overallTy env tpenv synExpr delayed =
+and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
     match synExpr with
 
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
         if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
         // Check to see if pattern translation decided to use an alternative identifier.
         match altNameRefCellOpt with
-        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> TcExprThen cenv overallTy env tpenv (SynExpr.LongIdent (isOpt, LongIdentWithDots([altId], []), None, mLongId)) delayed
+        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> 
+            TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, LongIdentWithDots([altId], []), None, mLongId)) delayed
         | _ -> TcLongIdentThen cenv overallTy env tpenv longId delayed
 
     // f x
+    // f(x)  // hpa=true
+    // f[x]  // hpa=true
     | SynExpr.App (hpa, _, func, arg, mFuncAndArg) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, Some func, arg, mFuncAndArg)) :: delayed)
+        
+        // func (arg)[arg2] gives warning that .[ must be used.
+        match delayed with
+        | DelayedApp (hpa2, _, arg2, _) :: _ when (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr hpa2 (Some synExpr) arg2 -> 
+            let mWarning = unionRanges arg.Range arg2.Range
+            match arg with 
+            | SynExpr.Paren _ -> 
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
+            | SynExpr.ArrayOrListComputed _
+            | SynExpr.ArrayOrList _ ->
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    warning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
+            | _ -> 
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
+
+        | _ -> ()
+
+        TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, Some func, arg, mFuncAndArg)) :: delayed)
 
     // e<tyargs>
     | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
 
     // e1.id1
     // e1.id1.id2
     // etc.
     | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
-        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
     // e1.[e2]
     // e1.[e21, ..., e2n]
     // etc.
     | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
-        if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        if not isArg && cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
 
     // e1.[e2] <- e3
@@ -5751,24 +5778,24 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
         else
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
     /// e1 <- e2
     | SynExpr.Set (e1, e2, mStmt) ->
-        TcExprThen cenv overallTy env tpenv e1 [MakeDelayedSet(e2, mStmt)]
+        TcExprThen cenv overallTy env tpenv false e1 [MakeDelayedSet(e2, mStmt)]
 
     /// e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
         else
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); DelayedApp(ExprAtomicFlag.Atomic, None, e2, mStmt); MakeDelayedSet(e3, mStmt)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup); DelayedApp(ExprAtomicFlag.Atomic, None, e2, mStmt); MakeDelayedSet(e3, mStmt)]
 
     | SynExpr.LongIdentSet (lidwd, e2, m) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
@@ -5951,19 +5978,19 @@ and (|IndexerArgs|) e =
     | SynExpr.Tuple (false, args, _, _) -> args
     | e -> [e]
 
-and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (setInfo: _ option) e1 indexArgs delayed =
-    let e1', e1ty, tpenv = TcExprOfUnknownType cenv env tpenv e1
-    let expandedIndexArgs = ExpandIndexArgs (Some e1) indexArgs
-    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some e1) e1' e1ty expandedIndexArgs indexArgs delayed
+and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (setInfo: _ option) synLeftExpr indexArgs delayed =
+    let leftExpr, e1ty, tpenv = TcExprOfUnknownType cenv env tpenv synLeftExpr
+    let expandedIndexArgs = ExpandIndexArgs (Some synLeftExpr) indexArgs
+    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some synLeftExpr) leftExpr e1ty expandedIndexArgs indexArgs delayed
 
 // Eliminate GetReverseIndex from index args
-and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
+and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
 
     // xs.GetReverseIndex rank offset - 1
     let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
         let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
         let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
-        match synLeftExpr with 
+        match synLeftExprOpt with 
         | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
         | Some xsId -> 
             mkSynApp1
@@ -6006,9 +6033,9 @@ and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
 // Check expr.[idx]
 // This is a little over complicated for my liking. Basically we want to interpret e1.[idx] as e1.Item(idx).
 // However it's not so simple as all that. First "Item" can have a different name according to an attribute in
-// .NET metadata. This means we manually typecheck 'e1' and look to see if it has a nominal type. We then
+// .NET metadata. This means we manually typecheck 'expr and look to see if it has a nominal type. We then
 // do the right thing in each case.
-and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr e1' e1ty expandedIndexArgs indexArgs delayed =
+and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprOpt expr e1ty expandedIndexArgs indexArgs delayed =
     let ad = env.AccessRights
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR
     // has a member called 'Item'
@@ -6137,7 +6164,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty
-                let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
+                let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
                 let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
                 Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
@@ -6153,14 +6180,14 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
             match setInfo with
             // e1.[e2]
             | None  ->
-                DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam None, mWholeExpr) :: delayed
+                DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExprOpt, MakeIndexParam None, mWholeExpr) :: delayed
             // e1.[e2] <- e3
             | Some (e3, mOfLeftOfSet) ->
                 match isIndex with
-                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
-                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam (Some e3), mWholeExpr) :: delayed
+                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExprOpt, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
+                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExprOpt, MakeIndexParam (Some e3), mWholeExpr) :: delayed
 
-        PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv e1') e1ty ExprAtomicFlag.Atomic delayed
+        PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv expr) e1ty ExprAtomicFlag.Atomic delayed
 
     else
         // deprecated constrained lookup
@@ -7460,7 +7487,6 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
     Propagate cenv overallTy env tpenv expr exprty delayed
     TcDelayed cenv overallTy env tpenv mExpr expr exprty atomicFlag delayed
 
-
 /// Typecheck "expr ... " constructs where "..." is a sequence of applications,
 /// type applications and dot-notation projections.
 and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomicFlag) delayed =
@@ -7481,8 +7507,8 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
     // f x
-    | DelayedApp (hpa, synExpr, arg, mExprAndArg) :: otherDelayed ->
-        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr exprty arg hpa otherDelayed
+    | DelayedApp (hpa, synLeftExpr, arg, mExprAndArg) :: otherDelayed ->
+        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExpr expr exprty arg hpa otherDelayed
     // f<tyargs>
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))
@@ -7496,7 +7522,6 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
         let expr2, tpenv = TcExprFlex cenv true false vty env tpenv synExpr2
         let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
         mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
-
 
 /// Convert the delayed identifiers to a dot-lookup.
 ///
@@ -7628,17 +7653,30 @@ and TcNameOfExprResult cenv (lastIdent: Ident) m =
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
 //-------------------------------------------------------------------------
 
-and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr exprty (synArg: SynExpr) atomicFlag delayed =
+// leftExpr[idx] gives a warning 
+and isAdjacentListExpr atomicFlag (synLeftExprOpt: SynExpr option) (synArg: SynExpr) =
+    (atomicFlag = ExprAtomicFlag.Atomic) ||
+    match synLeftExprOpt with
+    | Some synLeftExpr -> 
+        match synArg with
+        | SynExpr.ArrayOrList (false, _, _)
+        | SynExpr.ArrayOrListComputed (false, _, _) ->
+            synLeftExpr.Range.IsAdjacentTo synArg.Range 
+        | _ -> false
+    | _ -> false
+
+and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExprOpt leftExpr exprty (synArg: SynExpr) atomicFlag delayed =
     let denv = env.DisplayEnv
     let mArg = synArg.Range
-    let mFunExpr = expr.Range
+    let mLeftExpr = leftExpr.Range
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
-    match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
+    match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprty with
     | ValueSome (domainTy, resultTy) ->
+
+        // leftExpr[idx] unifying as application gives a warning 
         match synArg, atomicFlag with
-        // expr[idx]
         | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic ->
             if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                 warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
@@ -7646,7 +7684,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
                 warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
         | _ -> ()
 
-        match expr with
+        match leftExpr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
             TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
@@ -7659,37 +7697,41 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
             let synArg =
                 match synArg with
                 | SynExpr.ComputationExpr (false, comp, m) when 
-                        (match expr with
+                        (match leftExpr with
                          | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true
                          | _ -> false) ->
                     SynExpr.ComputationExpr (true, comp, m)
                 | _ -> synArg
 
             let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-            let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
+            let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->
         // Type-directed invokables
 
-        match synArg, atomicFlag with
-        // expr[idx]
-        // expr[idx] <- expr2
-        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m), ExprAtomicFlag.Atomic when cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
-            let expandedIndexArgs = ExpandIndexArgs synExpr indexArgs
+        match synArg with
+        // leftExpr[idx]
+        // leftExpr[idx] <- expr2
+        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m) 
+              when 
+                isAdjacentListExpr atomicFlag synLeftExprOpt synArg && 
+                cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
+
+            let expandedIndexArgs = ExpandIndexArgs synLeftExprOpt indexArgs
             let setInfo, delayed = 
                 match delayed with 
-                | DelayedSet(e3, _) :: rest -> Some (e3, unionRanges expr.Range synArg.Range), rest
+                | DelayedSet(e3, _) :: rest -> Some (e3, unionRanges leftExpr.Range synArg.Range), rest
                 | _ -> None, delayed
-            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synExpr expr.Expr exprty expandedIndexArgs indexArgs delayed
+            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExprOpt leftExpr.Expr exprty expandedIndexArgs indexArgs delayed
 
-        // Perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }'
-        | SynExpr.ComputationExpr (false, comp, _m), _ ->
-            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mFunExpr, expr.Expr, exprty, comp)
+        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }'
+        | SynExpr.ComputationExpr (false, comp, _m) ->
+            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprty, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 
         | _ ->
-            error (NotAFunction(denv, overallTy, mFunExpr, mArg))
+            error (NotAFunction(denv, overallTy, mLeftExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs
