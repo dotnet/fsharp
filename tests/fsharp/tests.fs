@@ -59,13 +59,40 @@ module CoreTests =
     let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
-    let ``array-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/array" FSC_BASIC_OPT_MINUS
+    let ``array-FSC_BASIC_OPT_MINUS-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC_OPT_MINUS "5.0"
 
     [<Test>]
-    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
+    let ``array-FSC_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "5.0"
 
     [<Test>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+    let ``array-FSI_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI_BASIC "5.0"
+
+    [<Test>]
+    let ``array-FSC_BASIC-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``array-no-dot-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_BASIC_OPT_MINUS "preview"
+
+    [<Test>]
+    let ``array-no-dot-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``array-no-dot-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI_BASIC "preview"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-default`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "default" "test-langversion-default"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-5_0`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-preview`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "preview" "test-langversion-preview"
 
     [<Test>]
     let ``comprehensions-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC_OPT_MINUS
@@ -3163,6 +3190,9 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``array-no-dot-GENERATED_SIGNATURE``() = singleTestBuildAndRunVersion "core/array-no-dot-" GENERATED_SIGNATURE "preview"
 
     [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
     let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE

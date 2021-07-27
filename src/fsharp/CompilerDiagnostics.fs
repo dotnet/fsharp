@@ -374,8 +374,9 @@ let warningOn err level specificWarnOn =
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
-    | _ -> level >= GetWarningLevel err 
+    | _ -> level >= GetWarningLevel err
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
@@ -1176,7 +1177,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
                         | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
-                        | Parser.NONTERM_typedSeqExprBlock
+                        | Parser.NONTERM_typedSequentialExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
 
