@@ -483,13 +483,13 @@
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
-        <source>The syntax 'expr1[expr2]' is used for indexing and slicing. Consider adding a type annotation or, if two function arguments are intended, then add a space, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is used for indexing and slicing. Consider adding a type annotation or, if two function arguments are intended, then add a space, e.g. 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is used for indexing/slicing. Consider adding a type annotation to enable indexing/slicing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is used for indexing/slicing. Consider adding a type annotation to enable indexing/slicing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing and slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing and slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">

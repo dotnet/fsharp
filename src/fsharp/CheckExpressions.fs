@@ -7436,7 +7436,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             // Note this case should not occur: would eventually give an "Unexpected type application" error in TcDelayed
             propagate isAddrOf delayedList' mExprAndTypeArgs exprty
 
-        | DelayedApp (atomicFlag, _, arg, mExprAndArg) :: delayedList' ->
+        | DelayedApp (atomicFlag, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | ValueSome (_, resultTy) ->
@@ -7453,29 +7453,30 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate isAddrOf delayedList' mExprAndArg resultTy
 
             | _ ->
-                let mArg = arg.Range
-                match arg with
+                let mArg = synArg.Range
+                match synArg with
                 | SynExpr.ComputationExpr _ -> ()
-                | SynExpr.ArrayOrListComputed (false, _, _) ->
-                    match atomicFlag with 
-                    | ExprAtomicFlag.Atomic when cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot -> 
-                        // expr[idx]
-                        // expr[idx1, idx2]
-                        // expr[idx1..]
-                        // expr[..idx1]
-                        // expr[idx1..idx2]
+
+                // expr[idx]
+                // expr[idx1, idx2]
+                // expr[idx1..]
+                // expr[..idx1]
+                // expr[idx1..idx2]
+                | SynExpr.ArrayOrListComputed(false, _, _) ->
+                    if  isAdjacentListExpr atomicFlag synLeftExprOpt synArg && 
+                        cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                         ()
-                    | _ -> 
-                    // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
-                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    if IsIndexerType cenv.g cenv.amap expr.Type then
-                        match expr.Expr with
-                        | Expr.Val (d, _, _) ->
-                            error (NotAFunctionButIndexer(denv, overallTy, Some d.DisplayName, mExpr, mArg))
-                        | _ ->
-                            error (NotAFunctionButIndexer(denv, overallTy, None, mExpr, mArg))
                     else
-                        error (NotAFunction(denv, overallTy, mExpr, mArg))
+                        // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
+                        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
+                        if IsIndexerType cenv.g cenv.amap expr.Type then
+                            match expr.Expr with
+                            | Expr.Val (d, _, _) ->
+                                error (NotAFunctionButIndexer(denv, overallTy, Some d.DisplayName, mExpr, mArg))
+                            | _ ->
+                                error (NotAFunctionButIndexer(denv, overallTy, None, mExpr, mArg))
+                        else
+                            error (NotAFunction(denv, overallTy, mExpr, mArg))
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
@@ -7507,8 +7508,8 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
     // f x
-    | DelayedApp (hpa, synLeftExpr, arg, mExprAndArg) :: otherDelayed ->
-        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExpr expr exprty arg hpa otherDelayed
+    | DelayedApp (hpa, synLeftExpr, synArg, mExprAndArg) :: otherDelayed ->
+        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExpr expr exprty synArg hpa otherDelayed
     // f<tyargs>
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))

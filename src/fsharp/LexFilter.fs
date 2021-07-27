@@ -2273,25 +2273,6 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               delayToken(TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
               true
 
-          //// Give a warning if '[' occurs immediately adjacent to non-identifier tokens that end an expression
-          ////
-          ////    3[3]
-          ////    (f x)[3]
-          ////    { X=1 }[3]
-          ////    arr[3]
-          ////    arr[3][3]
-          //// Only inserted if IndexerNotationWithoutDot is supported
-          //| IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _ | BIGNUM _ 
-          //| RBRACK | RBRACE _ | RPAREN when 
-          //     nextTokenIsAdjacentLBrack tokenTup ->
-          //    //if indexerNotationWithoutDot then
-          //    //    insertHighPrecedenceApp tokenTup
-          //    //else
-          //        let nextTok = peekNextTokenTup()
-          //        let m = mkSynRange (startPosOfTokenTup tokenTup) nextTok.EndPos
-          //        warning(Error(FSComp.SR.tcIdentifierFollowedByLeftBracketReserved(), m))
-          //        false
-                  
           // Insert HIGH_PRECEDENCE_BRACK_APP if needed 
           //    ident[3]
           | IDENT _ when nextTokenIsAdjacentLBrack tokenTup ->
