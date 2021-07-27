@@ -6,11 +6,10 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open FSDependencyManager
-open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
-type DependencyManagerAttribute() = inherit System.Attribute()
+type DependencyManagerAttribute() = inherit Attribute()
 
 /// The result of building the package resolution files.
 type PackageBuildResolutionResult =
@@ -105,7 +104,7 @@ module internal Utilities =
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
+                    raise (TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
                 else
                     p.WaitForExit()
             p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()

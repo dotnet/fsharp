@@ -4,7 +4,7 @@ open System
 open System.IO
 open System.Text
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CreateILModule.MainModuleBuilder

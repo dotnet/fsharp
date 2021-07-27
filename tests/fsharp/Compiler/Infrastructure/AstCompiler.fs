@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests.AstCompiler
 
-open FSharp.Test.Utilities
+open FSharp.Test
 open NUnit.Framework
 open System.Reflection
 
