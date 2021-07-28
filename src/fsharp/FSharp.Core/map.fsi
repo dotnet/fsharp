@@ -85,8 +85,11 @@ namespace Microsoft.FSharp.Collections
         /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
         member TryGetValue: key:'Key * [<System.Runtime.InteropServices.Out>] value:byref<'Value> -> bool
 
-        member Keys : 'Key seq 
-        member Values : 'Value seq
+        /// <summary>The keys in the map.</summary>
+        member Keys : seq<'Key>
+
+        /// <summary>All the values in the map, including duplicates.</summary>
+        member Values : seq<'Value>
 
         interface IDictionary<'Key, 'Value>         
         interface ICollection<KeyValuePair<'Key, 'Value>> 
@@ -347,8 +350,10 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Count")>]
         val count: table:Map<'Key,'T> -> int
 
+        /// <summary>The keys in the map.</summary>
         [<CompiledName("Keys")>]
         val keys: table: Map<'Key, 'T> -> 'Key seq
 
+        /// <summary>All the values in the map, including duplicates.</summary>
         [<CompiledName("Values")>]
         val values: table: Map<'Key, 'T> -> 'T seq

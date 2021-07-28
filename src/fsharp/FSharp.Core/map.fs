@@ -939,9 +939,7 @@ module Map =
         table.Count
 
     [<CompiledName("Keys")>]
-    let keys (table: Map<_, _>) = 
-        seq { for kvp in table -> kvp.Key }
+    let keys (table: Map<_, _>) = table.Keys
 
     [<CompiledName("Values")>]
-    let values (table: Map<_, _>) = 
-        seq { for kvp in table -> kvp.Value }
+    let values (table: Map<_, _>) = table.Keys

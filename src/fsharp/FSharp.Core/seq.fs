@@ -1490,7 +1490,7 @@ namespace Microsoft.FSharp.Collections
                 source |> toArray |> Array.splitInto count :> seq<_>)
 
         [<CompiledName("RemoveAt")>]
-        let removeAt (index: int) (source: 'T seq) : 'T seq =
+        let removeAt (index: int) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1500,7 +1500,7 @@ namespace Microsoft.FSharp.Collections
             }
     
         [<CompiledName("RemoveManyAt")>]
-        let removeManyAt (index: int) (count: int) (source: 'T seq) : 'T seq =
+        let removeManyAt (index: int) (count: int) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1510,7 +1510,7 @@ namespace Microsoft.FSharp.Collections
             }
     
         [<CompiledName("UpdateAt")>]
-        let updateAt (index: int) (value: 'T) (source: 'T seq) : 'T seq =
+        let updateAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1521,7 +1521,7 @@ namespace Microsoft.FSharp.Collections
             }
     
         [<CompiledName("UpdateManyAt")>]
-        let updateManyAt (index: int) (values: seq< 'T>) (source: 'T seq) : 'T seq =
+        let updateManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 let mutable valueCount = 0
@@ -1537,7 +1537,7 @@ namespace Microsoft.FSharp.Collections
             }
     
         [<CompiledName("InsertAt")>]
-        let insertAt (index: int) (value: 'T) (source: 'T seq) : 'T seq =
+        let insertAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1548,7 +1548,7 @@ namespace Microsoft.FSharp.Collections
             }
     
         [<CompiledName("InsertManyAt")>]
-        let insertManyAt (index: int) (values: seq<'T>) (source: 'T seq) : 'T seq =
+        let insertManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
             seq {
                 let mutable i = 0
                 for item in source do

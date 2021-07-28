@@ -1396,35 +1396,75 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
         [<CompiledName("Zip3")>]
         val zip3: source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'T1 * 'T2 * 'T3>
-        /// Return a new list with the item at a given index removed
-        /// If the index is outside the range of the list then it is ignored.
-        /// 
+        
+        /// <summary>Return a new sequence with the item at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
+
         [<CompiledName("RemoveAt")>]
-        val removeAt: index: int -> source: 'T seq -> 'T seq
+        val removeAt: index: int -> source: seq<'T> -> seq<'T>
     
-        /// Return a new list with the number of items starting at a given index removed.
-        /// If an implied item index is outside the range of the list then it is ignored.
+        /// <summary>Return a new sequence with the number of items starting at a given index removed.</summary>
+        ///
+        /// <param name="index">The index of the item to be removed.</param>
+        /// <param name="count">The number of items to remove.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
         [<CompiledName("RemoveManyAt")>]
-        val removeManyAt: index: int -> count: int -> source: 'T seq -> 'T seq
+        val removeManyAt: index: int -> count: int -> source: seq<'T> -> seq<'T>
     
-        /// Return a new list with the item at a given index set to the new value. The index may also be -1 or source.Length to return a new list with increased size. If 
-        /// index is below -1 or greater than source.Length an exception is raised.
+        /// <summary>Return a new sequence with the item at a given index set to the new value.</summary>
+        ///
+        /// <param name="index">The index of the item to be replaced.</param>
+        /// <param name="value">The new value.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
         [<CompiledName("UpdateAt")>]
-        val updateAt: index: int -> value: 'T -> source: 'T seq -> 'T seq
+        val updateAt: index: int -> value: 'T -> source: seq<'T> -> seq<'T>
     
-        /// Return a new list with the items starting at a given index set to the new values. The index may also be -count or source.Length to return a new list with increased size, where count is the number of elements
-        /// in values. If index is below -count or greater than source.Length an exception is raised.
+        /// <summary>Return a new sequence with the items starting at a given index set to the new values.</summary>
+        ///
+        /// <param name="index">The index of the first item to be replaced.</param>
+        /// <param name="values">The values to replace the current items with.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length - count of values.</exception>
         [<CompiledName("UpdateManyAt")>]
-        val updateManyAt: index: int -> values:seq< 'T> -> source: 'T seq -> 'T seq
+        val updateManyAt: index: int -> values:seq< 'T> -> source: seq<'T> -> seq<'T>
     
-        /// Return a new list with a new item inserted before the given index. The index may be 0 or source.Length to
-        /// return a new list with increased size.   If 
-        /// index is below 0 or greater than source.Length an exception is raised.
+        /// <summary>Return a new sequence with a new item inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the item should be inserted.</param>
+        /// <param name="value">The value to insert.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
         [<CompiledName("InsertAt")>]
-        val insertAt: index: int -> value: 'T -> source: 'T seq -> 'T seq
+        val insertAt: index: int -> value: 'T -> source: seq<'T> -> seq<'T>
     
-        /// Return a new list with new items inserted before the given index. The index may be 0 or source.Length to
-        /// return a new list with increased size.   If index is below 0 or greater
-        /// than source.Length an exception is raised.
+        /// <summary>Return a new sequence with new items inserted before the given index.</summary>
+        ///
+        /// <param name="index">The index where the items should be inserted.</param>
+        /// <param name="values">The values to insert.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
         [<CompiledName("InsertManyAt")>]
-        val insertManyAt: index: int -> values: seq<'T> -> source: 'T seq -> 'T seq
+        val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>
