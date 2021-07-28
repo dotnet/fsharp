@@ -18,23 +18,23 @@
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
-        <source>The use of 'cell := expr' is not recommended. Please change to 'cell.Value &lt;- expr'.</source>
-        <target state="new">The use of 'cell := expr' is not recommended. Please change to 'cell.Value &lt;- expr'.</target>
+        <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
+        <target state="new">The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
-        <source>The use of 'decr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value - 1' or define a helper function in your own code.</source>
-        <target state="new">The use of 'decr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value - 1' or define a helper function in your own code.</target>
+        <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
+        <target state="new">The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
-        <source>The use of '!cell' is not recommended. Please change your code to 'cell.Value'.</source>
-        <target state="new">The use of '!cell' is not recommended. Please change your code to 'cell.Value'.</target>
+        <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
+        <target state="new">The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
-        <source>The use of 'incr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value + 1' or define a helper function in your own code.</source>
-        <target state="new">The use of 'incr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value + 1' or define a helper function in your own code.</target>
+        <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
+        <target state="new">The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">

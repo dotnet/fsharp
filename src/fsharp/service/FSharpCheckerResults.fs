@@ -1800,10 +1800,11 @@ module internal ParseAndCheckFile =
 
             // Replay other background errors.
             for phasedError, sev in otherBackgroundDiagnostics do
-                if sev = FSharpDiagnosticSeverity.Warning then
-                    warning phasedError.Exception
-                else
-                    errorR phasedError.Exception
+                match sev with
+                | FSharpDiagnosticSeverity.Info -> informationalWarning phasedError.Exception
+                | FSharpDiagnosticSeverity.Warning -> warning phasedError.Exception
+                | FSharpDiagnosticSeverity.Error -> errorR phasedError.Exception
+                | FSharpDiagnosticSeverity.Hidden -> ()
 
         | None ->
             // For non-scripts, check for disallow #r and #load.

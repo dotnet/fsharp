@@ -597,6 +597,8 @@ let fillInstrs () =
     oneByteInstrs := Some oneByteInstrTable
     twoByteInstrs := Some twoByteInstrTable
 
+let f x = x[1]
+
 let rec getOneByteInstr i =
     match !oneByteInstrs with
     | None -> fillInstrs(); getOneByteInstr i

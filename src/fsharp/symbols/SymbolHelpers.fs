@@ -62,7 +62,12 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = if severity=FSharpDiagnosticSeverity.Warning then "warning" else "error"
+        let severity = 
+            match severity with
+            | FSharpDiagnosticSeverity.Warning -> "warning"
+            | FSharpDiagnosticSeverity.Error -> "error"
+            | FSharpDiagnosticSeverity.Info -> "info"
+            | FSharpDiagnosticSeverity.Hidden -> "hidden"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
@@ -97,7 +102,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 /// Use to reset error and warning handlers            
 [<Sealed>]
 type ErrorScope()  = 
-    let mutable errors = [] 
+    let mutable diags = [] 
     let mutable firstError = None
     let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let unwindEL =        
@@ -105,16 +110,14 @@ type ErrorScope()  =
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, severity) = 
                       let err = FSharpDiagnostic.CreateFromException(exn, severity, range.Zero, false)
-                      errors <- err :: errors
+                      diags <- err :: diags
                       if severity = FSharpDiagnosticSeverity.Error && firstError.IsNone then 
                           firstError <- Some err.Message
-                member x.ErrorCount = errors.Length })
+                member x.ErrorCount = diags.Length })
         
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+    member x.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
-
-    member x.Diagnostics = errors
+    member x.Diagnostics = diags
 
     member x.TryGetFirstErrorText() =
         match x.Errors with 

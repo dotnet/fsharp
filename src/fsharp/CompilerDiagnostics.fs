@@ -367,16 +367,17 @@ let GetWarningLevel err =
     // Level 2
     | _ -> 2
 
-let diagnosticEnabled (err, severity) level specificWarnOn =
-    let n = GetDiagnosticNumber err
+let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     List.contains n specificWarnOn ||
-    // Some specific warnings are never on by default, i.e. unused variable warnings
+    // Some specific warnings/informational are never on by default, i.e. unused variable warnings
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
-    | _ -> (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
+    | _ -> 
+        (severity = FSharpDiagnosticSeverity.Info) ||
+        (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
@@ -1873,21 +1874,24 @@ let ReportDiagnosticAsWarningOrInfo options (err, severity) =
     | FSharpDiagnosticSeverity.Error -> true
     | FSharpDiagnosticSeverity.Info 
     | FSharpDiagnosticSeverity.Warning ->
-        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn && 
-        not (List.contains (GetDiagnosticNumber err) options.WarnOff)
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        not (List.contains n options.WarnOff)
     | FSharpDiagnosticSeverity.Hidden -> false
 
 let ReportDiagnosticAsError options (err, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> true
     | FSharpDiagnosticSeverity.Warning ->
-        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn &&
-        not (List.contains (GetDiagnosticNumber err) options.WarnAsWarn) &&
-        ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
-         List.contains (GetDiagnosticNumber err) options.WarnAsError)
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
+        not (List.contains n options.WarnAsWarn) &&
+        ((options.GlobalWarnAsError && not (List.contains n options.WarnOff)) ||
+         List.contains n options.WarnAsError)
     | FSharpDiagnosticSeverity.Info ->
-        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn &&
-        List.contains (GetDiagnosticNumber err) options.WarnAsError
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
+        List.contains n options.WarnAsError
     | FSharpDiagnosticSeverity.Hidden -> false
 
 //----------------------------------------------------------------------------

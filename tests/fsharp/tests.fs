@@ -95,6 +95,11 @@ module CoreTests =
         singleVersionedNegTest cfg "preview" "test-langversion-preview"
 
     [<Test>]
+    let ``ref-ops-deprecation-langversion-preview`` () =
+        let cfg = testConfig "core/ref-ops-deprecation"
+        singleVersionedNegTest cfg "preview" "test-langversion-preview"
+
+    [<Test>]
     let ``comprehensions-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC_OPT_MINUS
 
     [<Test>]
