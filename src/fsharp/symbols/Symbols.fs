@@ -337,7 +337,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
     default _.Accessibility = FSharpAccessibility(taccessPublic)
         
     abstract Attributes: IList<FSharpAttribute>
-    default _.Attributes = makeReadOnlyCollection[]
+    default _.Attributes = makeReadOnlyCollection []
 
     member sym.HasAttribute<'T> () =
         sym.Attributes |> Seq.exists (fun attr -> attr.IsAttribute<'T>())
@@ -612,7 +612,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.IsNamespace =  entity.IsNamespace
 
     member x.MembersFunctionsAndValues = 
-      if isUnresolved() then makeReadOnlyCollection[] else
+      if isUnresolved() then makeReadOnlyCollection [] else
       protect <| fun () -> 
         ([ let _, entityTy = generalizeTyconRef entity
            let createMember (minfo: MethInfo) =
@@ -683,20 +683,20 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
       |> makeReadOnlyCollection
 
     member _.NestedEntities = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
         entity.ModuleOrNamespaceType.AllEntities 
         |> QueueList.toList
         |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x))
         |> makeReadOnlyCollection
 
     member x.UnionCases = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
         entity.UnionCasesAsRefList
         |> List.map (fun x -> FSharpUnionCase(cenv, x)) 
         |> makeReadOnlyCollection
 
     member x.FSharpFields =
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
     
         if entity.IsILEnumTycon then
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
@@ -722,7 +722,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         | Some ty -> FSharpType(cenv, ty)
 
     override _.Attributes = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv, a))
         |> makeReadOnlyCollection
