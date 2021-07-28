@@ -942,4 +942,4 @@ module Map =
     let keys (table: Map<_, _>) = table.Keys
 
     [<CompiledName("Values")>]
-    let values (table: Map<_, _>) = table.Keys
+    let values (table: Map<_, _>) = table.Values

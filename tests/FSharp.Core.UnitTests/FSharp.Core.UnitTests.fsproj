@@ -49,7 +49,6 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array5Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
