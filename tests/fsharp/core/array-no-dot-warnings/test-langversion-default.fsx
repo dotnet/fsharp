@@ -10,3 +10,6 @@ let _error = 1 + 1.0
 
 let xs = [1]
 let v5 = xs@[1]  //should not give warning
+
+let arr2 = [| 1 .. 5 |]
+arr2.[1..] <- [| 9;8;7;6 |] //should not give warning
