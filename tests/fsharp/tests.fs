@@ -3191,9 +3191,6 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
 
-    [<Test>]
-    let ``array-no-dot-GENERATED_SIGNATURE``() = singleTestBuildAndRunVersion "core/array-no-dot-" GENERATED_SIGNATURE "preview"
-
     [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
     let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
 
