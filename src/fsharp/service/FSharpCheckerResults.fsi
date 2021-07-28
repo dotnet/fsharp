@@ -305,7 +305,7 @@ type public FSharpCheckFileResults =
     member GetSemanticClassification : range option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
-    [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
+    [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
     member GetFormatSpecifierLocations : unit -> range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
@@ -434,8 +434,6 @@ type public FSharpCheckProjectResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
-    member internal RawFSharpAssemblyData : IRawFSharpAssemblyData option
-
     // Internal constructor.
     internal new : 
         projectFileName:string *
@@ -446,9 +444,8 @@ type public FSharpCheckProjectResults =
                  TcImports *
                  CcuThunk *
                  ModuleOrNamespaceType *
-                 TcSymbolUses list *
+                 Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
-                 IRawFSharpAssemblyData option *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *
@@ -486,7 +483,6 @@ type internal FsiInteractiveChecker =
           ->  FsiInteractiveChecker 
 
     member internal ParseAndCheckInteraction : 
-        ctok: CompilationThreadToken * 
         sourceText:ISourceText * 
         ?userOpName: string 
           -> Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>

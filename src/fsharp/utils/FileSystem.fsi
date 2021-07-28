@@ -6,12 +6,8 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection
-open System.Runtime.InteropServices
 open System.Text
-
-open FSharp.NativeInterop
-
-open Internal.Utilities.Library
+open System.Runtime.CompilerServices
 
 exception IllegalFileNameChar of string * char
 
@@ -96,6 +92,7 @@ type internal ReadOnlyByteMemory =
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+        static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
     
 /// Filesystem helpers
 module internal FileSystemUtils =
@@ -131,10 +128,10 @@ module internal FileSystemUtils =
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
-    abstract member AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly
+    abstract member AssemblyLoad: assemblyName:AssemblyName -> Assembly
 
     /// Used to load type providers and located assemblies in F# Interactive
-    abstract member AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly
+    abstract member AssemblyLoadFrom: fileName:string -> Assembly
 
 /// Default implementation for IAssemblyLoader
 type DefaultAssemblyLoader =
@@ -294,6 +291,7 @@ module public StreamExtensions =
         member ReadAllText : ?encoding: Encoding -> string
         member ReadLines : ?encoding: Encoding -> string seq
         member ReadAllLines : ?encoding: Encoding -> string array
+        member WriteAllText : text: string -> unit
         member AsByteMemory : unit -> ByteMemory
 
 [<AutoOpen>]
@@ -335,22 +333,52 @@ type internal ByteStream =
 #endif
 
 /// Imperative buffers and streams of byte[]
+/// Not thread safe.
 [<Sealed>]
 type internal ByteBuffer =
-    member Close : unit -> byte[]
+    interface IDisposable
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    member AsMemory : unit -> ReadOnlyMemory<byte>
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitIntAsByte : int -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitIntsAsBytes : int[] -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByte : byte -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitBytes : byte[] -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    member EmitMemory : ReadOnlyMemory<byte> -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitByteMemory : ReadOnlyByteMemory -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt32 : int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt64 : int64 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member FixupInt32 : pos: int -> value: int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitInt32AsUInt16 : int32 -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitBoolAsByte : bool -> unit
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member EmitUInt16 : uint16 -> unit
+
     member Position : int
-    static member Create : int -> ByteBuffer
+    static member Create : capacity: int * ?useArrayPool: bool -> ByteBuffer
 
 [<Sealed>]
 type internal ByteStorage =
@@ -365,6 +393,9 @@ type internal ByteStorage =
 
     /// Creates a ByteStorage that has a copy of the given ByteMemory.
     static member FromByteMemoryAndCopy : ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
+
+    /// Creates a ByteStorage that has a copy of the given Memory<byte>.
+    static member FromMemoryAndCopy : ReadOnlyMemory<byte> * useBackingMemoryMappedFile: bool -> ByteStorage
 
     /// Creates a ByteStorage that has a copy of the given byte array.
     static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage

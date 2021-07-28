@@ -34,9 +34,9 @@ val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option 
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * 
-     ('T -> range * string * Directive -> 'T) *
-     ('T -> range * string -> unit))
+    ('T -> range * string -> 'T) * 
+    ('T -> range * string * Directive -> 'T) *
+    ('T -> range * string -> unit)
       -> TcConfigBuilder * ParsedInput * string * 'T 
       -> 'T
 
@@ -89,7 +89,7 @@ val GetInitialTcState:
 val CreateDummyTypedImplFile: g: TcGlobals -> qualNameOfFile: QualifiedNameOfFile -> sigTy: ModuleOrNamespaceType -> TypedImplFile
 
 /// Check one input, returned as an Eventually computation
-val TypeCheckOneInputEventually :
+val TypeCheckOneInput:
     checkForErrors:(unit -> bool) *
     TcConfig *
     TcImports *
@@ -99,7 +99,7 @@ val TypeCheckOneInputEventually :
     TcState *
     ParsedInput *
     skipImplIfSigExists: bool
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
+      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
 val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
@@ -108,7 +108,7 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish:
     TypedImplFile list *
     TcState
-      -> TcState * TypedImplFile list
+      -> TcState * TypedImplFile list * ModuleOrNamespace
 
 /// Check a closed set of inputs 
 val TypeCheckClosedInputSet:
@@ -122,7 +122,7 @@ val TypeCheckClosedInputSet:
       -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
-val TypeCheckOneInputAndFinishEventually :
+val TypeCheckOneInputAndFinish :
     checkForErrors: (unit -> bool) *
     TcConfig *
     TcImports *
@@ -131,7 +131,7 @@ val TypeCheckOneInputAndFinishEventually :
     NameResolution.TcResultsSink *
     TcState *
     ParsedInput 
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
 

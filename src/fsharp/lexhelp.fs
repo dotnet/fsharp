@@ -9,7 +9,6 @@ open Internal.Utilities
 open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
-open FSharp.Compiler
 open FSharp.Compiler.IO
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ParseHelpers
@@ -38,7 +37,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
-    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, Parser.token>(Environment.ProcessorCount, defaultArg capacity 1024)
+    let strings = System.Collections.Concurrent.ConcurrentDictionary<string, token>(Environment.ProcessorCount, defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -101,15 +100,15 @@ let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
 //-----------------------------------------------------------------------
 
 let stringBufferAsString (buf: ByteBuffer) =
-    let buf = buf.Close()
+    let buf = buf.AsMemory()
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
-        let hi = buf.[i*2+1]
-        let lo = buf.[i*2]
+        let hi = buf.Span.[i*2+1]
+        let lo = buf.Span.[i*2]
         let c = char (((int hi) * 256) + (int lo))
         chars.[i] <- c
-    System.String(chars)
+    String(chars)
 
 /// When lexing bytearrays we don't expect to see any unicode stuff. 
 /// Likewise when lexing string constants we shouldn't see any trigraphs > 127 
@@ -117,8 +116,8 @@ let stringBufferAsString (buf: ByteBuffer) =
 /// we just take every second byte we stored.  Note all bytes > 127 should have been 
 /// stored using addIntChar 
 let stringBufferAsBytes (buf: ByteBuffer) = 
-    let bytes = buf.Close()
-    Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
+    let bytes = buf.AsMemory()
+    Array.init (bytes.Length / 2) (fun i -> bytes.Span.[i*2]) 
 
 [<Flags>]
 type LexerStringFinisherContext = 
@@ -185,10 +184,10 @@ let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127 
 let stringBufferIsBytes (buf: ByteBuffer) = 
-    let bytes = buf.Close()
+    let bytes = buf.AsMemory()
     let mutable ok = true 
     for i = 0 to bytes.Length / 2-1 do
-        if bytes.[i*2+1] <> 0uy then ok <- false
+        if bytes.Span.[i*2+1] <> 0uy then ok <- false
     ok
 
 let newline (lexbuf:LexBuffer<_>) = 
@@ -398,7 +397,7 @@ module Keywords =
                 else PathMap.applyDir args.pathMap dirname
                 |> fun dir -> KEYWORD_STRING(s, dir)
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (s, System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (s, System.IO.Path.GetFileName (FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex)) 
             | "__LINE__" -> 
                 KEYWORD_STRING (s, string lexbuf.StartPos.Line)
             | _ -> 

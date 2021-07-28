@@ -108,7 +108,7 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit System.Attribute()
@@ -177,7 +177,7 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.CompiledName = compiledName
 
-    [<AttributeUsage (AttributeTargets.Struct, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue, AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit System.Attribute()
@@ -260,6 +260,11 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
 
         member x.Message = message
+
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type InlineIfLambdaAttribute() = 
+        inherit System.Attribute()
 
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]

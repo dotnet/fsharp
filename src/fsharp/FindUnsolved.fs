@@ -170,7 +170,7 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
@@ -191,7 +191,7 @@ and accDiscrim cenv env d =
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcty, tgty) -> accTy cenv env srcty; accTy cenv env tgty
-    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
     | DecisionTreeTest.Error _ -> ()

@@ -12,10 +12,16 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Text
 open FSharp.Compiler.IO
+
+type internal FxResolverLockToken() =
+   interface LockToken
+
+type internal FxResolverLock = Lock<FxResolverLockToken>   
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
@@ -25,6 +31,10 @@ open FSharp.Compiler.IO
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
 type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
+
+    let fxlock = FxResolverLock()
+
+    static let RequireFxResolverLock (_fxtok: FxResolverLockToken, _thingProtected: 'T) = ()
 
     /// We only try once for each directory (cleared on solution unload) to prevent conditions where 
     /// we repeatedly try to run dotnet.exe on every keystroke for a script
@@ -68,7 +78,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+                    raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
                     p.WaitForExit()
 #if DEBUG
@@ -267,7 +277,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             |> Array.map (fun di -> computeVersion di.Name, di)
             |> Array.filter(fun (v, _) -> (compareVersion v targetVersion) <= 0)
             |> Array.sortWith (fun (v1,_) (v2,_) -> compareVersion v1 v2)
-            |> Array.map (fun (_, di) -> di)
+            |> Array.map snd
             |> Array.tryLast
         else
             None
@@ -336,7 +346,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         let pattern = "\"name\": \"" + tfmPrefix
         let startPos =
             let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-            if startPos >= 0  then startPos + (pattern.Length) else startPos
+            if startPos >= 0  then startPos + pattern.Length else startPos
         let length =
             if startPos >= 0 then
                 let ep = file.IndexOf("\"", startPos)
@@ -456,7 +466,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     let tryGetSdkRefsPackDirectory() = trySdkRefsPackDirectory.Force()
 
     let getDependenciesOf assemblyReferences =
-        let assemblies = new Dictionary<string, string>()
+        let assemblies = Dictionary<string, string>()
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
@@ -763,16 +773,24 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     member _.GetSystemAssemblies() = systemAssemblies
 
     member _.IsInReferenceAssemblyPackDirectory filename =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+
         match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
             let path = Path.GetDirectoryName(filename)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    member _.TryGetSdkDir() = tryGetSdkDir() |> replayWarnings
+    member _.TryGetSdkDir() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkDir() |> replayWarnings
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         // Interactive processes read their own configuration to find the running tfm
 
         let tfm =
@@ -819,12 +837,20 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
-    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory() |> replayWarnings
+    member _.GetFrameworkRefsPackDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetSdkRefsPackDirectory() |> replayWarnings
 
-    member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
+    member _.TryGetDesiredDotNetSdkVersionForDirectory() =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
+        tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
-    member _.GetDefaultReferences (useFsiAuxLib) =
+    member _.GetDefaultReferences useFsiAuxLib =
+      fxlock.AcquireLock <| fun fxtok -> 
+        RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =
             if assumeDotNetFramework then
                 getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework

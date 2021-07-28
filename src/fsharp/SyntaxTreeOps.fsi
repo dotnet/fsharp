@@ -153,6 +153,10 @@ val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list
 
 val ( |Attributes| ): synAttributes:SynAttributeList list -> SynAttribute list
 
+val ( |TyparDecls| ): typarDecls: SynTyparDecls option -> SynTyparDecl list
+val ( |TyparsAndConstraints| ): typarDecls: SynTyparDecls option -> SynTyparDecl list * SynTypeConstraint list
+val ( |ValTyparDecls| ): valTyparDecls: SynValTyparDecls -> SynTyparDecl list * SynTypeConstraint list * bool
+
 val rangeOfNonNilAttrs: attrs:SynAttributes -> range
 
 val stripParenTypes: synType:SynType -> SynType
@@ -222,11 +226,6 @@ module SynInfo =
     /// rather than member signatures.
     val AdjustMemberArgs: memFlags:SynMemberKind -> infosForArgs:'a list list -> 'a list list
 
-    /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
-    /// is an immediate 'fun ... -> ...' or 'function ...' expression. This is noted in the F# language specification.
-    /// This does not apply to member definitions.
-    val InferLambdaArgs: origRhsExpr:SynExpr -> SynArgInfo list list
-
     val InferSynReturnData: retInfo:SynReturnInfo option -> SynArgInfo
 
     val emptySynValData: SynValData
@@ -262,3 +261,5 @@ val inferredTyparDecls: SynValTyparDecls
 val noInferredTypars: SynValTyparDecls
 
 val synExprContainsError: inpExpr:SynExpr -> bool
+
+val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list

@@ -2,9 +2,9 @@
 
 module internal FSharp.Compiler.QuotationPickler
 
+open System
 open System.Text
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 
@@ -122,9 +122,9 @@ let mkApp (a, b) = CombExpr(AppOp, [], [a; b])
 
 let mkLambda (a, b) = LambdaExpr (a, b)
 
-let mkQuote (a) = QuoteExpr (a)
+let mkQuote a = QuoteExpr a
 
-let mkQuoteRaw40 (a) = QuoteRawExpr (a)
+let mkQuoteRaw40 a = QuoteRawExpr a
 
 let mkCond (x1, x2, x3)          = CombExpr(CondOp, [], [x1;x2;x3])
 
@@ -168,15 +168,15 @@ let mkCoerce  (ty, arg)        = CombExpr(CoerceOp, [ty], [arg])
 
 let mkTypeTest  (ty, arg)      = CombExpr(TypeTestOp, [ty], [arg])
 
-let mkAddressOf  (arg)        = CombExpr(AddressOfOp, [], [arg])
+let mkAddressOf  arg        = CombExpr(AddressOfOp, [], [arg])
 
 let mkAddressSet  (arg1, arg2) = CombExpr(AddressSetOp, [], [arg1;arg2])
 
 let mkVarSet  (arg1, arg2)     = CombExpr(ExprSetOp, [], [arg1;arg2])
 
-let mkDefaultValue (ty)       = CombExpr(DefaultValueOp, [ty], [])
+let mkDefaultValue ty       = CombExpr(DefaultValueOp, [ty], [])
 
-let mkThisVar (ty)       = ThisVarExpr(ty)
+let mkThisVar ty       = ThisVarExpr(ty)
 
 let mkNewArray     (ty, args)  = CombExpr(NewArrayOp, [ty], args)
 
@@ -234,7 +234,7 @@ let mkMethodCallW (d1, d2, d3, tyargs, args) = CombExpr(MethodCallWOp(d1, d2, d3
 
 let mkAttributedExpression(e, attr) = AttrExpr(e, [attr])
 
-let isAttributedExpression e = match e with AttrExpr(_, _) -> true | _ -> false
+let isAttributedExpression e = match e with AttrExpr _ -> true | _ -> false
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle expression and type specifications in a stable format
@@ -244,6 +244,10 @@ let isAttributedExpression e = match e with AttrExpr(_, _) -> true | _ -> false
 let SerializedReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
 
 let freshVar (n, ty, mut) = { vText=n; vType=ty; vMutable=mut }
+
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
 
 module SimplePickle =
 
@@ -308,13 +312,18 @@ module SimplePickle =
 
     let p_bytes (s:byte[]) st =
         let len = s.Length
-        p_int32 (len) st
+        p_int32 len st
         st.os.EmitBytes s
+
+    let p_memory (s:ReadOnlyMemory<byte>) st =
+        let len = s.Length
+        p_int32 len st
+        st.os.EmitMemory s
 
     let prim_pstring (s:string) st =
         let bytes = Encoding.UTF8.GetBytes s
         let len = bytes.Length
-        p_int32 (len) st
+        p_int32 len st
         st.os.EmitBytes bytes
 
     let p_int (c:int) st = p_int32 c st
@@ -333,9 +342,9 @@ module SimplePickle =
         p_int32 (int32 (i &&& 0xFFFFFFFFL)) st
         p_int32 (int32 (i >>> 32)) st
 
-    let bits_of_float32 (x:float32) = System.BitConverter.ToInt32(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float32 (x:float32) = BitConverter.ToInt32(BitConverter.GetBytes(x), 0)
 
-    let bits_of_float (x:float) = System.BitConverter.ToInt64(System.BitConverter.GetBytes(x), 0)
+    let bits_of_float (x:float) = BitConverter.ToInt64(BitConverter.GetBytes(x), 0)
 
     let p_uint64 x st = p_int64 (int64 x) st
 
@@ -363,20 +372,26 @@ module SimplePickle =
         | h :: t -> p_byte 1 st; f h st; p_list f t st
 
     let pickle_obj p x =
+        let st1 =
+            { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+              ostrings=Table<_>.Create() }
         let stringTab, phase1bytes =
-            let st1 =
-                { os = ByteBuffer.Create 100000
-                  ostrings=Table<_>.Create() }
             p x st1
-            st1.ostrings.AsList, st1.os.Close()
+            st1.ostrings.AsList, st1.os.AsMemory()
+
         let phase2data = (stringTab, phase1bytes)
+
+        let st2 =
+           { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+             ostrings=Table<_>.Create() }
         let phase2bytes =
-            let st2 =
-               { os = ByteBuffer.Create 100000
-                 ostrings=Table<_>.Create() }
-            p_tup2 (p_list prim_pstring) p_bytes phase2data st2
-            st2.os.Close()
-        phase2bytes
+            p_tup2 (p_list prim_pstring) p_memory phase2data st2
+            st2.os.AsMemory()
+
+        let finalBytes = phase2bytes.ToArray()
+        (st1.os :> IDisposable).Dispose()
+        (st2.os :> IDisposable).Dispose()
+        finalBytes
 
 open SimplePickle
 

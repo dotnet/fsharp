@@ -92,17 +92,10 @@ namespace FSharp.Compiler.Diagnostics
         /// Get the captured diagnostics
         member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
-    /// This represents the global state established as each task function runs as part of the build.
-    ///
-    /// Use to reset error and warning handlers.
-    type internal CompilationGlobalsScope =
-        new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-        interface IDisposable
-
     module internal DiagnosticHelpers = 
         val ReportDiagnostic: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
 
-        val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
+        val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<PhasedDiagnostic * FSharpDiagnosticSeverity> * suggestNames: bool -> FSharpDiagnostic[]
 
 namespace FSharp.Compiler.Symbols
 
@@ -112,7 +105,6 @@ namespace FSharp.Compiler.Symbols
     open FSharp.Compiler.Infos
     open FSharp.Compiler.NameResolution
     open FSharp.Compiler.InfoReader
-    open FSharp.Compiler.Syntax
     open FSharp.Compiler.Text
     open FSharp.Compiler.Xml
     open FSharp.Compiler.TypedTree

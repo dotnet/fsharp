@@ -15,7 +15,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
-open System.IO.MemoryMappedFiles
 open System.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -35,13 +34,13 @@ open FSharp.NativeInterop
 let checking = false
 let logging = false
 let _ = if checking then dprintn "warning: ILBinaryReader.checking is on"
-let noStableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
-let alwaysMemoryMapFSC = try (System.Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
+let noStableFileHeuristic = try (Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
+let alwaysMemoryMapFSC = try (Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
 let stronglyHeldReaderCacheSizeDefault = 30
-let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
+let stronglyHeldReaderCacheSize = try (match Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
 
-let singleOfBits (x: int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes x, 0)
-let doubleOfBits (x: int64) = System.BitConverter.Int64BitsToDouble x
+let singleOfBits (x: int32) = BitConverter.ToSingle(BitConverter.GetBytes x, 0)
+let doubleOfBits (x: int64) = BitConverter.Int64BitsToDouble x
 
 //---------------------------------------------------------------------
 // Utilities.
@@ -161,7 +160,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
 
     // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
     // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
-    let mutable weakMemory = new WeakReference<ByteMemory>(Unchecked.defaultof<_>)
+    let mutable weakMemory = WeakReference<ByteMemory>(Unchecked.defaultof<_>)
 
     member _.FileName = fileName
 
@@ -190,7 +189,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = new WeakReference<byte[]> (null)
+    let weakBytes = WeakReference<byte[]>(null)
 
     member _.FileName = fileName
 
@@ -391,7 +390,7 @@ let sigptrGetBytes n (bytes: byte[]) sigptr =
 
 let sigptrGetString n bytes sigptr =
     let bytearray, sigptr = sigptrGetBytes n bytes sigptr
-    (System.Text.Encoding.UTF8.GetString(bytearray, 0, bytearray.Length)), sigptr
+    (Encoding.UTF8.GetString(bytearray, 0, bytearray.Length)), sigptr
 
 
 // --------------------------------------------------------------------
@@ -687,25 +686,25 @@ let kindIllegal = RowKind [ ]
 // kind of element in that column.
 //---------------------------------------------------------------------
 
-let hcCompare (TaggedIndex((t1: HasConstantTag), (idx1: int))) (TaggedIndex((t2: HasConstantTag), idx2)) =
+let hcCompare (TaggedIndex(t1: HasConstantTag, idx1: int)) (TaggedIndex(t2: HasConstantTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let hsCompare (TaggedIndex((t1: HasSemanticsTag), (idx1: int))) (TaggedIndex((t2: HasSemanticsTag), idx2)) =
+let hsCompare (TaggedIndex(t1: HasSemanticsTag, idx1: int)) (TaggedIndex(t2: HasSemanticsTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let hcaCompare (TaggedIndex((t1: HasCustomAttributeTag), (idx1: int))) (TaggedIndex((t2: HasCustomAttributeTag), idx2)) =
+let hcaCompare (TaggedIndex(t1: HasCustomAttributeTag, idx1: int)) (TaggedIndex(t2: HasCustomAttributeTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let mfCompare (TaggedIndex((t1: MemberForwardedTag), (idx1: int))) (TaggedIndex((t2: MemberForwardedTag), idx2)) =
+let mfCompare (TaggedIndex(t1: MemberForwardedTag, idx1: int)) (TaggedIndex(t2: MemberForwardedTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let hdsCompare (TaggedIndex((t1: HasDeclSecurityTag), (idx1: int))) (TaggedIndex((t2: HasDeclSecurityTag), idx2)) =
+let hdsCompare (TaggedIndex(t1: HasDeclSecurityTag, idx1: int)) (TaggedIndex(t2: HasDeclSecurityTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let hfmCompare (TaggedIndex((t1: HasFieldMarshalTag), idx1)) (TaggedIndex((t2: HasFieldMarshalTag), idx2)) =
+let hfmCompare (TaggedIndex(t1: HasFieldMarshalTag, idx1)) (TaggedIndex(t2: HasFieldMarshalTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
-let tomdCompare (TaggedIndex((t1: TypeOrMethodDefTag), idx1)) (TaggedIndex((t2: TypeOrMethodDefTag), idx2)) =
+let tomdCompare (TaggedIndex(t1: TypeOrMethodDefTag, idx1)) (TaggedIndex(t2: TypeOrMethodDefTag, idx2)) =
     if idx1 < idx2 then -1 elif idx1 > idx2 then 1 else compare t1.Tag t2.Tag
 
 let simpleIndexCompare (idx1: int) (idx2: int) =
@@ -741,7 +740,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     fun f (idx: int32) ->
         let cache =
             match !cache with
-            | null -> cache := new ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+            | null -> cache := ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
@@ -763,7 +762,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     fun f (idx :'T) ->
         let cache =
             match !cache with
-            | null -> cache := new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+            | null -> cache := ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
@@ -866,13 +865,13 @@ let seekReadOptionalIndexedRow info =
     | [k] -> Some k
     | [] -> None
     | h :: _ ->
-        dprintn ("multiple rows found when indexing table")
+        dprintn "multiple rows found when indexing table"
         Some h
 
 let seekReadIndexedRow info =
     match seekReadOptionalIndexedRow info with
     | Some row -> row
-    | None -> failwith ("no row found for key when indexing table")
+    | None -> failwith "no row found for key when indexing table"
 
 //---------------------------------------------------------------------
 // IL Reading proper
@@ -895,7 +894,7 @@ type PEReader =
     textSegmentPhysicalSize: int32
     dataSegmentPhysicalLoc: int32
     dataSegmentPhysicalSize: int32
-    anyV2P: (string * int32) -> int32
+    anyV2P: string * int32 -> int32
     metadataAddr: int32
     sectionHeaders: (int32 * int32 * int32) list
     nativeResourcesAddr: int32
@@ -919,12 +918,12 @@ type ILMetadataReader =
     stringsStreamPhysicalLoc: int32
     blobsStreamPhysicalLoc: int32
     blobsStreamSize: int32
-    readUserStringHeap: (int32 -> string)
+    readUserStringHeap: int32 -> string
     memoizeString: string -> string
-    readStringHeap: (int32 -> string)
-    readBlobHeap: (int32 -> byte[])
+    readStringHeap: int32 -> string
+    readBlobHeap: int32 -> byte[]
     guidsStreamPhysicalLoc: int32
-    rowAddr: (TableName -> int -> int32)
+    rowAddr: TableName -> int -> int32
     tableBigness: bool []
     rsBigness: bool
     tdorBigness: bool
@@ -1475,7 +1474,7 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
                 let rva, _fidx = seekReadFieldRVARow ctxt mdv i
                 res := ("field", rva) :: !res
             for i = 1 to ctxt.getNumRows TableNames.ManifestResource do
-                let (offset, _, _, TaggedIndex(_tag, idx)) = seekReadManifestResourceRow ctxt mdv i
+                let offset, _, _, TaggedIndex(_tag, idx) = seekReadManifestResourceRow ctxt mdv i
                 if idx = 0 then
                   let rva = pectxt.resourcesAddr + offset
                   res := ("manifest resource", rva) :: !res
@@ -1485,7 +1484,7 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
           let methodRVAs =
               let res = ref []
               for i = 1 to ctxt.getNumRows TableNames.Method do
-                  let (rva, _, _, nameIdx, _, _) = seekReadMethodRow ctxt mdv i
+                  let rva, _, _, nameIdx, _, _ = seekReadMethodRow ctxt mdv i
                   if rva <> 0 then
                      let nm = readStringHeap ctxt nameIdx
                      res := (nm, rva) :: !res
@@ -1495,7 +1494,7 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
            @
            (List.map pectxt.anyV2P
               (dataStartPoints
-                @ [for (virtAddr, _virtSize, _physLoc) in pectxt.sectionHeaders do yield ("section start", virtAddr) done]
+                @ [for virtAddr, _virtSize, _physLoc in pectxt.sectionHeaders do yield ("section start", virtAddr) done]
                 @ [("md", pectxt.metadataAddr)]
                 @ (if pectxt.nativeResourcesAddr = 0x0 then [] else [("native resources", pectxt.nativeResourcesAddr) ])
                 @ (if pectxt.resourcesAddr = 0x0 then [] else [("managed resources", pectxt.resourcesAddr) ])
@@ -1530,9 +1529,9 @@ let isSorted (ctxt: ILMetadataReader) (tab: TableName) = ((ctxt.sorted &&& (int6
 
 // Note, pectxtEager and pevEager must not be captured by the results of this function
 let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PEReader) pevEager peinfo ilMetadataVersion idx =
-    let (subsys, subsysversion, useHighEntropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal) = peinfo
+    let subsys, subsysversion, useHighEntropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal = peinfo
     let mdv = ctxt.mdfile.GetView()
-    let (_generation, nameIdx, _mvidIdx, _encidIdx, _encbaseidIdx) = seekReadModuleRow ctxt mdv idx
+    let _generation, nameIdx, _mvidIdx, _encidIdx, _encbaseidIdx = seekReadModuleRow ctxt mdv idx
     let ilModuleName = readStringHeap ctxt nameIdx
     let nativeResources = readNativeResources pectxtEager
 
@@ -1562,7 +1561,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PE
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
     let mdview = ctxt.mdfile.GetView()
-    let (hash, v1, v2, v3, v4, flags, publicKeyIdx, nameIdx, localeIdx) = seekReadAssemblyRow ctxt mdview idx
+    let hash, v1, v2, v3, v4, flags, publicKeyIdx, nameIdx, localeIdx = seekReadAssemblyRow ctxt mdview idx
     let name = readStringHeap ctxt nameIdx
     let pubkey = readBlobHeapOption ctxt publicKeyIdx
     { Name= name
@@ -1583,7 +1582,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
         else ILAssemblyLongevity.Unspecified
       ExportedTypes= seekReadTopExportedTypes ctxt
       EntrypointElsewhere=
-            let (tab, tok) = pectxt.entryPointToken
+            let tab, tok = pectxt.entryPointToken
             if tab = TableNames.File then Some (seekReadFile ctxt mdview tok) else None
       Retargetable = 0 <> (flags &&& 0x100)
       DisableJitOptimizations = 0 <> (flags &&& 0x4000)
@@ -1594,7 +1593,7 @@ and seekReadAssemblyRef (ctxt: ILMetadataReader) idx = ctxt.seekReadAssemblyRef 
 and seekReadAssemblyRefUncached ctxtH idx =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
-    let (v1, v2, v3, v4, flags, publicKeyOrTokenIdx, nameIdx, localeIdx, hashValueIdx) = seekReadAssemblyRefRow ctxt mdv idx
+    let v1, v2, v3, v4, flags, publicKeyOrTokenIdx, nameIdx, localeIdx, hashValueIdx = seekReadAssemblyRefRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
     let publicKey =
         match readBlobHeapOption ctxt publicKeyOrTokenIdx with
@@ -1614,7 +1613,7 @@ and seekReadModuleRef (ctxt: ILMetadataReader) mdv idx =
     ILModuleRef.Create(name = readStringHeap ctxt nameIdx, hasMetadata=true, hash=None)
 
 and seekReadFile (ctxt: ILMetadataReader) mdv idx =
-    let (flags, nameIdx, hashValueIdx) = seekReadFileRow ctxt mdv idx
+    let flags, nameIdx, hashValueIdx = seekReadFileRow ctxt mdv idx
     ILModuleRef.Create(name = readStringHeap ctxt nameIdx, hasMetadata= ((flags &&& 0x0001) = 0x0), hash= readBlobHeapOption ctxt hashValueIdx)
 
 and seekReadClassLayout (ctxt: ILMetadataReader) mdv idx =
@@ -1651,7 +1650,7 @@ and isTopTypeDef flags =
      typeAccessOfFlags flags = ILTypeDefAccess.Public
 
 and seekIsTopTypeDefOfIdx ctxt idx =
-    let (flags, _, _, _, _, _) = seekReadTypeDefRow ctxt idx
+    let flags, _, _, _, _, _ = seekReadTypeDefRow ctxt idx
     isTopTypeDef flags
 
 and readBlobHeapAsSplitTypeName ctxt (nameIdx, namespaceIdx) =
@@ -1672,7 +1671,7 @@ and seekReadTypeDefRowExtents (ctxt: ILMetadataReader) _info (idx: int) =
     if idx >= ctxt.getNumRows TableNames.TypeDef then
         struct (ctxt.getNumRows TableNames.Field + 1, ctxt.getNumRows TableNames.Method + 1)
     else
-        let (_, _, _, _, fieldsIdx, methodsIdx) = seekReadTypeDefRow ctxt (idx + 1)
+        let _, _, _, _, fieldsIdx, methodsIdx = seekReadTypeDefRow ctxt (idx + 1)
         struct (fieldsIdx, methodsIdx )
 
 and seekReadTypeDefRowWithExtents ctxt (idx: int) =
@@ -1680,7 +1679,7 @@ and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     info, seekReadTypeDefRowExtents ctxt info idx
 
 and seekReadPreTypeDef ctxt toponly (idx: int) =
-    let (flags, nameIdx, namespaceIdx, _, _, _) = seekReadTypeDefRow ctxt idx
+    let flags, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
     if toponly && not (isTopTypeDef flags) then None
     else
      let ns, n = readBlobHeapAsSplitTypeName ctxt (nameIdx, namespaceIdx)
@@ -1695,7 +1694,7 @@ and typeDefReader ctxtH: ILTypeDefStored =
            // Re-read so as not to save all these in the lazy closure - this suspension ctxt.is the largest
            // heavily allocated one in all of AbsIL
 
-           let ((flags, nameIdx, namespaceIdx, extendsIdx, fieldsIdx, methodsIdx) as info) = seekReadTypeDefRow ctxt idx
+           let flags, nameIdx, namespaceIdx, extendsIdx, fieldsIdx, methodsIdx as info = seekReadTypeDefRow ctxt idx
            let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
            let struct (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
            let typars = seekReadGenericParams ctxt 0 (tomd_TypeDef, idx)
@@ -1803,7 +1802,7 @@ and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
          let enclIdx = seekReadIndexedRow (ctxt.getNumRows TableNames.Nested, seekReadNestedRow ctxt, fst, simpleIndexCompare idx, isSorted ctxt TableNames.Nested, snd)
          let tref = seekReadTypeDefAsTypeRef ctxt enclIdx
          tref.Enclosing@[tref.Name]
-     let (_, nameIdx, namespaceIdx, _, _, _) = seekReadTypeDefRow ctxt idx
+     let _, nameIdx, namespaceIdx, _, _, _ = seekReadTypeDefRow ctxt idx
      let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
      ILTypeRef.Create(scope=ILScopeRef.Local, enclosing=enc, name = nm )
 
@@ -1827,7 +1826,7 @@ and seekReadTypeDefOrRef (ctxt: ILMetadataReader) numtypars boxity (ginst: ILTyp
     | tag when tag = tdor_TypeDef -> seekReadTypeDefAsType ctxt boxity ginst idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRefAsType ctxt boxity ginst idx
     | tag when tag = tdor_TypeSpec ->
-        if not (List.isEmpty ginst) then dprintn ("type spec used as type constructor for a generic instantiation: ignoring instantiation")
+        if not (List.isEmpty ginst) then dprintn "type spec used as type constructor for a generic instantiation: ignoring instantiation"
         readBlobHeapAsType ctxt numtypars (seekReadTypeSpecRow ctxt mdv idx)
     | _ -> failwith "seekReadTypeDefOrRef ctxt"
 
@@ -1836,7 +1835,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeDef -> seekReadTypeDefAsTypeRef ctxt idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec ->
-        dprintn ("type spec used where a type ref or def is required")
+        dprintn "type spec used where a type ref or def is required"
         PrimaryAssemblyILGlobals.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
@@ -1899,7 +1898,7 @@ and seekReadOptionalTypeDefOrRef (ctxt: ILMetadataReader) numtypars boxity idx =
     else Some (seekReadTypeDefOrRef ctxt numtypars boxity List.empty idx)
 
 and seekReadField ctxt mdv (numtypars, hasLayout) (idx: int) =
-    let (flags, nameIdx, typeIdx) = seekReadFieldRow ctxt mdv idx
+    let flags, nameIdx, typeIdx = seekReadFieldRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
     let isStatic = (flags &&& 0x0010) <> 0
     ILFieldDef(name = nm,
@@ -2027,7 +2026,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         if generic then failwith "fptr sig may not be generic"
         let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
         let retty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        let argtys, sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
+        let argtys, sigptr = sigptrFold (sigptrGetTy ctxt numtypars) numparams bytes sigptr
         let typ =
             ILType.FunctionPointer
               { CallingConv=cc
@@ -2108,7 +2107,7 @@ and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx (numtypars, blobId
     if ccMaxked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then dprintn ("warning: property sig was "+string ccMaxked+" instead of CC_PROPERTY")
     let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
     let retty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-    let argtys, _sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
+    let argtys, _sigptr = sigptrFold (sigptrGetTy ctxt numtypars) numparams bytes sigptr
     hasthis, retty, argtys
 
 and readBlobHeapAsLocalsSig (ctxt: ILMetadataReader) numtypars blobIdx =
@@ -2121,7 +2120,7 @@ and readBlobHeapAsLocalsSigUncached ctxtH (BlobAsLocalSigIdx (numtypars, blobIdx
     let ccByte, sigptr = sigptrGetByte bytes sigptr
     if ccByte <> e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG then dprintn "warning: local sig was not CC_LOCAL"
     let struct (numlocals, sigptr) = sigptrGetZInt32 bytes sigptr
-    let localtys, _sigptr = sigptrFold (sigptrGetLocal ctxt numtypars) ( numlocals) bytes sigptr
+    let localtys, _sigptr = sigptrFold (sigptrGetLocal ctxt numtypars) numlocals bytes sigptr
     localtys
 
 and byteAsHasThis b =
@@ -2148,7 +2147,7 @@ and seekReadMemberRefAsMethodData ctxt numtypars idx: VarArgMethodData =
 and seekReadMemberRefAsMethodDataUncached ctxtH (MemberRefAsMspecIdx (numtypars, idx)) =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
-    let (mrpIdx, nameIdx, typeIdx) = seekReadMemberRefRow ctxt mdv idx
+    let mrpIdx, nameIdx, typeIdx = seekReadMemberRefRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
     let enclTy = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
     let _generic, genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt enclTy.GenericArgs.Length typeIdx
@@ -2166,7 +2165,7 @@ and seekReadMethodSpecAsMethodData (ctxt: ILMetadataReader) numtypars idx =
 and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypars, idx)) =
     let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
-    let (mdorIdx, instIdx) = seekReadMethodSpecRow ctxt mdv idx
+    let mdorIdx, instIdx = seekReadMethodSpecRow ctxt mdv idx
     let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, _)) = seekReadMethodDefOrRef ctxt numtypars mdorIdx
     let minst =
         let bytes = readBlobHeap ctxt instIdx
@@ -2184,7 +2183,7 @@ and seekReadMemberRefAsFieldSpec (ctxt: ILMetadataReader) numtypars idx =
 and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx (numtypars, idx)) =
    let (ctxt: ILMetadataReader) = getHole ctxtH
    let mdv = ctxt.mdfile.GetView()
-   let (mrpIdx, nameIdx, typeIdx) = seekReadMemberRefRow ctxt mdv idx
+   let mrpIdx, nameIdx, typeIdx = seekReadMemberRefRow ctxt mdv idx
    let nm = readStringHeap ctxt nameIdx
    let enclTy = seekReadMethodRefParent ctxt mdv numtypars mrpIdx
    let retty = readBlobHeapAsFieldSig ctxt numtypars typeIdx
@@ -2226,7 +2225,7 @@ and seekReadMethodDefAsMethodDataUncached ctxtH idx =
    let enclTy = seekReadTypeDefAsType ctxt AsObject (* not ok: see note *) finst tidx
 
    // Return the constituent parts: put it together at the place where this is called.
-   let (_code_rva, _implflags, _flags, nameIdx, typeIdx, _paramIdx) = seekReadMethodRow ctxt mdv idx
+   let _code_rva, _implflags, _flags, nameIdx, typeIdx, _paramIdx = seekReadMethodRow ctxt mdv idx
    let nm = readStringHeap ctxt nameIdx
 
    // Read the method def signature.
@@ -2242,7 +2241,7 @@ and seekReadFieldDefAsFieldSpec (ctxt: ILMetadataReader) idx =
 and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
    let (ctxt: ILMetadataReader) = getHole ctxtH
    let mdv = ctxt.mdfile.GetView()
-   let (_flags, nameIdx, typeIdx) = seekReadFieldRow ctxt mdv idx
+   let _flags, nameIdx, typeIdx = seekReadFieldRow ctxt mdv idx
    let nm = readStringHeap ctxt nameIdx
    (* Look for the field def parent. *)
    let tidx =
@@ -2267,7 +2266,7 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
    mkILFieldSpecInTy(enclTy, nm, retty)
 
 and seekReadMethod (ctxt: ILMetadataReader) mdv numtypars (idx: int) =
-     let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt mdv idx
+     let codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx = seekReadMethodRow ctxt mdv idx
      let nm = readStringHeap ctxt nameIdx
      let abstr = (flags &&& 0x0400) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
@@ -2283,13 +2282,13 @@ and seekReadMethod (ctxt: ILMetadataReader) mdv numtypars (idx: int) =
        if idx >= ctxt.getNumRows TableNames.Method then
          ctxt.getNumRows TableNames.Param + 1
        else
-         let (_, _, _, _, _, paramIdx) = seekReadMethodRow ctxt mdv (idx + 1)
+         let _, _, _, _, _, paramIdx = seekReadMethodRow ctxt mdv (idx + 1)
          paramIdx
 
      let ret, ilParams = seekReadParams ctxt mdv (retty, argtys) paramIdx endParamIdx
 
      let isEntryPoint =
-         let (tab, tok) = ctxt.entryPointToken
+         let tab, tok = ctxt.entryPointToken
          (tab = TableNames.Method && tok = idx)
 
      let body =
@@ -2326,7 +2325,7 @@ and seekReadParams (ctxt: ILMetadataReader) mdv (retty, argtys) pidx1 pidx2 =
     !retRes, List.ofArray paramsRes
 
 and seekReadParamExtras (ctxt: ILMetadataReader) mdv (retRes, paramsRes) (idx: int) =
-   let (flags, seq, nameIdx) = seekReadParamRow ctxt mdv idx
+   let flags, seq, nameIdx = seekReadParamRow ctxt mdv idx
    let inOutMasked = (flags &&& 0x00FF)
    let hasMarshal = (flags &&& 0x2000) <> 0x0
    let hasDefault = (flags &&& 0x1000) <> 0x0
@@ -2389,7 +2388,7 @@ and seekReadMethodSemantics ctxt id =
     | Some x -> x
 
 and seekReadEvent ctxt mdv numtypars idx =
-   let (flags, nameIdx, typIdx) = seekReadEventRow ctxt mdv idx
+   let flags, nameIdx, typIdx = seekReadEventRow ctxt mdv idx
    ILEventDef(eventType = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx,
               name = readStringHeap ctxt nameIdx,
               attributes = enum<EventAttributes>(flags),
@@ -2412,7 +2411,7 @@ and seekReadEvents (ctxt: ILMetadataReader) numtypars tidx =
                    if rowNum >= ctxt.getNumRows TableNames.EventMap then
                        ctxt.getNumRows TableNames.Event + 1
                    else
-                       let (_, endEventIdx) = seekReadEventMapRow ctxt mdv (rowNum + 1)
+                       let _, endEventIdx = seekReadEventMapRow ctxt mdv (rowNum + 1)
                        endEventIdx
 
                [ if beginEventIdx > 0 then
@@ -2420,7 +2419,7 @@ and seekReadEvents (ctxt: ILMetadataReader) numtypars tidx =
                      yield seekReadEvent ctxt mdv numtypars i ])
 
 and seekReadProperty ctxt mdv numtypars idx =
-   let (flags, nameIdx, typIdx) = seekReadPropertyRow ctxt mdv idx
+   let flags, nameIdx, typIdx = seekReadPropertyRow ctxt mdv idx
    let cc, retty, argtys = readBlobHeapAsPropertySig ctxt numtypars typIdx
    let setter= seekReadoptional_MethodSemantics ctxt (0x0001, TaggedIndex(hs_Property, idx))
    let getter = seekReadoptional_MethodSemantics ctxt (0x0002, TaggedIndex(hs_Property, idx))
@@ -2456,7 +2455,7 @@ and seekReadProperties (ctxt: ILMetadataReader) numtypars tidx =
                    if rowNum >= ctxt.getNumRows TableNames.PropertyMap then
                        ctxt.getNumRows TableNames.Property + 1
                    else
-                       let (_, endPropIdx) = seekReadPropertyMapRow ctxt mdv (rowNum + 1)
+                       let _, endPropIdx = seekReadPropertyMapRow ctxt mdv (rowNum + 1)
                        endPropIdx
                [ if beginPropIdx > 0 then
                    for i in beginPropIdx .. endPropIdx - 1 do
@@ -2515,7 +2514,7 @@ and seekReadConstant (ctxt: ILMetadataReader) idx =
   match kind with
   | x when x = uint16 et_STRING ->
     let blobHeap = readBlobHeap ctxt vidx
-    let s = System.Text.Encoding.Unicode.GetString(blobHeap, 0, blobHeap.Length)
+    let s = Encoding.Unicode.GetString(blobHeap, 0, blobHeap.Length)
     ILFieldInit.String s
   | x when x = uint16 et_BOOLEAN -> ILFieldInit.Bool (readBlobHeapAsBool ctxt vidx)
   | x when x = uint16 et_CHAR -> ILFieldInit.Char (readBlobHeapAsUInt16 ctxt vidx)
@@ -2537,7 +2536,7 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
    MethodBody.PInvoke
       (lazy
             let mdv = ctxt.mdfile.GetView()
-            let (flags, nameIdx, scopeIdx) = seekReadIndexedRow (ctxt.getNumRows TableNames.ImplMap,
+            let flags, nameIdx, scopeIdx = seekReadIndexedRow (ctxt.getNumRows TableNames.ImplMap,
                                                                 seekReadImplMapRow ctxt mdv,
                                                                 (fun (_, m, _, _) -> m),
                                                                 mfCompare (TaggedIndex(mf_MethodDef, midx)),
@@ -2588,8 +2587,8 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
               Where = seekReadModuleRef ctxt mdv scopeIdx })
 
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints =
-   let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
-   let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
+   let labelsOfRawOffsets = Dictionary<_, _>(sz/2)
+   let ilOffsetsOfLabels = Dictionary<_, _>(sz/2)
 
    let rawToLabel rawOffset =
        match labelsOfRawOffsets.TryGetValue rawOffset with
@@ -2603,7 +2602,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
        let lab = rawToLabel rawOffset
        ilOffsetsOfLabels.[lab] <- ilOffset
 
-   let ibuf = new ResizeArray<_>(sz/2)
+   let ibuf = ResizeArray<_>(sz/2)
    let curr = ref 0
    let prefixes = { al=Aligned; tl= Normalcall; vol= Nonvolatile;ro=NormalAddress;constrained=None }
    let lastb = ref 0x0
@@ -2633,7 +2632,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
           | _ -> false)
         do
          // Emitting one sequence point
-         let (_, tag) = List.head !seqPointsRemaining
+         let _, tag = List.head !seqPointsRemaining
          seqPointsRemaining := List.tail !seqPointsRemaining
          ibuf.Add (I_seqpoint tag)
 
@@ -2712,7 +2711,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
              curr := !curr + 8
              f prefixes x
          | I_field_instr f ->
-             let (tab, tok) = seekReadUncodedToken pev (start + (!curr))
+             let tab, tok = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              let fspec =
                if tab = TableNames.Field then
@@ -2724,7 +2723,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
          | I_method_instr f ->
              // method instruction, curr = "+string !curr
 
-             let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
+             let tab, idx = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)) =
                if tab = TableNames.Method then
@@ -2751,7 +2750,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
              let ty = seekReadTypeDefOrRef ctxt numtypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec uncoded)
              f prefixes ty
          | I_string_instr f ->
-             let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
+             let tab, idx = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              if tab <> TableNames.UserStrings then dprintn "warning: bad table in user string for ldstr"
              f prefixes (readUserStringHeap ctxt idx)
@@ -2780,7 +2779,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
              dprintn ("invalid instruction: "+string !lastb+ (if !lastb = 0xfe then ", "+string !lastb2 else ""))
              I_ret
          | I_tok_instr f ->
-             let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
+             let tab, idx = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              (* REVIEW: this incorrectly labels all MemberRef tokens as ILMethod's: we should go look at the MemberRef sig to determine if it is a field or method *)
              let token_info =
@@ -2794,7 +2793,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
                else failwith "bad token for ldtoken"
              f prefixes token_info
          | I_sig_instr f ->
-             let (tab, idx) = seekReadUncodedToken pev (start + (!curr))
+             let tab, idx = seekReadUncodedToken pev (start + (!curr))
              curr := !curr + 4
              if tab <> TableNames.StandAloneSig then dprintn "strange table for callsig token"
              let generic, _genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt numtypars (seekReadStandAloneSigRow ctxt mdv idx)
@@ -2953,7 +2952,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            // fat format for "+nm+", code size = " + string codeSize+", hasMoreSections = "+(if hasMoreSections then "true" else "false")+", b = "+string b)
 
            // Read the method body
-           let instrs, rawToLabel, lab2pc, raw2nextLab = seekReadTopCode ctxt pev mdv numtypars ( codeSize) codeBase seqpoints
+           let instrs, rawToLabel, lab2pc, raw2nextLab = seekReadTopCode ctxt pev mdv numtypars codeSize codeBase seqpoints
 
            // Read all the sections that follow the method body.
            // These contain the exception clauses.
@@ -3047,11 +3046,11 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            done (* while *)
 
            (* Convert the linear code format to the nested code format *)
-           if logging then dprintn ("doing localPdbInfos2")
+           if logging then dprintn "doing localPdbInfos2"
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
-           if logging then dprintn ("done localPdbInfos2, checking code...")
+           if logging then dprintn "done localPdbInfos2, checking code..."
            let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
-           if logging then dprintn ("done checking code.")
+           if logging then dprintn "done checking code."
            { IsZeroInit=initlocals
              MaxStack= maxstack
              NoInlining=noinline
@@ -3084,20 +3083,20 @@ and sigptrGetILNativeType ctxt bytes sigptr =
         // reading native type blob CM1, sigptr= "+string sigptr+ ", bytes.Length = "+string bytes.Length)
         let struct (guidLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM2, sigptr= "+string sigptr+", guidLen = "+string ( guidLen))
-        let guid, sigptr = sigptrGetBytes ( guidLen) bytes sigptr
+        let guid, sigptr = sigptrGetBytes guidLen bytes sigptr
         // reading native type blob CM3, sigptr= "+string sigptr)
         let struct (nativeTypeNameLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeNameLen = "+string ( nativeTypeNameLen))
-        let nativeTypeName, sigptr = sigptrGetString ( nativeTypeNameLen) bytes sigptr
+        let nativeTypeName, sigptr = sigptrGetString nativeTypeNameLen bytes sigptr
         // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeName = "+nativeTypeName)
         // reading native type blob CM5, sigptr= "+string sigptr)
         let struct (custMarshallerNameLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM6, sigptr= "+string sigptr+", custMarshallerNameLen = "+string ( custMarshallerNameLen))
-        let custMarshallerName, sigptr = sigptrGetString ( custMarshallerNameLen) bytes sigptr
+        let custMarshallerName, sigptr = sigptrGetString custMarshallerNameLen bytes sigptr
         // reading native type blob CM7, sigptr= "+string sigptr+", custMarshallerName = "+custMarshallerName)
         let struct (cookieStringLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM8, sigptr= "+string sigptr+", cookieStringLen = "+string ( cookieStringLen))
-        let cookieString, sigptr = sigptrGetBytes ( cookieStringLen) bytes sigptr
+        let cookieString, sigptr = sigptrGetBytes cookieStringLen bytes sigptr
         // reading native type blob CM9, sigptr= "+string sigptr)
         ILNativeType.Custom (guid, nativeTypeName, custMarshallerName, cookieString), sigptr
     elif ntbyte = nt_FIXEDSYSSTRING then
@@ -3115,7 +3114,7 @@ and sigptrGetILNativeType ctxt bytes sigptr =
            ILNativeType.SafeArray (int32AsILVariantType ctxt i, None), sigptr
          else
            let struct (len, sigptr) = sigptrGetZInt32 bytes sigptr
-           let s, sigptr = sigptrGetString ( len) bytes sigptr
+           let s, sigptr = sigptrGetString len bytes sigptr
            ILNativeType.SafeArray (int32AsILVariantType ctxt i, Some s), sigptr)
     elif ntbyte = nt_ARRAY then
        if sigptr >= bytes.Length then
@@ -3146,7 +3145,7 @@ and sigptrGetILNativeType ctxt bytes sigptr =
 and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: BinaryView) (pectxtEager: PEReader) (pevEager: BinaryView) =
     mkILResources
         [ for i = 1 to ctxt.getNumRows TableNames.ManifestResource do
-             let (offset, flags, nameIdx, implIdx) = seekReadManifestResourceRow ctxt mdv i
+             let offset, flags, nameIdx, implIdx = seekReadManifestResourceRow ctxt mdv i
 
              let scoref = seekReadImplAsScopeRef ctxt mdv implIdx
 
@@ -3178,7 +3177,7 @@ and seekReadNestedExportedTypes ctxt (exported: _ []) (nested: Lazy<_ []>) paren
       (lazy
             nested.Force().[parentIdx-1]
             |> List.map (fun i ->
-                let (flags, _tok, nameIdx, namespaceIdx, _implIdx) = exported.[i-1]
+                let flags, _tok, nameIdx, namespaceIdx, _implIdx = exported.[i-1]
                 { Name = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
                   Access = (match typeAccessOfFlags flags with
                             | ILTypeDefAccess.Nested n -> n
@@ -3199,14 +3198,14 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
             let nested = lazy (
                 let nested = [| for _i in 1..numRows -> [] |]
                 for i = 1 to numRows do
-                    let (flags,_,_,_,TaggedIndex(tag, idx)) = exported.[i-1]
+                    let flags,_,_,_,TaggedIndex(tag, idx) = exported.[i-1]
                     if not (isTopTypeDef flags) && (tag = i_ExportedType) then
                         nested.[idx-1] <- i :: nested.[idx-1]
                 nested)
 
             // return top exported types
             [ for i = 1 to numRows do
-                let (flags, _tok, nameIdx, namespaceIdx, implIdx) = exported.[i-1]
+                let flags, _tok, nameIdx, namespaceIdx, implIdx = exported.[i-1]
                 let (TaggedIndex(tag, _idx)) = implIdx
 
                 // if not a nested type
@@ -3288,7 +3287,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
         | None -> (0x0, 0x0)
         | Some positions -> positions
 
-    let (tablesStreamPhysLoc, _tablesStreamSize) =
+    let tablesStreamPhysLoc, _tablesStreamSize =
       match tryFindStream [| 0x23; 0x7e |] (* #~ *) with
       | Some res -> res
       | None ->
@@ -3299,10 +3298,10 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
          let firstStreamLength = seekReadInt32 mdv (streamHeadersStart + 4)
          firstStreamOffset, firstStreamLength
 
-    let (stringsStreamPhysicalLoc, stringsStreamSize) = findStream [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; |] (* #Strings *)
-    let (userStringsStreamPhysicalLoc, userStringsStreamSize) = findStream [| 0x23; 0x55; 0x53; |] (* #US *)
-    let (guidsStreamPhysicalLoc, _guidsStreamSize) = findStream [| 0x23; 0x47; 0x55; 0x49; 0x44; |] (* #GUID *)
-    let (blobsStreamPhysicalLoc, blobsStreamSize) = findStream [| 0x23; 0x42; 0x6c; 0x6f; 0x62; |] (* #Blob *)
+    let stringsStreamPhysicalLoc, stringsStreamSize = findStream [| 0x23; 0x53; 0x74; 0x72; 0x69; 0x6e; 0x67; 0x73; |] (* #Strings *)
+    let userStringsStreamPhysicalLoc, userStringsStreamSize = findStream [| 0x23; 0x55; 0x53; |] (* #US *)
+    let guidsStreamPhysicalLoc, _guidsStreamSize = findStream [| 0x23; 0x47; 0x55; 0x49; 0x44; |] (* #GUID *)
+    let blobsStreamPhysicalLoc, blobsStreamSize = findStream [| 0x23; 0x42; 0x6c; 0x6f; 0x62; |] (* #Blob *)
 
     let tableKinds =
         [|kindModule (* Table 0 *)
@@ -3624,7 +3623,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
           tableBigness=tableBigness }
     ctxtH := Some ctxt
 
-    let ilModule = seekReadModule ctxt reduceMemoryUsage pectxtEager pevEager peinfo (System.Text.Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
+    let ilModule = seekReadModule ctxt reduceMemoryUsage pectxtEager pevEager peinfo (Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
     let ilAssemblyRefs = lazy [ for i in 1 .. getNumRows TableNames.AssemblyRef do yield seekReadAssemblyRef ctxt i ]
 
     ilModule, ilAssemblyRefs
@@ -3833,7 +3832,7 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
 let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, noFileOnDisk) =
-    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk)
+    let metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk)
     let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage)
     ilModule, ilAssemblyRefs, pdb
 
@@ -3850,8 +3849,8 @@ let ClosePdbReader pdb =
     | None -> ()
 #endif
 
-type ILReaderMetadataSnapshot = (obj * nativeint * int)
-type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+type ILReaderMetadataSnapshot = obj * nativeint * int
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
 type MetadataOnlyFlag = Yes | No
@@ -3870,7 +3869,7 @@ type ILModuleReader =
     abstract ILAssemblyRefs: ILAssemblyRef list
 
     /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
-    inherit System.IDisposable
+    inherit IDisposable
 
 [<Sealed>]
 type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
@@ -3885,14 +3884,14 @@ type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
 let ilModuleReaderCache1 =
-    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
-           (stronglyHeldReaderCacheSize,
-            keepMax=stronglyHeldReaderCacheSize, // only strong entries
-            areSimilar=(fun (x, y) -> x = y))
+    AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+       (stronglyHeldReaderCacheSize,
+        keepMax=stronglyHeldReaderCacheSize, // only strong entries
+        areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCache1Lock = Lock()
 
 // // Cache to reuse readers that have already been created and are not yet GC'd
-let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
+let ilModuleReaderCache2 = ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
 let stableFileHeuristicApplies fileName =
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
@@ -3911,8 +3910,8 @@ let createByteFileChunk opts fileName chunk =
 
         ByteFile(fileName, bytes) :> BinaryFile
 
-let createMemoryMapFile fileName =
-    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = true)
+let getBinaryFile fileName useMemoryMappedFile =
+    let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = useMemoryMappedFile)
     let byteMem = stream.AsByteMemory()
 
     let safeHolder =
@@ -3946,15 +3945,15 @@ let ClearAllILModuleReaderCache() =
 
 let OpenILModuleReader fileName opts =
     // Pseudo-normalize the paths.
-    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_) as key), keyOk =
+    let ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_) as key, keyOk =
         try
            let fullPath = FileSystem.GetFullPathShim fileName
            let writeTime = FileSystem.GetLastWriteTimeShim fileName
            let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn ->
-            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString()))
-            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString()))
+            let fakeKey = ILModuleReaderCacheKey(fileName, DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
     let cacheResult1 =
@@ -3999,9 +3998,9 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = createMemoryMapFile fullPath
+                let disposer, pefileEager = getBinaryFile fullPath false
                 use _disposer = disposer
-                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false)
+                let metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb = openPEFileReader (fullPath, pefileEager, None, false)
                 let mdfile =
                     match mdfileOpt with
                     | Some mdfile -> mdfile
@@ -4038,7 +4037,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let pefile =
             if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
-                let _, pefile = createMemoryMapFile fullPath
+                let _, pefile = getBinaryFile fullPath false
                 pefile
             else
                 createByteFileChunk opts fullPath None

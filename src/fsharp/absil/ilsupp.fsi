@@ -7,16 +7,9 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal FSharp.Compiler.AbstractIL.Support
 
-open System
-open System.Runtime.InteropServices
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
-
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL 
 
 #if !FX_NO_PDB_WRITER
 type PdbWriter

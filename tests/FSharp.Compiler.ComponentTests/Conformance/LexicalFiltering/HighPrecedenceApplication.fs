@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Conformance.LexicalFiltering
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test.Compiler
+open FSharp.Test.Xunit.Attributes
 
 module HighPrecedenceApplication =
 
