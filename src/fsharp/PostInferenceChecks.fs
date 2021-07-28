@@ -765,6 +765,11 @@ and CheckValRef (cenv: cenv) (env: env) v m (context: PermitByRefExpr) =
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.RefCellNotationInformationals then
+            if valRefEq cenv.g v cenv.g.refcell_deref_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDeref(), m))
+            if valRefEq cenv.g v cenv.g.refcell_assign_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellAssign(), m))
+            if valRefEq cenv.g v cenv.g.refcell_incr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellIncr(), m))
+            if valRefEq cenv.g v cenv.g.refcell_decr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDecr(), m))
 
         // ByRefLike-typed values can only occur in permitting contexts 
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 

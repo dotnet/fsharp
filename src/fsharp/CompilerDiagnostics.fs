@@ -367,7 +367,7 @@ let GetWarningLevel err =
     // Level 2
     | _ -> 2
 
-let warningOn err level specificWarnOn =
+let diagnosticEnabled (err, severity) level specificWarnOn =
     let n = GetDiagnosticNumber err
     List.contains n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
@@ -376,7 +376,7 @@ let warningOn err level specificWarnOn =
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
-    | _ -> level >= GetWarningLevel err
+    | _ -> (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
@@ -1871,10 +1871,9 @@ let OutputDiagnosticContext prefix fileLineFunction os err =
 let ReportDiagnosticAsWarningOrInfo options (err, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> true
+    | FSharpDiagnosticSeverity.Info 
     | FSharpDiagnosticSeverity.Warning ->
-        warningOn err options.WarnLevel options.WarnOn && 
-        not (List.contains (GetDiagnosticNumber err) options.WarnOff)
-    | FSharpDiagnosticSeverity.Info ->
+        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn && 
         not (List.contains (GetDiagnosticNumber err) options.WarnOff)
     | FSharpDiagnosticSeverity.Hidden -> false
 
@@ -1882,13 +1881,14 @@ let ReportDiagnosticAsError options (err, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> true
     | FSharpDiagnosticSeverity.Warning ->
-        warningOn err options.WarnLevel options.WarnOn &&
+        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn &&
         not (List.contains (GetDiagnosticNumber err) options.WarnAsWarn) &&
         ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
          List.contains (GetDiagnosticNumber err) options.WarnAsError)
-    | FSharpDiagnosticSeverity.Hidden
     | FSharpDiagnosticSeverity.Info ->
+        diagnosticEnabled (err, severity) options.WarnLevel options.WarnOn &&
         List.contains (GetDiagnosticNumber err) options.WarnAsError
+    | FSharpDiagnosticSeverity.Hidden -> false
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas

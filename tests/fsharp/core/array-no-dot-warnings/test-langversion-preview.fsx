@@ -17,3 +17,8 @@ arr2.[1..] <- [| 9;8;7;6 |] //should not give warning
 let expectedLists = Array2D.zeroCreate 6 6
 expectedLists.[1,1] <- [ [1] ] //should not give warning
 
+let r = ref 3
+r := 4   // generates an informational in preview
+let rv = !r   // generates an informational in preview
+incr r   // generates an informational in preview
+decr r   // generates an informational in preview

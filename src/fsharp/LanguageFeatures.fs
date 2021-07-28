@@ -38,6 +38,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
+    | RefCellNotationInformationals
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
@@ -86,6 +87,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.IndexerNotationWithoutDot, previewVersion
+            LanguageFeature.RefCellNotationInformationals, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
             LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
@@ -174,6 +176,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot()
+        | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()

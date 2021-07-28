@@ -17,6 +17,26 @@
         <target state="translated">Funkce {0} vyžaduje knihovnu F# pro verzi jazyka {1} nebo novější.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkInfoRefcellAssign">
+        <source>The use of 'cell := expr' is not recommended. Please change to 'cell.Value &lt;- expr'.</source>
+        <target state="new">The use of 'cell := expr' is not recommended. Please change to 'cell.Value &lt;- expr'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDecr">
+        <source>The use of 'decr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value - 1' or define a helper function in your own code.</source>
+        <target state="new">The use of 'decr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value - 1' or define a helper function in your own code.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDeref">
+        <source>The use of '!cell' is not recommended. Please change your code to 'cell.Value'.</source>
+        <target state="new">The use of '!cell' is not recommended. Please change your code to 'cell.Value'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellIncr">
+        <source>The use of 'incr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value + 1' or define a helper function in your own code.</source>
+        <target state="new">The use of 'incr' from the FSharp.Core library is not recommended. Please change your code to 'cell.Value &lt;- cell.Value + 1' or define a helper function in your own code.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">Atribut AssemblyKeyNameAttribute je zastaralý. Použijte místo něj AssemblyKeyFileAttribute.</target>
@@ -133,8 +153,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
-        <source>revised index and slicing notation</source>
-        <target state="new">revised index and slicing notation</target>
+        <source>expr[idx] notation for indexing and slicing</source>
+        <target state="new">expr[idx] notation for indexing and slicing</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -175,6 +195,11 @@
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
         <target state="translated">formátování typu binary pro integery</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRefCellNotationInformationals">
+        <source>informational messages related to reference cells</source>
+        <target state="new">informational messages related to reference cells</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">

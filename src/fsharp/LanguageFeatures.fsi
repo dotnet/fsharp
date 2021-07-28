@@ -28,6 +28,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
+    | RefCellNotationInformationals
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
