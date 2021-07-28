@@ -165,12 +165,12 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
-    override x.DiagnosticSink(exn, severity) = 
-        if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
+    override x.DiagnosticSink(err, severity) = 
+        if ReportDiagnosticAsError options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportWarning options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Warning)
+        elif ReportDiagnosticAsWarningOrInfo options (err, severity) then
+            diagnostics.Add(err, severity)
 
     override x.ErrorCount = errorCount
 
@@ -180,10 +180,9 @@ module DiagnosticHelpers =
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 
         [ let severity = 
-               if (severity = FSharpDiagnosticSeverity.Error) then severity 
-               elif ReportWarningAsError options exn then FSharpDiagnosticSeverity.Error
+               if ReportDiagnosticAsError options (exn, severity) then FSharpDiagnosticSeverity.Error
                else severity
-          if (severity = FSharpDiagnosticSeverity.Error || ReportWarning options exn) then 
+          if (severity = FSharpDiagnosticSeverity.Error || ReportDiagnosticAsWarningOrInfo options (exn, severity)) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.

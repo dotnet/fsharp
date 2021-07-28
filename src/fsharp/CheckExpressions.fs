@@ -5415,18 +5415,18 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
                 if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
                 elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
+                    informationalWarning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
             | SynExpr.ArrayOrListComputed _
             | SynExpr.ArrayOrList _ ->
                 if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
                 elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    warning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
+                    informationalWarning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
             | _ -> 
                 if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
                 elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
+                    informationalWarning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
 
         | _ -> ()
 
@@ -7718,7 +7718,7 @@ and TcApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExprOpt leftEx
                 if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
                     warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
                 elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
-                    warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
+                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
             | _ -> ()
 
         match leftExpr with

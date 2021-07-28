@@ -76,7 +76,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     override x.ErrorCount = errors
 
     override x.DiagnosticSink(err, severity) =
-      if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError tcConfigB.errorSeverityOptions err then
+      if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
         if errors >= tcConfigB.maxErrors then
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
@@ -91,7 +91,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportWarning tcConfigB.errorSeverityOptions err then
+      elif ReportDiagnosticAsWarningOrInfo tcConfigB.errorSeverityOptions (err, severity) then
           x.HandleIssue(tcConfigB, err, severity)
 
 

@@ -52,7 +52,7 @@ exception HashIncludeNotAllowedInNonScript of range
 exception HashReferenceNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
+exception HashLoadedSourceHasIssues of informationals: exn list * warnings: exn list * errors: exn list * range
 
 /// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedScriptConsideredSource of range
@@ -202,7 +202,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | MSBuildReferenceResolutionWarning(_, _, m)
       | MSBuildReferenceResolutionError(_, _, m)
       | AssemblyNotResolved(_, m)
-      | HashLoadedSourceHasIssues(_, _, m)
+      | HashLoadedSourceHasIssues(_, _, _, m)
       | HashLoadedScriptConsideredSource m ->
           Some m
       // Strip TargetInvocationException wrappers
@@ -559,6 +559,7 @@ let HashReferenceNotAllowedInNonScriptE() = DeclareResourceString("HashReference
 let HashDirectiveNotAllowedInNonScriptE() = DeclareResourceString("HashDirectiveNotAllowedInNonScript", "")
 let FileNameNotResolvedE() = DeclareResourceString("FileNameNotResolved", "%s%s")
 let AssemblyNotResolvedE() = DeclareResourceString("AssemblyNotResolved", "%s")
+let HashLoadedSourceHasIssues0E() = DeclareResourceString("HashLoadedSourceHasIssues0", "")
 let HashLoadedSourceHasIssues1E() = DeclareResourceString("HashLoadedSourceHasIssues1", "")
 let HashLoadedSourceHasIssues2E() = DeclareResourceString("HashLoadedSourceHasIssues2", "")
 let HashLoadedScriptConsideredSourceE() = DeclareResourceString("HashLoadedScriptConsideredSource", "")
@@ -1605,10 +1606,13 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | IllegalFileNameChar(fileName, invalidChar) ->
           os.Append(FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar)|>snd) |> ignore
 
-      | HashLoadedSourceHasIssues(warnings, errors, _) ->
+      | HashLoadedSourceHasIssues(infos, warnings, errors, _) ->
         let Emit(l: exn list) =
             OutputExceptionR os (List.head l)
-        if errors=[] then
+        if isNil warnings && isNil errors then
+            os.Append(HashLoadedSourceHasIssues0E().Format) |> ignore
+            Emit infos
+        elif isNil errors then
             os.Append(HashLoadedSourceHasIssues1E().Format) |> ignore
             Emit warnings
         else
@@ -1864,14 +1868,27 @@ let OutputDiagnosticContext prefix fileLineFunction os err =
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-let ReportWarning options err =
-    warningOn err options.WarnLevel options.WarnOn && not (List.contains (GetDiagnosticNumber err) options.WarnOff)
+let ReportDiagnosticAsWarningOrInfo options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> true
+    | FSharpDiagnosticSeverity.Warning ->
+        warningOn err options.WarnLevel options.WarnOn && 
+        not (List.contains (GetDiagnosticNumber err) options.WarnOff)
+    | FSharpDiagnosticSeverity.Info ->
+        not (List.contains (GetDiagnosticNumber err) options.WarnOff)
+    | FSharpDiagnosticSeverity.Hidden -> false
 
-let ReportWarningAsError options err =
-    warningOn err options.WarnLevel options.WarnOn &&
-    not (List.contains (GetDiagnosticNumber err) options.WarnAsWarn) &&
-    ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
-     List.contains (GetDiagnosticNumber err) options.WarnAsError)
+let ReportDiagnosticAsError options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> true
+    | FSharpDiagnosticSeverity.Warning ->
+        warningOn err options.WarnLevel options.WarnOn &&
+        not (List.contains (GetDiagnosticNumber err) options.WarnAsWarn) &&
+        ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
+         List.contains (GetDiagnosticNumber err) options.WarnAsError)
+    | FSharpDiagnosticSeverity.Hidden
+    | FSharpDiagnosticSeverity.Info ->
+        List.contains (GetDiagnosticNumber err) options.WarnAsError
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas

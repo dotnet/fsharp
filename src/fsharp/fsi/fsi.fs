@@ -566,15 +566,14 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     member x.ResetErrorCount() = errorCount <- 0
 
     override x.DiagnosticSink(err, severity) =
-        if (severity = FSharpDiagnosticSeverity.Error) || ReportWarningAsError tcConfigB.errorSeverityOptions err  then
+        if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        else
-          DoWithDiagnosticColor severity (fun () ->
-            if ReportWarning tcConfigB.errorSeverityOptions err then
+        elif ReportDiagnosticAsWarningOrInfo tcConfigB.errorSeverityOptions (err, severity) then
+            DoWithDiagnosticColor severity (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
