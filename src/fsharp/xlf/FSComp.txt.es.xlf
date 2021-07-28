@@ -488,8 +488,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). Use 'expr1.[expr2]'. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -538,13 +538,13 @@
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you intend multiple arguments to a function, add a space between arguments 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you intend multiple arguments to a function, add a space between arguments 'someFunction [expr1] [expr2]'.</target>
+        <source>The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you are calling a function, add a space between arguments 'someFunction [expr1] [expr2]'.</source>
+        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you are calling a function, add a space between arguments 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction [expr1] [expr2]'.</target>
+        <source>The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction [expr1] [expr2]'.</source>
+        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -563,23 +563,23 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you intend multiple arguments to a function, add a space between arguments 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you intend multiple arguments to a function, add a space between arguments 'someFunction (expr1) [expr2]'.</target>
+        <source>The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you are calling a function, add a space between arguments 'someFunction (expr1) [expr2]'.</source>
+        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you are calling a function, add a space between arguments 'someFunction (expr1) [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you intend multiple arguments to a function, add a space between arguments 'someFunction (expr1) [expr2]'.</target>
+        <source>The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction (expr1) [expr2]'.</source>
+        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, add a space between arguments 'someFunction (expr1) [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">

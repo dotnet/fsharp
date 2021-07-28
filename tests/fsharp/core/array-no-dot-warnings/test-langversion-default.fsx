@@ -13,3 +13,7 @@ let v5 = xs@[1]  //should not give warning
 
 let arr2 = [| 1 .. 5 |]
 arr2.[1..] <- [| 9;8;7;6 |] //should not give warning
+
+let expectedLists = Array2D.zeroCreate 6 6
+expectedLists.[1,1] <- [ [1] ] //should not give warning
+

@@ -6180,13 +6180,12 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
             UnifyTypes cenv env mWholeExpr domainTy e1ty
             let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
-            let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, false, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
+            let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, true, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
             Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
     match attemptArrayString with
     | Some res -> res
-    | None ->
-    if isNominal || Option.isSome propName then
+    | None when isNominal || Option.isSome propName ->
         let nm =
             match propName with
             | None -> "Item"
@@ -6212,7 +6211,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
 
         PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv expr) e1ty ExprAtomicFlag.Atomic delayed
 
-    else
+    | _ ->
         // deprecated constrained lookup
         error(Error(FSComp.SR.tcObjectOfIndeterminateTypeUsedRequireTypeConstraint(), mWholeExpr))
 
