@@ -2286,7 +2286,7 @@ module Query =
 
     let MakeQueryableTake = 
         let F = MakeGenericStaticMethod <@ System.Linq.Queryable.Take @> 
-        fun (srcTy,src,count)  -> 
+        fun (srcTy,src,count : int)  -> 
             let src = Expr.Coerce(src,MakeIQueryableTy srcTy)
             F ([srcTy],[src;count])
 
