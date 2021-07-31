@@ -1334,37 +1334,103 @@ type ArrayModule2() =
         Assert.AreEqual(None, resultIndexGreater)
     
     [<Fact>]
-    member this.removeAt() =
-        Assert.AreEqual([|2..10|], (Array.removeAt 0 [|1..10|]))
-        Assert.AreEqual([|1..9|], (Array.removeAt 9 [|1..10|]))
+    member this.RemoveAt() =
+        // integer list
+        Assert.AreEqual([|2; 3; 4; 5|], (Array.removeAt 0 [|1..5|]))
         Assert.AreEqual([|1; 2; 4; 5|], (Array.removeAt 2 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4|], (Array.removeAt 4 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"2"; "3"; "4"; "5"|], (Array.removeAt 0 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "4"; "5"|], (Array.removeAt 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"|], (Array.removeAt 4 [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.removeAt 0 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeAt -1 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeAt 2 [|1|] |> ignore)
         
     [<Fact>]
-    member this.removeManyAt() =
-        Assert.AreEqual([|3..10|], (Array.removeManyAt 0 2 [|1..10|]))
-        Assert.AreEqual([|1..8|], (Array.removeManyAt 9 2 [|1..10|]))
+    member this.RemoveManyAt() =
+        // integer list
+        Assert.AreEqual([|3; 4; 5|], (Array.removeManyAt 0 2 [|1..5|]))
         Assert.AreEqual([|1; 2; 5|], (Array.removeManyAt 2 2 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3|], (Array.removeManyAt 3 2 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"3"; "4"; "5"|], (Array.removeManyAt 0 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "5"|], (Array.removeManyAt 2 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"|], (Array.removeManyAt 3 2 [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt 0 2 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt -1 2 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.removeManyAt 2 2 [|1|] |> ignore)
         
     [<Fact>]
-    member this.updateAt() =
-        Assert.AreEqual([|-1; 2; 3|], (Array.updateAt 0 -1 [|1..3|]))
-        Assert.AreEqual([|1; -1; 3|], (Array.updateAt 1 -1 [|1..3|]))
-        Assert.AreEqual([|1; 2; -1|], (Array.updateAt 2 -1 [|1..3|]))
+    member this.UpdateAt() =
+        // integer list
+        Assert.AreEqual([|0; 2; 3; 4; 5|], (Array.updateAt 0 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 4; 5|], (Array.updateAt 2 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0|], (Array.updateAt 4 0 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "2"; "3"; "4"; "5"|], (Array.updateAt 0 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "4"; "5"|], (Array.updateAt 2 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"|], (Array.updateAt 4 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.updateAt 0 0 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateAt -1 0 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateAt 2 0 [|1|] |> ignore)
     
     [<Fact>]
-    member this.updateManyAt() =
-        Assert.AreEqual([|-1; -2; 3; 4; 5|], (Array.updateManyAt 0 [-1; -2] [|1..5|]))
-        Assert.AreEqual([|1; 2; 3; -1; -2|], (Array.updateManyAt 3 [-1; -2] [|1..5|]))
-        Assert.AreEqual([|1; 2; -1; -2; 5|], (Array.updateManyAt 2 [-1; -2] [|1..5|]))
+    member this.UpdateManyAt() =
+        // integer list
+        Assert.AreEqual([|0; 0; 3; 4; 5|], (Array.updateManyAt 0 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 0; 5|], (Array.updateManyAt 2 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 0; 0|], (Array.updateManyAt 3 [0; 0] [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "0"; "3"; "4"; "5"|], (Array.updateManyAt 0 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "0"; "5"|], (Array.updateManyAt 2 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "0"; "0"|], (Array.updateManyAt 3 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Array.updateManyAt 0 [0; 0] [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateManyAt -1 [0; 0] [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.updateManyAt 2 [0; 0] [|1|] |> ignore)
         
     [<Fact>]
-    member this.insertAt() =
-        Assert.AreEqual([|-1; 1; 2; 3|], (Array.insertAt 0 -1 [|1..3|]))
-        Assert.AreEqual([|1; -1; 2; 3|], (Array.insertAt 1 -1 [|1..3|]))
-        Assert.AreEqual([|1; 2; 3; -1|], (Array.insertAt 3 -1 [|1..3|]))
+    member this.InsertAt() =
+        // integer list
+        Assert.AreEqual([|0; 1; 2; 3; 4; 5|], (Array.insertAt 0 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 3; 4; 5|], (Array.insertAt 2 0 [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0; 5|], (Array.insertAt 4 0 [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "1"; "2"; "3"; "4"; "5"|], (Array.insertAt 0 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "3"; "4"; "5"|], (Array.insertAt 2 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"; "5"|], (Array.insertAt 4 "0" [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0], Array.insertAt 0 0 [||])
+        CheckThrowsArgumentException (fun () -> Array.insertAt -1 0 [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.insertAt 2 0 [|1|] |> ignore)
         
     [<Fact>]
-    member this.insertManyAt() =
-        Assert.AreEqual([|-1; -2; 1; 2; 3|], (Array.insertManyAt 0 [-1; -2] [|1..3|]))
-        Assert.AreEqual([|1; -1; -2; 2; 3|], (Array.insertManyAt 1 [-1; -2] [|1..3|]))
-        Assert.AreEqual([|1; 2; 3; -1; -2|], (Array.insertManyAt 3 [-1; -2] [|1..3|]))
+    member this.InsertManyAt() =
+        // integer list
+        Assert.AreEqual([|0; 0; 1; 2; 3; 4; 5|], (Array.insertManyAt 0 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 0; 0; 3; 4; 5|], (Array.insertManyAt 2 [0; 0] [|1..5|]))
+        Assert.AreEqual([|1; 2; 3; 4; 0; 0; 5|], (Array.insertManyAt 4 [0; 0] [|1..5|]))
+        
+        //string list
+        Assert.AreEqual([|"0"; "0"; "1"; "2"; "3"; "4"; "5"|], (Array.insertManyAt 0 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "0"; "0"; "3"; "4"; "5"|], (Array.insertManyAt 2 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        Assert.AreEqual([|"1"; "2"; "3"; "4"; "0"; "0"; "5"|], (Array.insertManyAt 4 ["0"; "0"] [|"1"; "2"; "3"; "4"; "5"|]))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0; 0], Array.insertManyAt 0 [0; 0] [||])
+        CheckThrowsArgumentException (fun () -> Array.insertManyAt -1 [0; 0] [|1|] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.insertManyAt 2 [0; 0] [|1|] |> ignore)

@@ -1987,37 +1987,103 @@ type SeqModule2() =
         Assert.AreEqual(None, resultIndexGreater)
         
     [<Fact>]
-    member this.removeAt() =
-        Assert.AreEqual([|2..10|], (Seq.removeAt 0 [|1..10|]))
-        Assert.AreEqual([|1..9|], (Seq.removeAt 9 [|1..10|]))
-        Assert.AreEqual([|1; 2; 4; 5|], (Seq.removeAt 2 [|1..5|]))
+    member this.RemoveAt() =
+        // integer list
+        Assert.AreEqual([2; 3; 4; 5], (Seq.removeAt 0 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 4; 5], (Seq.removeAt 2 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3; 4], (Seq.removeAt 4 [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["2"; "3"; "4"; "5"], (Seq.removeAt 0 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "4"; "5"], (Seq.removeAt 2 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"; "4"], (Seq.removeAt 4 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Seq.removeAt 0 [] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.removeAt -1 [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.removeAt 2 [1] |> Seq.toList |> ignore)
         
     [<Fact>]
-    member this.removeManyAt() =
-        Assert.AreEqual([|3..10|], (Seq.removeManyAt 0 2 [|1..10|]))
-        Assert.AreEqual([|1..8|], (Seq.removeManyAt 9 2 [|1..10|]))
-        Assert.AreEqual([|1; 2; 5|], (Seq.removeManyAt 2 2 [|1..5|]))
+    member this.RemoveManyAt() =
+        // integer list
+        Assert.AreEqual([3; 4; 5], (Seq.removeManyAt 0 2 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 5], (Seq.removeManyAt 2 2 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3], (Seq.removeManyAt 3 2 [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["3"; "4"; "5"], (Seq.removeManyAt 0 2 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "5"], (Seq.removeManyAt 2 2 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"], (Seq.removeManyAt 3 2 ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Seq.removeManyAt 0 2 [] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.removeManyAt -1 2 [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.removeManyAt 2 2 [1] |> Seq.toList |> ignore)
         
     [<Fact>]
-    member this.updateAt() =
-        Assert.AreEqual([|-1; 2; 3|], (Seq.updateAt 0 -1 [|1..3|]))
-        Assert.AreEqual([|1; -1; 3|], (Seq.updateAt 1 -1 [|1..3|]))
-        Assert.AreEqual([|1; 2; -1|], (Seq.updateAt 2 -1 [|1..3|]))
+    member this.UpdateAt() =
+        // integer list
+        Assert.AreEqual([0; 2; 3; 4; 5], (Seq.updateAt 0 0 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 0; 4; 5], (Seq.updateAt 2 0 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3; 4; 0], (Seq.updateAt 4 0 [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["0"; "2"; "3"; "4"; "5"], (Seq.updateAt 0 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "0"; "4"; "5"], (Seq.updateAt 2 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"; "4"; "0"], (Seq.updateAt 4 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> Seq.updateAt 0 0 [] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.updateAt -1 0 [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.updateAt 2 0 [1] |> Seq.toList |> ignore)
     
     [<Fact>]
-    member this.updateManyAt() =
-        Assert.AreEqual([|-1; -2; 3; 4; 5|], (Seq.updateManyAt 0 [-1; -2] [|1..5|]))
-        Assert.AreEqual([|1; 2; 3; -1; -2|], (Seq.updateManyAt 3 [-1; -2] [|1..5|]))
-        Assert.AreEqual([|1; 2; -1; -2; 5|], (Seq.updateManyAt 2 [-1; -2] [|1..5|]))
+    member this.UpdateManyAt() =
+        // integer list
+        Assert.AreEqual([0; 0; 3; 4; 5], (Seq.updateManyAt 0 [0; 0] [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 0; 0; 5], (Seq.updateManyAt 2 [0; 0] [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3; 0; 0], (Seq.updateManyAt 3 [0; 0] [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["0"; "0"; "3"; "4"; "5"], (Seq.updateManyAt 0 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "0"; "0"; "5"], (Seq.updateManyAt 2 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"; "0"; "0"], (Seq.updateManyAt 3 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        CheckThrowsArgumentException (fun () -> List.updateManyAt 0 [0; 0] [] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.updateManyAt -1 [0; 0] [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> List.updateManyAt 2 [0; 0] [1] |> Seq.toList |> ignore)
         
     [<Fact>]
-    member this.insertAt() =
-        Assert.AreEqual([|-1; 1; 2; 3|], (Seq.insertAt 0 -1 [|1..3|]))
-        Assert.AreEqual([|1; -1; 2; 3|], (Seq.insertAt 1 -1 [|1..3|]))
-        Assert.AreEqual([|1; 2; 3; -1|], (Seq.insertAt 3 -1 [|1..3|]))
+    member this.InsertAt() =
+        // integer list
+        Assert.AreEqual([0; 1; 2; 3; 4; 5], (Seq.insertAt 0 0 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 0; 3; 4; 5], (Seq.insertAt 2 0 [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3; 4; 0; 5], (Seq.insertAt 4 0 [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["0"; "1"; "2"; "3"; "4"; "5"], (List.insertAt 0 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "0"; "3"; "4"; "5"], (List.insertAt 2 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"; "4"; "0"; "5"], (List.insertAt 4 "0" ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0], Seq.insertAt 0 0 [] |> Seq.toList)
+        CheckThrowsArgumentException (fun () -> Seq.insertAt -1 0 [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.insertAt 2 0 [1] |> Seq.toList |> ignore)
         
     [<Fact>]
-    member this.insertManyAt() =
-        Assert.AreEqual([|-1; -2; 1; 2; 3|], (Seq.insertManyAt 0 [-1; -2] [|1..3|]))
-        Assert.AreEqual([|1; -1; -2; 2; 3|], (Seq.insertManyAt 1 [-1; -2] [|1..3|]))
-        Assert.AreEqual([|1; 2; 3; -1; -2|], (Seq.insertManyAt 3 [-1; -2] [|1..3|]))
+    member this.InsertManyAt() =
+        // integer list
+        Assert.AreEqual([0; 0; 1; 2; 3; 4; 5], (Seq.insertManyAt 0 [0; 0] [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 0; 0; 3; 4; 5], (Seq.insertManyAt 2 [0; 0] [1..5] |> Seq.toList))
+        Assert.AreEqual([1; 2; 3; 4; 0; 0; 5], (Seq.insertManyAt 4 [0; 0] [1..5] |> Seq.toList))
+        
+        //string list
+        Assert.AreEqual(["0"; "0"; "1"; "2"; "3"; "4"; "5"], (Seq.insertManyAt 0 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "0"; "0"; "3"; "4"; "5"], (Seq.insertManyAt 2 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        Assert.AreEqual(["1"; "2"; "3"; "4"; "0"; "0"; "5"], (Seq.insertManyAt 4 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
+        
+        // empty list & out of bounds
+        Assert.AreEqual([0; 0], Seq.insertManyAt 0 [0; 0] [] |> Seq.toList)
+        CheckThrowsArgumentException (fun () -> Seq.insertManyAt -1 [0; 0] [1] |> Seq.toList |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.insertManyAt 2 [0; 0] [1] |> Seq.toList |> ignore)

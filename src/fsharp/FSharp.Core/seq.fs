@@ -1491,26 +1491,31 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("RemoveAt")>]
         let removeAt (index: int) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
                 for item in source do
                     if i <> index then 
                         yield item
                     i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
             }
     
         [<CompiledName("RemoveManyAt")>]
         let removeManyAt (index: int) (count: int) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
                 for item in source do
                     if i < index || i >= index + count then 
                         yield item
                     i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
             }
     
         [<CompiledName("UpdateAt")>]
         let updateAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1518,26 +1523,33 @@ namespace Microsoft.FSharp.Collections
                         yield item
                     else yield value
                     i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
             }
     
         [<CompiledName("UpdateManyAt")>]
         let updateManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
-                let mutable valueCount = 0
-                for item in source do
-                    if i < index then
-                        yield item
-                    elif i = index then
-                        for value in values do
-                            valueCount <- valueCount + 1
-                            yield value
-                    else yield item
+                let sourceEnumerator = source.GetEnumerator()
+                let valuesEnumerator = values.GetEnumerator()
+                
+                while i < index do // advance till index
+                    if not (sourceEnumerator.MoveNext()) then invalidArg "index" "index must be within bounds of the array"
+                    yield sourceEnumerator.Current
                     i <- i + 1
+                    
+                while valuesEnumerator.MoveNext() do // then advance both at the same time but yield values
+                    if not (sourceEnumerator.MoveNext()) then invalidArg "index" "index must be within bounds of the array"
+                    yield valuesEnumerator.Current
+                    
+                while sourceEnumerator.MoveNext() do // yield the rest of source if any
+                    yield sourceEnumerator.Current
             }
     
         [<CompiledName("InsertAt")>]
         let insertAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
                 for item in source do
@@ -1545,15 +1557,19 @@ namespace Microsoft.FSharp.Collections
                         yield value
                     yield item
                     i <- i + 1
+                if i = index then yield value
+                if i < index then invalidArg "index" "index must be within bounds of the array"
             }
     
         [<CompiledName("InsertManyAt")>]
         let insertManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
                 for item in source do
-                    if i = index then 
-                        for v in values do yield v
+                    if i = index then yield! values
                     yield item 
                     i <- i + 1
+                if i = index then yield! values // support inserting at the end
+                if i < index then invalidArg "index" "index must be within bounds of the array"
             }

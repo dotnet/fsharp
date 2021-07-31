@@ -88,9 +88,6 @@ namespace Microsoft.FSharp.Collections
         /// <summary>The keys in the map.</summary>
         member Keys : seq<'Key>
 
-        /// <summary>All the values in the map, including duplicates.</summary>
-        member Values : seq<'Value>
-
         interface IDictionary<'Key, 'Value>         
         interface ICollection<KeyValuePair<'Key, 'Value>> 
         interface IEnumerable<KeyValuePair<'Key, 'Value>>         

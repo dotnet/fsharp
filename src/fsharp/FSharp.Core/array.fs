@@ -1278,7 +1278,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length - 1
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <-
                     if i < index then source.[i]
                     else source.[i + 1]
@@ -1293,7 +1293,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length - count
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <-
                     if i < index then source.[i]
                     else source.[i + count]
@@ -1308,7 +1308,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <-
                     if i = index then value
                     else source.[i]
@@ -1323,7 +1323,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <-
                     if i >= index && i < index + valuesArray.Count then valuesArray.[i - index]
                     else source.[i]
@@ -1337,7 +1337,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length + 1
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <- 
                     if i < index then source.[i]
                     elif i = index then value
@@ -1353,7 +1353,7 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length + valuesArray.Count
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            for i in 0..length do
+            for i in 0..length - 1 do
                 result.[i] <- 
                     if i < index then source.[i]
                     elif i < index + valuesArray.Count then valuesArray.[i - index]

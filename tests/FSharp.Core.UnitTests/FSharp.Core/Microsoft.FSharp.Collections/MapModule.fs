@@ -647,10 +647,38 @@ type MapModule() =
 
     [<Fact>]
     member this.Keys() =
+        // reference keys
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "2"; "3"], Map.keys m)
+    
+        // value keys
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
         Assert.AreEqual([1; 2; 3], Map.keys m)
     
+        // one element  
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], Map.keys m)
+        
+        // empty
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], Map.keys m)
+        
+
+    
     [<Fact>]
     member this.Values() =
+        // reference types
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "4"; "9"], Map.values m)
+        
+        // value types
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
         Assert.AreEqual([1; 4; 9], Map.values m)
+        
+        // one element
+        let m = Map.ofArray [| (1, 1) |]
+        Assert.AreEqual([1], Map.values m)
+        
+        // empty
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], Map.values m)
