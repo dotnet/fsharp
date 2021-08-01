@@ -891,6 +891,36 @@ with
             assertRange (6, 2) (6, 21) clause.Range
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of arrow in SynMatchClause`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+        ]) ])) ->
+            assertRange (3, 10) (3, 12) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of arrow in SynMatchClause with when clause`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar when (someCheck bar) -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+        ]) ])) ->
+            assertRange (3, 31) (3, 33) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SourceIdentifiers =
     [<Test>]
     let ``__LINE__`` () =

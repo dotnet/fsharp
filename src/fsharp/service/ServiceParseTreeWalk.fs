@@ -753,7 +753,7 @@ module SyntaxTraversal =
             let defaultTraverse mc =
                 let path = SyntaxNode.SynMatchClause mc :: origPath
                 match mc with
-                | SynMatchClause(synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all ->
+                | SynMatchClause(synPat, synExprOption, _, synExpr, _range, _sequencePointInfoForTarget) as all ->
                     [dive synPat synPat.Range (traversePat path) ]
                     @
                     ([

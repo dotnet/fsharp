@@ -5661,7 +5661,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
-        let filterClauses = synWithClauses |> List.map (function SynMatchClause(pat, optWhenExpr, _, m, _) -> SynMatchClause(pat, optWhenExpr, (SynExpr.Const (SynConst.Int32 1, m)), m, DebugPointForTarget.No))
+        let filterClauses = synWithClauses |> List.map (function SynMatchClause(pat, optWhenExpr, arrow, _, m, _) -> SynMatchClause(pat, optWhenExpr, arrow, (SynExpr.Const (SynConst.Int32 1, m)), m, DebugPointForTarget.No))
         let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty cenv.g.int_ty env tpenv filterClauses
         let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
         let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
@@ -9212,7 +9212,7 @@ and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
     let isFirst() = if first then first <- false; true else false
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy resultTy env isFirst tpenv (SynMatchClause(pat, optWhenExpr, e, patm, spTgt)) =
+and TcMatchClause cenv inputTy resultTy env isFirst tpenv (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) =
     let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e

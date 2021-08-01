@@ -1280,6 +1280,7 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
+        arrow: Range option *
         resultExpr: SynExpr *
         range: range *
         debugPoint: DebugPointForTarget

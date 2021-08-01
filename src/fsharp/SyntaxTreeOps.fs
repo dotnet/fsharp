@@ -179,7 +179,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
             | SynPat.Wild _ -> None
             | _ ->
                 Some (fun e ->
-                    let clause = SynMatchClause(p, None, e, m, DebugPointForTarget.No)
+                    let clause = SynMatchClause(p, None, None, e, m, DebugPointForTarget.No)
                     SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], clause.Range))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
@@ -628,7 +628,7 @@ let rec synExprContainsError inpExpr =
     and walkBinds es = es |> List.exists walkBind
 
     and walkMatchClauses cl =
-        cl |> List.exists (fun (SynMatchClause(_, whenExpr, e, _, _)) -> walkExprOpt whenExpr || walkExpr e)
+        cl |> List.exists (fun (SynMatchClause(_, whenExpr, _, e, _, _)) -> walkExprOpt whenExpr || walkExpr e)
 
     and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
 
