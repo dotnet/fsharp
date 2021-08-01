@@ -1283,6 +1283,87 @@ module Lambdas =
             Assert.AreEqual("x", ident.idText)
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Simple lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun x -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 6) (1, 8) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Multiline lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun x y z
+                            ->
+                                x * y * z"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (2, 28) (2, 30) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Destructed lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun { X = x } -> x * 2"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 14) (1, 16) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Tuple in lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun (x, _) -> x * 3"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 11) (1, 13) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Complex arguments lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun (x, _) 
+    ({ Y = h::_ }) 
+    (SomePattern(z)) 
+    -> 
+    x * y + z"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (4, 4) (4, 6) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module IfThenElse =
     [<Test>]
     let ``If keyword in IfThenElse`` () =

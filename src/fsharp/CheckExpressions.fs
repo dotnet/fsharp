@@ -2322,7 +2322,7 @@ module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ... 
     /// In this case the semantics is let f a b = let A x = a in let B y = b 
     let private PushMultiplePatternsToRhs (cenv: cenv) isMember pats (NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr)) = 
-        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember pats rhsExpr
+        let spatsL2, rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember pats None rhsExpr
         NormalizedBindingRhs(spatsL2@spatsL, rtyOpt, rhsExpr)
 
 
@@ -2506,7 +2506,7 @@ module EventDeclarationNormalization =
 
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
-                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), trueRhsExpr, _, m) ->
+                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), _, trueRhsExpr, _, m) ->
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -5853,7 +5853,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, spats, _, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
@@ -8464,7 +8464,7 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
     | SynExpr.AddressOf (true, a, _, m) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType cenv.g m)
-    | SynExpr.Lambda (_, _, _, a, _, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
+    | SynExpr.Lambda (body = a) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote (_, raw, a, _, _) ->
         if raw then mkRawQuotedExprTy cenv.g
         else mkQuotedExprTy cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a)

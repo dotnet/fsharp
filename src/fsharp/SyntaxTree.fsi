@@ -665,6 +665,7 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
+        arrow: Range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
         range: range

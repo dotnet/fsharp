@@ -675,7 +675,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             Some (nm, Option.get (tryGetDataForCustomOperation nm), core, core.Range, optIntoInfo)
         | _ -> None
 
-    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, None, m)
+    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, None, e, None, m)
 
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
@@ -1391,7 +1391,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
-                                            SynExpr.Lambda (false, false, varSpaceSimplePat, arg, None, arg.Range.MakeSynthetic())
+                                            SynExpr.Lambda (false, false, varSpaceSimplePat, None, arg, None, arg.Range.MakeSynthetic())
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
@@ -1634,7 +1634,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
 
     let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
-        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, None, mBuilderVal)
+        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), None, runExpr, None, mBuilderVal)
 
     let env =
         match comp with
