@@ -40,9 +40,9 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Syntax) 
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, parsingOptions, projectOptions, DiagnosticsType.Semantic) 
+            let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         } |> Async.RunSynchronously
 
@@ -53,7 +53,8 @@ type DocumentDiagnosticAnalyzerTests()  =
                                 | Some(flags) -> {projectOptions with OtherOptions = Array.append projectOptions.OtherOptions flags}
 
         let errors = getDiagnostics fileContents
-        Assert.AreEqual(0, errors.Length, "There should be no errors generated")
+        if not errors.IsEmpty then
+            Assert.Fail("There should be no errors generated", errors)
 
     member private this.VerifyErrorAtMarker(fileContents: string, expectedMarker: string, ?expectedMessage: string) =
         let errors = getDiagnostics fileContents |> Seq.filter(fun e -> e.Severity = DiagnosticSeverity.Error) |> Seq.toArray

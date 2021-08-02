@@ -6,6 +6,8 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open System.Collections.Immutable
+open System.Threading
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -14,6 +16,8 @@ open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+
+open Microsoft.VisualStudio.FSharp.Editor
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
@@ -36,6 +40,12 @@ type ProjectId with
     member this.ToFSharpProjectIdString() =
         this.Id.ToString("D").ToLowerInvariant()
 
+type Project with
+    member this.IsFSharpMiscellaneous = this.Name = FSharpConstants.FSharpMiscellaneousFilesName
+    member this.IsFSharpMetadata = this.Name.StartsWith(FSharpConstants.FSharpMetadataName)
+    member this.IsFSharpMiscellaneousOrMetadata = this.IsFSharpMiscellaneous || this.IsFSharpMetadata
+    member this.IsFSharp = this.Language = LanguageNames.FSharp
+
 type Document with
     member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
         match this.Project with
@@ -46,6 +56,9 @@ type Document with
             | languageServices ->
                 languageServices.GetService<'T>()
                 |> Some
+
+    member this.IsFSharpScript =
+        isScriptFile this.FilePath
 
 module private SourceText =
 
@@ -279,3 +292,19 @@ module Exception =
         | _ -> root
         |> flattenInner
         |> String.concat " ---> "
+
+type Async with
+    static member RunImmediateExceptOnUI (computation: Async<'T>, ?cancellationToken ) =
+        match SynchronizationContext.Current with 
+        | null ->
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
+        | _ -> Async.RunSynchronously(computation, ?cancellationToken=cancellationToken)

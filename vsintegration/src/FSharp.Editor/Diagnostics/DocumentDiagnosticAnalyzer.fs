@@ -25,11 +25,7 @@ type internal DiagnosticsType =
 type internal FSharpDocumentDiagnosticAnalyzer
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
-
-    static let userOpName = "DocumentDiagnosticAnalyzer"
 
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with 
@@ -56,22 +52,24 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 hash 
         }
 
-    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
+    static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) = 
         async {
-            let fsSourceText = sourceText.ToFSharpSourceText()
-            let! parseResults = checker.ParseFile(filePath, fsSourceText, parsingOptions, userOpName=userOpName) 
+            let! ct = Async.CancellationToken
+
+            let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
+
+            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            let filePath = document.FilePath
+
             let! errors = 
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, fsSourceText, options, userOpName=userOpName) 
-                        match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> return [||]
-                        | FSharpCheckFileAnswer.Succeeded results ->
-                            // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                            let allErrors = HashSet(results.Diagnostics, errorInfoEqualityComparer)
-                            allErrors.ExceptWith(parseResults.Diagnostics)
-                            return Seq.toArray allErrors
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+                        // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
+                        let allErrors = HashSet(checkResults.Diagnostics, errorInfoEqualityComparer)
+                        allErrors.ExceptWith(parseResults.Diagnostics)
+                        return Seq.toArray allErrors
                     | DiagnosticsType.Syntax ->
                         return parseResults.Diagnostics
                 }
@@ -107,28 +105,25 @@ type internal FSharpDocumentDiagnosticAnalyzer
     interface IFSharpDocumentDiagnosticAnalyzer with
 
         member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMetadata then Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                     |> liftAsync
             } 
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then Task.FromResult(ImmutableArray.Empty)
+            else
+
             asyncMaybe {
-                let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
-                    return! 
-                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
-                        |> liftAsync
-                else
-                    return ImmutableArray<Diagnostic>.Empty
+                return! 
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
+                    |> liftAsync
             }
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

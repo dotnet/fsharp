@@ -77,6 +77,7 @@ type public Fsc () as this =
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
     let mutable warnOn : string = null
+    let mutable win32icon: string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
@@ -223,6 +224,9 @@ type public Fsc () as this =
         match warningsNotAsErrors with
         | null -> ()
         | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors |> splitAndWsTrim, ",")
+
+        // Win32IconFile
+        builder.AppendSwitchIfNotNull("--win32icon:", win32icon)
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -488,6 +492,11 @@ type public Fsc () as this =
     member fsc.VersionFile
         with get() = versionFile
         and set(s) = versionFile <- s
+
+    // For specifying a win32 icon file (.ico)
+    member fsc.Win32IconFile
+        with get() = win32icon
+        and set(s) = win32icon <- s
 
     // For specifying a win32 native resource file (.res)
     member fsc.Win32ResourceFile

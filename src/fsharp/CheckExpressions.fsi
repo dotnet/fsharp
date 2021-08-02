@@ -20,6 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
@@ -97,10 +98,13 @@ type TcEnv =
       eCtorInfo: CtorInfo option
 
       eCallerMemberName: string option
+
+      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
+      eLambdaArgInfos: ArgReprInfo list list
     } 
 
     member DisplayEnv : DisplayEnv
-    member NameEnv : NameResolution.NameResolutionEnv
+    member NameEnv : NameResolutionEnv
     member AccessRights : AccessorDomain
 
 //-------------------------------------------------------------------------
@@ -130,7 +134,7 @@ exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * 
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception ValueRestriction of DisplayEnv * InfoReader * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -174,7 +178,7 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
+      mutable recUses: ValMultiMap<Expr ref * range * bool>
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
@@ -186,7 +190,7 @@ type TcFileState =
       isScript: bool 
 
       /// Environment needed to convert IL types to F# types in the importer. 
-      amap: Import.ImportMap 
+      amap: ImportMap 
 
       /// Used to generate new syntactic argument names in post-parse syntactic processing
       synArgNameGenerator: SynArgNameGenerator
@@ -507,13 +511,13 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
-val AddLocalValPrimitive: v: Val -> TcEnv -> TcEnv
+val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
 
 /// Add a list of values to the environment, producing a new environment. Report to the sink.
-val AddLocalVals: tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
+val AddLocalVals: g: TcGlobals -> tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
 val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
@@ -596,7 +600,7 @@ val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: Paren
 val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
-val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<(Val * TypeScheme)> * NameMap<Val>
+val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option

@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
 open Internal.Utilities.Library 
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
@@ -104,10 +103,13 @@ let isSupportedDirectCall apps =
 // for more refined types later.
 // -------------------------------------------------------------------- 
 
-let mkFuncTypeRef n = 
-    if n = 1 then mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpFunc`2")
-    else mkILNestedTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), 
-                         [IlxSettings.ilxNamespace () + ".OptimizedClosures"], 
+[<Literal>]
+let fsharpCoreNamespace = "Microsoft.FSharp.Core"
+
+let mkFuncTypeRef fsharpCoreAssemblyScopeRef n = 
+    if n = 1 then mkILTyRef (fsharpCoreAssemblyScopeRef, fsharpCoreNamespace + ".FSharpFunc`2")
+    else mkILNestedTyRef (fsharpCoreAssemblyScopeRef, 
+                         [fsharpCoreNamespace + ".OptimizedClosures"], 
                          "FSharpFunc`"+ string (n + 1))
 type cenv = 
     {
@@ -132,8 +134,8 @@ let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) =
 
 let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs) =
     { ilg = ilg
-      tref_Func = Array.init 10 (fun i -> mkFuncTypeRef(i+1))
-      mkILTyFuncTy = ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (IlxSettings.ilxFsharpCoreLibScopeRef (), IlxSettings.ilxNamespace () + ".FSharpTypeFunc"))) 
+      tref_Func = Array.init 10 (fun i -> mkFuncTypeRef ilg.fsharpCoreAssemblyScopeRef (i+1))
+      mkILTyFuncTy = ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (ilg.fsharpCoreAssemblyScopeRef, fsharpCoreNamespace + ".FSharpTypeFunc"))) 
       addMethodGeneratedAttrs = addMethodGeneratedAttrs
       addFieldGeneratedAttrs = addFieldGeneratedAttrs
       addFieldNeverAttrs = addFieldNeverAttrs }
@@ -144,7 +146,7 @@ let mkILCurriedFuncTy cenv dtys rty = List.foldBack (mkILFuncTy cenv) dtys rty
 
 let typ_Func cenv (dtys: ILType list) rty = 
     let n = dtys.Length
-    let tref = if n <= 10 then cenv.tref_Func.[n-1] else mkFuncTypeRef n   
+    let tref = if n <= 10 then cenv.tref_Func.[n-1] else mkFuncTypeRef cenv.ilg.fsharpCoreAssemblyScopeRef n   
     mkILBoxedTy tref (dtys @ [rty])
 
 let rec mkTyOfApps cenv apps =
@@ -235,7 +237,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let storers, (loaders2 : ILInstr list list) =  unwind rest
             (List.rev (List.concat storers) : ILInstr list) , List.concat loaders2
         else 
-            stripUpTo n (function (_x :: _y) -> true | _ -> false) (function (x :: y) -> (x, y) | _ -> failwith "no!") loaders
+            stripUpTo n (function _x :: _y -> true | _ -> false) (function x :: y -> (x, y) | _ -> failwith "no!") loaders
             
     let rec buildApp fst loaders apps =
         // Strip off one valid indirect call.  [fst] indicates if this is the 
@@ -246,7 +248,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
         // Type applications: REVIEW: get rid of curried tyapps - just tuple them 
         | tyargs, [], _ when not (isNil tyargs) ->
             // strip again, instantiating as we go.  we could do this while we count. 
-            let (revInstTyArgs, rest') = 
+            let revInstTyArgs, rest' = 
                 (([], apps), tyargs) ||> List.fold (fun (revArgsSoFar, cs) _  -> 
                         let actual, rest' = destTyFuncApp cs
                         let rest'' = instAppsAux varCount [ actual ] rest'
@@ -311,7 +313,7 @@ let convILMethodBody (thisClo, boxReturnTy) (il: ILMethodBody) =
         match boxReturnTy with
         | None    -> code
         | Some ty -> morphILInstrsInILCode (convReturnInstr ty) code
-    {il with MaxStack=newMax; IsZeroInit=true; Code= code }
+    { il with MaxStack = newMax; Code = code }
 
 let convMethodBody thisClo = function
     | MethodBody.IL il -> 
@@ -320,7 +322,7 @@ let convMethodBody thisClo = function
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body)
+    let b' = convMethodBody thisClo md.Body
     md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
@@ -376,7 +378,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let fixupArg mkEnv mkArg n = 
                   let rec findMatchingArg l c = 
                       match l with 
-                      | ((m, _) :: t) -> 
+                      | (m, _) :: t -> 
                           if n = m then mkEnv c
                           else findMatchingArg t (c+1)
                       | [] -> mkArg (n - argToFreeVarMap.Length + 1)
@@ -411,7 +413,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
       match tyargsl, tmargsl, laterStruct with 
       // CASE 1 - Type abstraction 
-      | (_ :: _), [], _ ->
+      | _ :: _, [], _ ->
           let addedGenParams = tyargsl
           let nowReturnTy = (mkTyOfLambdas cenv laterStruct)
           

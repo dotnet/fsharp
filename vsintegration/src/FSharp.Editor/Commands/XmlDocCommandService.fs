@@ -20,15 +20,9 @@ open FSharp.Compiler.EditorServices
 type internal XmlDocCommandFilter 
      (
         wpfTextView: IWpfTextView, 
-        filePath: string, 
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        filePath: string,
         workspace: VisualStudioWorkspace
      ) =
-
-    static let userOpName = "XmlDocCommand"
-
-    let checker = checkerProvider.Checker
 
     let document =
         // There may be multiple documents with the same file path.
@@ -67,11 +61,10 @@ type internal XmlDocCommandFilter
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
-                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-                                let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parsedInput) 
+                                let! parseResults = document.GetFSharpParseResultsAsync(nameof(XmlDocCommandFilter)) |> liftAsync
+                                let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -118,11 +111,11 @@ type internal XmlDocCommandFilter
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
-    (checkerProvider: FSharpCheckerProvider,
-     projectInfoManager: FSharpProjectOptionsManager,
+    (
      workspace: VisualStudioWorkspace,
      textDocumentFactoryService: ITextDocumentFactoryService,
-     editorFactory: IVsEditorAdaptersFactoryService) =
+     editorFactory: IVsEditorAdaptersFactoryService
+    ) =
     interface IWpfTextViewCreationListener with
         member _.TextViewCreated(textView) = 
             match editorFactory.GetViewAdapter(textView) with
@@ -130,6 +123,6 @@ type internal XmlDocCommandFilterProvider
             | textViewAdapter ->
                 match textDocumentFactoryService.TryGetTextDocument(textView.TextBuffer) with
                 | true, doc ->
-                    let commandFilter = XmlDocCommandFilter(textView, doc.FilePath, checkerProvider, projectInfoManager, workspace)
+                    let commandFilter = XmlDocCommandFilter(textView, doc.FilePath, workspace)
                     commandFilter.AttachToViewAdapter textViewAdapter
                 | _ -> ()

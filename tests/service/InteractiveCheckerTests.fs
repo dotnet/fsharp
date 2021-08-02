@@ -27,7 +27,7 @@ let internal identsAndRanges (input: ParsedInput) =
     let identAndRange ident (range: range) =
         (ident, rangeToTuple range)
     let extractFromComponentInfo (componentInfo: SynComponentInfo) =
-        let ((SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
+        let (SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range)) = componentInfo
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
@@ -59,7 +59,7 @@ let internal identsAndRanges (input: ParsedInput) =
     | ParsedInput.SigFile _ -> []
 
 let internal parseAndExtractRanges code =
-    let file = "Test"
+    let file = "Test.fs"
     let result = parseSourceCode (file, code)
     result |> identsAndRanges
 

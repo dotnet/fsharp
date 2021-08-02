@@ -110,8 +110,7 @@ module internal RoslynHelpers =
         let task = tcs.Task
         let disposeReg() = barrier.Stop(); if not task.IsCanceled then reg.Dispose()
         Async.StartWithContinuations(
-                  async { do! Async.SwitchToThreadPool()
-                          return! computation }, 
+                  computation, 
                   continuation=(fun result -> 
                       disposeReg()
                       tcs.TrySetResult(result) |> ignore
@@ -229,3 +228,4 @@ module internal OpenDeclarationHelper =
 module internal TaggedText =
     let toString (tts: TaggedText[]) =
         tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
+

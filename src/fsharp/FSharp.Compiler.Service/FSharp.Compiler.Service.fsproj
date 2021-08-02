@@ -59,6 +59,7 @@
     <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,7 +74,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -111,18 +112,6 @@
     <Compile Include="..\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
-    </Compile>
     <Compile Include="..\utils\ResizeArray.fsi">
       <Link>Utilities\ResizeArray.fsi</Link>
     </Compile>
@@ -147,6 +136,12 @@
     <Compile Include="..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
+    <Compile Include="..\absil\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="..\absil\illib.fs">
+      <Link>Utilities\illib.fs</Link>
+    </Compile>
     <Compile Include="..\utils\FileSystem.fsi">
       <Link>Utilities\FileSystem.fsi</Link>
     </Compile>
@@ -159,18 +154,6 @@
     <Compile Include="..\absil\ildiag.fs">
       <Link>Utilities\ildiag.fs</Link>
     </Compile>
-    <Compile Include="..\absil\illib.fsi">
-      <Link>Utilities\illib.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fs">
-      <Link>Utilities\illib.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fsi">
-      <Link>Utilities\filename.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fs">
-      <Link>Utilities\filename.fs</Link>
-    </Compile>
     <Compile Include="..\absil\zmap.fsi">
       <Link>Utilities\zmap.fsi</Link>
     </Compile>
@@ -182,12 +165,6 @@
     </Compile>
     <Compile Include="..\absil\zset.fs">
       <Link>Utilities\zset.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fsi">
-      <Link>Utilities\bytes.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fs">
-      <Link>Utilities\bytes.fs</Link>
     </Compile>
     <Compile Include="..\XmlAdapters.fsi">
       <Link>Utilities\XmlAdapters.fsi</Link>
@@ -212,6 +189,12 @@
     </Compile>
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
+    </Compile>
+    <Compile Include="..\block.fsi">
+      <Link>Utilities\block.fsi</Link>
+    </Compile>
+    <Compile Include="..\block.fs">
+      <Link>Utilities\block.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
@@ -257,6 +240,18 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fsi">
+      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fs">
+      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fsi">
+      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fs">
+      <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
     <FsLex Include="..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -388,9 +383,6 @@
     <Compile Include="..\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
     </Compile>
-    <Compile Include="..\ilx\ilxsettings.fs">
-      <Link>ILXErase\ilxsettings.fs</Link>
-    </Compile>
     <Compile Include="..\ilx\EraseClosures.fsi">
       <Link>ILXErase\EraseClosures.fsi</Link>
     </Compile>
@@ -510,7 +502,7 @@
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="..\TypedTree.fs">
-      <Link>TypedTree\TypedTree.fs</Link>
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="..\TypedTreeBasics.fsi">
       <Link>TypedTree\TypedTreeBasics.fsi</Link>
@@ -683,6 +675,12 @@
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerStateMachines.fsi">
+      <Link>Optimize\LowerStateMachines.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerStateMachines.fs">
+      <Link>Optimize\LowerStateMachines.fs</Link>
+    </Compile>
     <Compile Include="..\autobox.fsi">
       <Link>Optimize\autobox.fsi</Link>
     </Compile>
@@ -715,6 +713,12 @@
     </Compile>
     <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
     </Compile>
     <Compile Include="..\CompilerConfig.fsi">
       <Link>Driver\CompilerConfig.fsi</Link>
@@ -813,12 +817,6 @@
     </Compile>
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
     </Compile>
 
     <!-- the incremental builder and service . -->
@@ -1002,6 +1000,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
 </Project>

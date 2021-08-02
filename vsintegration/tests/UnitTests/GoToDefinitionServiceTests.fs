@@ -41,21 +41,17 @@ module GoToDefinitionServiceTests =
 
     let private findDefinition
         (
-            checker: FSharpChecker, 
-            documentKey: DocumentId, 
-            sourceText: SourceText, 
-            filePath: string, 
+            document: Document,
+            sourceText: SourceText,
             position: int,
-            defines: string list, 
-            options: FSharpProjectOptions, 
-            textVersionHash: int
+            defines: string list 
         ) : range option = 
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash,  sourceText, options, LanguageServicePerformanceOptions.Default, userOpName=userOpName)  |> Async.RunSynchronously
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(userOpName)) |> Async.RunSynchronously
 
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
@@ -82,13 +78,12 @@ module GoToDefinitionServiceTests =
     let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
         let filePath = Path.GetTempFileName() + ".fs"
-        let options = makeOptions filePath [| |]
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
         let actual = 
-           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
+           findDefinition(document, sourceText, caretPosition, []) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 

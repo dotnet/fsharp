@@ -26,19 +26,20 @@
 ///     you need.  
 module FSharp.Compiler.AbstractIL.ILBinaryReader 
 
+open System.IO
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type internal ILReaderMetadataSnapshot = (obj * nativeint * int) 
-type internal ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+type ILReaderMetadataSnapshot = obj * nativeint * int 
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
-type internal MetadataOnlyFlag = Yes | No
+type MetadataOnlyFlag = Yes | No
 
 [<RequireQualifiedAccess>]
-type internal ReduceMemoryFlag = Yes | No
+type ReduceMemoryFlag = Yes | No
 
-type internal ILReaderOptions =
+type ILReaderOptions =
    { pdbDirPath: string option
 
      // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)
@@ -71,12 +72,19 @@ type public ILModuleReader =
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
 /// PDB files may not be read with this option. 
+/// Binary reader is internally cached.
 val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
 val internal ClearAllILModuleReaderCache : unit -> unit
 
 /// Open a binary reader based on the given bytes. 
+/// This binary reader is not internally cached.
 val internal OpenILModuleReaderFromBytes: fileName:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
+
+/// Open a binary reader based on the given stream. 
+/// This binary reader is not internally cached.
+/// The binary reader will own the given stream and the stream will be disposed when there are no references to the binary reader.
+val internal OpenILModuleReaderFromStream: fileName:string -> peStream: Stream -> options: ILReaderOptions -> ILModuleReader
 
 type internal Statistics = 
     { mutable rawMemoryFileCount : int

@@ -70,7 +70,7 @@ module Structure =
                  | SynSimplePat.Attrib(range = r)
                  | SynSimplePat.Id(range = r)
                  | SynSimplePat.Typed(range = r) -> r)
-            |> List.reduce Range.unionRanges
+            |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
     /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions
@@ -252,7 +252,7 @@ module Structure =
             | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
                 [
                     yield eLet
-                    for (_,_,_,_,eAndBang,_) in es do 
+                    for _,_,_,_,eAndBang,_ in es do 
                         yield eAndBang
                 ]
                 |> List.iter (fun e ->
@@ -348,7 +348,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
+            | SynExpr.IfThenElse (_, _, ifExpr, _, thenExpr, _, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->
                     // Outline the entire IfThenElse
@@ -420,7 +420,7 @@ module Structure =
         and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
-                    let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
+                    let range = Range.startToEnd attrs.[0].Range attrs.[attrs.Length-1].ArgExpr.Range
                     rcheck Scope.Attribute Collapse.Same range range
 
             match  attrs with
@@ -443,9 +443,8 @@ module Structure =
             | SynBindingKind.Normal ->
                 let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
                 match memberFlags with
-                | Some ({MemberKind=SynMemberKind.Constructor}) ->
-                    let collapse = Range.startToEnd expr.Range br
-                    rcheck Scope.New Collapse.Below br collapse
+                | Some {MemberKind=SynMemberKind.Constructor} ->
+                    rcheck Scope.New Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | Some _ ->
                     rcheck Scope.Member Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | None ->
@@ -521,7 +520,7 @@ module Structure =
         and parseSimpleRepr simple =
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases, _er) ->
-                for SynEnumCase (attrs, _, _, _, cr) in cases do
+                for SynEnumCase (attrs, _, _, _, _, cr) in cases do
                     rcheck Scope.EnumCase Collapse.Below cr cr
                     parseAttributes attrs
             | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->
@@ -536,7 +535,7 @@ module Structure =
                     parseAttributes attrs
             | _ -> ()
 
-        and parseTypeDefn (SynTypeDefn(SynComponentInfo(_, typeArgs, _, _, _, _, _, r), objectModel, members, _, fullrange)) = 
+        and parseTypeDefn (SynTypeDefn(SynComponentInfo(_, TyparDecls typeArgs, _, _, _, _, _, r), objectModel, members, _, fullrange)) = 
            let typeArgsRange = rangeOfTypeArgsElse r typeArgs
            let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with
@@ -643,7 +642,7 @@ module Structure =
             else None
 
         let getCommentRanges (lines: string[]) =
-            let rec loop ((lastLineNum, currentComment: CommentList option, result) as state) (lines: string list) lineNum =
+            let rec loop (lastLineNum, currentComment: CommentList option, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
                 | lineStr :: rest ->
@@ -749,7 +748,7 @@ module Structure =
                 parseTypeDefnSig typeDefSig
             | _ -> ()
 
-        and parseTypeDefnSig (SynTypeDefnSig (SynComponentInfo(attribs, typeArgs, _, longId, _, _, _, r) as __, objectModel, memberSigs, _)) = 
+        and parseTypeDefnSig (SynTypeDefnSig (SynComponentInfo(attribs, TyparDecls typeArgs, _, longId, _, _, _, r) as __, objectModel, memberSigs, _)) = 
             parseAttributes attribs
 
             let makeRanges memberSigs =
@@ -826,7 +825,7 @@ module Structure =
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
-            | SynModuleSigDecl.Val ((SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange)), r) ->
+            | SynModuleSigDecl.Val (SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange), r) ->
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs

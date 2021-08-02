@@ -3,7 +3,6 @@
 namespace rec FSharp.Compiler.Symbols
 
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
@@ -13,7 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -76,13 +74,13 @@ type FSharpDisplayContext =
 /// or FSharpActivePatternCase.
 [<Class>]
 type FSharpSymbol = 
-    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: NameResolution.Item -> FSharpSymbol
-    static member internal Create: cenv: SymbolEnv * item: NameResolution.Item -> FSharpSymbol
+    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item -> FSharpSymbol
+    static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
-    member internal Item: NameResolution.Item
+    member internal Item: Item
         
     /// Get the assembly declaring this symbol
     member Assembly: FSharpAssembly 
@@ -359,6 +357,9 @@ type FSharpEntity =
     /// Safe version of `GetMembersFunctionsAndValues`.
     member TryGetMembersFunctionsAndValues: unit -> IList<FSharpMemberOrFunctionOrValue>
 
+    /// Get the source text of the entity's signature to be used as metadata.
+    member TryGetMetadataText: unit -> ISourceText option
+
 /// Represents a delegate signature in an F# symbol
 [<Class>] 
 type FSharpDelegateSignature =
@@ -603,7 +604,7 @@ type FSharpStaticParameter =
     /// Indicates if the static parameter is optional
     member IsOptional: bool
 
-    [<System.ObsoleteAttribute("This member is no longer used, use IsOptional instead")>]
+    [<System.Obsolete("This member is no longer used, use IsOptional instead")>]
     member HasDefaultValue: bool
 #endif
 
@@ -713,10 +714,7 @@ type FSharpGenericParameterConstraint =
 [<RequireQualifiedAccess>] 
 type FSharpInlineAnnotation = 
 
-   /// Indicates the value is inlined and compiled code for the function does not exist
-   | PseudoValue
-
-   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is always inlined in statically compiled code
    | AlwaysInline 
 
    /// Indicates the value is optionally inlined 

@@ -4,36 +4,25 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.IO
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.LanguageServices
-
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 
 [<Export(typeof<IFSharpGoToDefinitionService>)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        metadataAsSource: FSharpMetadataAsSourceService
     ) =
 
-    let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
+    let gtd = GoToDefinition(metadataAsSource)
     let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
-    let metadataAsSourceService = checkerProvider.MetadataAsSource
    
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
@@ -69,36 +58,10 @@ type internal FSharpGoToDefinitionService
                         gtd.NavigateToItem(navItem, statusBar)
                         // 'true' means do it, like Sheev Palpatine would want us to.
                         true
-                    | FSharpGoToDefinitionResult.ExternalAssembly(tmpProjInfo, tmpDocInfo, targetSymbolUse, targetExternalSymbol) ->
-                        match targetSymbolUse.Symbol.Assembly.FileName with
-                        | Some targetSymbolAssemblyFileName ->
-                            try
-                                let symbolFullTypeName =
-                                    match targetExternalSymbol with
-                                    | FindDeclExternalSymbol.Constructor(tyName, _)
-                                    | FindDeclExternalSymbol.Event(tyName, _)
-                                    | FindDeclExternalSymbol.Field(tyName, _)
-                                    | FindDeclExternalSymbol.Method(tyName, _, _, _)
-                                    | FindDeclExternalSymbol.Property(tyName, _)
-                                    | FindDeclExternalSymbol.Type(tyName) -> tyName
-
-                                let text = MetadataAsSource.decompileCSharp(symbolFullTypeName, targetSymbolAssemblyFileName)
-                                let tmpShownDocOpt = metadataAsSourceService.ShowCSharpDocument(tmpProjInfo, tmpDocInfo, text)
-                                match tmpShownDocOpt with
-                                | Some tmpShownDoc ->
-                                    let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, TextSpan())                               
-                                    gtd.NavigateToItem(navItem, statusBar)
-                                    true
-                                | _ ->
-                                    statusBar.TempMessage (SR.CannotDetermineSymbol())
-                                    false
-                            with
-                            | _ ->
-                                statusBar.TempMessage (SR.CannotDetermineSymbol())
-                                false
-                        | _ ->
-                            statusBar.TempMessage (SR.CannotDetermineSymbol())
-                            false
+                    | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
+                        gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken, statusBar)
+                        // 'true' means do it, like Sheev Palpatine would want us to.
+                        true
                 else 
                     statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false

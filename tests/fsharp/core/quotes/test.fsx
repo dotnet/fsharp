@@ -10,6 +10,13 @@ module Core_quotes
 
 
 #nowarn "57"
+open System
+open System.Reflection
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+open Microsoft.FSharp.Quotations.DerivedPatterns
+
+
 let failures = ref []
 
 let report_failure (s : string) = 
@@ -27,12 +34,19 @@ let check s v1 v2 =
        eprintf " FAILED: got %A, expected %A" v1 v2 
        report_failure s
 
+let rec removeDoubleSpaces (s: string) =
+   let s2 = s.Replace("  ", " ")
+   if s = s2 then s else removeDoubleSpaces s2
 
-open System
-open System.Reflection
-open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Quotations.Patterns
-open Microsoft.FSharp.Quotations.DerivedPatterns
+let normalizeActivePatternResults (s: string) =
+   System.Text.RegularExpressions.Regex(@"activePatternResult\d+").Replace(s, "activePatternResult")
+
+let checkStrings s (v1: string) (v2: string) = 
+    check s 
+       (v1.Replace("\r","").Replace("\n","") |> removeDoubleSpaces |> normalizeActivePatternResults)
+       (v2.Replace("\r","").Replace("\n","") |> removeDoubleSpaces |> normalizeActivePatternResults)
+
+let checkQuoteString s expected (q: Expr)  = checkStrings s (sprintf "%A" q) expected
 
 let (|TypedValue|_|) (v : 'T) value = 
     match value with 
@@ -1444,42 +1458,39 @@ end
 module MoreQuotationsTests = 
 
     let t1 = <@@ try 1 with e when true -> 2 | e -> 3 @@>
-    printfn "t1 = %A" t1
-    check "vwjnkwve0-vwnio" 
-        (sprintf "%A" t1) 
-    "TryWith (Value (1), matchValue,
-            IfThenElse (Let (e, matchValue, Value (true)),
-                        Let (e, matchValue, Value (1)),
-                        Let (e, matchValue, Value (1))), matchValue,
-            IfThenElse (Let (e, matchValue, Value (true)),
-                        Let (e, matchValue, Value (2)),
-                        Let (e, matchValue, Value (3))))"
+    checkStrings "vwjnkwve0-vwnio" 
+        (sprintf "%A" t1)
+        """TryWith (Value (1), matchValue,
+          IfThenElse (Let (e, matchValue, Value (true)),
+                      Let (e, matchValue, Value (1)),
+                      Let (e, matchValue, Value (1))), matchValue,
+          IfThenElse (Let (e, matchValue, Value (true)),
+                      Let (e, matchValue, Value (2)),
+                      Let (e, matchValue, Value (3))))"""
 
     [<ReflectedDefinition>]
     let k (x:int) =
        try 1 with _ when true -> 2 | e -> 3
 
     let t2 = <@@ Map.empty.[0] @@>
-    printfn "t2 = %A" t2
-    check "vwjnkwve0-vwnio1" 
+    checkStrings "vwjnkwve0-vwnio1" 
        (sprintf "%A" t2) 
        "PropertyGet (Some (Call (None, Empty, [])), Item, [Value (0)])"
 
 
     let t4 = <@@ use a = new System.IO.StreamWriter(System.IO.Stream.Null) in a @@>
-    printfn "t4 = %A" t4
-    check "vwjnkwve0-vwnio3" 
+    checkStrings "vwjnkwve0-vwnio3" 
         (sprintf "%A" t4) 
-    "Let (a, NewObject (StreamWriter, FieldGet (None, Null)),
+        "Let (a, NewObject (StreamWriter, FieldGet (None, Null)),
         TryFinally (a,
                     IfThenElse (TypeTest (IDisposable, Coerce (a, Object)),
                                 Call (Some (Call (None, UnboxGeneric,
                                                 [Coerce (a, Object)])), Dispose,
                                     []), Value (<null>))))"
 
-    check "vwjnkwve0-vwnio3fuull" 
+    checkStrings "vwjnkwve0-vwnio3fuull" 
         (t4.ToString(true))
-    "Let (a,
+        "Let (a,
         NewObject (Void .ctor(System.IO.Stream),
                 FieldGet (None, System.IO.Stream Null)),
         TryFinally (a,
@@ -1492,47 +1503,129 @@ module MoreQuotationsTests =
 
 
     let t5 = <@@ try failwith "test" with _ when true -> 0 @@>
-    printfn "t5 = %A" t5
+    checkStrings "vwekwvel5" (sprintf "%A" t5) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+         IfThenElse (Value (true), Value (1), Value (0)), matchValue,
+         IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""
     
     let t6 = <@@ let mutable a = 0 in a <- 2 @@>
 
-    printfn "t6 = %A" t6
+    checkStrings "vwewvwewe6" (sprintf "%A" t6) 
+        """Let (a, Value (0), VarSet (a, Value (2)))"""
 
     let f (x: _ byref) = x
 
     let t7 = <@@ let mutable a = 0 in f (&a) @@>
-    printfn "t7 = %A" t7
-    
-    let t8 = <@@ for i in 1s .. 10s do printfn "%A" i @@>
-    printfn "t8 = %A" t8
+    checkStrings "vwewvwewe7" (sprintf "%A" t7) 
+        """Let (a, Value (0), Call (None, f, [AddressOf (a)]))"""
 
-    let t9 = <@@ try failwith "test" with Failure _ -> 0  @@>
-    printfn "t9 = %A" t9
+    let t8 = <@@ for i in 1s .. 10s do printfn "%A" i @@>
+    checkStrings "vwewvwewe8" (sprintf "%A" t8) 
+        """Let (inputSequence, Call (None, op_Range, [Value (1s), Value (10s)]),
+        Let (enumerator, Call (Some (inputSequence), GetEnumerator, []),
+             TryFinally (WhileLoop (Call (Some (enumerator), MoveNext, []),
+                                    Let (i,
+                                         PropertyGet (Some (enumerator), Current,
+                                                      []),
+                                         Application (Let (clo1,
+                                                           Call (None,
+                                                                 PrintFormatLine,
+                                                                 [Coerce (NewObject (PrintfFormat`5,
+                                                                                     Value ("%A")),
+                                                                          PrintfFormat`4)]),
+                                                           Lambda (arg10,
+                                                                   Application (clo1,
+                                                                                arg10))),
+                                                      i))),
+                         IfThenElse (TypeTest (IDisposable,
+                                               Coerce (enumerator, Object)),
+                                     Call (Some (Call (None, UnboxGeneric,
+                                                       [Coerce (enumerator, Object)])),
+                                           Dispose, []), Value (<null>)))))"""
+
+    let t9() = <@@ try failwith "test" with Failure _ -> 0  @@>
+    checkStrings "vwewvwewe9" (sprintf "%A" (t9())) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1557, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1557, Some),
+                         Value (1), Value (0))), matchValue,
+        Let (activePatternResult1558, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1558, Some),
+                         Value (0), Call (None, Reraise, []))))"""
 
     let t9b = <@@ Failure "fil" @@>
-    printfn "t9b = %A" t9b
+    checkStrings "vwewvwewe9b" (sprintf "%A" t9b) 
+        """Call (None, Failure, [Value ("fil")])"""
+
     let t9c = <@@ match Failure "fil" with Failure msg -> msg |  _ -> "no" @@>
-    printfn "t9c = %A" t9c
+    checkStrings "vwewvwewe9c" (sprintf "%A" t9c) 
+        """Let (matchValue, Call (None, Failure, [Value ("fil")]),
+        Let (activePatternResult1564, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1564, Some),
+                         Let (msg,
+                              PropertyGet (Some (activePatternResult1564), Value,
+                                           []), msg), Value ("no"))))"""
 
     let t10 = <@@ try failwith "test" with Failure _ -> 0 |  _ -> 1 @@>
-    printfn "t10 = %A" t10
+    checkStrings "vwewvwewe10" (sprintf "%A" t10) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1565, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1565, Some),
+                         Value (1), Value (1))), matchValue,
+        Let (activePatternResult1566, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1566, Some),
+                         Value (0), Value (1))))"""
 
     let t11 = <@@ try failwith "test" with :? System.NullReferenceException -> 0 @@>
-    printfn "t11 = %A" t11
+    checkStrings "vwewvwewe11" (sprintf "%A" t11) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue), Value (1),
+                    Value (0)), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue), Value (0),
+                    Call (None, Reraise, [])))"""
 
     let t12 = <@@ try failwith "test" with :? System.NullReferenceException as n -> 0 @@>
-    printfn "t12 = %A" t12
+    checkStrings "vwewvwewe12" (sprintf "%A" t12) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue),
+                    Let (n, Call (None, UnboxGeneric, [matchValue]), Value (1)),
+                    Value (0)), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue),
+                    Let (n, Call (None, UnboxGeneric, [matchValue]), Value (0)),
+                    Call (None, Reraise, [])))"""
 
     let t13 = <@@ try failwith "test" with Failure _ -> 1 | :? System.NullReferenceException as n -> 0 @@>
-    printfn "t13 = %A" t13
+    checkStrings "vwewvwewe13" (sprintf "%A" t13) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1576, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1576, Some),
+                         Value (1),
+                         IfThenElse (TypeTest (NullReferenceException,
+                                               matchValue),
+                                     Let (n,
+                                          Call (None, UnboxGeneric,
+                                                [matchValue]), Value (1)),
+                                     Value (0)))), matchValue,
+        Let (activePatternResult1577, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1577, Some),
+                         Value (1),
+                         IfThenElse (TypeTest (NullReferenceException,
+                                               matchValue),
+                                     Let (n,
+                                          Call (None, UnboxGeneric,
+                                                [matchValue]), Value (0)),
+                                     Call (None, Reraise, [])))))"""
 
     let t14 = <@@ try failwith "test" with _ when true -> 0 @@>
-    printfn "t14 = %A" t14
+    checkStrings "vwewvwewe13" (sprintf "%A" t14) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (Value (true), Value (1), Value (0)), matchValue,
+        IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""
 
-    let _ = <@@ let x : int option = None in x.IsSome @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.IsNone @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.Value @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.ToString() @@> |> printfn "quote = %A" 
+    let _ = <@@ let x : int option = None in x.IsSome @@> |> checkQuoteString "fqekhec1" """Let (x, NewUnionCase (None), Call (None, get_IsSome, [x]))"""
+    let _ = <@@ let x : int option = None in x.IsNone @@> |> checkQuoteString "fqekhec2" """Let (x, NewUnionCase (None), Call (None, get_IsNone, [x]))"""
+    let _ = <@@ let x : int option = None in x.Value @@> |> checkQuoteString "fqekhec3" """Let (x, NewUnionCase (None), PropertyGet (Some (x), Value, []))"""
+    let _ = <@@ let x : int option = None in x.ToString() @@> |> checkQuoteString "fqekhec4" """Let (x, NewUnionCase (None), Call (Some (x), ToString, []))"""
 
     module Extensions = 
         type System.Object with 
@@ -1562,63 +1655,63 @@ module MoreQuotationsTests =
             member x.Int32ExtensionIndexer2 with set(idx:int) (v:int) = ()
  
         let v = new obj()
-        let _ = <@@ v.ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v.ExtensionMethod0() @@>  |> checkQuoteString "fqekhec5" """Call (None, Object.ExtensionMethod0, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionMethod1() @@> |> checkQuoteString "fqekhec6" """Call (None, Object.ExtensionMethod1, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec7" """Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec8" """Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec9" """Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), Value (3), Value (4)])"""
+        let _ = <@@ v.ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec10" """Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v.ExtensionProperty1 @@> |> checkQuoteString "fqekhec11" """Call (None, Object.get_ExtensionProperty1, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionProperty2 @@> |> checkQuoteString "fqekhec12" """Call (None, Object.get_ExtensionProperty2, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec13" """Call (None, Object.set_ExtensionProperty3, [PropertyGet (None, v, []), Value (4)])"""
+        let _ = <@@ v.ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec14" """Call (None, Object.get_ExtensionIndexer1, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec15" """Call (None, Object.set_ExtensionIndexer2, [PropertyGet (None, v, []), Value (3), Value (4)])"""
 
-        let _ = <@@ v.ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v.ExtensionMethod0 @@> |> checkQuoteString "fqekhec16" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [PropertyGet (None, v, [])]))"""
+        let _ = <@@ v.ExtensionMethod1 @@> |> checkQuoteString "fqekhec17" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [PropertyGet (None, v, [])]))"""
+        let _ = <@@ v.ExtensionMethod2 @@> |> checkQuoteString "fqekhec18" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), arg00]))"""
+        let _ = <@@ v.ExtensionMethod3 @@> |> checkQuoteString "fqekhec19" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), arg00]))"""
+        let _ = <@@ v.ExtensionMethod4 @@> |> checkQuoteString "fqekhec20" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), arg00, arg01]))))"""
+        let _ = <@@ v.ExtensionMethod5 @@> |> checkQuoteString "fqekhec21" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), arg00]))"""
 
         let v2 = 3
-        let _ = <@@ v2.ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.ExtensionMethod0() @@> |> checkQuoteString "fqekhec22" """Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionMethod1() @@> |> checkQuoteString "fqekhec23" """Call (None, Object.ExtensionMethod1, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec24" """Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec25" """Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec26" """Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), Value (3), Value (4)])"""
+        let _ = <@@ v2.ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec27" """Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v2.ExtensionProperty1 @@> |> checkQuoteString "fqekhec28" """Call (None, Object.get_ExtensionProperty1, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionProperty2 @@> |> checkQuoteString "fqekhec29" """Call (None, Object.get_ExtensionProperty2, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec30" """Call (None, Object.set_ExtensionProperty3, [Coerce (PropertyGet (None, v2, []), Object), Value (4)])"""
+        let _ = <@@ v2.ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec31" """Call (None, Object.get_ExtensionIndexer1, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec32" """Call (None, Object.set_ExtensionIndexer2, [Coerce (PropertyGet (None, v2, []), Object), Value (3), Value (4)])"""
 
-        let _ = <@@ v2.ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.ExtensionMethod0 @@> |> checkQuoteString "fqekhec33" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)]))"""
+        let _ = <@@ v2.ExtensionMethod1 @@> |> checkQuoteString "fqekhec34" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [Coerce (PropertyGet (None, v2, []), Object)]))"""
+        let _ = <@@ v2.ExtensionMethod2 @@> |> checkQuoteString "fqekhec35" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
+        let _ = <@@ v2.ExtensionMethod3 @@> |> checkQuoteString "fqekhec36" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
+        let _ = <@@ v2.ExtensionMethod4 @@> |> checkQuoteString "fqekhec37" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), arg00, arg01]))))"""
+        let _ = <@@ v2.ExtensionMethod5 @@> |> checkQuoteString "fqekhec38" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
 
-        let _ = <@@ v2.Int32ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.Int32ExtensionMethod0() @@> |> checkQuoteString "fqekhec39" """Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionMethod1() @@> |> checkQuoteString "fqekhec40" """Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec41" """Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec42" """Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec43" """Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), Value (3), Value (4)])"""
+        let _ = <@@ v2.Int32ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec44" """Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v2.Int32ExtensionProperty1 @@> |> checkQuoteString "fqekhec45" """Call (None, Int32.get_Int32ExtensionProperty1, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionProperty2 @@> |> checkQuoteString "fqekhec46" """Call (None, Int32.get_Int32ExtensionProperty2, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec47" """Call (None, Int32.set_Int32ExtensionProperty3, [PropertyGet (None, v2, []), Value (4)])"""
+        let _ = <@@ v2.Int32ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec48" """Call (None, Int32.get_Int32ExtensionIndexer1, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec49" """Call (None, Int32.set_Int32ExtensionIndexer2, [PropertyGet (None, v2, []), Value (3), Value (4)])"""
 
-        let _ = <@@ v2.Int32ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.Int32ExtensionMethod0 @@> |> checkQuoteString "fqekhec50" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])]))"""
+        let _ = <@@ v2.Int32ExtensionMethod1 @@> |> checkQuoteString "fqekhec51" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])]))"""
+        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> checkQuoteString "fqekhec52" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), arg00]))"""
+        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> checkQuoteString "fqekhec53" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), arg00]))"""
+        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> checkQuoteString "fqekhec54" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), arg00, arg01]))))"""
+        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> checkQuoteString "fqekhec55" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), arg00]))"""
 
 
 module QuotationConstructionTests = 
@@ -2819,7 +2912,7 @@ module ReflectionOverTypeInstantiations =
 
     let notRequired opname item = 
         let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
-        System.Diagnostics.Debug.Assert (false, msg)
+        //System.Diagnostics.Debug.Assert (false, msg)
         raise (System.NotSupportedException msg)
 
     /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
@@ -3912,8 +4005,132 @@ module TestQuotationOfListSum2 =
          test "check List.sum 216" false
 
 
+module ComputationExpressionWithOptionalsAndParamArray =
+    open System
+    type InputKind =
+        | Text of placeholder:string option
+        | Password of placeholder: string option
+    type InputOptions =
+      { Label: string option
+        Kind : InputKind
+        Validators : (string -> bool) array }
+    type InputBuilder() =
+        member t.Yield(_) =
+          { Label = None
+            Kind = Text None
+            Validators = [||] }
+        [<CustomOperation("text")>]
+        member this.Text(io, ?placeholder) =
+            { io with Kind = Text placeholder }
+        [<CustomOperation("password")>]
+        member this.Password(io, ?placeholder) =
+            { io with Kind = Password placeholder }
+        [<CustomOperation("label")>]
+        member this.Label(io, label) =
+            { io with Label = Some label }
+        [<CustomOperation("with_validators")>]
+        member this.Validators(io, [<ParamArray>] validators) =
+            { io with Validators = validators }
+
+    let input = InputBuilder()
+    let name =
+        input {
+            label "Name"
+            text
+            with_validators
+                (String.IsNullOrWhiteSpace >> not)
+        }
+    let email =
+        input {
+            label "Email"
+            text "Your email"
+            with_validators
+                (String.IsNullOrWhiteSpace >> not)
+                (fun s -> s.Contains "@")
+        }
+    let password =
+        input {
+            label "Password"
+            password "Must contains at least 6 characters, one number and one uppercase"
+            with_validators
+                (String.exists Char.IsUpper)
+                (String.exists Char.IsDigit)
+                (fun s -> s.Length >= 6)
+        }
+    check "vewhkvh1" name.Kind (Text None)
+    check "vewhkvh2" email.Kind (Text (Some "Your email"))
+    check "vewhkvh3" email.Label (Some "Email")
+    check "vewhkvh4" email.Validators.Length 2
+    check "vewhkvh5" password.Label (Some "Password")
+    check "vewhkvh6" password.Validators.Length 3
 
 #endif
+
+module QuotationOfComputationExpressionZipOperation =
+
+    type Builder() =
+      member __.Bind (x, f) = f x
+      member __.Return x = x
+      member __.For (x, f) = f x
+      member __.Yield x = x
+      [<CustomOperation("var", MaintainsVariableSpaceUsingBind = true, IsLikeZip=true)>]
+      member __.Var (x, y, f) = f x y
+
+    let builder = Builder()
+
+    let q = 
+        <@  builder {
+                let! x = 1
+                var y in 2
+                return x + y
+            } @> 
+
+    let actual = (q.ToString())
+    checkStrings "brewbreebr" actual 
+       """Application (Lambda (builder@,
+                     Call (Some (builder@), For,
+                           [Call (Some (builder@), Var,
+                                  [Call (Some (builder@), Bind,
+                                         [Value (1),
+                                          Lambda (_arg1,
+                                                  Let (x, _arg1,
+                                                       Call (Some (builder@),
+                                                             Yield, [x])))]),
+                                   Value (2),
+                                   Lambda (x, Lambda (y, NewTuple (x, y)))]),
+                            Lambda (_arg2,
+                                    Let (y, TupleGet (_arg2, 1),
+                                         Let (x, TupleGet (_arg2, 0),
+                                              Call (Some (builder@), Return,
+                                                    [Call (None, op_Addition,
+                                                           [x, y])]))))])),
+             PropertyGet (None, builder, []))"""
+        
+module CheckEliminatedConstructs = 
+    let isNullQuoted (ts : 't[]) =
+        <@
+            match ts with
+            | null -> true
+            | _ -> false
+        @>
+
+    let actual1 = ((isNullQuoted [| |]).ToString())
+    checkStrings "brewbreebrvwe1" actual1
+       """IfThenElse (Call (None, op_Equality, [ValueWithName ([||], ts), Value (<null>)]),
+            Value (true), Value (false))"""
+        
+module Interpolation =
+    let interpolatedNoHoleQuoted = <@ $"abc" @>
+    let actual1 = interpolatedNoHoleQuoted.ToString()
+    checkStrings "brewbreebrwhat1" actual1 """Value ("abc")"""
+
+    let interpolatedWithLiteralQuoted = <@ $"abc {1} def" @>
+    let actual2 = interpolatedWithLiteralQuoted.ToString()
+    checkStrings "brewbreebrwhat2" actual2
+        """Call (None, PrintFormatToString,
+                 [NewObject (PrintfFormat`5, Value ("abc %P() def"),
+                             NewArray (Object, Call (None, Box, [Value (1)])),
+                             Value (<null>))])"""
 
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
