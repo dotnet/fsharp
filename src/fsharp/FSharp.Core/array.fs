@@ -1303,9 +1303,8 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            Array.Copy(source, result, index)
+            Array.Copy(source, result, length)
             result.[index] <- value
-            Array.Copy(source, index + 1, result, index + 1, length - index - 1)
             
             result
         
