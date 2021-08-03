@@ -568,13 +568,11 @@ module Array2Tests = begin
     test "vvrew03" (Array2D.get arr 2 2 = 0);
     test "vvrew04" (Array2D.get arr 2 3 = 0);
     
-    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
-    // It should land into preview7, which is set to be released August 10th 2021.
-    // These tests should be reenabled then.
-    // ignore (Array2D.set arr 0 2 4);
-    // test "vsdiuvs5" (Array2D.get arr 0 2 = 4);
-    // arr.[0,2] <- 2;
-    // test "vsdiuvs6" (arr.[0,2] = 2);
+    ignore (Array2D.set arr 0 2 4);
+    test "vsdiuvs5" (Array2D.get arr 0 2 = 4);
+    arr.[0,2] <- 2;
+    
+    test "vsdiuvs6" (arr.[0,2] = 2);
     test "vropivrwe7" (Array2D.length1 arr = 3);
     test "vropivrwe8" (Array2D.length2 arr = 4)
 
@@ -650,16 +648,10 @@ module Array3Tests = begin
     test "vvrew04" (Array3D.get arr 2 3 4 = 0);
     ignore (Array3D.set arr 0 2 3 4);
     test "vsdiuvs5" (Array3D.get arr 0 2 3 = 4);
-
-
-    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
-    // It should land into preview7, which is set to be released August 10th 2021.
-    // These tests should be reenabled then.
-    //arr.[0,2,3] <- 2;
-    //test "vsdiuvs6" (arr.[0,2,3] = 2);
-    //arr.[0,2,3] <- 3;
-    //test "vsdiuvs" (arr.[0,2,3] = 3);
-    
+    arr.[0,2,3] <- 2;
+    test "vsdiuvs6" (arr.[0,2,3] = 2);
+    arr.[0,2,3] <- 3;
+    test "vsdiuvs" (arr.[0,2,3] = 3);
     test "vropivrwe7" (Array3D.length1 arr = 3);
     test "vropivrwe8" (Array3D.length2 arr = 4);
     test "vropivrwe9" (Array3D.length3 arr = 5)
