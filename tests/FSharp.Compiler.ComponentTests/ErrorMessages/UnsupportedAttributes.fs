@@ -20,6 +20,7 @@ type C() =
     member _.G() = ()
         """
         |> FSharp
+        |> withOptions ["--nowarn:1182"]
         |> typecheck
         |> shouldFail
         |> withResults [
