@@ -13,6 +13,9 @@
 	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
 	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
 	<OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
+
+	<NoWarn>$(NoWarn);1182</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>

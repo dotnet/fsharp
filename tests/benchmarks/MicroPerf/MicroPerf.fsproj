@@ -11,6 +11,8 @@
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
 
+    <NoWarn>$(NoWarn);1182</NoWarn>
+
     <!-- By default this project will compile with the proto compiler -->
     <!-- Uncommenting this will build with a previous installed compiler  -->
     <!--
