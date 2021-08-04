@@ -369,7 +369,7 @@ type SynType =
 
     | AnonRecd of
         isStruct: bool *
-        fields:(Ident * SynType) list *
+        fields: (Ident * SynType) list *
         range: range
 
     | Array of
@@ -477,8 +477,9 @@ type SynExpr =
 
     | AnonRecd of
         isStruct: bool *
-        copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * SynExpr) list *
+        copyInfo: (SynExpr * BlockSeparator) option *
+        withoutFields: Ident list *
+        recordFields: (Ident * SynExpr) list *
         range: range
 
     | ArrayOrList of

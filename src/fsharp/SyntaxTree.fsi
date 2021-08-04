@@ -462,7 +462,7 @@ type SynType =
     /// F# syntax: struct {| id: type; ...; id: type |}
     | AnonRecd of
         isStruct: bool *
-        fields:(Ident * SynType) list *
+        fields: (Ident * SynType) list *
         range: range
 
     /// F# syntax: type[]
@@ -579,6 +579,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
+        withoutFields: Ident list *
         recordFields:(Ident * SynExpr) list *
         range: range
 

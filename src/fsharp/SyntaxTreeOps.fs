@@ -685,9 +685,9 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Tuple (_, es, _, _) ->
               walkExprs es
 
-          | SynExpr.AnonRecd (_, origExpr, flds, _) ->
+          | SynExpr.AnonRecd (_, origExpr, _withouts, flds, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              walkExprs (List.map snd flds)
+              walkExprs (List.map snd flds) // || walkExprs withouts
 
           | SynExpr.Record (_, origExpr, fs, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||

@@ -4242,10 +4242,10 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                 let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
                 TType_tuple(tupInfo,args'),tpenv
 
-    | SynType.AnonRecd(_, [],m) ->
+    | SynType.AnonRecd(_, [], m) ->
         error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
 
-    | SynType.AnonRecd(isStruct, args,m) ->
+    | SynType.AnonRecd(isStruct, args, m) ->
         let tupInfo = mkTupInfo isStruct
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
         let unsortedFieldIds = args |> List.map fst |> List.toArray
@@ -5583,8 +5583,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         let expr = mkAnyTupled cenv.g m tupInfo args' argTys
         expr, tpenv
 
-    | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
-        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
+    | SynExpr.AnonRecd (isStruct, optOrigExpr, withoutFields, unsortedFieldExprs, mWholeExpr) ->
+        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, withoutFields, unsortedFieldExprs, mWholeExpr)
 
     | SynExpr.ArrayOrList (isArray, args, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
@@ -6989,7 +6989,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
 
 // Check '{| .... |}'
-and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, _withoutFields, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
     let unsortedFieldSynExprsGiven = List.map snd unsortedFieldIdsAndSynExprsGiven
 
     match optOrigSynExpr with
@@ -7024,10 +7024,10 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
         mkAnonRecd cenv.g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
     | Some (origExpr, _) ->
-        // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
+        // The fairly complex case '{| origExpr with X = 1; Y = 2 with- Z|}'
         // The origExpr may be either a record or anonymous record.
         // The origExpr may be either a struct or not.
-        // All the properties of origExpr are copied across except where they are overridden.
+        // All the properties of origExpr are copied across except where they are overridden or are in `withoutFields` list.
         // The result is a field-sorted anonymous record.
         //
         // Unlike in the case of record type copy-and-update we do _not_ assume that the origExpr has the same type as the overall expression.
