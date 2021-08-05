@@ -12,6 +12,11 @@
         <target state="translated">Aggiungi la parola chiave mancante 'fun'</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">Aggiungi parametro membro di istanza mancante</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Aggiungi la parola chiave 'new'</target>
@@ -48,7 +53,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
+        <source>F# Disposable Values (top-level)</source>
         <target state="translated">Valori eliminabili F# (primo livello)</target>
         <note />
       </trans-unit>
@@ -99,7 +104,7 @@
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
-        <target state="new">Remove unused binding</target>
+        <target state="translated">Rimuovi il binding inutilizzato</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -252,6 +257,11 @@
         <target state="translated">Usare '&lt;-' per modificare il valore</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">Usa 'nameof'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">Usare 'upcast'</target>
@@ -269,7 +279,7 @@
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
-        <target state="new">Use '.Value' to dereference expression</target>
+        <target state="translated">Usa '.Value' per dereferenziare l'espressione</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

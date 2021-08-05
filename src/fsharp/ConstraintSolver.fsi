@@ -3,7 +3,6 @@
 /// Solves constraints using a mutable constraint-solver state
 module internal FSharp.Compiler.ConstraintSolver
 
-open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
@@ -94,7 +93,7 @@ type ContextInfo =
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
-        amap : ImportMap
+        infoReader: InfoReader
         error: exn
     }
 
@@ -125,11 +124,11 @@ exception NonRigidTypar                         of displayEnv: DisplayEnv * stri
 
 exception ArgDoesNotMatchError                  of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
-type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
+type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 
 [<Sealed>]
 type ConstraintSolverState =
-    static member New: TcGlobals * Import.ImportMap * InfoReader * TcValF -> ConstraintSolverState
+    static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
 val BakedInTraitConstraintNames: Set<string>
 

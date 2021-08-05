@@ -14,7 +14,6 @@ open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILX.Types
 open FSharp.Compiler.CompilerGlobalState
@@ -25,6 +24,7 @@ open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -38,9 +38,6 @@ type StampMap<'T> = Map<Stamp, 'T>
 [<RequireQualifiedAccess>]
 type ValInline =
 
-    /// Indicates the value must always be inlined and no .NET IL code is generated for the value/function
-    | PseudoVal
-
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
 
@@ -53,7 +50,7 @@ type ValInline =
     /// Returns true if the implementation of a value must always be inlined
     member x.MustInline = 
         match x with 
-        | ValInline.PseudoVal | ValInline.Always -> true 
+        | ValInline.Always -> true 
         | ValInline.Optional | ValInline.Never -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
@@ -109,7 +106,6 @@ type ValFlags(flags: int64) =
                      (if isCompGen then                                      0b00000000000000001000L 
                       else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b00000000000000000000L
                                         | ValInline.Always ->                0b00000000000000010000L
                                         | ValInline.Optional ->              0b00000000000000100000L
                                         | ValInline.Never ->                 0b00000000000000110000L) |||
@@ -141,7 +137,7 @@ type ValFlags(flags: int64) =
 
                      (match isGeneratedEventVal with
                                         | false     ->                       0b00000000000000000000L
-                                        | true      ->                       0b00100000000000000000L)                                        
+                                        | true      ->                       0b00100000000000000000L)                                          
 
         ValFlags flags
 
@@ -157,7 +153,7 @@ type ValFlags(flags: int64) =
 
     member x.IsCompilerGenerated =      (flags       &&&                     0b00000000000000001000L) <> 0x0L
 
-    member x.SetIsCompilerGenerated isCompGen = 
+    member x.WithIsCompilerGenerated isCompGen = 
             let flags =                 (flags       &&&                  ~~~0b00000000000000001000L) |||
                                         (match isCompGen with
                                           | false           ->               0b00000000000000000000L
@@ -166,7 +162,7 @@ type ValFlags(flags: int64) =
 
     member x.InlineInfo = 
                                   match (flags       &&&                     0b00000000000000110000L) with 
-                                                             |               0b00000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b00000000000000000000L
                                                              |               0b00000000000000010000L -> ValInline.Always
                                                              |               0b00000000000000100000L -> ValInline.Optional
                                                              |               0b00000000000000110000L -> ValInline.Never
@@ -203,11 +199,11 @@ type ValFlags(flags: int64) =
 
     member x.WithRecursiveValInfo recValInfo = 
             let flags = 
-                     (flags       &&&                                    ~~~0b00000001100000000000L) |||
+                     (flags       &&&                                     ~~~0b00000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->              0b00000000000000000000L
-                                     | ValInRecScope true  ->               0b00000000100000000000L
-                                     | ValInRecScope false ->               0b00000001000000000000L) 
+                                     | ValNotInRecScope     ->               0b00000000000000000000L
+                                     | ValInRecScope true  ->                0b00000000100000000000L
+                                     | ValInRecScope false ->                0b00000001000000000000L) 
             ValFlags flags
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b00000010000000000000L) <> 0L
@@ -234,13 +230,17 @@ type ValFlags(flags: int64) =
 
     member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
 
+    member x.InlineIfLambda                            =         (flags &&& 0b100000000000000000000L) <> 0L
+    
+    member x.WithInlineIfLambda                        = ValFlags(flags ||| 0b100000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b10011001100000000000L) 
+                                                      (flags       &&&   ~~~0b010011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -467,7 +467,7 @@ exception UndefinedName of
     depth: int * 
     error: (string -> string) * 
     id: Ident * 
-    suggestions: ErrorLogger.Suggestions
+    suggestions: Suggestions
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
@@ -667,7 +667,7 @@ type Entity =
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
-            let _nm, args = PrettyNaming.demangleProvidedTypeName x.LogicalName
+            let _nm, args = demangleProvidedTypeName x.LogicalName
             args.Length > 0 
 #endif
 
@@ -690,7 +690,7 @@ type Entity =
 
 #if !NO_EXTENSIONTYPING
         if x.IsProvidedErasedTycon then 
-            let nm, args = PrettyNaming.demangleProvidedTypeName nm
+            let nm, args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
@@ -1187,7 +1187,7 @@ type Entity =
         // and also for types with relocation suppressed.
         | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
             let st = info.ProvidedType
-            let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, x.Range)
+            let tref = GetILTypeRefOfProvidedType (st, x.Range)
             let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
             CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
         | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
@@ -1201,7 +1201,7 @@ type Entity =
                         match isType with 
                         | FSharpModuleWithSuffix | ModuleOrType -> 
                             let outerTypeName = (textOfPath (List.rev (h :: racc)))
-                            ILTypeRef.Create(sref, (outerTypeName :: List.map (fun (nm, _) -> nm) t), item)
+                            ILTypeRef.Create(sref, (outerTypeName :: List.map fst t), item)
                         | _ -> 
                           top (h :: racc) t
                 top [] p 
@@ -1218,7 +1218,7 @@ type Entity =
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
                         match x.TypeReprInfo with 
-                        | TILObjectRepr (TILObjectReprData(ilScopeRef, ilEnclosingTypeDefs, ilTypeDef)) -> IL.mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
+                        | TILObjectRepr (TILObjectReprData(ilScopeRef, ilEnclosingTypeDefs, ilTypeDef)) -> mkRefForNestedILTypeDef ilScopeRef (ilEnclosingTypeDefs, ilTypeDef)
                         | _ -> ilTypeRefForCompilationPath x.CompilationPath x.CompiledName
                     // Pre-allocate a ILType for monomorphic types, to reduce memory usage from Abstract IL nodes
                     let ilTypeOpt = 
@@ -1356,7 +1356,7 @@ type TyconAugmentation =
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
           tcaug_adhoc=NameMultiMap.empty 
-          tcaug_adhoc_list=new ResizeArray<_>() 
+          tcaug_adhoc_list=ResizeArray<_>() 
           tcaug_super=None
           tcaug_interfaces=[] 
           tcaug_closed=false 
@@ -1398,7 +1398,7 @@ type TyconRepresentation =
     /// Indicates the representation information for a provided namespace.  
     //
     // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
-    | TProvidedNamespaceExtensionPoint of ExtensionTyping.ResolutionEnvironment * Tainted<ITypeProvider> list
+    | TProvidedNamespaceExtensionPoint of ResolutionEnvironment * Tainted<ITypeProvider> list
 #endif
 
     /// The 'NoRepr' value here has four meanings: 
@@ -1464,11 +1464,11 @@ type TProvidedTypeInfo =
 
       /// A type read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it does an import on the underlying type
-      UnderlyingTypeOfEnum: (unit -> TType) 
+      UnderlyingTypeOfEnum: unit -> TType 
 
       /// A flag read from the provided type and used to compute basic properties of the type definition.
       /// Reading is delayed, since it looks at the .BaseType
-      IsDelegate: (unit -> bool) 
+      IsDelegate: unit -> bool 
 
       /// Indicates the type is erased
       IsErased: bool 
@@ -2706,6 +2706,9 @@ type Val =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.val_flags.InlineIfLambda
+
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.InlineInfo.MustInline
 
@@ -2832,6 +2835,10 @@ type Val =
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    // Set the logical name of the value
+    member x.SetLogicalName(nm) = 
+        x.val_logical_name <- nm
+
     member x.ValCompiledName =
         match x.val_opt_data with
         | Some optData -> optData.val_compiled_name
@@ -2897,6 +2904,8 @@ type Val =
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
+    member x.SetIsCompilerGenerated(v) = x.val_flags <- x.val_flags.WithIsCompilerGenerated(v) 
+
     member x.SetIsMemberOrModuleBinding() = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 
     member x.SetMakesNoCriticalTailcalls() = x.val_flags <- x.val_flags.WithMakesNoCriticalTailcalls
@@ -2908,6 +2917,8 @@ type Val =
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
 
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
+
+    member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3110,9 +3121,9 @@ type NonLocalEntityRef =
                     [ for resolver in resolvers do
                         let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
                         let typename = path.[j]
-                        let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
+                        let resolution = TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
+                        | None | Some Tainted.Null -> ()
                         | Some st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
@@ -3770,6 +3781,9 @@ type ValRef =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.Deref.InlineInfo
 
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.Deref.InlineIfLambda
+
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.Deref.MustInline
 
@@ -4271,18 +4285,20 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type 
     | IsInst of source: TType * target: TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, activePatInfo)
     ///
     /// Run the active pattern and bind a successful result to a 
     /// variable in the remaining tree. 
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
+    ///     isStructRetTy -- Is the active pattern a struct return
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of
         activePatExpr: Expr *        
         activePatResTys: TTypes *
+        isStructRetTy: bool *
         activePatIdentity: (ValRef * TypeInst) option *
         idx: int *
         activePatternInfo: ActivePatternInfo
@@ -4297,12 +4313,22 @@ type DecisionTreeTest =
     override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
+///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
+///   -- targetExpr - The expression to evaluate if we branch to the target
+///   -- debugPoint - The debug point for the target
+///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
-    | TTarget of Val list * Expr * DebugPointForTarget
+    | TTarget of 
+        boundVals: Val list *
+        targetExpr: Expr *
+        debugPoint: DebugPointForTarget *
+        isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    member x.TargetExpression = (let (TTarget(_, expr, _, _)) = x in expr)
 
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
@@ -4310,9 +4336,15 @@ type DecisionTreeTarget =
 type Bindings = Binding list
 
 /// A binding of a variable to an expression, as in a `let` binding or similar
+///  -- val: The value being bound
+///  -- expr: The expression to execute to get the value
+///  -- debugPoint: The debug point for the binding
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding = 
-    | TBind of var: Val * expr: Expr * debugPoint: DebugPointAtBinding
+    | TBind of
+        var: Val *
+        expr: Expr *
+        debugPoint: DebugPointAtBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4332,16 +4364,23 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int 
+    | APElemRef of
+        activePatternInfo: ActivePatternInfo *
+        activePatternVal: ValRef *
+        caseIndex: int *
+        isStructRetTy: bool
 
     /// Get the full information about the active pattern being referred to
-    member x.ActivePatternInfo = (let (APElemRef(info, _, _)) = x in info)
+    member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
 
     /// Get a reference to the value for the active pattern being referred to
-    member x.ActivePatternVal = (let (APElemRef(_, vref, _)) = x in vref)
+    member x.ActivePatternVal = (let (APElemRef(_, vref, _, _)) = x in vref)
+
+    /// Get a reference to the value for the active pattern being referred to
+    member x.IsStructReturn = (let (APElemRef(_, _, _, isStructRetTy)) = x in isStructRetTy)
 
     /// Get the index of the active pattern element within the overall active pattern 
-    member x.CaseIndex = (let (APElemRef(_, _, n)) = x in n)
+    member x.CaseIndex = (let (APElemRef(_, _, n, _)) = x in n)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4353,7 +4392,10 @@ type ActivePatternElemRef =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ValReprInfo = 
     /// ValReprInfo (typars, args, result)
-    | ValReprInfo of typars: TyparReprInfo list * args: ArgReprInfo list list * result: ArgReprInfo 
+    | ValReprInfo of
+        typars: TyparReprInfo list *
+        args: ArgReprInfo list list *
+        result: ArgReprInfo 
 
     /// Get the extra information about the arguments for the value
     member x.ArgInfos = (let (ValReprInfo(_, args, _)) = x in args)
@@ -4602,7 +4644,7 @@ type Expr =
         | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
         | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
         | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
-        | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
+        | StaticOptimization _ -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
         | Quote _ -> "Quote(..)"
         | WitnessArg _  -> "WitnessArg(..)"
@@ -4631,7 +4673,7 @@ type TOp =
     | Array
 
     /// Constant byte arrays (used for parser tables and other embedded data)
-    | Bytes of byte[] 
+    | Bytes of byte[]
 
     /// Constant uint16 arrays (used for parser tables)
     | UInt16s of uint16[] 
@@ -4736,7 +4778,7 @@ type TOp =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
-
+    
     override op.ToString() = 
         match op with 
         | UnionCase ucref -> "UnionCase(" + ucref.CaseName + ")"
@@ -5018,7 +5060,7 @@ type TypedImplFile =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFileAfterOptimization = 
     { ImplFile: TypedImplFile 
-      OptimizeDuringCodeGen: (bool -> Expr -> Expr) }
+      OptimizeDuringCodeGen: bool -> Expr -> Expr }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5077,14 +5119,16 @@ type CcuData =
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      TryGetILModuleDef: unit -> ILModuleDef option 
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      MemberSignatureEquality: (TType -> TType -> bool) 
+      MemberSignatureEquality: TType -> TType -> bool 
       
       /// The table of .NET CLI type forwarders for this assembly
-      TypeForwarders: CcuTypeForwarderTable }
+      TypeForwarders: CcuTypeForwarderTable
+      
+      XmlDocumentationInfo: XmlDocumentationInfo option }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5135,7 +5179,7 @@ type CcuThunk =
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
         if ccu.IsUnresolvedReference then 
-            let path = System.String.Join(".", requiringPath)
+            let path = String.Join(".", requiringPath)
             raise(UnresolvedPathReferenceNoRange(ccu.name, path))
             
     /// Indicates that this DLL uses F# 2.0+ quotation literals somewhere. This is used to implement a restriction on static linking.
@@ -5229,6 +5273,11 @@ type CcuThunk =
     
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    /// Used at the end of comppiling an assembly to get a frozen, final stable CCU
+    /// for the compilation which we no longer mutate.
+    member x.CloneWithFinalizedContents(ccuContents) =
+        { x with target = { x.target with Contents = ccuContents } }
 
     override ccu.ToString() = ccu.AssemblyName
 
@@ -5386,7 +5435,7 @@ type Construct() =
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
-                  ErrorLogger.findOriginalException)
+                  findOriginalException)
 
         TProvidedTypeExtensionPoint 
             { ResolutionEnvironment=resolutionEnvironment
@@ -5419,7 +5468,7 @@ type Construct() =
                 st.PApplyWithProvider((fun (st, provider) ->
                     ignore provider
                     st.IsMeasure), m)
-                  .PUntaintNoFailure(fun x -> x)
+                  .PUntaintNoFailure(Operators.id)
             if isMeasure then TyparKind.Measure else TyparKind.Type
 
         let access = 
@@ -5430,7 +5479,7 @@ type Construct() =
             match cpath with 
             | None -> 
                 let ilScopeRef = st.TypeProviderAssemblyRef
-                let enclosingName = ExtensionTyping.GetFSharpPathToProvidedType(st, m)
+                let enclosingName = GetFSharpPathToProvidedType(st, m)
                 CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace))
             | Some p -> p
         let pubpath = cpath.NestedPublicPath id
@@ -5446,7 +5495,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
+            entity_modul_contents = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
@@ -5655,11 +5704,11 @@ type Construct() =
 
     /// Create a new module or namespace node by cloning an existing one
     static member NewClonedModuleOrNamespace orig =
-        Construct.NewModifiedModuleOrNamespace (fun mty -> mty) orig
+        Construct.NewModifiedModuleOrNamespace id orig
 
     /// Create a new type definition node by cloning an existing one
     static member NewClonedTycon orig =
-        Construct.NewModifiedTycon (fun d -> d) orig
+        Construct.NewModifiedTycon id orig
 
 #if !NO_EXTENSIONTYPING
     /// Compute the definition location of a provided item
@@ -5671,6 +5720,6 @@ type Construct() =
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 
-            Range.mkRange filePath pos pos |> Some
+            mkRange filePath pos pos |> Some
 #endif
 

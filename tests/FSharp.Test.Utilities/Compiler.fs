@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Test.Assert
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Assert
-open FSharp.Test.Utilities.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -101,7 +101,9 @@ module rec Compiler =
     let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
-        | Path p -> System.IO.File.ReadAllText p
+        | Path p ->
+            use stream = FileSystem.OpenFileForReadShim(p)
+            stream.ReadAllText()
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -121,8 +123,8 @@ module rec Compiler =
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source          = Text source
-              LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp31
+              LangVersion     = CSharpLanguageVersion.CSharp9
+              TargetFramework = TargetFramework.Current
               Name            = None
               References      = [] }
 
@@ -439,10 +441,10 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
+        | Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
@@ -513,9 +515,9 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
+    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
         match baseline.SourceFilename with
-        | Some f -> File.WriteAllText(Path.ChangeExtension(f, extension), actualErrors)
+        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
         | _ -> ()
 
     let private verifyFSBaseline (fs) : unit =

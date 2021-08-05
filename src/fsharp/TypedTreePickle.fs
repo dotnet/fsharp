@@ -5,6 +5,7 @@ module internal FSharp.Compiler.TypedTreePickle
 open System.Collections.Generic
 open System.Text
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -22,6 +23,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -84,8 +86,8 @@ type Table<'T> =
 
     static member Create n =
       { name = n
-        tbl = new System.Collections.Generic.Dictionary<_, _>(1000, HashIdentity.Structural)
-        rows= new ResizeArray<_>(1000)
+        tbl = Dictionary<_, _>(1000, HashIdentity.Structural)
+        rows= ResizeArray<_>(1000)
         count=0 }
 
 [<NoEquality; NoComparison>]
@@ -97,10 +99,10 @@ let new_itbl n r = { itbl_name=n; itbl_rows=r }
 
 [<NoEquality; NoComparison>]
 type NodeOutTable<'Data, 'Node> =
-    { NodeStamp : ('Node -> Stamp)
-      NodeName : ('Node -> string)
-      GetRange : ('Node -> range)
-      Deref: ('Node -> 'Data)
+    { NodeStamp : 'Node -> Stamp
+      NodeName : 'Node -> string
+      GetRange : 'Node -> range
+      Deref: 'Node -> 'Data
       Name: string
       Table: Table<Stamp> }
     member x.Size = x.Table.Size
@@ -137,8 +139,8 @@ let pfailwith st str = ffailwith st.ofile str
 
 [<NoEquality; NoComparison>]
 type NodeInTable<'Data, 'Node> =
-    { LinkNode : ('Node -> 'Data -> unit)
-      IsLinked : ('Node -> bool)
+    { LinkNode : 'Node -> 'Data -> unit
+      IsLinked : 'Node -> bool
       Name : string
       Nodes : 'Node[] }
     member x.Get n = x.Nodes.[n]
@@ -188,8 +190,8 @@ let p_int32 n st =
     if n >= 0 && n <= 0x7F then
         p_byte (b0 n) st
     else if n >= 0x80 && n <= 0x3FFF then
-        p_byte ( (0x80 ||| (n >>> 8))) st
-        p_byte ( (n &&& 0xFF)) st
+        p_byte (0x80 ||| (n >>> 8)) st
+        p_byte (n &&& 0xFF) st
     else
         p_byte 0xFF st
         prim_p_int32 n st
@@ -210,6 +212,11 @@ let p_bytes (s: byte[]) st =
     let len = s.Length
     p_int32 len st
     st.os.EmitBytes s
+
+let p_memory (s: System.ReadOnlyMemory<byte>) st =
+    let len = s.Length
+    p_int32 len st
+    st.os.EmitMemory s
 
 let p_prim_string (s: string) st =
     let bytes = Encoding.UTF8.GetBytes s
@@ -773,15 +780,18 @@ let p_encoded_simpletyp x st = p_int x st
 let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 let pickleObjWithDanglingCcus inMem file g scope p x =
-  let ccuNameTab, (ntycons, ntypars, nvals, nanoninfos), stringTab, pubpathTab, nlerefTab, simpleTyTab, phase1bytes =
-    let st1 =
-      { os = ByteBuffer.Create 100000
+  let st1 =
+      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
-        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
-        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
         oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
         ostrings=Table<_>.Create "ostrings"
         onlerefs=Table<_>.Create "onlerefs"
@@ -791,31 +801,32 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         ofile=file
         oInMem=inMem
         isStructThisArgPos = false}
+  let ccuNameTab, (ntycons, ntypars, nvals, nanoninfos), stringTab, pubpathTab, nlerefTab, simpleTyTab, phase1bytes =
     p x st1
     let sizes =
       st1.oentities.Size,
       st1.otypars.Size,
       st1.ovals.Size,
       st1.oanoninfos.Size
-    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.Close()
+    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
+  let st2 =
+   { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+     oscope=scope
+     occus= Table<_>.Create "occus (fake)"
+     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+     ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+     oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+     ostrings=Table<_>.Create "ostrings (fake)"
+     opubpaths=Table<_>.Create "opubpaths (fake)"
+     onlerefs=Table<_>.Create "onlerefs (fake)"
+     osimpletys=Table<_>.Create "osimpletys (fake)"
+     oglobals=g
+     ofile=file
+     oInMem=inMem
+     isStructThisArgPos = false }
   let phase2bytes =
-    let st2 =
-     { os = ByteBuffer.Create 100000
-       oscope=scope
-       occus= Table<_>.Create "occus (fake)"
-       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
-       ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
-       ostrings=Table<_>.Create "ostrings (fake)"
-       opubpaths=Table<_>.Create "opubpaths (fake)"
-       onlerefs=Table<_>.Create "onlerefs (fake)"
-       osimpletys=Table<_>.Create "osimpletys (fake)"
-       oglobals=g
-       ofile=file
-       oInMem=inMem
-       isStructThisArgPos = false }
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
     // Add a 4th integer indicated by a negative 1st integer
     let z1 = if nanoninfos > 0 then  -ntycons-1 else ntycons
@@ -828,11 +839,14 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         (p_array p_encoded_pubpath)
         (p_array p_encoded_nleref)
         (p_array p_encoded_simpletyp)
-        p_bytes
+        p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
-    st2.os.Close()
-  phase2bytes
+    st2.os
+
+  let finalBytes = phase2bytes
+  (st1.os :> System.IDisposable).Dispose()
+  finalBytes
 
 let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
     for i = 0 to inMap.Count - 1 do
@@ -872,7 +886,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
             (u_array u_encoded_simpletyp)
             u_byte_memory
             st2
-    let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
+    let ccuTab       = new_itbl "iccus"       (Array.map CcuThunk.CreateDelayed ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
     let pubpathTab   = new_itbl "ipubpaths"   (Array.map (decode_pubpath st2 stringTab) pubpathTab)
     let nlerefTab    = new_itbl "inlerefs"    (Array.map (decode_nleref st2 ccuTab stringTab) nlerefTab)
@@ -941,12 +955,12 @@ let u_ILPublicKey st =
     | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
-let u_ILVersion st = 
-    let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
+let u_ILVersion st =
+    let major, minor, build, revision = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
     ILVersionInfo(major, minor, build, revision)
 
 let u_ILModuleRef st =
-    let (a, b, c) = u_tup3 u_string u_bool (u_option u_bytes) st
+    let a, b, c = u_tup3 u_string u_bool (u_option u_bytes) st
     ILModuleRef.Create(a, b, c)
 
 let u_ILAssemblyRef st =
@@ -1181,10 +1195,10 @@ let [<Literal>] itag_ldelem_any    = 59
 let [<Literal>] itag_stelem_any    = 60
 let [<Literal>] itag_unbox_any     = 61
 let [<Literal>] itag_ldlen_multi   = 62
-let [<Literal>] itag_initobj       = 63   // currently unused, added for forward compat, see https://visualfsharp.codeplex.com/SourceControl/network/forks/jackpappas/fsharpcontrib/contribution/7134
-let [<Literal>] itag_initblk       = 64   // currently unused, added for forward compat
-let [<Literal>] itag_cpobj         = 65   // currently unused, added for forward compat
-let [<Literal>] itag_cpblk         = 66   // currently unused, added for forward compat
+let [<Literal>] itag_initobj       = 63
+let [<Literal>] itag_initblk       = 64
+let [<Literal>] itag_cpobj         = 65
+let [<Literal>] itag_cpblk         = 66
 
 let simple_instrs =
     [ itag_add, AI_add
@@ -1331,7 +1345,7 @@ let p_namemap p = p_Map p_string p
 let u_Map_core uk uv n st =
     Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
-let u_Map uk uv st = 
+let u_Map uk uv st =
     let n = u_int st
     u_Map_core uk uv n st
 
@@ -1516,7 +1530,7 @@ let p_trait (TTrait(a, b, c, d, e, f)) st  =
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
 
 let u_anonInfo_data st =
-    let (ccu, info, nms) = u_tup3 u_ccuref u_bool (u_array u_ident) st
+    let ccu, info, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
     AnonRecdTypeInfo.Create (ccu, mkTupInfo info, nms)
 
 let u_anonInfo st =
@@ -1527,20 +1541,20 @@ let u_trait_sln st =
     let tag = u_byte st
     match tag with
     | 0 ->
-        let (a, b, c, d) = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
+        let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
         ILMethSln(a, b, c, d)
     | 1 ->
-        let (a, b, c) = u_tup3 u_ty u_vref u_tys st
+        let a, b, c = u_tup3 u_ty u_vref u_tys st
         FSMethSln(a, b, c)
     | 2 ->
         BuiltInSln
     | 3 ->
         ClosedExprSln (u_expr_fwd st)
     | 4 ->
-        let (a, b, c) = u_tup3 u_tys u_rfref u_bool st
+        let a, b, c = u_tup3 u_tys u_rfref u_bool st
         FSRecdFieldSln(a, b, c)
     | 5 ->
-         let (a, b, c) = u_tup3 u_anonInfo u_tys u_int st
+         let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
     | _ -> ufailwith st "u_trait_sln"
 
@@ -1562,7 +1576,7 @@ let p_measure_varcon unt st =
      match unt with
      | Measure.Con tcref   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
-     | _                  -> pfailwith st ("p_measure_varcon: expected measure variable or constructor")
+     | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
 // Pickle a positive integer power of a unit-of-measure variable or constructor
 let rec p_measure_pospower unt n st =
@@ -1817,7 +1831,7 @@ and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
     | TRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec (x.CasesTable.CasesByIndex) st; false
+    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
     | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
@@ -1877,7 +1891,7 @@ and p_recdfield_spec x st =
     p_access x.rfield_access st
 
 and p_rfield_table x st =
-    p_array p_recdfield_spec (x.FieldsByIndex) st
+    p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
     p_tyar_specs (x.entity_typars.Force(x.entity_range)) st
@@ -1963,20 +1977,6 @@ and p_tycon_objmodel_kind x st =
     | TTyconStruct      -> p_byte 2 st
     | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TTyconEnum        -> p_byte 4 st
-
-and p_mustinline x st =
-    p_byte (match x with
-            | ValInline.PseudoVal -> 0
-            | ValInline.Always  -> 1
-            | ValInline.Optional -> 2
-            | ValInline.Never -> 3) st
-
-and p_basethis x st =
-    p_byte (match x with
-            | BaseVal -> 0
-            | CtorThisVal  -> 1
-            | NormalVal -> 2
-            | MemberThisVal -> 3) st
 
 and p_vrefFlags x st =
     match x with
@@ -2210,7 +2210,7 @@ and u_tcaug st =
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false
-     tcaug_adhoc_list= new ResizeArray<_> (c |> List.map (fun (_, vref) -> (false, vref)))
+     tcaug_adhoc_list= ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
      tcaug_adhoc=NameMultiMap.ofList c
      tcaug_interfaces=d
      tcaug_super=e
@@ -2263,22 +2263,6 @@ and u_tycon_objmodel_kind st =
     | 3 -> u_slotsig st |> TTyconDelegate
     | 4 -> TTyconEnum
     | _ -> ufailwith st "u_tycon_objmodel_kind"
-
-and u_mustinline st =
-    match u_byte st with
-    | 0 -> ValInline.PseudoVal
-    | 1 -> ValInline.Always
-    | 2 -> ValInline.Optional
-    | 3 -> ValInline.Never
-    | _ -> ufailwith st "u_mustinline"
-
-and u_basethis st =
-    match u_byte st with
-    | 0 -> BaseVal
-    | 1 -> CtorThisVal
-    | 2 -> NormalVal
-    | 3 -> MemberThisVal
-    | _ -> ufailwith st "u_basethis"
 
 and u_vrefFlags st =
     match u_byte st with
@@ -2408,7 +2392,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"
 
-and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
+and p_target (TTarget(a, b, _, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
 and p_lval_op_kind x st =
@@ -2439,7 +2423,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
@@ -2542,7 +2526,7 @@ and u_op st =
     | 17 -> let a = u_lval_op_kind st
             let b = u_vref st
             TOp.LValueOp (a, b)
-    | 18 -> let (a1, a2, a3, a4, a5, a7, a8, a9) = (u_tup8 u_bool u_bool u_bool u_bool u_vrefFlags u_bool u_bool  u_ILMethodRef) st
+    | 18 -> let a1, a2, a3, a4, a5, a7, a8, a9 = (u_tup8 u_bool u_bool u_bool u_bool u_vrefFlags u_bool u_bool  u_ILMethodRef) st
             let b = u_tys st
             let c = u_tys st
             let d = u_tys st
@@ -2584,7 +2568,7 @@ and p_expr expr st =
     | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr p_dummy_range (a, b, c) st
     | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr p_dummy_range (a, b, c) st
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty (a, b, c, d, e) st
-    | Expr.Obj (_, b, c, d, e, f, g)          -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
@@ -2610,7 +2594,8 @@ and u_expr st =
            let b = u_expr st
            let c = u_int st
            let d = u_dummy_range  st
-           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), DebugPointAtSequential.StmtOnly, d)
+           let dir = match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"
+           Expr.Sequential (a, b, dir, DebugPointAtSequential.SuppressStmt, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st
@@ -2666,7 +2651,7 @@ and u_expr st =
     | 14 ->
         let traitInfo = u_trait st
         let m = u_dummy_range st
-        Expr.WitnessArg (traitInfo, m) 
+        Expr.WitnessArg (traitInfo, m)
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =
