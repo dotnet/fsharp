@@ -138,8 +138,8 @@ type CompilerAssert private () =
         errors, outputFilePath
 
     static let compileAux isExe options source f : unit =
-        let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+        let inputFilePath = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
             f (rawCompile inputFilePath outputFilePath isExe options source)
         finally
@@ -351,7 +351,7 @@ type CompilerAssert private () =
         "tfm": "net5.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "5.0.0"
+            "version": "6.0"
         }
     }
 }"""
@@ -411,7 +411,7 @@ type CompilerAssert private () =
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
     static member CompileOfAst isExe source =
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then "exe" else ".dll")
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
 
         let parseResults =
