@@ -146,6 +146,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <DebugType>portable</DebugType>
     <LangVersion>$(LANGUAGEVERSION)</LangVersion>
     <Optimize>$(OPTIMIZE)</Optimize>
+    <NoWarn>$(NOWARN);1182;</NoWarn>
     <SignAssembly>false</SignAssembly>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
