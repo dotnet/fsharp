@@ -2,6 +2,9 @@
 // Regression test for FSHARP1.0:4758
 // Type Inference
 namespace N
+
+#nowarn "1182"
+
 module ActualTests2 = 
 
     type Var<'a> =

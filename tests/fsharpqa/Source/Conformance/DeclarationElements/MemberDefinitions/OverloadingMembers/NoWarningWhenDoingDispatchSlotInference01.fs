@@ -5,9 +5,9 @@
 
 type MyTraceListener = class
                         inherit System.Diagnostics.TraceListener
-                        override x.Write (message:string) = ()
-                        override x.WriteLine (message:string) = ()
-                        override x.Fail (message:string) = exit 0
+                        override x.Write (_message:string) = ()
+                        override x.WriteLine (_message:string) = ()
+                        override x.Fail (_message:string) = exit 0
                        end
 
 exit 0

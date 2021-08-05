@@ -6,5 +6,5 @@
 //<Expects status="success"></Expects>
 #light
 
-let s1 = seq { for i in [ 1 .. 2 ] -> 10 }
+let s1 = seq { for _i in [ 1 .. 2 ] -> 10 }
 (if (Seq.head s1) = 10 then 0 else 1) |> exit

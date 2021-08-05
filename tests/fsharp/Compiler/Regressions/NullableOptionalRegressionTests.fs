@@ -26,7 +26,7 @@ type Node (child:Node)=
 let test () =
     let parent = Node()
     let b1 = OverloadMeths.Map(parent.child, fun x -> x.child)
-    let c1 = OverloadMeths.Map(b1, fun x -> x.child)
+    let _c1 = OverloadMeths.Map(b1, fun x -> x.child)
     ()
         """
         |> withLangVersion50

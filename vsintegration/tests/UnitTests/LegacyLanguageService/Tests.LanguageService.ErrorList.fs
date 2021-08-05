@@ -561,7 +561,7 @@ but here has type
     member public this.``NoError.FlagsAndSettings.TargetOptionsRespected``() =
         let fileContent = """
             [<System.Obsolete("x")>]
-            let fn x = 0
+            let fn _x = 0
             let y = fn 1"""
         // Turn off the "Obsolete" warning.
         let (solution, project, file) = this.CreateSingleFileProject(fileContent, disabledWarnings = ["44"])
@@ -654,15 +654,15 @@ but here has type
             fileContents = """
                 #nowarn "47"
 
-                type Fruit (shelfLife : int) as x =
+                type Fruit (_shelfLife : int) as x =
     
-                        let mutable m_age = (fun () -> x)
+                        let mutable _m_age = (fun () -> x)
 
 
                 #nowarn "25" // FS0025: Incomplete pattern matches on this expression. For example, the value 'C' 
 
                 type DU = A | B | C
-                let f x = function A -> true | B -> false
+                let f _x = function A -> true | B -> false
 
 
                 #nowarn "58" // FS0058: possible incorrect indentation: this token is offside of context started at

@@ -1,7 +1,7 @@
 // #Regression #Conformance #LexicalAnalysis #ReqNOMT 
 // Regression test for FSHARP1.0:6044
 
-#nowarn "44" "49"
+#nowarn "44" "49" "1182"
 
 [<System.Obsolete("Dummy attribute to trigger a warning")>]
 let obsoleteIdentifier = 12

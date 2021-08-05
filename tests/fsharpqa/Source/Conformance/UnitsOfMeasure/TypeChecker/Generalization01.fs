@@ -9,7 +9,7 @@ type Kg
 
 type M<[<Measure>] 'a> = class end
 
-type T = static member star ( y:'b when 'b :> M<'a>) = 0
+type T = static member star ( _y:'b when 'b :> M<'a>) = 0
 
 let p = 1<Kg>
 let m = Unchecked.defaultof<M<Kg>>

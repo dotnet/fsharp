@@ -10,6 +10,6 @@ open System.Numerics                    // <- we need this since the deprecated 
 
 let v1 = 99999999I                      // bigint          (System.Numerics.BigInteger)
 
-let check(x:BigInteger) = true
+let check(_x:BigInteger) = true
 
 exit (if check(v1) then 0 else 1)

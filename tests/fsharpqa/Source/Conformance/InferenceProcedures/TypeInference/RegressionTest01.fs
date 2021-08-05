@@ -2,6 +2,9 @@
 // Regression test for FSHARP1.0:4758
 // Type Inference
 namespace N
+
+#nowarn "1182"
+
 module ActualTests1 = 
     type Var<'a> =
         static member Foo(x:Var<'a>,y:'a)      = failwith "" : Var<bool>

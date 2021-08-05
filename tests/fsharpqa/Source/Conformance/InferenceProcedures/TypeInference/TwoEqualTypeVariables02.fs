@@ -3,6 +3,9 @@
 // Type Inference
 // Check Method Disambiguation When User Generic Variable Get Instantiated By Overload Resolution
 namespace N
+
+#nowarn "1182"
+
 // These different return types are used to determine which overload got chosen
 type One = | One
 type Two = | Two

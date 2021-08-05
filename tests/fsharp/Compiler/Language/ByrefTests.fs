@@ -248,7 +248,7 @@ type MyClass() =
 
 let test () =
     let mutable x = 1
-    let y = &&x
+    let _y = &&x
     ()
             """
 
@@ -280,12 +280,12 @@ type C() =
         let verifyProperty = """.property instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 X()
         {
-          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )
           .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
         }"""
 
-        let verifyMethod = """.method public hidebysig specialname 
-                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+        let verifyMethod = """.method public hidebysig specialname
+                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 get_X() cil managed
         {
           .param [0]
@@ -307,7 +307,7 @@ type C<'T>() =
     member _.X<'U>(): inref<'T> = &x
             """
 
-        let verifyMethod = """.method public hidebysig instance !T& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+        let verifyMethod = """.method public hidebysig instance !T& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 X<U>() cil managed
         {
           .param [0]
@@ -329,8 +329,8 @@ type C<'T>() =
     abstract X<'U> : unit -> inref<'U>
             """
 
-        let verifyMethod = """.method public hidebysig abstract virtual 
-                instance !!U& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+        let verifyMethod = """.method public hidebysig abstract virtual
+                instance !!U& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 X<U>() cil managed
         {
           .param [0]
@@ -348,18 +348,18 @@ type C<'T>() =
 module Test
 
 type C =
-    abstract X: inref<int> 
+    abstract X: inref<int>
             """
 
         let verifyProperty = """.property instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 X()
         {
-          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )
           .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
         }"""
 
         let verifyMethod = """.method public hidebysig specialname abstract virtual
-                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
                 get_X() cil managed
         {
           .param [0]

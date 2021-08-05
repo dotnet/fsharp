@@ -9,7 +9,7 @@
 
 let v1 = 99999999I      // bigint          (Microsoft.FSharp.Core.bigint)
 
-let check(x:bigint) = true
+let check(_x:bigint) = true
 
 if check(v1) = false then exit 1
 

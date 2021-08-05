@@ -5,6 +5,9 @@
 // Notice that the [<OverloadID("...")>] attribute is no longer needed
 // These different return types are used to determine which overload got chosen
 namespace N
+
+#nowarn "1182"
+
 type One = | One
 type Two = | Two
 type Three = | Three

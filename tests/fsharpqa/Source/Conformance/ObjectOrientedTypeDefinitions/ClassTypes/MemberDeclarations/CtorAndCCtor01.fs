@@ -5,6 +5,8 @@
 
 namespace N
 
+#nowarn "1182"
+
 type T1(``.ctor`` : char) = 
     let ``.ctor`` = 10
     static member ``.ctor ``(``.ctor`` : int) = ``.ctor`` + 1

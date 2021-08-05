@@ -124,7 +124,7 @@ type (*start*)=(*end*)
     member public this.AbstractClasses_Constructors_PositiveTests_1() = 
         this.VerifyNoErrors("""
 [<AbstractClass>]
-type C(a : int) = 
+type C(_a : int) = 
     new(a : string) = C(int a)
     new(b) = match b with Some _ -> C(1) | _ -> C("")
             """)
@@ -133,7 +133,7 @@ type C(a : int) =
     member public this.AbstractClasses_Constructors_PositiveTests_2() = 
         this.VerifyNoErrors("""
 [<AbstractClass>]
-type C(a : int) = 
+type C(_a : int) = 
     new(a : string) = new C(int a)
     new(b) = match b with Some _ -> new C(1) | _ -> new C("")
             """)
@@ -142,7 +142,7 @@ type C(a : int) =
     member public this.AbstractClasses_Constructors_PositiveTests_3() = 
         this.VerifyNoErrors("""
 [<AbstractClass>]
-type O(o : int) = 
+type O(_o : int) = 
     new() = O(1)
             """)
 
@@ -150,7 +150,7 @@ type O(o : int) =
     member public this.AbstractClasses_Constructors_PositiveTests_4() = 
         this.VerifyNoErrors("""
 [<AbstractClass>]
-type O(o : int) = 
+type O(_o : int) = 
     new() = O() then printfn "A"
             """)
 
@@ -158,7 +158,7 @@ type O(o : int) =
     member public this.AbstractClasses_Constructors_PositiveTests_5() = 
         this.VerifyNoErrors("""
 [<AbstractClass>]
-type O(o : int) = 
+type O(_o : int) = 
     new() = new O(1) then printfn "A"
             """)
 
@@ -253,7 +253,7 @@ type (*start*)A(*end*) = int * A
         this.VerifyWarningBetweenMarkers(
             fileContents = """
 [<System.Obsolete("x")>]
-let fn x = 0
+let fn _x = 0
 let y = (*start*)fn(*end*) 1
             """,
             expectedMessage = "This construct is deprecated. x")
@@ -282,7 +282,7 @@ let r = (*start*)f 3(*end*) 4
         this.VerifyWarningBetweenMarkers(
             fileContents = """
 let a = async {
-    let! (*start*)[| r1; r2 |](*end*) = Async.Parallel [| async.Return(1); async.Return(2) |]
+    let! (*start*)[| _r1; _r2 |](*end*) = Async.Parallel [| async.Return(1); async.Return(2) |]
     let yyyy = 4
     return r1,r2
 }
@@ -293,7 +293,7 @@ let a = async {
     member public this.InComputationExpression_Bug6095_B() =
         this.VerifyWarningBetweenMarkers(
             fileContents = """
-let f = (*start*)function(*end*) | [| a;b |] -> ()
+let f = (*start*)function(*end*) | [| _a;_b |] -> ()
             """,
             expectedMessage = "Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s).")
 
@@ -301,7 +301,7 @@ let f = (*start*)function(*end*) | [| a;b |] -> ()
     member public this.InComputationExpression_Bug6095_C() =
         this.VerifyWarningBetweenMarkers(
             fileContents = """
-for (*start*)[|a;b|](*end*) in [| [|42|] |] do ()
+for (*start*)[|_a;_b|](*end*) in [| [|42|] |] do ()
             """,
             expectedMessage = "Incomplete pattern matches on this expression. For example, the value '[|_; _; _|]' may indicate a case not covered by the pattern(s). Unmatched elements will be ignored.")
             

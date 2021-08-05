@@ -66,7 +66,7 @@ let changeProperty() =
 type MyClass(property1 : int) =
     member val Property1 = property1
     member val Property2 = "" with get, set
-    
+
 let x = MyClass(1)
 let y = "hello"
 
@@ -83,9 +83,9 @@ let changeProperty() =
     let ``Don't warn if assignment to property without setter ``() =
         CompilerAssert.TypeCheckSingleError
             """
-type MyClass(property1 : int) =
+type MyClass(_property1 : int) =
     member val Property2 = "" with get
-    
+
 let x = MyClass(1)
 let y = "hello"
 

@@ -19,18 +19,18 @@ let fail msg =
 
     [<Test>]
     let ``Partial active pattern returns Option`1`` () =
-        pass "let (|Foo|_|) x = None"
+        pass "let (|Foo|_|) _x = None"
 
     [<Test>]
     let ``Partial struct active pattern returns ValueOption`1`` () =
-        pass "[<return:Struct>] let (|P1|_|) x = ValueNone"
+        pass "[<return:Struct>] let (|P1|_|) _x = ValueNone"
 
     [<Test>]
     let ``StructAttribute can be placed at the active pattern return type annotation`` () =
         pass
             """
-let (|P1|_|) x: [<Struct>] _ = ValueNone
-let (|P2|_|) x: [<return:Struct>] _ = ValueNone
+let (|P1|_|) _x: [<Struct>] _ = ValueNone
+let (|P2|_|) _x: [<return:Struct>] _ = ValueNone
             """
 
     [<Test>]
@@ -38,7 +38,7 @@ let (|P2|_|) x: [<return:Struct>] _ = ValueNone
         run """
 [<Struct>]
 type T1 = { v1: int }
-and T2 = 
+and T2 =
   | T2C1 of int * string
   | T2C2 of T1 * T2
 and [<Struct>] T3 = { v3: T2 }
@@ -46,25 +46,25 @@ and T4() =
     let mutable _v4 = { v3 = T2C2({v1=0}, T2C1(1, "hey")) }
     member __.v4 with get() = _v4 and set (x) = _v4 <- x
 
-[<return:Struct>] 
+[<return:Struct>]
 let (|P1|_|) =
     function
     | 0 -> ValueNone
     | _ -> ValueSome()
 
-[<return:Struct>] 
+[<return:Struct>]
 let (|P2|_|) =
     function
     | "foo" -> ValueNone
     | _ -> ValueSome "bar"
 
-[<return:Struct>] 
+[<return:Struct>]
 let (|P3|_|) (x: T2) =
   match x with
   | T2C1(a, b) -> ValueSome(a, b)
   | _ -> ValueNone
 
-[<return:Struct>] 
+[<return:Struct>]
 let (|P4|_|) (x: T4) =
   match x.v4 with
   | { v3 = T2C2 ({v1=a}, P3(b, c)) } -> ValueSome (a, b, c)
@@ -87,7 +87,7 @@ match t4 with
             """
 
     [<Test>]
-    let ``[<return:>] attribute is rotated to the return value``() = 
+    let ``[<return:>] attribute is rotated to the return value``() =
         run
             """
 open System
@@ -96,7 +96,7 @@ open System
 type MyAttribute() =
     inherit Attribute()
 
-let extract xs = 
+let extract xs =
   xs
   |> Seq.map (fun x -> x.GetType().Name)
   |> List.ofSeq
@@ -121,7 +121,7 @@ match ret_attrs, binding_attrs with
 | _ -> fail $"ret_attrs = {ret_attrs}, binding_attrs = {binding_attrs} method = {method}"
             """
     [<Test>]
-    let ``Implicitly-targeted attribute on let binding do not target return``() = 
+    let ``Implicitly-targeted attribute on let binding do not target return``() =
         run
             """
 open System
@@ -130,7 +130,7 @@ open System
 type MyAttribute() =
     inherit Attribute()
 
-let extract xs = 
+let extract xs =
   xs
   |> Seq.map (fun x -> x.GetType().Name)
   |> List.ofSeq
@@ -170,7 +170,7 @@ let (|Foo|_|) x = ValueNone
 
     [<Test>]
     let ``StructAttribute must explicitly target active pattern return value`` () =
-        fail 
+        fail
             """
 [<Struct>]
 let (|Foo|_|) x = ValueNone
@@ -179,15 +179,15 @@ let (|Foo|_|) x = ValueNone
                "This attribute is not valid for use on this language element");
               (FSharpDiagnosticSeverity.Error, 1, (2, 1, 3, 16),
                "This expression was expected to have type
-    ''a option'    
+    ''a option'
 but here has type
     ''b voption'    ")|]
 
     [<Test>]
     let ``StructAttribute not allowed on other bindings than partial active pattern definitions`` () =
-        fail 
+        fail
             """
-[<return:Struct>] 
+[<return:Struct>]
 let x = 1
 
 [<return:Struct>]

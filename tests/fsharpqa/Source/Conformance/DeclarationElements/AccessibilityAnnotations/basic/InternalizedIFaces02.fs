@@ -12,6 +12,6 @@ module N.M
 
  and Gen<'a> = 
   | Gen of (int -> StdGen -> 'a) 
-  member x.Map f = failwith ""
+  member x.Map _f = failwith ""
   interface IGen with
     member x.AsGenObject = x.Map box

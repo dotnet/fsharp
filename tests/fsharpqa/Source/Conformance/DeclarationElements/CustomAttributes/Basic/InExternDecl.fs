@@ -5,4 +5,4 @@
 module M
 
 type myAttrib() = inherit System.Attribute()
-extern int A([<myAttrib>] int a)
+extern int A([<myAttrib>] int _a)

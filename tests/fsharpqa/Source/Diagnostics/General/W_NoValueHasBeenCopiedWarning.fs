@@ -12,6 +12,6 @@ let main(_) =
        ()
     with 
     | :? 'TException as e -> 
-          let msg = e.ToString()
+          let _msg = e.ToString()
           ()
     0
