@@ -136,6 +136,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--fullpaths"
         yield "--flaterrors"
         yield "--target:library"
+        yield "--nowarn:1182"
         for x in fileNames do
             yield x
         let references = mkStandardProjectReferences ()

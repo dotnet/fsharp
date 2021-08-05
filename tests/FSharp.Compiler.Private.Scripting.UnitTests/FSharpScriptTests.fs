@@ -418,7 +418,7 @@ let y = 2
             foundInner <- foundInner || name = "inner")
         let code = @"
 let x =
-    let inner = 1
+    let _inner = 1
     ()
 "
         script.Eval(code) |> ignoreValue
