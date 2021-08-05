@@ -57,7 +57,7 @@ variables:
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: DotNetSdkVersion
-    value: '6.0.100-preview.6.21355.2'
+    value: '6.0.100-rc.1.21379.2'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
