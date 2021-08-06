@@ -687,7 +687,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.ToArray() =
         MapTree.toArray tree
 
-    member m.Keys = seq { for kvp in m -> kvp.Key }
+    member m.Keys = KeyCollection(m) :> ICollection<'Key>
+    
+    member m.Values = ValueCollection(m) :> ICollection<'Value>
 
     static member ofList l : Map<'Key, 'Value> = 
        let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
@@ -729,11 +731,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
             with get x = m.[x] 
             and  set x v = ignore(x, v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        // REVIEW: this implementation could avoid copying the Values to an array 
-        member m.Keys = ([| for kvp in m -> kvp.Key |] :> ICollection<'Key>)
+        member m.Keys = m.Keys
 
-        // REVIEW: this implementation could avoid copying the Values to an array 
-        member m.Values = ([| for kvp in m -> kvp.Value |] :> ICollection<'Value>)
+        member m.Values = m.Values
 
         member m.Add(k, v) = ignore(k, v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
@@ -777,11 +777,11 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
         member m.Item with get key = m.[key]
 
-        member m.Keys = seq { for kvp in m -> kvp.Key }
+        member m.Keys = m.Keys :> IEnumerable<'Key>
 
         member m.TryGetValue(key, value: byref<'Value>) = m.TryGetValue(key, &value) 
 
-        member m.Values = seq { for kvp in m -> kvp.Value }
+        member m.Values = m.Values :> IEnumerable<'Value>
 
         member m.ContainsKey key = m.ContainsKey key
 
@@ -820,6 +820,70 @@ and
 
         [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
         member x.KeyValue = keyValue
+
+and KeyCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>) =
+    interface ICollection<'Key> with
+        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        
+        member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+        member _.Contains x = parent.ContainsKey x
+
+        member _.CopyTo(arr, index) =
+            if isNull arr then nullArg "arr"
+            if index < 0 then invalidArg "index" "index must be positive"
+            if index + parent.Count > arr.Length then invalidArg "index" "array is smaller than index plus the number of items to copy"
+             
+            let mutable i = index
+            for item in parent do 
+                arr.[i] <- item.Key
+                i <- i + 1
+
+        member _.IsReadOnly = true
+
+        member _.Count = parent.Count
+        
+    interface IEnumerable<'Key> with
+        member _.GetEnumerator() =
+            (seq { for item in parent do item.Key}).GetEnumerator()
+            
+    interface Collections.IEnumerable with
+        member _.GetEnumerator() = 
+            (seq { for item in parent do item.Key}).GetEnumerator() :> Collections.IEnumerator
+    
+and ValueCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>) =
+    interface ICollection<'Value> with
+        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+        member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+
+        member _.Contains x = parent.Exists(fun _ value -> Unchecked.equals value x)
+
+        member _.CopyTo(arr, index) = 
+            if isNull arr then nullArg "arr"
+            if index < 0 then invalidArg "index" "index must be positive"
+            if index + parent.Count > arr.Length then invalidArg "index" "array is smaller than index plus the number of items to copy"
+             
+            let mutable i = index
+            for item in parent do 
+                arr.[i] <- item.Value
+                i <- i + 1
+
+        member _.IsReadOnly = true
+
+        member _.Count = parent.Count
+        
+    interface IEnumerable<'Value> with
+        member _.GetEnumerator() =
+            (seq { for item in parent do item.Value}).GetEnumerator()
+            
+    interface Collections.IEnumerable with
+        member _.GetEnumerator() = 
+            (seq { for item in parent do item.Value }).GetEnumerator() :> Collections.IEnumerator
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
@@ -940,4 +1004,4 @@ module Map =
     let keys (table: Map<_, _>) = table.Keys
 
     [<CompiledName("Values")>]
-    let values (table: Map<_, _>) = seq { for kvp in table -> kvp.Value }
+    let values (table: Map<_, _>) = table.Values
