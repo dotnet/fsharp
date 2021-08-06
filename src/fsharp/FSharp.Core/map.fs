@@ -729,26 +729,26 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     interface IDictionary<'Key, 'Value> with 
         member m.Item 
             with get x = m.[x] 
-            and  set x v = ignore(x, v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+            and  set _ _ = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member m.Keys = m.Keys
 
         member m.Values = m.Values
 
-        member m.Add(k, v) = ignore(k, v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member m.Add(_, _) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member m.ContainsKey k = m.ContainsKey k
 
         member m.TryGetValue(k, r) = m.TryGetValue(k, &r) 
 
-        member m.Remove(k : 'Key) = ignore k; (raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated))) : bool)
+        member m.Remove(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with 
-        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Add(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Remove(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member m.Contains x = m.ContainsKey x.Key && Unchecked.equals m.[x.Key] x.Value
 
@@ -823,11 +823,11 @@ and
 
 and KeyCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>) =
     interface ICollection<'Key> with
-        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Add(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
         
         member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Remove(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Contains x = parent.ContainsKey x
 
@@ -855,11 +855,11 @@ and KeyCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>
     
 and ValueCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>) =
     interface ICollection<'Value> with
-        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Add(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Remove(_) = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member _.Contains x = parent.Exists(fun _ value -> Unchecked.equals value x)
 

@@ -1531,8 +1531,8 @@ namespace Microsoft.FSharp.Collections
             if index < 0 then invalidArg "index" "index must be within bounds of the array"
             seq {
                 let mutable i = 0
-                let sourceEnumerator = source.GetEnumerator()
-                let valuesEnumerator = values.GetEnumerator()
+                use sourceEnumerator = source.GetEnumerator()
+                use valuesEnumerator = values.GetEnumerator()
                 
                 while i < index do // advance till index
                     if not (sourceEnumerator.MoveNext()) then invalidArg "index" "index must be within bounds of the array"
