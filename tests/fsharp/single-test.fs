@@ -355,8 +355,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let sources = extraSources |> List.filter (fileExists cfg)
 
-        fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g --langversion:preview " cfg.fsc_flags sources
-        fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview " cfg.fsc_flags sources
+        fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g --langversion:preview --nowarn:1182 " cfg.fsc_flags sources
+        fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g --langversion:preview --nowarn:1182 " cfg.fsc_flags sources
 
         peverify cfg "test--optimize-lib.dll"
         peverify cfg "test--optimize-client-of-lib.exe"
@@ -429,11 +429,11 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
         else "--warnaserror"
 
-    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
+    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --nowarn:1182 --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
     let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
 
-    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
+    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --nowarn:1182 --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
 
     let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
 
