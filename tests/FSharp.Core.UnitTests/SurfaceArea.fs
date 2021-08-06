@@ -2015,7 +2015,6 @@ Microsoft.FSharp.Core.Operators: T Lock[TLock,T](TLock, Microsoft.FSharp.Core.FS
 Microsoft.FSharp.Core.Operators: TResult Using[T,TResult](T, Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators: System.Type TypeOf[T]()
 Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators: System.Type TypeDefOf[T]()
 Microsoft.FSharp.Core.Operators: Int32 SizeOf[T]()
 Microsoft.FSharp.Core.Operators: Int32 Hash[T](T)
