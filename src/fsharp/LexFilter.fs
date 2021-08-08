@@ -729,7 +729,21 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
             // 'begin match' limited by minimum of two  
             // '(match' limited by minimum of two  
-            | _, (CtxtMatch _ as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _rest
+            | _, (CtxtMatch _ as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _
+                      -> if ctxt1.StartCol <= ctxt2.StartCol 
+                         then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
+                         else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol) 
+            // Insert this rule to allow
+            //     begin match 1 with
+            //     | 1 -> ()
+            //     | 2 ->
+            //       f() // <- No offside warning here
+            //     end
+            // when relaxWhitespace2
+            // Otherwise the rule of 'match ... with' limited by 'match' (given RelaxWhitespace2)
+            // will consider the CtxtMatch as the limiting context instead of allowing undentation until the parenthesis
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore11
+            | _, (CtxtMatchClauses _ as ctxt1) :: (CtxtMatch _) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _ when relaxWhitespace2
                       -> if ctxt1.StartCol <= ctxt2.StartCol 
                          then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
                          else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol) 
@@ -751,7 +765,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             | _, (CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
-            // 'try ... with' limited by 'try'  (updated rule)
+            // 'match ... with' limited by 'match' (given RelaxWhitespace2)
             | _, (CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest) when relaxWhitespace2
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
@@ -769,9 +783,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'let (ActivePattern <@'  limited by 'let' (given RelaxWhitespace2)
             // 'let (ActivePattern <@@' limited by 'let' (given RelaxWhitespace2)
             // Same for 'match', 'if', 'then', 'else', 'for', 'while', 'member', 'when', and everything: No need to specify rules like the 'then' and 'else's below over and over again
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2
             | _, CtxtParen (TokenLExprParen, _) :: rest
             // 'let x = { y =' limited by 'let'  (given RelaxWhitespace2) etc.
             // 'let x = {| y =' limited by 'let' (given RelaxWhitespace2) etc.
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2
             | _, CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest when relaxWhitespace2
                       -> undentationLimit false rest
 
@@ -1697,6 +1713,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // do ignore (
         //     1
         // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
         | _, CtxtDo offsidePos :: _
                 when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
@@ -1749,6 +1766,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //     }; static member e() = [
         //         1 // This is not offside for backcompat, don't apply relaxWhitespace2OffsideRule
         //     ]
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
         | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
@@ -1806,6 +1824,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // fun () -> async {
         //     1
         // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
                     when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtFun\n"
             popCtxt()
@@ -1813,6 +1832,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // function () -> async {
         //     1
         // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
         | _, CtxtFunction offsidePos :: _
                     when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             popCtxt()

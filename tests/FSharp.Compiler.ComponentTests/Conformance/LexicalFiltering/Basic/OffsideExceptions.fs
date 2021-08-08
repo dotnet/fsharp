@@ -18,6 +18,7 @@ module OffsideExceptions =
         |> asFsx
         |> typecheck
         |> shouldSucceed
+        |> shouldSucceed
         |> ignore
 
     [<Theory; File "RelaxWhitespace2.fs">]
@@ -176,17 +177,34 @@ type __() =
         ), 2
         |> printfn "%O"
         in let () = ignore<(unit -> int) * unit> a
+    let a' =
+        fun () -> seq {
+                    1
+        }, 2
+        |> printfn "%O"
+        in let () = ignore<(unit -> int) * unit> a'
     let b =
         fun () -> (
                     1
         ), 2
         |> printfn "%O"
         in do ignore<(unit -> int) * unit> b
+    let b' =
+        fun () -> seq {
+                    1
+        }, 2
+        |> printfn "%O"
+        in do ignore<(unit -> int) * unit> b'
     let c =
         do ignore (
                     1
         ), 2 |> printfn "%O"
         in do ignore<unit * unit> c
+    let c' =
+        do ignore seq {
+                    1
+        }, 2 |> printfn "%O"
+        in do ignore<unit * unit> c'
     member _.d() = seq {
         1
     }; static member e() = [
@@ -206,6 +224,22 @@ module [<
          >] B() = let [<
                    Experimental "c"
                    >] c = 1
+        """
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+    [<Fact>]
+    // https://github.com/dotnet/fsharp/pull/11772#issuecomment-888637013
+    let RelaxWhitespace2_AllowedBefore11() =
+        Fsx """
+let f() = ()
+
+begin match 1 with
+| 1 -> ()
+| 2 ->
+  f()
+| _ -> printfn ":)"
+end
         """
         |> typecheck
         |> shouldSucceed
