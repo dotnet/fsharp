@@ -182,7 +182,7 @@ type __() =
                     1
         }, 2
         |> printfn "%O"
-        in let () = ignore<(unit -> int) * unit> a'
+        in let () = ignore<(unit -> seq<int>) * unit> a'
     let b =
         fun () -> (
                     1
@@ -194,14 +194,14 @@ type __() =
                     1
         }, 2
         |> printfn "%O"
-        in do ignore<(unit -> int) * unit> b'
+        in do ignore<(unit -> seq<int>) * unit> b'
     let c =
         do ignore (
                     1
         ), 2 |> printfn "%O"
         in do ignore<unit * unit> c
     let c' =
-        do ignore seq {
+        do ignore <| seq {
                     1
         }, 2 |> printfn "%O"
         in do ignore<unit * unit> c'
