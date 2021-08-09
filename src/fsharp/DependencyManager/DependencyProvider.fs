@@ -117,7 +117,7 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -156,13 +156,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
             let resolveDepsExWithScriptInfoAndTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout,outputDir) :> IDependencyManagerProvider)
+            Some (fun () -> ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout,outputDir) :> IDependencyManagerProvider)
         | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int>; |] resolveDependenciesMethodName
             let resolveDepsExWithScriptInfoAndTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout, outputDir) :> IDependencyManagerProvider)
+            Some (fun () -> ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
@@ -256,7 +256,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                                     box scriptName
                                     box (packageManagerTextLines
                                          |> Seq.filter(fun (dv, _) -> dv = "r") 
-                                         |> Seq.map(fun (_, line) -> line))
+                                         |> Seq.map snd)
                                     box tfm |]
                 else
                     None, [||]

@@ -7,12 +7,9 @@ open System.IO
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open System.Globalization
 open System.Runtime.InteropServices
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open FSharp.Compiler.IO
 
 let debug = false
 
@@ -83,13 +80,13 @@ module Check =
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
     let NotNone argName (arg:'T option) : 'T =
         match arg with
-        | None -> raise (new InvalidOperationException(argName))
+        | None -> raise (InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
     let ArgumentNotNull arg argName =
         match box(arg) with
-        | null -> raise (new ArgumentNullException(argName))
+        | null -> raise (ArgumentNullException(argName))
         | _ -> ()
 
     /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
@@ -97,14 +94,14 @@ module Check =
     let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName =
         ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new ArgumentOutOfRangeException(argName))
+            raise (ArgumentOutOfRangeException(argName))
 
     /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
     let StringArgumentNotNullOrEmpty (s:string) argName =
         ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new ArgumentNullException(argName))
+            raise (ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library
@@ -424,8 +421,6 @@ type Dumper(x:obj) =
 //---------------------------------------------------------------------------
 
 module internal AsyncUtil =
-    open System
-    open System.Threading
     open Microsoft.FSharp.Control
 
     /// Represents the reified result of an asynchronous computation.
@@ -449,7 +444,7 @@ module internal AsyncUtil =
         // The continuation for the result, if any
         let mutable savedConts = []
 
-        let syncRoot = new obj()
+        let syncRoot = obj()
 
 
         // Record the result in the AsyncResultCell.
@@ -513,8 +508,6 @@ module internal AsyncUtil =
 // USAGE: call UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() from "main()".
 // Note: This is not SDL required but recommended.
 module UnmanagedProcessExecutionOptions =
-    open System
-    open System.Runtime.InteropServices
 
     [<DllImport("kernel32.dll")>]
     extern UIntPtr private GetProcessHeap()

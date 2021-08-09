@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.NameResolution
 
 open Internal.Utilities.Library
-open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import

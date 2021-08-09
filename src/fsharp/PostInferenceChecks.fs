@@ -2222,7 +2222,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         
         // precompute methods grouped by MethInfo.LogicalName
         let hashOfImmediateMeths = 
-                let h = new Dictionary<string, _>()
+                let h = Dictionary<string, _>()
                 for minfo in immediateMeths do
                     match h.TryGetValue minfo.LogicalName with
                     | true, methods -> 
@@ -2240,7 +2240,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                         yield m
             ]
 
-        let hashOfImmediateProps = new Dictionary<string, _>()
+        let hashOfImmediateProps = Dictionary<string, _>()
         for minfo in immediateMeths do
             let nm = minfo.LogicalName
             let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
@@ -2350,7 +2350,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             hashOfImmediateProps.[nm] <- pinfo :: others
             
         if not (isInterfaceTy g ty) then
-            let hashOfAllVirtualMethsInParent = new Dictionary<string, _>()
+            let hashOfAllVirtualMethsInParent = Dictionary<string, _>()
             for minfo in allVirtualMethsInParent do
                 let nm = minfo.LogicalName
                 let others = getHash hashOfAllVirtualMethsInParent nm

@@ -7,10 +7,8 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.Support
 open Internal.Utilities.Library
@@ -312,7 +310,7 @@ type SharedRow(elems: RowElement[], hashCode: int) =
         | :? SharedRow as y -> equalRows elems y.GenericRow
         | _ -> false
 
-let SharedRow(elems: RowElement[]) = new SharedRow(elems, hashRow elems)
+let SharedRow(elems: RowElement[]) = SharedRow(elems, hashRow elems)
 
 /// Special representation : Note, only hashing by name
 let AssemblyRefRow(s1, s2, s3, s4, l1, b1, nameIdx, str2, b2) =
@@ -373,8 +371,8 @@ type MetadataTable<'T> =
 #if DEBUG
           lookups=0
 #endif
-          dict = new Dictionary<_, _>(100, hashEq)
-          rows= new ResizeArray<_>() }
+          dict = Dictionary<_, _>(100, hashEq)
+          rows= ResizeArray<_>() }
 
     member tbl.EntriesAsArray =
 #if DEBUG
@@ -1489,7 +1487,7 @@ type CodeBuffer =
           reqdBrFixups=[]
           reqdStringFixupsInMethod=[]
           availBrFixups = Dictionary<_, _>(10, HashIdentity.Structural)
-          seqpoints = new ResizeArray<_>(10)
+          seqpoints = ResizeArray<_>(10)
         }
 
     member codebuf.EmitExceptionClause seh = codebuf.seh <- seh :: codebuf.seh
@@ -2919,13 +2917,13 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
 
           AssemblyRefs = MetadataTable<_>.New("ILAssemblyRef", EqualityComparer.Default)
           documents=MetadataTable<_>.New("pdbdocs", EqualityComparer.Default)
-          trefCache=new Dictionary<_, _>(100)
-          pdbinfo= new ResizeArray<_>(200)
+          trefCache=Dictionary<_, _>(100)
+          pdbinfo= ResizeArray<_>(200)
           moduleGuid= Array.zeroCreate 16
           fieldDefs= MetadataTable<_>.New("field defs", EqualityComparer.Default)
           methodDefIdxsByKey = MetadataTable<_>.New("method defs", EqualityComparer.Default)
           // This uses reference identity on ILMethodDef objects
-          methodDefIdxs = new Dictionary<_, _>(100, HashIdentity.Reference)
+          methodDefIdxs = Dictionary<_, _>(100, HashIdentity.Reference)
           propertyDefs = MetadataTable<_>.New("property defs", EqualityComparer.Default)
           eventDefs = MetadataTable<_>.New("event defs", EqualityComparer.Default)
           typeDefs = MetadataTable<_>.New("type defs", EqualityComparer.Default)
@@ -3003,7 +3001,6 @@ let count f arr =
     Array.fold (fun x y -> x + f y) 0x0 arr
 
 module FileSystemUtilities =
-    open System
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false

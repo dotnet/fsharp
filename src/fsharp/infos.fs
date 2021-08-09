@@ -6,7 +6,6 @@ open System
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
@@ -900,7 +899,7 @@ type ILMethInfo =
 
 
 /// Describes an F# use of a method
-[<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
+[<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
 [<NoComparison; NoEquality>]
 type MethInfo =
     /// Describes a use of a method declared in F# code and backed by F# metadata.

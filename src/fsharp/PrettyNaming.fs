@@ -10,10 +10,8 @@ open System.Collections.Concurrent
 open System.Globalization
 open System.Text
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open Internal.Utilities.Library
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 
@@ -116,7 +114,7 @@ let private opCharTranslateTable =
 
 /// The set of characters usable in custom operators.
 let private opCharSet =
-    let t = new HashSet<_>()
+    let t = HashSet<_>()
     for c, _ in opCharTranslateTable do
         t.Add(c) |> ignore
     t
@@ -140,7 +138,7 @@ let IsOperatorName (name: string) =
             else
                 isOperatorName name (idx + 1) endIndex
 
-    let skipParens = if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then true else false
+    let skipParens = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
     let startIndex = if skipParens then 2 else 0
     let endIndex = if skipParens then name.Length - 2 else name.Length
 
@@ -176,7 +174,7 @@ let private compileCustomOpName =
         // Has this operator already been compiled?
         compiledOperators.GetOrAdd(opp, fun (op: string) ->
             let opLength = op.Length
-            let sb = new StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+            let sb = StringBuilder(opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
             for i = 0 to opLength - 1 do
                 let c = op.[i]
                 match t2.TryGetValue c with

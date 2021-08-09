@@ -25,7 +25,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Syntax.PrettyNaming
-open FSharp.Compiler.AbstractIL
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false

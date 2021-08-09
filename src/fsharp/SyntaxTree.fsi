@@ -321,7 +321,6 @@ type RecordFieldName = LongIdentWithDots * bool
 /// 1, "3", ident, ident.[expr] and (expr). If an atomic expression has type T,
 /// then the largest expression ending at the same range as the atomic expression
 /// also has type T.
-[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
@@ -764,8 +763,12 @@ type SynExpr =
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
     | IfThenElse of
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
+        thenKeyword: range *
         thenExpr: SynExpr *
+        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *

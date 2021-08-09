@@ -3,7 +3,6 @@
 namespace rec FSharp.Compiler.Symbols
 
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
@@ -13,7 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -606,7 +604,7 @@ type FSharpStaticParameter =
     /// Indicates if the static parameter is optional
     member IsOptional: bool
 
-    [<System.ObsoleteAttribute("This member is no longer used, use IsOptional instead")>]
+    [<System.Obsolete("This member is no longer used, use IsOptional instead")>]
     member HasDefaultValue: bool
 #endif
 

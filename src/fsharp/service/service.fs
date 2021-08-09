@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -898,7 +897,7 @@ type BackgroundCompiler(
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
-                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
+                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, Lexhelp.LexResourceManager(), 
                     applyCompilerOptions, assumeDotNetFramework, 
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
@@ -1022,7 +1021,7 @@ type FSharpChecker(legacyReferenceResolver,
 
     let mutable maxMB = maxMBDefault
 
-    let maxMemEvent = new Event<unit>()
+    let maxMemEvent = Event<unit>()
 
     /// Instantiate an interactive checker.    
     static member Create(

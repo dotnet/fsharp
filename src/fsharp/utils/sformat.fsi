@@ -22,7 +22,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open System.IO
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
 
 #if COMPILER
 

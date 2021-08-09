@@ -18,7 +18,6 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-[<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType = 0
     | ValueType = 1
@@ -158,7 +157,7 @@ module TcResolutionsExtensions =
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m (typ: SemanticClassificationType) =
                     if duplicates.Add m then
-                        results.Add (new SemanticClassificationItem((m, typ)))
+                        results.Add (SemanticClassificationItem((m, typ)))
 
                 resolutions
                 |> Array.iter (fun cnr ->
@@ -166,7 +165,7 @@ module TcResolutionsExtensions =
                     | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.ComputationExpression
 
-                    | (Item.Value vref), _, _, _, _, m when isValRefMutable vref ->
+                    | Item.Value vref, _, _, _, _, m when isValRefMutable vref ->
                         add m SemanticClassificationType.MutableVar
 
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
@@ -375,7 +374,7 @@ module TcResolutionsExtensions =
 
                     | _, _, _, _, _, m ->
                         add m SemanticClassificationType.Plaintext)
-                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> new SemanticClassificationItem((m, SemanticClassificationType.Printf))))
+                results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> SemanticClassificationItem((m, SemanticClassificationType.Printf))))
                 results.ToArray()
                ) 
                (fun msg -> 

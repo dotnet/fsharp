@@ -5,7 +5,6 @@
 /// are never used.
 module internal FSharp.Compiler.Optimizer
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -21,8 +20,6 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
@@ -165,7 +162,7 @@ type ValInfos(entries) =
                 let vkey = (vref, vref.Deref.GetLinkageFullKey())
                 if dict.ContainsKey vkey then 
                     failwithf "dictionary already contains key %A" vkey
-                dict.Add(vkey, p) |> ignore
+                dict.Add(vkey, p)
             ReadOnlyDictionary dict), id)
 
     member x.Entries = valInfoTable.Force().Values
@@ -1280,7 +1277,7 @@ let IsMutableStructuralBindingForTupleElement (vref: ValRef) =
 
 let IsMutableForOutArg (vref: ValRef) =
     vref.IsCompilerGenerated &&
-    vref.LogicalName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)
+    vref.LogicalName.StartsWith(outArgCompilerGeneratedName)
 
 let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
     IsMutableStructuralBindingForTupleElement vref || 
@@ -1985,7 +1982,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | LinearMatchExpr _
     | Expr.Sequential _ 
     | Expr.Let _ ->  
-        OptimizeLinearExpr cenv env expr (fun x -> x)
+        OptimizeLinearExpr cenv env expr id
 
     | Expr.Const (c, m, ty) -> 
         OptimizeConst cenv env expr (c, m, ty)
@@ -3644,7 +3641,7 @@ and OptimizeModuleExpr cenv env x =
             // probably more costly than copying specs anyway.
             let rec elimModTy (mtyp: ModuleOrNamespaceType) =                  
                 let mty = 
-                    new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
+                    ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)), 
                                               entities= mtyp.AllEntities)
                 mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
@@ -3771,7 +3768,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=new Dictionary<Stamp, bool>() }
+          casApplied=Dictionary<Stamp, bool>() }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
 

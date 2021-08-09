@@ -3,7 +3,6 @@
 /// Compute the load closure of a set of script files
 module internal FSharp.Compiler.ScriptClosure
 
-open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig

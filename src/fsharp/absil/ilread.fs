@@ -15,7 +15,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
-open System.IO.MemoryMappedFiles
 open System.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -161,7 +160,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
 
     // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
     // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
-    let mutable weakMemory = new WeakReference<ByteMemory>(Unchecked.defaultof<_>)
+    let mutable weakMemory = WeakReference<ByteMemory>(Unchecked.defaultof<_>)
 
     member _.FileName = fileName
 
@@ -190,7 +189,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = new WeakReference<byte[]> (null)
+    let weakBytes = WeakReference<byte[]>(null)
 
     member _.FileName = fileName
 
@@ -741,7 +740,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     fun f (idx: int32) ->
         let cache =
             match !cache with
-            | null -> cache := new ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+            | null -> cache := ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
@@ -763,7 +762,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     fun f (idx :'T) ->
         let cache =
             match !cache with
-            | null -> cache := new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+            | null -> cache := ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
@@ -2588,8 +2587,8 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
               Where = seekReadModuleRef ctxt mdv scopeIdx })
 
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints =
-   let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
-   let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
+   let labelsOfRawOffsets = Dictionary<_, _>(sz/2)
+   let ilOffsetsOfLabels = Dictionary<_, _>(sz/2)
 
    let rawToLabel rawOffset =
        match labelsOfRawOffsets.TryGetValue rawOffset with
@@ -2603,7 +2602,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
        let lab = rawToLabel rawOffset
        ilOffsetsOfLabels.[lab] <- ilOffset
 
-   let ibuf = new ResizeArray<_>(sz/2)
+   let ibuf = ResizeArray<_>(sz/2)
    let curr = ref 0
    let prefixes = { al=Aligned; tl= Normalcall; vol= Nonvolatile;ro=NormalAddress;constrained=None }
    let lastb = ref 0x0
@@ -3885,14 +3884,14 @@ type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
 let ilModuleReaderCache1 =
-    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
-           (stronglyHeldReaderCacheSize,
-            keepMax=stronglyHeldReaderCacheSize, // only strong entries
-            areSimilar=(fun (x, y) -> x = y))
+    AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+       (stronglyHeldReaderCacheSize,
+        keepMax=stronglyHeldReaderCacheSize, // only strong entries
+        areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCache1Lock = Lock()
 
 // // Cache to reuse readers that have already been created and are not yet GC'd
-let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
+let ilModuleReaderCache2 = ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
 let stableFileHeuristicApplies fileName =
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false

@@ -29,11 +29,8 @@ module Tests.Service.Editor
 
 open NUnit.Framework
 open FsUnit
-open System
-open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
-open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -1183,8 +1180,8 @@ let ``GetDeclarationLocation should not require physical file`` () =
 module internal TPProject =
     open System.IO
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let base2 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """

@@ -5,7 +5,6 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
 open System.IO
-open System.Threading
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -733,7 +732,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
         { IsFSharp=true
           UsesFSharp20PlusQuotations=false
 #if !NO_EXTENSIONTYPING
-          InvalidateEvent=(new Event<_>()).Publish
+          InvalidateEvent=(Event<_>()).Publish
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif

@@ -7,7 +7,6 @@ open System.Diagnostics
 open Internal.Utilities.Library 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpSymbolPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -157,7 +156,7 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _)  -> 
                     Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
-                    Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
+                    Some (sprintf "%s [%s]" typeName (String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
                     Some (sprintf "%s^%s" typeName power)
                 | SynType.MeasureDivide(TypeIdent numerator, TypeIdent denominator, _) ->
@@ -847,7 +846,7 @@ module InterfaceStubGenerator =
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (synExpr1, synExpr2, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]

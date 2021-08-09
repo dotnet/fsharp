@@ -320,7 +320,7 @@ module Layout =
 
     let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL semicolon) layouts
 
-    let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+    let spaceListL layouts = tagListL id layouts
 
     let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
 
@@ -673,7 +673,7 @@ module Display =
         let index   (_, i)          = i
         let extract rstrs = combine(List.rev rstrs) 
         let newLine (rstrs, _) n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             let rstrs = push "\n"   rstrs
             let rstrs = push indent rstrs
             rstrs, n
@@ -718,7 +718,7 @@ module Display =
         let index i = i
         let addText z text = write text;  (z + length text)
         let newLine _ n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             chan.WriteLine();
             write (tagText indent);
             n

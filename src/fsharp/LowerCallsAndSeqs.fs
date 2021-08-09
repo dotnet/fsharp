@@ -5,7 +5,6 @@ module internal FSharp.Compiler.LowerCallsAndSeqs
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
@@ -683,7 +682,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
             // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
-                let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
+                let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
                 let dtree =
                   TDSwitch(pcExpr,
@@ -750,7 +749,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 //  goto startLabel
                 // DONE_DISPOSE:
                 let whileLoop =
-                    let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
+                    let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
                     let dtree =
                         TDSwitch(pcExpr,

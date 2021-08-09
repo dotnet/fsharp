@@ -86,8 +86,8 @@ type Table<'T> =
 
     static member Create n =
       { name = n
-        tbl = new Dictionary<_, _>(1000, HashIdentity.Structural)
-        rows= new ResizeArray<_>(1000)
+        tbl = Dictionary<_, _>(1000, HashIdentity.Structural)
+        rows= ResizeArray<_>(1000)
         count=0 }
 
 [<NoEquality; NoComparison>]
@@ -789,9 +789,9 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
       { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
-        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
-        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+        oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+        otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
+        ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), id , "ovals")
         oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
         ostrings=Table<_>.Create "ostrings"
         onlerefs=Table<_>.Create "onlerefs"
@@ -814,8 +814,8 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
    { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
      oscope=scope
      occus= Table<_>.Create "occus (fake)"
-     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
+     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), id , "otycons")
+     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), id , "otypars")
      ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
      oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
      ostrings=Table<_>.Create "ostrings (fake)"
@@ -2210,7 +2210,7 @@ and u_tcaug st =
      tcaug_equals=b2
      // only used for code generation and checking - hence don't care about the values when reading back in
      tcaug_hasObjectGetHashCode=false
-     tcaug_adhoc_list= new ResizeArray<_> (c |> List.map (fun (_, vref) -> (false, vref)))
+     tcaug_adhoc_list= ResizeArray<_>(c |> List.map (fun (_, vref) -> (false, vref)))
      tcaug_adhoc=NameMultiMap.ofList c
      tcaug_interfaces=d
      tcaug_super=e

@@ -17,7 +17,6 @@ open FSharp.Compiler
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Xml
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -164,7 +163,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
-    let diagnostics = new ResizeArray<_>()
+    let diagnostics = ResizeArray<_>()
 
     override x.DiagnosticSink(exn, severity) = 
         if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
@@ -207,7 +206,6 @@ module DiagnosticHelpers =
 
 namespace FSharp.Compiler.Symbols
 
-open System
 open System.IO
 
 open Internal.Utilities.Library  

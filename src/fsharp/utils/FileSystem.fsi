@@ -6,13 +6,8 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection
-open System.Runtime.InteropServices
 open System.Text
 open System.Runtime.CompilerServices
-
-open FSharp.NativeInterop
-
-open Internal.Utilities.Library
 
 exception IllegalFileNameChar of string * char
 

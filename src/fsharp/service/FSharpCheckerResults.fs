@@ -15,7 +15,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
@@ -39,23 +38,18 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.SymbolHelpers
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.AbstractIL
-open System.Reflection.PortableExecutable
 open FSharp.Compiler.BuildGraph
 
 open Internal.Utilities
 open Internal.Utilities.Collections
-open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
@@ -548,13 +542,14 @@ type internal TypeCheckInfo
                     not (isFunTy nenv.DisplayEnv.g ty))
             |> Seq.toArray
 
-        let thereWereSomeQuals = not (Array.isEmpty quals)
         // filter out errors
 
         let quals = quals
                     |> Array.filter (fun (ty,nenv,_,_) ->
                         let denv = nenv.DisplayEnv
                         not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
+
+        let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
     /// obtains captured typing for the given position
@@ -1567,7 +1562,7 @@ module internal ParseAndCheckFile =
     /// Error handler for parsing & type checking while processing a single file
     type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = errorSeverityOptions
-        let errorsAndWarningsCollector = new ResizeArray<_>()
+        let errorsAndWarningsCollector = ResizeArray<_>()
         let mutable errorCount = 0
 
         // We'll need number of lines for adjusting error messages at EOF
@@ -1626,7 +1621,7 @@ module internal ParseAndCheckFile =
         let defines = (SourceFileImpl.AdditionalDefinesForUseInEditor options.IsInteractive) @ options.ConditionalCompilationDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
-        let lexResourceManager = new LexResourceManager()
+        let lexResourceManager = LexResourceManager()
 
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
@@ -1656,7 +1651,7 @@ module internal ParseAndCheckFile =
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-        let matchingBraces = new ResizeArray<_>()
+        let matchingBraces = ResizeArray<_>()
         usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
@@ -1729,7 +1724,7 @@ module internal ParseAndCheckFile =
 
     let parseFile(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
+        let errHandler = ErrorHandler(true, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
@@ -1835,7 +1830,7 @@ module internal ParseAndCheckFile =
         let parsedMainInput = parseResults.ParseTree
 
         // Initialize the error handler
-        let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, sourceText, suggestNamesForErrors)
+        let errHandler = ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, sourceText, suggestNamesForErrors)
 
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
@@ -2353,7 +2348,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
-                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new LexResourceManager(),
+                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
                     tryGetMetadataSnapshot=(fun _ -> None),
                     reduceMemoryUsage=reduceMemoryUsage,

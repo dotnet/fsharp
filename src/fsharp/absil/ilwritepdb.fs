@@ -23,7 +23,7 @@ type BlobBuildingStream () =
     inherit Stream()
 
     static let chunkSize = 32 * 1024
-    let builder = new BlobBuilder(chunkSize)
+    let builder = BlobBuilder(chunkSize)
 
     override _.CanWrite = true
     override _.CanRead  = false
@@ -38,9 +38,9 @@ type BlobBuildingStream () =
 
     override _.Flush() = ()
     override _.Dispose(_disposing: bool) = ()
-    override _.Seek(_offset: int64, _origin: SeekOrigin) = raise (new NotSupportedException())
-    override _.Read(_buffer: byte array, _offset: int, _count: int) = raise (new NotSupportedException())
-    override _.SetLength(_value: int64) = raise (new NotSupportedException())
+    override _.Seek(_offset: int64, _origin: SeekOrigin) = raise (NotSupportedException())
+    override _.Read(_buffer: byte array, _offset: int, _count: int) = raise (NotSupportedException())
+    override _.SetLength(_value: int64) = raise (NotSupportedException())
     override val Position = 0L with get, set
 
 // --------------------------------------------------------------------
@@ -274,12 +274,12 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
     let metadata = MetadataBuilder()
     let serializeDocumentName (name: string) =
         let name = PathMap.apply pathMap name
-        let count s c = s |> Seq.filter(fun ch -> if c = ch then true else false) |> Seq.length
+        let count s c = s |> Seq.filter(fun ch -> c = ch) |> Seq.length
 
         let s1, s2 = '/', '\\'
         let separator = if (count name s1) >= (count name s2) then s1 else s2
 
-        let writer = new BlobBuilder()
+        let writer = BlobBuilder()
         writer.WriteByte(byte separator)
 
         for part in name.Split( [| separator |] ) do
@@ -313,7 +313,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 use stream = FileSystem.OpenFileForReadShim(file)
 
                 let length64 = stream.Length
-                if length64 > int64 Int32.MaxValue then raise (new IOException("File is too long"))
+                if length64 > int64 Int32.MaxValue then raise (IOException("File is too long"))
 
                 let builder = new BlobBuildingStream()
                 let length = int length64
@@ -321,12 +321,12 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     builder.WriteInt32 0
                     builder.TryWriteBytes(stream, length) |> ignore
                 else
-                    builder.WriteInt32 length |>ignore
+                    builder.WriteInt32 length
                     use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
-                    stream.CopyTo deflater |> ignore
+                    stream.CopyTo deflater
                 Some (builder.ToImmutableArray())
 
-        let mutable index = new Dictionary<string, DocumentHandle>(docs.Length)
+        let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
         let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
         metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
@@ -376,7 +376,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                     | None -> Array.empty
                     | Some _ -> minfo.SequencePoints
 
-            let builder = new BlobBuilder()
+            let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
 
             if sps.Length = 0 then
@@ -493,7 +493,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                 else 0
 
             let collectScopes scope =
-                let list = new List<PdbMethodScope>()
+                let list = List<PdbMethodScope>()
                 let rec toList scope parent =
                     let nested =
                         match parent with
@@ -542,7 +542,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         System.Func<IEnumerable<Blob>, BlobContentId>(convert)
 
     let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, idProvider)
-    let blobBuilder = new BlobBuilder()
+    let blobBuilder = BlobBuilder()
     let contentId= serializer.Serialize blobBuilder
     let portablePdbStream = new MemoryStream()
     blobBuilder.WriteContentTo portablePdbStream
@@ -568,6 +568,9 @@ let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId)
     pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some stream) embeddedPdb deterministic
 
 #if !FX_NO_PDB_WRITER
+
+open Microsoft.Win32
+
 //---------------------------------------------------------------------
 // PDB Writer.  The function [WritePdbInfo] abstracts the
 // imperative calls to the Symbol Writer API.
@@ -702,7 +705,7 @@ let (?) this memb (args:'Args) : 'R =
 
 // Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
 
-let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
+let monoCompilerSvc = AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
 let ctor (asmName: AssemblyName) clsName (args: obj[]) =
     let asm = Assembly.Load asmName
     let ty = asm.GetType clsName
@@ -773,7 +776,7 @@ let writeMdbInfo fmdb f info =
         | _ -> ()
 
     // Finalize - MDB requires the MVID of the generated .NET module
-    let moduleGuid = new Guid(info.ModuleID |> Array.map byte)
+    let moduleGuid = Guid(info.ModuleID |> Array.map byte)
     wr?WriteSymbolFile moduleGuid
 #endif
 

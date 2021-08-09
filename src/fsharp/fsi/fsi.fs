@@ -20,7 +20,6 @@ open System.Text
 open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.FSharpEnvironment
@@ -61,7 +60,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Tokenization
@@ -117,7 +115,7 @@ module internal Utilities =
         match declaringType |> getMember name memberType bindingFlags with
         | [||] -> declaringType.GetInterfaces() |> Array.tryPick (tryFindMember name memberType)
         | [|m|] -> Some m
-        | _ -> raise <| new AmbiguousMatchException(sprintf "Ambiguous match for member '%s'" name)
+        | _ -> raise <| AmbiguousMatchException(sprintf "Ambiguous match for member '%s'" name)
 
     let getInstanceProperty (obj:obj) (nm:string) =
         let p = (tryFindMember nm MemberTypes.Property <| obj.GetType()).Value :?> PropertyInfo
@@ -205,7 +203,7 @@ module internal Utilities =
 
 [<AutoSerializable(false)>]
 type internal FsiTimeReporter(outWriter: TextWriter) =
-    let stopwatch = new Stopwatch()
+    let stopwatch = Stopwatch()
     let ptime = Process.GetCurrentProcess()
     let numGC = GC.MaxGeneration
     member tr.TimeOp(f) =
@@ -240,7 +238,7 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () =
-    let evaluationEvent = new Event<EvaluationEventArgs> ()
+    let evaluationEvent = Event<EvaluationEventArgs>()
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: IFormatProvider
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -493,7 +491,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
 
 /// Used to make a copy of input in order to include the input when displaying the error text.
 type internal FsiStdinSyphon(errorWriter: TextWriter) =
-    let syphonText = new StringBuilder()
+    let syphonText = StringBuilder()
 
     /// Clears the syphon text
     member x.Reset () =
@@ -736,13 +734,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerMisc(),
         [   CompilerOption("help", tagNone,
-                                 OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks),None,
-                                 Some (FSIstrings.SR.fsiHelp()))
+                                 OptionHelp (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
-            CompilerOption("full-help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("full-help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
@@ -851,7 +848,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
 let internal SetCurrentUICultureForThread (lcid : int option) =
     let culture = Thread.CurrentThread.CurrentUICulture
     match lcid with
-    | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
+    | Some n -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(n)
     | None -> ()
     { new IDisposable with member x.Dispose() = Thread.CurrentThread.CurrentUICulture <- culture }
 
@@ -939,7 +936,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
     /// Peek on the standard input so that the user can type into it from a console window.
     do if fsiOptions.Interact then
          if fsiOptions.PeekAheadOnConsoleToPermitTyping then
-          (new Thread(fun () ->
+          (Thread(fun () ->
               match consoleOpt with
               | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
                   if List.isEmpty fsiOptions.SourceFiles then
@@ -1212,7 +1209,7 @@ type internal FsiDynamicCompiler
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr
                 if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
-                    colorPrintL outWriter opts responseL |> ignore
+                    colorPrintL outWriter opts responseL
 
         // Build the new incremental state.
         let istate = {istate with  optEnv    = optEnv;
@@ -1779,7 +1776,7 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
             if (interruptAllowed = InterruptCanRaiseException) then
                 killThreadRequest <- ThreadAbortRequest
                 let killerThread =
-                    new Thread(new ThreadStart(fun () ->
+                    Thread(ThreadStart(fun () ->
                         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
                         // sleep long enough to allow ControlEventHandler handler on main thread to return
                         // Also sleep to give computations a bit of time to terminate
@@ -1800,7 +1797,7 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 
         // WINDOWS TECHNIQUE: .NET has more safe points, and you can do more when a safe point.
         // Hence we actually start up the killer thread within the handler.
-        let ctrlEventHandler = new ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false )
+        let ctrlEventHandler = ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false )
         ctrlEventHandlers <- ctrlEventHandler :: ctrlEventHandlers
         ctrlEventActions  <- raiseCtrlC       :: ctrlEventActions
         exitViaKillThread <- false // don't exit via kill thread
@@ -1973,7 +1970,7 @@ module internal MagicAssemblyResolution =
 
         let rangeStdin = rangeN stdinMockFilename 0
 
-        let resolveAssembly = new ResolveEventHandler(fun _ args ->
+        let resolveAssembly = ResolveEventHandler(fun _ args ->
             // Explanation: our understanding is that magic assembly resolution happens
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
@@ -2589,7 +2586,7 @@ type internal FsiInteractionProcessor
       if progress then fprintfn fsiConsoleOutput.Out "creating stdinReaderThread";
 
       let stdinReaderThread =
-        new Thread(new ThreadStart(fun () ->
+        Thread(ThreadStart(fun () ->
             InstallErrorLoggingOnThisThread errorLogger // FSI error logging on stdinReaderThread, e.g. parse errors.
             use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
             try
@@ -2664,8 +2661,8 @@ type internal FsiInteractionProcessor
 
         let tcState = istate.tcState
         let amap = istate.tcImports.GetImportMap()
-        let infoReader = new InfoReader(istate.tcGlobals,amap)
-        let ncenv = new NameResolver(istate.tcGlobals,amap,infoReader,FakeInstantiationGenerator)
+        let infoReader = InfoReader(istate.tcGlobals,amap)
+        let ncenv = NameResolver(istate.tcGlobals,amap,infoReader,FakeInstantiationGenerator)
         let ad = tcState.TcEnvFromImpls.AccessRights
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
@@ -2686,7 +2683,7 @@ type internal FsiInteractionProcessor
 //----------------------------------------------------------------------------
 
 let internal SpawnThread name f =
-    let th = new Thread(new ThreadStart(f),Name=name)
+    let th = Thread(ThreadStart(f),Name=name)
     th.IsBackground <- true;
     th.Start()
 
@@ -2806,7 +2803,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
 #endif
 
-    let fsiStdinSyphon = new FsiStdinSyphon(errorWriter)
+    let fsiStdinSyphon = FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
 
     let errorLogger = ErrorLoggerThatStopsOnFirstError(tcConfigB, fsiStdinSyphon, fsiConsoleOutput)
@@ -2834,7 +2831,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     do
       match tcConfigB.preferredUiLang with
-      | Some s -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(s)
+      | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
       | None -> ()
 
     do
@@ -2880,7 +2877,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let niceNameGen = NiceNameGenerator()
 
     // Share intern'd strings across all lexing/parsing
-    let lexResourceManager = new LexResourceManager()
+    let lexResourceManager = LexResourceManager()
 
     /// The lock stops the type checker running at the same time as the server intellisense implementation.
     let tcLockObject = box 7 // any new object will do
@@ -3331,7 +3328,7 @@ type CompilerInputStream() =
     let pauseDuration = 100
 
     // Queue of characters waiting to be read.
-    let readQueue = new Queue<byte>()
+    let readQueue = Queue<byte>()
 
     let  waitForAtLeastOneByte(count : int) =
         let rec loop() =
@@ -3381,7 +3378,7 @@ type CompilerInputStream() =
 type CompilerOutputStream()  =
     inherit Stream()
     // Queue of characters waiting to be read.
-    let contentQueue = new Queue<byte>()
+    let contentQueue = Queue<byte>()
     let nyi() = raise (NotSupportedException())
 
     override x.CanRead = false

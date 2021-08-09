@@ -3,8 +3,6 @@
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal FSharp.Compiler.Features
 
-open System
-
 //------------------------------------------------------------------------------------------------------------------
 // Language version command line switch
 //------------------------------------------------------------------------------------------------------------------
