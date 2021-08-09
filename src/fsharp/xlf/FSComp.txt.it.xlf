@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
-        <target state="new">resumable state machines</target>
+        <target state="translated">macchine a stati ripristinabili</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
