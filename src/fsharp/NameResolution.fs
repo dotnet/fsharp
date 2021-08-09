@@ -1870,7 +1870,7 @@ type TcResolutions
 
 [<Struct>]
 type TcSymbolUseData =
-   { Item: Item
+   { ItemWithInst: ItemWithInst
      ItemOccurence: ItemOccurence
      DisplayEnv: DisplayEnv
      Range: range }
@@ -1885,7 +1885,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     // Make sure we only capture the information we really need to report symbol uses
     let allUsesOfSymbols =
         capturedNameResolutions
-        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
+        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { ItemWithInst=cnr.ItemWithInst; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
 
     let capturedNameResolutions = ()
     do capturedNameResolutions // don't capture this!
@@ -1896,7 +1896,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
         // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
-                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
+                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
                     yield symbolUse |]
 
     member this.AllUsesOfSymbols = allUsesOfSymbols

@@ -120,6 +120,7 @@ type public FSharpSymbolUse =
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
+    member Instantiation: (FSharpGenericParameter * FSharpType) list 
 
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
     /// and other methods to format items in a way that is suitable for a specific source code location.
@@ -156,7 +157,7 @@ type public FSharpSymbolUse =
     member IsPrivateToFile: bool 
 
     // For internal use only
-    internal new: denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new: denv: DisplayEnv * symbol:FSharpSymbol * inst: TyparInst * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
