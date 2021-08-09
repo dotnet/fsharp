@@ -4,7 +4,11 @@
     <MicrosoftFSharpShimHelpersPropsIncluded>true</MicrosoftFSharpShimHelpersPropsIncluded>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(FSharpTryUseLegacyCompiler)' != 'true'">
+  <!--
+    If the Directory.Build.props file in the project directory specifies 'FSharpUseNETSdkCompiler' then Visual Studio / msbuild.exe will use the NETSDK compiler.
+    Otherwise stick with desktop compiler.
+  -->
+  <PropertyGroup Condition="'$(FSharpUseNETSdkCompiler)' == 'true'">
 
     <!-- We are in the msbuild/VS build path only, we want to forward to the installed net sdk always -->
     <FSharpCompilerPath Condition="'$(FSharpCompilerPath)' == ''">$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</FSharpCompilerPath>
