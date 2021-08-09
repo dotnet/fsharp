@@ -32,7 +32,7 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = FSharp.Test.Utilities.getTestsDirectory __SOURCE_DIRECTORY__ dir
+let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
@@ -83,7 +83,13 @@ module CoreTests =
     [<Test>]
     let ``auto-widen-version-preview-warns-on``() = 
         let cfg = testConfig "core/auto-widen/preview"
-        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3386 --warnaserror+ --define:NEGATIVE" }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3388 --warnon:3389 --warnon:3390 --warnaserror+ --define:NEGATIVE" }
+        singleVersionedNegTest cfg "preview" "test"
+
+    [<Test>]
+    let ``auto-widen-version-preview-default-warns``() = 
+        let cfg = testConfig "core/auto-widen/preview-default-warns"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnaserror+ --define:NEGATIVE" }
         singleVersionedNegTest cfg "preview" "test"
 
     [<Test>]
@@ -1000,8 +1006,8 @@ module CoreTests =
 
         let fsc_flags_errors_ok = ""
 
-        let rawFileOut = Path.GetTempFileName()
-        let rawFileErr = Path.GetTempFileName()
+        let rawFileOut = tryCreateTemporaryFileName ()
+        let rawFileErr = tryCreateTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.

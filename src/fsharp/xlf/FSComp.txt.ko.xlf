@@ -502,14 +502,19 @@
         <target state="translated">Byref 형식은 개방형 형식 선언에서 허용되지 않습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcImplicitConversionUsed">
-        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
-        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+      <trans-unit id="tcBuiltInImplicitConversionUsed">
+        <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcImplicitConversionUsed2">
-        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+      <trans-unit id="tcImplicitConversionUsedForMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -590,6 +595,11 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">다시 시작 가능한 코드 또는 다시 시작 가능한 상태 시스템을 사용하려면 /langversion:preview가 필요합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSubsumptionImplicitConversionUsed">
+        <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
