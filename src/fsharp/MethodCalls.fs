@@ -402,7 +402,7 @@ type CalledMeth<'T>
                     allowParamArgs && 
                     nUnnamedCallerArgs >= 1 && 
                     nUnnamedCalledArgs >= 1 && 
-                    nUnnamedCallerArgs >= nUnnamedCalledArgs &&
+                    nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
                         if isIndexerSetter then
                             unnamedCalledArgs.[nUnnamedCalledArgs-2]
@@ -410,7 +410,7 @@ type CalledMeth<'T>
                             unnamedCalledArgs.[nUnnamedCalledArgs-1]
                     possibleParamArg.IsParamArray && isArray1DTy g possibleParamArg.CalledArgumentType
 
-                if supportsParamArgs && nUnnamedCallerArgs >= nUnnamedCalledArgs-1 then
+                if supportsParamArgs then
                     if isIndexerSetter then
                         // Note, for an indexer setter nUnnamedCalledArgs will be at least two, and normally exactly 2
                         let unnamedCalledArgs2 =
