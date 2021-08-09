@@ -32,14 +32,6 @@ Build from the command line:
 
 After it's finished, open `FSharp.sln` in your editor of choice.
 
-### Visual Studio Online quickstart
-
-If you'd like to use Visual Studio online (or VSCode with VSO as backend), just click this button to create a new online environment:
-
-<a href="https://online.visualstudio.com/environments/new?name=my-fsharp&repo=dotnet/fsharp"><img src="https://img.shields.io/static/v1?style=flat-square&logo=microsoft&label=VS%20Online&message=Create&color=blue" alt="VS Online"></a>
-
-This will provision an environment with all necessary dependencies. Initial build of the environment may take up to 10 minutes, as it's also performing initial build of the F# compiler.
-
 ### Documentation for contributors
 
 See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building the codebase. In practice, you only really need to run `build.cmd`/`build.sh`.

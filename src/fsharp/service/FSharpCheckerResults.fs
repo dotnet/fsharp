@@ -542,13 +542,14 @@ type internal TypeCheckInfo
                     not (isFunTy nenv.DisplayEnv.g ty))
             |> Seq.toArray
 
-        let thereWereSomeQuals = not (Array.isEmpty quals)
         // filter out errors
 
         let quals = quals
                     |> Array.filter (fun (ty,nenv,_,_) ->
                         let denv = nenv.DisplayEnv
                         not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
+
+        let thereWereSomeQuals = not (Array.isEmpty quals)
         thereWereSomeQuals, quals
 
     /// obtains captured typing for the given position
