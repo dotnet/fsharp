@@ -2133,6 +2133,8 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpSymb
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpSymbol get_Symbol()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]] Instantiation
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]] get_Instantiation()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: System.String get_FileName()
