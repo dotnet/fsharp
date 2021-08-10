@@ -400,7 +400,6 @@ type CalledMeth<'T>
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 let supportsParamArgs = 
                     allowParamArgs && 
-                    nUnnamedCallerArgs >= 1 && 
                     nUnnamedCalledArgs >= 1 && 
                     nUnnamedCallerArgs >= nUnnamedCalledArgs-1 &&
                     let possibleParamArg =
