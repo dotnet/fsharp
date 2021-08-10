@@ -60,12 +60,6 @@ module CoreTests =
 
     [<Test>]
     let ``array-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/array" FSC_BASIC_OPT_MINUS
-<<<<<<< HEAD
-
-    [<Test>]
-    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
-=======
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
 
     [<Test>]
     let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC

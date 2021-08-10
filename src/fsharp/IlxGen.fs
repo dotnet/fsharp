@@ -5103,11 +5103,7 @@ and GenGenericArgs m (tyenv: TypeReprEnv) tps =
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
     let g = cenv.g
-<<<<<<< HEAD
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m true true thisVars eenv expr
-=======
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc true thisVars eenv expr
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject true true thisVars eenv expr
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure cloinfo.cloArityInfo))
     // Now generate the actual closure implementation w.r.t. eenvinner
@@ -5134,13 +5130,8 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
 
 and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m expr =
     let g = cenv.g
-<<<<<<< HEAD
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m false true thisVars eenv expr
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject false true thisVars eenv expr
     let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
-=======
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc true thisVars eenv expr
-    let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure cloinfo.cloArityInfo))
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
     let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
@@ -5254,24 +5245,14 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
             | Env (_, _, Some (moreFtyvs, _)) 
             | Local (_, _, Some (moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
             | _ -> ftyvs)
-<<<<<<< HEAD
 
     let cloFreeTypars = cloFreeTyvars.FreeTypars |> Zset.elements
-=======
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
-
-    let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
     let eenvinner = eenvouter |> EnvForTypars cloFreeTypars
 
     let ilCloTyInner =
-<<<<<<< HEAD
         let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTypars
-        mkILFormalBoxedTy ilCloTypeRef ilCloGenericParams
-=======
-        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
-        mkILFormalNamedTy boxity ilCloTypeRef ilCloGenericParams
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
+        mkILFormalBoxedTy boxity ilCloTypeRef ilCloGenericParams
 
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
     // The latter doesn't apply for the delegate implementation of closures.
@@ -5319,12 +5300,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-<<<<<<< HEAD
-    (cloAttribs, cloFreeTypars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
-=======
-    (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
-
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
+    (cloFreeTypars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
@@ -7127,23 +7103,14 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
         if isUnitTy g ty && not v.IsMutable then Null, eenv
         else
             match repr with
-<<<<<<< HEAD
             | Some repr when IsNamedLocalTypeFuncVal g v repr ->
                 let ftyvs = (freeInExpr CollectTypars repr).FreeTyvars
-=======
-            | Some r when IsNamedLocalTypeFuncVal g v r ->
-                let ftyvs = (freeInExpr CollectTypars r).FreeTyvars
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
                 // known, named, non-escaping type functions
                 let cloinfoGenerate eenv =
                     let eenvinner =
                         {eenv with
                              letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
-<<<<<<< HEAD
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true true [] eenvinner repr
-=======
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvinner r
->>>>>>> 3b0e1b7aec8ed028d208a185b97833fefec77f44
+                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvinner repr
                     cloinfo
 
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, g.ilg.typ_Object, false) scopeMarks
