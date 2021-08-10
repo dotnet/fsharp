@@ -356,7 +356,3 @@ namespace Microsoft.FSharp.Collections
         /// <summary>The keys in the map.</summary>
         [<CompiledName("Keys")>]
         val keys: table: Map<'Key, 'T> -> ICollection<'Key>
-
-        /// <summary>All the values in the map, including duplicates.</summary>
-        [<CompiledName("Values")>]
-        val values: table: Map<'Key, 'T> -> ICollection<'T>

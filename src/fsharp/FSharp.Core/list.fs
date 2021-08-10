@@ -744,31 +744,6 @@ namespace Microsoft.FSharp.Collections
             if curr.IsEmpty then invalidArg "index" "index must be within bounds of the list"
             else coll.AddManyAndClose(curr.Tail)
     
-        [<CompiledName("UpdateManyAt")>]
-        let updateManyAt (index: int) (values: seq< 'T>) (source: 'T list) : 'T list =
-            if index < 0 then invalidArg "index" "index must be within bounds of the list"
-
-            let mutable i = 0
-            let mutable coll = ListCollector()
-            let mutable curr = source
-            while i < index do // traverse and save the linked list until index
-                  match curr with
-                  | [] -> invalidArg "index" "index must be within bounds of the list" 
-                  | h::t ->
-                      coll.Add(h) // keep items before index
-                      curr <- t
-                  i <- i + 1
-                  
-            for value in values do
-                  match curr with
-                  | [] -> invalidArg "index" "index must be within bounds of the list" 
-                  | _::t ->
-                      coll.Add(value) // add new value instead of item
-                      curr <- t
-                  i <- i + 1
-
-            coll.AddManyAndClose(curr) 
-    
         [<CompiledName("InsertAt")>]
         let insertAt (index: int) (value: 'T) (source: 'T list) : 'T list =
             if index < 0 then invalidArg "index" "index must be within bounds of the list"

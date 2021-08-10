@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Collections
 
 open System
 open System.Collections.Generic
+open System.Collections
 open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Text
@@ -723,8 +724,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
         member _.GetEnumerator() = MapTree.mkIEnumerator tree
 
-    interface System.Collections.IEnumerable with
-        member _.GetEnumerator() = (MapTree.mkIEnumerator tree :> System.Collections.IEnumerator)
+    interface IEnumerable with
+        member _.GetEnumerator() = (MapTree.mkIEnumerator tree :> IEnumerator)
 
     interface IDictionary<'Key, 'Value> with 
         member m.Item 
@@ -849,9 +850,9 @@ and KeyCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>
         member _.GetEnumerator() =
             (seq { for item in parent do item.Key}).GetEnumerator()
             
-    interface Collections.IEnumerable with
+    interface IEnumerable with
         member _.GetEnumerator() = 
-            (seq { for item in parent do item.Key}).GetEnumerator() :> Collections.IEnumerator
+            (seq { for item in parent do item.Key}).GetEnumerator() :> IEnumerator
     
 and ValueCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Value>) =
     interface ICollection<'Value> with
@@ -881,9 +882,9 @@ and ValueCollection<'Key, 'Value when 'Key : comparison>(parent: Map<'Key, 'Valu
         member _.GetEnumerator() =
             (seq { for item in parent do item.Value}).GetEnumerator()
             
-    interface Collections.IEnumerable with
+    interface IEnumerable with
         member _.GetEnumerator() = 
-            (seq { for item in parent do item.Value }).GetEnumerator() :> Collections.IEnumerator
+            (seq { for item in parent do item.Value }).GetEnumerator() :> IEnumerator
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
@@ -1002,6 +1003,3 @@ module Map =
 
     [<CompiledName("Keys")>]
     let keys (table: Map<_, _>) = table.Keys
-
-    [<CompiledName("Values")>]
-    let values (table: Map<_, _>) = table.Values

@@ -1132,18 +1132,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("UpdateAt")>]
         val updateAt: index: int -> value: 'T -> source: 'T list -> 'T list
     
-        /// <summary>Return a new list with the items starting at a given index set to the new values.</summary>
-        ///
-        /// <param name="index">The index of the first item to be replaced.</param>
-        /// <param name="values">The values to replace the current items with.</param>
-        /// <param name="source">The input list.</param>
-        ///
-        /// <returns>The result list.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length - count of values.</exception>
-        [<CompiledName("UpdateManyAt")>]
-        val updateManyAt: index: int -> values:seq< 'T> -> source: 'T list -> 'T list
-    
         /// <summary>Return a new list with a new item inserted before the given index.</summary>
         ///
         /// <param name="index">The index where the item should be inserted.</param>

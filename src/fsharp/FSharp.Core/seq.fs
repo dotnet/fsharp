@@ -1526,27 +1526,6 @@ namespace Microsoft.FSharp.Collections
                 if i <= index then invalidArg "index" "index must be within bounds of the array"
             }
     
-        [<CompiledName("UpdateManyAt")>]
-        let updateManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
-            if index < 0 then invalidArg "index" "index must be within bounds of the array"
-            seq {
-                let mutable i = 0
-                use sourceEnumerator = source.GetEnumerator()
-                use valuesEnumerator = values.GetEnumerator()
-                
-                while i < index do // advance till index
-                    if not (sourceEnumerator.MoveNext()) then invalidArg "index" "index must be within bounds of the array"
-                    yield sourceEnumerator.Current
-                    i <- i + 1
-                    
-                while valuesEnumerator.MoveNext() do // then advance both at the same time but yield values
-                    if not (sourceEnumerator.MoveNext()) then invalidArg "index" "index must be within bounds of the array"
-                    yield valuesEnumerator.Current
-                    
-                while sourceEnumerator.MoveNext() do // yield the rest of source if any
-                    yield sourceEnumerator.Current
-            }
-    
         [<CompiledName("InsertAt")>]
         let insertAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
             if index < 0 then invalidArg "index" "index must be within bounds of the array"

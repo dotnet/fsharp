@@ -1277,8 +1277,10 @@ namespace Microsoft.FSharp.Collections
             
             let length = source.Length - 1
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
-            Array.Copy(source, result, index)
-            Array.Copy(source, index + 1, result, index, length - index)
+            if index > 0 then 
+                Array.Copy(source, result, index)
+            if length - index > 0 then
+                Array.Copy(source, index + 1, result, index, length - index)
         
             result
         
@@ -1290,8 +1292,10 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length - count
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            Array.Copy(source, result, index)
-            Array.Copy(source, index + count, result, index, length - index)
+            if index > 0 then
+                Array.Copy(source, result, index)
+            if length - index > 0 then
+                Array.Copy(source, index + count, result, index, length - index)
             
             result
         
@@ -1303,25 +1307,9 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            Array.Copy(source, result, length)
+            if length > 0 then
+                Array.Copy(source, result, length)
             result.[index] <- value
-            
-            result
-        
-        [<CompiledName("UpdateManyAt")>]
-        let updateManyAt (index: int) (values: seq< 'T>) (source: 'T[]) : 'T[] = 
-            checkNonNull "source" source
-            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
-            
-            let length = source.Length
-            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
-            let mutable count = 0
-            
-            Array.Copy(source, result, index)
-            for value in values do
-                result.[index + count] <- value
-                count <- count + 1
-            Array.Copy(source, index + count, result, index + count, length - index - count)
             
             result
         
@@ -1333,9 +1321,14 @@ namespace Microsoft.FSharp.Collections
             let length = source.Length + 1
             let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
 
-            Array.Copy(source, result, index)
+            if index > 0 then
+                Array.Copy(source, result, index)
+            
             result.[index] <- value
-            Array.Copy(source, index, result, index + 1, source.Length - index)
+            
+            if source.Length - index > 0 then
+                Array.Copy(source, index, result, index + 1, source.Length - index)
+            
             result
         
         [<CompiledName("InsertManyAt")>]
@@ -1344,13 +1337,20 @@ namespace Microsoft.FSharp.Collections
             if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
             
             let valuesArray = Seq.toArray values
-            let length = source.Length + valuesArray.Length
-            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
-            
-            Array.Copy(source, result, index)
-            Array.Copy(valuesArray, 0, result, index, valuesArray.Length)
-            Array.Copy(source, index, result, index + valuesArray.Length, source.Length - index)
-            result
+            if valuesArray.Length = 0 then source
+            else
+                let length = source.Length + valuesArray.Length
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                
+                if index > 0 then
+                    Array.Copy(source, result, index)
+                    
+                Array.Copy(valuesArray, 0, result, index, valuesArray.Length)
+                
+                if source.Length - index > 0 then
+                    Array.Copy(source, index, result, index + valuesArray.Length, source.Length - index)
+                
+                result
 
         module Parallel =
             open System.Threading.Tasks

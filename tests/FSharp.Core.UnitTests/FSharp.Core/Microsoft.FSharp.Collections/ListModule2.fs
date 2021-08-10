@@ -1173,23 +1173,6 @@ type ListModule02() =
         CheckThrowsArgumentException (fun () -> List.updateAt 0 0 [] |> ignore)
         CheckThrowsArgumentException (fun () -> List.updateAt -1 0 [1] |> ignore)
         CheckThrowsArgumentException (fun () -> List.updateAt 2 0 [1] |> ignore)
-    
-    [<Fact>]
-    member this.UpdateManyAt() =
-        // integer list
-        Assert.AreEqual([0; 0; 3; 4; 5], (List.updateManyAt 0 [0; 0] [1..5]))
-        Assert.AreEqual([1; 2; 0; 0; 5], (List.updateManyAt 2 [0; 0] [1..5]))
-        Assert.AreEqual([1; 2; 3; 0; 0], (List.updateManyAt 3 [0; 0] [1..5]))
-        
-        //string list
-        Assert.AreEqual(["0"; "0"; "3"; "4"; "5"], (List.updateManyAt 0 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"]))
-        Assert.AreEqual(["1"; "2"; "0"; "0"; "5"], (List.updateManyAt 2 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"]))
-        Assert.AreEqual(["1"; "2"; "3"; "0"; "0"], (List.updateManyAt 3 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"]))
-        
-        // empty list & out of bounds
-        CheckThrowsArgumentException (fun () -> List.updateManyAt 0 [0; 0] [] |> ignore)
-        CheckThrowsArgumentException (fun () -> List.updateManyAt -1 [0; 0] [1] |> ignore)
-        CheckThrowsArgumentException (fun () -> List.updateManyAt 2 [0; 0] [1] |> ignore)
         
     [<Fact>]
     member this.InsertAt() =

@@ -2036,23 +2036,6 @@ type SeqModule2() =
         CheckThrowsArgumentException (fun () -> Seq.updateAt 0 0 [] |> Seq.toList |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.updateAt -1 0 [1] |> Seq.toList |> ignore)
         CheckThrowsArgumentException (fun () -> Seq.updateAt 2 0 [1] |> Seq.toList |> ignore)
-    
-    [<Fact>]
-    member this.UpdateManyAt() =
-        // integer list
-        Assert.AreEqual([0; 0; 3; 4; 5], (Seq.updateManyAt 0 [0; 0] [1..5] |> Seq.toList))
-        Assert.AreEqual([1; 2; 0; 0; 5], (Seq.updateManyAt 2 [0; 0] [1..5] |> Seq.toList))
-        Assert.AreEqual([1; 2; 3; 0; 0], (Seq.updateManyAt 3 [0; 0] [1..5] |> Seq.toList))
-        
-        //string list
-        Assert.AreEqual(["0"; "0"; "3"; "4"; "5"], (Seq.updateManyAt 0 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
-        Assert.AreEqual(["1"; "2"; "0"; "0"; "5"], (Seq.updateManyAt 2 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
-        Assert.AreEqual(["1"; "2"; "3"; "0"; "0"], (Seq.updateManyAt 3 ["0"; "0"] ["1"; "2"; "3"; "4"; "5"] |> Seq.toList))
-        
-        // empty list & out of bounds
-        CheckThrowsArgumentException (fun () -> List.updateManyAt 0 [0; 0] [] |> Seq.toList |> ignore)
-        CheckThrowsArgumentException (fun () -> List.updateManyAt -1 [0; 0] [1] |> Seq.toList |> ignore)
-        CheckThrowsArgumentException (fun () -> List.updateManyAt 2 [0; 0] [1] |> Seq.toList |> ignore)
         
     [<Fact>]
     member this.InsertAt() =
