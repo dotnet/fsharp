@@ -5246,12 +5246,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
             | Local (_, _, Some (moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
             | _ -> ftyvs)
 
-    let cloFreeTypars = cloFreeTyvars.FreeTypars |> Zset.elements
+    let cloFreeTyvars = cloFreeTyvars.FreeTypars |> Zset.elements
 
-    let eenvinner = eenvouter |> EnvForTypars cloFreeTypars
+    let eenvinner = eenvouter |> EnvForTypars cloFreeTyvars
 
     let ilCloTyInner =
-        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTypars
+        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
         mkILFormalNamedTy boxity ilCloTypeRef ilCloGenericParams
 
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
@@ -5264,7 +5264,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
         let generateWitnesses = ComputeGenerateWitnesses g eenvinner
         if generateWitnesses then
             // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTypars
+            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
         else
             []
 
@@ -5300,7 +5300,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloFreeTypars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 and GetIlxClosureInfo cenv m boxity isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
