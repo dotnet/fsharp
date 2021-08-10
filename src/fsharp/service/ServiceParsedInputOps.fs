@@ -7,7 +7,6 @@ open System.IO
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open Internal.Utilities.Library  
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -223,10 +222,10 @@ module ParsedInput =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some (synExpr.Range)
+                        Some synExpr.Range
                     else
                         // see comment below for SynExpr.DotSet
-                        Some ((unionRanges synExpr.Range r))
+                        Some (unionRanges synExpr.Range r)
             | SynExpr.Set (synExpr, synExpr2, range) ->
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -242,14 +241,14 @@ module ParsedInput =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some (synExpr.Range)
+                        Some synExpr.Range
                     else
                         // f(0).X.Y.Z
                         //       ^
                         //      -   r has this value
                         // ----     synExpr.Range has this value
                         // ------   we want this value
-                        Some ((unionRanges synExpr.Range r))
+                        Some (unionRanges synExpr.Range r)
             | SynExpr.DotNamedIndexedPropertySet (synExpr, LongIdentWithDots(longIdent, _), synExpr2, synExpr3, _range) ->  
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
@@ -260,29 +259,29 @@ module ParsedInput =
                 else
                     let inFront, r = CheckLongIdent longIdent
                     if inFront then
-                        Some (synExpr.Range)
+                        Some synExpr.Range
                     else
-                        Some ((unionRanges synExpr.Range r))
+                        Some (unionRanges synExpr.Range r)
             | SynExpr.DiscardAfterMissingQualificationAfterDot (synExpr, _range) ->  // get this for e.g. "bar()."
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
-                    Some (synExpr.Range) 
+                    Some synExpr.Range 
             | SynExpr.FromParseError (synExpr, range) -> 
                 if SyntaxTraversal.rangeContainsPosLeftEdgeInclusive synExpr.Range pos then
                     traverseSynExpr synExpr
                 else
                     Some range 
-            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), rhs, _) 
+            | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, rhs, _) 
                 when ident.idText = "op_ArrayLookup" 
                      && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive rhs.Range pos) ->
                 match defaultTraverse expr with
                 | None ->
                     // (expr).(expr) is an ML-deprecated array lookup, but we want intellisense on the dot
                     // also want it for e.g. [|arr|].(0)
-                    Some (expr.Range) 
+                    Some expr.Range 
                 | x -> x  // we found the answer deeper somewhere in the lhs
-            | SynExpr.Const (SynConst.Double(_), range) -> Some range 
+            | SynExpr.Const (SynConst.Double _, range) -> Some range 
             | _ -> defaultTraverse expr
         })
     
@@ -322,7 +321,7 @@ module ParsedInput =
                     member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                         if rangeContainsPos expr.Range pos then
                             match TryGetExpression false expr with
-                            | (Some parts) -> parts |> String.concat "." |> Some
+                            | Some parts -> parts |> String.concat "." |> Some
                             | _ -> defaultTraverse expr
                         else
                             None }
@@ -405,7 +404,7 @@ module ParsedInput =
                               dive exprIndexer exprIndexer.Range traverseSynExpr
                               dive exprRhs exprRhs.Range traverseSynExpr
                             ] |> pick expr
-                        | SynExpr.Const (SynConst.Double(_), m) ->
+                        | SynExpr.Const (SynConst.Double _, m) ->
                             if posEq m.End pos then
                                 // the cursor is at the dot
                                 Some (m.End, false)
@@ -422,7 +421,7 @@ module ParsedInput =
                                     // the cursor is left of the dot
                                     None
                             | r -> r
-                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, (SynExpr.Ident ident), lhs, _m) 
+                        | SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident ident, lhs, _m) 
                             when ident.idText = "op_ArrayLookup" 
                                  && not(SyntaxTraversal.rangeContainsPosLeftEdgeInclusive lhs.Range pos) ->
                             match defaultTraverse expr with
@@ -539,7 +538,7 @@ module ParsedInput =
             | SynType.Paren(t, _) -> walkType t
             | _ -> None
 
-        and walkClause (SynMatchClause(pat, e1, e2, _, _)) =
+        and walkClause (SynMatchClause(pat, e1, _, e2, _, _)) =
             walkPatWithKind (Some EntityKind.Type) pat 
             |> Option.orElse (walkExpr e2)
             |> Option.orElse (Option.bind walkExpr e1)
@@ -573,7 +572,7 @@ module ParsedInput =
             | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListOfSeqExpr (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.CompExpr (_, _, e, _) -> walkExprWithKind parentKind e
-            | SynExpr.Lambda (_, _, _, e, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
             | SynExpr.Match (_, e, synMatchClauseList, _) -> 
@@ -588,7 +587,7 @@ module ParsedInput =
             | SynExpr.TryFinally (e1, e2, _, _, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.Lazy (e, _) -> walkExprWithKind parentKind e
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
-            | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) -> 
+            | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3, _, _, _, _) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElse (match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
@@ -614,7 +613,7 @@ module ParsedInput =
             | SynExpr.LetOrUseBang(_, _, _, _, e1, es, e2, _) ->
                 [
                     yield e1
-                    for (_,_,_,_,eAndBang,_) in es do
+                    for _,_,_,_,eAndBang,_ in es do
                         yield eAndBang
                     yield e2
                 ]
@@ -695,12 +694,12 @@ module ParsedInput =
         and walkTypeDefnRepr = function
             | SynTypeDefnRepr.ObjectModel (_, defns, _) -> List.tryPick walkMember defns
             | SynTypeDefnRepr.Simple(defn, _) -> walkTypeDefnSimple defn
-            | SynTypeDefnRepr.Exception(_) -> None
+            | SynTypeDefnRepr.Exception _ -> None
 
         and walkTypeDefnSigRepr = function
             | SynTypeDefnSigRepr.ObjectModel (_, defns, _) -> List.tryPick walkMemberSig defns
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
-            | SynTypeDefnSigRepr.Exception(_) -> None
+            | SynTypeDefnSigRepr.Exception _ -> None
 
         and walkTypeDefn (SynTypeDefn (info, repr, members, _, _)) =
             walkComponentInfo false info
@@ -751,11 +750,11 @@ module ParsedInput =
                         match ds with
                         | [] -> 
                             // pos lies after the id and no dots found - return accumulated plid and current id as residue 
-                            Some (plid, Some (x.idText))
+                            Some (plid, Some x.idText)
                         | d :: ds ->
                             if posGeq pos d.End  then 
                                 // pos lies after the dot - proceed to the next identifier
-                                collect ((x.idText) :: plid) xs ds
+                                collect (x.idText :: plid) xs ds
                             else
                                 // pos after the id but before the dot
                                 // A $.B - return nothing
@@ -775,10 +774,10 @@ module ParsedInput =
             let rec getKind isClass isInterface isStruct = 
                 function
                 | [] -> isClass, isInterface, isStruct
-                | (SynAttr "Class") :: xs -> getKind true isInterface isStruct xs
-                | (SynAttr "AbstractClass") :: xs -> getKind true isInterface isStruct xs
-                | (SynAttr "Interface") :: xs -> getKind isClass true isStruct xs
-                | (SynAttr "Struct") :: xs -> getKind isClass isInterface true xs
+                | SynAttr "Class" :: xs -> getKind true isInterface isStruct xs
+                | SynAttr "AbstractClass" :: xs -> getKind true isInterface isStruct xs
+                | SynAttr "Interface" :: xs -> getKind isClass true isStruct xs
+                | SynAttr "Struct" :: xs -> getKind isClass isInterface true xs
                 | _ :: xs -> getKind isClass isInterface isStruct xs
 
             match getKind false false false synAttributes with
@@ -788,7 +787,7 @@ module ParsedInput =
             | false, false, true -> Struct
             | _ -> Invalid
 
-        let GetCompletionContextForInheritSynMember ((SynComponentInfo(Attributes synAttributes, _, _, _, _, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
+        let GetCompletionContextForInheritSynMember (SynComponentInfo(Attributes synAttributes, _, _, _, _, _, _, _), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
             let success k = Some (CompletionContext.Inherit (k, completionPath))
 
@@ -864,22 +863,22 @@ module ParsedInput =
 
         let (|NewObjectOrMethodCall|_|) e =
             match e with
-            | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
+            | SynExpr.New (_, SynType.LongIdent typeName, arg, _) -> 
                 // new A()
                 Some (endOfLastIdent typeName, findSetters arg)
-            | (SynExpr.New (_, SynType.App(StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | SynExpr.New (_, SynType.App(StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.Ident id, arg, _)) -> 
+            | SynExpr.App (_, false, SynExpr.Ident id, arg, _) -> 
                 // A()
                 Some (id.idRange.End, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // A<_>()
                 Some (endOfClosingTokenOrIdent mGreaterThan id, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.LongIdent (_, lid, _, _), arg, _)) -> 
+            | SynExpr.App (_, false, SynExpr.LongIdent (_, lid, _, _), arg, _) -> 
                 // A.B()
                 Some (endOfLastIdent lid, findSetters arg)
-            | (SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.LongIdent (_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | SynExpr.App (_, false, SynExpr.TypeApp (SynExpr.LongIdent (_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _) -> 
                 // A.B<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
             | _ -> None
@@ -954,7 +953,7 @@ module ParsedInput =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | SyntaxNode.SynExpr(_) :: SyntaxNode.SynBinding(_) :: SyntaxNode.SynMemberDefn(_) :: SyntaxNode.SynTypeDefn(SynTypeDefn(SynComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
+                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(SynComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with
@@ -979,7 +978,7 @@ module ParsedInput =
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
                             | Some completionPath -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
-                            | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
+                            | None -> Some CompletionContext.Invalid // A $ .B -> no completion list
 
                         | _ -> None 
                         
@@ -1163,7 +1162,7 @@ module ParsedInput =
             | [_] as idents -> identsByEndPos.[value.Range.End] <- idents
             | idents ->
                 for dotRange in lids do
-                    identsByEndPos.[Position.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
+                    identsByEndPos.[mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
                 identsByEndPos.[value.Range.End] <- idents
     
         let addIdent (ident: Ident) =
@@ -1251,7 +1250,7 @@ module ParsedInput =
                 walkType t; List.iter walkTypeConstraint typeConstraints
             | _ -> ()
     
-        and walkClause (SynMatchClause (pat, e1, e2, _, _)) =
+        and walkClause (SynMatchClause (pat, e1, _, e2, _, _)) =
             walkPat pat
             walkExpr e2
             e1 |> Option.iter walkExpr
@@ -1277,7 +1276,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
-            | SynExpr.Lambda (_, _, pats, e, _, _) ->
+            | SynExpr.Lambda (_, _, pats, _, e, _, _) ->
                 walkSimplePats pats
                 walkExpr e
             | SynExpr.New (_, t, e, _)
@@ -1320,7 +1319,7 @@ module ParsedInput =
                 List.iter walkBinding bindings; walkExpr e
             | SynExpr.TryWith (e, _, clauses, _, _, _, _) ->
                 List.iter walkClause clauses;  walkExpr e
-            | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) ->
+            | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3, _, _, _, _) ->
                 List.iter walkExpr [e1; e2]
                 e3 |> Option.iter walkExpr
             | SynExpr.LongIdentSet (ident, e, _)
@@ -1351,7 +1350,7 @@ module ParsedInput =
             | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
                 walkPat pat
                 walkExpr e1
-                for (_,_,_,patAndBang,eAndBang,_) in es do
+                for _,_,_,patAndBang,eAndBang,_ in es do
                     walkPat patAndBang
                     walkExpr eAndBang
                 walkExpr e2
@@ -1571,7 +1570,7 @@ module ParsedInput =
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
                 | true, [], _f :: _s :: _ -> 
                     let ident = longIdentToIdents ident
-                    ns <- Some (ident.[0..ident.Length - 2])
+                    ns <- Some ident.[0..ident.Length - 2]
                 | _ -> ()
                 
                 let fullIdent = parent @ ident

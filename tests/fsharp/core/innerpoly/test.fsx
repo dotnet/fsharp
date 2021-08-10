@@ -447,6 +447,8 @@ module Bug11620A =
         let getService () : 'Data = createService thing
         (fun () -> getService)
 
+// The generated signature for this bug repro has mistakes, we are not enabling it yet
+#if !GENERATED_SIGNATURE
 module Bug11620B =
 
     type Data = interface end
@@ -474,6 +476,7 @@ module Bug11620B =
 
     main ()
 
+#endif
 
 
 #if TESTS_AS_APP

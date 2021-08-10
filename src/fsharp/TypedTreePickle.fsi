@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.TypedTreePickle
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.TypedTree
@@ -144,4 +143,4 @@ val internal u_ty : unpickler<TType>
 val internal unpickleCcuInfo : ReaderState -> PickledCcuInfo
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
-val internal unpickleObjWithDanglingCcus : file:string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> ('T  unpickler) -> ReadOnlyByteMemory -> PickledDataWithReferences<'T>
+val internal unpickleObjWithDanglingCcus : file:string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> 'T  unpickler -> ReadOnlyByteMemory -> PickledDataWithReferences<'T>

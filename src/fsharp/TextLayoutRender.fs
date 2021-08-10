@@ -3,9 +3,7 @@
 namespace FSharp.Compiler.Text
 
 open System
-open System.Collections.Immutable
 open System.IO
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Core.Printf
@@ -91,7 +89,7 @@ type NoResult = NoResult
 module LayoutRender =
     let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
-    let spaces n = new String(' ', n)
+    let spaces n = String(' ', n)
       
     let renderL (rr: LayoutRenderer<_, _>) layout =
         let rec addL z pos i layout k = 

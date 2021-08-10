@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AddMissingInstanceMemberParameter">
         <source>Add missing instance member parameter</source>
-        <target state="new">Add missing instance member parameter</target>
+        <target state="translated">Přidat chybějící parametr člena instance</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="NameCanBeSimplified">
         <source>Name can be simplified.</source>
-        <target state="translated">Název se dá zjednodušit.</target>
+        <target state="translated">Název může být zjednodušený.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpMutableVarsClassificationType">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="UseNameof">
         <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
+        <target state="translated">Použít nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
