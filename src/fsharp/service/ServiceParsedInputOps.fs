@@ -538,7 +538,7 @@ module ParsedInput =
             | SynType.Paren(t, _) -> walkType t
             | _ -> None
 
-        and walkClause (SynMatchClause(pat, e1, e2, _, _)) =
+        and walkClause (SynMatchClause(pat, e1, _, e2, _, _)) =
             walkPatWithKind (Some EntityKind.Type) pat 
             |> Option.orElse (walkExpr e2)
             |> Option.orElse (Option.bind walkExpr e1)
@@ -572,7 +572,7 @@ module ParsedInput =
             | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListOfSeqExpr (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.CompExpr (_, _, e, _) -> walkExprWithKind parentKind e
-            | SynExpr.Lambda (_, _, _, e, _, _) -> walkExprWithKind parentKind e
+            | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
             | SynExpr.Match (_, e, synMatchClauseList, _) -> 
@@ -1250,7 +1250,7 @@ module ParsedInput =
                 walkType t; List.iter walkTypeConstraint typeConstraints
             | _ -> ()
     
-        and walkClause (SynMatchClause (pat, e1, e2, _, _)) =
+        and walkClause (SynMatchClause (pat, e1, _, e2, _, _)) =
             walkPat pat
             walkExpr e2
             e1 |> Option.iter walkExpr
@@ -1276,7 +1276,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
-            | SynExpr.Lambda (_, _, pats, e, _, _) ->
+            | SynExpr.Lambda (_, _, pats, _, e, _, _) ->
                 walkSimplePats pats
                 walkExpr e
             | SynExpr.New (_, t, e, _)
