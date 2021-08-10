@@ -99,10 +99,10 @@ let YieldFree (cenv: cenv) expr =
                 YieldFree e2 && Option.forall YieldFree e3opt
 
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
-                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
+                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
             | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
-                clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
+                clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
             | SynExpr.For (_, _, _, _, _, body, _)
             | SynExpr.TryFinally (body, _, _, _, _)
@@ -130,10 +130,10 @@ let YieldFree (cenv: cenv) expr =
                 YieldFree e2 && Option.forall YieldFree e3opt
 
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
-                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
+                YieldFree e1 && clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
             | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
-                clauses |> List.forall (fun (SynMatchClause(_, _, e, _, _)) -> YieldFree e)
+                clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
             | SynExpr.For (_, _, _, _, _, body, _)
             | SynExpr.TryFinally (body, _, _, _, _)
@@ -676,7 +676,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             Some (nm, Option.get (tryGetDataForCustomOperation nm), core, core.Range, optIntoInfo)
         | _ -> None
 
-    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, None, m)
+    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, None, e, None, m)
 
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
@@ -945,7 +945,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
             Some (trans CompExprTranslationPass.Initial q varSpace innerComp
                     (fun holeFill -> 
-                        translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [SynMatchClause(pat, None, holeFill, mPat, DebugPointForTarget.Yes)], spBind, mFor) ])) )
+                        translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [SynMatchClause(pat, None, None, holeFill, mPat, DebugPointForTarget.Yes)], spBind, mFor) ])) )
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
             let mFor = match spBind with DebugPointAtFor.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.For) | _ -> m
@@ -1119,7 +1119,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let bindRange = match spBind with DebugPointAtBinding.Yes m -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcUseMayNotBeUsedInQueries(), bindRange))
             let innerCompRange = innerComp.Range
-            let consumeExpr = SynExpr.MatchLambda(false, innerCompRange, [SynMatchClause(pat, None, transNoQueryOps innerComp, innerCompRange, DebugPointForTarget.Yes)], spBind, innerCompRange)
+            let consumeExpr = SynExpr.MatchLambda(false, innerCompRange, [SynMatchClause(pat, None, None, transNoQueryOps innerComp, innerCompRange, DebugPointForTarget.Yes)], spBind, innerCompRange)
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Using" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Using"), bindRange))
             Some (translatedCtxt (mkSynCall "Using" bindRange [rhsExpr; consumeExpr ]))
@@ -1155,9 +1155,9 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad "Bind" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), bindRange))
 
-            let consumeExpr = SynExpr.MatchLambda(false, bindRange, [SynMatchClause(pat, None, transNoQueryOps innerComp, innerComp.Range, DebugPointForTarget.Yes)], spBind, bindRange)
+            let consumeExpr = SynExpr.MatchLambda(false, bindRange, [SynMatchClause(pat, None, None, transNoQueryOps innerComp, innerComp.Range, DebugPointForTarget.Yes)], spBind, bindRange)
             let consumeExpr = mkSynCall "Using" bindRange [SynExpr.Ident(id); consumeExpr ]
-            let consumeExpr = SynExpr.MatchLambda(false, bindRange, [SynMatchClause(pat, None, consumeExpr, id.idRange, DebugPointForTarget.Yes)], spBind, bindRange)
+            let consumeExpr = SynExpr.MatchLambda(false, bindRange, [SynMatchClause(pat, None, None, consumeExpr, id.idRange, DebugPointForTarget.Yes)], spBind, bindRange)
             let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
             // TODO: consider allowing translation to BindReturn
             Some(translatedCtxt (mkSynCall "Bind" bindRange [rhsExpr; consumeExpr]))
@@ -1281,7 +1281,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.Match (spMatch, expr, clauses, m) ->
             let mMatch = match spMatch with DebugPointAtBinding.Yes mMatch -> mMatch | _ -> m
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
-            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, innerComp, patm, sp)) -> SynMatchClause(pat, cond, transNoQueryOps innerComp, patm, sp))
+            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, innerComp, patm, sp)) -> SynMatchClause(pat, cond, arrow, transNoQueryOps innerComp, patm, sp))
             Some(translatedCtxt (SynExpr.Match (spMatch, expr, clauses, m)))
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
@@ -1293,7 +1293,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mMatch ad "Bind" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mMatch))
 
-            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, innerComp, patm, sp)) -> SynMatchClause(pat, cond, transNoQueryOps innerComp, patm, sp))
+            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, innerComp, patm, sp)) -> SynMatchClause(pat, cond, arrow, transNoQueryOps innerComp, patm, sp))
             let consumeExpr = SynExpr.MatchLambda (false, mMatch, clauses, spMatch, mMatch)
 
             // TODO: consider allowing translation to BindReturn
@@ -1303,7 +1303,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
-            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, clauseComp, patm, sp)) -> SynMatchClause(pat, cond, transNoQueryOps clauseComp, patm, sp))
+            let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, clauseComp, patm, sp)) -> SynMatchClause(pat, cond, arrow, transNoQueryOps clauseComp, patm, sp))
             let consumeExpr = SynExpr.MatchLambda(true, mTryToLast, clauses, DebugPointAtBinding.NoneAtSticky, mTryToLast)
 
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mTry ad "TryWith" builderTy) then
@@ -1392,7 +1392,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
-                                            SynExpr.Lambda (false, false, varSpaceSimplePat, arg, None, arg.Range.MakeSynthetic())
+                                            SynExpr.Lambda (false, false, varSpaceSimplePat, None, arg, None, arg.Range.MakeSynthetic())
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
@@ -1510,7 +1510,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         
             // Build the `BindReturn` call
             let dataCompPriorToOp =
-                let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [SynMatchClause(consumePat, None, innerExpr, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
+                let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [SynMatchClause(consumePat, None, None, innerExpr, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
                 translatedCtxt (mkSynCall bindName bindRange (bindArgs @ [consumeExpr]))
 
             match customOpInfo with 
@@ -1526,7 +1526,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
             // Build the `Bind` call
             trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
-                let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [SynMatchClause(consumePat, None, holeFill, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
+                let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [SynMatchClause(consumePat, None, None, holeFill, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
                 translatedCtxt (mkSynCall bindName bindRange (bindArgs @ [consumeExpr])))
 
     and convertSimpleReturnToExpr varSpace innerComp =
@@ -1534,11 +1534,11 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.YieldOrReturn ((false, _), returnExpr, _) -> Some (returnExpr, None)
         | SynExpr.Match (spMatch, expr, clauses, m) ->
             let clauses = 
-                clauses |> List.map (fun (SynMatchClause(pat, cond, innerComp2, patm, sp)) -> 
+                clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, innerComp2, patm, sp)) -> 
                     match convertSimpleReturnToExpr varSpace innerComp2 with
                     | None -> None // failure
                     | Some (_, Some _) -> None // custom op on branch = failure
-                    | Some (innerExpr2, None) -> Some (SynMatchClause(pat, cond, innerExpr2, patm, sp)))
+                    | Some (innerExpr2, None) -> Some (SynMatchClause(pat, cond, arrow, innerExpr2, patm, sp)))
             if clauses |> List.forall Option.isSome then
                 Some (SynExpr.Match (spMatch, expr, (clauses |> List.map Option.get), m), None)
             else
@@ -1605,11 +1605,11 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.LetOrUse (_, _, _, innerComp, _) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
         | SynExpr.Match (_, _, clauses, _) ->
-            clauses |> List.forall (fun (SynMatchClause(_, _, innerComp, _, _)) -> isSimpleExpr innerComp)
+            clauses |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr innerComp)
         | SynExpr.MatchBang _ -> false
         | SynExpr.TryWith (innerComp, _, clauses, _, _, _, _) -> 
             isSimpleExpr innerComp && 
-            clauses |> List.forall (fun (SynMatchClause(_, _, clauseComp, _, _)) -> isSimpleExpr clauseComp)
+            clauses |> List.forall (fun (SynMatchClause(resultExpr = clauseComp)) -> isSimpleExpr clauseComp)
         | SynExpr.YieldOrReturnFrom _ -> false
         | SynExpr.YieldOrReturn _ -> false
         | SynExpr.DoBang _ -> false
@@ -1635,7 +1635,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
     let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
-        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, None, mBuilderVal)
+        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), None, runExpr, None, mBuilderVal)
 
     let env =
         match comp with
@@ -1866,7 +1866,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
             let tclauses, tpenv = 
                 List.mapFold 
-                    (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp)) ->
+                    (fun tpenv (SynMatchClause(pat, cond, _, innerComp, _, sp)) ->
                           let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
                           let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
                           TClause(pat', cond', TTarget(vspecs, innerExpr, sp, None), pat'.Range), tpenv)

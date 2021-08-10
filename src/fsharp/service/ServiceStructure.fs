@@ -377,7 +377,7 @@ module Structure =
             | SynExpr.While (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
-            | SynExpr.Lambda (_, _, pats, e, _, r) ->
+            | SynExpr.Lambda (_, _, pats, _, e, _, r) ->
                 match pats with
                 | SynSimplePats.SimplePats (_, pr)
                 | SynSimplePats.Typed (_, _, pr) ->
@@ -407,7 +407,7 @@ module Structure =
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
             | _ -> ()
 
-        and parseMatchClause (SynMatchClause(synPat, _, e, _r, _) as clause) =
+        and parseMatchClause (SynMatchClause(synPat, _, _, e, _r, _) as clause) =
             let rec getLastPat = function
                 | SynPat.Or(_, pat, _) -> getLastPat pat
                 | x -> x
