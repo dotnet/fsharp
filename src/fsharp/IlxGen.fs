@@ -5252,7 +5252,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
 
     let ilCloTyInner =
         let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTypars
-        mkILFormalBoxedTy boxity ilCloTypeRef ilCloGenericParams
+        mkILFormalNamedTy boxity ilCloTypeRef ilCloGenericParams
 
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
     // The latter doesn't apply for the delegate implementation of closures.
