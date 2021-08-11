@@ -8047,7 +8047,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             UnifyTypes cenv env mStmt overallTy g.unit_ty
             vref.Deref.SetHasBeenReferenced()
             CheckValAccessible mItem env.AccessRights vref
-            CheckValAttributes g vref mItem |> CommitOperationResult
+            CheckValAttributes g vref mItem
+            |> obsoleteAllowedToUseObsoleteFilter env
+            |> CommitOperationResult
             let vty = vref.Type
             let vty2 =
                 if isByrefTy g vty then
