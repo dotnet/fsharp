@@ -3675,7 +3675,7 @@ and FreeVarStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames ilCl
 /// local variable (not method or property). For example
 //      let foo() =
 //          let a = 0<_>
-//         ()
+//          ()
 //  in debug code , here `a` will be a TyLamba.  However the compiled representation of 
 // `a` is an integer.
 and IsLocalErasedTyLambda g eenv (v: Val) e =
@@ -3683,7 +3683,9 @@ and IsLocalErasedTyLambda g eenv (v: Val) e =
     | Expr.TyLambda (_, tyargs, body, _, _) when
             tyargs |> List.forall (fun tp -> tp.IsErased) &&
             (match StorageForVal g v.Range v eenv with Local _ -> true | _ -> false) ->
-        Some body
+        match stripExpr body with 
+        | Expr.Lambda _ -> None
+        | _ -> Some body
     | _ -> None
 
 //--------------------------------------------------------------------------

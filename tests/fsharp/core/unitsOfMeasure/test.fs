@@ -40,6 +40,22 @@ let nullReferenceError weightedList =
 
 let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
 
+type C< [<Measure>] 'u> =
+   abstract Invoke: float<'u> list -> int
+
+let rec loop<[<Measure>]'u>  =
+    { new C<'u> with 
+        member _.Invoke(xs) =
+            match xs with
+            | [] -> 1
+            | weight :: tail ->
+                loop<'u>.Invoke(tail) }
+
+let nullReferenceError2 (weightedList: float<'u> list) =
+    loop<'u>.Invoke(weightedList)
+
+let ``is this null 2?`` = nullReferenceError2 [ 0.3; 0.3; 0.4 ]
+
 module TestLibrary =
 
     [<Measure>] 
