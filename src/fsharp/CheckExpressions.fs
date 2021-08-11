@@ -2592,6 +2592,18 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
     | _ -> ()
 
 
+let obsoleteAllowedToUseObsoleteFilter (env : TcEnv) (op : OperationResult<unit>) : OperationResult<unit> =
+    let filter (warning : exn) =
+        warning.ToString()
+        // here should be traversing the env to see if there's
+        // an enclosing obsolete entity
+        match env.eCallerMemberName with
+        | Some("newAdd") -> false
+        | _ -> true
+    match op with
+    | OkResult(warnings, r) -> OkResult(List.filter filter warnings, r)
+    | ErrorResult(warnings, r) -> ErrorResult(List.filter filter warnings, r)
+
 /// TcVal. "Use" a value, normally at a fresh type instance (unless optInst is
 /// given). optInst is set when an explicit type instantiation is given, e.g.
 ///     Seq.empty<string>
@@ -2611,7 +2623,9 @@ let TcVal checkAttributes cenv env tpenv (vref: ValRef) optInst optAfterResoluti
         v.SetHasBeenReferenced()
         CheckValAccessible m env.eAccessRights vref
         if checkAttributes then
-            CheckValAttributes cenv.g vref m |> CommitOperationResult
+            CheckValAttributes cenv.g vref m
+            |> obsoleteAllowedToUseObsoleteFilter env
+            |> CommitOperationResult
         let vty = vref.Type
         // byref-typed values get dereferenced
         if isByrefTy cenv.g vty then

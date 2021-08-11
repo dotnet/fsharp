@@ -170,9 +170,18 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+// FS-1112
+module ObsoleteAttributeTest =
+    let isWarningEmitted source =
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.Diagnostics
+        |> Array.exists (fun diag -> diag.ErrorNumber = 44 (* this construct is deprecated *))
+
     [<Test>]
-    let ``Test obsolete inside obsolete`` () =
-        let source = """
+    let ``Obsolete function calls obsolete function`` () =
+        """
 open System
 
 [<Obsolete>]
@@ -180,14 +189,47 @@ let add a b = a + b
 
 [<Obsolete>]
 let newAdd a b = add a b
-"""
+"""     |> isWarningEmitted |> Assert.False
 
-        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
-        let _, checkResults = parseAndCheckFile fileName source options
+    [<Test>]
+    let ``Obsolete function calls obsolete type`` () =
+        """
+open System
 
-        checkResults.Diagnostics
-        |> Array.exists (fun diag -> diag.ErrorNumber = 44 (* this construct is deprecated *))
-        |> Assert.False
+[<Obsolete>]
+type Aaa =
+    | Quack
+    | Duck
+    
+[<Obsolete>]
+let func a b =
+    Quack
+"""     |> isWarningEmitted |> Assert.False
+
+    [<Test>]
+    let ``Non-obsolete function calls obsolete function`` () =
+        """
+open System
+
+[<Obsolete>]
+let add a b = a + b
+
+let newAdd a b = add a b
+"""     |> isWarningEmitted |> Assert.True
+
+    [<Test>]
+    let ``Non-obsolete function calls obsolete type`` () =
+        """
+open System
+
+[<Obsolete>]
+type Aaa =
+    | Quack
+    | Duck
+    
+let func a b =
+    Quack
+"""     |> isWarningEmitted |> Assert.True
 
 
 module Types =
