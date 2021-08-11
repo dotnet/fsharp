@@ -5,6 +5,7 @@ namespace FSharp.Compiler.ComponentTests
 open Xunit
 open FSharp.Test.Compiler
 
+#if NETCOREAPP
 // Test cases for https://github.com/dotnet/fsharp/issues/9369
 module IndexerSetterParamArray =
 
@@ -17,41 +18,39 @@ open System
 type T() =
     let mutable v = ""
     member this.Item
-        with get ([<ParamArray>] indices: int[]) = v
+        with get ([<ParamArray>] indices: int[]) = 
+            $"{v}; get(%A{indices})"
+
         and set ([<ParamArray>] indices: int[]) (value: string) =
-            v <- String.concat "," (Array.map string indices) + " <- " + value
+            v <- $"set(%A{indices}, {value})"
 
 let t = T()
 
-t.[2] <- "2" 
-if t.[2] <> "2 <- 2" then failwith "not right value A"
-
-printfn $"t.[2] = {t.[2]}"
-
 // Using an explicit array is allowed
-t.[ [| 2 |] ] <- "2" 
-if t.[ [| 2 |] ] <> "2 <- 2" then failwith "not right value B"
+t.[[| 2 |] ] <- "7" 
+let v2 = t.[[| 2 |]]
+printfn $"v2 = {v2}"
+if v2 <> "set([|2|], 7); get([|2|])" then failwith "not right value B"
 
 
-t.[2, 1] <- "2" 
-if t.[2, 1] <> "2,1 <- 2" then failwith "not right value C"
+t.[1] <- "7" 
+let v3 = t.[1]
+printfn $"v3 = {v3}"
+if v3 <> "set([|1|], 7); get([|1|])" then failwith "not right value C"
 
-printfn $"t.[2, 1] = {t.[2, 1]}"
-
-t.[2, 1, 0] <- "2" 
-if t.[2, 1, 0] <> "2,1,0 <- 2" then failwith "not right value D"
-
-printfn $"t.[2, 1, 0] = {t.[2, 1, 0]}"
-
-t.[2, 1, 0, 4] <- "2" 
-if t.[2, 1, 0, 4] <> "2,1,0,4 <- 2" then failwith "not right value E"
+t.[1, 0] <- "7" 
+let v4 = t.[1, 0]
+printfn $"v4 = {v4}"
+if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
 
 // Inference defaults to the array in absense of other information 
 let f idxs =
-    t.[ idxs ] <- "2" 
+    t.[ idxs ] <- "7" 
 
-f [| 2 |]
-if t.[ [| 2 |] ] <> "2 <- 2" then failwith "not right value F"
+f ([| 2 |] )
+let v5 = t.[ [| 2 |] ]
+printfn $"v5 = {v5}"
+if v5 <> "set([|2|], 7); get([|2|])" then failwith "not right value"
 
     """
      |> ignoreWarnings
@@ -119,3 +118,57 @@ if v5 <> "set(1, [|2|], 7); get(1, [|2|])" then failwith "not right value"
      |> compileExeAndRun
      |> shouldSucceed
 
+    [<Fact>]
+    let ``Indexer setter via extension can use ParamArray`` () =
+        FSharp """
+module One
+open System
+
+type T() =
+    member val v : string = "" with get, set
+
+[<AutoOpen>]
+module M =
+    type T with 
+        member this.Item
+            with get ([<ParamArray>] indices: int[]) = 
+                $"{this.v}; get(%A{indices})"
+
+            and set ([<ParamArray>] indices: int[]) (value: string) =
+                this.v <- $"set(%A{indices}, {value})"
+
+let t = T()
+
+// Using an explicit array is allowed
+t.[[| 2 |] ] <- "7" 
+let v2 = t.[[| 2 |]]
+printfn $"v2 = {v2}"
+if v2 <> "set([|2|], 7); get([|2|])" then failwith "not right value B"
+
+
+t.[1] <- "7" 
+let v3 = t.[1]
+printfn $"v3 = {v3}"
+if v3 <> "set([|1|], 7); get([|1|])" then failwith "not right value C"
+
+t.[1, 0] <- "7" 
+let v4 = t.[1, 0]
+printfn $"v4 = {v4}"
+if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
+
+// Inference defaults to the array in absense of other information 
+let f idxs =
+    t.[ idxs ] <- "7" 
+
+f ([| 2 |] )
+let v5 = t.[ [| 2 |] ]
+printfn $"v5 = {v5}"
+if v5 <> "set([|2|], 7); get([|2|])" then failwith "not right value"
+
+
+    """
+     |> ignoreWarnings
+     |> compileExeAndRun
+     |> shouldSucceed
+
+#endif
