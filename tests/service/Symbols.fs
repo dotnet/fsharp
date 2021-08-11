@@ -170,6 +170,26 @@ let x = 123
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
 
+    [<Test>]
+    let ``Test obsolete inside obsolete`` () =
+        let source = """
+open System
+
+[<Obsolete>]
+let add a b = a + b
+
+[<Obsolete>]
+let newAdd a b = add a b
+"""
+
+        let fileName, options = mkTestFileAndOptions source [| "--noconditionalerasure" |]
+        let _, checkResults = parseAndCheckFile fileName source options
+
+        checkResults.Diagnostics
+        |> Array.exists (fun diag -> diag.ErrorNumber = 44 (* this construct is deprecated *))
+        |> Assert.False
+
+
 module Types =
     [<Test>]
     let ``FSharpType.Print parent namespace qualifiers`` () =
