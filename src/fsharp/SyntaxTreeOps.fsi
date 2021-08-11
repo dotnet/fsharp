@@ -87,7 +87,7 @@ val PushPatternToExpr: synArgNameGenerator:SynArgNameGenerator -> isMember:bool 
 ///        let (UnionCase x) = tmp1 in
 ///        let (UnionCase y) = tmp2 in
 ///        body"
-val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
+val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> arrow:Range option -> rhs:SynExpr -> SynSimplePats list * SynExpr
 
 val opNameParenGet: string
 
@@ -141,7 +141,7 @@ val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
-val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> e:SynExpr -> SynExpr
+val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> arrow:Range option -> e:SynExpr -> SynExpr
 
 val arbExpr: debugStr:string * range:range -> SynExpr
 
@@ -225,11 +225,6 @@ module SynInfo =
     /// This is similar to IncorporateEmptyTupledArgForPropertyGetter, but applies to member definitions
     /// rather than member signatures.
     val AdjustMemberArgs: memFlags:SynMemberKind -> infosForArgs:'a list list -> 'a list list
-
-    /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
-    /// is an immediate 'fun ... -> ...' or 'function ...' expression. This is noted in the F# language specification.
-    /// This does not apply to member definitions.
-    val InferLambdaArgs: origRhsExpr:SynExpr -> SynArgInfo list list
 
     val InferSynReturnData: retInfo:SynReturnInfo option -> SynArgInfo
 

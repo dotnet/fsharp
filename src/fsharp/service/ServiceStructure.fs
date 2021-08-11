@@ -70,7 +70,7 @@ module Structure =
                  | SynSimplePat.Attrib(range = r)
                  | SynSimplePat.Id(range = r)
                  | SynSimplePat.Typed(range = r) -> r)
-            |> List.reduce Range.unionRanges
+            |> List.reduce unionRanges
 
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
     /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions
@@ -252,7 +252,7 @@ module Structure =
             | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
                 [
                     yield eLet
-                    for (_,_,_,_,eAndBang,_) in es do 
+                    for _,_,_,_,eAndBang,_ in es do 
                         yield eAndBang
                 ]
                 |> List.iter (fun e ->
@@ -348,7 +348,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
+            | SynExpr.IfThenElse (_, _, ifExpr, _, thenExpr, _, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->
                     // Outline the entire IfThenElse
@@ -377,7 +377,7 @@ module Structure =
             | SynExpr.While (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
-            | SynExpr.Lambda (_, _, pats, e, _, r) ->
+            | SynExpr.Lambda (_, _, pats, _, e, _, r) ->
                 match pats with
                 | SynSimplePats.SimplePats (_, pr)
                 | SynSimplePats.Typed (_, _, pr) ->
@@ -407,7 +407,7 @@ module Structure =
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
             | _ -> ()
 
-        and parseMatchClause (SynMatchClause(synPat, _, e, _r, _) as clause) =
+        and parseMatchClause (SynMatchClause(synPat, _, _, e, _r, _) as clause) =
             let rec getLastPat = function
                 | SynPat.Or(_, pat, _) -> getLastPat pat
                 | x -> x
@@ -420,7 +420,7 @@ module Structure =
         and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
-                    let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
+                    let range = Range.startToEnd attrs.[0].Range attrs.[attrs.Length-1].ArgExpr.Range
                     rcheck Scope.Attribute Collapse.Same range range
 
             match  attrs with
@@ -642,7 +642,7 @@ module Structure =
             else None
 
         let getCommentRanges (lines: string[]) =
-            let rec loop ((lastLineNum, currentComment: CommentList option, result) as state) (lines: string list) lineNum =
+            let rec loop (lastLineNum, currentComment: CommentList option, result as state) (lines: string list) lineNum =
                 match lines with
                 | [] -> state
                 | lineStr :: rest ->
@@ -825,7 +825,7 @@ module Structure =
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
-            | SynModuleSigDecl.Val ((SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange)), r) ->
+            | SynModuleSigDecl.Val (SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange), r) ->
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs

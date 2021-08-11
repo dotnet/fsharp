@@ -8,6 +8,7 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -49,7 +50,7 @@ module internal PervasiveAutoOpens =
         // See http://www.mono-project.com/FAQ:_Technical
         // "How can I detect if am running in Mono?" section
         try
-            System.Type.GetType ("Mono.Runtime") <> null
+            Type.GetType "Mono.Runtime" <> null
         with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
@@ -85,6 +86,19 @@ module internal PervasiveAutoOpens =
     let foldOn p f z x = f z (p x)
 
     let notFound() = raise (KeyNotFoundException())
+
+    type Async with
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
 
 [<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
@@ -311,7 +325,7 @@ module List =
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
-        assert not (typeof<'T>.IsValueType) 
+        assert not typeof<'T>.IsValueType 
         match inp with
         | [] -> inp
         | [h1a] -> 
@@ -381,17 +395,17 @@ module List =
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
 
-    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r) :: t) -> if x = h then r else assoc x t
+        | (h, r) :: t -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _) :: t) -> x = h || memAssoc x t
+        | (h, _) :: t -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
@@ -501,7 +515,7 @@ module ValueOptionInternal =
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String =
-    let make (n: int) (c: char) : string = new String(c, n)
+    let make (n: int) (c: char) : string = String(c, n)
 
     let get (str: string) i = str.[i]
 
@@ -608,7 +622,7 @@ module Dictionary =
 
     let inline ofList (xs: ('Key * 'Value) list) = 
         let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
-        for (k,v) in xs do
+        for k,v in xs do
            t.Add(k,v)
         t
 
@@ -840,7 +854,7 @@ module CancellableAutoOpens =
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let gate = obj ()
-    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
+    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
@@ -880,7 +894,7 @@ exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =
 
-    static let undefined = new LazyWithContextFailure(UndefinedException)
+    static let undefined = LazyWithContextFailure(UndefinedException)
 
     member _.Exception = exn
 
@@ -901,7 +915,7 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
@@ -940,7 +954,7 @@ type LazyWithContext<'T, 'ctxt> =
                   x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e))
+                  x.funcOrException <- box(LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -948,7 +962,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
+        let t = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res
@@ -1116,7 +1130,7 @@ module MapAutoOpens =
 
         static member Empty : Map<'Key, 'Value> = Map.empty
 
-        member x.Values = [ for (KeyValue(_, v)) in x -> v ]
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
 
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 

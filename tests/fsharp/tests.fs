@@ -17,6 +17,7 @@ open TestFramework
 open Scripting
 open SingleTest
 open HandleExpects
+open FSharp.Test
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
@@ -31,7 +32,7 @@ let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
-let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
+let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
@@ -63,7 +64,10 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
 
-    [<Test>]
+    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
+    // It should land into preview7, which is set to be released August 10th 2021.
+    // These tests should be reenabled then.
+    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
     let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
 
     [<Test>]
@@ -459,6 +463,45 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines-non-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines neg-resumable-01`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-01"
+
+
+    [<Test>]
+    let ``state-machines neg-resumable-02`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-02"
 
     [<Test>]
     let ``lots-of-conditionals``() =
@@ -941,8 +984,8 @@ module CoreTests =
 
         let fsc_flags_errors_ok = ""
 
-        let rawFileOut = Path.GetTempFileName()
-        let rawFileErr = Path.GetTempFileName()
+        let rawFileOut = tryCreateTemporaryFileName ()
+        let rawFileErr = tryCreateTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.

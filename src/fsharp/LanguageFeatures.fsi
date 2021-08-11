@@ -9,6 +9,7 @@ type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
+    | RelaxWhitespace2
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -17,6 +18,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing

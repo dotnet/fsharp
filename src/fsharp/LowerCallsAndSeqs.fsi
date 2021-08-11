@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.LowerCallsAndSeqs
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text
@@ -22,6 +21,6 @@ val LowerImplFile: g: TcGlobals -> assembly: TypedImplFile -> TypedImplFile
 /// free variables of the sequence expression.
 val ConvertSequenceExprToObject: g: TcGlobals -> amap: ImportMap -> overallExpr: Expr -> (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 
-val IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool 
+val IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool
 
 val LowerComputedListOrArrayExpr: tcVal: ConstraintSolver.TcValF -> g: TcGlobals -> amap: ImportMap -> Expr -> Expr option

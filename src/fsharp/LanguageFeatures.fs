@@ -3,8 +3,6 @@
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal FSharp.Compiler.Features
 
-open System
-
 //------------------------------------------------------------------------------------------------------------------
 // Language version command line switch
 //------------------------------------------------------------------------------------------------------------------
@@ -21,6 +19,7 @@ type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
+    | RelaxWhitespace2
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -29,6 +28,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
@@ -79,9 +79,11 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
+            LanguageFeature.RelaxWhitespace2, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
+            LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
@@ -145,6 +147,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop()
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
+        | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
         | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration()
@@ -153,6 +156,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()

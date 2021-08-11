@@ -151,6 +151,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->
@@ -257,6 +258,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let targetsBody = generateTargets
         let overridesBody = generateOverrides
+        
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
@@ -368,6 +370,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 let singleTestBuildAndRunAux cfg p =
     singleTestBuildAndRunCore cfg "" p "latest"
 
+
 let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p =
     singleTestBuildAndRunCore cfg copyFiles p "latest"
 
@@ -377,6 +380,7 @@ let singleTestBuildAndRun dir p =
 
 let singleTestBuildAndRunVersion dir p version =
     let cfg = testConfig dir
+
     singleTestBuildAndRunCore cfg "" p version
 
 let singleVersionedNegTest (cfg: TestConfig) version testname =
@@ -450,4 +454,6 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
 
-let singleNegTest (cfg: TestConfig) testname = singleVersionedNegTest (cfg: TestConfig) "" testname
+
+let singleNegTest (cfg: TestConfig) testname =
+    singleVersionedNegTest (cfg: TestConfig) "" testname
