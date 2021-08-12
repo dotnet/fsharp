@@ -3236,7 +3236,7 @@ and OptimizeDebugPipeRights cenv env expr =
 
     let x0, pipes = getPipes g expr []
     assert (pipes.Length > 0)
-    let pipes, pipeLast = List.frontAndBack pipes
+    let pipesFront, pipeLast = List.frontAndBack pipes
     
     let xR0, xInfo0 = OptimizeExpr cenv env x0
 
@@ -3269,7 +3269,7 @@ and OptimizeDebugPipeRights cenv env expr =
     // with a breakpoint on the binding
     //
     let pipesBinder =
-        (List.indexed pipes, binderLast) ||> List.foldBack (fun (i, (xRange, xType, resType, fExpr: Expr, _)) binder ->
+        (List.indexed pipesFront, binderLast) ||> List.foldBack (fun (i, (xRange, xType, resType, fExpr: Expr, _)) binder ->
     
             let name = "<pipe-stage-" + string (i+1) + ">"
             let inputVal, inputExpr = mkLocal xRange name xType
@@ -3292,10 +3292,8 @@ and OptimizeDebugPipeRights cenv env expr =
     // with a breakpoint on the pipe-input binding
     let xRange0 = x0.Range
     let inputVal, inputValExpr= mkLocal xRange0 "<pipe-input>" (tyOfExpr g x0)
-    let pipesExpr, pipesInfo = pipesBinder (inputValExpr, xInfo0)
-    // The range used for the 'let' expression is only the 'f1' in x |> f1 |> f2
-    let nextFuncRange = (p45 pipes.Head).Range 
-    let expr = mkLet (DebugPointAtBinding.Yes xRange0) nextFuncRange inputVal xR0 pipesExpr
+    let pipesExprR, pipesInfo = pipesBinder (inputValExpr, xInfo0)
+    let expr = mkLet (DebugPointAtBinding.Yes xRange0) expr.Range inputVal xR0 pipesExprR
     expr, pipesInfo
     
 and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m) =
