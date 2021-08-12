@@ -233,8 +233,6 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue get_Item(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Void .ctor(System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,TValue]])
-Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Empty
-Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] get_Empty()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.Collections.Generic.ICollection`1[TKey] Keys
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.Collections.Generic.ICollection`1[TKey] get_Keys()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.Collections.Generic.ICollection`1[TValue] Values
@@ -403,6 +401,7 @@ Microsoft.FSharp.Collections.MapModule: TState FoldBack[TKey,T,TState](Microsoft
 Microsoft.FSharp.Collections.MapModule: TState Fold[TKey,T,TState](Microsoft.FSharp.Core.FSharpFunc`2[TState,Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,TState]]], TState, Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: Void Iterate[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: System.Collections.Generic.ICollection`1[TKey] Keys[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: System.Collections.Generic.ICollection`1[T] Values[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Contains[T](T, System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists2[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,System.Boolean]], System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])

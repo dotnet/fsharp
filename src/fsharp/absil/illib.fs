@@ -1127,6 +1127,8 @@ type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 [<AutoOpen>]
 module MapAutoOpens =
     type Map<'Key, 'Value when 'Key : comparison> with
+        
+        static member Empty : Map<'Key, 'Value> = Map.empty
     
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
