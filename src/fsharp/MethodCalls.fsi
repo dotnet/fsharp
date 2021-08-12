@@ -182,21 +182,36 @@ type CalledMeth<'T> =
 
     /// The formal instantiation of the method we're attempting to call 
     member CallerTyArgs: TType list
+
     member HasCorrectArity: bool
+
     member HasCorrectGenericArity: bool
+
     member HasOptArgs: bool
+
     member HasOutArgs: bool
+
+    member IsIndexParamArraySetter: bool
 
     /// The method we're attempting to call 
     member Method: MethInfo
+
     member NumArgSets: int
+
     member NumAssignedProps: int
+
     member NumCalledTyArgs: int
+
     member NumCallerTyArgs: int
+
     member ParamArrayCalledArgOpt: CalledArg option
+
     member ParamArrayCallerArgs: CallerArg<'T> list option
+
     member TotalNumAssignedNamedArgs: int
+
     member TotalNumUnnamedCalledArgs: int
+
     member TotalNumUnnamedCallerArgs: int
 
     /// Unassigned args
@@ -207,8 +222,11 @@ type CalledMeth<'T> =
 
     /// Unnamed called out args: return these as part of the return tuple
     member UnnamedCalledOutArgs: CalledArg list
+
     member UsesParamArrayConversion: bool
+
     member amap: ImportMap
+
     member infoReader: InfoReader
   
 val NamesOfCalledArgs: calledArgs:CalledArg list -> Ident list
