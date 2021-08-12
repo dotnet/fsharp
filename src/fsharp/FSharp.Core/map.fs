@@ -1003,3 +1003,6 @@ module Map =
 
     [<CompiledName("Keys")>]
     let keys (table: Map<_, _>) = table.Keys
+
+    [<CompiledName("Values")>]
+    let values (table: Map<_, _>) = table.Values
