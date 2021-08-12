@@ -11,288 +11,206 @@ open System.Runtime.CompilerServices
 [<MemoryDiagnoser>]
 [<MarkdownExporterAttribute.GitHub>]
 type CollectionsBenchmark() =
-
+    let mutable length = 0
+    let mutable list = []
+    let mutable array = [||]
+            
     [<Params( (* 0, 1, 100, *) 1000, 10000)>]
-    member val Length = 0 with get, set
+    member this.Length
+        with get () = length
+        and set (value) = 
+            length <- value
+            list <- List.init length (fun _ -> 0)
+            array <- Array.init length (fun _ -> 0)  
+          
     /// List
     [<Benchmark>]
     member x.ListRemoveAtBeginning() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.removeAt 0 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.removeAt 0 
+        |> ignore
 
     [<Benchmark>]
     member x.ListRemoveAtEnd() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.removeAt (x.Length - 1) 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.removeAt (x.Length - 1) 
+        |> ignore
         
     [<Benchmark>]
     member x.ListRemoveManyAtBeginning() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.removeManyAt 0 10 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.removeManyAt 0 10 
+        |> ignore
 
     [<Benchmark>]
     member x.ListRemoveManyAtEnd() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.removeManyAt (x.Length - 11) 10 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.removeManyAt (x.Length - 11) 10 
+        |> ignore
         
     [<Benchmark>]
     member x.ListInsertAtBeginning() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.insertAt 0 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.insertAt 0 1 
+        |> ignore
 
     [<Benchmark>]
     member x.ListInsertAtEnd() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.insertAt (x.Length - 1) 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.insertAt (x.Length - 1) 1 
+        |> ignore
         
     [<Benchmark>]
     member x.ListInsertManyAtBeginning() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.insertManyAt 0 [1..10] 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.insertManyAt 0 [1..10] 
+        |> ignore
 
     [<Benchmark>]
     member x.ListInsertManyAtEnd() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.insertManyAt (x.Length - 11) [1..10]
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.insertManyAt (x.Length - 11) [1..10]
+        |> ignore
         
     [<Benchmark>]
     member x.ListUpdateAtBeginning() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.updateAt 0 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.updateAt 0 1 
+        |> ignore
 
     [<Benchmark>]
     member x.ListUpdateEnd() =
-        async {
-            List.init x.Length (fun _ -> 0)
-            |> List.updateAt (x.Length - 1) 1
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> List.updateAt (x.Length - 1) 1
+        |> ignore
         
     /// Array
     [<Benchmark>]
     member x.ArrayRemoveAtBeginning() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.removeAt 0 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.removeAt 0 
+        |> ignore
 
     [<Benchmark>]
     member x.ArrayRemoveAtEnd() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.removeAt (x.Length - 1) 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.removeAt (x.Length - 1) 
+        |> ignore
         
     [<Benchmark>]
     member x.ArrayRemoveManyAtBeginning() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.removeManyAt 0 10 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.removeManyAt 0 10 
+        |> ignore
 
     [<Benchmark>]
     member x.ArrayRemoveManyAtEnd() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.removeManyAt (x.Length - 11) 10 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.removeManyAt (x.Length - 11) 10 
+        |> ignore
         
     [<Benchmark>]
     member x.ArrayInsertAtBeginning() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.insertAt 0 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.insertAt 0 1 
+        |> ignore
 
     [<Benchmark>]
     member x.ArrayInsertAtEnd() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.insertAt (x.Length - 1) 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.insertAt (x.Length - 1) 1 
+        |> ignore
         
     [<Benchmark>]
     member x.ArrayInsertManyAtBeginning() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.insertManyAt 0 [1..10] 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.insertManyAt 0 [1..10] 
+        |> ignore
 
     [<Benchmark>]
     member x.ArrayInsertManyAtEnd() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.insertManyAt (x.Length - 11) [1..10]
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.insertManyAt (x.Length - 11) [1..10]
+        |> ignore
         
     [<Benchmark>]
     member x.ArrayUpdateAtBeginning() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.updateAt 0 1 
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.updateAt 0 1 
+        |> ignore
 
     [<Benchmark>]
     member x.ArrayUpdateEnd() =
-        async {
-            Array.init x.Length (fun _ -> 0)
-            |> Array.updateAt (x.Length - 1) 1
-            |> ignore
-        }
-        |> Async.StartAsTask
+        array
+        |> Array.updateAt (x.Length - 1) 1
+        |> ignore
         
     /// Seq
     [<Benchmark>]
+    member x.SeqBaseline() =
+        array 
+        |> Seq.toList
+        |> ignore
+        
+    [<Benchmark>]
     member x.SeqRemoveAtBeginning() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.removeAt 0 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.removeAt 0 
+        |> Seq.toList
+        |> ignore
 
     [<Benchmark>]
     member x.SeqRemoveAtEnd() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.removeAt (x.Length - 1) 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.removeAt (x.Length - 1) 
+        |> Seq.toList
+        |> ignore
         
     [<Benchmark>]
     member x.SeqRemoveManyAtBeginning() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.removeManyAt 0 10 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.removeManyAt 0 10 
+        |> Seq.toList
+        |> ignore
 
     [<Benchmark>]
     member x.SeqRemoveManyAtEnd() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.removeManyAt (x.Length - 11) 10 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.removeManyAt (x.Length - 11) 10 
+        |> Seq.iter ignore
         
     [<Benchmark>]
     member x.SeqInsertAtBeginning() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.insertAt 0 1
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.insertAt 0 1
+        |> Seq.iter ignore
 
     [<Benchmark>]
     member x.SeqInsertAtEnd() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.insertAt (x.Length - 1) 1 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.insertAt (x.Length - 1) 1 
+        |> Seq.iter ignore
         
     [<Benchmark>]
     member x.SeqInsertManyAtBeginning() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.insertManyAt 0 [1..10] 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.insertManyAt 0 [1..10] 
+        |> Seq.iter ignore
 
     [<Benchmark>]
     member x.SeqInsertManyAtEnd() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.insertManyAt (x.Length - 11) [1..10]
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.insertManyAt (x.Length - 11) [1..10]
+        |> Seq.iter ignore
         
     [<Benchmark>]
     member x.SeqUpdateAtBeginning() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.updateAt 0 1 
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.updateAt 0 1 
+        |> Seq.iter ignore
 
     [<Benchmark>]
     member x.SeqUpdateEnd() =
-        async {
-            Seq.init x.Length (fun _ -> 0)
-            |> Seq.updateAt (x.Length - 1) 1
-            |> Seq.toList
-            |> ignore
-        }
-        |> Async.StartAsTask
+        list
+        |> Seq.updateAt (x.Length - 1) 1
+        |> Seq.iter ignore
