@@ -475,6 +475,7 @@ module Bug11620B =
         0
 
     main ()
+
 #endif
 
 
