@@ -3272,16 +3272,16 @@ and OptimizeDebugPipeRights cenv env expr =
         (List.indexed pipesFront, binderLast) ||> List.foldBack (fun (i, (xRange, xType, resType, fExpr: Expr, _)) binder ->
     
             let name = "<pipe-stage-" + string (i+1) + ">"
-            let inputVal, inputExpr = mkLocal xRange name xType
+            let stageVal, stageValExpr = mkLocal xRange name resType
     
             let fRange = fExpr.Range
             let fType = mkFunTy xType resType
             let fR, finfo = OptimizeExpr cenv env fExpr
-            let restExpr, restInfo = binder (inputExpr, finfo)
+            let restExpr, restInfo = binder (stageValExpr, finfo)
             let appDebugPoint = DebugPointAtBinding.Yes fRange
             let newBinder (ve, info) = 
                 // The range used for the 'let' expression is only the 'f' in x |> f
-                let expr = mkLet appDebugPoint fRange inputVal (mkApps g ((fR, fType), [], [ve], fRange)) restExpr
+                let expr = mkLet appDebugPoint fRange stageVal (mkApps g ((fR, fType), [], [ve], fRange)) restExpr
                 let info = CombineValueInfosUnknown [info; restInfo]
                 expr, info
             newBinder
