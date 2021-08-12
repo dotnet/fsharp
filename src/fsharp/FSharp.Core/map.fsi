@@ -353,3 +353,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>The keys in the map.</summary>
         [<CompiledName("Keys")>]
         val keys: table: Map<'Key, 'T> -> ICollection<'Key>
+
+        /// <summary>The values in the map.</summary>
+        [<CompiledName("Values")>]
+        val values: table: Map<'Key, 'T> -> ICollection<'T>
