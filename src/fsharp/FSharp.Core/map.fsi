@@ -85,9 +85,6 @@ namespace Microsoft.FSharp.Collections
         /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
         member TryGetValue: key: 'Key * [<System.Runtime.InteropServices.Out>] value: byref<'Value> -> bool
         
-        /// <summary>The empty map.</summary>
-        static member Empty: Map<'Key,'Value> when 'Key: comparison
-
         /// <summary>The keys in the map.</summary>
         member Keys : ICollection<'Key>
 
