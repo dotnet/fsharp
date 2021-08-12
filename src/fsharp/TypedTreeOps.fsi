@@ -2505,4 +2505,9 @@ val (|ResumableCodeInvoke|_|):
     g:TcGlobals ->
     expr: Expr -> 
        (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option    
-       
+
+val (|OpPipeRight|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * TType * Expr * Expr * range) option
+

@@ -7658,6 +7658,13 @@ let (|DelegateInvokeExpr|_|) g expr =
             Some(iref, fty, tyargs, f, args, m)
     | _ -> None
 
+let (|OpPipeRight|_|) g expr =
+    match expr with
+    | Expr.App (Expr.Val (vref, _, _), _, [xType; resType], [xExpr; fExpr], m) 
+        when valRefEq g vref g.piperight_vref -> 
+            Some(xType, resType, xExpr, fExpr, m)
+    | _ -> None
+
 let rec MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, fty, tyargs, argsl: Expr list, m) =
     match f with 
     | Expr.Let (bind, body, mlet, _) ->
