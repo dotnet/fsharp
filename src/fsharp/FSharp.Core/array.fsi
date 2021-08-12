@@ -1001,7 +1001,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A copy of the input array, after removing the first N elements.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="T:System.ArgumentExcepion">Thrown when count is negative or exceeds the number of 
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative or exceeds the number of 
         /// elements in the array.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
