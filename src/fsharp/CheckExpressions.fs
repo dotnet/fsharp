@@ -8867,7 +8867,8 @@ and TcMethodApplication
             | _ -> ()
     end
 
-    if (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
+    if not finalCalledMeth.IsIndexParamArraySetter &&
+       (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
         errorR(Deprecated(FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix(), mMethExpr))
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
