@@ -682,6 +682,7 @@ type CompilerAssert private () =
             parseResults.Diagnostics
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
+        printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
         Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors
