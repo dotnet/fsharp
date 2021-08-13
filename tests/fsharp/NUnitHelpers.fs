@@ -2,7 +2,7 @@ namespace NUnit.Framework
 
 module Assert =
 
-    [<assembly: Parallelizable(ParallelScope.All)>]
+    [<assembly: NonParallelizable()>]
     do()
 
     let inline fail message = Assert.Fail message

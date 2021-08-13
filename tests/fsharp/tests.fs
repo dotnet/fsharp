@@ -88,7 +88,7 @@ module CoreTests =
     [<Test>]
     let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
 
-    [<Test; Ignore("test fails in debug mode, see https://github.com/dotnet/fsharp/pull/11763")>]
+    [<Test>]
     let ``genericmeasures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC_OPT_MINUS
 
     [<Test>]
