@@ -3248,11 +3248,14 @@ and getPipes g expr acc =
     | OpPipeRight g (resType, xExpr, fExpr, m) ->
         getPipes g xExpr (([xExpr.Range], resType, fExpr, m) :: acc) 
     | OpPipeRight2 g (resType, x1Expr, x2Expr, fExpr, m) ->
-        Choice2Of3 (x1Expr, x2Expr), (([x1Expr.Range; x2Expr.Range], resType, fExpr, m) :: acc)
+        [x1Expr; x2Expr], (([x1Expr.Range; x2Expr.Range], resType, fExpr, m) :: acc)
     | OpPipeRight3 g (resType, x1Expr, x2Expr, x3Expr, fExpr, m) ->
-        Choice3Of3 (x1Expr, x2Expr, x3Expr), (([x1Expr.Range; x2Expr.Range; x3Expr.Range], resType, fExpr, m) :: acc)
+        [x1Expr; x2Expr; x3Expr], (([x1Expr.Range; x2Expr.Range; x3Expr.Range], resType, fExpr, m) :: acc)
     | _ ->
-        Choice1Of3 expr, acc
+        [expr], acc
+
+and mkDebugPoint g m e = 
+    mkThenDoSequential DebugPointAtSequential.SuppressStmt m e (mkUnit g m)
 
 /// In debug code, process a pipe-right manually to lay down the debug point for the application of the function after
 /// the evaluation of the argument, all the way down the chain.
@@ -3262,20 +3265,8 @@ and OptimizeDebugPipeRights cenv env expr =
     env.methEnv.pipelineCount <- env.methEnv.pipelineCount + 1
     let xs0, pipes = getPipes g expr []
     
-    let xs0R, xs0Info =
-        match xs0 with 
-        | Choice1Of3 x01 -> 
-            let x01R, x01Info = OptimizeExpr cenv env x01
-            [x01R], x01Info
-        | Choice2Of3 (x01, x02) ->
-            let x01R, x01Info = OptimizeExpr cenv env x01
-            let x02R, x02Info = OptimizeExpr cenv env x02
-            [x01R; x02R], CombineValueInfosUnknown [x01Info; x02Info]
-        | Choice3Of3 (x01, x02, x03) -> 
-            let x01R, x01Info = OptimizeExpr cenv env x01
-            let x02R, x02Info = OptimizeExpr cenv env x02
-            let x03R, x03Info = OptimizeExpr cenv env x03
-            [x01R; x02R; x03R], CombineValueInfosUnknown [x01Info; x02Info; x03Info]
+    let xs0R, xs0Infos = OptimizeExprsThenConsiderSplits cenv env xs0
+    let xs0Info = CombineValueInfosUnknown xs0Infos
 
     assert (pipes.Length > 0)
     let pipesFront, pipeLast = List.frontAndBack pipes
@@ -3290,9 +3281,8 @@ and OptimizeDebugPipeRights cenv env expr =
         let fRange = fExpr.Range
         let fType = tyOfExpr g fExpr
         let fR, finfo = OptimizeExpr cenv env fExpr
-        let lastDebugPoint = DebugPointAtSequential.SuppressStmt
         let app = mkApps g ((fR, fType), [], prevInputs, fRange)
-        let expr = mkThenDoSequential lastDebugPoint fRange app (mkUnit g fRange)
+        let expr = mkDebugPoint g fRange app
         let info = CombineValueInfosUnknown [finfo; prevInputInfo]
         expr, info
 
@@ -3307,20 +3297,16 @@ and OptimizeDebugPipeRights cenv env expr =
         List.foldBack 
             (fun (i, (xsRange, resType, fExpr: Expr, _)) binder ->
                 let name = "Pipe #" + string env.methEnv.pipelineCount + " stage #" + string (i+1)
-                let stageVals, stageValExprs =
-                    xsRange
-                    |> List.map (fun xRange -> mkLocal xRange name resType)
-                    |> List.unzip
-    
+                let stageVal, stageValExpr = mkLocal (List.reduce unionRanges xsRange) name resType
                 let fRange = fExpr.Range
                 let fType = tyOfExpr g fExpr
                 let fR, finfo = OptimizeExpr cenv env fExpr
-                let restExpr, restInfo = binder (stageValExprs, finfo)
-                let appDebugPoint = DebugPointAtBinding.Yes fRange
+                let restExpr, restInfo = binder ([stageValExpr], finfo)
                 let newBinder (ves, info) = 
                     // The range used for the 'let' expression is only the 'f' in x |> f
                     let app = mkApps g ((fR, fType), [], ves, fRange)
-                    let expr = List.foldBack (fun stageVal e -> mkLet appDebugPoint fRange stageVal e restExpr) stageVals app
+                    let appDebugPoint = DebugPointAtBinding.Yes fRange
+                    let expr = mkLet appDebugPoint fRange stageVal app restExpr
                     let info = CombineValueInfosUnknown [info; restInfo]
                     expr, info
                 newBinder
@@ -3335,8 +3321,8 @@ and OptimizeDebugPipeRights cenv env expr =
     let inputVals, inputValExprs =
         xs0R
         |> List.map (fun x0R -> 
-            let xRange0 = x0R.Range
-            mkLocal xRange0 ("Pipe #" + string env.methEnv.pipelineCount + " input") (tyOfExpr g x0R))
+            let nm = ("Pipe #" + string env.methEnv.pipelineCount + " input")
+            mkLocal x0R.Range nm (tyOfExpr g x0R))
         |> List.unzip
     let pipesExprR, pipesInfo = pipesBinder (inputValExprs, xs0Info)
     
