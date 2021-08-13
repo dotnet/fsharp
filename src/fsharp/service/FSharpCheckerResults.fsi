@@ -120,7 +120,7 @@ type public FSharpSymbolUse =
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
-    member Instantiation: (FSharpGenericParameter * FSharpType) list 
+    member GenericArguments: (FSharpGenericParameter * FSharpType) list 
 
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
     /// and other methods to format items in a way that is suitable for a specific source code location.

@@ -206,7 +206,7 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol:FSharpSymbol, inst: TyparInst, ite
 
     member _.Symbol  = symbol
 
-    member _.Instantiation =
+    member _.GenericArguments =
         let cenv = symbol.SymbolEnv
         inst |> List.map (fun (v, ty) -> FSharpGenericParameter(cenv, v), FSharpType(cenv, ty)) 
 
