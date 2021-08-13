@@ -232,7 +232,7 @@ module LeafExpressionConverter =
                     | GenericParameterAttributes.None -> false
                     | GenericParameterAttributes.Covariant -> hasReferenceConversionTo sourceArgument destArgument
                     | GenericParameterAttributes.Contravariant -> not (sourceArgument.IsValueType || destArgument.IsValueType)
-                    | x -> failwith $"Unexpected GenericParameterAttributes variance: {x}"
+                    | x -> Printf.failwithf "Unexpected GenericParameterAttributes variance: %O" x
                 )
             // TODO: Is expanding this worth it?
             // || (source.IsArray || dest.IsArray) && StrictHasReferenceConversionTo(source, dest, true)
