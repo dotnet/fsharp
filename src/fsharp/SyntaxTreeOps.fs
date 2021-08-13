@@ -768,3 +768,23 @@ let (|SynPipeRight|_|) input =
         when synId.idText = "op_PipeRight" ->
         Some (x1, x2)
     | _ -> None
+
+let (|SynPipeRight2|_|) input =
+    match input with
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, 
+        SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, 
+            SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), _m1), 
+            x2, _m2) 
+        when synId.idText = "op_PipeRight2" ->
+        Some (x1a, x1b, x2)
+    | _ -> None
+
+let (|SynPipeRight3|_|) input =
+    match input with
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, 
+        SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, 
+            SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), _m1), 
+            x2, _m2) 
+        when synId.idText = "op_PipeRight3" ->
+        Some (x1a, x1b, x1c, x2)
+    | _ -> None

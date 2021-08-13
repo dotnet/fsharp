@@ -266,3 +266,7 @@ val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> str
 
 val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
 
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+
