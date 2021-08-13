@@ -393,6 +393,34 @@ stages:
         #     displayName: Regular rebuild
 
         # Plain build Linux
+        - job: Plain_Build_Windows
+          pool:
+            vmImage: windows-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)/service
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
+
+        # Plain build Linux
         - job: Plain_Build_Linux
           pool:
             vmImage: ubuntu-latest
@@ -412,10 +440,13 @@ stages:
               packageType: sdk
               useGlobalJson: true
               includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
+              workingDirectory: $(Build.SourcesDirectory)/service
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Mac
         - job: Plain_Build_MacOS
@@ -437,10 +468,13 @@ stages:
               packageType: sdk
               useGlobalJson: true
               includePreviewVersions: true
-              workingDirectory: $(Build.SourcesDirectory)
+              workingDirectory: $(Build.SourcesDirectory)/service
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
