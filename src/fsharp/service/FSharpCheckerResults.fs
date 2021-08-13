@@ -202,9 +202,13 @@ module internal FSharpCheckerResultsSettings =
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
 
 [<Sealed>]
-type FSharpSymbolUse(denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) =
+type FSharpSymbolUse(denv: DisplayEnv, symbol:FSharpSymbol, inst: TyparInst, itemOcc, range: range) =
 
     member _.Symbol  = symbol
+
+    member _.GenericArguments =
+        let cenv = symbol.SymbolEnv
+        inst |> List.map (fun (v, ty) -> FSharpGenericParameter(cenv, v), FSharpType(cenv, ty)) 
 
     member _.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
 
@@ -1179,7 +1183,7 @@ type internal TypeCheckInfo
                             | items ->
                                 items
                                 |> List.map (fun item -> let symbol = FSharpSymbol.Create(cenv, item.Item)
-                                                         FSharpSymbolUse(denv, symbol, ItemOccurence.Use, m)))
+                                                         FSharpSymbolUse(denv, symbol, item.ItemWithInst.TyparInst, ItemOccurence.Use, m)))
 
                     //end filtering
                     items)
@@ -1338,8 +1342,8 @@ type internal TypeCheckInfo
                 match declItemsOpt with
                 | None | Some ([],_,_,_) -> None
                 | Some (items, denv, _, m) ->
-                    let allItems = items |> List.collect (fun item -> FlattenItems g m item.Item)
-                    let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item))
+                    let allItems = items |> List.collect (fun item -> FlattenItems g m item.ItemWithInst)
+                    let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item.Item), item)
                     Some (symbols, denv, m)
             )
             (fun msg ->
@@ -1467,7 +1471,7 @@ type internal TypeCheckInfo
                 | None | Some ([], _, _, _) -> None
                 | Some (item :: _, denv, _, m) ->
                     let symbol = FSharpSymbol.Create(cenv, item.Item)
-                    Some (symbol, denv, m)
+                    Some (symbol, item.ItemWithInst, denv, m)
             )
             (fun msg ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
@@ -1981,18 +1985,18 @@ type FSharpCheckFileResults
     member _.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.GetSymbolUseAtLocation (line, lineText, colAtEndOfNames, names)
-            |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(denv,sym,ItemOccurence.Use,m)))
+            |> Option.map (fun (sym, itemWithInst, denv,m) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInst,ItemOccurence.Use,m)))
 
     member _.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.GetMethodsAsSymbols (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
-                symbols |> List.map (fun sym -> FSharpSymbolUse(denv,sym,ItemOccurence.Use,m))))
+                symbols |> List.map (fun (sym, itemWithInst) -> FSharpSymbolUse(denv,sym,itemWithInst.TyparInst,ItemOccurence.Use,m))))
 
     member _.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names) =
         threadSafeOp (fun () -> None) (fun scope ->
             scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
-            |> Option.map (fun (sym,_,_) -> sym))
+            |> Option.map (fun (sym,_,_,_) -> sym))
 
     member info.GetFormatSpecifierLocations() =
         info.GetFormatSpecifierLocationsAndArity() |> Array.map fst
@@ -2033,8 +2037,8 @@ type FSharpCheckFileResults
                         for symbolUse in symbolUseChunk do
                             cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                             if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                                let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
+                                let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
+                                FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range)
                 })
 
     member _.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
@@ -2044,7 +2048,7 @@ type FSharpCheckFileResults
                 [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
                      cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
+                        yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range) |])
 
     member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) =
         threadSafeOp
@@ -2265,7 +2269,7 @@ type FSharpCheckProjectResults
         |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
         |> Seq.map (fun symbolUse ->
                cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
-               FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range))
+               FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range))
         |> Seq.toArray
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
@@ -2297,8 +2301,8 @@ type FSharpCheckProjectResults
                 for symbolUse in symbolUseChunk do
                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                      let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                      yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
+                      let symbol = FSharpSymbol.Create(cenv, symbolUse.ItemWithInst.Item)
+                      yield FSharpSymbolUse(symbolUse.DisplayEnv, symbol, symbolUse.ItemWithInst.TyparInst, symbolUse.ItemOccurence, symbolUse.Range) |]
 
     member _.ProjectContext =
         let tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles, projectOptions = getDetails()
