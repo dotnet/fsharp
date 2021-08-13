@@ -3322,7 +3322,7 @@ and OptimizeDebugPipeRights cenv env expr =
     let inputVals, inputValExprs =
         xs0R
         |> List.mapi (fun i x0R -> 
-            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R  > 1 then "#" + string (i+1) else "")
+            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R  > 1 then " #" + string (i+1) else "")
             mkLocal x0R.Range nm (tyOfExpr g x0R))
         |> List.unzip
     let pipesExprR, pipesInfo = pipesBinder (inputValExprs, xs0Info)
