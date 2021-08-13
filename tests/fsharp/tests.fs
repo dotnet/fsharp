@@ -64,7 +64,6 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "5.0"
 
-    [<Test>]
     [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
     let ``array-FSI_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI_BASIC "5.0"
 
@@ -77,7 +76,6 @@ module CoreTests =
     [<Test>]
     let ``array-no-dot-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_BASIC "preview"
 
-    [<Test>]
     [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
     let ``array-no-dot-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI_BASIC "preview"
 

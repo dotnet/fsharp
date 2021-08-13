@@ -1940,7 +1940,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
     let delayedExpr = mkDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
-let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (isArrayOrList, hasBuilder, comp) m =
+let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
         TcExpr cenv overallTy env tpenv replacementExpr
@@ -1960,7 +1960,7 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (isA
         
     TcSequenceExpression cenv env tpenv comp overallTy m
 
-let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, comp) m  =
+let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (isArray, comp) m  =
     // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
     // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
@@ -1971,11 +1971,11 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
 
         let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 
-        UnifyTypes cenv env m overallTy genCollTy
+        UnifyTypes cenv env m overallTy.Commit genCollTy
 
         let exprTy = mkSeqTy cenv.g genCollElemTy
 
-        let expr, tpenv = TcExpr cenv exprTy env tpenv replacementExpr
+        let expr, tpenv = TcExpr cenv (MustEqual exprTy) env tpenv replacementExpr
         let expr = 
             if cenv.g.compilingFslib then 
                 //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
@@ -1985,7 +1985,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
                 // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
                 mkCallSeq cenv.g m genCollElemTy expr
                    
-        let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy)
+        let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy.Commit)
 
         let expr = 
             if isArray then 
@@ -2033,10 +2033,10 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
       //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
       TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env (* canAdhoc  *) m (fun () ->
         
-        let exprty = mkSeqTy cenv.g genCollElemTy
+        let exprTy = mkSeqTy cenv.g genCollElemTy
 
         // Check the comprehension
-        let expr, tpenv = TcSequenceExpression cenv env tpenv comp (MustEqual exprty) m
+        let expr, tpenv = TcSequenceExpression cenv env tpenv comp (MustEqual exprTy) m
 
         let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
 
