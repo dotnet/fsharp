@@ -100,10 +100,28 @@ module internal RoslynHelpers =
         member _.Stop() = isStopped <- true
 
     // This is like Async.StartAsTask, but
-    //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken
-    //  2. if exception occurs then set result to Unchecked.defaultof<_>, i.e. swallow exceptions
+    //  1. If cancellation occurs we explicitly associate the cancellation with cancellationToken
+    //  2. If exception occurs then set result to Unchecked.defaultof<_>, i.e. swallow exceptions
     //     and hope that Roslyn copes with the null
+    //  3. Never, ever run the computation on the UI thread - switch to thread pool if necessary
+    //     This is because Roslyn makes blocking invocations of tasks from the UI thread at
+    //     several points, and relies on those tasks completing in the thread pool if necessary.
+    //     See for example https://github.com/dotnet/fsharp/issues/11946#issuecomment-896071454
+    //     Note that no async { ... } code in FSharp.Editor is ever intended to run on the UI
+    //     thread in any form. That is, our async code in FSharp.Editor is always "backgroundAsync"
+    //     in the sense that it is valid switch away from the UI thread if it is ever started on
+    //     the UI thread, e.g. see the corresponding backgroundTask { ... } in RFC FS-1097
+    
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
+        // Protect against blocking the UI thread by switching to thread pool
+        let computation =
+            match SynchronizationContext.Current with 
+            | null -> computation
+            | _ ->
+                async {
+                    do! Async.SwitchToThreadPool()
+                    return! computation
+                }
         let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
         let barrier = VolatileBarrier()
         let reg = cancellationToken.Register(fun _ -> if barrier.Proceed then tcs.TrySetCanceled(cancellationToken) |> ignore)

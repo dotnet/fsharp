@@ -375,6 +375,9 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
+    | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
+    | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
+    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> 
         (severity = FSharpDiagnosticSeverity.Info) ||
         (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)

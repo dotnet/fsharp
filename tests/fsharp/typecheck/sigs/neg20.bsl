@@ -69,17 +69,17 @@ neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'A'.
+neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
-neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B1'. This element has type 'B2'.
+neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B1'. This element has type 'B2'.
 
-neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'C'. This element has type 'B'.
+neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'C'. This element has type 'B'.
 
-neg20.fs(66,25,66,32): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'A'. This element has type 'B'.
+neg20.fs(66,25,66,32): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'A'. This element has type 'B'.
 
-neg20.fs(67,27,67,34): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'C'.
+neg20.fs(67,27,67,34): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'C'.
 
-neg20.fs(70,31,70,38): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'C'.
+neg20.fs(70,31,70,38): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'C'.
 
 neg20.fs(71,34,71,42): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
@@ -110,9 +110,9 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return values of the same type as the first branch, which here is 'B'. This branch returns a value of type 'C'.
+neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'B'. This branch returns a value of type 'C'.
 
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'B'. This branch returns a value of type 'C'.
+neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'B'. This branch returns a value of type 'C'.
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
     'A'    
@@ -129,7 +129,7 @@ neg20.fs(97,26,97,33): typecheck error FS0001: This expression was expected to h
 but here has type
     'B'    
 
-neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list must be of the same type as the first element, which here is 'B'. This element has type 'A'.
+neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
 neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
     'B * B -> 'a'    
@@ -415,3 +415,13 @@ neg20.fs(428,19,428,38): typecheck error FS1133: No constructors are available f
 neg20.fs(430,22,430,41): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
 neg20.fs(444,39,444,41): typecheck error FS0039: The type 'OverloadedClassName' does not define the field, constructor or member 'S2'.
+
+neg20.fs(447,27,447,28): typecheck error FS0001: This expression was expected to have type
+    'int option'    
+but here has type
+    'int'    
+
+neg20.fs(448,30,448,33): typecheck error FS0001: This expression was expected to have type
+    'string option'    
+but here has type
+    'string'    

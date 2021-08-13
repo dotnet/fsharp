@@ -156,7 +156,7 @@ type public FSharpSymbolUse =
     member IsPrivateToFile: bool 
 
     // For internal use only
-    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new: denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]

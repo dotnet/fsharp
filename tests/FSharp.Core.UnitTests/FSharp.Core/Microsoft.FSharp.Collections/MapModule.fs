@@ -644,3 +644,21 @@ type MapModule() =
         Assert.AreEqual(resultEpt,None)
                
         ()  
+
+    [<Fact>]
+    member this.Keys() =
+        // reference keys
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "2"; "3"], Map.keys m)
+    
+        // value keys
+        let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
+        Assert.AreEqual([1; 2; 3], Map.keys m)
+    
+        // one element  
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], Map.keys m)
+        
+        // empty
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], Map.keys m)
