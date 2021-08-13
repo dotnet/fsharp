@@ -401,7 +401,8 @@ module FSharpExprConvert =
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
-        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->  E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) 
+        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->
+            E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) |> contF
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
             ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contF
