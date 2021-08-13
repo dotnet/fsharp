@@ -149,7 +149,7 @@ namespace FSharp.Compiler.Symbols
 
         val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
-        val FlattenItems : TcGlobals -> range -> Item -> Item list
+        val FlattenItems : TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
 #if !NO_EXTENSIONTYPING
         val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
