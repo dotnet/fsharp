@@ -369,7 +369,7 @@ type OptimizationSettings =
     member x.EliminateUnusedBindings = x.localOpt () 
 
     /// Determines if we should arrange things so we debug points for pipelines x |> f1 |> f2
-    /// including locals "<pipe-input>", "<pipe-stage-1>" and so on.
+    /// including locals "<pipe1-input>", "<pipe1-stage1>" and so on.
     /// On by default for debug code.
     member x.DebugPointsForPipeRight =
         not (x.localOpt ()) &&
@@ -422,9 +422,16 @@ type cenv =
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
+
     }
 
     override x.ToString() = "<cenv>"
+
+// environment for a method
+type menv =
+    { mutable pipelineCount: int }
+
+    override x.ToString() = "<menv>"
 
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
@@ -448,6 +455,8 @@ type IncrementalOptimizationEnv =
 
       localExternalVals: LayeredMap<Stamp, ValInfo>
 
+      methEnv: menv
+
       globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
     }
 
@@ -459,7 +468,8 @@ type IncrementalOptimizationEnv =
           dontSplitVars = ValMap.Empty
           disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
-          globalModuleInfos = LayeredMap.Empty }
+          globalModuleInfos = LayeredMap.Empty 
+          methEnv = { pipelineCount = 0 } }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -3234,6 +3244,7 @@ and getPipes g expr acc =
 and OptimizeDebugPipeRights cenv env expr =
     let g = cenv.g
 
+    env.methEnv.pipelineCount <- env.methEnv.pipelineCount + 1
     let x0, pipes = getPipes g expr []
     assert (pipes.Length > 0)
     let pipesFront, pipeLast = List.frontAndBack pipes
@@ -3271,7 +3282,7 @@ and OptimizeDebugPipeRights cenv env expr =
     let pipesBinder =
         (List.indexed pipesFront, binderLast) ||> List.foldBack (fun (i, (xRange, xType, resType, fExpr: Expr, _)) binder ->
     
-            let name = "<pipe-stage-" + string (i+1) + ">"
+            let name = "Pipe #" + string env.methEnv.pipelineCount + " stage #" + string (i+1)
             let stageVal, stageValExpr = mkLocal xRange name resType
     
             let fRange = fExpr.Range
@@ -3291,7 +3302,7 @@ and OptimizeDebugPipeRights cenv env expr =
     //    rest <pipe-input>
     // with a breakpoint on the pipe-input binding
     let xRange0 = x0.Range
-    let inputVal, inputValExpr= mkLocal xRange0 "<pipe-input>" (tyOfExpr g x0)
+    let inputVal, inputValExpr= mkLocal xRange0 ("Pipe #" + string env.methEnv.pipelineCount + " input") (tyOfExpr g x0)
     let pipesExprR, pipesInfo = pipesBinder (inputValExpr, xInfo0)
     let expr = mkLet (DebugPointAtBinding.Yes xRange0) expr.Range inputVal xR0 pipesExprR
     expr, pipesInfo
@@ -3326,6 +3337,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
     match e with 
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
+        let env = { env with methEnv = { pipelineCount = 0 }}
         let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo e
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
@@ -3869,7 +3881,8 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=Dictionary<Stamp, bool>() }
+          casApplied=Dictionary<Stamp, bool>() 
+        }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
 
