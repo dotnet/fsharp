@@ -821,10 +821,10 @@ module ParsedInput =
                 when ident.idText = name -> Some (lhs, rhs)
             | _ -> None
 
-        // checks if we are in rhs of the range operator
+        // checks if we are in a range operator
         let isAtRangeOp (p : SyntaxVisitorPath) = 
             match p with
-            | SyntaxNode.SynExpr(SynExpr.IndexRange(Some _, _, None, _, _, _)) :: _ -> true
+            | SyntaxNode.SynExpr(SynExpr.IndexRange _) :: _ -> true
             | _ -> false
 
         let (|Setter|_|) e =

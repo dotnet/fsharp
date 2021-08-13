@@ -3131,6 +3131,38 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B2``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue.. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B3``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_C``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue..]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_D``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. ]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
     // Verify the auto completion after the close-parentheses,
     // there should be auto completion
     [<Test>]
