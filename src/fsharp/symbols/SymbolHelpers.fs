@@ -982,11 +982,13 @@ module internal SymbolHelpers =
             ->  None
 
     /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g (m: range) item =
+    let FlattenItems g (m: range) (item: ItemWithInst) : ItemWithInst list =
         ignore m
-        match item with 
-        | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig))  
-        | Item.CtorGroup(nm, cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) 
+        match item.Item with 
+        | Item.MethodGroup(nm, minfos, orig) ->
+            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInst = item.TyparInst })
+        | Item.CtorGroup(nm, cinfos) ->
+            cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInst = item.TyparInst }) 
         | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
