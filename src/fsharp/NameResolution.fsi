@@ -360,7 +360,7 @@ type internal TcResolutions =
 
 [<Struct>]
 type TcSymbolUseData = 
-   { Item: Item
+   { ItemWithInst: ItemWithInst
      ItemOccurence: ItemOccurence
      DisplayEnv: DisplayEnv
      Range: range }

@@ -238,6 +238,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
 
     member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
+    member internal _.SymbolEnv = cenv
     member internal _.Item = item()
 
     member _.DisplayName = item().DisplayName

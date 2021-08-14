@@ -477,11 +477,6 @@
         <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. '{1}' 디렉터리에 있는 '{0} --version'의 출력은 '{2}'이고 종료 코드는 '{3}'입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcAmbiguousImplicitConversion">
-        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
         <target state="translated">이 스크립트의 .NET SDK를 확인할 수 없습니다. dotnet.exe를 찾을 수 없습니다. .NET SDK가 설치되어 있는지 확인하세요.</target>
@@ -490,6 +485,11 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. 예기치 않은 오류 '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -784,12 +784,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -804,12 +804,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
+        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
