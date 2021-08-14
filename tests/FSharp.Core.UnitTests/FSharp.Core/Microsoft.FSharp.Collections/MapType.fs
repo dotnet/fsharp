@@ -358,8 +358,9 @@ type MapType() =
     
     [<Fact>]
     member this.Keys() =
-        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
-        Assert.AreEqual(["1"; "2"; "3"], m.Keys)
+        // Keys are ordered
+        let m = Map.ofArray [| ("3", "9"); ("2", "4"); ("1", "3") |]
+        Assert.AreEqual(["3"; "2"; "1"], m.Keys)
     
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
         Assert.AreEqual([1; 2; 3], m.Keys)
@@ -372,8 +373,9 @@ type MapType() =
 
     [<Fact>]
     member this.Values() =
-        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
-        Assert.AreEqual(["1"; "4"; "9"], m.Values)
+        // values are ordered by the key
+        let m = Map.ofArray [| ("3", "9"); ("2", "4"); ("1", "3") |]
+        Assert.AreEqual(["9"; "4"; "1"], m.Values)
     
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
         Assert.AreEqual([1; 4; 9], m.Values)
