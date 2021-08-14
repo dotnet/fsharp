@@ -1473,25 +1473,6 @@ let x = new MyClass2(0)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
     [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.Popup``() =
-        // Salsa is no yet capable of determining whether there would be a popup, it can only test what would appear if there were.
-        // So can't do test below.
-//        AssertAutoCompleteContainsNoCoffeeBreak 
-//          [ "System.Console..BackgroundColor" ]
-//          "System.Console.."
-//          [ ] // should be empty - in fact, there is no popup here
-//          [ "abs"; "BackgroundColor" ] // should not contain anything
-        ()
-
-    [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.CtrlSpace``() =
-        AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
-          [ "System.Console..BackgroundColor" ]
-          "System.Console.."
-          [ ] // should contain nothing - .. is not properly used range operator
-          [ "abs" ] // should not contain (from prior System.Console)
-    
-    [<Test>]
     member public this.``DotCompletionInPatternsPartOfLambda``() = 
         let content = ["let _ = fun x . -> x + 1"]
         AssertCtrlSpaceCompletionListIsEmpty content "x ."

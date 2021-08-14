@@ -2052,19 +2052,19 @@ module CoreTests =
 [<NonParallelizable>]
 module VersionTests =
     [<Test>]
-    let ``member-selfidentifier-version4.6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
+    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4.7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
 
     [<Test>]
-    let ``indent-version4.6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
+    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``indent-version4.7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
+    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
 
     [<Test>]
-    let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
+    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
     let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BUILDONLY "preview"
@@ -2683,14 +2683,14 @@ module TypecheckTests =
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>]
-    let ``type check neg24 version 4.6`` () =
+    let ``type check neg24 version 4_6`` () =
         let cfg = testConfig "typecheck/sigs/version46"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "4.6" "neg24"
 
     [<Test>]
-    let ``type check neg24 version 4.7`` () =
+    let ``type check neg24 version 4_7`` () =
         let cfg = testConfig "typecheck/sigs/version47"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
