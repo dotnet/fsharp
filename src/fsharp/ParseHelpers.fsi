@@ -45,7 +45,9 @@ module LexbufLocalXmlDocStore =
     val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
 
     val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> PreXmlDoc
-  
+
+    val AddGrabPoint: lexbuf:UnicodeLexing.Lexbuf -> unit
+
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse

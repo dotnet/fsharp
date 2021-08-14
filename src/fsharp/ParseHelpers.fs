@@ -6,6 +6,8 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
@@ -91,20 +93,28 @@ module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
 
+    let private getCollector (lexbuf: Lexbuf) =
+        match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
+        | true, collector -> collector
+        | _ ->
+            let collector = box (XmlDocCollector())
+            lexbuf.BufferLocalStore.[xmlDocKey] <- collector
+            collector
+
+        |> unbox<XmlDocCollector>
+
     let ClearXmlDoc (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
-        let collector =
-            match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
-            | true, collector -> collector
-            | _ ->
-                let collector = box (XmlDocCollector())
-                lexbuf.BufferLocalStore.[xmlDocKey] <- collector
-                collector
-        let collector = unbox<XmlDocCollector>(collector)
+        let collector = getCollector lexbuf
         collector.AddXmlDocLine(lineText, range)
+
+    let AddGrabPoint (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        let startPos = lexbuf.StartPos
+        collector.AddGrabPoint(mkPos startPos.Line startPos.Column)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
@@ -112,7 +122,7 @@ module LexbufLocalXmlDocStore =
         match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
         | true, collector ->
             let collector = unbox<XmlDocCollector>(collector)
-            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.End)
+            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.Start)
         | _ ->
             PreXmlDoc.Empty
 

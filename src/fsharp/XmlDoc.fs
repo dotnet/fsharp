@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.Xml
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Xml
 open System.Xml.Linq
@@ -146,10 +147,10 @@ and XmlDocStatics() =
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
     let mutable savedLines = ResizeArray<string * range>()
-    let mutable savedGrabPoints = ResizeArray<pos>()
+    let mutable savedGrabPoints = Dictionary<_, _>()
+    let mutable currentGrabPointCommentsCount = 0
+
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
-    let savedGrabPointsAsArray =
-        lazy (savedGrabPoints.ToArray() |> Array.sortWith posCompare)
 
     let savedLinesAsArray =
         lazy (savedLines.ToArray() |> Array.sortWith (fun (_, p1) (_, p2) -> posCompare p1.End p2.End))
@@ -158,32 +159,26 @@ type XmlDocCollector() =
         // can't add more XmlDoc elements to XmlDocCollector after extracting first XmlDoc from the overall results
         assert (not savedLinesAsArray.IsValueCreated)
 
-    member x.AddGrabPoint pos =
+    member x.AddGrabPoint(pos: pos) =
         check()
-        savedGrabPoints.Add pos
+        if currentGrabPointCommentsCount = 0 then () else
+        let commentsStartEndIndexes = struct(savedLines.Count - currentGrabPointCommentsCount, savedLines.Count - 1)
+        savedGrabPoints.Add(pos, commentsStartEndIndexes)
+        currentGrabPointCommentsCount <- 0
 
     member x.AddXmlDocLine(line, range) =
         check()
         savedLines.Add(line, range)
+        currentGrabPointCommentsCount <- currentGrabPointCommentsCount + 1
 
     member x.LinesBefore grabPointPos =
-      try
         let lines = savedLinesAsArray.Force()
-        let grabPoints = savedGrabPointsAsArray.Force()
-        let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_, m) -> posGeq m.End grabPointPos)
-        let grabPointIndex = Array.findFirstIndexWhereTrue grabPoints (fun pos -> posGeq pos grabPointPos)
-        assert (posEq grabPoints.[grabPointIndex] grabPointPos)
-        let firstLineIndexAfterPrevGrabPoint =
-            if grabPointIndex = 0 then
-                0
-            else
-                let prevGrabPointPos = grabPoints.[grabPointIndex-1]
-                Array.findFirstIndexWhereTrue lines (fun (_, m) -> posGeq m.End prevGrabPointPos)
+        match savedGrabPoints.TryGetValue grabPointPos with
+        | true, struct(startIndex, endIndex) -> lines.[startIndex .. endIndex]
+        | false, _ -> [||]
 
-        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1]
-        lines
-      with e ->
-        [| |]
+    member x.HasComments grabPointPos =
+        savedGrabPoints.TryGetValue grabPointPos |> fst
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
@@ -209,8 +204,14 @@ type PreXmlDoc =
                    doc.Check(paramNamesOpt)
                 doc
 
+    member x.IsEmpty =
+        match x with
+        | PreXmlDirect (lines, _) -> lines |> Array.forall String.IsNullOrWhiteSpace
+        | PreXmlMerge(a, b) -> a.IsEmpty && b.IsEmpty
+        | PreXmlDocEmpty -> true
+        | PreXmlDoc (pos, collector) -> not (collector.HasComments pos)
+
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
-        collector.AddGrabPoint grabPointPos
         PreXmlDoc(grabPointPos, collector)
 
     static member Empty = PreXmlDocEmpty

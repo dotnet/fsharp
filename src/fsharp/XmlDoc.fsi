@@ -44,7 +44,9 @@ type internal XmlDocCollector =
     member AddXmlDocLine: line:string * range:range -> unit
 
     member LinesBefore: grabPointPos: pos -> (string * range) []
-  
+
+    member HasComments: grabPointPos: pos -> bool
+
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
 type public PreXmlDoc =
@@ -56,6 +58,8 @@ type public PreXmlDoc =
     static member Create: unprocessedLines:string [] * range:range -> PreXmlDoc
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
+
+    member IsEmpty: bool
 
     static member Empty: PreXmlDoc
 
