@@ -917,3 +917,26 @@ type NonStructuralComparisonTests() =
         let y = 32 |> float32
         let comparison = compare x y
         Assert.AreEqual(0, comparison)
+
+module DynamicConversionTests =
+    type A = A
+    type B() = class end
+    type [<Struct>] C =
+        static member op_Explicit(_: A) = C() // Explicit from another type
+        static member op_Explicit(_: C) = B() // Explicit to another type
+        static member op_Implicit(_: D) = C() // Duplicated implicit conversion
+        static member op_Explicit(_: C) = { D = 0 } // Duplicated explicit conversion
+    and D = { D : int } with
+        static member op_Implicit(_: A) = { D = 0 } // Implicit from another type
+        static member op_Implicit(_: D) = B() // Implicit to another type
+        static member op_Implicit(_: D) = C() // Duplicated implicit conversion
+        static member op_Explicit(_: C) = { D = 0 } // Duplicated explicit conversion
+    let [<Fact>] ExplicitDynamicTests() =
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(A) : C) // Explicit from another type
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(C()) : B) // Explicit to another type
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic({ D = 0 }) : C) // Duplicated implicit conversion
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(C()) : D) // Duplicated explicit conversion
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(A) : D) // Implicit from another type
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic({ D = 0 }) : B) // Implicit to another type
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic({ D = 0 }) : C) // Duplicated implicit conversion
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(C()) : D) // Duplicated explicit conversion

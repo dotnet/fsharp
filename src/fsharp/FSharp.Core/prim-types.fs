@@ -2536,9 +2536,17 @@ namespace Microsoft.FSharp.Core
         type System.Type with
     
             member inline this.GetSingleStaticMethodByTypes(name: string, parameterTypes: Type[]) =
-               let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
-               this.GetMethod(name, staticBindingFlags, null, parameterTypes, null )
-
+                let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
+                this.GetMethod(name, staticBindingFlags, null, parameterTypes, null )
+            // Logic based on https://github.com/dotnet/runtime/blob/f66b142980b2b0df738158457458e003944dc7f6/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L662
+            member inline this.GetSingleStaticConversionOperatorByTypes(fromType : Type, toType : Type) =
+                let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
+                let mutable ret = null
+                for mi in this.GetMethods staticBindingFlags do
+                    if (System.String.Equals(mi.Name, "op_Implicit") || System.String.Equals(mi.Name, "op_Explicit")) &&
+                       (let p = mi.GetParameters() in p.Length = 1 && (get p 0).ParameterType.IsEquivalentTo fromType) && mi.ReturnType.IsEquivalentTo toType then
+                       ret <- mi
+                ret
         let UnaryDynamicImpl nm : ('T -> 'U) =
              let aty = typeof<'T>
              let minfo = aty.GetSingleStaticMethodByTypes(nm, [| aty |])
@@ -2560,7 +2568,14 @@ namespace Microsoft.FSharp.Core
 
                 match meth with 
                 | null ->
-                    let ameth = aty.GetSingleStaticMethodByTypes(opName, [| aty |])
+                    let ameth =
+                        if System.String.Equals(opName, "op_Explicit") then
+                            let aty2 = typeof<'U>
+                            match aty.GetSingleStaticConversionOperatorByTypes(aty, aty2) with
+                            | null -> aty2.GetSingleStaticConversionOperatorByTypes(aty, aty2)
+                            | ameth -> ameth
+                        else
+                            aty.GetSingleStaticMethodByTypes(opName, [| aty |])
                     match ameth with
                     | null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                     | res -> 
