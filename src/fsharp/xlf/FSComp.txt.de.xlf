@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">zusätzliche typgesteuerte Konvertierungen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
-        <target state="new">whitespace relaxation v2</target>
+        <target state="translated">whitespace relaxation v2</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -459,7 +459,7 @@
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <target state="translated">Dieser Ausdruck weist den Typ "{0}" auf und wird nur durch eine mehrdeutige implizite Konvertierung mit dem Typ "{1}" kompatibel gemacht. Erwägen Sie die Verwendung eines expliziten Aufrufs an "op_Implicit". Die anwendbaren impliziten Konvertierungen sind: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -499,17 +499,17 @@
       </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Dieser Ausdruck verwendet eine integrierte implizite Konvertierung, um den Typ "{0}" in den Typ "{1}" zu konvertieren. Siehe https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">Dieser Ausdruck verwendet die implizite Konvertierung "{0}", um den Typ "{1}" in den Typ "{2}" zu konvertieren.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">Dieser Ausdruck verwendet die implizite Konvertierung "{0}", um den Typ "{1}" in den Typ "{2}" zu konvertieren. Siehe https://aka.ms/fsharp-implicit-convs. Diese Warnung kann durch "#nowarn \" 3391 \ " deaktiviert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -594,7 +594,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Dieser Ausdruck konvertiert den Typ "{0}" implizit in den Typ "{1}". Siehe https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -704,12 +704,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Alle Elemente einer Liste müssen implizit in den Typ des ersten Elements konvertierbar sein, der hier "{0}" genannt wird. Dieses Element hat den Typ "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Alle Elemente eines Arrays müssen implizit in den Typ des ersten Elements konvertierbar sein, der hier "{0}" genannt ist. Dieses Element weist den Typ "{1}" auf.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -724,12 +724,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Alle Verzweigungen eines „If-Ausdrucks“ müssen Werte zurückgeben, die implizit in den Typ der ersten Verzweigung konvertierbar sind, welcher hier "{0}" genannt wird. Diese Verzweigung gibt einen Wert vom Typ "{1}" zurück.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Alle Verzweigungen eines Musterübereinstimmungsausdrucks müssen Werte zurückgeben, die implizit zu dem Typen der ersten Verzweigung konvertiert werden können, welche hier „{0}“ genannt wird. Diese Verzweigung gibt einen Wert des Typs „{1}“ zurück.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
