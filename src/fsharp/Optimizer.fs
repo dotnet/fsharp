@@ -3296,10 +3296,10 @@ and OptimizeDebugPipeRights cenv env expr =
     let pipesBinder =
         List.foldBack 
             (fun (i, (xsRange, resType, fExpr: Expr, _)) binder ->
-                let name = $"Pipe #%d{env.methEnv.pipelineCount} stage #%d{i+1}"
-                let stageVal, stageValExpr = mkLocal (List.reduce unionRanges xsRange) name resType
                 let fRange = fExpr.Range
                 let fType = tyOfExpr g fExpr
+                let name = $"Pipe #%d{env.methEnv.pipelineCount} stage #%d{i+1} at line %d{fRange.StartLine}"
+                let stageVal, stageValExpr = mkLocal (List.reduce unionRanges xsRange) name resType
                 let fR, finfo = OptimizeExpr cenv env fExpr
                 let restExpr, restInfo = binder ([stageValExpr], finfo)
                 let newBinder (ves, info) = 
@@ -3322,7 +3322,7 @@ and OptimizeDebugPipeRights cenv env expr =
     let inputVals, inputValExprs =
         xs0R
         |> List.mapi (fun i x0R -> 
-            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R  > 1 then " #" + string (i+1) else "")
+            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R  > 1 then " #" + string (i+1) else "") + $" at line %d{x0R.Range.StartLine}"
             mkLocal x0R.Range nm (tyOfExpr g x0R))
         |> List.unzip
     let pipesExprR, pipesInfo = pipesBinder (inputValExprs, xs0Info)
