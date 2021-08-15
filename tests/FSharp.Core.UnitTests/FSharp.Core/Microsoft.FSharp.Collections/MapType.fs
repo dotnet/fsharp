@@ -360,28 +360,28 @@ type MapType() =
     member this.Keys() =
         // Keys are ordered
         let m = Map.ofArray [| ("3", "9"); ("2", "4"); ("1", "3") |]
-        Assert.AreEqual(["3"; "2"; "1"], m.Keys)
+        Assert.AreEqual(["1"; "2"; "3"], m.Keys |> Seq.toList)
     
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
-        Assert.AreEqual([1; 2; 3], m.Keys)
+        Assert.AreEqual([1; 2; 3], m.Keys |> Seq.toList)
         
         let m = Map.ofArray [| |]
-        Assert.AreEqual([], m.Keys)
+        Assert.AreEqual([], m.Keys |> Seq.toList)
         
         let m = Map.ofArray [| (1, 1); |]
-        Assert.AreEqual([1], m.Keys)
+        Assert.AreEqual([1], m.Keys |> Seq.toList)
 
     [<Fact>]
     member this.Values() =
         // values are ordered by the key
         let m = Map.ofArray [| ("3", "9"); ("2", "4"); ("1", "3") |]
-        Assert.AreEqual(["9"; "4"; "1"], m.Values)
+        Assert.AreEqual(["3"; "4"; "9"], m.Values |> Seq.toList)
     
         let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
-        Assert.AreEqual([1; 4; 9], m.Values)
+        Assert.AreEqual([1; 4; 9], m.Values |> Seq.toList)
         
         let m = Map.ofArray [| |]
-        Assert.AreEqual([], m.Values)
+        Assert.AreEqual([], m.Values |> Seq.toList)
         
         let m = Map.ofArray [| (1, 1); |]
-        Assert.AreEqual([1], m.Values)
+        Assert.AreEqual([1], m.Values |> Seq.toList)
