@@ -21,7 +21,7 @@ type OperatorsModuleChecked() =
         let charByte = Operators.Checked.byte '0'
         Assert.AreEqual(48uy, charByte)
 
- // boundary value
+        // boundary value
         let boundByte = Operators.Checked.byte 255.0
         Assert.AreEqual(255uy, boundByte)
 

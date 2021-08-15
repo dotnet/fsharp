@@ -311,8 +311,19 @@ type OperatorsModule1() =
     [<Fact>]
     member _.char() =
         // int type
-        let intchar = Operators.char 48
-        Assert.AreEqual('0', intchar)
+        Assert.AreEqual('0', Operators.char 48)
+        Assert.AreEqual('0', Operators.char 48u)
+        Assert.AreEqual('0', Operators.char 48s)
+        Assert.AreEqual('0', Operators.char 48us)
+        Assert.AreEqual('0', Operators.char 48y)
+        Assert.AreEqual('0', Operators.char 48uy)
+        Assert.AreEqual('0', Operators.char 48L)
+        Assert.AreEqual('0', Operators.char 48uL)
+        Assert.AreEqual('0', Operators.char 48n)
+        Assert.AreEqual('0', Operators.char 48un)
+        Assert.AreEqual('0', Operators.char 48f)
+        Assert.AreEqual('0', Operators.char 48.)
+        Assert.AreEqual('0', Operators.char 48m)
         
         // string type
         let stringchar = Operators.char " "
@@ -367,6 +378,10 @@ type OperatorsModule1() =
         
         // int value
         let mindecimal = Operators.decimal (1)
+        Assert.AreEqual(1M, mindecimal)
+        
+        // char value
+        let mindecimal = Operators.decimal '\001'
         Assert.AreEqual(1M, mindecimal)
        
         // float  value

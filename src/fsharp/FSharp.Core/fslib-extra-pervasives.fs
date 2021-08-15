@@ -375,4 +375,3 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type ITypeProvider2 =
         abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
-

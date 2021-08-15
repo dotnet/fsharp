@@ -853,8 +853,7 @@ module LeafExpressionConverter =
         if isLinqExpressionsConvertible e.Type inp.Type then
             exprErasedConstructor(e, inp.Type, null)
         else
-            // The dynamic implementations of checked conversion operators refer to LanguagePrimitives.ExplicitDynamic which is unchecked! This is a bug and should definitely be fixed.
-            let method = Reflection.MethodInfo.GetMethodFromHandle (methodhandleof (fun x -> LanguagePrimitives.ExplicitDynamic x)) :?> Reflection.MethodInfo
+            let method = Reflection.MethodInfo.GetMethodFromHandle (if isChecked then methodhandleof (fun x -> LanguagePrimitives.CheckedExplicitDynamic x) else methodhandleof (fun x -> LanguagePrimitives.ExplicitDynamic x)) :?> Reflection.MethodInfo
             exprErasedConstructor(e, inp.Type, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
 

@@ -16,4 +16,3 @@ module TyperelatedExpressions =
         |> typecheck
         |> shouldSucceed
         |> ignore
-

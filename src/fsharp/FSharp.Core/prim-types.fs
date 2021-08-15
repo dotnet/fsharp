@@ -2861,7 +2861,7 @@ namespace Microsoft.FSharp.Core
         let ExplicitDynamic<'T, 'U> (value: 'T) : 'U =
             if typeeq<'U, byte> then 
                 if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u1" (convPrim<_,sbyte> value) : byte #)
-                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u1" (convPrim<_,byte> value) : byte #)
+                elif typeeq<'T, byte> then convPrim<_,'U> value
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u1" (convPrim<_,int16> value) : byte #)
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u1" (convPrim<_,uint16> value) : byte #)
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u1" (convPrim<_,int32> value) : byte #) 
@@ -2876,7 +2876,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseByte (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, sbyte> then 
-                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i1" (convPrim<_,sbyte> value) : sbyte #)
+                if typeeq<'T, sbyte> then convPrim<_,'U> value
                 elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i1" (convPrim<_,byte> value) : sbyte #)
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i1" (convPrim<_,int16> value) : sbyte #)
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i1" (convPrim<_,uint16> value) : sbyte #)
@@ -2895,7 +2895,7 @@ namespace Microsoft.FSharp.Core
                 if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,sbyte> value) : uint16 #)
                 elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,byte> value) : uint16 #)
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int16> value) : uint16 #)
-                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint16> value) : uint16 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> value
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int32> value) : uint16 #) 
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint32> value) : uint16 #) 
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int64> value) : uint16 #) 
@@ -2910,7 +2910,7 @@ namespace Microsoft.FSharp.Core
             elif typeeq<'U, int16> then 
                 if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i2" (convPrim<_,sbyte> value) : int16 #)
                 elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i2" (convPrim<_,byte> value) : int16 #)
-                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i2" (convPrim<_,int16> value) : int16 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> value
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i2" (convPrim<_,uint16> value) : int16 #)
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i2" (convPrim<_,int32> value) : int16 #) 
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i2" (convPrim<_,uint32> value) : int16 #) 
@@ -2929,7 +2929,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int16> value) : uint32 #)
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint16> value) : uint32 #)
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int32> value) : uint32 #) 
-                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint32> value) : uint32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> value
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int64> value) : uint32 #) 
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint64> value) : uint32 #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.u4" (convPrim<_,nativeint> value) : uint32 #) 
@@ -2944,7 +2944,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i4" (convPrim<_,byte> value) : int32 #)
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int16> value) : int32 #)
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint16> value) : int32 #)
-                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int32> value) : int32 #) 
+                elif typeeq<'T, int32> then convPrim<_,'U> value
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint32> value) : int32 #) 
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int64> value) : int32 #) 
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint64> value) : int32 #) 
@@ -2963,7 +2963,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int32> value) : uint64 #) 
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint32> value) : uint64 #) 
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "" (convPrim<_,int64> value) : uint64 #) 
-                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i8" (convPrim<_,uint64> value) : uint64 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> value
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i8" (convPrim<_,nativeint> value) : uint64 #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u8" (convPrim<_,unativeint> value) : uint64 #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float> value) : uint64 #) 
@@ -2978,7 +2978,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint16> value) : int64 #)
                 elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int32> value) : int64 #) 
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint32> value) : int64 #) 
-                elif typeeq<'T, int64> then convPrim<_,'U> (convPrim<_,int64> value) 
+                elif typeeq<'T, int64> then convPrim<_,'U> value
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "" (convPrim<_,uint64> value) : int64 #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i8" (convPrim<_,nativeint> value) : int64 #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u8" (convPrim<_,unativeint> value) : int64 #) 
@@ -2999,7 +2999,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r4" (convPrim<_,nativeint> value) : float32 #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,unativeint> value) : float32 #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float> value) : float32 #) 
-                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float32> value) : float32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> value
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,char> value) : float32 #) 
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseSingle (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
@@ -3014,7 +3014,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint64> value) : float #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r8" (convPrim<_,nativeint> value) : float #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,unativeint> value) : float #) 
-                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float> value) : float #) 
+                elif typeeq<'T, float> then convPrim<_,'U> value
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float32> value) : float #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,char> value) : float #) 
                 elif typeeq<'T, decimal> then convPrim<_,'U> (Convert.ToDouble(convPrim<_,decimal> value))
@@ -3030,7 +3030,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i" (convPrim<_,int64> value) : unativeint #) 
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint64> value) : unativeint #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "" (convPrim<_,nativeint> value) : unativeint #) 
-                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "" (convPrim<_,unativeint> value) : unativeint #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> value
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u" (convPrim<_,float> value) : unativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u" (convPrim<_,float32> value) : unativeint #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : unativeint #) 
@@ -3046,7 +3046,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint32> value) : nativeint #) 
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i" (convPrim<_,int64> value) : nativeint #) 
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint64> value) : nativeint #) 
-                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "" (convPrim<_,nativeint> value) : nativeint #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> value
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "" (convPrim<_,unativeint> value) : nativeint #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i" (convPrim<_,float> value) : nativeint #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i" (convPrim<_,float32> value) : nativeint #) 
@@ -3067,7 +3067,240 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,unativeint> value) : char #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : char #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : char #) 
-                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : char #) 
+                elif typeeq<'T, char> then convPrim<_,'U> value
+                elif typeeq<'T, decimal> then convPrim<_,'U> (Decimal.op_Explicit (convPrim<_,decimal> value) : char) 
+                elif typeeq<'T, string> then convPrim<_,'U> (System.Char.Parse (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, decimal> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,sbyte> value))
+                elif typeeq<'T, byte> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,byte> value))
+                elif typeeq<'T, int16> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int16> value))
+                elif typeeq<'T, uint16> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint16> value))
+                elif typeeq<'T, int32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int32> value)) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint32> value)) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int64> value)) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint64> value)) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (Convert.ToDecimal (# "conv.i8" (convPrim<_,nativeint> value) : int64 #)) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (Convert.ToDecimal (# "conv.u8" (convPrim<_,unativeint> value) : uint64 #)) 
+                elif typeeq<'T, float> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float> value)) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float32> value)) 
+                elif typeeq<'T, char> then convPrim<_,'U> (Convert.ToDecimal (# "" (convPrim<_,char> value) : uint16 #)) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> value 
+                elif typeeq<'T, string> then convPrim<_,'U> (Decimal.Parse(convPrim<_,string> value, NumberStyles.Float,CultureInfo.InvariantCulture)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            else
+                UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+
+        let CheckedExplicitDynamic<'T, 'U> (value: 'T) : 'U =
+            if typeeq<'U, byte> then
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,sbyte> value) : byte #)
+                elif typeeq<'T, byte> then convPrim<_,'U> value
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,int16> value) : byte #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.u1.un" (convPrim<_,uint16> value) : byte #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,int32> value) : byte #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.u1.un" (convPrim<_,uint32> value) : byte #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,int64> value) : byte #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.u1.un" (convPrim<_,uint64> value) : byte #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,nativeint> value) : byte #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.u1.un" (convPrim<_,unativeint> value) : byte #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,float> value) : byte #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u1" (convPrim<_,float32> value) : byte #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.u1.un" (convPrim<_,char> value) : byte #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseByte (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, sbyte> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> value
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,byte> value) : sbyte #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,int16> value) : sbyte #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,uint16> value) : sbyte #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,int32> value) : sbyte #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,uint32> value) : sbyte #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,int64> value) : sbyte #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,uint64> value) : sbyte #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,nativeint> value) : sbyte #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,unativeint> value) : sbyte #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,float> value) : sbyte #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.i1" (convPrim<_,float32> value) : sbyte #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.i1.un" (convPrim<_,char> value) : sbyte #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseSByte (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint16> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,sbyte> value) : uint16 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,byte> value) : uint16 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int16> value) : uint16 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> value
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int32> value) : uint16 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,uint32> value) : uint16 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int64> value) : uint16 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,uint64> value) : uint16 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,nativeint> value) : uint16 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,unativeint> value) : uint16 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,float> value) : uint16 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,float32> value) : uint16 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,char> value) : uint16 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt16 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int16> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,sbyte> value) : int16 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,byte> value) : int16 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> value
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,uint16> value) : int16 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,int32> value) : int16 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,uint32> value) : int16 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,int64> value) : int16 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,uint64> value) : int16 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,nativeint> value) : int16 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,unativeint> value) : int16 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,float> value) : int16 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.i2" (convPrim<_,float32> value) : int16 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.i2.un" (convPrim<_,char> value) : int16 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt16 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,sbyte> value) : uint32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.u4.un" (convPrim<_,byte> value) : uint32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,int16> value) : uint32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.u4.un" (convPrim<_,uint16> value) : uint32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,int32> value) : uint32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> value
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,int64> value) : uint32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.u4.un" (convPrim<_,uint64> value) : uint32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,nativeint> value) : uint32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.u4.un" (convPrim<_,unativeint> value) : uint32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,float> value) : uint32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u4" (convPrim<_,float32> value) : uint32 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.u4.un" (convPrim<_,char> value) : uint32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt32 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,sbyte> value) : int32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,byte> value) : int32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,int16> value) : int32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,uint16> value) : int32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> value
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,uint32> value) : int32 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,int64> value) : int32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,uint64> value) : int32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,nativeint> value) : int32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,unativeint> value) : int32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,float> value) : int32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.i4" (convPrim<_,float32> value) : int32 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.i4.un" (convPrim<_,char> value) : int32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt32 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint64> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,sbyte> value) : uint64 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.u8.un" (convPrim<_,byte> value) : uint64 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,int16> value) : uint64 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.u8.un" (convPrim<_,uint16> value) : uint64 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,int32> value) : uint64 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.u8.un" (convPrim<_,uint32> value) : uint64 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,int64> value) : uint64 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> value
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,nativeint> value) : uint64 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.u8.un" (convPrim<_,unativeint> value) : uint64 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,float> value) : uint64 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u8" (convPrim<_,float32> value) : uint64 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.u8.un" (convPrim<_,char> value) : uint64 #)
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt64 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int64> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,sbyte> value) : int64 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,byte> value) : int64 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,int16> value) : int64 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,uint16> value) : int64 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,int32> value) : int64 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,uint32> value) : int64 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> value
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,uint64> value) : int64 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,nativeint> value) : int64 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,unativeint> value) : int64 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,float> value) : int64 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.i8" (convPrim<_,float32> value) : int64 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.i8.un" (convPrim<_,char> value) : int64 #)
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt64 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, float32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.r4" (convPrim<_,sbyte> value) : float32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,byte> value) : float32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int16> value) : float32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint16> value) : float32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int32> value) : float32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint32> value) : float32 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int64> value) : float32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint64> value) : float32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r4" (convPrim<_,nativeint> value) : float32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,unativeint> value) : float32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float> value) : float32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> value
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,char> value) : float32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseSingle (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, float> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.r8" (convPrim<_,sbyte> value) : float #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,byte> value) : float #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int16> value) : float #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint16> value) : float #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int32> value) : float #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint32> value) : float #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int64> value) : float #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint64> value) : float #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r8" (convPrim<_,nativeint> value) : float #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,unativeint> value) : float #) 
+                elif typeeq<'T, float> then convPrim<_,'U> value
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float32> value) : float #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,char> value) : float #) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> (Convert.ToDouble(convPrim<_,decimal> value))
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseDouble (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, unativeint> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,sbyte> value) : unativeint #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.u.un" (convPrim<_,byte> value) : unativeint #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,int16> value) : unativeint #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.u.un" (convPrim<_,uint16> value) : unativeint #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,int32> value) : unativeint #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.u.un" (convPrim<_,uint32> value) : unativeint #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,int64> value) : unativeint #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.u.un" (convPrim<_,uint64> value) : unativeint #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,nativeint> value) : unativeint #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> value
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,float> value) : unativeint #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u" (convPrim<_,float32> value) : unativeint #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.u.un" (convPrim<_,char> value) : unativeint #)
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.ovf.u" (Decimal.op_Explicit (convPrim<_,decimal> value) : uint64) : unativeint #)
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUIntPtr (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, nativeint> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,sbyte> value) : nativeint #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,byte> value) : nativeint #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,int16> value) : nativeint #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,uint16> value) : nativeint #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,int32> value) : nativeint #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,uint32> value) : nativeint #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,int64> value) : nativeint #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,uint64> value) : nativeint #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> value
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,unativeint> value) : nativeint #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,float> value) : nativeint #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.i" (convPrim<_,float32> value) : nativeint #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.ovf.i.un" (convPrim<_,char> value) : nativeint #)
+                elif typeeq<'T, decimal> then convPrim<_,'U> (# "conv.ovf.i" (Decimal.op_Explicit (convPrim<_,decimal> value) : int64) : nativeint #)
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseIntPtr (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, char> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,sbyte> value) : char #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,byte> value) : char #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int16> value) : char #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,uint16> value) : char #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int32> value) : char #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,uint32> value) : char #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,int64> value) : char #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,uint64> value) : char #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,nativeint> value) : char #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.ovf.u2.un" (convPrim<_,unativeint> value) : char #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,float> value) : char #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.ovf.u2" (convPrim<_,float32> value) : char #) 
+                elif typeeq<'T, char> then convPrim<_,'U> value
                 elif typeeq<'T, decimal> then convPrim<_,'U> (Decimal.op_Explicit (convPrim<_,decimal> value) : char) 
                 elif typeeq<'T, string> then convPrim<_,'U> (System.Char.Parse (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
@@ -4969,7 +5202,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToByte")>]
             let inline byte (value: ^T) = 
-                 ExplicitDynamic<(^T),byte> value 
+                 CheckedExplicitDynamic<(^T),byte> value 
                  when ^T : string     = ParseByte (castToString value)
                  when ^T : float     = (# "conv.ovf.u1" value  : byte #)
                  when ^T : float32   = (# "conv.ovf.u1" value  : byte #)
@@ -4989,7 +5222,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             let inline sbyte (value: ^T) = 
-                 ExplicitDynamic<(^T),sbyte> value 
+                 CheckedExplicitDynamic<(^T),sbyte> value 
                  when ^T : string     = ParseSByte (castToString value)
                  when ^T : float     = (# "conv.ovf.i1" value  : sbyte #)
                  when ^T : float32   = (# "conv.ovf.i1" value  : sbyte #)
@@ -5009,7 +5242,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]
             let inline uint16 (value: ^T) = 
-                 ExplicitDynamic<(^T),uint16> value 
+                 CheckedExplicitDynamic<(^T),uint16> value 
                  when ^T : string     = ParseUInt16 (castToString value)
                  when ^T : float      = (# "conv.ovf.u2" value  : uint16 #)
                  when ^T : float32    = (# "conv.ovf.u2" value  : uint16 #)
@@ -5029,7 +5262,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToChar")>]
             let inline char (value: ^T) = 
-                 ExplicitDynamic<(^T), char> value 
+                 CheckedExplicitDynamic<(^T), char> value 
                  when ^T : string     = (System.Char.Parse(castToString value))
                  when ^T : float      = (# "conv.ovf.u2" value  : char #)
                  when ^T : float32    = (# "conv.ovf.u2" value  : char #)
@@ -5049,7 +5282,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt16")>]
             let inline int16 (value: ^T) = 
-                 ExplicitDynamic<(^T), int16> value 
+                 CheckedExplicitDynamic<(^T), int16> value 
                  when ^T : string     = ParseInt16 (castToString value)
                  when ^T : float     = (# "conv.ovf.i2" value  : int16 #)
                  when ^T : float32   = (# "conv.ovf.i2" value  : int16 #)
@@ -5069,7 +5302,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt32")>]
             let inline uint32 (value: ^T) = 
-                 ExplicitDynamic<(^T), uint32> value 
+                 CheckedExplicitDynamic<(^T), uint32> value 
                  when ^T : string     = ParseUInt32 (castToString value)
                  when ^T : float     = (# "conv.ovf.u4" value  : uint32 #)
                  when ^T : float32   = (# "conv.ovf.u4" value  : uint32 #)
@@ -5089,7 +5322,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt32")>]
             let inline int32 (value: ^T) = 
-                 ExplicitDynamic<(^T), int32> value 
+                 CheckedExplicitDynamic<(^T), int32> value 
                  when ^T : string     = ParseInt32 (castToString value)
                  when ^T : float     = (# "conv.ovf.i4" value  : int32 #)
                  when ^T : float32   = (# "conv.ovf.i4" value  : int32 #)
@@ -5112,7 +5345,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt64")>]
             let inline uint64 (value: ^T) = 
-                 ExplicitDynamic<(^T), uint64> value 
+                 CheckedExplicitDynamic<(^T), uint64> value 
                  when ^T : string     = ParseUInt64 (castToString value)
                  when ^T : float     = (# "conv.ovf.u8" value  : uint64 #)
                  when ^T : float32   = (# "conv.ovf.u8" value  : uint64 #)
@@ -5132,7 +5365,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt64")>]
             let inline int64 (value: ^T) = 
-                 ExplicitDynamic<(^T), int64> value 
+                 CheckedExplicitDynamic<(^T), int64> value 
                  when ^T : string     = ParseInt64 (castToString value)
                  when ^T : float     = (# "conv.ovf.i8" value  : int64 #)
                  when ^T : float32   = (# "conv.ovf.i8" value  : int64 #)
@@ -5152,7 +5385,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUIntPtr")>]
             let inline unativeint (value: ^T) = 
-                 ExplicitDynamic<(^T), unativeint> value 
+                 CheckedExplicitDynamic<(^T), unativeint> value 
                  when ^T : string     = ParseUIntPtr (castToString value)
                  when ^T : float     = (# "conv.ovf.u" value  : unativeint #)
                  when ^T : float32   = (# "conv.ovf.u" value  : unativeint #)
@@ -5173,7 +5406,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToIntPtr")>]
             let inline nativeint (value: ^T) = 
-                 ExplicitDynamic<(^T), nativeint> value 
+                 CheckedExplicitDynamic<(^T), nativeint> value 
                  when ^T : string     = ParseIntPtr (castToString value)
                  when ^T : float     = (# "conv.ovf.i" value  : nativeint #)
                  when ^T : float32   = (# "conv.ovf.i" value  : nativeint #)
