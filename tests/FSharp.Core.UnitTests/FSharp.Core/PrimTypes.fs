@@ -918,6 +918,7 @@ type NonStructuralComparisonTests() =
         let comparison = compare x y
         Assert.AreEqual(0, comparison)
 
+#nowarn "1204" // CompilerMessage: This function is for use by dynamic invocations of F# code and should not be used directly
 module DynamicConversionTests =
     type A = A
     type B() = class end
