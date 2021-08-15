@@ -214,7 +214,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
-        <target state="new">whitespace relaxation v2</target>
+        <target state="translated">uso meno restrittivo degli spazi vuoti v2</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
