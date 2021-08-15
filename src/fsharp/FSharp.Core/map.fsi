@@ -357,7 +357,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Keys")>]
         val keys: table: Map<'Key, 'T> -> ICollection<'Key>
 
-        /// <summary>The values in the map.
+        /// <summary>The values in the map, including the duplicates.
         /// The sequence will be ordered by the keys of the map.</summary>
         [<CompiledName("Values")>]
         val values: table: Map<'Key, 'T> -> ICollection<'T>
