@@ -7644,6 +7644,8 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
             | _ ->
                 let mArg = synArg.Range
                 match synArg with
+                // async { ... }
+                // seq { ... }
                 | SynExpr.ComputationExpr _ -> ()
 
                 // expr[idx]
@@ -7652,20 +7654,41 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                 // expr[..idx1]
                 // expr[idx1..idx2]
                 | SynExpr.ArrayOrListComputed(false, _, _) ->
-                    if isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
-                        cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
+                    if isAdjacent && cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                        // This is the non-error path
                         ()
                     else
-                        // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
+                        // This is the error path. The error we give depends on what's enabled.
+                        // 
+                        // First, 'delayed' is about to be dropped on the floor, do rudimentary checking to get name resolutions in its body
                         RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                        if IsIndexerType cenv.g cenv.amap expr.Type then
+                        let vName =
                             match expr.Expr with
-                            | Expr.Val (d, _, _) ->
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, Some d.DisplayName, mExpr, mArg))
-                            | _ ->
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, None, mExpr, mArg))
+                            | Expr.Val (d, _, _) -> Some d.DisplayName
+                            | _ -> None
+                        if isAdjacent then
+                            if IsIndexerType cenv.g cenv.amap expr.Type then
+                                if cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
+                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
+                                match vName with
+                                | Some nm -> 
+                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(nm, nm), mExprAndArg))
+                                | _ -> 
+                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerIndexingNotYetEnabled(), mExprAndArg))
+                            else
+                                match vName with
+                                | Some nm -> 
+                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(nm), mExprAndArg))
+                                | _ -> 
+                                    error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
                         else
-                            error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                            if IsIndexerType cenv.g cenv.amap expr.Type then
+                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
+                            else
+                                error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+
+                // f x  (where 'f' is not a function)
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed

@@ -528,8 +528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview). If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -593,13 +593,13 @@
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you are calling a function, use parentheses or add a space between arguments 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as in an argument list. If you are calling a function, use parentheses or add a space between arguments 'someFunction [expr1] [expr2]'.</target>
+        <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
-        <source>The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction [expr1] [expr2]'.</target>
+        <source>The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -617,24 +617,44 @@
         <target state="translated">Nie można przypisać elementu „{0}” do wartości oznaczonej jako literał</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
+        <source>This expression supports index notation, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview.</source>
+        <target state="new">This expression supports index notation, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
+        <source>This value supports index notation, e.g. '{0}.[index]'. The syntax 'expr[index]' requires /langversion:preview.</source>
+        <target state="new">This value supports index notation, e.g. '{0}.[index]'. The syntax 'expr[index]' requires /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
+        <source>This expression is not a function and does not support index notation.</source>
+        <target state="new">This expression is not a function and does not support index notation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
+        <source>The value '{0}' is not a function and does not support index notation.</source>
+        <target state="new">The value '{0}' is not a function and does not support index notation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
-        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction expr1 [expr2]'.</target>
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
-        <source>The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you are calling a function, use parentheses or add a space between arguments 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as in an argument list. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If you are calling a function, use parentheses or add a space between arguments 'someFunction (expr1) [expr2]'.</target>
+        <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as an argument. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
-        <source>The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If you are calling a function, use parentheses or add a space between arguments 'someFunction (expr1) [expr2]'.</target>
+        <source>The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing/slicing (in preview) and is ambiguous when used as an argument. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
