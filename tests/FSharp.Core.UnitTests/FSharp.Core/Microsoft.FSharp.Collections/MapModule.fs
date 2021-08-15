@@ -671,7 +671,7 @@ type MapModule() =
     
         // value keys, out of order, including duplicates
         let m = Map.ofArray [| (1, 2); (5, 6); (3, 4); (1, 2) |]
-        Assert.AreEqual([2; 2; 4; 6], Map.values m |> Seq.toList)
+        Assert.AreEqual([2; 4; 6], Map.values m |> Seq.toList)
     
         // one element  
         let m = Map.ofArray [| (1, 1); |]
