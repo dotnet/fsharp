@@ -921,8 +921,12 @@ type NonStructuralComparisonTests() =
 #nowarn "1204" // CompilerMessage: This function is for use by dynamic invocations of F# code and should not be used directly
 module DynamicConversionTests =
     type A = A
-    type B() = class end
+    type B() =
+        static member op_Equality(_: B, _: B) = false
+        static member op_Inequality(_: B, _: B) = true
     type [<Struct>] C =
+        static member op_Equality(_: C, _: C) = true
+        static member op_Inequality(_: C, _: C) = true
         static member op_Explicit(_: A) = C() // Explicit from another type
         static member op_Explicit(_: C) = B() // Explicit to another type
         static member op_Implicit(_: D) = C() // Duplicated implicit conversion
@@ -933,6 +937,11 @@ module DynamicConversionTests =
         static member op_Implicit(_: D) = C() // Duplicated implicit conversion
         static member op_Explicit(_: C) = { D = 0 } // Duplicated explicit conversion
     let [<Fact>] ExplicitDynamicTests() =
+        Assert.False(LanguagePrimitives.EqualityDynamic(B())(B()) : bool)
+        Assert.True(LanguagePrimitives.InequalityDynamic(B())(B()) : bool)
+        Assert.True(LanguagePrimitives.EqualityDynamic(C())(C()) : bool)
+        Assert.True(LanguagePrimitives.InequalityDynamic(C())(C()) : bool)
+        Assert.NotNull(LanguagePrimitives.ExplicitDynamic(A) : C)
         Assert.NotNull(LanguagePrimitives.ExplicitDynamic(A) : C) // Explicit from another type
         Assert.NotNull(LanguagePrimitives.ExplicitDynamic(C()) : B) // Explicit to another type
         Assert.NotNull(LanguagePrimitives.ExplicitDynamic({ D = 0 }) : C) // Duplicated implicit conversion

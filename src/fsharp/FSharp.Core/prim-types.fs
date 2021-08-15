@@ -3203,7 +3203,7 @@ namespace Microsoft.FSharp.Core
             elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,char> x) (convPrim<_,char> y) : bool #))
             elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_Inequality (convPrim<_,decimal> x, convPrim<_,decimal> y))
             elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (not (String.Equals (convPrim<_,string> x, convPrim<_,string> y)))
-            else BinaryOpDynamicImplTable<OpEqualityInfo, 'T1, 'T2, 'U>.Invoke "op_Inequality" x y
+            else BinaryOpDynamicImplTable<OpInequalityInfo, 'T1, 'T2, 'U>.Invoke "op_Inequality" x y
 
         type DivideByIntInfo = class end
         let DivideByIntDynamic<'T> (x: 'T) (n: int) : 'T =
