@@ -172,9 +172,10 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
         if ReportDiagnosticAsError options (err, severity) then
             diagnostics.Add(err, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportDiagnosticAsWarningOrInfo options (err, severity) then
+        elif ReportDiagnosticAsWarning options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Warning)
+        elif ReportDiagnosticAsInfo options (err, severity) then
             diagnostics.Add(err, severity)
-
     override x.ErrorCount = errorCount
 
     member x.GetDiagnostics() = diagnostics.ToArray()
@@ -185,7 +186,7 @@ module DiagnosticHelpers =
         [ let severity = 
                if ReportDiagnosticAsError options (exn, severity) then FSharpDiagnosticSeverity.Error
                else severity
-          if (severity = FSharpDiagnosticSeverity.Error || ReportDiagnosticAsWarningOrInfo options (exn, severity)) then 
+          if (severity = FSharpDiagnosticSeverity.Error || ReportDiagnosticAsWarning options (exn, severity)  || ReportDiagnosticAsInfo options (exn, severity)) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.

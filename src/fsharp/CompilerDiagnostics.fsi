@@ -101,8 +101,11 @@ val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list *
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
-/// Indicates if we should report a diagnostic as a warning or informational
-val ReportDiagnosticAsWarningOrInfo: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
+/// Indicates if we should report a diagnostic as a warning
+val ReportDiagnosticAsInfo: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
+
+/// Indicates if we should report a diagnostic as a warning
+val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
 
 /// Indicates if we should report a warning as an error
 val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool

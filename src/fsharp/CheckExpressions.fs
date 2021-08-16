@@ -59,7 +59,7 @@ let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -7670,7 +7670,7 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                         if isAdjacent then
                             if IsIndexerType cenv.g cenv.amap expr.Type then
                                 if cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
-                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
+                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
                                 match vName with
                                 | Some nm -> 
                                     error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(nm, nm), mExprAndArg))
@@ -7684,7 +7684,8 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                                     error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
                         else
                             if IsIndexerType cenv.g cenv.amap expr.Type then
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg))
+                                let old = not (cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
+                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
                             else
                                 error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
 

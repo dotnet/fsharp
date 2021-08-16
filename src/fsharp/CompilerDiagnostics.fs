@@ -182,7 +182,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NotAFunction(_, _, mfun, _) ->
           Some mfun
 
-      | NotAFunctionButIndexer(_, _, _, mfun, _) ->
+      | NotAFunctionButIndexer(_, _, _, mfun, _, _) ->
           Some mfun
 
       | IllegalFileNameChar _ -> Some rangeCmdArgs
@@ -862,10 +862,15 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | InterfaceNotRevealed(denv, ity, _) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
 
-      | NotAFunctionButIndexer(_, _, name, _, _) ->
-          match name with
-          | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
-          | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+      | NotAFunctionButIndexer(_, _, name, _, _, old) ->
+          if old then
+              match name with
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+          else
+              match name with
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2()) |> ignore
 
       | NotAFunction(_, _, _, marg) ->
           if marg.StartColumn = 0 then
@@ -1872,28 +1877,43 @@ let OutputDiagnosticContext prefix fileLineFunction os err =
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-let ReportDiagnosticAsWarningOrInfo options (err, severity) =
+let ReportDiagnosticAsInfo options (err, severity) =
     match severity with
-    | FSharpDiagnosticSeverity.Error -> true
-    | FSharpDiagnosticSeverity.Info 
+    | FSharpDiagnosticSeverity.Error -> false
+    | FSharpDiagnosticSeverity.Warning -> false
+    | FSharpDiagnosticSeverity.Info ->
+        let n = GetDiagnosticNumber err
+        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        not (List.contains n options.WarnOff)
+    | FSharpDiagnosticSeverity.Hidden -> false
+
+let ReportDiagnosticAsWarning options (err, severity) =
+    match severity with
+    | FSharpDiagnosticSeverity.Error -> false
     | FSharpDiagnosticSeverity.Warning ->
         let n = GetDiagnosticNumber err
         IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn && 
+        not (List.contains n options.WarnOff)
+    // Informational become warning if explicitly on and not explicitly off
+    | FSharpDiagnosticSeverity.Info ->
+        let n = GetDiagnosticNumber err
+        List.contains n options.WarnOn && 
         not (List.contains n options.WarnOff)
     | FSharpDiagnosticSeverity.Hidden -> false
 
 let ReportDiagnosticAsError options (err, severity) =
     match severity with
     | FSharpDiagnosticSeverity.Error -> true
+    // Warnings become errors in some situations
     | FSharpDiagnosticSeverity.Warning ->
         let n = GetDiagnosticNumber err
         IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
         not (List.contains n options.WarnAsWarn) &&
         ((options.GlobalWarnAsError && not (List.contains n options.WarnOff)) ||
          List.contains n options.WarnAsError)
+    // Informational become errors if explicitly WarnAsError
     | FSharpDiagnosticSeverity.Info ->
         let n = GetDiagnosticNumber err
-        IsWarningOrInfoEnabled (err, severity) n options.WarnLevel options.WarnOn &&
         List.contains n options.WarnAsError
     | FSharpDiagnosticSeverity.Hidden -> false
 
