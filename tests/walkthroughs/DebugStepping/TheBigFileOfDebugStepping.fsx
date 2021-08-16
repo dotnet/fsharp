@@ -890,3 +890,37 @@ TaskBreakpoints1() |> Task.RunSynchronously
 InlinedCode.test()
 Pipelined.testListPipeline()
 Pipelined.testArrayPipeline()
+
+module BooleanLogic =
+
+    let testFunctionWithAnd x y =
+        x && y
+
+    let testFunctionWithOr x y =
+        x || y
+
+    let testFunctionWithMultipleAnd x y z =
+        x && y && z
+
+    let testFunctionWithMultipleOr x y z =
+        x || y || z
+
+    let testFunctionWithIfOfAnd x y =
+        if x && y then
+            1
+        else
+            2
+
+    let testFunctionWithIfOfOr x y =
+        if x || y then
+            1
+        else
+            2
+
+    testFunctionWithAnd true false
+    testFunctionWithMultipleAnd true true false
+    testFunctionWithMultipleOr false false true
+    testFunctionWithOr true false
+    testFunctionWithIfOfAnd true false
+    testFunctionWithIfOfOr false false
+

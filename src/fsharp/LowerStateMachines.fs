@@ -415,13 +415,15 @@ type LowerStateMachine(g: TcGlobals) =
             let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
             let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
             let dtree =
-                TDSwitch(pcExpr,
-                        [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
-                            for pc in pcs do
-                                yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
-                        // The default is to go to pcInit
-                        Some(mkGotoLabelTarget initLabel),
-                        m)
+                TDSwitch(
+                    DebugPointAtSwitch.No, 
+                    pcExpr,
+                    [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
+                        for pc in pcs do
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
+                    // The default is to go to pcInit
+                    Some(mkGotoLabelTarget initLabel),
+                    m)
 
             let table = mbuilder.Close(dtree, m, g.int_ty)
             mkCompGenSequential m table (mkLabelled m initLabel expr)

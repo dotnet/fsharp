@@ -583,11 +583,11 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // In this case the 'expr' already holds the result of the 'isinst' test.
 
     | TCase(DecisionTreeTest.IsInst _, success) :: edges, dflt  when Option.isSome inpExprOpt ->
-        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
+        TDSwitch(DebugPointAtSwitch.No, expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
 
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
-        TDSwitch(expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
+        TDSwitch(DebugPointAtSwitch.No, expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
 
 #if OPTIMIZE_LIST_MATCHING
     // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable
@@ -597,7 +597,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
     | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
                      when Option.isSome inpExprOpt ->
-        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, emptyCase)], Some consCase, m)
+        TDSwitch(DebugPointAtSwitch.No, expr, [TCase(DecisionTreeTest.IsNull, emptyCase)], Some consCase, m)
 #endif
 
     // All these should also always have default cases
@@ -621,7 +621,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     | DecisionTreeTest.Const (Const.Double _ | Const.Single _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _ as c)   ->
                         mkILAsmCeq g m testexpr (Expr.Const (c, m, tyOfExpr g testexpr))
                     | _ -> error(InternalError("strange switch", m))
-                mkBoolSwitch m testexpr tree sofar)
+                mkBoolSwitch DebugPointAtSwitch.No m testexpr tree sofar)
           edges
           dflt
 
@@ -663,7 +663,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
             | _ -> failwith "internal error: compactify"
         let edgeGroups = compactify None edges'
-        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(expr, edgeGroup, Some sofar, m))
+        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(DebugPointAtSwitch.No, expr, edgeGroup, Some sofar, m))
 
     // For a total pattern match, run the active pattern, bind the result and
     // recursively build a switch in the choice type
@@ -671,10 +671,10 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
        error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", m))
 
     // For a complete match, optimize one test to be the default
-    | TCase(_, tree) :: rest, None -> TDSwitch (expr, rest, Some tree, m)
+    | TCase(_, tree) :: rest, None -> TDSwitch (DebugPointAtSwitch.No, expr, rest, Some tree, m)
 
     // Otherwise let codegen make the choices
-    | _ -> TDSwitch (expr, edges, dflt, m)
+    | _ -> TDSwitch (DebugPointAtSwitch.No, expr, edges, dflt, m)
 
 #if DEBUG
 let rec layoutPat pat =
@@ -933,26 +933,15 @@ let CompilePatternBasic
                 match valMap.TryFind v with
                 | None -> mkUnit g v.Range
                 | Some res -> res)
-        let rhs' = TDSuccess(es2, i)
+        let successTree = TDSuccess(es2, i)
         match GetWhenGuardOfClause i refuted with
         | Some whenExpr ->
-
             let m = whenExpr.Range
+            let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
+            let failureTree = (InvestigateFrontiers (RefutedWhenClause :: refuted) rest)
+            mkBoolSwitch (DebugPointAtSwitch.Yes m) m whenExprWithBindings successTree failureTree
 
-            // SEQUENCE POINTS: REVIEW: Build a sequence point at 'when'
-            let whenExpr = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
-
-            // We must duplicate both the bindings and the guard expression to ensure uniqueness of bound variables.
-            // This is because guards and bindings can end up being compiled multiple times when "or" patterns are used.
-            //
-            // let whenExpr = copyExpr g CloneAll whenExpr
-            //
-            // However, we are not allowed to copy expressions until type checking is complete, because this
-            // would lose recursive fixup points within the expressions (see FSharp 1.0 bug 4821).
-
-            mkBoolSwitch m whenExpr rhs' (InvestigateFrontiers (RefutedWhenClause :: refuted) rest)
-
-        | None -> rhs'
+        | None -> successTree
 
     /// Select the set of discriminators which we can handle in one test, or as a series of iterated tests,
     /// e.g. in the case of TPat_isinst. Ensure we only take at most one class of `TPat_query` at a time.
@@ -1434,3 +1423,5 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
 
     | _ ->
         CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
+type IA =
+    abstract X: int -> int

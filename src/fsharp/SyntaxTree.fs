@@ -174,6 +174,11 @@ type DebugPointForTarget =
     | No
 
 [<RequireQualifiedAccess>]
+type DebugPointAtSwitch =
+    | Yes of range
+    | No
+
+[<RequireQualifiedAccess>]
 type DebugPointAtSequential =
     | SuppressNeither
     | SuppressStmt

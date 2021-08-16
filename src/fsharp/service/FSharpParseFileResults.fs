@@ -618,7 +618,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
                       for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
-                          yield! walkExprOpt false whenExpr
+                          yield! walkExprOpt true whenExpr
                           yield! walkExpr true e 
 
                   | SynExpr.Lambda (body = bodyExpr) -> 
@@ -628,7 +628,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false inpExpr 
                       for SynMatchClause(_, whenExpr, _, tgtExpr, _, _) in cl do 
-                          yield! walkExprOpt false whenExpr
+                          yield! walkExprOpt true whenExpr
                           yield! walkExpr true tgtExpr 
 
                   | SynExpr.LetOrUse (_, _, binds, bodyExpr, _) -> 
@@ -684,7 +684,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
-                          yield! walkExprOpt false whenExpr
+                          yield! walkExprOpt true whenExpr
                           yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration

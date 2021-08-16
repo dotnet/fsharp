@@ -685,20 +685,22 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
                 let dtree =
-                  TDSwitch(pcExpr,
-                           [
-                             // Add an empty disposal action for the initial state (pc = 0)
-                             if isDisposal then
-                                 yield mkCase(DecisionTreeTest.Const(Const.Int32 pcInit), mkGotoLabelTarget noDisposeContinuationLabel)
+                  TDSwitch(
+                      DebugPointAtSwitch.No,
+                      pcExpr,
+                      [
+                        // Add an empty disposal action for the initial state (pc = 0)
+                        if isDisposal then
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pcInit), mkGotoLabelTarget noDisposeContinuationLabel)
 
-                             // Yield one target for each PC, where the action of the target is to goto the appropriate label
-                             for pc in pcs do
-                                 yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc])
+                        // Yield one target for each PC, where the action of the target is to goto the appropriate label
+                        for pc in pcs do
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc])
 
-                             // Yield one target for the 'done' program counter, where the action of the target is to continuation label
-                             yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
-                           Some(mkGotoLabelTarget pc2lab.[pcInit]),
-                           m)
+                        // Yield one target for the 'done' program counter, where the action of the target is to continuation label
+                        yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
+                      Some(mkGotoLabelTarget pc2lab.[pcInit]),
+                      m)
 
                 let table = mbuilder.Close(dtree, m, g.int_ty)
                 mkCompGenSequential m table (mkLabelled m initLabel expr)
@@ -752,10 +754,11 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
                     let dtree =
-                        TDSwitch(pcExpr,
-                                    [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
-                                    Some (addResultTarget (mkUnit g m)),
-                                    m)
+                        TDSwitch(DebugPointAtSwitch.No, 
+                            pcExpr,
+                            [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
+                            Some (addResultTarget (mkUnit g m)),
+                            m)
                     let pcIsEndStateComparison = mbuilder.Close(dtree, m, g.unit_ty)
                     mkLabelled m startLabel
                         (mkCompGenSequential m

@@ -218,6 +218,14 @@ type DebugPointForTarget =
     | Yes
     | No
 
+/// Represents whether a debug point should be present at the switch
+/// logic of a decision tree. These are introduced for 'when' expressions
+/// and the encoding of 'a && b', 'a || b'
+[<RequireQualifiedAccess>]
+type DebugPointAtSwitch =
+    | Yes of range
+    | No
+
 /// Represents whether a debug point should be suppressed for either the
 /// first or second part of a sequential execution, that is whether the
 /// construct corresponds to a debug point in the original source.

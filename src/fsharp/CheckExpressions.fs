@@ -3449,7 +3449,7 @@ let EliminateInitializationGraphs
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
 
         and CheckDecisionTree st = function
-            | TDSwitch(e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
+            | TDSwitch(_, e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
 
@@ -9376,14 +9376,14 @@ and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr: SynExpr opt
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
-    let optWhenExpr', tpenv =
+    let optWhenExprR, tpenv =
         match optWhenExpr with
         | Some whenExpr ->
             let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
-            let whenExpr', tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) guardEnv tpenv whenExpr
-            Some whenExpr', tpenv
+            let whenExprR, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) guardEnv tpenv whenExpr
+            Some whenExprR, tpenv
         | None -> None, tpenv
-    patf' (TcPatPhase2Input (values, true)), optWhenExpr', NameMap.range vspecMap, envinner, tpenv
+    patf' (TcPatPhase2Input (values, true)), optWhenExprR, NameMap.range vspecMap, envinner, tpenv
 
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
@@ -9392,10 +9392,10 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
     let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
-    let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
+    let pat', optWhenExprR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
-    TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt, None), patm), tpenv
+    TClause(pat', optWhenExprR, TTarget(vspecs, e', spTgt, None), patm), tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     match c with

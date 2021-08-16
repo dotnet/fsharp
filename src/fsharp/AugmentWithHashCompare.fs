@@ -157,10 +157,10 @@ let mkCompareTestConjuncts g m exprs =
         (a, b) ||> List.foldBack (fun e acc -> 
             let nv, ne = mkCompGenLocal m "n" g.int_ty
             mkCompGenLet m nv e
-              (mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty
+              (mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.int_ty
                  (mkClt g m ne (mkZero g m))
                  ne
-                 (mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty 
+                 (mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.int_ty 
                     (mkCgt g m ne (mkZero g m))
                     ne
                     acc)))
@@ -171,7 +171,7 @@ let mkEqualsTestConjuncts g m exprs =
     | [h] -> h
     | l -> 
         let a, b = List.frontAndBack l 
-        List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty e acc (mkFalse g m)) a b
+        List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
     if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
@@ -305,7 +305,7 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
                      mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
         let dflt = Some(mbuilder.AddResultTarget(mkFalse g m, DebugPointForTarget.No))
-        let dtree = TDSwitch(thate, cases, dflt, m)
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thate, cases, dflt, m)
         mbuilder.Close(dtree, m, g.bool_ty)
 
     let expr = mkBindThatNullEquals g m thise thate expr
@@ -328,7 +328,7 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
                      mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
         let dflt = mbuilder.AddResultTarget(mkFalse g m, DebugPointForTarget.No)
-        let dtree = TDSwitch(thate, cases, Some dflt, m)
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thate, cases, Some dflt, m)
         mbuilder.Close(dtree, m, g.bool_ty)
     let expr = mkBindThatAddr g m g.exn_ty thataddrv thatv thate expr
     let expr = mkIsInstConditional g m g.exn_ty thatobje thatv expr (mkFalse g m)
@@ -372,13 +372,13 @@ let mkUnionCompare g tcref (tycon: Tycon) =
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
-        let dtree = TDSwitch(thise, cases, dflt, m) 
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty  
+            mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))in 
@@ -433,13 +433,13 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function Some c -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
-        let dtree = TDSwitch(thise, cases, dflt, m) 
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.int_ty  
+            mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))
@@ -493,13 +493,13 @@ let mkUnionEquality g tcref (tycon: Tycon) =
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No)))
-        let dtree = TDSwitch(thise, cases, dflt, m) 
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty  
+          mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)
@@ -555,13 +555,13 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function Some c -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No))
-        let dtree = TDSwitch(thise, cases, dflt, m) 
+        let dtree = TDSwitch(DebugPointAtSwitch.No, thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty  
+          mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)
@@ -658,7 +658,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
                else 
                    let tag = mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m)
                    Some(mbuilder.AddResultTarget(tag, DebugPointForTarget.No))
-    let dtree = TDSwitch(thise, cases, dflt, m)
+    let dtree = TDSwitch(DebugPointAtSwitch.No, thise, cases, dflt, m)
     let stmt = mbuilder.Close(dtree, m, g.int_ty)
     let expr = mkCompGenLet m accv (mkZero g m) stmt 
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullHash g m thise expr
