@@ -2511,7 +2511,6 @@ namespace Microsoft.FSharp.Core
              // this condition is used whenever ^T is resolved to a nominal type
             when ^T : ^T = (^T : (static member Zero : ^T) ())
 
-
         let inline GenericOne< ^T when ^T : (static member One : ^T) > : ^T =
             GenericOneDynamic<(^T)>()
             when ^T : int32       = 1
@@ -2534,11 +2533,13 @@ namespace Microsoft.FSharp.Core
             when ^T : ^T = (^T : (static member One : ^T) ())
 
         type System.Type with
-    
+            /// Gets a single static non-conversion operator or method by types
             member inline this.GetSingleStaticMethodByTypes(name: string, parameterTypes: Type[]) =
                 let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
                 this.GetMethod(name, staticBindingFlags, null, parameterTypes, null )
+
             // Logic based on https://github.com/dotnet/runtime/blob/f66b142980b2b0df738158457458e003944dc7f6/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L662
+            /// Gets a single static conversion operator by types
             member inline this.GetSingleStaticConversionOperatorByTypes(fromType : Type, toType : Type) =
                 let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
                 let mutable ret = null
@@ -2547,6 +2548,7 @@ namespace Microsoft.FSharp.Core
                        (let p = mi.GetParameters() in p.Length = 1 && (get p 0).ParameterType.IsEquivalentTo fromType) && mi.ReturnType.IsEquivalentTo toType then
                        ret <- mi
                 ret
+
         let UnaryDynamicImpl nm : ('T -> 'U) =
              let aty = typeof<'T>
              let minfo = aty.GetSingleStaticMethodByTypes(nm, [| aty |])
@@ -2904,7 +2906,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,unativeint> value) : uint16 #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : uint16 #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : uint16 #) 
-                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : uint16 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "" (convPrim<_,char> value) : uint16 #) 
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt16 (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, int16> then 
@@ -2945,7 +2947,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int16> value) : int32 #)
                 elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint16> value) : int32 #)
                 elif typeeq<'T, int32> then convPrim<_,'U> value
-                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint32> value) : int32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "" (convPrim<_,uint32> value) : int32 #) 
                 elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int64> value) : int32 #) 
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint64> value) : int32 #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i4" (convPrim<_,nativeint> value) : int32 #) 
@@ -2982,8 +2984,8 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "" (convPrim<_,uint64> value) : int64 #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i8" (convPrim<_,nativeint> value) : int64 #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u8" (convPrim<_,unativeint> value) : int64 #) 
-                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float> value) : int64 #) 
-                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float32> value) : int64 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i8" (convPrim<_,float> value) : int64 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i8" (convPrim<_,float32> value) : int64 #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u8" (convPrim<_,char> value) : int64 #) 
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseInt64 (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
@@ -2999,7 +3001,8 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r4" (convPrim<_,nativeint> value) : float32 #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,unativeint> value) : float32 #) 
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float> value) : float32 #) 
-                elif typeeq<'T, float32> then convPrim<_,'U> value
+                // NOTE: float32 should convert its argument to 32-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float32> value) : float32 #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,char> value) : float32 #) 
                 elif typeeq<'T, string> then convPrim<_,'U> (ParseSingle (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
@@ -3014,7 +3017,8 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint64> value) : float #) 
                 elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r8" (convPrim<_,nativeint> value) : float #) 
                 elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,unativeint> value) : float #) 
-                elif typeeq<'T, float> then convPrim<_,'U> value
+                // NOTE: float should convert its argument to 64-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float> value) : float #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float32> value) : float #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,char> value) : float #) 
                 elif typeeq<'T, decimal> then convPrim<_,'U> (Convert.ToDouble(convPrim<_,decimal> value))
@@ -4468,7 +4472,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u1" value  : byte #)
              when ^T : char       = (# "conv.u1" value  : byte #)
              when ^T : unativeint = (# "conv.u1" value  : byte #)
-             when ^T : byte       = (# "conv.u1" value  : byte #)
+             when ^T : byte       = (# "" value  : byte #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
@@ -4484,7 +4488,7 @@ namespace Microsoft.FSharp.Core
              when ^T : int32     = (# "conv.i1" value  : sbyte #)
              when ^T : int16     = (# "conv.i1" value  : sbyte #)
              when ^T : nativeint = (# "conv.i1" value  : sbyte #)
-             when ^T : sbyte     = (# "conv.i1" value  : sbyte #)
+             when ^T : sbyte     = (# "" value  : sbyte #)
              when ^T : uint64     = (# "conv.i1" value  : sbyte #)
              when ^T : uint32     = (# "conv.i1" value  : sbyte #)
              when ^T : uint16     = (# "conv.i1" value  : sbyte #)
@@ -4509,8 +4513,8 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte     = (# "conv.u2" value  : uint16 #)
              when ^T : uint64     = (# "conv.u2" value  : uint16 #)
              when ^T : uint32     = (# "conv.u2" value  : uint16 #)
-             when ^T : uint16     = (# "conv.u2" value  : uint16 #)
-             when ^T : char       = (# "conv.u2" value  : uint16 #)
+             when ^T : uint16     = (# "" value  : uint16 #)
+             when ^T : char       = (# "" value  : uint16 #)
              when ^T : unativeint = (# "conv.u2" value  : uint16 #)
              when ^T : byte     = (# "conv.u2" value  : uint16 #)
              // According to the somewhat subtle rules of static optimizations,
@@ -4526,7 +4530,7 @@ namespace Microsoft.FSharp.Core
              when ^T : float32   = (# "conv.i2" value  : int16 #)
              when ^T : int64     = (# "conv.i2" value  : int16 #)
              when ^T : int32     = (# "conv.i2" value  : int16 #)
-             when ^T : int16     = (# "conv.i2" value  : int16 #)
+             when ^T : int16     = (# "" value  : int16 #)
              when ^T : nativeint = (# "conv.i2" value  : int16 #)
              when ^T : sbyte     = (# "conv.i2" value  : int16 #)
              when ^T : uint64     = (# "conv.i2" value  : int16 #)
@@ -4554,7 +4558,7 @@ namespace Microsoft.FSharp.Core
              when ^T : int16     = (# "" value : uint32 #)
              when ^T : sbyte     = (# "" value : uint32 #)             
              when ^T : uint64     = (# "conv.u4" value  : uint32 #)
-             when ^T : uint32     = (# "conv.u4" value  : uint32 #)
+             when ^T : uint32     = (# "" value  : uint32 #)
              when ^T : uint16     = (# "conv.u4" value  : uint32 #)
              when ^T : char       = (# "conv.u4" value  : uint32 #)
              when ^T : unativeint = (# "conv.u4" value  : uint32 #)
@@ -4638,7 +4642,7 @@ namespace Microsoft.FSharp.Core
              when ^T : string     = ParseInt64 (castToString value)
              when ^T : float     = (# "conv.i8" value  : int64 #)
              when ^T : float32   = (# "conv.i8" value  : int64 #)
-             when ^T : int64     = (# "conv.i8" value  : int64 #)
+             when ^T : int64     = (# "" value  : int64 #)
              when ^T : int32     = (# "conv.i8" value  : int64 #)
              when ^T : int16     = (# "conv.i8" value  : int64 #)
              when ^T : nativeint = (# "conv.i8" value  : int64 #)
@@ -4753,7 +4757,7 @@ namespace Microsoft.FSharp.Core
              when ^T : int64      = (# "conv.i" value  : nativeint #)
              when ^T : int32      = (# "conv.i" value  : nativeint #)
              when ^T : int16      = (# "conv.i" value  : nativeint #)
-             when ^T : nativeint  = (# "conv.i" value  : nativeint #)
+             when ^T : nativeint  = (# "" value  : nativeint #)
              when ^T : sbyte      = (# "conv.i" value  : nativeint #)
              // Narrower unsigned types we zero-extend.
              // Same length unsigned types we leave as such (so unsigned MaxValue (all-bits-set) gets reinterpreted as -1).
@@ -4839,8 +4843,8 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = (# "conv.u2" value  : char #)
              when ^T : uint64     = (# "conv.u2" value  : char #)
              when ^T : uint32     = (# "conv.u2" value  : char #)
-             when ^T : uint16     = (# "conv.u2" value  : char #)
-             when ^T : char       = (# "conv.u2" value  : char #)
+             when ^T : uint16     = (# "" value  : char #)
+             when ^T : char       = (# "" value  : char #)
              when ^T : unativeint = (# "conv.u2" value  : char #)
              when ^T : byte       = (# "conv.u2" value  : char #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> char) (value))

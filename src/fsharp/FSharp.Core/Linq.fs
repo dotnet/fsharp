@@ -93,10 +93,12 @@ module LeafExpressionConverter =
         | TypeCode.UInt32
         | TypeCode.UInt64 -> true
         | _ -> false
+
     // https://github.com/dotnet/runtime/blob/fa779e8cb2b5868a0ac2fd4215f39ffb91f0dab0/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L2226
     /// Can LINQ Expressions' BinaryExpression's (Left/Right)Shift construct a SimpleBinaryExpression from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsSimpleShift left right =
         isLinqExpressionsInteger left && getNonNullableType right = typeof<int>
+
     // https://github.com/dotnet/runtime/blob/cf7e7a46f8a4a6225a8f1e059a846ccdebf0454c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L110
     /// Can LINQ Expressions' (UnaryExpression/BinaryExpression)'s arithmetic operations construct a (SimpleBinaryExpression/UnaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsArithmeticType typ =
@@ -112,6 +114,7 @@ module LeafExpressionConverter =
         | TypeCode.UInt32
         | TypeCode.UInt64 -> true
         | _ -> false
+
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L132
     /// Can LINQ Expressions' UnaryExpression.(Checked)Negate construct a UnaryExpression from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsArithmeticTypeButNotUnsignedInt typ =
@@ -123,6 +126,7 @@ module LeafExpressionConverter =
         | TypeCode.UInt32
         | TypeCode.UInt64 -> false
         | _ -> true
+
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L149
     /// Can LINQ Expressions' (UnaryExpression.Not/BinaryExpression.Binary(And/Or/ExclusiveOr)) construct a (UnaryExpression/SimpleBinaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsIntegerOrBool typ =
@@ -139,6 +143,7 @@ module LeafExpressionConverter =
         | TypeCode.SByte
         | TypeCode.Byte -> true
         | _ -> false
+
     // https://github.com/dotnet/runtime/blob/7bd472498e690e9421df86d5a9d728faa939742c/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L47
     /// Can LINQ Expressions' BinaryExpression's comparison operations construct a (SimpleBinaryExpression/LogicalBinaryExpression) from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsNumeric typ =
@@ -157,16 +162,20 @@ module LeafExpressionConverter =
         | TypeCode.UInt32
         | TypeCode.UInt64 -> true
         | _ -> false
+
     // https://github.com/dotnet/runtime/blob/afaf666eff08435123eb649ac138419f4c9b9344/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L1047
     /// Can LINQ Expressions' BinaryExpression's equality operations provide built-in structural equality from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsStructurallyEquatable typ =
         isLinqExpressionsNumeric typ || typ = typeof<bool> || getNonNullableType(typ).IsEnum
+
     // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/BinaryExpression.cs#L1221
     /// Can LINQ Expressions' BinaryExpression's comparison operations provide built-in comparison from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsComparable = isLinqExpressionsNumeric
+
     /// Can LINQ Expressions' BinaryExpression's equality operations provide built-in equality from the type in question? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsEquatable typ =
         isLinqExpressionsStructurallyEquatable typ || typ = typeof<obj>
+
     /// Can LINQ Expressions' BinaryExpression's conversion operations provide built-in conversion from source to dest? Otherwise, use the F# operator as the user-defined method. 
     let isLinqExpressionsConvertible source dest =
         // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Linq/Expressions/UnaryExpression.cs#L757
@@ -199,6 +208,8 @@ module LeafExpressionConverter =
            && (getNonNullableType dest <> typeof<bool> || source.IsEnum && source.GetEnumUnderlyingType() = typeof<bool>)
 
         ||
+        // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L458
+        // IsLegalExplicitVariantDelegateConversion
         // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L260
         // HasReferenceConversionTo
         let rec hasReferenceConversionTo source dest =
@@ -214,28 +225,19 @@ module LeafExpressionConverter =
             // Interface conversion
             || source.IsInterface || dest.IsInterface
 
+            // The following part shouldn't be needed for our usage of isLinqExpressionsConvertible here because we only use this for potentially nullable built-in numeric types
+(*          
             // Variant delegate conversion
-            ||  // https://github.com/dotnet/runtime/blob/4c92aef2b08f9c4374c520e7e664a44f1ad8ce56/src/libraries/System.Linq.Expressions/src/System/Dynamic/Utils/TypeUtils.cs#L458
-                // IsLegalExplicitVariantDelegateConversion
-                let isDelegate (t: Type) = t.IsSubclassOf typeof<MulticastDelegate>
-                isDelegate source && isDelegate dest && source.IsGenericType && dest.IsGenericType
-                &&
-                let genericDelegate = source.GetGenericTypeDefinition()
-                dest.GetGenericTypeDefinition() = genericDelegate
-                &&
-                (source.GetGenericArguments(), dest.GetGenericArguments(), genericDelegate.GetGenericArguments())
-                |||> Array.forall3 (fun sourceArgument destArgument genericParameter ->
-                    // If the arguments are identical then this one is automatically good, so skip it.
-                    sourceArgument.IsEquivalentTo destArgument
-                    ||
-                    match genericParameter.GenericParameterAttributes &&& GenericParameterAttributes.VarianceMask with
-                    | GenericParameterAttributes.None -> false
-                    | GenericParameterAttributes.Covariant -> hasReferenceConversionTo sourceArgument destArgument
-                    | GenericParameterAttributes.Contravariant -> not (sourceArgument.IsValueType || destArgument.IsValueType)
-                    | x -> Printf.failwithf "Unexpected GenericParameterAttributes variance: %O" x
-                )
-            // TODO: Is expanding this worth it?
-            // || (source.IsArray || dest.IsArray) && StrictHasReferenceConversionTo(source, dest, true)
+            if (IsLegalExplicitVariantDelegateConversion(source, dest))
+            {
+                return true;
+            }
+
+            // Object conversion handled by assignable above.
+            Debug.Assert(source != typeof(object) && dest != typeof(object));
+
+            return (source.IsArray || dest.IsArray) && StrictHasReferenceConversionTo(source, dest, true);
+*)
         hasReferenceConversionTo source dest
     let SpecificCallToMethodInfo (minfo: System.Reflection.MethodInfo) =
         let isg1 = minfo.IsGenericMethod
@@ -794,6 +796,7 @@ module LeafExpressionConverter =
     and failConvert inp =
             raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
 
+    /// Translate a unary operator
     and transUnaryOp linqExpressionsCondition inp env x (exprErasedConstructor: _ * _ -> _) fallback =
         let e = ConvExprToLinqInContext env x
         if linqExpressionsCondition e.Type then
@@ -802,6 +805,8 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e, method.MakeGenericMethod [| getNonNullableType x.Type; getNonNullableType inp.Type |])
         |> asExpr
+
+    /// Translate a shift operator
     and transShiftOp inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
@@ -813,6 +818,8 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
+
+    /// Translate a non-shift binary operator that does not return a boolean
     and transBinOp linqExpressionsCondition inp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ -> _) fallback =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
@@ -824,7 +831,9 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e1, e2, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
+
     // The F# boolean structural equality / comparison operators do not take witnesses and the referenced methods are callable directly
+    /// Translate a non-shift binary operator without witnesses that does not return a boolean
     and transBoolOpNoWitness linqExpressionsCondition env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor: _ * _ * _ * _ -> _) method =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
@@ -836,7 +845,9 @@ module LeafExpressionConverter =
         else
             exprErasedConstructor(e1, e2, false, method)
         |> asExpr
+
     // But the static boolean operators do take witnesses!
+    /// Translate a non-shift binary operator that returns a boolean
     and transBoolOp linqExpressionsCondition inp env x1 x2 (exprErasedConstructor: _ * _ * _ * _ -> _) fallback =
         let e1 = ConvExprToLinqInContext env x1
         let e2 = ConvExprToLinqInContext env x2
@@ -847,6 +858,8 @@ module LeafExpressionConverter =
             let method = Reflection.MethodInfo.GetMethodFromHandle fallback :?> Reflection.MethodInfo
             exprErasedConstructor(e1, e2, false, method.MakeGenericMethod [| getNonNullableType x1.Type; getNonNullableType x2.Type; getNonNullableType inp.Type |])
         |> asExpr
+
+    /// Translate a conversion operator
     and transConv (inp: Expr) env isChecked x =
         let e = ConvExprToLinqInContext env x
         let exprErasedConstructor: _ * _ * _ -> _ = if isChecked then Expression.ConvertChecked else Expression.Convert

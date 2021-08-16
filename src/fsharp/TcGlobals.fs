@@ -1610,7 +1610,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             [ arg0Ty; arg1Ty ],
             Some retTy ->
                [vara; varb; varc], [ varaTy; varbTy ], varcTy, [ arg0Ty; arg1Ty; retTy ]
-          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic"),
+          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic" | "CheckedExplicitDynamic"),
             [ arg0Ty ],
             Some retTy ->
                [vara; varb ], [ varaTy ], varbTy, [ arg0Ty; retTy ]
