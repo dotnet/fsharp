@@ -1917,10 +1917,14 @@ type CodeGenBuffer(m: range,
             hasDebugPoints <- true
 
             // Replace the FeeFee seqpoint at the entry with a better debug point
-            if codebuf.Count = 1 then
-                assert (match codebuf.[0] with I_seqpoint _ -> true | _ -> false)
-                codebuf.[0] <- i
+            let isSingleFeeFee =
+                codebuf.Count = 1 && 
+                match codebuf.[0] with
+                | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
+                | _ -> false
 
+            if isSingleFeeFee then
+                codebuf.[0] <- i
             else
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i

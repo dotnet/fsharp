@@ -6270,8 +6270,7 @@ type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
-    tcref.CanDeref &&
-    not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
+    (tcref.CanDeref && not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref)) ||
     tyconRefEq g tcref g.decimal_tcr || 
     tyconRefEq g tcref g.date_tcr
 

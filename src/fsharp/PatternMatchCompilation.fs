@@ -1378,26 +1378,25 @@ let CompilePatternBasic
 
 let isPartialOrWhenClause (c: TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
 
-
 let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isPartialOrWhenClause clausesL ->
-        // Partial clauses cause major code explosion if treated naively
-        // Hence treat any pattern matches with any partial clauses clause-by-clause
 
         // First make sure we generate at least some of the obvious incomplete match warnings.
         let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
         let warnOnIncomplete = true
-        let clausesPretendAllPartialFail = List.collect (fun (TClause(p, whenOpt, tg, m)) -> [TClause(erasePartialPatterns p, whenOpt, tg, m)]) clausesL
+        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (TClause(p, whenOpt, tg, m)) -> [TClause(erasePartialPatterns p, whenOpt, tg, m)]) 
         let _ = CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
         let warnOnIncomplete = false
 
+        // Partial and when clauses cause major code explosion if treated naively
+        // Hence treat any pattern matches with any partial clauses clause-by-clause
         let rec atMostOnePartialAtATime clauses =
             match List.takeUntil isPartialOrWhenClause clauses with
             | l, [] ->
                 CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
             | l, h :: t ->
-                // Add the partial clause.
+                // Add the partial or when clause.
                 doGroupWithAtMostOnePartial (l @ [h]) t
 
         and doGroupWithAtMostOnePartial group rest =
