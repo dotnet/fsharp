@@ -5697,7 +5697,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
 and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     let targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, vs, es, flags, startScope, endScope = targetInfo
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
-    let spExpr = (match spTarget with DebugPointForTarget.Yes -> SPAlways | DebugPointForTarget.No _ -> SPSuppress)
+    let spExpr = (match spTarget with DebugPointAtTarget.Yes -> SPAlways | DebugPointAtTarget.No _ -> SPSuppress)
 
     // Only emit start of hidden code if we really have to, i.e. if the target expression doesn't start with a
     // debug point anyway

@@ -179,7 +179,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
             | SynPat.Wild _ -> None
             | _ ->
                 Some (fun e ->
-                    let clause = SynMatchClause(p, None, None, e, m, DebugPointForTarget.No)
+                    let clause = SynMatchClause(p, None, None, e, m, DebugPointAtTarget.No)
                     SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], clause.Range))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn

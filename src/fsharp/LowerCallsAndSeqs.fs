@@ -683,7 +683,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
                 let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
-                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
+                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointAtTarget.No)
                 let dtree =
                   TDSwitch(
                       DebugPointAtSwitch.No,
@@ -752,7 +752,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // DONE_DISPOSE:
                 let whileLoop =
                     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-                    let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
+                    let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointAtTarget.No)
                     let dtree =
                         TDSwitch(DebugPointAtSwitch.No, 
                             pcExpr,

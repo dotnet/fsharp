@@ -853,7 +853,7 @@ let CompilePatternBasic
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget([], throwExpr, DebugPointForTarget.No, None)
+            let tg = TTarget([], throwExpr, DebugPointAtTarget.No, None)
             let _ = matchBuilder.AddTarget tg
             let clause = TClause(TPat_wild matchm, None, tg, matchm)
             incompleteMatchClauseOnce <- Some clause
@@ -1409,8 +1409,8 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
             // If the remainder of the match boiled away to nothing interesting.
             // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
             let spTarget =
-                if equals expr.Range matchm then DebugPointForTarget.No
-                else DebugPointForTarget.Yes
+                if equals expr.Range matchm then DebugPointAtTarget.No
+                else DebugPointAtTarget.Yes
 
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget, None), matchm)

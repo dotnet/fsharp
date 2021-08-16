@@ -91,7 +91,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
                     // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
                     // state machine locals.
                     (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
-                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty generateBody
+                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty generateBody
                             (mkCompGenSequential m 
                                 (mkValSet m vref (mkDefault (m, vref.Type)))
                                 (mkTrue g m))
@@ -413,7 +413,7 @@ type LowerStateMachine(g: TcGlobals) =
         else
             let initLabel = generateCodeLabel()
             let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
-            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
+            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointAtTarget.No)
             let dtree =
                 TDSwitch(
                     DebugPointAtSwitch.No, 
@@ -539,7 +539,7 @@ type LowerStateMachine(g: TcGlobals) =
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
                 let lab = (match reenterLabOpt with Some l -> l | _ -> generateCodeLabel())
-                mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
             { phase1 = recreate None resNone.phase1 resSome.phase1
               phase2 = (fun ctxt ->
                 let generate2 = resSome.phase2 ctxt

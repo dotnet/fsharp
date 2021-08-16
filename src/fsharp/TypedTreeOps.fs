@@ -1348,10 +1348,10 @@ let mkTrue g m = mkBool g m true
 let mkFalse g m = mkBool g m false
 
 let mkLazyOr (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty e1 (mkTrue g m) e2
+    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty e1 (mkTrue g m) e2
 
 let mkLazyAnd (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.bool_ty e1 e2 (mkFalse g m)
+    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty e1 e2 (mkFalse g m)
 
 let mkCoerceExpr(e, to_ty, m, from_ty) = Expr.Op (TOp.Coerce, [to_ty;from_ty], [e], m)
 
@@ -5768,7 +5768,7 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No, flags))
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, DebugPointAtTarget.No, flags))
         primMkMatch (DebugPointAtBinding.NoneAtInvisible, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
@@ -8497,16 +8497,16 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
     if canUseTypeTestFast g tgty then 
 
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
-        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
+        let tg2 = mbuilder.AddResultTarget(e2, DebugPointAtTarget.No)
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)
         let dtree = TDSwitch(DebugPointAtSwitch.No, exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No, None)))
-        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointAtTarget.No, None)))
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)
         let dtree = TDSwitch(DebugPointAtSwitch.No, vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
@@ -8517,8 +8517,8 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 // used for compiler-generated code.
 let mkNullTest g m e1 e2 e3 =
     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-    let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
-    let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)            
+    let tg2 = mbuilder.AddResultTarget(e2, DebugPointAtTarget.No)
+    let tg3 = mbuilder.AddResultTarget(e3, DebugPointAtTarget.No)            
     let dtree = TDSwitch(DebugPointAtSwitch.No, e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
     let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
     expr         
@@ -8529,12 +8529,12 @@ let mkNonNullTest (g: TcGlobals) m e =
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
 let mkNonNullCond g m ty e1 e2 e3 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
+    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m ty (mkNonNullTest g m e1) e2 e3
 
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
 let mkIfThen (g: TcGlobals) m e1 e2 =
-    mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
+    mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
 let ModuleNameIsMangled g attrs =
     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with

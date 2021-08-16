@@ -4322,7 +4322,7 @@ type DecisionTreeTarget =
     | TTarget of 
         boundVals: Val list *
         targetExpr: Expr *
-        debugPoint: DebugPointForTarget *
+        debugPoint: DebugPointAtTarget *
         isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
