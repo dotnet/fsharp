@@ -7910,7 +7910,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
             match synArg, atomicFlag with
             | (SynExpr.ArrayOrList (false, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
                 if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
-                    warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
+                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
                 elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
                     informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
             | _ -> ()
