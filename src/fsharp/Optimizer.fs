@@ -3242,7 +3242,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     
 /// Extract a sequence of pipe-right operations (note the pipe-right operator is left-associative
 /// so we start with the full thing and descend down taking apps off the end first)
-/// The pipeline begins with a |>, ||> or ||>
+/// The pipeline begins with a |>, ||> or |||>
 and getPipes g expr acc =
     match expr with
     | OpPipeRight g (resType, xExpr, fExpr, m) ->
