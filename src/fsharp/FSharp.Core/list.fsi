@@ -780,12 +780,12 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Returns the list after removing the first N elements.</summary>
         ///
-        /// <param name="count">The number of elements to skip.</param>
+        /// <param name="count">The number of elements to skip. If the number is 0 or negative the input list is returned.</param>
         /// <param name="list">The input list.</param>
         ///
         /// <returns>The list after removing the first N elements.</returns>
         ///
-        /// <exception cref="T:System.ArgumentException">Thrown when count is negative or exceeds the number of 
+        /// <exception cref="T:System.ArgumentException">Thrown when count exceeds the number of 
         /// elements in the list.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> list: 'T list -> 'T list
