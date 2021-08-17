@@ -388,10 +388,15 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)/service
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild of FSharp.sln
-          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+          - script: dotnet build ..\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Linux
@@ -416,10 +421,15 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)/service
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild of FSharp.sln
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+          - script: dotnet build ../FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Mac
@@ -444,10 +454,15 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)/service
               installationPath: $(Agent.ToolsDirectory)/dotnet
-          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild of FSharp.sln
-          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+          - script: dotnet build ../FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
     # Arcade-powered source build
