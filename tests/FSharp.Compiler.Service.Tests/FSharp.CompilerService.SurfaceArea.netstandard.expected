@@ -5293,29 +5293,29 @@ FSharp.Compiler.Syntax.DebugPointAtWith: Int32 GetHashCode(System.Collections.IE
 FSharp.Compiler.Syntax.DebugPointAtWith: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtWith: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtWith: System.String ToString()
-FSharp.Compiler.Syntax.DebugPointForTarget
-FSharp.Compiler.Syntax.DebugPointForTarget+Tags: Int32 No
-FSharp.Compiler.Syntax.DebugPointForTarget+Tags: Int32 Yes
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean Equals(FSharp.Compiler.Syntax.DebugPointForTarget)
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean Equals(System.Object)
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean IsNo
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean IsYes
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean get_IsNo()
-FSharp.Compiler.Syntax.DebugPointForTarget: Boolean get_IsYes()
-FSharp.Compiler.Syntax.DebugPointForTarget: FSharp.Compiler.Syntax.DebugPointForTarget No
-FSharp.Compiler.Syntax.DebugPointForTarget: FSharp.Compiler.Syntax.DebugPointForTarget Yes
-FSharp.Compiler.Syntax.DebugPointForTarget: FSharp.Compiler.Syntax.DebugPointForTarget get_No()
-FSharp.Compiler.Syntax.DebugPointForTarget: FSharp.Compiler.Syntax.DebugPointForTarget get_Yes()
-FSharp.Compiler.Syntax.DebugPointForTarget: FSharp.Compiler.Syntax.DebugPointForTarget+Tags
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 CompareTo(FSharp.Compiler.Syntax.DebugPointForTarget)
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 CompareTo(System.Object)
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 GetHashCode()
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 Tag
-FSharp.Compiler.Syntax.DebugPointForTarget: Int32 get_Tag()
-FSharp.Compiler.Syntax.DebugPointForTarget: System.String ToString()
+FSharp.Compiler.Syntax.DebugPointAtTarget
+FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 No
+FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 Yes
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTarget)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean IsNo
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean IsYes
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean get_IsNo()
+FSharp.Compiler.Syntax.DebugPointAtTarget: Boolean get_IsYes()
+FSharp.Compiler.Syntax.DebugPointAtTarget: FSharp.Compiler.Syntax.DebugPointAtTarget No
+FSharp.Compiler.Syntax.DebugPointAtTarget: FSharp.Compiler.Syntax.DebugPointAtTarget Yes
+FSharp.Compiler.Syntax.DebugPointAtTarget: FSharp.Compiler.Syntax.DebugPointAtTarget get_No()
+FSharp.Compiler.Syntax.DebugPointAtTarget: FSharp.Compiler.Syntax.DebugPointAtTarget get_Yes()
+FSharp.Compiler.Syntax.DebugPointAtTarget: FSharp.Compiler.Syntax.DebugPointAtTarget+Tags
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 CompareTo(FSharp.Compiler.Syntax.DebugPointAtTarget)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 CompareTo(System.Object)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 GetHashCode()
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 Tag
+FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 get_Tag()
+FSharp.Compiler.Syntax.DebugPointAtTarget: System.String ToString()
 FSharp.Compiler.Syntax.ExprAtomicFlag
 FSharp.Compiler.Syntax.ExprAtomicFlag: FSharp.Compiler.Syntax.ExprAtomicFlag Atomic
 FSharp.Compiler.Syntax.ExprAtomicFlag: FSharp.Compiler.Syntax.ExprAtomicFlag NonAtomic
@@ -7011,11 +7011,11 @@ FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 Tag
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynInterpolatedStringPart: System.String ToString()
 FSharp.Compiler.Syntax.SynMatchClause
-FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointForTarget debugPoint
-FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointForTarget get_debugPoint()
+FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointAtTarget debugPoint
+FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.DebugPointAtTarget get_debugPoint()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynExpr get_resultExpr()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynExpr resultExpr
-FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynMatchClause NewSynMatchClause(FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointForTarget)
+FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynMatchClause NewSynMatchClause(FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTarget)
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynPat get_pat()
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Syntax.SynPat pat
 FSharp.Compiler.Syntax.SynMatchClause: FSharp.Compiler.Text.Range Range
