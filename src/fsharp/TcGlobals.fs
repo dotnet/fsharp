@@ -624,6 +624,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let v_reference_equality_inner_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                        "PhysicalEqualityIntrinsic"            , None                 , None          , [vara],     mk_rel_sig varaTy)
 
+  let v_piperight_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_PipeRight"                         , None                 , None          , [vara; varb],([[varaTy];[varaTy --> varbTy]], varbTy))
+  let v_piperight2_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                            "op_PipeRight2"                        , None                 , None          , [vara; varb; varc],([[varaTy; varbTy];[varaTy --> (varbTy --> varcTy)]], varcTy))
+  let v_piperight3_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                            "op_PipeRight3"                        , None                 , None          , [vara; varb; varc; vard],([[varaTy; varbTy; varcTy];[varaTy --> (varbTy --> (varcTy --> vardTy))]], vardTy))
   let v_bitwise_or_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseOr"                         , None                 , None          , [vara],     mk_binop_ty varaTy)
   let v_bitwise_and_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseAnd"                        , None                 , None          , [vara],     mk_binop_ty varaTy)
   let v_bitwise_xor_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ExclusiveOr"                       , None                 , None          , [vara],     mk_binop_ty varaTy)
@@ -1298,6 +1301,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val reference_equality_inner_vref         = ValRefForIntrinsic v_reference_equality_inner_info
 
+  member val piperight_vref            = ValRefForIntrinsic v_piperight_info
+  member val piperight2_vref            = ValRefForIntrinsic v_piperight2_info
+  member val piperight3_vref            = ValRefForIntrinsic v_piperight3_info
   member val bitwise_or_vref            = ValRefForIntrinsic v_bitwise_or_info
   member val bitwise_and_vref           = ValRefForIntrinsic v_bitwise_and_info
   member val bitwise_xor_vref           = ValRefForIntrinsic v_bitwise_xor_info

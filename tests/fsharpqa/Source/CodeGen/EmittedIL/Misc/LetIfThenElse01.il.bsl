@@ -36,13 +36,13 @@
   // Offset: 0x000001E0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {60B68B7F-BE5A-D8FD-A745-03837F8BB660}
+// MVID: {611B0EC4-BE5A-D8FD-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AF0000
+// Image base: 0x069B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -171,12 +171,13 @@
     .entrypoint
     // Code size       10 (0xa)
     .maxstack  3
-    .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_0,
+    .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #1 input at line 12',
              [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1)
-    .line 12,12 : 1,15 ''
+    .line 12,12 : 1,5 ''
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [mscorlib]System.Tuple`4<int32,int32,int32,int32> LetIfThenElse01::F<int32>(!!0)
     IL_0006:  stloc.0
+    .line 12,12 : 9,15 ''
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
     IL_0009:  ret

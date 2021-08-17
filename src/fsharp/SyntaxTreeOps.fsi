@@ -263,3 +263,10 @@ val noInferredTypars: SynValTyparDecls
 val synExprContainsError: inpExpr:SynExpr -> bool
 
 val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list
+
+val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
+
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+

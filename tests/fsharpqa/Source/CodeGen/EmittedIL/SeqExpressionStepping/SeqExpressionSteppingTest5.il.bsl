@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {60BD414C-2432-9401-A745-03834C41BD60}
+// MVID: {611B0EC5-2432-9401-A745-0383C50E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05410000
+// Image base: 0x06560000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -436,13 +436,17 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
-    .maxstack  8
-    .line 16,16 : 13,30 ''
+    // Code size       14 (0xe)
+    .maxstack  3
+    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 16')
+    .line 16,16 : 13,17 ''
     IL_0000:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5::f4()
-    IL_0005:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_000a:  pop
-    IL_000b:  ret
+    IL_0005:  stloc.0
+    .line 16,16 : 20,30 ''
+    IL_0006:  ldloc.0
+    IL_0007:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_000c:  pop
+    IL_000d:  ret
   } // end of method $SeqExpressionSteppingTest5::main@
 
 } // end of class '<StartupCode$SeqExpressionSteppingTest5>'.$SeqExpressionSteppingTest5

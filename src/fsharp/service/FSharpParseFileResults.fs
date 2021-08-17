@@ -534,6 +534,36 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! checkRange e.Range
                       yield! walkExpr false e
 
+                  // Always allow breakpoints on input and stages of x |> f1 |> f2 pipelines
+                  | SynPipeRight _ ->
+                      let rec loop e =
+                          seq {
+                              match e with 
+                              | SynPipeRight (xExpr, fExpr) ->
+                                  yield! checkRange fExpr.Range
+                                  yield! walkExpr false fExpr
+                                  yield! loop xExpr
+                              | SynPipeRight2 (xExpr1, xExpr2, fExpr) ->
+                                  yield! checkRange fExpr.Range
+                                  yield! checkRange xExpr1.Range
+                                  yield! checkRange xExpr2.Range
+                                  yield! walkExpr false xExpr1
+                                  yield! walkExpr false xExpr2
+                                  yield! walkExpr false fExpr
+                              | SynPipeRight3 (xExpr1, xExpr2, xExpr3, fExpr) ->
+                                  yield! checkRange fExpr.Range
+                                  yield! checkRange xExpr1.Range
+                                  yield! checkRange xExpr2.Range
+                                  yield! checkRange xExpr3.Range
+                                  yield! walkExpr false xExpr1
+                                  yield! walkExpr false xExpr2
+                                  yield! walkExpr false xExpr3
+                                  yield! walkExpr false fExpr
+                              | _ -> 
+                                  yield! checkRange e.Range
+                                  yield! walkExpr false e
+                          }
+                      yield! loop expr
                   | SynExpr.NamedIndexedPropertySet (_, e1, e2, _)
                   | SynExpr.DotSet (e1, _, e2, _)
                   | SynExpr.Set (e1, e2, _)
