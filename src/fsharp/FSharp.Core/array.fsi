@@ -995,13 +995,13 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Builds a new array that contains the elements of the given array, excluding the first N elements.</summary>
         ///
-        /// <param name="count">The number of elements to skip.</param>
+        /// <param name="count">The number of elements to skip. If negative the full array will be returned as a copy.</param>
         /// <param name="array">The input array.</param>
         ///
         /// <returns>A copy of the input array, after removing the first N elements.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="T:System.ArgumentException">Thrown when count is negative or exceeds the number of 
+        /// <exception cref="T:System.ArgumentException">Thrown when count exceeds the number of 
         /// elements in the array.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
