@@ -428,10 +428,10 @@ type cenv =
     override x.ToString() = "<cenv>"
 
 // environment for a method
-type menv =
+type MethodEnv =
     { mutable pipelineCount: int }
 
-    override x.ToString() = "<menv>"
+    override x.ToString() = "<MethodEnv>"
 
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
@@ -455,7 +455,7 @@ type IncrementalOptimizationEnv =
 
       localExternalVals: LayeredMap<Stamp, ValInfo>
 
-      methEnv: menv
+      methEnv: MethodEnv
 
       globalModuleInfos: LayeredMap<string, LazyModuleInfo>   
     }

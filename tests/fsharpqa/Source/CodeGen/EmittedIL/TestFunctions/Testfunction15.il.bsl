@@ -36,13 +36,13 @@
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction15.exe
-// MVID: {6116A469-A624-4662-A745-038369A41661}
+// MVID: {611B0ED4-A624-4662-A745-0383D40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05410000
+// Image base: 0x07120000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -98,7 +98,7 @@
     // Code size       40 (0x28)
     .maxstack  6
     .locals init ([0] int32 x,
-             [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #1 input')
+             [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #1 input at line 6')
     .line 5,5 : 5,18 ''
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.1

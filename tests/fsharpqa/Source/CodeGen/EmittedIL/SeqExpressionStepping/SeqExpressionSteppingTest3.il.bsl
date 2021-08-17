@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest3.exe
-// MVID: {6116A45B-2432-943F-A745-03835BA41661}
+// MVID: {611B0EC5-2432-943F-A745-0383C50E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x052D0000
+// Image base: 0x06440000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -270,7 +270,7 @@
     .entrypoint
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> 'Pipe #1 input')
+    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> 'Pipe #1 input at line 11')
     .line 11,11 : 13,17 ''
     IL_0000:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>> SeqExpressionSteppingTest3/SeqExpressionSteppingTest3::f2()
     IL_0005:  stloc.0

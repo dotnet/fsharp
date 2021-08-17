@@ -36,13 +36,13 @@
   // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {6116A45A-8173-986B-A745-03835AA41661}
+// MVID: {611B0EC4-8173-986B-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CB0000
+// Image base: 0x06620000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -435,16 +435,16 @@
              [8] int32[0...,0...,0...,0...] array4D,
              [9] int32[] a1,
              [10] int32[] a2,
-             [11] int32 'Pipe #1 input',
-             [12] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #2 input',
+             [11] int32 'Pipe #1 input at line 27',
+             [12] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #2 input at line 30',
              [13] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_13,
-             [14] int32 'Pipe #3 input',
-             [15] class [mscorlib]System.Tuple`3<int32,int32,int32> 'Pipe #4 input',
+             [14] int32 'Pipe #3 input at line 31',
+             [15] class [mscorlib]System.Tuple`3<int32,int32,int32> 'Pipe #4 input at line 34',
              [16] class [mscorlib]System.Tuple`3<int32,int32,int32> V_16,
-             [17] int32 'Pipe #5 input',
-             [18] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #6 input',
+             [17] int32 'Pipe #5 input at line 35',
+             [18] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #6 input at line 38',
              [19] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_19,
-             [20] int32 'Pipe #7 input')
+             [20] int32 'Pipe #7 input at line 39')
     .line 5,5 : 1,24 ''
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.1
@@ -603,11 +603,11 @@
     IL_0144:  ldc.i4.0
     IL_0145:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Get<int32>(!!0[],
                                                                                                int32)
-    IL_014a:  stloc.s    'Pipe #1 input'
+    IL_014a:  stloc.s    'Pipe #1 input at line 27'
     .line 27,27 : 19,33 ''
     IL_014c:  call       int32[] CodeGenRenamings01::get_a2()
     IL_0151:  ldc.i4.0
-    IL_0152:  ldloc.s    'Pipe #1 input'
+    IL_0152:  ldloc.s    'Pipe #1 input at line 27'
     IL_0154:  call       void [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Set<int32>(!!0[],
                                                                                                 int32,
                                                                                                 !!0)
@@ -625,9 +625,9 @@
                                                                                                       !1,
                                                                                                       !2,
                                                                                                       !3)
-    IL_0187:  stloc.s    'Pipe #2 input'
+    IL_0187:  stloc.s    'Pipe #2 input at line 30'
     .line 30,30 : 81,87 ''
-    IL_0189:  ldloc.s    'Pipe #2 input'
+    IL_0189:  ldloc.s    'Pipe #2 input at line 30'
     IL_018b:  stloc.s    V_13
     .line 31,31 : 1,19 ''
     IL_018d:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
@@ -636,12 +636,12 @@
     IL_0194:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Get<int32>(!!0[0...,0...],
                                                                                                  int32,
                                                                                                  int32)
-    IL_0199:  stloc.s    'Pipe #3 input'
+    IL_0199:  stloc.s    'Pipe #3 input at line 31'
     .line 31,31 : 23,41 ''
     IL_019b:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
     IL_01a0:  ldc.i4.0
     IL_01a1:  ldc.i4.0
-    IL_01a2:  ldloc.s    'Pipe #3 input'
+    IL_01a2:  ldloc.s    'Pipe #3 input at line 31'
     IL_01a4:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Set<int32>(!!0[0...,0...],
                                                                                                   int32,
                                                                                                   int32,
@@ -657,9 +657,9 @@
     IL_01c8:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
                                                                                                 !1,
                                                                                                 !2)
-    IL_01cd:  stloc.s    'Pipe #4 input'
+    IL_01cd:  stloc.s    'Pipe #4 input at line 34'
     .line 34,34 : 80,86 ''
-    IL_01cf:  ldloc.s    'Pipe #4 input'
+    IL_01cf:  ldloc.s    'Pipe #4 input at line 34'
     IL_01d1:  stloc.s    V_16
     .line 35,35 : 1,26 ''
     IL_01d3:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
@@ -670,13 +670,13 @@
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_01e0:  stloc.s    'Pipe #5 input'
+    IL_01e0:  stloc.s    'Pipe #5 input at line 35'
     .line 35,35 : 30,55 ''
     IL_01e2:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
     IL_01e7:  ldc.i4.0
     IL_01e8:  ldc.i4.0
     IL_01e9:  ldc.i4.0
-    IL_01ea:  ldloc.s    'Pipe #5 input'
+    IL_01ea:  ldloc.s    'Pipe #5 input at line 35'
     IL_01ec:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Set<int32>(!!0[0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
@@ -696,9 +696,9 @@
                                                                                                       !1,
                                                                                                       !2,
                                                                                                       !3)
-    IL_021f:  stloc.s    'Pipe #6 input'
+    IL_021f:  stloc.s    'Pipe #6 input at line 38'
     .line 38,38 : 105,111 ''
-    IL_0221:  ldloc.s    'Pipe #6 input'
+    IL_0221:  ldloc.s    'Pipe #6 input at line 38'
     IL_0223:  stloc.s    V_19
     .line 39,39 : 1,28 ''
     IL_0225:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
@@ -711,14 +711,14 @@
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_0233:  stloc.s    'Pipe #7 input'
+    IL_0233:  stloc.s    'Pipe #7 input at line 39'
     .line 39,39 : 32,59 ''
     IL_0235:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
     IL_023a:  ldc.i4.0
     IL_023b:  ldc.i4.0
     IL_023c:  ldc.i4.0
     IL_023d:  ldc.i4.0
-    IL_023e:  ldloc.s    'Pipe #7 input'
+    IL_023e:  ldloc.s    'Pipe #7 input at line 39'
     IL_0240:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,

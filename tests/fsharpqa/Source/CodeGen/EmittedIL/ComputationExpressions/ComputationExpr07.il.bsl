@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr07.exe
-// MVID: {6116A45A-35BD-E566-A745-03835AA41661}
+// MVID: {611B0EC4-35BD-E566-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06EC0000
+// Image base: 0x06E40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -258,7 +258,7 @@
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res7,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1,
-             [2] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input')
+             [2] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input at line 13')
     .line 100001,100001 : 0,0 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1

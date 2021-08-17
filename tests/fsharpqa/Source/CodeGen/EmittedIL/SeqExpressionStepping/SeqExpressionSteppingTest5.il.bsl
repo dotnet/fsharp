@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {6116A45B-2432-9401-A745-03835BA41661}
+// MVID: {611B0EC5-2432-9401-A745-0383C50E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07120000
+// Image base: 0x06560000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -438,7 +438,7 @@
     .entrypoint
     // Code size       14 (0xe)
     .maxstack  3
-    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input')
+    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 16')
     .line 16,16 : 13,17 ''
     IL_0000:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5::f4()
     IL_0005:  stloc.0
