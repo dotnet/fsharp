@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>net5.0;net472</TargetFrameworks>
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionProperty)</FSharpCoreImplicitPackageVersion>
     <PackagePath>typeproviders</PackagePath>
   </PropertyGroup>
 
