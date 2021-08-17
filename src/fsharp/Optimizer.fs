@@ -1486,13 +1486,13 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
                Some (Expr.Sequential(invoke, rest, NormalSeq, sp, m))
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
-         | Expr.Match (spMatch, _exprm, TDSwitch(dp, Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
+         | Expr.Match (spMatch, _exprm, TDSwitch(sp, Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 &&
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
                    not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
               let spMatch = spBind.Combine spMatch
-              Some (Expr.Match (spMatch, e1.Range, TDSwitch(dp, e1, cases, dflt, m), targets, m, ty2))
+              Some (Expr.Match (spMatch, e1.Range, TDSwitch(sp, e1, cases, dflt, m), targets, m, ty2))
                
          // Immediate use of value as part of an application. 'let f = e in f ...' and 'let x = e in f ... x ...'
          // Note functions are evaluated before args 
@@ -1541,8 +1541,8 @@ let rec (|KnownValApp|_|) expr =
 /// check single case with bool const.
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
-    | TDSwitch(dp, expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
-        Some (dp, expr, testBool, caseTree, defaultTree, range)
+    | TDSwitch(sp, expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
+        Some (sp, expr, testBool, caseTree, defaultTree, range)
     | _ -> 
         None
 
@@ -1556,7 +1556,7 @@ let (|ConstantBoolTarget|_|) target =
 /// apart from one branch which defers to another expression
 let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, costOuterDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (_dp, _expr, [case], Some defaultTree, _range) -> 
+    | TDSwitch (_sp, _expr, [case], Some defaultTree, _range) -> 
         let tc1,ec1 = CountBoolLogicTree data case.CaseTree 
         let tc2, ec2 = CountBoolLogicTree data defaultTree 
         tc1 + tc2, ec1 + ec2
@@ -1572,10 +1572,10 @@ let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, co
 /// depending on whether the target result was true/false
 let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (dp, expr, cases, defaultTree, range) -> 
+    | TDSwitch (sp, expr, cases, defaultTree, range) -> 
         let cases2 = cases |> List.map (RewriteBoolLogicCase data)
         let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
-        TDSwitch (dp, expr, cases2, defaultTree2, range)
+        TDSwitch (sp, expr, cases2, defaultTree2, range)
     | TDSuccess([], idx) -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
@@ -3582,7 +3582,7 @@ and OptimizeDecisionTree cenv env m x =
         else 
             rest, rinfo
 
-    | TDSwitch (dp, e, cases, dflt, m) -> 
+    | TDSwitch (sp, e, cases, dflt, m) -> 
         // We always duplicate boolean-typed guards prior to optimizing. This is work which really should be done in patcompile.fs
         // where we must duplicate "when" expressions to ensure uniqueness of bound variables.
         //
@@ -3590,7 +3590,7 @@ and OptimizeDecisionTree cenv env m x =
         // Hence we do it here. There is no doubt a better way to do this.
         let e = if typeEquiv cenv.g (tyOfExpr cenv.g e) cenv.g.bool_ty then copyExpr cenv.g CloneAll e else e
 
-        OptimizeSwitch cenv env (dp, e, cases, dflt, m)
+        OptimizeSwitch cenv env (sp, e, cases, dflt, m)
 
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test, vinfo with 
@@ -3604,7 +3604,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 
-and OptimizeSwitch cenv env (dp, e, cases, dflt, m) =
+and OptimizeSwitch cenv env (sp, e, cases, dflt, m) =
     let eR, einfo = OptimizeExpr cenv env e 
 
     let cases, dflt = 
@@ -3621,9 +3621,9 @@ and OptimizeSwitch cenv env (dp, e, cases, dflt, m) =
     // OK, see what weRre left with and continue
     match cases, dflt with 
     | [], Some case -> OptimizeDecisionTree cenv env m case
-    | _ -> OptimizeSwitchFallback cenv env (dp, eR, einfo, cases, dflt, m)
+    | _ -> OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m)
 
-and OptimizeSwitchFallback cenv env (dp, eR, einfo, cases, dflt, m) =
+and OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m) =
     let casesR, cinfos =
         cases 
         |> List.map (fun (TCase(discrim, e)) -> let eR, einfo = OptimizeDecisionTree cenv env m e in TCase(discrim, eR), einfo)
@@ -3635,7 +3635,7 @@ and OptimizeSwitchFallback cenv env (dp, eR, einfo, cases, dflt, m) =
     let size = (dinfos.Length + cinfos.Length) * 2
     let info = CombineValueInfosUnknown (einfo :: cinfos @ dinfos)
     let info = { info with TotalSize = info.TotalSize + size; FunctionSize = info.FunctionSize + size; }
-    TDSwitch (dp, eR, casesR, dfltR, m), info
+    TDSwitch (sp, eR, casesR, dfltR, m), info
 
 and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
     try 

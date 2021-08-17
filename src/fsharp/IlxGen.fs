@@ -5592,10 +5592,10 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
         | _ ->
             contf targetInfos
 
-    | TDSwitch(dp, e, cases, dflt, m) ->
+    | TDSwitch(sp, e, cases, dflt, m) ->
         
         // Emit the debug point 
-        match dp with
+        match sp with
         | DebugPointAtSwitch.Yes dpm -> CG.EmitDebugPoint cgbuf dpm
         | DebugPointAtSwitch.No -> ()
 

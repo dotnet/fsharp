@@ -1502,6 +1502,165 @@ let f () =
          ((6, 17), (6, 7, 6, 18, "List.unzip3"))]
 
 [<Test>]
+let ``ValidateBreakpointLocation tests for lambda with wild arg`` () =
+    let input =
+      """
+let bodyWrapper () =
+   id (fun _ ->
+        let x = 1
+        x)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = 
+        let lines = input.Replace("\r", "").Split( [| '\n' |])
+        let positions = [ Position.mkPos 4 0 ]
+        [ for pos in positions do
+            match parseResult.ValidateBreakpointLocation pos with
+            | Some r -> 
+                let text = 
+                    [ if r.StartLine = r.EndLine then
+                          lines.[r.StartLine-1].[r.StartColumn..r.EndColumn-1]
+                      else
+                          lines.[r.StartLine-1].[r.StartColumn..]
+                          for l in r.StartLine..r.EndLine-2 do 
+                                lines.[l]
+                          lines.[r.EndLine-1].[..r.EndColumn-1] ]
+                    |> String.concat "$"
+                ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
+            | None -> 
+                ()]
+    printfn "%A" results
+    results |> shouldEqual 
+        [((3, 0), (3, 5, 3, 8, "[1]"));
+         ((3, 1),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((3, 2),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((3, 3),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((3, 4),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((3, 5), (3, 5, 3, 8, "[1]")); ((3, 6), (3, 5, 3, 8, "[1]"));
+         ((3, 7), (3, 5, 3, 8, "[1]")); ((3, 8), (3, 5, 3, 8, "[1]"));
+         ((3, 9), (3, 9, 3, 12, "[2]")); ((3, 10), (3, 9, 3, 12, "[2]"));
+         ((3, 11), (3, 9, 3, 12, "[2]")); ((3, 12), (3, 9, 3, 12, "[2]"));
+         ((3, 13), (3, 13, 3, 16, "[3]")); ((3, 14), (3, 13, 3, 16, "[3]"));
+         ((3, 15), (3, 13, 3, 16, "[3]")); ((3, 16), (3, 13, 3, 16, "[3]"));
+         ((3, 17),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 0), (4, 9, 4, 18, "List.zip3"));
+         ((4, 1),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 2),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 3),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 4),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 5),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 6),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 7),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 8),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((4, 9), (4, 9, 4, 18, "List.zip3")); ((4, 10), (4, 9, 4, 18, "List.zip3"));
+         ((4, 11), (4, 9, 4, 18, "List.zip3")); ((4, 12), (4, 9, 4, 18, "List.zip3"));
+         ((4, 13), (4, 9, 4, 18, "List.zip3")); ((4, 14), (4, 9, 4, 18, "List.zip3"));
+         ((4, 15), (4, 9, 4, 18, "List.zip3")); ((4, 16), (4, 9, 4, 18, "List.zip3"));
+         ((4, 17), (4, 9, 4, 18, "List.zip3"));
+         ((5, 0), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 1),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 2),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 3),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 4),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 5),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 6),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((5, 7), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 8), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 9), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 10), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 11), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 12), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 13), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 14), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 15), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 16), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 17), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 18), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 19), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 20), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 21), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 22), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 23), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 24), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 25), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 26), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 27), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 28), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 29), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 30), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 31), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 32), (5, 32, 5, 39, "(c,b,a)")); ((5, 33), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 34), (5, 32, 5, 39, "(c,b,a)")); ((5, 35), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 36), (5, 32, 5, 39, "(c,b,a)")); ((5, 37), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 38), (5, 32, 5, 39, "(c,b,a)")); ((5, 39), (5, 32, 5, 39, "(c,b,a)"));
+         ((6, 0), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 1),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 2),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 3),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 4),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 5),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 6),
+          (3, 4, 6, 18,
+           "([1],[2],[3]) $    |||> List.zip3$    |> List.map (fun (a,b,c) -> (c,b,a))$    |> List.unzip3"));
+         ((6, 7), (6, 7, 6, 18, "List.unzip3")); ((6, 8), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 9), (6, 7, 6, 18, "List.unzip3")); ((6, 10), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 11), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 12), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 13), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 14), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 15), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 16), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 17), (6, 7, 6, 18, "List.unzip3"))]
+
+[<Test>]
 let ``Partially valid namespaces should be reported`` () =
     let input =
       """
