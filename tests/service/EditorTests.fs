@@ -55,6 +55,9 @@ let input =
   """
 
 [<Test>]
+#if COMPILED
+[<Ignore("This isn't picking up changes in Fsharp.Core")>]
+#endif
 let ``Intro test`` () =
 
     // Split the input & define file name
