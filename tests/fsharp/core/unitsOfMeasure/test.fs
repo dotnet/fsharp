@@ -29,16 +29,36 @@ let foo =
     problem // Error: Incorrect number of type arguments to local call
 
 
-let nullReferenceError weightedList =
-    let rec loop accumululatedWeight (remaining : float<'u> list) =
-        match remaining with
-        | [] -> accumululatedWeight
-        | weight :: tail ->
-            loop (accumululatedWeight + weight) tail
+// This was causing bad codegen in debug code
+module InnerFunctionGenericOnlyByMeasure =
+    let nullReferenceError weightedList =
+        let rec loop accumululatedWeight (remaining : float<'u> list) =
+            match remaining with
+            | [] -> accumululatedWeight
+            | weight :: tail ->
+                loop (accumululatedWeight + weight) tail
 
-    loop 0.0<_> weightedList
+        loop 0.0<_> weightedList
 
-let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
+    let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
+
+// Another variation on the above test case, where the recursive thing is a type function generic unly by a unit of measure
+module TopLevelTypeFunctionGenericOnlyByMeasure =
+    type C< [<Measure>] 'u> =
+       abstract Invoke: float<'u> list -> int
+
+    let rec loop<[<Measure>]'u>  =
+        { new C<'u> with 
+            member _.Invoke(xs) =
+                match xs with
+                | [] -> 1
+                | weight :: tail ->
+                    loop<'u>.Invoke(tail) }
+
+    let nullReferenceError2 (weightedList: float<'u> list) =
+        loop<'u>.Invoke(weightedList)
+
+    let ``is this null 2?`` = nullReferenceError2 [ 0.3; 0.3; 0.4 ]
 
 module TestLibrary =
 

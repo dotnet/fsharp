@@ -448,6 +448,8 @@ module rec Compiler =
             | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                printfn "---------output-------\n%s\n-------"  output
+                printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     Success executionResult
@@ -637,7 +639,13 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Diagnostics)
+                let message = 
+                    [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
+                      match r.Output with
+                      | Some (ExecutionOutput output) ->
+                          sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | _ -> () ]
+                    |> String.concat "\n"
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =

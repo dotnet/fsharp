@@ -87,6 +87,11 @@
         <target state="translated">Атрибут сборки "{0}" ссылается на сборку конструктора "{1}", которая не может быть загружена или не существует. Получено исключение: {2} — {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>additional type-directed conversions</source>
+        <target state="translated">дополнительные преобразования на основе типа</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">применимые вычислительные выражения</target>
@@ -179,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
-        <target state="new">whitespace relaxation v2</target>
+        <target state="translated">смягчение требований по использованию пробелов, версия 2</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -452,6 +457,11 @@
         <target state="translated">Не удалось определить пакет SDK .NET для этого скрипта. Если сценарий находится в каталоге с использованием файла "global.json", убедитесь, что установлен соответствующий пакет SDK .NET. Непредвиденная ошибка "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="translated">Это выражение имеет тип "{0}" и совместимо только с типом "{1}" посредством неоднозначного неявного преобразования. Рассмотрите возможность использования явного вызова "op_Implicit". Применимые неявные преобразования: {2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Эта функция не поддерживается в данной версии F#. Возможно, потребуется добавить/langversion:preview, чтобы использовать эту функцию.</target>
@@ -485,6 +495,21 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Типы ByRef запрещены в объявлении открытого типа.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcBuiltInImplicitConversionUsed">
+        <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Это выражение использует встроенное неявное преобразование, чтобы преобразовать тип "{0}" в тип "{1}". См. сведения на странице https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
+        <target state="translated">Это выражение использует неявное преобразование "{0}" для преобразования типа "{1}" в тип "{2}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
+        <target state="translated">Это выражение использует неявное преобразование "{0}" для преобразования типа "{1}" в тип "{2}". См. сведения на странице https://aka.ms/fsharp-implicit-convs. Это предупреждение можно отключить, используя параметр '#nowarn \"3391\"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -565,6 +590,11 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">Для использования возобновляемого кода или возобновляемых конечных автоматов требуется /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSubsumptionImplicitConversionUsed">
+        <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Это выражение неявно преобразует тип "{0}" в тип "{1}". См. сведения на странице https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -673,13 +703,13 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Все элементы выражения конструктора списка должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Все элементы списка должны поддерживать неявное преобразование в тип первого элемента, которым здесь является "{0}". Тип этого элемента: "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Все элементы выражения конструктора массива должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Все элементы массива должны поддерживать неявное преобразование в тип первого элемента, которым здесь является "{0}". Тип этого элемента: "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -693,13 +723,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Все ветви выражения "if" должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Все ветви выражения "if" должны возвращать значения, поддерживающие неявное преобразование в тип первой ветви, которым здесь является "{0}". Эта ветвь возвращает значение типа "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Все ветви выражения сопоставления шаблонов должны возвращать значения одного типа. Первая ветвь возвратила значение типа "{0}", а эта ветвь — типа "{1}".</target>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Все ветви выражения соответствия шаблону должны возвращать значения, поддерживающие неявное преобразование в тип первой ветви, которым здесь является "{0}". Эта ветвь возвращает значение типа "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">

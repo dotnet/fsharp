@@ -80,6 +80,7 @@ type FSharpSymbol =
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
+    member internal SymbolEnv: SymbolEnv
     member internal Item: Item
         
     /// Get the assembly declaring this symbol
