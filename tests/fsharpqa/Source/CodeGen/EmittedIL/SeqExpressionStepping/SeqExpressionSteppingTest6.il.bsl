@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-// MVID: {6116A45B-2432-94A2-A745-03835BA41661}
+// MVID: {611B0EC5-2432-94A2-A745-0383C50E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DF0000
+// Image base: 0x07170000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -514,7 +514,7 @@
     // Code size       44 (0x2c)
     .maxstack  6
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> es,
-             [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input')
+             [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 13')
     .line 4,4 : 5,21 ''
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2

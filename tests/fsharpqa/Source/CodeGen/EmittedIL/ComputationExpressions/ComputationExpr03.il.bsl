@@ -40,13 +40,13 @@
   // Offset: 0x00000240 Length: 0x0000008C
 }
 .module ComputationExpr03.exe
-// MVID: {6116A45A-3649-E566-A745-03835AA41661}
+// MVID: {611B0EC4-3649-E566-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F30000
+// Image base: 0x06B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -341,9 +341,9 @@
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res2,
              [1] class [ComputationExprLibrary]Library.Eventually`1<int32> res3,
              [2] class [ComputationExprLibrary]Library.EventuallyBuilder V_2,
-             [3] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input',
+             [3] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input at line 10',
              [4] class [ComputationExprLibrary]Library.EventuallyBuilder V_4,
-             [5] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #2 input')
+             [5] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #2 input at line 22')
     .line 100001,100001 : 0,0 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.2
@@ -372,9 +372,9 @@
     IL_0041:  stloc.1
     .line 22,22 : 1,5 ''
     IL_0042:  call       class [ComputationExprLibrary]Library.Eventually`1<int32> ComputationExpr03::get_res3()
-    IL_0047:  stloc.s    'Pipe #2 input'
+    IL_0047:  stloc.s    'Pipe #2 input at line 22'
     .line 22,22 : 10,26 ''
-    IL_0049:  ldloc.s    'Pipe #2 input'
+    IL_0049:  ldloc.s    'Pipe #2 input at line 22'
     IL_004b:  call       !!0 [ComputationExprLibrary]Library.EventuallyModule::force<int32>(class [ComputationExprLibrary]Library.Eventually`1<!!0>)
     IL_0050:  pop
     IL_0051:  ret

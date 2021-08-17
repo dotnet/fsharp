@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest1.dll
-// MVID: {6116A45A-6394-B5D4-A745-03835AA41661}
+// MVID: {611B0EC4-6394-B5D4-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07170000
+// Image base: 0x06680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -140,7 +140,7 @@
   {
     // Code size       18 (0x12)
     .maxstack  5
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'Pipe #1 input',
+    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'Pipe #1 input at line 10',
              [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
     .line 10,10 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest1/AsyncExpressionSteppingTest1::f1()

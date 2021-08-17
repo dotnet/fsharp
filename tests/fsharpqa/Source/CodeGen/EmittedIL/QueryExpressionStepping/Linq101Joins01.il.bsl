@@ -45,13 +45,13 @@
   // Offset: 0x00000310 Length: 0x000000C3
 }
 .module Linq101Joins01.exe
-// MVID: {6116A45B-151B-685E-A745-03835BA41661}
+// MVID: {611B0EC5-151B-685E-A745-0383C50E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CA0000
+// Image base: 0x06D00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,10 +60,10 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input@14'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input at line 12@14'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #1 input@14' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #1 input at line 12@14' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -74,7 +74,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #1 input@14'::.ctor
+    } // end of method 'Pipe #1 input at line 12@14'::.ctor
 
     .method public strict virtual instance string 
             Invoke(string c) cil managed
@@ -85,24 +85,24 @@
       .line 14,14 : 32,33 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Joins01.fs'
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'Pipe #1 input@14'::Invoke
+    } // end of method 'Pipe #1 input at line 12@14'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input@14'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input@14' Linq101Joins01/'Pipe #1 input@14'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input at line 12@14'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input at line 12@14' Linq101Joins01/'Pipe #1 input at line 12@14'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #1 input@14'::.cctor
+    } // end of method 'Pipe #1 input at line 12@14'::.cctor
 
-  } // end of class 'Pipe #1 input@14'
+  } // end of class 'Pipe #1 input at line 12@14'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input@14-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input at line 12@14-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #1 input@14-1' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #1 input at line 12@14-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -113,7 +113,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #1 input@14-1'::.ctor
+    } // end of method 'Pipe #1 input at line 12@14-1'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -125,24 +125,24 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'Pipe #1 input@14-1'::Invoke
+    } // end of method 'Pipe #1 input at line 12@14-1'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input@14-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input@14-1' Linq101Joins01/'Pipe #1 input@14-1'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input at line 12@14-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input at line 12@14-1' Linq101Joins01/'Pipe #1 input at line 12@14-1'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #1 input@14-1'::.cctor
+    } // end of method 'Pipe #1 input at line 12@14-1'::.cctor
 
-  } // end of class 'Pipe #1 input@14-1'
+  } // end of class 'Pipe #1 input at line 12@14-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input@14-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input at line 12@14-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [Utils]Utils/Product,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #1 input@14-2' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #1 input at line 12@14-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -153,7 +153,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [Utils]Utils/Product,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #1 input@14-2'::.ctor
+    } // end of method 'Pipe #1 input at line 12@14-2'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product> 
             Invoke(string c,
@@ -167,21 +167,21 @@
       IL_0002:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>::.ctor(!0,
                                                                                                                   !1)
       IL_0007:  ret
-    } // end of method 'Pipe #1 input@14-2'::Invoke
+    } // end of method 'Pipe #1 input at line 12@14-2'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input@14-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input@14-2' Linq101Joins01/'Pipe #1 input@14-2'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input at line 12@14-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input at line 12@14-2' Linq101Joins01/'Pipe #1 input at line 12@14-2'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #1 input@14-2'::.cctor
+    } // end of method 'Pipe #1 input at line 12@14-2'::.cctor
 
-  } // end of class 'Pipe #1 input@14-2'
+  } // end of class 'Pipe #1 input at line 12@14-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input@14-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input at line 12@14-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -199,9 +199,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #1 input@14-3'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #1 input at line 12@14-3'::builder@
       IL_000d:  ret
-    } // end of method 'Pipe #1 input@14-3'::.ctor
+    } // end of method 'Pipe #1 input at line 12@14-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,object> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product> _arg1) cil managed
@@ -221,7 +221,7 @@
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>::get_Item1()
       IL_000f:  stloc.2
       IL_0010:  ldarg.0
-      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #1 input@14-3'::builder@
+      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #1 input at line 12@14-3'::builder@
       IL_0016:  ldloc.2
       IL_0017:  ldloc.1
       IL_0018:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>::.ctor(!0,
@@ -229,14 +229,14 @@
       IL_001d:  tail.
       IL_001f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,object>(!!0)
       IL_0024:  ret
-    } // end of method 'Pipe #1 input@14-3'::Invoke
+    } // end of method 'Pipe #1 input at line 12@14-3'::Invoke
 
-  } // end of class 'Pipe #1 input@14-3'
+  } // end of class 'Pipe #1 input at line 12@14-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input@15-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 input at line 12@15-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,string>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #1 input@15-4' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #1 input at line 12@15-4' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -247,7 +247,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,string>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #1 input@15-4'::.ctor
+    } // end of method 'Pipe #1 input at line 12@15-4'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,string> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product> tupledArg) cil managed
@@ -270,24 +270,24 @@
       IL_0015:  newobj     instance void class [mscorlib]System.Tuple`2<string,string>::.ctor(!0,
                                                                                               !1)
       IL_001a:  ret
-    } // end of method 'Pipe #1 input@15-4'::Invoke
+    } // end of method 'Pipe #1 input at line 12@15-4'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input@15-4'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input@15-4' Linq101Joins01/'Pipe #1 input@15-4'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #1 input at line 12@15-4'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #1 input at line 12@15-4' Linq101Joins01/'Pipe #1 input at line 12@15-4'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #1 input@15-4'::.cctor
+    } // end of method 'Pipe #1 input at line 12@15-4'::.cctor
 
-  } // end of class 'Pipe #1 input@15-4'
+  } // end of class 'Pipe #1 input at line 12@15-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input@22'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input at line 20@22'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #2 input@22' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #2 input at line 20@22' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -298,7 +298,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #2 input@22'::.ctor
+    } // end of method 'Pipe #2 input at line 20@22'::.ctor
 
     .method public strict virtual instance string 
             Invoke(string c) cil managed
@@ -308,24 +308,24 @@
       .line 22,22 : 37,38 ''
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'Pipe #2 input@22'::Invoke
+    } // end of method 'Pipe #2 input at line 20@22'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input@22'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input@22' Linq101Joins01/'Pipe #2 input@22'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input at line 20@22'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input at line 20@22' Linq101Joins01/'Pipe #2 input at line 20@22'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #2 input@22'::.cctor
+    } // end of method 'Pipe #2 input at line 20@22'::.cctor
 
-  } // end of class 'Pipe #2 input@22'
+  } // end of class 'Pipe #2 input at line 20@22'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input@22-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input at line 20@22-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #2 input@22-1' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #2 input at line 20@22-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -336,7 +336,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #2 input@22-1'::.ctor
+    } // end of method 'Pipe #2 input at line 20@22-1'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -348,24 +348,24 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'Pipe #2 input@22-1'::Invoke
+    } // end of method 'Pipe #2 input at line 20@22-1'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input@22-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input@22-1' Linq101Joins01/'Pipe #2 input@22-1'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input at line 20@22-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input at line 20@22-1' Linq101Joins01/'Pipe #2 input at line 20@22-1'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #2 input@22-1'::.cctor
+    } // end of method 'Pipe #2 input at line 20@22-1'::.cctor
 
-  } // end of class 'Pipe #2 input@22-1'
+  } // end of class 'Pipe #2 input at line 20@22-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input@22-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input at line 20@22-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #2 input@22-2' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #2 input at line 20@22-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -376,7 +376,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #2 input@22-2'::.ctor
+    } // end of method 'Pipe #2 input at line 20@22-2'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
             Invoke(string c,
@@ -390,21 +390,21 @@
       IL_0002:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                             !1)
       IL_0007:  ret
-    } // end of method 'Pipe #2 input@22-2'::Invoke
+    } // end of method 'Pipe #2 input at line 20@22-2'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input@22-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input@22-2' Linq101Joins01/'Pipe #2 input@22-2'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input at line 20@22-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input at line 20@22-2' Linq101Joins01/'Pipe #2 input at line 20@22-2'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #2 input@22-2'::.cctor
+    } // end of method 'Pipe #2 input at line 20@22-2'::.cctor
 
-  } // end of class 'Pipe #2 input@22-2'
+  } // end of class 'Pipe #2 input at line 20@22-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input@22-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input at line 20@22-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -422,9 +422,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #2 input@22-3'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #2 input at line 20@22-3'::builder@
       IL_000d:  ret
-    } // end of method 'Pipe #2 input@22-3'::.ctor
+    } // end of method 'Pipe #2 input at line 20@22-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> _arg1) cil managed
@@ -444,7 +444,7 @@
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
       IL_0010:  ldarg.0
-      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #2 input@22-3'::builder@
+      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #2 input at line 20@22-3'::builder@
       IL_0016:  ldloc.2
       IL_0017:  ldloc.1
       IL_0018:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::.ctor(!0,
@@ -452,14 +452,14 @@
       IL_001d:  tail.
       IL_001f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(!!0)
       IL_0024:  ret
-    } // end of method 'Pipe #2 input@22-3'::Invoke
+    } // end of method 'Pipe #2 input at line 20@22-3'::Invoke
 
-  } // end of class 'Pipe #2 input@22-3'
+  } // end of class 'Pipe #2 input at line 20@22-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input@23-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 input at line 20@23-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #2 input@23-4' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #2 input at line 20@23-4' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -470,7 +470,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #2 input@23-4'::.ctor
+    } // end of method 'Pipe #2 input at line 20@23-4'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> tupledArg) cil managed
@@ -492,24 +492,24 @@
       IL_0010:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                             !1)
       IL_0015:  ret
-    } // end of method 'Pipe #2 input@23-4'::Invoke
+    } // end of method 'Pipe #2 input at line 20@23-4'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input@23-4'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input@23-4' Linq101Joins01/'Pipe #2 input@23-4'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #2 input at line 20@23-4'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #2 input at line 20@23-4' Linq101Joins01/'Pipe #2 input at line 20@23-4'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #2 input@23-4'::.cctor
+    } // end of method 'Pipe #2 input at line 20@23-4'::.cctor
 
-  } // end of class 'Pipe #2 input@23-4'
+  } // end of class 'Pipe #2 input at line 20@23-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@30'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@30'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #3 input@30' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #3 input at line 28@30' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -520,7 +520,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #3 input@30'::.ctor
+    } // end of method 'Pipe #3 input at line 28@30'::.ctor
 
     .method public strict virtual instance string 
             Invoke(string c) cil managed
@@ -530,24 +530,24 @@
       .line 30,30 : 37,38 ''
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'Pipe #3 input@30'::Invoke
+    } // end of method 'Pipe #3 input at line 28@30'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input@30'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input@30' Linq101Joins01/'Pipe #3 input@30'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@30'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input at line 28@30' Linq101Joins01/'Pipe #3 input at line 28@30'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #3 input@30'::.cctor
+    } // end of method 'Pipe #3 input at line 28@30'::.cctor
 
-  } // end of class 'Pipe #3 input@30'
+  } // end of class 'Pipe #3 input at line 28@30'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@30-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@30-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #3 input@30-1' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #3 input at line 28@30-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -558,7 +558,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #3 input@30-1'::.ctor
+    } // end of method 'Pipe #3 input at line 28@30-1'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -570,24 +570,24 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'Pipe #3 input@30-1'::Invoke
+    } // end of method 'Pipe #3 input at line 28@30-1'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input@30-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input@30-1' Linq101Joins01/'Pipe #3 input@30-1'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@30-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input at line 28@30-1' Linq101Joins01/'Pipe #3 input at line 28@30-1'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #3 input@30-1'::.cctor
+    } // end of method 'Pipe #3 input at line 28@30-1'::.cctor
 
-  } // end of class 'Pipe #3 input@30-1'
+  } // end of class 'Pipe #3 input at line 28@30-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@30-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@30-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #3 input@30-2' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #3 input at line 28@30-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -598,7 +598,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #3 input@30-2'::.ctor
+    } // end of method 'Pipe #3 input at line 28@30-2'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
             Invoke(string c,
@@ -612,21 +612,21 @@
       IL_0002:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                             !1)
       IL_0007:  ret
-    } // end of method 'Pipe #3 input@30-2'::Invoke
+    } // end of method 'Pipe #3 input at line 28@30-2'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input@30-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input@30-2' Linq101Joins01/'Pipe #3 input@30-2'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@30-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input at line 28@30-2' Linq101Joins01/'Pipe #3 input at line 28@30-2'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #3 input@30-2'::.cctor
+    } // end of method 'Pipe #3 input at line 28@30-2'::.cctor
 
-  } // end of class 'Pipe #3 input@30-2'
+  } // end of class 'Pipe #3 input at line 28@30-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@31-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@31-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -648,15 +648,15 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@31-4'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@31-4'::builder@
       IL_000d:  ldarg.0
       IL_000e:  ldarg.2
-      IL_000f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #3 input@31-4'::ps
+      IL_000f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #3 input at line 28@31-4'::ps
       IL_0014:  ldarg.0
       IL_0015:  ldarg.3
-      IL_0016:  stfld      string Linq101Joins01/'Pipe #3 input@31-4'::c
+      IL_0016:  stfld      string Linq101Joins01/'Pipe #3 input at line 28@31-4'::c
       IL_001b:  ret
-    } // end of method 'Pipe #3 input@31-4'::.ctor
+    } // end of method 'Pipe #3 input at line 28@31-4'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,object> 
             Invoke(class [Utils]Utils/Product _arg2) cil managed
@@ -669,11 +669,11 @@
       IL_0001:  stloc.0
       .line 32,32 : 9,34 ''
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@31-4'::builder@
+      IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@31-4'::builder@
       IL_0008:  ldarg.0
-      IL_0009:  ldfld      string Linq101Joins01/'Pipe #3 input@31-4'::c
+      IL_0009:  ldfld      string Linq101Joins01/'Pipe #3 input at line 28@31-4'::c
       IL_000e:  ldarg.0
-      IL_000f:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #3 input@31-4'::ps
+      IL_000f:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #3 input at line 28@31-4'::ps
       IL_0014:  ldloc.0
       IL_0015:  newobj     instance void class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>::.ctor(!0,
                                                                                                                                                                                                        !1,
@@ -681,11 +681,11 @@
       IL_001a:  tail.
       IL_001c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,object>(!!0)
       IL_0021:  ret
-    } // end of method 'Pipe #3 input@31-4'::Invoke
+    } // end of method 'Pipe #3 input at line 28@31-4'::Invoke
 
-  } // end of class 'Pipe #3 input@31-4'
+  } // end of class 'Pipe #3 input at line 28@31-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@30-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@30-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -703,9 +703,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@30-3'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@30-3'::builder@
       IL_000d:  ret
-    } // end of method 'Pipe #3 input@30-3'::.ctor
+    } // end of method 'Pipe #3 input at line 28@30-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> _arg1) cil managed
@@ -725,30 +725,30 @@
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
       IL_0010:  ldarg.0
-      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@30-3'::builder@
+      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@30-3'::builder@
       IL_0016:  ldarg.0
-      IL_0017:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@30-3'::builder@
+      IL_0017:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@30-3'::builder@
       IL_001c:  ldloc.1
       IL_001d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0022:  ldarg.0
-      IL_0023:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input@30-3'::builder@
+      IL_0023:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@30-3'::builder@
       IL_0028:  ldloc.1
       IL_0029:  ldloc.2
-      IL_002a:  newobj     instance void Linq101Joins01/'Pipe #3 input@31-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
-                                                                                    class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,
-                                                                                    string)
+      IL_002a:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@31-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
+                                                                                               class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,
+                                                                                               string)
       IL_002f:  tail.
       IL_0031:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
       IL_0036:  ret
-    } // end of method 'Pipe #3 input@30-3'::Invoke
+    } // end of method 'Pipe #3 input at line 28@30-3'::Invoke
 
-  } // end of class 'Pipe #3 input@30-3'
+  } // end of class 'Pipe #3 input at line 28@30-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input@32-5'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #3 input at line 28@32-5'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,string>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #3 input@32-5' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #3 input at line 28@32-5' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -759,7 +759,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,string>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #3 input@32-5'::.ctor
+    } // end of method 'Pipe #3 input at line 28@32-5'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,string> 
             Invoke(class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product> tupledArg) cil managed
@@ -786,24 +786,24 @@
       IL_001c:  newobj     instance void class [mscorlib]System.Tuple`2<string,string>::.ctor(!0,
                                                                                               !1)
       IL_0021:  ret
-    } // end of method 'Pipe #3 input@32-5'::Invoke
+    } // end of method 'Pipe #3 input at line 28@32-5'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input@32-5'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input@32-5' Linq101Joins01/'Pipe #3 input@32-5'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@32-5'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #3 input at line 28@32-5' Linq101Joins01/'Pipe #3 input at line 28@32-5'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #3 input@32-5'::.cctor
+    } // end of method 'Pipe #3 input at line 28@32-5'::.cctor
 
-  } // end of class 'Pipe #3 input@32-5'
+  } // end of class 'Pipe #3 input at line 28@32-5'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@39'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@39'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #4 input@39' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #4 input at line 37@39' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -814,7 +814,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #4 input@39'::.ctor
+    } // end of method 'Pipe #4 input at line 37@39'::.ctor
 
     .method public strict virtual instance string 
             Invoke(string c) cil managed
@@ -824,24 +824,24 @@
       .line 39,39 : 37,38 ''
       IL_0000:  ldarg.1
       IL_0001:  ret
-    } // end of method 'Pipe #4 input@39'::Invoke
+    } // end of method 'Pipe #4 input at line 37@39'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input@39'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input@39' Linq101Joins01/'Pipe #4 input@39'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@39'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input at line 37@39' Linq101Joins01/'Pipe #4 input at line 37@39'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #4 input@39'::.cctor
+    } // end of method 'Pipe #4 input at line 37@39'::.cctor
 
-  } // end of class 'Pipe #4 input@39'
+  } // end of class 'Pipe #4 input at line 37@39'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@39-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@39-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #4 input@39-1' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #4 input at line 37@39-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -852,7 +852,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #4 input@39-1'::.ctor
+    } // end of method 'Pipe #4 input at line 37@39-1'::.ctor
 
     .method public strict virtual instance string 
             Invoke(class [Utils]Utils/Product p) cil managed
@@ -864,24 +864,24 @@
       IL_0001:  tail.
       IL_0003:  callvirt   instance string [Utils]Utils/Product::get_Category()
       IL_0008:  ret
-    } // end of method 'Pipe #4 input@39-1'::Invoke
+    } // end of method 'Pipe #4 input at line 37@39-1'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input@39-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input@39-1' Linq101Joins01/'Pipe #4 input@39-1'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@39-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input at line 37@39-1' Linq101Joins01/'Pipe #4 input at line 37@39-1'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #4 input@39-1'::.cctor
+    } // end of method 'Pipe #4 input at line 37@39-1'::.cctor
 
-  } // end of class 'Pipe #4 input@39-1'
+  } // end of class 'Pipe #4 input at line 37@39-1'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@39-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@39-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #4 input@39-2' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #4 input at line 37@39-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -892,7 +892,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #4 input@39-2'::.ctor
+    } // end of method 'Pipe #4 input at line 37@39-2'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> 
             Invoke(string c,
@@ -906,21 +906,21 @@
       IL_0002:  newobj     instance void class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::.ctor(!0,
                                                                                                                                                                             !1)
       IL_0007:  ret
-    } // end of method 'Pipe #4 input@39-2'::Invoke
+    } // end of method 'Pipe #4 input at line 37@39-2'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input@39-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input@39-2' Linq101Joins01/'Pipe #4 input@39-2'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@39-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input at line 37@39-2' Linq101Joins01/'Pipe #4 input at line 37@39-2'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #4 input@39-2'::.cctor
+    } // end of method 'Pipe #4 input at line 37@39-2'::.cctor
 
-  } // end of class 'Pipe #4 input@39-2'
+  } // end of class 'Pipe #4 input at line 37@39-2'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@40-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@40-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -942,15 +942,15 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@40-4'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@40-4'::builder@
       IL_000d:  ldarg.0
       IL_000e:  ldarg.2
-      IL_000f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input@40-4'::ps
+      IL_000f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input at line 37@40-4'::ps
       IL_0014:  ldarg.0
       IL_0015:  ldarg.3
-      IL_0016:  stfld      string Linq101Joins01/'Pipe #4 input@40-4'::c
+      IL_0016:  stfld      string Linq101Joins01/'Pipe #4 input at line 37@40-4'::c
       IL_001b:  ret
-    } // end of method 'Pipe #4 input@40-4'::.ctor
+    } // end of method 'Pipe #4 input at line 37@40-4'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object> 
             Invoke(class [Utils]Utils/Product _arg2) cil managed
@@ -985,11 +985,11 @@
       IL_001f:  stloc.1
       .line 42,42 : 9,22 ''
       IL_0020:  ldarg.0
-      IL_0021:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@40-4'::builder@
+      IL_0021:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@40-4'::builder@
       IL_0026:  ldarg.0
-      IL_0027:  ldfld      string Linq101Joins01/'Pipe #4 input@40-4'::c
+      IL_0027:  ldfld      string Linq101Joins01/'Pipe #4 input at line 37@40-4'::c
       IL_002c:  ldarg.0
-      IL_002d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input@40-4'::ps
+      IL_002d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input at line 37@40-4'::ps
       IL_0032:  ldloc.0
       IL_0033:  ldloc.1
       IL_0034:  newobj     instance void class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::.ctor(!0,
@@ -999,11 +999,11 @@
       IL_0039:  tail.
       IL_003b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(!!0)
       IL_0040:  ret
-    } // end of method 'Pipe #4 input@40-4'::Invoke
+    } // end of method 'Pipe #4 input at line 37@40-4'::Invoke
 
-  } // end of class 'Pipe #4 input@40-4'
+  } // end of class 'Pipe #4 input at line 37@40-4'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@39-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@39-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1021,9 +1021,9 @@
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Collections.IEnumerable>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
-      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@39-3'::builder@
+      IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@39-3'::builder@
       IL_000d:  ret
-    } // end of method 'Pipe #4 input@39-3'::.ctor
+    } // end of method 'Pipe #4 input at line 37@39-3'::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Collections.IEnumerable> 
             Invoke(class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> _arg1) cil managed
@@ -1043,31 +1043,31 @@
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
       IL_0010:  ldarg.0
-      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@39-3'::builder@
+      IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@39-3'::builder@
       IL_0016:  ldarg.0
-      IL_0017:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@39-3'::builder@
+      IL_0017:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@39-3'::builder@
       IL_001c:  ldloc.1
       IL_001d:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [System.Core]System.Linq.Enumerable::DefaultIfEmpty<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0022:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0027:  ldarg.0
-      IL_0028:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input@39-3'::builder@
+      IL_0028:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@39-3'::builder@
       IL_002d:  ldloc.1
       IL_002e:  ldloc.2
-      IL_002f:  newobj     instance void Linq101Joins01/'Pipe #4 input@40-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
-                                                                                    class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,
-                                                                                    string)
+      IL_002f:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@40-4'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder,
+                                                                                               class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,
+                                                                                               string)
       IL_0034:  tail.
       IL_0036:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
       IL_003b:  ret
-    } // end of method 'Pipe #4 input@39-3'::Invoke
+    } // end of method 'Pipe #4 input at line 37@39-3'::Invoke
 
-  } // end of class 'Pipe #4 input@39-3'
+  } // end of class 'Pipe #4 input at line 37@39-3'
 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input@42-5'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #4 input at line 37@42-5'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Tuple`2<string,string>>
   {
-    .field static assembly initonly class Linq101Joins01/'Pipe #4 input@42-5' @_instance
+    .field static assembly initonly class Linq101Joins01/'Pipe #4 input at line 37@42-5' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1078,7 +1078,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Tuple`2<string,string>>::.ctor()
       IL_0006:  ret
-    } // end of method 'Pipe #4 input@42-5'::.ctor
+    } // end of method 'Pipe #4 input at line 37@42-5'::.ctor
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<string,string> 
             Invoke(class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string> tupledArg) cil managed
@@ -1108,19 +1108,19 @@
       IL_001e:  newobj     instance void class [mscorlib]System.Tuple`2<string,string>::.ctor(!0,
                                                                                               !1)
       IL_0023:  ret
-    } // end of method 'Pipe #4 input@42-5'::Invoke
+    } // end of method 'Pipe #4 input at line 37@42-5'::Invoke
 
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
       .maxstack  10
-      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input@42-5'::.ctor()
-      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input@42-5' Linq101Joins01/'Pipe #4 input@42-5'::@_instance
+      IL_0000:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@42-5'::.ctor()
+      IL_0005:  stsfld     class Linq101Joins01/'Pipe #4 input at line 37@42-5' Linq101Joins01/'Pipe #4 input at line 37@42-5'::@_instance
       IL_000a:  ret
-    } // end of method 'Pipe #4 input@42-5'::.cctor
+    } // end of method 'Pipe #4 input at line 37@42-5'::.cctor
 
-  } // end of class 'Pipe #4 input@42-5'
+  } // end of class 'Pipe #4 input at line 37@42-5'
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
           get_categories() cil managed
@@ -1244,13 +1244,13 @@
              [3] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] q2,
              [4] class [mscorlib]System.Tuple`2<string,string>[] q3,
              [5] class [mscorlib]System.Tuple`2<string,string>[] q4,
-             [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #1 input',
+             [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #1 input at line 12',
              [7] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_7,
-             [8] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>> 'Pipe #2 input',
+             [8] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>> 'Pipe #2 input at line 20',
              [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9,
-             [10] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #3 input',
+             [10] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #3 input at line 28',
              [11] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_11,
-             [12] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #4 input',
+             [12] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,string>> 'Pipe #4 input at line 37',
              [13] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_13)
     .line 8,8 : 1,88 ''
     IL_0000:  ldstr      "Beverages"
@@ -1291,25 +1291,25 @@
     IL_0064:  ldloc.s    V_7
     IL_0066:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Joins01::get_products()
     IL_006b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0070:  ldsfld     class Linq101Joins01/'Pipe #1 input@14' Linq101Joins01/'Pipe #1 input@14'::@_instance
-    IL_0075:  ldsfld     class Linq101Joins01/'Pipe #1 input@14-1' Linq101Joins01/'Pipe #1 input@14-1'::@_instance
-    IL_007a:  ldsfld     class Linq101Joins01/'Pipe #1 input@14-2' Linq101Joins01/'Pipe #1 input@14-2'::@_instance
+    IL_0070:  ldsfld     class Linq101Joins01/'Pipe #1 input at line 12@14' Linq101Joins01/'Pipe #1 input at line 12@14'::@_instance
+    IL_0075:  ldsfld     class Linq101Joins01/'Pipe #1 input at line 12@14-1' Linq101Joins01/'Pipe #1 input at line 12@14-1'::@_instance
+    IL_007a:  ldsfld     class Linq101Joins01/'Pipe #1 input at line 12@14-2' Linq101Joins01/'Pipe #1 input at line 12@14-2'::@_instance
     IL_007f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!4,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Join<string,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,string,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1>,
                                                                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!2,!!3>,
                                                                                                                                                                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!2,!!4>>)
     IL_0084:  ldloc.s    V_7
-    IL_0086:  newobj     instance void Linq101Joins01/'Pipe #1 input@14-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0086:  newobj     instance void Linq101Joins01/'Pipe #1 input at line 12@14-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_008b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0090:  ldsfld     class Linq101Joins01/'Pipe #1 input@15-4' Linq101Joins01/'Pipe #1 input@15-4'::@_instance
+    IL_0090:  ldsfld     class Linq101Joins01/'Pipe #1 input at line 12@15-4' Linq101Joins01/'Pipe #1 input at line 12@15-4'::@_instance
     IL_0095:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,string>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_009a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,string>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_009f:  stloc.s    'Pipe #1 input'
+    IL_009f:  stloc.s    'Pipe #1 input at line 12'
     .line 16,16 : 10,21 ''
-    IL_00a1:  ldloc.s    'Pipe #1 input'
+    IL_00a1:  ldloc.s    'Pipe #1 input at line 12'
     IL_00a3:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,string>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00a8:  dup
     IL_00a9:  stsfld     class [mscorlib]System.Tuple`2<string,string>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q@11
@@ -1328,25 +1328,25 @@
     IL_00c9:  ldloc.s    V_9
     IL_00cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Joins01::get_products()
     IL_00d0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_00d5:  ldsfld     class Linq101Joins01/'Pipe #2 input@22' Linq101Joins01/'Pipe #2 input@22'::@_instance
-    IL_00da:  ldsfld     class Linq101Joins01/'Pipe #2 input@22-1' Linq101Joins01/'Pipe #2 input@22-1'::@_instance
-    IL_00df:  ldsfld     class Linq101Joins01/'Pipe #2 input@22-2' Linq101Joins01/'Pipe #2 input@22-2'::@_instance
+    IL_00d5:  ldsfld     class Linq101Joins01/'Pipe #2 input at line 20@22' Linq101Joins01/'Pipe #2 input at line 20@22'::@_instance
+    IL_00da:  ldsfld     class Linq101Joins01/'Pipe #2 input at line 20@22-1' Linq101Joins01/'Pipe #2 input at line 20@22-1'::@_instance
+    IL_00df:  ldsfld     class Linq101Joins01/'Pipe #2 input at line 20@22-2' Linq101Joins01/'Pipe #2 input at line 20@22-2'::@_instance
     IL_00e4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!4,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupJoin<string,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,string,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!2,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2>,!!4>>)
     IL_00e9:  ldloc.s    V_9
-    IL_00eb:  newobj     instance void Linq101Joins01/'Pipe #2 input@22-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_00eb:  newobj     instance void Linq101Joins01/'Pipe #2 input at line 20@22-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_00f0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00f5:  ldsfld     class Linq101Joins01/'Pipe #2 input@23-4' Linq101Joins01/'Pipe #2 input@23-4'::@_instance
+    IL_00f5:  ldsfld     class Linq101Joins01/'Pipe #2 input at line 20@23-4' Linq101Joins01/'Pipe #2 input at line 20@23-4'::@_instance
     IL_00fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00ff:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0104:  stloc.s    'Pipe #2 input'
+    IL_0104:  stloc.s    'Pipe #2 input at line 20'
     .line 24,24 : 10,21 ''
-    IL_0106:  ldloc.s    'Pipe #2 input'
+    IL_0106:  ldloc.s    'Pipe #2 input at line 20'
     IL_0108:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_010d:  dup
     IL_010e:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q2@19
@@ -1365,25 +1365,25 @@
     IL_012e:  ldloc.s    V_11
     IL_0130:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Joins01::get_products()
     IL_0135:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_013a:  ldsfld     class Linq101Joins01/'Pipe #3 input@30' Linq101Joins01/'Pipe #3 input@30'::@_instance
-    IL_013f:  ldsfld     class Linq101Joins01/'Pipe #3 input@30-1' Linq101Joins01/'Pipe #3 input@30-1'::@_instance
-    IL_0144:  ldsfld     class Linq101Joins01/'Pipe #3 input@30-2' Linq101Joins01/'Pipe #3 input@30-2'::@_instance
+    IL_013a:  ldsfld     class Linq101Joins01/'Pipe #3 input at line 28@30' Linq101Joins01/'Pipe #3 input at line 28@30'::@_instance
+    IL_013f:  ldsfld     class Linq101Joins01/'Pipe #3 input at line 28@30-1' Linq101Joins01/'Pipe #3 input at line 28@30-1'::@_instance
+    IL_0144:  ldsfld     class Linq101Joins01/'Pipe #3 input at line 28@30-2' Linq101Joins01/'Pipe #3 input at line 28@30-2'::@_instance
     IL_0149:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!4,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupJoin<string,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,string,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!2,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2>,!!4>>)
     IL_014e:  ldloc.s    V_11
-    IL_0150:  newobj     instance void Linq101Joins01/'Pipe #3 input@30-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0150:  newobj     instance void Linq101Joins01/'Pipe #3 input at line 28@30-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0155:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_015a:  ldsfld     class Linq101Joins01/'Pipe #3 input@32-5' Linq101Joins01/'Pipe #3 input@32-5'::@_instance
+    IL_015a:  ldsfld     class Linq101Joins01/'Pipe #3 input at line 28@32-5' Linq101Joins01/'Pipe #3 input at line 28@32-5'::@_instance
     IL_015f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`3<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,string>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0164:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,string>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0169:  stloc.s    'Pipe #3 input'
+    IL_0169:  stloc.s    'Pipe #3 input at line 28'
     .line 33,33 : 10,21 ''
-    IL_016b:  ldloc.s    'Pipe #3 input'
+    IL_016b:  ldloc.s    'Pipe #3 input at line 28'
     IL_016d:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,string>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0172:  dup
     IL_0173:  stsfld     class [mscorlib]System.Tuple`2<string,string>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q3@27
@@ -1402,25 +1402,25 @@
     IL_0194:  ldloc.s    V_13
     IL_0196:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Joins01::get_products()
     IL_019b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_01a0:  ldsfld     class Linq101Joins01/'Pipe #4 input@39' Linq101Joins01/'Pipe #4 input@39'::@_instance
-    IL_01a5:  ldsfld     class Linq101Joins01/'Pipe #4 input@39-1' Linq101Joins01/'Pipe #4 input@39-1'::@_instance
-    IL_01aa:  ldsfld     class Linq101Joins01/'Pipe #4 input@39-2' Linq101Joins01/'Pipe #4 input@39-2'::@_instance
+    IL_01a0:  ldsfld     class Linq101Joins01/'Pipe #4 input at line 37@39' Linq101Joins01/'Pipe #4 input at line 37@39'::@_instance
+    IL_01a5:  ldsfld     class Linq101Joins01/'Pipe #4 input at line 37@39-1' Linq101Joins01/'Pipe #4 input at line 37@39-1'::@_instance
+    IL_01aa:  ldsfld     class Linq101Joins01/'Pipe #4 input at line 37@39-2' Linq101Joins01/'Pipe #4 input at line 37@39-2'::@_instance
     IL_01af:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!4,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupJoin<string,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,string,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!2,!!3>,
                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2>,!!4>>)
     IL_01b4:  ldloc.s    V_13
-    IL_01b6:  newobj     instance void Linq101Joins01/'Pipe #4 input@39-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_01b6:  newobj     instance void Linq101Joins01/'Pipe #4 input at line 37@39-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_01bb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_01c0:  ldsfld     class Linq101Joins01/'Pipe #4 input@42-5' Linq101Joins01/'Pipe #4 input@42-5'::@_instance
+    IL_01c0:  ldsfld     class Linq101Joins01/'Pipe #4 input at line 37@42-5' Linq101Joins01/'Pipe #4 input at line 37@42-5'::@_instance
     IL_01c5:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,string>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_01ca:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,string>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_01cf:  stloc.s    'Pipe #4 input'
+    IL_01cf:  stloc.s    'Pipe #4 input at line 37'
     .line 43,43 : 10,21 ''
-    IL_01d1:  ldloc.s    'Pipe #4 input'
+    IL_01d1:  ldloc.s    'Pipe #4 input at line 37'
     IL_01d3:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,string>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_01d8:  dup
     IL_01d9:  stsfld     class [mscorlib]System.Tuple`2<string,string>[] '<StartupCode$Linq101Joins01>'.$Linq101Joins01::q4@36
