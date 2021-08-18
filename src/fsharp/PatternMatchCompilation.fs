@@ -1432,7 +1432,6 @@ let CompilePatternBasic
 
     dtree, targets
 
-<<<<<<< HEAD
 // Three pattern constructs can cause significant code expansion in various combinations
 //   - Partial active patterns
 //   - Disjunctive patterns
@@ -1501,13 +1500,6 @@ let isProblematicClause (clause: TypedMatchClause) =
 let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =
     match clausesL with
     | _ when List.exists isProblematicClause clausesL ->
-=======
-let isPartialOrWhenClause (c: TypedMatchClause) = isPatternPartial c.Pattern || c.GuardExpr.IsSome
-
-let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: TypedMatchClause list) inputTy resultTy =
-    match clausesL with
-    | _ when List.exists isPartialOrWhenClause clausesL ->
->>>>>>> ac2ce9141e3085029fe1bd14808babfb547ae543
 
         // First make sure we generate at least some of the obvious incomplete match warnings.
         let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
@@ -1518,7 +1510,6 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
 
         // Partial and when clauses cause major code explosion if treated naively
         // Hence treat any pattern matches with any partial clauses clause-by-clause
-<<<<<<< HEAD
         let rec atMostOneProblematicClauseAtATime clauses =
             match List.takeUntil isProblematicClause clauses with
             | l, [] ->
@@ -1526,15 +1517,6 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
             | l, h :: t ->
                 // Add the problematic clause.
                 doGroupWithAtMostOneProblematic (l @ [h]) t
-=======
-        let rec atMostOnePartialAtATime clauses =
-            match List.takeUntil isPartialOrWhenClause clauses with
-            | l, [] ->
-                CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
-            | l, h :: t ->
-                // Add the partial or when clause.
-                doGroupWithAtMostOnePartial (l @ [h]) t
->>>>>>> ac2ce9141e3085029fe1bd14808babfb547ae543
 
         and doGroupWithAtMostOneProblematic group rest =
             // Compile the remaining clauses.
@@ -1559,5 +1541,3 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
 
     | _ ->
         CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
-type IA =
-    abstract X: int -> int
