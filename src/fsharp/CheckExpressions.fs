@@ -3449,7 +3449,7 @@ let EliminateInitializationGraphs
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
 
         and CheckDecisionTree st = function
-            | TDSwitch(e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
+            | TDSwitch(_, e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
 
@@ -5838,7 +5838,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
             synWithClauses |> List.map (fun clause ->
                 let (SynMatchClause(pat, optWhenExpr, arrow, _, m, _)) = clause
                 let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
-                SynMatchClause(pat, optWhenExpr, arrow, oneExpr, m, DebugPointForTarget.No))
+                SynMatchClause(pat, optWhenExpr, arrow, oneExpr, m, DebugPointAtTarget.No))
         let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty (MustEqual cenv.g.int_ty) env tpenv filterClauses
         let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
         let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
@@ -7396,7 +7396,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
         CompilePatternForMatch
             cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
-            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.Yes, None), mForLoopStart)] 
+            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.Yes, None), mForLoopStart)] 
             enumElemTy
             overallTy.Commit
 
@@ -9352,15 +9352,15 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         match synElseExprOpt with
         | None ->
             let elseExpr = mkUnit cenv.g mIfToThen
-            let spElse = DebugPointForTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
-            let overallExpr = primMkCond spIfToThen DebugPointForTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
+            let spElse = DebugPointAtTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
+            let overallExpr = primMkCond spIfToThen DebugPointAtTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
             cont (overallExpr, tpenv)
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
-                let resExpr = primMkCond spIfToThen DebugPointForTarget.Yes DebugPointForTarget.Yes m overallTy.Commit boolExpr thenExpr elseExpr
+                let resExpr = primMkCond spIfToThen DebugPointAtTarget.Yes DebugPointAtTarget.Yes m overallTy.Commit boolExpr thenExpr elseExpr
                 cont (resExpr, tpenv))
 
     | _ ->
@@ -9376,14 +9376,14 @@ and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr: SynExpr opt
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
-    let optWhenExpr', tpenv =
+    let optWhenExprR, tpenv =
         match optWhenExpr with
         | Some whenExpr ->
             let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
-            let whenExpr', tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) guardEnv tpenv whenExpr
-            Some whenExpr', tpenv
+            let whenExprR, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) guardEnv tpenv whenExpr
+            Some whenExprR, tpenv
         | None -> None, tpenv
-    patf' (TcPatPhase2Input (values, true)), optWhenExpr', NameMap.range vspecMap, envinner, tpenv
+    patf' (TcPatPhase2Input (values, true)), optWhenExprR, NameMap.range vspecMap, envinner, tpenv
 
 and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
@@ -9392,10 +9392,10 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
     let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
-    let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
+    let pat', optWhenExprR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
-    TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt, None), patm), tpenv
+    TClause(pat', optWhenExprR, TTarget(vspecs, e', spTgt, None), patm), tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     match c with
@@ -10079,7 +10079,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the compilation of the pattern to the bodyExpr we get from mkCleanup
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
-            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.No, None), m)]
+            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.No, None), m)]
             let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx, bodyExprTy

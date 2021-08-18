@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr05.exe
-// MVID: {611B0EC4-3687-E566-A745-0383C40E1B61}
+// MVID: {611C4D7F-3687-E566-A745-03837F4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C50000
+// Image base: 0x05380000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -164,29 +164,31 @@
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       57 (0x39)
+      // Code size       58 (0x3a)
       .maxstack  7
       .locals init ([0] int32 x)
+      .line 8,8 : 9,50 ''
+      IL_0000:  nop
       .line 8,8 : 18,33 ''
-      IL_0000:  ldstr      "hello"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_000f:  pop
+      IL_0001:  ldstr      "hello"
+      IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0010:  pop
       .line 8,8 : 35,49 ''
-      IL_0010:  ldstr      "hello"
-      IL_0015:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_001a:  stloc.0
+      IL_0011:  ldstr      "hello"
+      IL_0016:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_001b:  stloc.0
       .line 9,9 : 17,72 ''
-      IL_001b:  ldarg.0
-      IL_001c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
-      IL_0021:  newobj     instance void ComputationExpr05/'res5@9-1'::.ctor()
-      IL_0026:  ldarg.0
-      IL_0027:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
-      IL_002c:  newobj     instance void ComputationExpr05/'res5@10-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
-      IL_0031:  tail.
-      IL_0033:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Using<int32>(class [mscorlib]System.IDisposable,
+      IL_001c:  ldarg.0
+      IL_001d:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
+      IL_0022:  newobj     instance void ComputationExpr05/'res5@9-1'::.ctor()
+      IL_0027:  ldarg.0
+      IL_0028:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr05/res5@8::builder@
+      IL_002d:  newobj     instance void ComputationExpr05/'res5@10-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
+      IL_0032:  tail.
+      IL_0034:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Using<int32>(class [mscorlib]System.IDisposable,
                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.IDisposable,class [ComputationExprLibrary]Library.Eventually`1<!!0>>)
-      IL_0038:  ret
+      IL_0039:  ret
     } // end of method res5@8::Invoke
 
   } // end of class res5@8

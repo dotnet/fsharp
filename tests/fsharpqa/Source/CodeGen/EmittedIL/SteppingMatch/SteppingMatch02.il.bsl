@@ -36,13 +36,13 @@
   // Offset: 0x00000218 Length: 0x0000007A
 }
 .module SteppingMatch02.dll
-// MVID: {60B68B90-CAC2-C63D-A745-0383908BB660}
+// MVID: {611C4D99-CAC2-C63D-A745-0383994D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05330000
+// Image base: 0x06CD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,12 +62,14 @@
     .line 5,5 : 9,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch02.fs'
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
+    .line 100001,100001 : 0,0 ''
     IL_0002:  ldloc.0
     IL_0003:  isinst     class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice2Of2<!!a,!!b>
     IL_0008:  brfalse.s  IL_000c
 
     IL_000a:  br.s       IL_001e
 
+    .line 100001,100001 : 0,0 ''
     IL_000c:  ldloc.0
     IL_000d:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice1Of2<!!a,!!b>
     IL_0012:  stloc.1
@@ -76,7 +78,7 @@
     IL_0018:  call       void [mscorlib]System.Console::WriteLine(string)
     IL_001d:  ret
 
-    .line 5,5 : 9,21 ''
+    .line 100001,100001 : 0,0 ''
     IL_001e:  ldloc.0
     IL_001f:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2/Choice2Of2<!!a,!!b>
     IL_0024:  stloc.2

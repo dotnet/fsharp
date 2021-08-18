@@ -40,13 +40,13 @@
   // Offset: 0x00000240 Length: 0x0000008C
 }
 .module ComputationExpr03.exe
-// MVID: {611B0EC4-3649-E566-A745-0383C40E1B61}
+// MVID: {611C4D7F-3649-E566-A745-03837F4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B90000
+// Image base: 0x06EE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,28 +80,30 @@
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       44 (0x2c)
+      // Code size       45 (0x2d)
       .maxstack  7
       .locals init ([0] int32 x)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 8,8 : 18,33 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr03.fs'
-      IL_0000:  ldstr      "hello"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_000f:  pop
+      .line 8,8 : 9,50 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr03.fs'
+      IL_0000:  nop
+      .line 8,8 : 18,33 ''
+      IL_0001:  ldstr      "hello"
+      IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0010:  pop
       .line 8,8 : 35,49 ''
-      IL_0010:  ldstr      "hello"
-      IL_0015:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_001a:  stloc.0
+      IL_0011:  ldstr      "hello"
+      IL_0016:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_001b:  stloc.0
       .line 9,9 : 9,21 ''
-      IL_001b:  ldarg.0
-      IL_001c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/res2@8::builder@
-      IL_0021:  ldloc.0
+      IL_001c:  ldarg.0
+      IL_001d:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/res2@8::builder@
       IL_0022:  ldloc.0
-      IL_0023:  add
-      IL_0024:  tail.
-      IL_0026:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
-      IL_002b:  ret
+      IL_0023:  ldloc.0
+      IL_0024:  add
+      IL_0025:  tail.
+      IL_0027:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
+      IL_002c:  ret
     } // end of method res2@8::Invoke
 
   } // end of class res2@8
@@ -131,25 +133,27 @@
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       42 (0x2a)
+      // Code size       43 (0x2b)
       .maxstack  6
       .locals init ([0] int32 x)
+      .line 17,17 : 17,58 ''
+      IL_0000:  nop
       .line 17,17 : 26,41 ''
-      IL_0000:  ldstr      "hello"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_000f:  pop
+      IL_0001:  ldstr      "hello"
+      IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0010:  pop
       .line 17,17 : 43,57 ''
-      IL_0010:  ldstr      "hello"
-      IL_0015:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_001a:  stloc.0
+      IL_0011:  ldstr      "hello"
+      IL_0016:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_001b:  stloc.0
       .line 18,18 : 17,25 ''
-      IL_001b:  ldarg.0
-      IL_001c:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@17-2'::builder@
-      IL_0021:  ldc.i4.1
-      IL_0022:  tail.
-      IL_0024:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
-      IL_0029:  ret
+      IL_001c:  ldarg.0
+      IL_001d:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@17-2'::builder@
+      IL_0022:  ldc.i4.1
+      IL_0023:  tail.
+      IL_0025:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
+      IL_002a:  ret
     } // end of method 'res3@17-2'::Invoke
 
   } // end of class 'res3@17-2'

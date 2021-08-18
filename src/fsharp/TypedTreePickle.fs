@@ -2376,7 +2376,7 @@ and u_const st =
 
 and p_dtree x st =
     match x with
-    | TDSwitch (a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
+    | TDSwitch (_sp, a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
     | TDSuccess (a, b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a, b) st
     | TDBind (a, b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a, b) st
 
@@ -2406,9 +2406,11 @@ and p_recdInfo x st =
 and u_dtree st =
     let tag = u_byte st
     match tag with
-    | 0 -> u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st |> TDSwitch
-    | 1 -> u_tup2 u_Exprs u_int                                             st |> TDSuccess
-    | 2 -> u_tup2 u_bind u_dtree                                                st |> TDBind
+    | 0 ->
+        let a,b,c,d = u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st
+        TDSwitch(DebugPointAtSwitch.No, a, b, c, d)
+    | 1 -> u_tup2 u_Exprs u_int st |> TDSuccess
+    | 2 -> u_tup2 u_bind u_dtree st |> TDBind
     | _ -> ufailwith st "u_dtree"
 
 and u_dtree_case st = let a, b = u_tup2 u_dtree_discrim u_dtree st in (TCase(a, b))
@@ -2423,7 +2425,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No, None))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointAtTarget.No, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
