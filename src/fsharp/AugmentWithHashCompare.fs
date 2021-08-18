@@ -157,10 +157,10 @@ let mkCompareTestConjuncts g m exprs =
         (a, b) ||> List.foldBack (fun e acc -> 
             let nv, ne = mkCompGenLocal m "n" g.int_ty
             mkCompGenLet m nv e
-              (mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.int_ty
+              (mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.int_ty
                  (mkClt g m ne (mkZero g m))
                  ne
-                 (mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.int_ty 
+                 (mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.int_ty 
                     (mkCgt g m ne (mkZero g m))
                     ne
                     acc)))
@@ -171,7 +171,7 @@ let mkEqualsTestConjuncts g m exprs =
     | [h] -> h
     | l -> 
         let a, b = List.frontAndBack l 
-        List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty e acc (mkFalse g m)) a b
+        List.foldBack (fun e acc -> mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
     if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
@@ -378,7 +378,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.int_ty  
+            mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))in 
@@ -439,7 +439,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.int_ty  
+            mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ AI_sub  ], [], [thistage; thattage], [g.int_ty], m))
@@ -499,7 +499,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty  
+          mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)
@@ -561,7 +561,7 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty  
+          mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)

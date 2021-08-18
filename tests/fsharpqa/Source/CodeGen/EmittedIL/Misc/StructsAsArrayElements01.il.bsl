@@ -36,13 +36,13 @@
   // Offset: 0x00000758 Length: 0x0000022C
 }
 .module StructsAsArrayElements01.dll
-// MVID: {60B68B7F-29F3-6E68-A745-03837F8BB660}
+// MVID: {611C52A3-29F3-6E68-A745-0383A3521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06A80000
+// Image base: 0x06670000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -84,6 +84,7 @@
       IL_0010:  ldloc.0
       IL_0011:  ldfld      int32 StructsAsArrayElements01/T::i
       IL_0016:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_0017:  ldloc.2
       IL_0018:  ldloc.3
       IL_0019:  bge.s      IL_001d
@@ -139,6 +140,7 @@
       IL_0013:  ldloc.1
       IL_0014:  ldfld      int32 StructsAsArrayElements01/T::i
       IL_0019:  stloc.s    V_4
+      .line 100001,100001 : 0,0 ''
       IL_001b:  ldloc.3
       IL_001c:  ldloc.s    V_4
       IL_001e:  bge.s      IL_0022

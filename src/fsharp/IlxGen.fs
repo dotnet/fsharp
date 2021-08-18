@@ -1916,15 +1916,15 @@ type CodeGenBuffer(m: range,
             let i = I_seqpoint attr
             hasDebugPoints <- true
 
-            // Replace the FeeFee seqpoint at the entry with a better debug point
+            // Replace a FeeFee seqpoint with a better debug point
+            let n = codebuf.Count
             let isSingleFeeFee =
-                codebuf.Count = 1 && 
-                match codebuf.[0] with
+                match codebuf.[n-1] with
                 | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
                 | _ -> false
 
             if isSingleFeeFee then
-                codebuf.[0] <- i
+                codebuf.[n-1] <- i
             else
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
@@ -1941,9 +1941,13 @@ type CodeGenBuffer(m: range,
             hasDebugPoints <- true
 
             // don't emit just after another FeeFee
-            match codebuf.[codebuf.Count-1] with
-            | I_seqpoint sm when sm.Line = FeeFee mgbuf.cenv -> ()
-            | _ ->
+            let n = codebuf.Count
+            let isSingleFeeFee =
+                match codebuf.[n-1] with
+                | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
+                | _ -> false
+
+            if not isSingleFeeFee then
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
 
@@ -2673,7 +2677,9 @@ and GenSequel cenv cloc cgbuf sequel =
       if cgbuf.mgbuf.cenv.opts.generateDebugSymbols then
          cgbuf.EmitStartOfHiddenCode()
          CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
+
       CG.EmitInstr cgbuf (pop 0) Push0 (I_br x.CodeLabel)
+
   | LeaveHandler (isFinally, whereToSaveResultOpt, afterHandler, hasResult) ->
       if hasResult then
           if isFinally then
@@ -2685,6 +2691,7 @@ and GenSequel cenv cloc cgbuf sequel =
             | Some (whereToSaveResult, _) ->
                 EmitSetLocal cgbuf whereToSaveResult
       CG.EmitInstr cgbuf (pop 0) Push0 (if isFinally then I_endfinally else I_leave(afterHandler.CodeLabel))
+
   | EndFilter ->
       CG.EmitInstr cgbuf (pop 1) Push0 I_endfilter
   )
@@ -3936,8 +3943,8 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
 
        cgbuf.EmitStartOfHiddenCode()
 
-       (* Restore the stack and load the result *)
-       EmitRestoreStack cgbuf stack (* RESTORE *)
+       // Restore the stack and load the result
+       EmitRestoreStack cgbuf stack
 
        match whereToSaveOpt with
        | Some (whereToSave, ilResultTy) ->
@@ -5699,12 +5706,7 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
     let spExpr = (match spTarget with DebugPointAtTarget.Yes -> SPAlways | DebugPointAtTarget.No _ -> SPSuppress)
 
-    // Only emit start of hidden code if we really have to, i.e. if the target expression doesn't start with a
-    // debug point anyway
-    if isNil vs && DoesGenExprStartWithDebugPoint cenv.g spExpr successExpr then
-       ()
-    else
-       cgbuf.EmitStartOfHiddenCode()
+    cgbuf.EmitStartOfHiddenCode()
 
     CG.SetMarkToHere cgbuf startScope
     let binds = mkInvisibleBinds vs es
