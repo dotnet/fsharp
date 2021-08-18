@@ -214,8 +214,16 @@ type SynAccess =
 /// of a decision tree, that is whether the construct corresponds to a debug
 /// point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForTarget =
+type DebugPointAtTarget =
     | Yes
+    | No
+
+/// Represents whether a debug point should be present at the switch
+/// logic of a decision tree. These are introduced for 'when' expressions
+/// and the encoding of 'a && b', 'a || b'
+[<RequireQualifiedAccess>]
+type DebugPointAtSwitch =
+    | Yes of range
     | No
 
 /// Represents whether a debug point should be suppressed for either the
@@ -1283,7 +1291,7 @@ type SynMatchClause =
         arrow: Range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointForTarget
+        debugPoint: DebugPointAtTarget
 
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range

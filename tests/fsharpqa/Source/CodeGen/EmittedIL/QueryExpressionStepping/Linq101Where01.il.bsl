@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {611B0EC5-FF23-CD21-A745-0383C50E1B61}
+// MVID: {611C4D82-FF23-CD21-A745-0383824D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06790000
+// Image base: 0x06A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -363,34 +363,36 @@
     .method public strict virtual instance bool 
             Invoke(class [Utils]Utils/Product p) cil managed
     {
-      // Code size       37 (0x25)
+      // Code size       38 (0x26)
       .maxstack  10
+      .line 33,33 : 16,57 ''
+      IL_0000:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0000:  ldarg.1
-      IL_0001:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
-      IL_0006:  ldc.i4.0
-      IL_0007:  ble.s      IL_0023
+      IL_0001:  ldarg.1
+      IL_0002:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
+      IL_0007:  ldc.i4.0
+      IL_0008:  ble.s      IL_0024
 
       .line 100001,100001 : 0,0 ''
-      IL_0009:  ldarg.1
-      IL_000a:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
-      IL_000f:  ldc.i4     0x12c
-      IL_0014:  ldc.i4.0
+      IL_000a:  ldarg.1
+      IL_000b:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
+      IL_0010:  ldc.i4     0x12c
       IL_0015:  ldc.i4.0
       IL_0016:  ldc.i4.0
-      IL_0017:  ldc.i4.2
-      IL_0018:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+      IL_0017:  ldc.i4.0
+      IL_0018:  ldc.i4.2
+      IL_0019:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
                                                                             int32,
                                                                             int32,
                                                                             bool,
                                                                             uint8)
-      IL_001d:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
+      IL_001e:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
                                                                             valuetype [netstandard]System.Decimal)
-      IL_0022:  ret
+      IL_0023:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0023:  ldc.i4.0
-      IL_0024:  ret
+      IL_0024:  ldc.i4.0
+      IL_0025:  ret
     } // end of method 'expensiveInStockProducts@33-1'::Invoke
 
     .method private specialname rtspecialname static 
@@ -736,7 +738,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -755,6 +757,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -818,17 +821,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 52,52 : 9,17 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method 'Pipe #3 input at line 50@52'::Close
 
     .method public strict virtual instance bool 
@@ -924,22 +930,24 @@
             Invoke(int32 i,
                    string d) cil managed
     {
-      // Code size       18 (0x12)
+      // Code size       19 (0x13)
       .maxstack  8
       .line 54,54 : 29,49 ''
-      IL_0000:  ldarg.2
-      IL_0001:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_0006:  ldarg.1
-      IL_0007:  bge.s      IL_0010
+      IL_0000:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0001:  ldarg.2
+      IL_0002:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0007:  ldarg.1
+      IL_0008:  bge.s      IL_0011
 
       .line 54,54 : 50,57 ''
-      IL_0009:  ldarg.2
-      IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::Some(!0)
-      IL_000f:  ret
+      IL_000a:  ldarg.2
+      IL_000b:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::Some(!0)
+      IL_0010:  ret
 
       .line 54,54 : 63,67 ''
-      IL_0010:  ldnull
-      IL_0011:  ret
+      IL_0011:  ldnull
+      IL_0012:  ret
     } // end of method 'Pipe #3 stage #1 at line 54@54'::Invoke
 
     .method private specialname rtspecialname static 

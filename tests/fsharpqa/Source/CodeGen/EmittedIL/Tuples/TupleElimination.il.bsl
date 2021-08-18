@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {60EF4161-DFDD-92DF-A745-03836141EF60}
+// MVID: {611C52B3-DFDD-92DF-A745-0383B3521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x065E0000
+// Image base: 0x050E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

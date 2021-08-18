@@ -3942,14 +3942,14 @@ patternClauses:
        let mArrow, resultExpr = $2
        let mLast = resultExpr.Range
        let m = unionRanges resultExpr.Range patm
-       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast  }
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult BAR patternClauses 
      { let pat, guard, patm = $1 
        let mArrow, resultExpr = $2
        let clauses, mLast = $4
        let m = unionRanges resultExpr.Range patm
-       (SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes) :: clauses), mLast }
+       (SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
      { let pat, guard, patm = $1 
@@ -3957,7 +3957,7 @@ patternClauses:
        let mLast = rhs parseState 3 
        let m = unionRanges resultExpr.Range patm
        // silent recovery
-       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast  }
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast  }
 
   | patternAndGuard patternResult error 
      { let pat, guard, patm = $1 
@@ -3965,7 +3965,7 @@ patternClauses:
        let mLast = resultExpr.Range
        let m = unionRanges resultExpr.Range patm
        // silent recovery 
-       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast }
 
   | patternAndGuard error 
      { let pat, guard, patm = $1 
@@ -3975,7 +3975,7 @@ patternClauses:
            | Some e -> unionRanges patm e.Range 
            | _ -> patm
        // silent recovery 
-       [SynMatchClause(pat, guard, None, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointForTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, None, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointAtTarget.Yes)], mLast }
  
 patternGuard: 
   | WHEN declExpr 

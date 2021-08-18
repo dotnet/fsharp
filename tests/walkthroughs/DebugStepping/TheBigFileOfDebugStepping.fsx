@@ -890,3 +890,117 @@ TaskBreakpoints1() |> Task.RunSynchronously
 InlinedCode.test()
 Pipelined.testListPipeline()
 Pipelined.testArrayPipeline()
+
+module BooleanLogic =
+
+    let testFunctionWithAnd x y =
+        x && y
+
+    let testFunctionWithOr x y =
+        x || y
+
+    let testFunctionWithMultipleAnd x y z =
+        x && y && z
+
+    let testFunctionWithMultipleOr x y z =
+        x || y || z
+
+    let testFunctionWithIfOfAnd x y =
+        if x && y then
+            1
+        else
+            2
+
+    let testFunctionWithIfOfOr x y =
+        if x || y then
+            1
+        else
+            2
+
+    testFunctionWithAnd true false
+    testFunctionWithMultipleAnd true true false
+    testFunctionWithMultipleOr false false true
+    testFunctionWithOr true false
+    testFunctionWithIfOfAnd true false
+    testFunctionWithIfOfOr false false
+
+// See https://github.com/dotnet/fsharp/issues/11977
+module FalseSteppingBug =
+    type U = 
+       | A1 of int
+       | A2 of int
+       | A3 of int
+       | A4 of int
+
+    let testFunc f u = 
+        match u with 
+        | A1 n -> f n
+        | A2 n when n > 4 -> f n // this was falsely hit
+        | A2 n -> f n
+        | A3 n -> f n
+        | A4 n -> f n
+
+    testFunc id (A3 4)
+
+
+
+// https://github.com/dotnet/fsharp/pull/11981
+module MissingFirstTry =
+    let TestFunction3() =
+        try 
+           let x = 1+1
+           System.Console.WriteLine "Hello";
+        with _ -> 
+           System.Console.WriteLine "World"      
+
+    TestFunction3()
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhen1 =
+
+    let TestMatchWithWhen x y =
+        match x with
+        | [_] when y > 4 -> 5
+        | [_] when y < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [1] 4
+    TestMatchWithWhen [1] 5
+    TestMatchWithWhen [1] 6
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithVariableBinding =
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [x] when x > 4 -> 5
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4]
+    TestMatchWithWhen [5]
+    TestMatchWithWhen [6]
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithUnionClauses=
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [_;x] 
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4;5]
+    TestMatchWithWhen [5;4]
+    TestMatchWithWhen [6]

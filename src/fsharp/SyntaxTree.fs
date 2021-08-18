@@ -169,8 +169,13 @@ type SynAccess =
         | Private -> "Private"
 
 [<RequireQualifiedAccess>]
-type DebugPointForTarget =
+type DebugPointAtTarget =
     | Yes
+    | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtSwitch =
+    | Yes of range
     | No
 
 [<RequireQualifiedAccess>]
@@ -1150,7 +1155,7 @@ type SynMatchClause =
         arrow: Range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointForTarget
+        debugPoint: DebugPointAtTarget
 
     member this.RangeOfGuardAndRhs =
         match this with

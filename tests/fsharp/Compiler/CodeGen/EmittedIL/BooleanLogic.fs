@@ -21,35 +21,36 @@ let compute (x: int) =
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  compute(int32 x) cil managed
-{
-  
-  .maxstack  8
-  IL_0000:  ldarg.0
-  IL_0001:  ldc.i4.1
-  IL_0002:  beq.s      IL_0008
+  {
     
-  IL_0004:  ldarg.0
-  IL_0005:  ldc.i4.2
-  IL_0006:  bne.un.s   IL_000a
-    
-  IL_0008:  ldc.i4.2
-  IL_0009:  ret
-    
-  IL_000a:  ldarg.0
-  IL_000b:  ldc.i4.3
-  IL_000c:  beq.s      IL_0012
-    
-  IL_000e:  ldarg.0
-  IL_000f:  ldc.i4.4
-  IL_0010:  bne.un.s   IL_0014
-    
-  IL_0012:  ldc.i4.3
-  IL_0013:  ret
-    
-  IL_0014:  ldc.i4.4
-  IL_0015:  ret
-} 
-    
+    .maxstack  8
+    IL_0000:  nop
+    IL_0001:  ldarg.0
+    IL_0002:  ldc.i4.1
+    IL_0003:  beq.s      IL_0009
+
+    IL_0005:  ldarg.0
+    IL_0006:  ldc.i4.2
+    IL_0007:  bne.un.s   IL_000b
+
+    IL_0009:  ldc.i4.2
+    IL_000a:  ret
+
+    IL_000b:  nop
+    IL_000c:  ldarg.0
+    IL_000d:  ldc.i4.3
+    IL_000e:  beq.s      IL_0014
+
+    IL_0010:  ldarg.0
+    IL_0011:  ldc.i4.4
+    IL_0012:  bne.un.s   IL_0016
+
+    IL_0014:  ldc.i4.3
+    IL_0015:  ret
+
+    IL_0016:  ldc.i4.4
+    IL_0017:  ret
+}    
             """
             ])
 
