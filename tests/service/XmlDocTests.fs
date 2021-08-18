@@ -118,8 +118,28 @@ type A = class end
     checkResults
     |> checkXml "A" [|"B"|]
 
-[<Test; Ignore("TODO")>]
-let Let1() =
+[<Test>]
+let ``let binding 01 - simple``() =
+    let _, checkResults = getParseAndCheckResults """
+///f1
+let ///f2
+    rec ///f3
+        private f x = f x
+"""
+    checkResults
+    |> checkXml "f" [|"f1"|]
+
+[<Test>]
+let ``let binding 02 - let in``() =
+    let _, checkResults = getParseAndCheckResults """
+///X
+let x = 3 in print x
+"""
+    checkResults
+    |> checkXml "x" [|"X"|]
+
+[<Test>]
+let ``let binding 03 - expression delimiter``() =
     let _, checkResults = getParseAndCheckResults """
 ///A
 1 + 1
@@ -129,8 +149,8 @@ let f x = ()
     checkResults
     |> checkXml "f" [|"B"|]
 
-[<Test; Ignore("TODO")>]
-let Let2() =
+[<Test>]
+let ``let binding 04 - local binding``() =
     let _, checkResults = getParseAndCheckResults """
 let _ =
     ///A
@@ -143,7 +163,67 @@ let _ =
     |> checkXml "x" [|"B"|]
 
 [<Test>]
-let ``And type xml doc``() =
+let ``let binding 05 - with attribute``() =
+    let _, checkResults = getParseAndCheckResults """
+///X
+[<Literal>]
+let x = 5
+"""
+    checkResults
+    |> checkXml "x" [|"X"|]
+
+[<Test>]
+let ``let binding 06 - xml doc after attribute``() =
+    let _, checkResults = getParseAndCheckResults """
+[<Literal>]
+///X
+let x = 5
+"""
+    checkResults
+    |> checkXml "x" [||]
+
+[<Test>]
+let ``let binding 07 - attribute after 'let'``() =
+    let _, checkResults = getParseAndCheckResults """
+///X
+let [<Literal>] x = 5
+"""
+    checkResults
+    |> checkXml "x" [|"X"|]
+
+[<Test>]
+let ``let binding 08 - xml doc before 'and'``() =
+    let _, checkResults = getParseAndCheckResults """
+let rec f x = g x
+///G
+and g x = f x
+"""
+    checkResults
+    |> checkXml "g" [|"G"|]
+
+[<Test>]
+let ``let binding 09 - xml doc after 'and'``() =
+    let _, checkResults = getParseAndCheckResults """
+let rec f x = g x
+and ///G
+    [<NotNull>] g x = f x
+"""
+    checkResults
+    |> checkXml "g" [|"G"|]
+
+[<Test>]
+let ``let binding 010 - xml doc before and after 'and'``() =
+    let _, checkResults = getParseAndCheckResults """
+let rec f x = g x
+///G1
+and ///G2
+    g x = f x
+"""
+    checkResults
+    |> checkXml "g" [|"G1"|]
+
+[<Test>]
+let ``and type xml doc``() =
     let _, checkResults = getParseAndCheckResults """
 type A = class end
 ///B
@@ -348,3 +428,47 @@ type A =
 """
     checkResults
     |> checkXml "B" [|"B1"; "B2"|]
+
+[<Test>]
+let ``attributes after type keyword``() =
+    let _, checkResults = getParseAndCheckResultsOfSignatureFile """
+///A1
+type ///A2
+     [<NotNull>] A = class end
+"""
+    checkResults
+    |> checkXml "A" [|"A1"|]
+
+[<Test>]
+let ``module definition``() =
+    let _, checkResults = getParseAndCheckResults """
+///M1
+module
+       ///M2
+       rec M =
+    open M
+"""
+    checkResults
+    |> checkXml "M" [|"M1"|]
+
+[<Test>]
+let ``module specification``() =
+    let _, checkResults = getParseAndCheckResultsOfSignatureFile """
+///M1
+module
+       ///M2
+       rec M
+"""
+    checkResults
+    |> checkXml "M" [|"M1"|]
+
+[<Test>]
+let ``extern``() =
+    let _, checkResults = getParseAndCheckResults """
+///E
+[<DllImport("")>]
+extern void E()
+"""
+    checkResults
+    |> checkXml "E" [|"E"|]
+

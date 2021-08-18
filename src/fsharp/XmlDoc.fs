@@ -147,7 +147,7 @@ and XmlDocStatics() =
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
     let mutable savedLines = ResizeArray<string * range>()
-    let mutable savedGrabPoints = Dictionary<_, _>()
+    let mutable savedGrabPoints = Dictionary<pos, struct(int * int)>()
     let mutable currentGrabPointCommentsCount = 0
 
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1

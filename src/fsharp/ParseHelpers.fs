@@ -6,8 +6,6 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position

@@ -2601,9 +2601,10 @@ defnBindings:
 
         // The first binding swallows any attributes prior to the 'let'
         BindingSetPreAttrs(mLetKwd, isRec, isUse,
-            (fun attrs vis -> 
+            (fun attrs vis ->
+                let xmlDoc = grabXmlDoc(parseState, attrs, 1)
                 // apply the builder
-                let binds = localBindingsBuilder attrs vis mLetKwd
+                let binds = localBindingsBuilder xmlDoc attrs vis mLetKwd
                 if not isRec && not (isNilOrSingleton binds) then 
                       reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
                 [], binds),
@@ -2643,7 +2644,8 @@ hardwhiteLetBindings:
         // the first binding swallow any attributes prior to the 'let' 
         BindingSetPreAttrs(mLetKwd, isRec, isUse,
           (fun attrs vis ->
-            let binds = localBindingsBuilder attrs vis mLetKwd
+            let xmlDoc = grabXmlDoc(parseState, attrs, 1)
+            let binds = localBindingsBuilder xmlDoc attrs vis mLetKwd
             if not isRec && not (isNilOrSingleton binds) then
                 reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [], binds),
@@ -2694,8 +2696,7 @@ hardwhiteDefnBindingsTerminator:
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN cArgs rparen 
-      { let rty, vis, nm, args  = $2, $3, $4, $7 
-        let xmlDoc = grabXmlDoc(parseState, [], 1)
+      { let rty, vis, nm, args  = $2, $3, $4, $7
         let nmm = rhs parseState 3 
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
@@ -2706,9 +2707,10 @@ cPrototype:
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                                   mRhs)
-        (fun attrs _ -> 
+        (fun attrs _ ->
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+            let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
                               (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
@@ -2785,16 +2787,19 @@ localBindings:
                match moreLocalBindingsLastRange with 
                | None -> localBindingRange 
                | Some m -> m
-           Some lastRange, (fun attrs vis mLetKwd -> attrLocalBindingBuilder attrs vis mLetKwd true ::  moreBindings)
+           Some lastRange, (fun xmlDoc attrs vis mLetKwd -> attrLocalBindingBuilder xmlDoc attrs vis mLetKwd true ::  moreBindings)
         | None -> 
-           moreLocalBindingsLastRange, (fun _attrs _vis _letm -> moreBindings) }
+           moreLocalBindingsLastRange, (fun _xmlDoc _attrs _vis _letm -> moreBindings) }
 
 
 moreLocalBindings: 
   | AND attr_localBinding moreLocalBindings 
       { let mLetKwd = rhs parseState 1
         (match $2 with 
-         | Some (localBindingRange, attrLocalBindingBuilder) -> (attrLocalBindingBuilder [] None mLetKwd false, localBindingRange) :: $3 
+         | Some (localBindingRange, attrLocalBindingBuilder) ->
+            let xmlDoc = grabXmlDoc(parseState, [], 1)
+            let xmlDoc = if xmlDoc.IsEmpty then grabXmlDoc(parseState, [], 2) else xmlDoc
+            (attrLocalBindingBuilder xmlDoc [] None mLetKwd false, localBindingRange) :: $3
          | None -> $3) }
 
   | %prec prec_no_more_attr_bindings 
@@ -2806,7 +2811,7 @@ attr_localBinding:
   | opt_attributes localBinding 
       { let attrs2 = $1
         let localBindingRange, localBindingBuilder = $2
-        let attrLocalBindingBuilder = (fun attrs vis mLetKwd _ -> localBindingBuilder (attrs@attrs2) vis mLetKwd)
+        let attrLocalBindingBuilder = (fun xmlDoc attrs vis mLetKwd _ -> localBindingBuilder xmlDoc (attrs@attrs2) vis mLetKwd)
         Some(localBindingRange, attrLocalBindingBuilder) }
 
   | error 
@@ -2822,9 +2827,8 @@ localBinding:
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
         let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
-        let xmlDoc = grabXmlDoc(parseState, [], 1)
         let localBindingBuilder = 
-          (fun attrs vis mLetKwd -> 
+          (fun xmlDoc attrs vis mLetKwd ->
             let mWhole = (unionRanges mLetKwd mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let spBind = if IsControlFlowExpression expr then DebugPointAtBinding.NoneAtLet else DebugPointAtBinding.Yes mWhole
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
@@ -2836,9 +2840,8 @@ localBinding:
         let mRhs = rhs parseState 5
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3
-        let xmlDoc = grabXmlDoc(parseState, [], 1)
         let localBindingBuilder = 
-          (fun attrs vis mLetKwd -> 
+          (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
             let eqm = rhs parseState 5
             let zeroWidthAtEnd = eqm.EndRange
@@ -2852,9 +2855,9 @@ localBinding:
         let mRhs = mWhole.EndRange  // zero-width range at end of last good token
         let bindingBuilder, mBindLhs = $3 
         let localBindingBuilder = 
-          (fun attrs vis mLetKwd -> 
+          (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
-            (bindingBuilder PreXmlDoc.Empty) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None))
+            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None))
         mWhole, localBindingBuilder }
 
 
@@ -4739,12 +4742,12 @@ objExprBindings:
   | WITH localBindings 
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        localBindingsBuilder [] None mWithKwd }
+        localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
 
   | OWITH localBindings OEND
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        localBindingsBuilder [] None mWithKwd }
+        localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
 
   | WITH objectImplementationBlock opt_declEnd
       { $2 |> 
