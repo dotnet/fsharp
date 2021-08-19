@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="setup_30_0_0.fsproj" />
+    <ProjectReference Include="setup.fsproj" />
   </ItemGroup>
 
 </Project>
