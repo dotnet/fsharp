@@ -1422,5 +1422,3 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
 
     | _ ->
         CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused true actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
-type IA =
-    abstract X: int -> int
