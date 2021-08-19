@@ -24,10 +24,11 @@ try {
     $ArtifactsBinDir = Join-Path $RepoRoot "artifacts" | Join-Path -ChildPath "bin" -Resolve
     $FSharpAssemblyDirs = Get-ChildItem -Path $ArtifactsBinDir -Filter "FSharp.*"
     $FscAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsc"
+    $FscAnyCpuAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fscAnyCpu"
     $FsiAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsi"
     $FsiAnyCpuAssemblyDir = Get-ChildItem -Path $ArtifactsBinDir -Filter "fsiAnyCpu"
     $ProjectSystemAssemblyDirs = Get-ChildItem -Path $ArtifactsBinDir -Filter "ProjectSystem*"
-    $FSharpDirs = @($FSharpAssemblyDirs) + @($FscAssemblyDir) + @($FsiAssemblyDir) + @($FsiAnyCpuAssemblyDir) + @($ProjectSystemAssemblyDirs)
+    $FSharpDirs = @($FSharpAssemblyDirs) + @($FscAssemblyDir) + @($FscAnyCpuAssemblyDir) + @($FsiAssemblyDir) + @($FsiAnyCpuAssemblyDir) + @($ProjectSystemAssemblyDirs)
     $FSharpDllPaths = $FSharpDirs | ForEach-Object { Get-ChildItem -Path (Join-Path $ArtifactsBinDir $_) -Recurse -Filter "*.dll" } | ForEach-Object { $_.FullName }
     $FSharpExePaths = $FSharpDirs | ForEach-Object { Get-ChildItem -Path (Join-Path $ArtifactsBinDir $_) -Recurse -Filter "*.exe" } | ForEach-Object { $_.FullName }
     $FSharpAssemblyPaths = @($FSharpDllPaths) + @($FSharpExePaths)
