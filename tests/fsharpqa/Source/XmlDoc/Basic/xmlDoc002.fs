@@ -5,8 +5,8 @@
 
 #light 
 
-/// I'm an xml comment!
 //// I am NOT an xml comment
+/// I'm an xml comment!
 type e = 
   | A
   | B
