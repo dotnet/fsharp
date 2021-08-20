@@ -431,7 +431,7 @@ type StringModule() =
         Assert.AreEqual("pear apple", e1)
         
         let e2 = String.trimChars "_-" "-_-foo-_bar__-"
-        Assert.AreEqual("foo bar", e2)
+        Assert.AreEqual("foo-_bar", e2)
         
         CheckThrowsArgumentNullException(fun () -> String.trimChars "" null |> ignore) 
 
