@@ -151,3 +151,15 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ReplaceChar")>]
         val replaceChar: oldValue:char -> newValue:char -> str:string -> string
+        
+        [<CompiledName("Trim")>]
+        val trim: str:string -> string
+        
+        [<CompiledName("TrimChars")>]
+        val trimChars: chars:seq<char> -> str:string -> string
+        
+        [<CompiledName("TrimStartChars")>]
+        val trimStartChars: chars:seq<char> -> str:string -> string
+        
+        [<CompiledName("TrimEndChars")>]
+        val trimEndChars: chars:seq<char> -> str:string -> string

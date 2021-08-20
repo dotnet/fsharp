@@ -408,3 +408,49 @@ type StringModule() =
         Assert.AreEqual("bonono", e2)
 
         CheckThrowsArgumentNullException(fun () -> String.replaceChar 'x' 'y' null |> ignore)    
+
+    [<Fact>]
+    member this.Trim () =
+        let e1 = String.trim "foo bar"
+        Assert.AreEqual("foo bar", e1)
+        
+        let e2 = String.trim " foo bar  "
+        Assert.AreEqual("foo bar", e2)
+        
+        let e3 = String.trim "\t \tfoo\t bar\t"
+        Assert.AreEqual("foo\t bar", e3)
+        
+        let e4 = String.trim "\011foo\011\133bar\133"
+        Assert.AreEqual("foo\011\133bar", e4)
+        
+        CheckThrowsArgumentNullException(fun () -> String.trim null |> ignore)  
+        
+    [<Fact>]
+    member this.TrimChars () =
+        let e1 = String.trimChars "abcd" "pear apple"
+        Assert.AreEqual("pear apple", e1)
+        
+        let e2 = String.trimChars "_-" "-_-foo-_bar__-"
+        Assert.AreEqual("foo bar", e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.trimChars "" null |> ignore) 
+
+    [<Fact>]
+    member this.TrimStartChars () =
+        let e1 = String.trimStartChars "abcd" "pear apple"
+        Assert.AreEqual("pear apple", e1)
+        
+        let e2 = String.trimStartChars "_-" "-_-foo-_bar__-"
+        Assert.AreEqual("foo-_bar__-", e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.trimStartChars "" null |> ignore) 
+        
+    [<Fact>]
+    member this.TrimEndChars () =
+        let e1 = String.trimEndChars "abcd" "pear apple"
+        Assert.AreEqual("pear apple", e1)
+        
+        let e2 = String.trimEndChars "_-" "-_-foo-_bar__-"
+        Assert.AreEqual("-_-foo-_bar", e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.trimEndChars "" null |> ignore) 

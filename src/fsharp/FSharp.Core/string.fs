@@ -182,7 +182,7 @@ namespace Microsoft.FSharp.Core
                 check 0  
         
         [<CompiledName("Contains")>]
-        let contains substring (str: string) =
+        let contains (substring: string) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
@@ -201,3 +201,31 @@ namespace Microsoft.FSharp.Core
                 nullArg (nameof(str))
             else
                 str.Replace(oldValue, newValue)
+                
+        [<CompiledName("Trim")>]
+        let trim (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Trim ()
+                
+        [<CompiledName("TrimChars")>]
+        let trimChars (chars: seq<char>) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Trim (Seq.toArray chars)
+                
+        [<CompiledName("TrimStartChars")>]
+        let trimStartChars (chars: seq<char>) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.TrimStart (Seq.toArray chars)
+                
+        [<CompiledName("TrimEndChars")>]
+        let trimEndChars (chars: seq<char>) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.TrimEnd (Seq.toArray chars)
