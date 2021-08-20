@@ -682,7 +682,7 @@ moduleIntro:
   | moduleKeyword opt_attributes opt_access opt_rec path
       { if not (isNil $2) then
             parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
-        $4, $5.Lid, grabXmlDoc(parseState, [], 1), $3, $2 }
+        $4, $5.Lid, $3, $2 }
 
 
 /* The start of a namespace declaration */
@@ -732,11 +732,12 @@ fileModuleSpec:
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
-      let isRec, path2, xml, vis, attribs2 = $3 
+      let isRec, path2, vis, attribs2 = $3
+      let xmlDoc = grabXmlDoc(parseState, $1, 1)
       (fun (isRec2, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2 
-        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1 @ attribs2, vis, m)))  }
+        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1 @ attribs2, vis, m)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
@@ -797,7 +798,7 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let isRec, path, xml, vis, attribs2 = $3 
+        let isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
@@ -807,35 +808,32 @@ moduleSpfn:
         | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
 
   | opt_attributes opt_declVisibility moduleIntro colonOrEquals moduleSpecBlock
-      { let isRec, path, xml, vis, attribs2 = $3
+      { let isRec, path, vis, attribs2 = $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = SynComponentInfo($1 @ attribs2, None, [], path, xml, false, vis, rhs parseState 3)
+        let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
         SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
 
-  | opt_attributes opt_declVisibility typeKeyword tyconSpfnList
-      { if Option.isSome $2 then
-            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-
-        match $4 with
-        | [] -> raiseParseErrorAt (rhs2 parseState 3 4) (FSComp.SR.parsUnexpectedEmptyModuleDefn ())
-        | SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _, d, d2, d3), e, f, g) :: tail ->
-            let attrs = $1 @ cas
-            let mTc =
-                let keywordM = rhs parseState 3
-                (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges g
-            let xmlDoc = grabXmlDoc(parseState, $1, 3)
-            let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, mTc))
-            let m = (mTc, tail) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
-
-            SynModuleSigDecl.Types (tc :: tail, m) }
+  | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
+      { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _, d, d2, d3), e, f, g)) = $4
+        let attrs = $1 @ cas
+        let mTc =
+            let keywordM = rhs parseState 3
+            (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges g
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, mTc))
+        let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
+        SynModuleSigDecl.Types (tc :: $5, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3 
-        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, c, d, d2), e, f)
+        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), e, f)
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
   | openDecl
@@ -844,7 +842,7 @@ moduleSpfn:
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 3), ($9), ($11), ($12)
+        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m = rhs2 parseState 1 11 
         let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, m) 
@@ -880,11 +878,16 @@ moduleSpecBlock:
 
 
 tyconSpfnList:  
-  | tyconSpfn AND tyconSpfnList 
-     { $1 :: $3 } 
+  | AND tyconSpfn tyconSpfnList
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       let tyconSpfn =
+           if xmlDoc.IsEmpty then $2 else
+           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _, fixity, vis, rangeOfLid), typeRepr, members, range)) = $2
+           SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, range)
+       tyconSpfn :: $3 }
 
-  | tyconSpfn 
-     { [$1] }
+  |
+     { [] }
 
 
 /* A type definition in a signature */
@@ -1035,13 +1038,15 @@ classMemberSpfn:
   | opt_attributes opt_declVisibility VAL fieldDecl 
      { let wholeRange = rhs2 parseState 1 4
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let fld = $4 $1 false wholeRange 
+       let xmlDoc = grabXmlDoc(parseState, $1, 1)
+       let fld = $4 xmlDoc $1 false wholeRange
        SynMemberSig.ValField (fld, wholeRange) }
 
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
      { let wholeRange = rhs2 parseState 1 5
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       SynMemberSig.ValField($5 $1 true wholeRange, wholeRange) }
+       let xmlDoc = grabXmlDoc(parseState, $1, 1)
+       SynMemberSig.ValField($5 xmlDoc $1 true wholeRange, wholeRange) }
 
   | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -1170,11 +1175,12 @@ fileModuleImpl:
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
-      let isRec2, path2, xml, vis, attribs2 = $3 
+      let isRec2, path2, vis, attribs2 = $3
+      let xmlDoc = grabXmlDoc(parseState, $1, 1)
       (fun (isRec, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2 
-        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1@attribs2, vis, m))) }
+        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1@attribs2, vis, m))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
     { let m = (rhs parseState 1) 
@@ -1311,13 +1317,15 @@ moduleDefn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3 
         let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
-        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, c, d, d2), e, f)) 
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), e, f))
         [ SynModuleDecl.Exception(ec, f) ] }
 
   /* 'module' definitions */
   | opt_attributes opt_declVisibility moduleIntro EQUALS namedModuleDefnBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attribs, (isRec, path, xml, vis, attribs2) = $1, $3 
+        let attribs, (isRec, path, vis, attribs2) = $1, $3
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
         match $5 with
         | Choice1Of2 eqn -> 
             if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -1331,7 +1339,7 @@ moduleDefn:
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            let info = SynComponentInfo(attribs @ attribs2, None, [], path, xml, false, vis, rhs parseState 3)
+            let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
             [ SynModuleDecl.NestedModule(info, isRec, def, false, (rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
@@ -2540,7 +2548,8 @@ recdFieldDeclList:
 recdFieldDecl: 
   | opt_attributes fieldDecl
      { let wholeRange = rhs2 parseState 1 2
-       let fld = $2 $1 false wholeRange
+       let xmlDoc = grabXmlDoc(parseState, $1, 1)
+       let fld = $2 xmlDoc $1 false wholeRange
        let (SynField (a, b, c, d, e, f, vis, wholeRange)) = fld
        if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
        SynField (a, b, c, d, e, f, None, wholeRange) }
@@ -2548,23 +2557,17 @@ recdFieldDecl:
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
-     { let xmlDoc = grabXmlDoc (parseState, [], 3)
-       fun attrs stat wholeRange -> SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
+     { fun xmlDoc attrs stat wholeRange -> SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
 
 /* An exception definition */
 exconDefn: 
   | exconCore opt_classDefn 
      { SynExceptionDefn($1, $2, ($1.Range, $2) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
-
-/* Part of an exception definition */
-exceptionAndGrabDoc:
-  | EXCEPTION
-     { grabXmlDoc(parseState, [], 1) }
   
 /* Part of an exception definition */
 exconCore: 
-  | exceptionAndGrabDoc opt_attributes opt_access exconIntro exconRepr 
-     { SynExceptionDefnRepr($2, $4, $5, $1, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
+  | EXCEPTION opt_attributes opt_access exconIntro exconRepr
+     { SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
   
 /* Part of an exception definition */
 exconIntro:
