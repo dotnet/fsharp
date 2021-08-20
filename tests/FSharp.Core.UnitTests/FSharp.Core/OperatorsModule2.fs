@@ -52,11 +52,11 @@ type OperatorsModule2() =
         
         // Overflow.
         let result = Operators.int Single.MaxValue
-        Assert.AreEqual(0, result)
+        Assert.AreEqual(Int32.MinValue, result)
 
         // Overflow
         let result = Operators.int Single.MinValue
-        Assert.AreEqual(0, result)
+        Assert.AreEqual(Int32.MinValue, result)
         
         // Overflow
         let result = Operators.int Double.MaxValue
