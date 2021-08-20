@@ -1535,7 +1535,7 @@ let ``Test Operator Declarations for UInt16`` () =
         [], "let testUInt16ToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.float> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float32> (arg0_0),Operators.ToDouble<Microsoft.FSharp.Core.uint16> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.float> (arg0_0),e1)) @ (52,47--52,57)"
         [], "let testUInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (arg0_0),Operators.ToDouble<Microsoft.FSharp.Core.uint16> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.float> (arg0_0),e1)) @ (53,47--53,55)"
         [], "let testUInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)"
-        [], "let testUInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint16> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.char> (arg0_0),e1) @ (55,47--55,54)"
+        [], "let testUInt16ToCharOperator(e1) = e1 @ (55,47--55,54)"
         [FC47; FC50], "let testUInt16ToStringOperator(e1) = let mutable copyOfStruct: Microsoft.FSharp.Core.uint16 = e1 in copyOfStruct.ToString() @ (56,47--56,56)"
       ]
 
@@ -2868,7 +2868,7 @@ let ``Test Operator Declarations for Char`` () =
         [], "let testCharToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.byte> (arg0_0),e1) @ (29,43--29,58)"
         [], "let testCharToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.sbyte> (arg0_0),e1) @ (30,43--30,59)"
         [], "let testCharToInt16Checked(e1) = Checked.ToInt16<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.int16> (arg0_0),e1) @ (31,43--31,59)"
-        [], "let testCharToUInt16Checked(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.uint16> (arg0_0),e1) @ (32,43--32,52)"
+        [], "let testCharToUInt16Checked(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.uint16> (arg0_0),e1) @ (32,43--32,60)"
         [], "let testCharToIntChecked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.int32> (arg0_0),e1) @ (33,43--33,57)"
         [], "let testCharToInt32Checked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.int32> (arg0_0),e1) @ (34,43--34,59)"
         [], "let testCharToUInt32Checked(e1) = Checked.ToUInt32<Microsoft.FSharp.Core.char> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.uint32> (arg0_0),e1) @ (35,43--35,60)"
