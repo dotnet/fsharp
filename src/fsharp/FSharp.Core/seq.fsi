@@ -1402,10 +1402,15 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index">The index of the item to be removed.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     seq { 0; 1; 2 } |> Seq.removeAt 1 // evaluates to seq { 0; 2 }
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
-
         [<CompiledName("RemoveAt")>]
         val removeAt: index: int -> source: seq<'T> -> seq<'T>
     
@@ -1415,6 +1420,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="count">The number of items to remove.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     seq { 0; 1; 2; 3 } |> Seq.removeManyAt 1 2 // evaluates to seq { 0; 3 }
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
@@ -1427,6 +1438,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="value">The new value.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     seq { 0; 1; 2 } |> Seq.updateAt 1 9 // evaluates to seq { 0; 9; 2 }
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
@@ -1439,6 +1456,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="value">The value to insert.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     seq { 0; 1; 2 } |> Seq.insertAt 1 9 // evaluates to seq { 0; 9; 1; 2 }
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
@@ -1451,6 +1474,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="values">The values to insert.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     seq { 0; 1; 2 } |> Seq.insertManyAt 1 [8; 9] // evaluates to seq { 0; 8; 9; 1; 2 }
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>

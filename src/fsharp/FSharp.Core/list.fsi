@@ -1102,6 +1102,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index">The index of the item to be removed.</param>
         /// <param name="source">The input list.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     [ 0; 1; 2 ] |> List.removeAt 1 // evaluates to [ 0; 2 ]
+        /// </code>
+        /// </example>
+        ///
         /// <returns>The result list.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
@@ -1113,6 +1119,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index">The index of the item to be removed.</param>
         /// <param name="count">The number of items to remove.</param>
         /// <param name="source">The input list.</param>
+        ///
+        /// <example>
+        /// <code>
+        ///     [ 0; 1; 2; 3 ] |> List.removeManyAt 1 2 // evaluates to [ 0; 3 ]
+        /// </code>
+        /// </example>
         ///
         /// <returns>The result list.</returns>
         ///
@@ -1126,6 +1138,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="value">The new value.</param>
         /// <param name="source">The input list.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     [ 0; 1; 2 ] |> List.updateAt 1 9 // evaluates to [ 0; 9; 2 ]
+        /// </code>
+        /// </example>
+        ///
         /// <returns>The result list.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
@@ -1138,6 +1156,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="value">The value to insert.</param>
         /// <param name="source">The input list.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     [ 0; 1; 2 ] |> List.insertAt 1 9 // evaluates to [ 0; 9; 1; 2 ]
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result list.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
@@ -1150,6 +1174,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="values">The values to insert.</param>
         /// <param name="source">The input list.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     [ 0; 1; 2 ] |> List.insertManyAt 1 [ 8; 9 ] // evaluates to [ 0; 8; 9; 1; 2 ]
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The result list.</returns>
         ///
         /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
