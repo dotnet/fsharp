@@ -3653,7 +3653,6 @@ FSharp.Compiler.EditorServices.Structure+Scope: Boolean Equals(System.Object, Sy
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsArrayOrList
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsAttribute
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsComment
-FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsCompExprInternal
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsComputationExpr
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsDo
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsElseInIfThenElse
@@ -3700,7 +3699,6 @@ FSharp.Compiler.EditorServices.Structure+Scope: Boolean IsYieldOrReturnBang
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsArrayOrList()
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsAttribute()
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsComment()
-FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsCompExprInternal()
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsComputationExpr()
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsDo()
 FSharp.Compiler.EditorServices.Structure+Scope: Boolean get_IsElseInIfThenElse()
@@ -3801,7 +3799,6 @@ FSharp.Compiler.EditorServices.Structure+Scope: Scope YieldOrReturnBang
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_ArrayOrList()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_Attribute()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_Comment()
-FSharp.Compiler.EditorServices.Structure+Scope: Scope get_CompExprInternal()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_ComputationExpr()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_Do()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope get_ElseInIfThenElse()
