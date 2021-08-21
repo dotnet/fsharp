@@ -44,7 +44,6 @@ module public Structure =
         | MatchLambda
         | MatchClause
         | Lambda
-        | CompExprInternal
         | Quote
         | Record
         | SpecialFunc

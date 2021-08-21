@@ -3604,7 +3604,6 @@ FSharp.Compiler.EditorServices.Structure+Collapse: System.String ToString()
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ArrayOrList
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Attribute
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Comment
-FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 CompExprInternal
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ComputationExpr
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Do
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ElseInIfThenElse
@@ -3756,7 +3755,6 @@ FSharp.Compiler.EditorServices.Structure+Scope: Int32 get_Tag()
 FSharp.Compiler.EditorServices.Structure+Scope: Scope ArrayOrList
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Attribute
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Comment
-FSharp.Compiler.EditorServices.Structure+Scope: Scope CompExprInternal
 FSharp.Compiler.EditorServices.Structure+Scope: Scope ComputationExpr
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Do
 FSharp.Compiler.EditorServices.Structure+Scope: Scope ElseInIfThenElse

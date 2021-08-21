@@ -307,11 +307,6 @@ let mkSynDotBrackGet  m mDot a b = SynExpr.DotIndexedGet (a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
-//let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
-
-//let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
-//    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
-
 let mkSynDotParenGet lhsm dotm a b   =
     match b with
     | SynExpr.Tuple (false, [_;_], _, _)   ->

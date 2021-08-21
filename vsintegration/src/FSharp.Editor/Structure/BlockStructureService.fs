@@ -49,7 +49,6 @@ module internal BlockStructure =
         | Scope.IfThenElse-> FSharpBlockTypes.Conditional
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.SpecialFunc
         | Scope.Lambda
@@ -104,7 +103,6 @@ module internal BlockStructure =
         | Scope.IfThenElse
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.Lambda
         | Scope.LetOrUseBang

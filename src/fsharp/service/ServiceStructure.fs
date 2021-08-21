@@ -109,7 +109,6 @@ module Structure =
         | MatchLambda
         | MatchClause
         | Lambda
-        | CompExprInternal
         | Quote
         | Record
         | SpecialFunc
@@ -159,7 +158,6 @@ module Structure =
             | MatchLambda         -> "MatchLambda"
             | MatchClause         -> "MatchClause"
             | Lambda              -> "Lambda"
-            | CompExprInternal    -> "CompExprInternal"
             | Quote               -> "Quote"
             | Record              -> "Record"
             | SpecialFunc         -> "SpecialFunc"
