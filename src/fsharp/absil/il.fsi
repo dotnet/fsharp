@@ -559,10 +559,10 @@ type internal ILInstr =
     // The IL writer then reverses this when emitting the binary.
     | I_ldelem      of ILBasicType
     | I_stelem      of ILBasicType
-    | I_ldelema     of ILReadonly * bool * ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_ldelem_any  of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_stelem_any  of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_newarr      of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
+    | I_ldelema     of ILReadonly * bool * ILArrayShape * ILType
+    | I_ldelem_any  of ILArrayShape * ILType
+    | I_stelem_any  of ILArrayShape * ILType
+    | I_newarr      of ILArrayShape * ILType
     | I_ldlen
 
     // "System.TypedReference" related instructions: almost
@@ -746,16 +746,43 @@ type internal ILLocal =
 
 type internal ILLocals = list<ILLocal>
 
+/// Defines an opened namespace, type relevant to a code location.
+/// 
+/// Emitted to the PortablePDB format. Note the format supports additional variations on
+/// imported things that are not yet emitted in F#.
+type ILImport =
+
+    /// Represents an 'open type XYZ' opening a type
+    | ImportType of targetType: ILType // * alias: string option 
+
+    /// Represents an 'open XYZ' opening a namespace
+    | ImportNamespace of targetNamespace: string // * assembly: ILAssemblyRef option * alias: string option
+
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
+
+/// Defines a set of opened namespace, type relevant to a code location.
+/// 
+/// Emitted to the PortablePDB format.
+type ILImports =
+    {
+      Parent: ILImports option
+      Imports: ILImport[]
+    }
+
 /// IL method bodies
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal ILMethodBody =
-    { IsZeroInit: bool
+    {
+      IsZeroInit: bool
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      SourceMarker: ILSourceMarker option }
+      SourceMarker: ILSourceMarker option
+      Imports: ILImports option
+    }
 
 /// Member Access
 [<RequireQualifiedAccess>]
@@ -1806,20 +1833,32 @@ val internal mkILLocal: ILType -> (string * int * int) option -> ILLocal
 val internal mkILEmptyGenericParams: ILGenericParameterDefs
 
 /// Make method definitions.
-val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
-val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
+val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option * ILImports option -> ILMethodBody
+
+val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option * ILImports option -> MethodBody
+
 val internal methBodyNotAvailable: Lazy<MethodBody>
+
 val internal methBodyAbstract: Lazy<MethodBody>
+
 val internal methBodyNative: Lazy<MethodBody>
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
+
 val internal mkILClassCtor: MethodBody -> ILMethodDef
-val internal mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
+
+val internal mkILNonGenericEmptyCtor: ILType * ILSourceMarker option * ILImports option -> ILMethodDef
+
 val internal mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 /// Make field definitions.
@@ -1851,12 +1890,14 @@ val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 /// Injecting initialization code into a class.
 /// Add some code to the end of the .cctor for a type.  Create a .cctor
 /// if one doesn't exist already.
-val internal prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
+val internal prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILImports option -> ILTypeDef -> ILTypeDef
 
 /// Derived functions for making some simple constructors
-val internal mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val internal mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val internal mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val internal mkILStorageCtor: ILInstr list * ILType * (string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
+
+val internal mkILSimpleStorageCtor: ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
+
+val internal mkILSimpleStorageCtorWithParamNames: ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
 
 val internal mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 

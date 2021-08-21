@@ -49,54 +49,62 @@ type BlobBuildingStream () =
 type PdbDocumentData = ILSourceDocument
 
 type PdbLocalVar =
-    { Name: string
+    {
+      Name: string
       Signature: byte[]
       /// the local index the name corresponds to
-      Index: int32  }
+      Index: int32
+    }
 
-type PdbOpenNamespacesAndType =
-    | ExternAlias of string
-    | OpenType of targetType: ILType * alias: string option
-    | OpenNamespace of targetNamespace: string list * alias: string option * alias: string option
-public readonly IAssemblyReference? TargetAssemblyOpt;
-public readonly INamespace? TargetNamespaceOpt;
-public readonly ITypeReference? TargetTypeOpt;
-public readonly string? TargetXmlNamespaceOpt;
+type PdbImport =
+    | ImportType of targetTypeToken: int32 (* alias: string option *)
+    | ImportNamespace of targetNamespace: string (* assembly: ILAssemblyRef option * alias: string option *) 
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
 
-type PdbOpenNamespacesAndTypesScope =
-    { Parent: PdbOpenNamespacesAndTypesScope option
-      PdbOpenNamespacesAndTypes: PdbOpenNamespacesAndType[] }
+type PdbImports =
+    { 
+      Parent: PdbImports option
+      Imports: PdbImport[]
+    }
 
 type PdbMethodScope =
-    { Children: PdbMethodScope[]
+    { 
+      Children: PdbMethodScope[]
       StartOffset: int
       EndOffset: int
       Locals: PdbLocalVar[]
-      OpenNamespacesAndTypes: PdbOpenNamespacesAndTypesScope
-      (* REVIEW open_namespaces: pdb_namespace array *) }
+      Imports: PdbImports option
+    }
 
 type PdbSourceLoc =
-    { Document: int
+    {
+      Document: int
       Line: int
-      Column: int }
+      Column: int
+    }
 
-type PdbSequencePoint =
-    { Document: int
+type PdbDebugPoint =
+    {
+      Document: int
       Offset: int
       Line: int
       Column: int
       EndLine: int
-      EndColumn: int }
+      EndColumn: int
+    }
     override x.ToString() = sprintf "(%d,%d)-(%d,%d)" x.Line x.Column x.EndLine x.EndColumn
 
 type PdbMethodData =
-    { MethToken: int32
+    {
+      MethToken: int32
       MethName: string
       LocalSignatureToken: int32
       Params: PdbLocalVar array
       RootScope: PdbMethodScope option
       Range: (PdbSourceLoc * PdbSourceLoc) option
-      SequencePoints: PdbSequencePoint array }
+      DebugPoints: PdbDebugPoint []
+    }
 
 module SequencePoint =
     let orderBySource sp1 sp2 =
@@ -341,29 +349,29 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     /// </summary>
     let sourceCompressionThreshold = 200
 
-    let documentIndex =
-        let includeSource file =
-            let isInList = embedSourceList |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0)
+    let includeSource file =
+        let isInList = embedSourceList |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0)
 
-            if not embedAllSource && not isInList || not (FileSystem.FileExistsShim file) then
-                None
+        if not embedAllSource && not isInList || not (FileSystem.FileExistsShim file) then
+            None
+        else
+            use stream = FileSystem.OpenFileForReadShim(file)
+
+            let length64 = stream.Length
+            if length64 > int64 Int32.MaxValue then raise (IOException("File is too long"))
+
+            let builder = new BlobBuildingStream()
+            let length = int length64
+            if length < sourceCompressionThreshold then
+                builder.WriteInt32 0
+                builder.TryWriteBytes(stream, length) |> ignore
             else
-                use stream = FileSystem.OpenFileForReadShim(file)
+                builder.WriteInt32 length
+                use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
+                stream.CopyTo deflater
+            Some (builder.ToImmutableArray())
 
-                let length64 = stream.Length
-                if length64 > int64 Int32.MaxValue then raise (IOException("File is too long"))
-
-                let builder = new BlobBuildingStream()
-                let length = int length64
-                if length < sourceCompressionThreshold then
-                    builder.WriteInt32 0
-                    builder.TryWriteBytes(stream, length) |> ignore
-                else
-                    builder.WriteInt32 length
-                    use deflater = new DeflateStream(builder, CompressionMode.Compress, true)
-                    stream.CopyTo deflater
-                Some (builder.ToImmutableArray())
-
+    let documentIndex =
         let mutable index = Dictionary<string, DocumentHandle>(docs.Length)
         let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
         metadata.SetCapacity(TableIndex.Document, docLength)
@@ -413,27 +421,102 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
             | true, h -> h
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
-    let _scopeIndex = new Dictionary<IImportScope, ImportScopeHandle>(ImportScopeEqualityComparer.Instance)
+    let scopeIndex = new Dictionary<PdbImports, ImportScopeHandle>()
 
-    let rec getImportScopeIndex(scope: IImportScope , Dictionary<IImportScope, ImportScopeHandle> scopeIndex)
-    {
-        ImportScopeHandle scopeHandle;
-        if (scopeIndex.TryGetValue(scope, out scopeHandle))
-        {
-            // scope is already indexed:
-            return scopeHandle;
-        }
+    let serializeImport (writer: BlobBuilder) (import: PdbImport) =
+        match import with
+        //| AssemblyReferenceAlias alias->
+        //    // <import> ::= AliasAssemblyReference <alias> <target-assembly>
+        //    writer.WriteByte((byte)ImportDefinitionKind.AliasAssemblyReference);
+        //    writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(alias.Name)));
+        //    writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(GetOrAddAssemblyReferenceHandle(alias.Assembly)));
 
-        var parent = scope.Parent;
-        var parentScopeHandle = (parent != null) ? getImportScopeIndex(scope.Parent, scopeIndex) : moduleImportScopeHandle;
+        //| OpenXmlNamespace(prefix, xmlNamespace) ->
+        //        Debug.Assert(import.TargetNamespaceOpt == null);
+        //        Debug.Assert(import.TargetAssemblyOpt == null);
+        //        Debug.Assert(import.TargetTypeOpt == null);
 
-        var result = _debugMetadataOpt.AddImportScope(
-            parentScope: parentScopeHandle,
-            imports: SerializeImportsBlob(scope));
+        //        // <import> ::= ImportXmlNamespace <alias> <target-namespace>
+        //        writer.WriteByte((byte)ImportDefinitionKind.ImportXmlNamespace);
+        //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
+        //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.TargetXmlNamespaceOpt)));
+        | ImportType targetTypeToken ->
+
+                //if (import.AliasOpt != null)
+                //{
+                //    // <import> ::= AliasType <alias> <target-type>
+                //    writer.WriteByte((byte)ImportDefinitionKind.AliasType);
+                //    writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
+                //}
+                //else
+                    // <import> ::= ImportType <target-type>
+                writer.WriteByte(byte ImportDefinitionKind.ImportType)
+
+                writer.WriteCompressedInteger(targetTypeToken)
+
+        | ImportNamespace targetNamespace ->
+                //if (import.TargetAssemblyOpt != null)
+                //{
+                //    if (import.AliasOpt != null)
+                //    {
+                //        // <import> ::= AliasAssemblyNamespace <alias> <target-assembly> <target-namespace>
+                //        writer.WriteByte((byte)ImportDefinitionKind.AliasAssemblyNamespace);
+                //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
+                //    }
+                //    else
+                //    {
+                //        // <import> ::= ImportAssemblyNamespace <target-assembly> <target-namespace>
+                //        writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyNamespace);
+                //    }
+
+                //    writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(GetAssemblyReferenceHandle(import.TargetAssemblyOpt)));
+                //}
+                //else
+                //{
+                    //if (import.AliasOpt != null)
+                    //{
+                    //    // <import> ::= AliasNamespace <alias> <target-namespace>
+                    //    writer.WriteByte((byte)ImportDefinitionKind.AliasNamespace);
+                    //    writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
+                    //}
+                    //else
+                    //{
+                        // <import> ::= ImportNamespace <target-namespace>
+                writer.WriteByte(byte ImportDefinitionKind.ImportNamespace);
+                // TODO: cache?
+                writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(metadata.GetOrAddBlobUTF8(targetNamespace)))
+
+        //| ReferenceAlias alias ->
+        //        // <import> ::= ImportReferenceAlias <alias>
+        //        Debug.Assert(import.AliasOpt != null);
+        //        Debug.Assert(import.TargetAssemblyOpt == null);
+
+        //        writer.WriteByte((byte)ImportDefinitionKind.ImportAssemblyReferenceAlias);
+        //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
+
+    let serializeImportsBlob (scope: PdbImports) =
+        let writer = new BlobBuilder()
+
+        for import in scope.Imports do
+            serializeImport writer import
+
+        metadata.GetOrAddBlob(writer)
+
+    let rec getImportScopeIndex (scope: PdbImports) =
+        match scopeIndex.TryGetValue(scope) with
+        | true, v -> v
+        | _ -> 
+
+        let parentScopeHandle =
+            match scope.Parent with
+            | None -> moduleImportScopeHandle
+            | Some parent -> getImportScopeIndex parent
+
+        let blob = serializeImportsBlob(scope)
+        let result = metadata.AddImportScope(parentScopeHandle, blob);
 
         scopeIndex.Add(scope, result);
-        return result;
-    }
+        result
 
     let writeMethodScopes methToken scope =
         for s in collectScopes scope do
@@ -453,12 +536,12 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     let emitMethod minfo =
         let docHandle, sequencePointBlob =
             let sps =
-                match minfo.SequencePoints with
+                match minfo.DebugPoints with
                 | null -> Array.empty
                 | _ ->
                     match minfo.Range with
                     | None -> Array.empty
-                    | Some _ -> minfo.SequencePoints
+                    | Some _ -> minfo.DebugPoints
 
             let builder = BlobBuilder()
             builder.WriteCompressedInteger(minfo.LocalSignatureToken)
@@ -597,6 +680,10 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         reportTime showTimes "PDB: Created"
         (portablePdbStream.Length, contentId, portablePdbStream, algorithmName, contentHash)
 
+let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) checksumAlgorithm showTimes (info: PdbData) (pathMap: PathMap) =
+    let generator = PortablePdbGenerator (embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, showTimes, info, pathMap)
+    generator.Emit()
+
 let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
@@ -645,8 +732,8 @@ let writePdbInfo showTimes f fpdb info cvChunk =
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
     reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
 
-    let spCounts = info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = Array.collect (fun x -> x.SequencePoints) info.Methods |> Array.indexed
+    let spCounts = info.Methods |> Array.map (fun x -> x.DebugPoints.Length)
+    let allSps = Array.collect (fun x -> x.DebugPoints) info.Methods |> Array.indexed
 
     let spOffset = ref 0
     info.Methods |> Array.iteri (fun i minfo ->
@@ -664,7 +751,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
               // Partition the sequence points by document
               let spsets =
-                  let res = Dictionary<int,PdbSequencePoint list ref>()
+                  let res = Dictionary<int,PdbDebugPoint list ref>()
                   for (_,sp) in sps do
                       let k = sp.Document
                       let mutable xsR = Unchecked.defaultof<_>
@@ -803,7 +890,7 @@ let writeMdbInfo fmdb f info =
             wr?OpenMethod(cue, 0, sm) |> ignore
 
             // Write sequence points
-            for sp in meth.SequencePoints do
+            for sp in meth.DebugPoints do
                 wr?MarkSequencePoint(sp.Offset, cue?get_SourceFile(), sp.Line, sp.Column, false)
 
             // Walk through the tree of scopes and write all variables
@@ -854,7 +941,7 @@ let logDebugInfo (outfile: string) (info: PdbData) =
                                       sprintf "[%d,%d:%d] - [%d,%d:%d]" f.Document f.Line f.Column t.Document t.Line t.Column))
       fprintfn sw "     Points:"
 
-      for sp in meth.SequencePoints do
+      for sp in meth.DebugPoints do
         fprintfn sw "      - Doc: %d Offset:%d [%d:%d]-[%d-%d]" sp.Document sp.Offset sp.Line sp.Column sp.EndLine sp.EndColumn
 
       // Walk through the tree of scopes and write all variables

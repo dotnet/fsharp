@@ -1475,7 +1475,7 @@ type CodeBuffer =
       mutable reqdStringFixupsInMethod: (int * int) list
       /// data for exception handling clauses
       mutable seh: ExceptionClauseSpec list
-      seqpoints: ResizeArray<PdbSequencePoint> }
+      seqpoints: ResizeArray<PdbDebugPoint> }
 
     interface IDisposable with
         member this.Dispose() =
@@ -1666,7 +1666,7 @@ module Codebuf =
               tab.[tglab] <- adjuster origBrDest
           tab
       let newReqdStringFixups = List.map (fun (origFixupLoc, stok) -> adjuster origFixupLoc, stok) origReqdStringFixups
-      let newSeqPoints = Array.map (fun (sp: PdbSequencePoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
+      let newSeqPoints = Array.map (fun (sp: PdbDebugPoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
       let newExnClauses =
           origExnClauses |> List.map (fun (st1, sz1, st2, sz2, kind) ->
               (adjuster st1, (adjuster (st1 + sz1) - adjuster st1),
@@ -2014,19 +2014,21 @@ module Codebuf =
         | _ -> failwith "an IL instruction cannot be emitted"
 
 
-    let mkScopeNode cenv (localSigs: _[]) (startOffset, endOffset, ls: ILLocalDebugMapping list, childScopes) =
-        if isNil ls || not cenv.generatePdb then childScopes
+    let mkScopeNode cenv importScope (localSigs: _[]) (startOffset, endOffset, ls: ILLocalDebugMapping list, childScopes) =
+        if isNil ls || not cenv.generatePdb then
+            childScopes
         else
           [ { Children= Array.ofList childScopes
               StartOffset=startOffset
               EndOffset=endOffset
               Locals=
-                  ls |> List.filter (fun v -> v.LocalName <> "")
-                     |> List.map (fun x ->
-                          { Name=x.LocalName
-                            Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
-                            Index= x.LocalIndex } )
-                      |> Array.ofList } ]
+                  [| for x in ls do 
+                       if x.LocalName <> "" then
+                           { Name=x.LocalName
+                             Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
+                             Index= x.LocalIndex } |]
+              Imports = importScope
+            } ]
 
 
     // Used to put local debug scopes and exception handlers into a tree form
@@ -2100,7 +2102,7 @@ module Codebuf =
 
         trees
 
-    let rec makeLocalsTree cenv localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) =
+    let rec makeLocalsTree cenv importScope localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) =
         let localInsideLocal (locspec1: ILLocalDebugInfo) (locspec2: ILLocalDebugInfo) =
           labelRangeInsideLabelRange lab2pc locspec1.Range locspec2.Range
 
@@ -2110,8 +2112,8 @@ module Codebuf =
             roots |> List.collect (fun (cl, ch) ->
                 let s1, e1 = labelsToRange lab2pc cl.Range
                 let s1, e1 = pc2pos.[s1], pc2pos.[e1]
-                let children = makeLocalsTree cenv localSigs pc2pos lab2pc ch
-                mkScopeNode cenv localSigs (s1, e1, cl.DebugMappings, children))
+                let children = makeLocalsTree cenv importScope localSigs pc2pos lab2pc ch
+                mkScopeNode cenv importScope localSigs (s1, e1, cl.DebugMappings, children))
         trees
 
 
@@ -2120,7 +2122,7 @@ module Codebuf =
         List.iter (emitExceptionHandlerTree codebuf) childSEH // internal first
         x |> Option.iter codebuf.EmitExceptionClause
 
-    let emitCode cenv localSigs (codebuf: CodeBuffer) env (code: ILCode) =
+    let emitCode cenv importScope localSigs (codebuf: CodeBuffer) env (code: ILCode) =
         let instrs = code.Instrs
 
         // Build a table mapping Abstract IL pcs to positions in the generated code buffer
@@ -2150,12 +2152,12 @@ module Codebuf =
         List.iter (emitExceptionHandlerTree codebuf) SEHTree
 
         // Build the locals information, ready to emit
-        let localsTree = makeLocalsTree cenv localSigs pc2pos code.Labels code.Locals
+        let localsTree = makeLocalsTree cenv importScope localSigs pc2pos code.Labels code.Locals
         localsTree
 
-    let EmitTopCode cenv localSigs env nm code =
+    let EmitMethodCode cenv importScope localSigs env nm code =
         use codebuf = CodeBuffer.Create nm
-        let origScopes = emitCode cenv localSigs codebuf env code
+        let origScopes = emitCode cenv importScope localSigs codebuf env code
         let origCode = codebuf.code.AsMemory().ToArray()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
@@ -2167,10 +2169,13 @@ module Codebuf =
             applyBrFixups origCode origExnClauses origReqdStringFixups origAvailBrFixups origReqdBrFixups origSeqPoints origScopes
 
         let rootScope =
-            { Children= Array.ofList newScopes
+            { 
+              Children= Array.ofList newScopes
               StartOffset=0
               EndOffset=newCode.Length
-              Locals=[| |] }
+              Locals=[| |] 
+              Imports = importScope 
+            }
 
         (newReqdStringFixups, newExnClauses, newCode, newSeqPoints, rootScope)
 
@@ -2181,6 +2186,9 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
     let bytes = emitBytesViaBuffer (fun bb -> bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD
                                               EmitType cenv env bb ty)
     GetBytesAsBlobIdx cenv bytes
+
+let GenPdbImports _cenv _env (_il: ILImports option) : PdbImports option =
+    failwith "tbd"
 
 let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let localSigs =
@@ -2193,7 +2201,8 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
       else
         [| |]
 
-    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitTopCode cenv localSigs env mname il.Code
+    let imports = GenPdbImports cenv env il.Imports
+    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
     let codeSize = code.Length
     use methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format?
@@ -2488,7 +2497,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                               Line=m.EndLine
                               Column=m.EndColumn })
                   | _ -> None
-                SequencePoints=seqpoints }
+                DebugPoints=seqpoints }
           cenv.AddCode code
           addr
       | MethodBody.Abstract
@@ -2502,7 +2511,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 Params = [| |]
                 RootScope = None
                 Range = None
-                SequencePoints = [| |] }
+                DebugPoints = [| |] }
           0x0000
       | MethodBody.Native ->
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"

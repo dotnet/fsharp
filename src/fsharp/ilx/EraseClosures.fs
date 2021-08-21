@@ -480,11 +480,12 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    MethodBody.IL (lazy convil))
               let ctorMethodDef = 
                   mkILStorageCtor 
-                    (None, 
-                     [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
+                    ([ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
                      nowTy, 
                      mkILCloFldSpecs cenv nowFields, 
-                     ILMemberAccess.Assembly)
+                     ILMemberAccess.Assembly,
+                     None,
+                     None)
                    |> cenv.addMethodGeneratedAttrs 
 
               let cloTypeDef = 
@@ -613,27 +614,29 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       |  [], [], Lambdas_return _ -> 
 
           // No code is being declared: just bake a (mutable) environment 
-          let cloCode' = 
+          let cloCodeR = 
             match td.Extends with 
             | None ->  (mkILNonGenericEmptyCtor None cenv.ilg.typ_Object).MethodBody 
             | Some  _ -> convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)
 
           let ctorMethodDef = 
             let flds = (mkILCloFldSpecs cenv nowFields)
-            mkILCtor(ILMemberAccess.Public, 
-                    List.map mkILParamNamed flds, 
-                    mkMethodBody
-                      (cloCode'.IsZeroInit, 
-                       cloCode'.Locals, 
-                       cloCode'.MaxStack, 
-                       prependInstrsToCode
-                          (List.concat (List.mapi (fun n (nm, ty) -> 
-                               [ mkLdarg0
-                                 mkLdarg (uint16 (n+1))
-                                 mkNormalStfld (mkILFieldSpecInTy (nowTy, nm, ty))
-                               ])  flds))
-                         cloCode'.Code, 
-                       None))
+            mkILCtor(
+                ILMemberAccess.Public, 
+                List.map mkILParamNamed flds, 
+                mkMethodBody
+                    (cloCodeR.IsZeroInit, 
+                     cloCodeR.Locals, 
+                     cloCodeR.MaxStack, 
+                     prependInstrsToCode
+                        (List.concat (List.mapi (fun n (nm, ty) -> 
+                            [ mkLdarg0
+                              mkLdarg (uint16 (n+1))
+                              mkNormalStfld (mkILFieldSpecInTy (nowTy, nm, ty))
+                            ])  flds))
+                        cloCodeR.Code, 
+                     None,
+                     None))
           
           let cloTypeDef = 
             td.With(implements= td.Implements,

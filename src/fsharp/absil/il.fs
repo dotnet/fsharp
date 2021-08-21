@@ -1259,15 +1259,31 @@ type ILLocal =
 
 type ILLocals = list<ILLocal>
 
+type ILImport =
+    | ImportType of targetType: ILType // * alias: string option 
+    | ImportNamespace of targetNamespace: string // * assembly: ILAssemblyRef option * alias: string option
+
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
+
+type ILImports =
+    {
+      Parent: ILImports option
+      Imports: ILImport[]
+    }
+
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILMethodBody =
-    { IsZeroInit: bool
+    { 
+      IsZeroInit: bool
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      SourceMarker: ILSourceMarker option }
+      SourceMarker: ILSourceMarker option
+      Imports: ILImports  option
+    }
 
 [<RequireQualifiedAccess>]
 type ILMemberAccess =
@@ -2924,17 +2940,18 @@ type ILFieldSpec with
 // Make a method mbody
 // --------------------------------------------------------------------
 
-let mkILMethodBody (initlocals, locals, maxstack, code, tag) : ILMethodBody =
+let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethodBody =
     { IsZeroInit=initlocals
       MaxStack=maxstack
       NoInlining=false
       AggressiveInlining=false
       Locals= locals
       Code= code
-      SourceMarker=tag }
+      SourceMarker=tag
+      Imports=imports }
 
-let mkMethodBody (zeroinit, locals, maxstack, code, tag) =
-    let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag)
+let mkMethodBody (zeroinit, locals, maxstack, code, tag, imports) =
+    let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag, imports)
     MethodBody.IL (lazy ilCode)
 
 // --------------------------------------------------------------------
@@ -2985,9 +3002,10 @@ let mkNormalLdobj dt = I_ldobj (Aligned, Nonvolatile, dt)
 
 let mkNormalStobj dt = I_stobj (Aligned, Nonvolatile, dt)
 
-let mkILNonGenericEmptyCtor tag superTy =
+let mkILNonGenericEmptyCtor (superTy, tag, imports) =
     let ctor = mkCallBaseConstructor (superTy, [])
-    mkILCtor (ILMemberAccess.Public, [], mkMethodBody (false, [], 8, nonBranchingInstrsToCode ctor, tag))
+    let body = mkMethodBody (false, [], 8, nonBranchingInstrsToCode ctor, tag, imports)
+    mkILCtor (ILMemberAccess.Public, [], body)
 
 // --------------------------------------------------------------------
 // Make a static, top level monomorphic method - very useful for
@@ -3104,16 +3122,18 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
         { c2 with Labels = labels
                   Instrs = Array.append instrs c2.Instrs }
 
-let prependInstrsToMethod new_code md =
-    mdef_code2code (prependInstrsToCode new_code) md
+let prependInstrsToMethod newCode md =
+    mdef_code2code (prependInstrsToCode newCode) md
 
 // Creates cctor if needed
-let cdef_cctorCode2CodeOrCreate tag f (cd: ILTypeDef) =
+let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
     let mdefs = cd.Methods
     let cctor =
         match mdefs.FindByName ".cctor" with
         | [mdef] -> mdef
-        | [] -> mkILClassCtor (mkMethodBody (false, [], 1, nonBranchingInstrsToCode [ ], tag))
+        | [] -> 
+            let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode [ ], tag, imports)
+            mkILClassCtor body
         | _ -> failwith "bad method table: more than one .cctor found"
 
     let methods = ILMethodDefs (fun () -> [| yield f cctor; for md in mdefs do if md.Name <> ".cctor" then yield md |])
@@ -3135,8 +3155,8 @@ let mkRefForILMethod scope (tdefs, tdef) mdef = mkRefToILMethod (mkRefForNestedI
 let mkRefForILField scope (tdefs, tdef) (fdef: ILFieldDef) = mkILFieldRef (mkRefForNestedILTypeDef scope (tdefs, tdef), fdef.Name, fdef.FieldType)
 
 // Creates cctor if needed
-let prependInstrsToClassCtor instrs tag cd =
-    cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
+let prependInstrsToClassCtor instrs tag imports cd =
+    cdef_cctorCode2CodeOrCreate tag imports (prependInstrsToMethod instrs) cd
 
 let mkILField (isStatic, nm, ty, init: ILFieldInit option, at: byte [] option, access, isLiteral) =
      ILFieldDef(name=nm,
@@ -3229,55 +3249,64 @@ let emptyILMethodImpls = mkILMethodImpls []
 
 /// Make a constructor that simply takes its arguments and stuffs
 /// them in fields. preblock is how to call the superclass constructor....
-let mkILStorageCtorWithParamNames (tag, preblock, ty, extraParams, flds, access) =
+let mkILStorageCtorWithParamNames (preblock: ILInstr list, ty, extraParams, flds, access, tag, imports) =
+    let code =
+        [ match tag with 
+          | Some x -> I_seqpoint x
+          | None -> ()
+          yield! preblock 
+          for (n, (_pnm, nm, fieldTy)) in List.indexed flds do
+              mkLdarg0
+              mkLdarg (uint16 (n+1))
+              mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy)) 
+        ]
+    let body = mkMethodBody (false, [], 2, nonBranchingInstrsToCode code, tag, imports)
     mkILCtor(access,
-            (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams,
-            mkMethodBody
-              (false, [], 2,
-               nonBranchingInstrsToCode
-                 begin
-                   (match tag with Some x -> [I_seqpoint x] | None -> []) @
-                   preblock @
-                   List.concat (List.mapi (fun n (_pnm, nm, fieldTy) ->
-                     [ mkLdarg0
-                       mkLdarg (uint16 (n+1))
-                       mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
-                     ]) flds)
-                 end, tag))
+            (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams, body
+            )
 
-let mkILSimpleStorageCtorWithParamNames (tag, baseTySpec, ty, extraParams, flds, access) =
+let mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, flds, access, tag, imports) =
     let preblock =
       match baseTySpec with
-        None -> []
+      | None -> []
       | Some tspec ->
           [ mkLdarg0
             mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec, [])) ]
-    mkILStorageCtorWithParamNames (tag, preblock, ty, extraParams, flds, access)
+    mkILStorageCtorWithParamNames (preblock, ty, extraParams, flds, access, tag, imports)
 
 let addParamNames flds =
     flds |> List.map (fun (nm, ty) -> (nm, nm, ty))
 
-let mkILSimpleStorageCtor (tag, baseTySpec, ty, extraParams, flds, access) =
-    mkILSimpleStorageCtorWithParamNames (tag, baseTySpec, ty, extraParams, addParamNames flds, access)
+let mkILSimpleStorageCtor (baseTySpec, ty, extraParams, flds, access, tag, imports) =
+    mkILSimpleStorageCtorWithParamNames (baseTySpec, ty, extraParams, addParamNames flds, access, tag, imports)
 
-let mkILStorageCtor (tag, preblock, ty, flds, access) = mkILStorageCtorWithParamNames (tag, preblock, ty, [], addParamNames flds, access)
+let mkILStorageCtor (preblock, ty, flds, access, tag, imports) =
+    mkILStorageCtorWithParamNames (preblock, ty, [], addParamNames flds, access, tag, imports)
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
+    let attributes =
+        convertTypeAccessFlags access |||
+        TypeAttributes.AutoLayout |||
+        TypeAttributes.Class |||
+        (match init with 
+         | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
+         | _ -> enum 0) 
+        ||| TypeAttributes.AnsiClass
+
     ILTypeDef(name=nm,
-              attributes=(convertTypeAccessFlags access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class |||
-                          (match init with | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit | _ -> enum 0) ||| TypeAttributes.AnsiClass),
-              genericParams= genparams,
-              implements = impl,
-              layout=ILTypeDefLayout.Auto,
-              extends = Some extends,
-              methods= methods,
-              fields= fields,
-              nestedTypes=nestedTypes,
-              customAttrs=attrs,
-              methodImpls=emptyILMethodImpls,
-              properties=props,
-              events=events,
-              securityDecls=emptyILSecurityDecls)
+        attributes=attributes,
+        genericParams= genparams,
+        implements = impl,
+        layout=ILTypeDefLayout.Auto,
+        extends = Some extends,
+        methods= methods,
+        fields= fields,
+        nestedTypes=nestedTypes,
+        customAttrs=attrs,
+        methodImpls=emptyILMethodImpls,
+        properties=props,
+        events=events,
+        securityDecls=emptyILSecurityDecls)
 
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
     ILTypeDef(name = nm,

@@ -70,9 +70,11 @@ let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPro
    let ilReturn = mkILReturn ilPropType
    let ilMethodDef =
        if isStatic then
-           mkILNonGenericStaticMethod (ilMethName, reprAccess, [], ilReturn, mkMethodBody(true, [], 2, nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec], None))
+           let body = mkMethodBody(true, [], 2, nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec], None, None)
+           mkILNonGenericStaticMethod (ilMethName, reprAccess, [], ilReturn, body)
        else
-           mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec], None))
+           let body = mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec], None, None)
+           mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, body)
    ilMethodDef.WithSpecialName
 
 /// Choose the constructor parameter names for fields
@@ -945,7 +947,7 @@ and sequel =
 and Pushes = ILType list
 and Pops = int
 
-/// The overall environment at a particular point in an expression tree.
+/// The overall environment at a particular point in the declaration/expression tree.
 and IlxGenEnv =
     { /// The representation decisions for the (non-erased) type parameters that are in scope
       tyenv: TypeReprEnv
@@ -965,6 +967,9 @@ and IlxGenEnv =
 
       /// Hiding information down the signature chain, used to compute what's public to the assembly
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list
+
+      /// The open/open-type declarations in scope
+      imports: ILImports option
 
       /// All values in scope
       valsInScope: ValMap<Lazy<ValStorage>>
@@ -1492,13 +1497,13 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             gmethods.Add ilMethodDef
 
-    member b.NestedTypeDefs = gnested
+    member _.NestedTypeDefs = gnested
 
-    member b.GetCurrentFields() = gfields |> Seq.readonly
+    member _.GetCurrentFields() = gfields |> Seq.readonly
 
     /// Merge Get and Set property nodes, which we generate independently for F# code
     /// when we come across their corresponding methods.
-    member b.AddOrMergePropertyDef(pdef, m) =
+    member _.AddOrMergePropertyDef(pdef, m) =
         let discard =
             match tdefDiscards with
             | Some (_, pdefDiscard) -> pdefDiscard pdef
@@ -1506,10 +1511,12 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         if not discard then
             AddPropertyDefToHash m gproperties pdef
 
-    member b.PrependInstructionsToSpecificMethodDef(cond, instrs, tag) =
+    member _.PrependInstructionsToSpecificMethodDef(cond, instrs, tag, imports) =
         match ResizeArray.tryFindIndex cond gmethods with
         | Some idx -> gmethods.[idx] <- prependInstrsToMethod instrs gmethods.[idx]
-        | None -> gmethods.Add(mkILClassCtor (mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag)))
+        | None ->
+            let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode instrs, tag, imports)
+            gmethods.Add(mkILClassCtor body)
 
 
 and TypeDefsBuilder() =
@@ -1635,7 +1642,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
 
-            let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
+            let ilBaseTySpec = (if isStruct then None else Some ilBaseTy.TypeSpec)
+            let ilCtorDef = mkILSimpleStorageCtorWithParamNames(ilBaseTySpec, ilTy, [], flds, ILMemberAccess.Public, None, None)
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -1720,12 +1728,13 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     /// This initializes the script in #load and fsc command-line order causing their
     /// side effects to be executed.
-    member mgbuf.AddInitializeScriptsInOrderToEntryPoint () =
+    member mgbuf.AddInitializeScriptsInOrderToEntryPoint (imports) =
         // Get the entry point and initialized any scripts in order.
         match explicitEntryPointInfo with
         | Some tref ->
             let InitializeCompiledScript(fspec, m) =
-                mgbuf.AddExplicitInitToSpecificMethodDef((fun (md: ILMethodDef) -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, [], [])
+                let ilDebugPoint = GenPossibleILSourceMarker cenv m
+                mgbuf.AddExplicitInitToSpecificMethodDef((fun (md: ILMethodDef) -> md.IsEntryPoint), tref, fspec, ilDebugPoint, imports, [], [])
             scriptInitFspecs |> List.iter InitializeCompiledScript
         | None -> ()
 
@@ -1778,7 +1787,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
 
-    member _.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
+    member _.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, imports, feefee, seqpt) =
         // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
         // Doing both a store and load keeps FxCop happier because it thinks the field is useful
         let instrs =
@@ -1787,7 +1796,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
               yield mkNormalStsfld fspec
               yield mkNormalLdsfld fspec
               yield AI_pop]
-        gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt)
+        gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt, imports)
 
     member _.AddEventDef (tref, edef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddEventDef(edef)
@@ -2145,15 +2154,18 @@ let CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
 
     let code = buildILCode methodName lab2pc instrs exns localDebugSpecs
 
-    // Attach a source range to the method. Only do this is it has some debug points, because .NET 2.0/3.5
-    // ILDASM has issues if you emit symbols with a source range but without any debug points
+    // Attach a source range to the method. Only do this if it has some debug points.
     let sourceRange = if hasDebugPoints then GenPossibleILSourceMarker cenv m else None
+
+    let ilImports = eenv.imports
 
     // The old union erasure phase increased maxstack by 2 since the code pushes some items, we do the same here
     let maxStack = maxStack + 2
 
     // Build an Abstract IL method
-    instrs, mkILMethodBody (eenv.initLocals, locals, maxStack, code, sourceRange)
+    let body = mkILMethodBody (eenv.initLocals, locals, maxStack, code, sourceRange, ilImports)
+    
+    instrs, body
 
 let StartDelayedLocalScope nm cgbuf =
     let startScope = CG.GenerateDelayMark cgbuf ("start_" + nm)
@@ -5019,8 +5031,7 @@ and GenSequenceExpr
         mkILNonGenericVirtualMethod("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL (lazy ilCode))
         |> AddNonUserCompilerGeneratedAttribs g
 
-    let ilCtorBody =
-        mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly).MethodBody
+    let ilCtorBody = mkILSimpleStorageCtor(Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports).MethodBody
 
     let cloMethods = [generateNextMethod; closeMethod; checkCloseMethod; lastGeneratedMethod; getFreshMethod]
     let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericParams, [], ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], ilCloBaseTy, [], Some ilxCloSpec)
@@ -5057,8 +5068,9 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
           let cloTy = mkILFormalBoxedTy cloSpec.TypeRef (mkILFormalTypars cloSpec.GenericArgs)
           let fspec = mkILFieldSpec (cloSpec.GetStaticFieldSpec().FieldRef, cloTy)
           let ctorSpec = mkILMethSpecForMethRefInTy (cloSpec.Constructor.MethodRef, cloTy, [])
-          let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode [ I_newobj (ctorSpec, None); mkNormalStsfld fspec ], None)
-          let cctor = mkILClassCtor (MethodBody.IL (lazy ilCode))
+          let ilInstrs = [ I_newobj (ctorSpec, None); mkNormalStsfld fspec ]
+          let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode ilInstrs, None, None)
+          let cctor = mkILClassCtor (MethodBody.IL (notlazy ilCode))
           let ilFieldDef = mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly).WithInitOnly(true)
           (cctor :: mdefs), [ ilFieldDef ]
       else
@@ -5126,7 +5138,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
         strip cloinfo.ilCloLambdas
 
     let ilCloBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, entryPointInfo, cloinfo.cloName, eenvinner, 1, body, Return)
-    let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(g.ilg.typ_Object, [])), None )
+    let ilCtorBody = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor(g.ilg.typ_Object, [])), None, eenv.imports)
     let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilDirectGenericParams, ilDirectWitnessParams, mkILReturn ilCloFormalReturnTy, MethodBody.IL(lazy ilCloBody)) ]
 
     let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], g.ilg.typ_Object, [], Some cloinfo.cloSpec)
@@ -5444,7 +5456,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(TSlotSig(_, delega
              ilDelegeeParams,
              ilDelegeeRet,
              MethodBody.IL(lazy ilMethodBody))
-    let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
+    let delegeeCtorMeth = mkILSimpleStorageCtor(Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly, None, eenvouter.imports)
     let ilCtorBody = delegeeCtorMeth.MethodBody
 
     let ilCloLambdas = Lambdas_return ilCtxtDelTy
@@ -6195,13 +6207,13 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isSt
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty, ilPropDef, m)
 
             let getterMethod =
-                mkILStaticMethod([], ilGetterMethRef.Name, access, [], mkILReturn fty,
-                               mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld fspec ], None)).WithSpecialName
+                let body = mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld fspec ], None, eenv.imports)
+                mkILStaticMethod([], ilGetterMethRef.Name, access, [], mkILReturn fty, body).WithSpecialName
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, getterMethod)
             if mut || cenv.opts.isInteractiveItExpr then
+                let body = mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec], None, eenv.imports)
                 let setterMethod =
-                    mkILStaticMethod([], ilSetterMethRef.Name, access, [mkILParamNamed("value", fty)], mkILReturn ILType.Void,
-                                   mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec], None)).WithSpecialName
+                    mkILStaticMethod([], ilSetterMethRef.Name, access, [mkILParamNamed("value", fty)], mkILReturn ILType.Void, body).WithSpecialName
                 cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, setterMethod)
 
             GenBindingRhs cenv cgbuf eenv sp vspec rhsExpr
@@ -7426,7 +7438,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
     // those fields are "touched" the InitClass .cctor is forced. The InitClass .cctor will
     // then fill in the value of the mutable fields.
     if not mspec.IsNamespace && (cgbuf.mgbuf.GetCurrentFields(TypeRefForCompLoc eenvinner.cloc) |> Seq.isEmpty |> not) then
-        GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo (TypeRefForCompLoc eenvinner.cloc) mspec.Range
+        GenForceWholeFileInitializationAsPartOfCCtor cenv cgbuf.mgbuf lazyInitInfo (TypeRefForCompLoc eenvinner.cloc) eenv.imports mspec.Range
 
 
 /// Generate the namespace fragments in a single file
@@ -7518,7 +7530,8 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
             if doesSomething then
                 lazyInitInfo.Add (fun fspec feefee seqpt ->
                     // This adds the explicit init of the .cctor to the explicit entry point main method
-                    mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, feefee, seqpt))
+                    let ilDebugPoint = GenPossibleILSourceMarker cenv m
+                    mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.IsEntryPoint), tref, fspec, ilDebugPoint, eenv.imports, feefee, seqpt))
 
                 let cctorMethDef = mkILClassCtor (MethodBody.IL (lazy topCode))
                 mgbuf.AddMethodDef(initClassTy.TypeRef, cctorMethDef)
@@ -7579,10 +7592,12 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
 
     eenvafter
 
-and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (lazyInitInfo: ResizeArray<_>) tref m =
+and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (lazyInitInfo: ResizeArray<_>) tref imports m =
     // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
     // Doing both a store and load keeps FxCop happier because it thinks the field is useful
-    lazyInitInfo.Add (fun fspec feefee seqpt -> mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.Name = ".cctor"), tref, fspec, GenPossibleILSourceMarker cenv m, feefee, seqpt))
+    lazyInitInfo.Add (fun fspec feefee seqpt -> 
+        let ilDebugPoint = GenPossibleILSourceMarker cenv m
+        mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.Name = ".cctor"), tref, fspec, ilDebugPoint, imports, feefee, seqpt))
 
 
 /// Generate an Equals method.
@@ -7590,21 +7605,23 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
     let g = cenv.g
     let mspec = mkILNonGenericInstanceMethSpecInTy (g.iltyp_IComparable, "CompareTo", [g.ilg.typ_Object], g.ilg.typ_Int32)
 
+    let ilInstrs =
+        [ mkLdarg0
+          mkLdarg 1us
+          if tcref.IsStructOrEnumTycon then
+              I_callconstraint ( Normalcall, ilThisTy, mspec, None)
+          else
+              I_callvirt ( Normalcall, mspec, None)
+          mkLdcInt32 0
+          AI_ceq ]
+
+    let ilMethodBody = mkMethodBody(true, [], 2, nonBranchingInstrsToCode ilInstrs, None, None)
+    
     mkILNonGenericVirtualMethod
         ("Equals", ILMemberAccess.Public,
          [mkILParamNamed ("obj", g.ilg.typ_Object)],
          mkILReturn g.ilg.typ_Bool,
-         mkMethodBody(true, [], 2,
-                         nonBranchingInstrsToCode
-                            [ yield mkLdarg0
-                              yield mkLdarg 1us
-                              if tcref.IsStructOrEnumTycon then
-                                  yield I_callconstraint ( Normalcall, ilThisTy, mspec, None)
-                              else
-                                  yield I_callvirt ( Normalcall, mspec, None)
-                              yield mkLdcInt32 0
-                              yield AI_ceq ],
-                         None))
+         ilMethodBody)
     |> AddNonUserCompilerGeneratedAttribs g
 
 and GenFieldInit m c =
@@ -7719,24 +7736,26 @@ and GenToStringMethod cenv eenv ilThisTy m =
                                                ilThisTy], [])
                // Instantiate with our own type
                let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
+
                // Here's the body of the method. Call printf, then invoke the function it returns
                let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
-               let mdef =
-                   mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [],
-                        mkILReturn g.ilg.typ_String,
-                        mkMethodBody (true, [], 2, nonBranchingInstrsToCode
-                                ([ // load the hardwired format string
-                                    yield I_ldstr "%+A"
-                                    // make the printf format object
-                                    yield mkNormalNewobj newFormatMethSpec
-                                    // call sprintf
-                                    yield mkNormalCall sprintfMethSpec
-                                    // call the function returned by sprintf
-                                    yield mkLdarg0
-                                    if ilThisTy.Boxity = ILBoxity.AsValue then
-                                        yield mkNormalLdobj ilThisTy ] @
-                                    callInstrs),
-                                None))
+
+               let ilInstrs =
+                   [ // load the hardwired format string
+                     I_ldstr "%+A"
+                     // make the printf format object
+                     mkNormalNewobj newFormatMethSpec
+                     // call sprintf
+                     mkNormalCall sprintfMethSpec
+                     // call the function returned by sprintf
+                     mkLdarg0
+                     if ilThisTy.Boxity = ILBoxity.AsValue then
+                         mkNormalLdobj ilThisTy 
+                     yield! callInstrs ]
+
+               let ilMethodBody = mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
+               
+               let mdef = mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
                let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
                yield mdef
       | _ -> () ]
@@ -8023,13 +8042,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let iLAccess = ComputeMemberAccess isPropHidden
                     let ilMethodDef =
                          if isStatic then
-                             mkILNonGenericStaticMethod
-                               (ilMethName, iLAccess, ilParams, ilReturn,
-                                  mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld ilFieldSpec], None))
+                             let ilMethodBody = mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld ilFieldSpec], None, eenv.imports)
+                             mkILNonGenericStaticMethod (ilMethName, iLAccess, ilParams, ilReturn, ilMethodBody)
                          else
-                             mkILNonGenericInstanceMethod
-                               (ilMethName, iLAccess, ilParams, ilReturn,
-                                  mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec], None))
+                             let ilMethodBody = mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec], None, eenv.imports)
+                             mkILNonGenericInstanceMethod (ilMethName, iLAccess, ilParams, ilReturn, ilMethodBody)
                     yield ilMethodDef.WithSpecialName
 
               if generateDebugDisplayAttribute then
@@ -8050,25 +8067,26 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                                        g.ilg.typ_String], [])
                       // Instantiate with our own type
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
+
                       // Here's the body of the method. Call printf, then invoke the function it returns
                       let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
-                      let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName, ILMemberAccess.Assembly, [],
-                                                   mkILReturn g.ilg.typ_Object,
-                                                   mkMethodBody
-                                                         (true, [], 2,
-                                                          nonBranchingInstrsToCode
-                                                            ([ // load the hardwired format string
-                                                               yield I_ldstr "%+0.8A"
-                                                               // make the printf format object
-                                                               yield mkNormalNewobj newFormatMethSpec
-                                                               // call sprintf
-                                                               yield mkNormalCall sprintfMethSpec
-                                                               // call the function returned by sprintf
-                                                               yield mkLdarg0
-                                                               if ilThisTy.Boxity = ILBoxity.AsValue then
-                                                                  yield mkNormalLdobj ilThisTy ] @
-                                                             callInstrs),
-                                                          None))
+
+                      let ilInstrs =
+                          [ // load the hardwired format string
+                            I_ldstr "%+0.8A"
+                            // make the printf format object
+                            mkNormalNewobj newFormatMethSpec
+                            // call sprintf
+                            mkNormalCall sprintfMethSpec
+                            // call the function returned by sprintf
+                            mkLdarg0
+                            if ilThisTy.Boxity = ILBoxity.AsValue then
+                                mkNormalLdobj ilThisTy
+                            yield! callInstrs ]
+
+                      let ilMethodBody = mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
+                      
+                      let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName, ILMemberAccess.Assembly, [], mkILReturn g.ilg.typ_Object, ilMethodBody)
                       yield ilMethodDef.WithSpecialName |> AddNonUserCompilerGeneratedAttribs g
                   | None, _ ->
                       //printfn "sprintf not found"
@@ -8098,7 +8116,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(g.ilg.typ_Object.TypeSpec)
-                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
+                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess, None, eenvouter.imports)
 
                  yield ilMethodDef
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
@@ -8338,7 +8356,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         //
         // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
         if tycon.TyparsNoRange.IsEmpty && tycon.MembersOfFSharpTyconSorted |> List.exists (fun vref -> vref.Deref.IsClassConstructor) then
-          GenForceWholeFileInitializationAsPartOfCCtor cenv mgbuf lazyInitInfo tref m
+          GenForceWholeFileInitializationAsPartOfCCtor cenv mgbuf lazyInitInfo tref eenv.imports m
 
 
 
@@ -8473,7 +8491,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
 
-        mgbuf.AddInitializeScriptsInOrderToEntryPoint()
+        mgbuf.AddInitializeScriptsInOrderToEntryPoint(eenv.imports)
 
 //-------------------------------------------------------------------------
 // When generating a module we just write into mutable

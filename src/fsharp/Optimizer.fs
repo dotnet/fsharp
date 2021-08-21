@@ -3047,7 +3047,6 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         if isGetHashCode then None else
 
         // Inlining lambda 
-  (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
         let f2R = CopyExprForInlining cenv false f2 m
 
         // Optimizing arguments after inlining
@@ -3055,6 +3054,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // REVIEW: this is a cheapshot way of optimizing the arg expressions as well without the restriction of recursive  
         // inlining kicking into effect 
         let argsR = args |> List.map (fun e -> let eR, _einfo = OptimizeExpr cenv env e in eR) 
+
         // Beta reduce. MakeApplicationAndBetaReduce cenv.g does all the hard work. 
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce cenv.g (f2R, f2ty, [tyargs], argsR, m)

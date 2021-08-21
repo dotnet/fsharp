@@ -2870,7 +2870,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                try
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
-                 let sps = pdbMethodGetSequencePoints pdbm
+                 let sps = pdbMethodGetDebugPoints pdbm
                  (* let roota, rootb = pdbScopeGetOffsets rootScope in *)
                  let seqpoints =
                     let arr =
@@ -2880,16 +2880,17 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                            // reader API. They should return an index into the array of documents for the reader
                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
                            let source =
-                             ILSourceMarker.Create(document = sourcedoc,
-                                                 line = sp.pdbSeqPointLine,
-                                                 column = sp.pdbSeqPointColumn,
-                                                 endLine = sp.pdbSeqPointEndLine,
-                                                 endColumn = sp.pdbSeqPointEndColumn)
+                               ILSourceMarker.Create(document = sourcedoc,
+                                   line = sp.pdbSeqPointLine,
+                                   column = sp.pdbSeqPointColumn,
+                                   endLine = sp.pdbSeqPointEndLine,
+                                   endColumn = sp.pdbSeqPointEndColumn)
                            (sp.pdbSeqPointOffset, source))
 
                     Array.sortInPlaceBy fst arr
 
                     Array.toList arr
+
                  let rec scopes scp =
                        let a, b = pdbScopeGetOffsets scp
                        let lvs = pdbScopeGetLocals scp
@@ -2925,16 +2926,21 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            let codeSize = (int32 b >>>& 2)
            // tiny format for "+nm+", code size = " + string codeSize)
            let instrs, _, lab2pc, raw2nextLab = seekReadTopCode ctxt pev mdv numtypars codeSize codeBase seqpoints
-           (* Convert the linear code format to the nested code format *)
+
+           // Convert the linear code format to the nested code format
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            let code = buildILCode nm lab2pc instrs [] localPdbInfos2
-           { IsZeroInit=false
+
+           { 
+             IsZeroInit=false
              MaxStack= 8
              NoInlining=noinline
              AggressiveInlining=aggressiveinline
              Locals=List.empty
              SourceMarker=methRangePdbInfo
-             Code=code }
+             Code=code
+             Imports=None
+           }
 
        else
            let hasMoreSections = (b &&& e_CorILMethod_MoreSects) <> 0x0uy
@@ -3045,19 +3051,22 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              nextSectionBase := sectionBase + sectionSize
            done (* while *)
 
-           (* Convert the linear code format to the nested code format *)
+           // Convert the linear code format to the nested code format 
            if logging then dprintn "doing localPdbInfos2"
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            if logging then dprintn "done localPdbInfos2, checking code..."
            let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
            if logging then dprintn "done checking code."
-           { IsZeroInit=initlocals
+           { 
+             IsZeroInit=initlocals
              MaxStack= maxstack
              NoInlining=noinline
              AggressiveInlining=aggressiveinline
              Locals = locals
              Code=code
-             SourceMarker=methRangePdbInfo})
+             SourceMarker=methRangePdbInfo
+             Imports = None
+           })
 
 and int32AsILVariantType (ctxt: ILMetadataReader) (n: int32) =
     if List.memAssoc n (Lazy.force ILVariantTypeRevMap) then
