@@ -4963,6 +4963,13 @@ module WitnessTests =
                
     test "check non-CallWithWitnesses operators"       
         (let tests = [|
+              <@@ LanguagePrimitives.PhysicalEquality [|3|] [|3|] @@>, box false
+              <@@ let x = [|3|] in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              <@@ LanguagePrimitives.PhysicalEquality (seq { 3 }) (seq { 3 }) @@>, box false
+              <@@ let x = seq { 3 } in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              <@@ LanguagePrimitives.PhysicalEquality (obj()) (obj()) @@>, box false
+              <@@ let x = obj() in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              
               <@@ 3y = 3y @@>, box true
               <@@ 3uy = 3uy @@>, box true
               <@@ 3s = 3s @@>, box true
@@ -4983,7 +4990,9 @@ module WitnessTests =
               <@@ [3] = [3] @@>, box true
               <@@ [|3|] = [|3|] @@>, box true
               <@@ seq { 3 } = seq { 3 } @@>, box false // Reference equality
+              <@@ let x = seq { 3 } in x = x @@>, box true
               <@@ obj() = obj() @@>, box false
+              <@@ let x = obj() in x = x @@>, box true
               
               <@@ 3y <> 3y @@>, box false
               <@@ 3uy <> 3uy @@>, box false
@@ -5005,7 +5014,9 @@ module WitnessTests =
               <@@ [3] <> [3] @@>, box false
               <@@ [|3|] <> [|3|] @@>, box false
               <@@ seq { 3 } <> seq { 3 } @@>, box true // Reference equality
+              <@@ let x = seq { 3 } in x <> x @@>, box false
               <@@ obj() <> obj() @@>, box true
+              <@@ let x = obj() in x <> x @@>, box false
 
               <@@ 3y <= 3y @@>, box true
               <@@ 3uy <= 3uy @@>, box true

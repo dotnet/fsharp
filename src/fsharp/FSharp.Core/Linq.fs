@@ -258,6 +258,7 @@ module LeafExpressionConverter =
         SpecificCallToMethodInfo minfo
     let (|GenericArgs|) (minfo: MethodInfo) = minfo.GetGenericArguments()
 
+    let (|PhysicalEqualityQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> LanguagePrimitives.PhysicalEquality x y))
     let (|GenericEqualityQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> LanguagePrimitives.GenericEquality x y))
     let (|EqualsQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x = y))
     let (|GreaterQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x > y))
@@ -524,6 +525,8 @@ module LeafExpressionConverter =
             | PlusQ (_, GenericArgs [|ty1; ty2; ty3|], [x1; x2]) when ty1 = typeof<string> && ty2 = typeof<string> && ty3 = typeof<string> ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
+            // LanguagePrimitives.PhysicalEquality's generic constraint of both sides being the same reference type is already sufficient for Linq Expressions' requirements
+            | PhysicalEqualityQ (_, m, [x1; x2]) -> transBoolOpNoWitness (fun _ -> true) env false x1 x2 false (fun (l, r, _, _) -> Expression.ReferenceEqual(l, r)) m
             | GenericEqualityQ (_, m, [x1; x2])
             | EqualsQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.Equal m
             | NotEqQ (_, m, [x1; x2]) -> transBoolOpNoWitness isLinqExpressionsStructurallyEquatable env false x1 x2 false Expression.NotEqual m
