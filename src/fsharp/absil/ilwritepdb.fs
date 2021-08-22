@@ -669,6 +669,8 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     member _.Emit() =
         sortMethods showTimes info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
+
+// Currently disabled, see 
 #if EMIT_IMPORT_SCOPES
         defineModuleImportScope()
 #else
