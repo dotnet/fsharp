@@ -182,12 +182,15 @@ let checkForMultipleAugmentations m a1 a2 =
     if not (isNil a1) && not (isNil a2) then raiseParseErrorAt m (FSComp.SR.parsOnlyOneWithAugmentationAllowed())
     a1 @ a2
 
-let grabXmlDoc(parseState:IParseState, optAttributes: SynAttributeList list, elemIdx) =
+let grabXmlDocAtRangeStart(parseState: IParseState, optAttributes: SynAttributeList list, range: range) =
     let grabPoint =
         match optAttributes with
-        | [] -> rhs parseState elemIdx
+        | [] -> range
         | h :: _ -> h.Range
     LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
+
+let grabXmlDoc(parseState: IParseState, optAttributes: SynAttributeList list, elemIdx) =
+    grabXmlDocAtRangeStart(parseState, optAttributes, rhs parseState elemIdx)
 
 let rangeOfLongIdent(lid:LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
@@ -1014,7 +1017,7 @@ classSpfnMembersAtLeastOne:
 classMemberSpfn:
   | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 3), $5, $6, $7, $9, $11
+       let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let getSetRangeOpt, getSet = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
@@ -1038,22 +1041,20 @@ classMemberSpfn:
   | opt_attributes opt_declVisibility VAL fieldDecl 
      { let wholeRange = rhs2 parseState 1 4
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       let fld = $4 xmlDoc $1 false wholeRange
+       let fld = $4 $1 false wholeRange
        SynMemberSig.ValField (fld, wholeRange) }
 
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
      { let wholeRange = rhs2 parseState 1 5
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       SynMemberSig.ValField($5 xmlDoc $1 true wholeRange, wholeRange) }
+       SynMemberSig.ValField($5 $1 true wholeRange, wholeRange) }
 
   | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        SynMemberSig.NestedType($5, rhs2 parseState 1 5) }
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
-     { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 3), $5
+     { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
        let m = unionRanges (rhs parseState 1) ty.Range 
        let isInline = false 
        let valSpfn = SynValSig ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m)
@@ -1304,7 +1305,7 @@ moduleDefn:
   /* 'type' definitions */
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let xmlDoc = grabXmlDoc(parseState, $1, 3)
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _, d, d2, d3), e, f, g, h)) = $4
         let attrs = $1@cas
         let mTc = (h, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
@@ -1566,9 +1567,9 @@ tyconDefn:
      { let vis, spats, az = $3, $5, $6
        let nameRange = rhs parseState 1
        let (tcDefRepr, members) = $8 nameRange
-       let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
+       let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
        // Gets the XML doc comments prior to the implicit constructor
-       let xmlDoc = grabXmlDoc(parseState, $2, 5)
+       let xmlDoc = grabXmlDoc(parseState, $2, 2)
        let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, xmlDoc, rangeOfLid lid)
        let tcDefRepr = 
          match tcDefRepr with
@@ -1739,7 +1740,8 @@ memberCore:
      { let mRhs = $5.Range 
        let optReturnType = $3 
        let bindingBuilder, mBindLhs = $2 
-       (fun xmlDoc vis memFlagsBuilder attrs rangeStart ->
+       (fun vis memFlagsBuilder attrs rangeStart ->
+            let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
             let memberFlags = Some (memFlagsBuilder SynMemberKind.Member)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let binding = (bindingBuilder xmlDoc) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags)
@@ -1752,9 +1754,10 @@ memberCore:
        let propertyNameBindingBuilder, _ = $2 
        let optPropertyType = $3 
        let isMutable = false
-       (fun xmlDoc visNoLongerUsed memFlagsBuilder attrs rangeStart ->
+       (fun visNoLongerUsed memFlagsBuilder attrs rangeStart ->
              let hasGet = ref false
              let hasSet = ref false
+             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
 
              // Iterate over 1 or 2 'get'/'set' entries
              $4 |> List.choose (fun (optInline, optAttrs, (bindingBuilder, mBindLhs), optReturnType, expr, exprm) ->
@@ -1954,8 +1957,7 @@ classDefnMember:
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let _, flags = $3
-       let doc = grabXmlDoc(parseState, $1, 1)
-       $4 doc $2 flags $1 rangeStart }
+       $4 $2 flags $1 rangeStart }
        
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
@@ -1989,22 +1991,19 @@ classDefnMember:
   | opt_attributes opt_declVisibility valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let rangeStart = rhs parseState 1
-        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        $3 xmlDoc rangeStart $1 false }
+        $3 rangeStart $1 false }
         
   | opt_attributes opt_declVisibility STATIC valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let rangeStart = rhs parseState 1
-        let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        $4 xmlDoc rangeStart $1 true  }
+        $4 rangeStart $1 true  }
 
   | opt_attributes opt_declVisibility memberFlags autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1 
        if Option.isSome $2 then
            errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isStatic, flags = $3
-       let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       $4 xmlDoc $1 isStatic flags rangeStart }
+       $4 $1 isStatic flags rangeStart }
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
@@ -2015,7 +2014,7 @@ classDefnMember:
         let declPat = SynPat.LongIdent (LongIdentWithDots([mkSynId (rhs parseState 3) "new"], []), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
-        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, grabXmlDoc(parseState, $1, 3), valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible), m) ] }
+        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, grabXmlDoc(parseState, $1, 1), valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible), m) ] }
         
   | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -2027,7 +2026,8 @@ valDefnDecl:
   | VAL opt_mutable opt_access ident COLON  typ 
      {  let mRhs = rhs2 parseState 4 6
         let mValDecl = rhs2 parseState 1 6
-        (fun xmlDoc rangeStart attribs isStatic ->
+        (fun rangeStart attribs isStatic ->
+            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
             let mValDecl = unionRanges rangeStart mValDecl
             let fld = SynField(attribs, isStatic, Some $4, $6, $2, xmlDoc, $3, mRhs)
             [ SynMemberDefn.ValField(fld, mValDecl) ]) }
@@ -2039,7 +2039,8 @@ autoPropsDefnDecl:
      { let mGetSetOpt, getSet = $8
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
-       (fun xmlDoc attribs isStatic flags rangeStart ->
+       (fun attribs isStatic flags rangeStart ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range
            [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, $7, mGetSetOpt, memberRange) ]) }
 
@@ -2192,13 +2193,11 @@ objectImplementationMembers:
 objectImplementationMember: 
   | opt_attributes memberOrOverride memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       let doc = grabXmlDoc(parseState, $1, 1)
-       $3 doc None OverrideMemberFlags $1 rangeStart }
+       $3 None OverrideMemberFlags $1 rangeStart }
 
   | opt_attributes memberOrOverride autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       $3 xmlDoc $1 false OverrideMemberFlags rangeStart }
+       $3 $1 false OverrideMemberFlags rangeStart }
 
   | opt_attributes memberOrOverride error 
       { [] } 
@@ -2548,8 +2547,7 @@ recdFieldDeclList:
 recdFieldDecl: 
   | opt_attributes fieldDecl
      { let wholeRange = rhs2 parseState 1 2
-       let xmlDoc = grabXmlDoc(parseState, $1, 1)
-       let fld = $2 xmlDoc $1 false wholeRange
+       let fld = $2 $1 false wholeRange
        let (SynField (a, b, c, d, e, f, vis, wholeRange)) = fld
        if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
        SynField (a, b, c, d, e, f, None, wholeRange) }
@@ -2557,7 +2555,9 @@ recdFieldDecl:
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
-     { fun xmlDoc attrs stat wholeRange -> SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
+     { fun attrs stat wholeRange ->
+           let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, wholeRange)
+           SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
 
 /* An exception definition */
 exconDefn: 
