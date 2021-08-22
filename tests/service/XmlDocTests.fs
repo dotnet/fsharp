@@ -184,17 +184,35 @@ let x = 3
     checkResults
     |> checkXml "x" [|"X1"; "X2"|]
 
-[<Test; Ignore("TODO: fix")>]
-let ``let bindings 03 - let in``() =
+[<Test>]
+let ``let bindings 03 - 'let in'``() =
     let _, checkResults = getParseAndCheckResults """
 ///X1
 ///X2
 [<Attr>]
 ///X3
-let x = 3 in print x
+let x = 3 in
+
+///Y1
+///Y2
+[<Attr>]
+///Y3
+let y = x
 """
     checkResults
-    |> checkXml "x" [|"X1"; "X2"|]
+    |> checkXmls [
+        "x", [|"X1"; "X2"|]
+        "y", [|"Y1"; "Y2"|]
+       ]
+
+[<Test>]
+let ``let bindings 03 - 'let in' with attributes after 'let'``() =
+    let _, checkResults = getParseAndCheckResults """
+let ///X
+    [<Attr>] x = 3 in print x
+"""
+    checkResults
+    |> checkXml "x" [||]
 
 [<Test>]
 let ``let bindings 04 - local binding``() =
