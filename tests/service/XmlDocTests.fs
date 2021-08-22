@@ -380,13 +380,16 @@ type A() =
 [<Test>]
 let ``type members 06 - implicit ctor``() =
     let _, checkResults = getParseAndCheckResults """
-type A ///CTOR
+type A ///CTOR1
+       ///CTOR2
+       [<Attr>]
+       ///CTOR3
        () =
 """
     checkResults
     |> checkXmls [
         "A", [||]
-        ".ctor", [|"CTOR"|]
+        ".ctor", [|"CTOR1"; "CTOR2"|]
        ]
 
 [<Test>]
