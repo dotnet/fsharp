@@ -2219,7 +2219,7 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
 
 let GenPdbImport (cenv: cenv) env (input: ILDebugImport) =
     match input with 
-    | ILDebugImport.ImportType ty -> PdbImport.ImportType (GetTypeAsBlobIdx cenv env ty)
+    | ILDebugImport.ImportType ty -> PdbImport.ImportType (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env ty))
     | ILDebugImport.ImportNamespace nsp -> PdbImport.ImportNamespace nsp
 
 let rec GenPdbImports (cenv: cenv) env (input: ILDebugImports option) =

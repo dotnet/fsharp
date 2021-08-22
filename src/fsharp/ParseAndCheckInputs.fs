@@ -645,18 +645,18 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
+    let openDecls0, tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
 
     if tcConfig.checkOverflow then
         try 
             let checkOperatorsModule = pathToSynLid initm (splitNamespace CoreOperatorsCheckedName)
-            let tcEnv, openDecls = TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (checkOperatorsModule, initm)
-            tcEnv, openDecls
+            let tcEnv, openDecls1 = TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (checkOperatorsModule, initm)
+            tcEnv, openDecls0 @ openDecls1
         with e ->
             errorRecovery e initm
-            tcEnv, []
+            tcEnv, openDecls0
     else
-        tcEnv, []
+        tcEnv, openDecls0
 
 /// Inject faults into checking
 let CheckSimulateException(tcConfig: TcConfig) =
@@ -705,7 +705,7 @@ type TcState =
       tcsCcuSig: ModuleOrNamespaceType
       
       /// The collected open declarations implied by '/checked' flag and processing F# interactive fragments that have an implied module.
-      tcsOpenDeclarations: OpenDeclaration list
+      tcsImplicitOpenDeclarations: OpenDeclaration list
     }
 
     member x.NiceNameGenerator = x.tcsNiceNameGen
@@ -770,7 +770,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootSigs = Zmap.empty qnameOrder
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace 
-      tcsOpenDeclarations = openDecls0
+      tcsImplicitOpenDeclarations = openDecls0
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
@@ -855,7 +855,7 @@ let TypeCheckOneInput(checkForErrors,
                     (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Cancellable.ret
                   else
-                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, tcState.tcsImplicitOpenDeclarations, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring, tcImplEnv, rootSigOpt, file)
 
               let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
@@ -895,7 +895,7 @@ let TypeCheckOneInput(checkForErrors,
                         tcsRootImpls=rootImpls
                         tcsCcuSig=ccuSigForFile
                         tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                        tcsOpenDeclarations = tcState.tcsOpenDeclarations @ openDecls
+                        tcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations @ openDecls
                     }
               return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
 

@@ -10,6 +10,7 @@ open System.IO.Compression
 open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
+open System.Security.Cryptography
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
@@ -160,8 +161,8 @@ let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
         use file = FileSystem.OpenFileForReadShim(url)
         let guid, alg =
             match checksumAlgorithm with
-            | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-            | HashAlgorithm.Sha256 -> guidSha2, System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha1 -> guidSha1, SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha256 -> guidSha2, SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
         let checkSum = alg.ComputeHash file
         Some (guid, checkSum)
@@ -308,7 +309,6 @@ let collectScopes scope =
 
 type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, showTimes, info: PdbData, pathMap: PathMap) =
 
-    let externalRowCounts = getRowCounts info.TableRowCounts
     let docs =
         match info.Documents with
         | null -> Array.empty
@@ -421,10 +421,11 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
             | true, h -> h
 
     let moduleImportScopeHandle = MetadataTokens.ImportScopeHandle(1)
-    let scopeIndex = new Dictionary<PdbImports, ImportScopeHandle>()
+    let importScopesTable = new Dictionary<PdbImports, ImportScopeHandle>()
 
     let serializeImport (writer: BlobBuilder) (import: PdbImport) =
         match import with
+        // We don't yet emit these kinds of imports
         //| AssemblyReferenceAlias alias->
         //    // <import> ::= AliasAssemblyReference <alias> <target-assembly>
         //    writer.WriteByte((byte)ImportDefinitionKind.AliasAssemblyReference);
@@ -440,6 +441,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         //        writer.WriteByte((byte)ImportDefinitionKind.ImportXmlNamespace);
         //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.AliasOpt)));
         //        writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(_debugMetadataOpt.GetOrAddBlobUTF8(import.TargetXmlNamespaceOpt)));
+        // Corresponds to an 'open <module>' or 'open type' in F#
         | ImportType targetTypeToken ->
 
                 //if (import.AliasOpt != null)
@@ -454,6 +456,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
 
                 writer.WriteCompressedInteger(targetTypeToken)
 
+        // Corresponds to an 'open <namespace>' 
         | ImportNamespace targetNamespace ->
                 //if (import.TargetAssemblyOpt != null)
                 //{
@@ -483,7 +486,6 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                     //{
                         // <import> ::= ImportNamespace <target-namespace>
                 writer.WriteByte(byte ImportDefinitionKind.ImportNamespace);
-                // TODO: cache?
                 writer.WriteCompressedInteger(MetadataTokens.GetHeapOffset(metadata.GetOrAddBlobUTF8(targetNamespace)))
 
         //| ReferenceAlias alias ->
@@ -502,30 +504,48 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
 
         metadata.GetOrAddBlob(writer)
 
-    let rec getImportScopeIndex (scope: PdbImports) =
-        match scopeIndex.TryGetValue(scope) with
+    // Define the empty global imports scope for the whole assembly,it gets index #1 (the first entry in the table)
+    let defineModuleImportScope() =
+        let writer = new BlobBuilder()
+        let blob = metadata.GetOrAddBlob writer
+        let rid = metadata.AddImportScope(parentScope=Unchecked.defaultof<_>,imports=blob)
+        assert(rid = moduleImportScopeHandle)
+
+    let rec getImportScopeIndex (imports: PdbImports) =
+        match importScopesTable.TryGetValue(imports) with
         | true, v -> v
         | _ -> 
 
         let parentScopeHandle =
-            match scope.Parent with
+            match imports.Parent with
             | None -> moduleImportScopeHandle
             | Some parent -> getImportScopeIndex parent
 
-        let blob = serializeImportsBlob(scope)
-        let result = metadata.AddImportScope(parentScopeHandle, blob);
+        let blob = serializeImportsBlob imports
+        let result = metadata.AddImportScope(parentScopeHandle, blob)
 
-        scopeIndex.Add(scope, result);
+        importScopesTable.Add(imports, result)
         result
 
     let writeMethodScopes methToken scope =
         for s in collectScopes scope do
-            //var bodyImportScope = bodyOpt.ImportScope;
-            //var importScopeHandle = (bodyImportScope != null) ? GetImportScopeIndex(bodyImportScope, _scopeIndex) : default;
+            
+            // Get or create the import scope for this method
+            let importScopeHandle =
+#if EMIT_IMPORT_SCOPES
+                match s.Imports with 
+                | None -> Unchecked.defaultof<_>
+                | Some imports -> getImportScopeIndex imports
+#else
+                getImportScopeIndex |> ignore // make sure this code counts as used
+                Unchecked.defaultof<_>
+#endif
+
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
+
             metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(methToken),
-                Unchecked.defaultof<ImportScopeHandle>,
+                importScopeHandle,
                 nextHandle,
                 Unchecked.defaultof<LocalConstantHandle>,
                 s.StartOffset, s.EndOffset - s.StartOffset ) |>ignore
@@ -649,7 +669,14 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     member _.Emit() =
         sortMethods showTimes info
         metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
-        for minfo in info.Methods do emitMethod minfo
+#if EMIT_IMPORT_SCOPES
+        defineModuleImportScope()
+#else
+        defineModuleImportScope |> ignore // make sure this function counts as used
+#endif
+
+        for minfo in info.Methods do 
+            emitMethod minfo
 
         let entryPoint =
             match info.EntryPoint with
@@ -662,15 +689,17 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
 
         let algorithmName, hashAlgorithm =
             match checksumAlgorithm with
-            | HashAlgorithm.Sha1 -> "SHA1", System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-            | HashAlgorithm.Sha256 -> "SHA256", System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha1 -> "SHA1", SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha256 -> "SHA256", SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
-        let idProvider: System.Func<IEnumerable<Blob>, BlobContentId> =
+        let idProvider =
             let convert (content: IEnumerable<Blob>) =
                 let contentBytes = content |> Seq.collect (fun c -> c.GetBytes()) |> Array.ofSeq
                 contentHash <- contentBytes |> hashAlgorithm.ComputeHash
                 BlobContentId.FromHash contentHash
-            System.Func<IEnumerable<Blob>, BlobContentId>(convert)
+            Func<IEnumerable<Blob>, BlobContentId>(convert)
+
+        let externalRowCounts = getRowCounts info.TableRowCounts
 
         let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, idProvider)
         let blobBuilder = BlobBuilder()

@@ -5384,7 +5384,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let mspec = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id doc modAttrs (MaybeLazy.Strict mty)
 
               // Now typecheck. 
-              let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None mdefs 
+              let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None [] mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
               mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
@@ -5443,7 +5443,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let nsInfo = Some (mspecNSOpt, envNS.eModuleOrNamespaceTypeAccumulator)
           let mutRecNSInfo = if isRec then nsInfo else None
 
-          let! modExpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo defs
+          let! modExpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv parent endm envNS xml mutRecNSInfo [] defs
 
           MutRecBindingChecking.TcMutRecDefns_UpdateNSContents nsInfo
           
@@ -5595,7 +5595,7 @@ and TcMutRecDefsFinish cenv defs m =
 
     TMDefRec(true, opens, tycons, binds, m)
 
-and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
+and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 defs =
   cancellable {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
     if cenv.compilingCanonicalFslibModuleType then 
@@ -5617,10 +5617,12 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
         let! compiledDefs, envAtEnd = TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm ([], env, env) defs 
 
         // Apply the functions for each declaration to build the overall expression-builder 
-        let mexpr = TMDefs(List.foldBack (fun (f, _) x -> f x) compiledDefs []) 
+        let mdefs = List.foldBack (fun (f, _) x -> f x) compiledDefs []
+        let mdefs = match openDecls0 with [] -> mdefs | _ -> TMDefOpens openDecls0 :: mdefs
+        let mexpr = TMDefs mdefs 
 
         // Collect up the attributes that are global to the file 
-        let topAttrsNew = List.foldBack (fun (_, y) x -> y@x) compiledDefs []
+        let topAttrsNew = compiledDefs |> List.map snd |> List.concat
         return (mexpr, topAttrsNew, envAtEnd)
   }  
     
@@ -5633,7 +5635,7 @@ and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
 let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env (p, root) = 
     let warn() = 
         warning(Error(FSComp.SR.tcAttributeAutoOpenWasIgnored(p, ccu.AssemblyName), scopem))
-        env
+        [], env
     let p = splitNamespace p 
     if isNil p then warn() else
     let h, t = List.frontAndBack p 
@@ -5643,10 +5645,11 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | ValueSome _ -> 
         let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
         let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
-        OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        let envinner = OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        [openDecl], envinner
 
 // Add the CCU and apply the "AutoOpen" attributes
-let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisibleToAttributes) = 
+let AddCcuToTcEnv (g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisibleToAttributes) = 
     let env = AddNonLocalCcu g amap scopem env assemblyName (ccu, internalsVisibleToAttributes)
 
     // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
@@ -5661,8 +5664,7 @@ let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsV
         else 
             autoOpens
 
-    let env = (env, autoOpens) ||> List.fold (ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap ccu scopem)
-    env
+    (env, autoOpens) ||> List.collectFold (ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap ccu scopem)
 
 let emptyTcEnv g =
     let cpath = compPathInternal // allow internal access initially
@@ -5681,12 +5683,12 @@ let emptyTcEnv g =
       eLambdaArgInfos = [] }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
-    (emptyTcEnv g, ccus) ||> List.fold (fun env (ccu, autoOpens, internalsVisible) -> 
+    (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
         try 
             AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible)
         with e -> 
             errorRecovery e scopem 
-            env) 
+            [], env) 
 
 type ConditionalDefines = 
     string list
@@ -5810,11 +5812,18 @@ let MakeInitialEnv env =
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
 let TypeCheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
-       (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) 
-       env 
-       (rootSigOpt: ModuleOrNamespaceType option)
-       (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
+       (g, niceNameGen, amap,
+        topCcu,
+        openDecls0,
+        checkForErrors,
+        conditionalDefines,
+        tcSink,
+        isInternalTestSpanStackReferring,
+        env,
+        rootSigOpt: ModuleOrNamespaceType option,
+        synImplFile) =
 
+ let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) = synImplFile
  let infoReader = InfoReader(g, amap)
 
  cancellable {
@@ -5828,7 +5837,7 @@ let TypeCheckOneImplFile
     let envinner, mtypeAcc = MakeInitialEnv env 
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
-    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None defs
+    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
 
     let implFileTypePriorToSig = !mtypeAcc 
 

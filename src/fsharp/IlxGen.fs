@@ -1351,25 +1351,35 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
 let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
     List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
-and AddDebugImportsToEnv cenv eenv (openDecls: OpenDeclaration list) =
+and AddDebugImportsToEnv _cenv eenv (openDecls: OpenDeclaration list) =
     let ilImports =
         [| 
           for openDecl in openDecls do
             for modul in openDecl.Modules do
                 if modul.IsNamespace then
-                    ILDebugImport.ImportNamespace modul.DisplayName
-                else
-                    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
-            for t in openDecl.Types do
-                let m = defaultArg openDecl.Range Range.range0
-                ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
+                    ILDebugImport.ImportNamespace (fullDisplayTextOfModRef modul)
+                // Emit of 'open type' and 'open <module>' is causing problems
+                // See https://github.com/dotnet/fsharp/pull/12010#issuecomment-903339109
+                //
+                // It may be nested types/modules in particular
+                //else
+                //    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
+            //for t in openDecl.Types do
+            //    let m = defaultArg openDecl.Range Range.range0
+            //    ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
         |]
+        |> Array.distinctBy (function
+            | ILDebugImport.ImportNamespace nsp -> nsp
+            | ILDebugImport.ImportType t -> t.QualifiedName)
 
-    let imports =
-        { Parent = eenv.imports
-          Imports = ilImports }
+    if ilImports.Length = 0 then
+        eenv
+    else
+        let imports =
+            { Parent = eenv.imports
+              Imports = ilImports }
                 
-    { eenv with imports = Some imports }
+        { eenv with imports = Some imports }
 
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with
