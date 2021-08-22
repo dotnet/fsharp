@@ -378,6 +378,18 @@ type A() =
     |> checkXml "get_B" [|"B1"; "B2"|]
 
 [<Test>]
+let ``type members 06 - implicit ctor``() =
+    let _, checkResults = getParseAndCheckResults """
+type A ///CTOR
+       () =
+"""
+    checkResults
+    |> checkXmls [
+        "A", [||]
+        ".ctor", [|"CTOR"|]
+       ]
+
+[<Test>]
 let ``record``() =
     checkSignatureAndImplementation """
 type A =
