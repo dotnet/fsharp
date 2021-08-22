@@ -502,7 +502,7 @@
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="..\TypedTree.fs">
-      <Link>TypedTree\TypedTreeBasics.fs</Link>
+      <Link>TypedTree\TypedTree.fs</Link>
     </Compile>
     <Compile Include="..\TypedTreeBasics.fsi">
       <Link>TypedTree\TypedTreeBasics.fsi</Link>

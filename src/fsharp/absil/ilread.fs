@@ -2880,7 +2880,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                            // reader API. They should return an index into the array of documents for the reader
                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
                            let source =
-                               ILSourceMarker.Create(document = sourcedoc,
+                               ILDebugPoint.Create(document = sourcedoc,
                                    line = sp.pdbSeqPointLine,
                                    column = sp.pdbSeqPointColumn,
                                    endLine = sp.pdbSeqPointEndLine,
@@ -2937,9 +2937,9 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              NoInlining=noinline
              AggressiveInlining=aggressiveinline
              Locals=List.empty
-             SourceMarker=methRangePdbInfo
              Code=code
-             Imports=None
+             DebugPoint=methRangePdbInfo
+             DebugImports=None
            }
 
        else
@@ -3064,8 +3064,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              AggressiveInlining=aggressiveinline
              Locals = locals
              Code=code
-             SourceMarker=methRangePdbInfo
-             Imports = None
+             DebugPoint=methRangePdbInfo
+             DebugImports = None
            })
 
 and int32AsILVariantType (ctxt: ILMetadataReader) (n: int32) =

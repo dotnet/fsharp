@@ -2530,7 +2530,7 @@ module internal AssemblyReader =
 
 
 #if DEBUG_INFO
-    type ILSourceMarker =
+    type ILDebugPoint =
         { sourceDocument: ILSourceDocument;
           sourceLine: int;
           sourceColumn: int;
@@ -2650,7 +2650,7 @@ module internal AssemblyReader =
 
       | I_break 
 #if EMIT_DEBUG_INFO
-      | I_seqpoint of ILSourceMarker
+      | I_seqpoint of ILDebugPoint
 #endif
       | I_arglist  
 
@@ -2710,7 +2710,7 @@ module internal AssemblyReader =
           Locals: ILLocals
           Code:  ILCode
 #if EMIT_DEBUG_INFO
-          SourceMarker: ILSourceMarker option 
+          DebugPoint: ILDebugPoint option 
 #endif
          }
 
@@ -10824,7 +10824,7 @@ namespace ProviderImplementation.ProvidedTypes
             member codebuf.EmitExceptionClause seh = codebuf.seh.Add(seh)
 
 #if DEBUG_INFO
-            member codebuf.EmitSeqPoint cenv (m:ILSourceMarker)  = ()
+            member codebuf.EmitSeqPoint cenv (m:ILDebugPoint)  = ()
                 if cenv.generatePdb then 
                   // table indexes are 1-based, document array indexes are 0-based 
                   let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1  
@@ -11828,7 +11828,7 @@ namespace ProviderImplementation.ProvidedTypes
                         Params= [| |] (* REVIEW *)
                         RootScope = Some rootScope
                         Range=  
-                          match ilmbody.SourceMarker with 
+                          match ilmbody.DebugPoint with 
                           | Some m  when cenv.generatePdb -> 
                               // table indexes are 1-based, document array indexes are 0-based 
                               let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1 

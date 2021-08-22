@@ -926,7 +926,7 @@ type ILSourceDocument =
     member x.File=x.sourceFile
 
 [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILSourceMarker =
+type ILDebugPoint =
     { sourceDocument: ILSourceDocument
       sourceLine: int
       sourceColumn: int
@@ -1206,7 +1206,7 @@ type ILInstr =
     | I_refanyval of ILType
 
     | I_break
-    | I_seqpoint of ILSourceMarker
+    | I_seqpoint of ILDebugPoint
 
     | I_arglist
 
@@ -1259,17 +1259,18 @@ type ILLocal =
 
 type ILLocals = list<ILLocal>
 
-type ILImport =
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILDebugImport =
     | ImportType of targetType: ILType // * alias: string option 
     | ImportNamespace of targetNamespace: string // * assembly: ILAssemblyRef option * alias: string option
 
     //| ReferenceAlias of string
     //| OpenXmlNamespace of prefix: string * xmlNamespace: string
 
-type ILImports =
+type ILDebugImports =
     {
-      Parent: ILImports option
-      Imports: ILImport[]
+      Parent: ILDebugImports option
+      Imports: ILDebugImport[]
     }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1281,8 +1282,8 @@ type ILMethodBody =
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      SourceMarker: ILSourceMarker option
-      Imports: ILImports  option
+      DebugPoint: ILDebugPoint option
+      DebugImports: ILDebugImports option
     }
 
 [<RequireQualifiedAccess>]
@@ -1694,7 +1695,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
 
     member x.MethodBody = match x.Body with MethodBody.IL il -> il.Value | _ -> failwith "not IL"
 
-    member x.SourceMarker = x.MethodBody.SourceMarker
+    member x.DebugPoint = x.MethodBody.DebugPoint
 
     member x.MaxStack = x.MethodBody.MaxStack
 
@@ -1703,47 +1704,80 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     member md.CallingSignature = mkILCallSig (md.CallingConv, md.ParameterTypes, md.Return.Type)
 
     member x.IsClassInitializer = x.Name = ".cctor"
+
     member x.IsConstructor = x.Name = ".ctor"
 
     member x.Access = memberAccessOfFlags (int x.Attributes)
+
     member x.IsStatic = x.Attributes &&& MethodAttributes.Static <> enum 0
+
     member x.IsNonVirtualInstance = not x.IsStatic && not x.IsVirtual
+
     member x.IsVirtual = x.Attributes &&& MethodAttributes.Virtual <> enum 0
+
     member x.IsFinal = x.Attributes &&& MethodAttributes.Final <> enum 0
+
     member x.IsNewSlot = x.Attributes &&& MethodAttributes.NewSlot <> enum 0
+
     member x.IsCheckAccessOnOverride= x.Attributes &&& MethodAttributes.CheckAccessOnOverride <> enum 0
+
     member x.IsAbstract = x.Attributes &&& MethodAttributes.Abstract <> enum 0
+
     member x.IsHideBySig = x.Attributes &&& MethodAttributes.HideBySig <> enum 0
+
     member x.IsSpecialName = x.Attributes &&& MethodAttributes.SpecialName <> enum 0
+
     member x.IsUnmanagedExport = x.Attributes &&& MethodAttributes.UnmanagedExport <> enum 0
+
     member x.IsReqSecObj = x.Attributes &&& MethodAttributes.RequireSecObject <> enum 0
+
     member x.HasSecurity = x.Attributes &&& MethodAttributes.HasSecurity <> enum 0
 
     member x.IsManaged = x.ImplAttributes &&& MethodImplAttributes.Managed <> enum 0
+
     member x.IsForwardRef = x.ImplAttributes &&& MethodImplAttributes.ForwardRef <> enum 0
+
     member x.IsInternalCall = x.ImplAttributes &&& MethodImplAttributes.InternalCall <> enum 0
+
     member x.IsPreserveSig = x.ImplAttributes &&& MethodImplAttributes.PreserveSig <> enum 0
+
     member x.IsSynchronized = x.ImplAttributes &&& MethodImplAttributes.Synchronized <> enum 0
+
     member x.IsNoInline = x.ImplAttributes &&& MethodImplAttributes.NoInlining <> enum 0
+
     member x.IsAggressiveInline= x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
+
     member x.IsMustRun = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
 
     member x.WithSpecialName = x.With(attributes = (x.Attributes ||| MethodAttributes.SpecialName))
+
     member x.WithHideBySig() =
         x.With(attributes = (
                 if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
                 else failwith "WithHideBySig"))
+
     member x.WithHideBySig(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig))
+
     member x.WithFinal(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Final))
+
     member x.WithAbstract(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
+
     member x.WithAccess(access) = x.With(attributes = (x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access))
+
     member x.WithNewSlot = x.With(attributes = (x.Attributes ||| MethodAttributes.NewSlot))
+
     member x.WithSecurity(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity))
+
     member x.WithPInvoke(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl))
+
     member x.WithPreserveSig(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig))
+
     member x.WithSynchronized(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized))
+
     member x.WithNoInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining))
+
     member x.WithAggressiveInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining))
+
     member x.WithRuntime(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
 
 /// Index table by name and arity.
@@ -2947,8 +2981,8 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
       AggressiveInlining=false
       Locals= locals
       Code= code
-      SourceMarker=tag
-      Imports=imports }
+      DebugPoint=tag
+      DebugImports=imports }
 
 let mkMethodBody (zeroinit, locals, maxstack, code, tag, imports) =
     let ilCode = mkILMethodBody (zeroinit, locals, maxstack, code, tag, imports)

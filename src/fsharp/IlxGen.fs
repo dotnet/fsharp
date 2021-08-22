@@ -969,7 +969,7 @@ and IlxGenEnv =
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list
 
       /// The open/open-type declarations in scope
-      imports: ILImports option
+      imports: ILDebugImports option
 
       /// All values in scope
       valsInScope: ValMap<Lazy<ValStorage>>
@@ -1351,10 +1351,29 @@ let AddBindingsForTycon allocVal (cloc: CompileLocation) (tycon: Tycon) eenv =
 let rec AddBindingsForModuleDefs allocVal (cloc: CompileLocation) eenv mdefs =
     List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
-/// Record how constructs are represented, for a module or namespace fragment definition.
+and AddDebugImportsToEnv cenv eenv (openDecls: OpenDeclaration list) =
+    let ilImports =
+        [| 
+          for openDecl in openDecls do
+            for modul in openDecl.Modules do
+                if modul.IsNamespace then
+                    ILDebugImport.ImportNamespace modul.DisplayName
+                else
+                    ILDebugImport.ImportType (mkILNonGenericBoxedTy modul.CompiledRepresentationForNamedType)
+            for t in openDecl.Types do
+                let m = defaultArg openDecl.Range Range.range0
+                ILDebugImport.ImportType (GenType cenv.amap m TypeReprEnv.Empty t)
+        |]
+
+    let imports =
+        { Parent = eenv.imports
+          Imports = ilImports }
+                
+    { eenv with imports = Some imports }
+
 and AddBindingsForModuleDef allocVal cloc eenv x =
     match x with
-    | TMDefRec(_isRec, tycons, mbinds, _) ->
+    | TMDefRec(_isRec, _opens, tycons, mbinds, _) ->
         // Virtual don't have 'let' bindings and must be added to the environment
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
         let eenv = List.foldBack (AddBindingsForModule allocVal cloc) mbinds eenv
@@ -1362,6 +1381,8 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
     | TMDefLet(bind, _) ->
         allocVal cloc bind.Var eenv
     | TMDefDo _ ->
+        eenv
+    | TMDefOpens _->
         eenv
     | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) ->
         AddBindingsForLocalModuleType allocVal cloc eenv mtyp
@@ -1406,7 +1427,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 
 /// Generate IL debugging information.
 let GenILSourceMarker (g: TcGlobals) (m: range) =
-    ILSourceMarker.Create(document=g.memoize_file m.FileIndex,
+    ILDebugPoint.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
                           /// NOTE: .NET && VS measure first column as column 1
                           column= m.StartColumn+1,
@@ -1827,7 +1848,7 @@ let Push0 = Push []
 
 let FeeFee (cenv: cenv) = (if cenv.opts.testFlagEmitFeeFeeAs100001 then 100001 else 0x00feefee)
 let FeeFeeInstr (cenv: cenv) doc =
-      I_seqpoint (ILSourceMarker.Create(document = doc,
+      I_seqpoint (ILDebugPoint.Create(document = doc,
                                         line = FeeFee cenv,
                                         column = 0,
                                         endLine = FeeFee cenv,
@@ -7377,32 +7398,45 @@ and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x =
             // Allocate all the values, including any shadow locals for static fields
             let allocVal cloc v = AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v
             AddBindingsForModuleDef allocVal eenv.cloc eenv def
-        GenModuleDef cenv cgbuf qname lazyInitInfo eenv def)
+        let _eenvEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenv def
+        ())
 
 and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs =
-    mdefs |> List.iter (GenModuleDef cenv cgbuf qname lazyInitInfo eenv)
+    let _eenvEnd = (eenv, mdefs) ||> List.fold (GenModuleDef cenv cgbuf qname lazyInitInfo)
+    ()
 
 and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
     match x with
-    | TMDefRec(_isRec, tycons, mbinds, m) ->
-        tycons |> List.iter (fun tc ->
-            if tc.IsExceptionDecl
-            then GenExnDef cenv cgbuf.mgbuf eenv m tc
-            else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc)
-        mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m)
+    | TMDefRec(_isRec, opens, tycons, mbinds, m) ->
+        let eenvinner = AddDebugImportsToEnv cenv eenv opens
+        for tc in tycons do
+            if tc.IsExceptionDecl then
+                GenExnDef cenv cgbuf.mgbuf eenvinner m tc
+            else
+                GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc
+        for mbind in mbinds do
+            GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+        eenvinner
 
     | TMDefLet(bind, _) ->
         GenBindings cenv cgbuf eenv [bind] None
+        eenv
+
+    | TMDefOpens openDecls ->
+        let eenvinner = AddDebugImportsToEnv cenv eenv openDecls
+        eenvinner
 
     | TMDefDo(e, _) ->
         GenExpr cenv cgbuf eenv SPAlways e discard
+        eenv
 
     | TMAbstract mexpr ->
         GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+        eenv
 
     | TMDefs mdefs ->
         GenModuleDefs cenv cgbuf qname lazyInitInfo eenv mdefs
-
+        eenv
 
 // Generate a module binding
 and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) lazyInitInfo eenv m x =
@@ -7432,7 +7466,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
         GenTypeDefForCompLoc (cenv, eenvinner, cgbuf.mgbuf, eenvinner.cloc, hidden, mspec.Attribs, staticClassTrigger, false, (* atEnd= *) true)
 
     // Generate the declarations in the module and its initialization code
-    GenModuleDef cenv cgbuf qname lazyInitInfo eenvinner mdef
+    let _envAtEnd = GenModuleDef cenv cgbuf qname lazyInitInfo eenvinner mdef
 
     // If the module has a .cctor for some mutable fields, we need to ensure that when
     // those fields are "touched" the InitClass .cctor is forced. The InitClass .cctor will
@@ -7725,15 +7759,18 @@ and GenToStringMethod cenv eenv ilThisTy m =
       | Some(Lazy(Method(_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))), Some(Lazy(Method(_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
                // The type returned by the 'sprintf' call
                let funcTy = EraseClosures.mkILFuncTy g.ilxPubCloEnv ilThisTy g.ilg.typ_String
+
                // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
-               let newFormatMethSpec = mkILMethSpec(newFormatMethSpec.MethodRef, AsObject,
-                                               [// 'T -> string'
-                                               funcTy
-                                               // rest follow from 'StringFormat<T>'
-                                               GenUnitTy cenv eenv m
-                                               g.ilg.typ_String
-                                               g.ilg.typ_String
-                                               ilThisTy], [])
+               let newFormatMethSpec =
+                   mkILMethSpec(newFormatMethSpec.MethodRef, AsObject,
+                                [ // 'T -> string'
+                                  funcTy
+                                  // rest follow from 'StringFormat<T>'
+                                  GenUnitTy cenv eenv m
+                                  g.ilg.typ_String
+                                  g.ilg.typ_String
+                                  ilThisTy], [])
+
                // Instantiate with our own type
                let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
 
@@ -8116,14 +8153,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(g.ilg.typ_Object.TypeSpec)
-                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess, None, eenvouter.imports)
+                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess, None, eenv.imports)
 
                  yield ilMethodDef
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
-                     yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
+                     yield mkILSimpleStorageCtor(Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports)
 
                  if not (tycon.HasMember g "ToString" []) then
                     yield! GenToStringMethod cenv eenv ilThisTy m
@@ -8278,14 +8315,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                          altFields=GenUnionCaseRef cenv.amap m eenvinner.tyenv i ucspec.RecdFieldsArray
                          altCustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv ucspec.Attribs @ [mkCompilationMappingAttrWithSeqNum g (int SourceConstructFlags.UnionCase) i]) })
                let cuinfo =
-                  { cudReprAccess=reprAccess
-                    cudNullPermitted=IsUnionTypeWithNullAsTrueValue g tycon
-                    cudHelpersAccess=reprAccess
-                    cudHasHelpers=ComputeUnionHasHelpers g tcref
-                    cudDebugProxies= generateDebugProxies
-                    cudDebugDisplayAttributes= ilDebugDisplayAttributes
-                    cudAlternatives= alternatives
-                    cudWhere = None}
+                  { UnionCasesAccessibility=reprAccess
+                    IsNullPermitted=IsUnionTypeWithNullAsTrueValue g tycon
+                    HelpersAccessibility=reprAccess
+                    HasHelpers=ComputeUnionHasHelpers g tcref
+                    GenerateDebugProxies= generateDebugProxies
+                    DebugDisplayAttributes= ilDebugDisplayAttributes
+                    UnionCases= alternatives
+                    DebugPoint = None
+                    DebugImports = eenv.imports }
 
                let layout =
                    if isStructTy g thisTy then
@@ -8334,12 +8372,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
                let tdefDiscards =
                   Some ((fun (md: ILMethodDef) ->
-                            (cuinfo.cudHasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) ||
-                            (cuinfo.cudHasHelpers = SpecialFSharpOptionHelpers && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))),
+                            (cuinfo.HasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) ||
+                            (cuinfo.HasHelpers = SpecialFSharpOptionHelpers && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))),
 
                         (fun (pd: ILPropertyDef) ->
-                            (cuinfo.cudHasHelpers = SpecialFSharpListHelpers && (pd.Name = "Empty" || pd.Name = "IsEmpty" )) ||
-                            (cuinfo.cudHasHelpers = SpecialFSharpOptionHelpers && (pd.Name = "Value" || pd.Name = "None"))))
+                            (cuinfo.HasHelpers = SpecialFSharpListHelpers && (pd.Name = "Empty" || pd.Name = "IsEmpty" )) ||
+                            (cuinfo.HasHelpers = SpecialFSharpOptionHelpers && (pd.Name = "Value" || pd.Name = "None"))))
 
                tdef2, tdefDiscards
 
@@ -8396,13 +8434,13 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
              |> List.unzip4
 
         let ilCtorDef =
-            mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
+            mkILSimpleStorageCtorWithParamNames(Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess, None, eenv.imports)
 
         // In compiled code, all exception types get a parameterless constructor for use with XML serialization
         // This does default-initialization of all fields
         let ilCtorDefNoArgs =
             if not (isNil fieldNamesAndTypes) then
-                [ mkILSimpleStorageCtor(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
+                [ mkILSimpleStorageCtor(Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess, None, eenv.imports) ]
             else
                 []
 
@@ -8410,45 +8448,20 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
           match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
           | Some serializationInfoType, Some streamingContextType ->
+
+            let ilInstrsForSerialization =
+                [ mkLdarg0
+                  mkLdarg 1us
+                  mkLdarg 2us
+                  mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ]
+                |> nonBranchingInstrsToCode
+
             let ilCtorDefForSerialization =
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context", streamingContextType)],
-                        mkMethodBody
-                          (false, [], 8,
-                           nonBranchingInstrsToCode
-                              [ mkLdarg0
-                                mkLdarg 1us
-                                mkLdarg 2us
-                                mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
-                           None))
+                        mkMethodBody (false, [], 8, ilInstrsForSerialization, None, eenv.imports))
 
             [ilCtorDefForSerialization]
-(*
-            let getObjectDataMethodForSerialization =
-                let ilMethodDef =
-                    mkILNonGenericVirtualMethod
-                        ("GetObjectData", ILMemberAccess.Public,
-                         [mkILParamNamed ("info", serializationInfoType);mkILParamNamed("context", g.iltyp_StreamingContext)],
-                         mkILReturn ILType.Void,
-                         (let code =
-                            nonBranchingInstrsToCode
-                              [ mkLdarg0
-                                mkLdarg 1us
-                                mkLdarg 2us
-                                mkNormalCall (mkILNonGenericInstanceMethSpecInTy (g.iltyp_Exception, "GetObjectData", [serializationInfoType; g.iltyp_StreamingContext], ILType.Void))
-                              ]
-                          mkMethodBody(true, [], 8, code, None)))
-                // Here we must encode: [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
-                // In ILDASM this is: .permissionset demand = {[mscorlib]System.Security.Permissions.SecurityPermissionAttribute = {property bool 'SerializationFormatter' = bool(true)}}
-                match g.tref_SecurityPermissionAttribute with
-                | None -> ilMethodDef
-                | Some securityPermissionAttributeType ->
-                    { ilMethodDef with
-                           SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet g.ilg (ILSecurityAction.Demand, [(securityPermissionAttributeType, [("SerializationFormatter", g.ilg.typ_Bool, ILAttribElem.Bool true)])])]
-                           HasSecurity=true }
-            [ilCtorDefForSerialization; getObjectDataMethodForSerialization]
-*)
-//#endif
           | _ -> []
 
         let ilTypeName = tref.Name
@@ -8487,7 +8500,8 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                     let qname = QualifiedNameOfFile(mkSynId range0 "unused")
                     LocalScope "module" cgbuf (fun scopeMarks ->
                     let eenv = AddBindingsForModuleDef (fun cloc v -> AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v) eenv.cloc eenv mexpr
-                    GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr)), range0)
+                    let _eenvEnv = GenModuleDef cenv cgbuf qname lazyInitInfo eenv mexpr
+                    ())), range0)
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
 
@@ -8514,7 +8528,9 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
       isInLoop = false
-      initLocals = true }
+      initLocals = true
+      imports = None
+    }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list

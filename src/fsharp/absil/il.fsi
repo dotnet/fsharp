@@ -37,8 +37,8 @@ type ILSourceDocument =
     member File: string
 
 [<Sealed>]
-type internal ILSourceMarker =
-    static member Create: document: ILSourceDocument * line: int * column: int * endLine:int * endColumn: int-> ILSourceMarker
+type internal ILDebugPoint =
+    static member Create: document: ILSourceDocument * line: int * column: int * endLine:int * endColumn: int-> ILDebugPoint
     member Document: ILSourceDocument
     member Line: int
     member Column: int
@@ -579,7 +579,7 @@ type internal ILInstr =
     // statement covered by the given range - this is a
     // dummy instruction and is not emitted
     | I_break
-    | I_seqpoint of ILSourceMarker
+    | I_seqpoint of ILDebugPoint
 
     // Varargs - C++ only
     | I_arglist
@@ -750,7 +750,8 @@ type internal ILLocals = list<ILLocal>
 /// 
 /// Emitted to the PortablePDB format. Note the format supports additional variations on
 /// imported things that are not yet emitted in F#.
-type ILImport =
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILDebugImport =
 
     /// Represents an 'open type XYZ' opening a type
     | ImportType of targetType: ILType // * alias: string option 
@@ -764,10 +765,10 @@ type ILImport =
 /// Defines a set of opened namespace, type relevant to a code location.
 /// 
 /// Emitted to the PortablePDB format.
-type ILImports =
+type ILDebugImports =
     {
-      Parent: ILImports option
-      Imports: ILImport[]
+      Parent: ILDebugImports option
+      Imports: ILDebugImport[]
     }
 
 /// IL method bodies
@@ -780,8 +781,8 @@ type internal ILMethodBody =
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      SourceMarker: ILSourceMarker option
-      Imports: ILImports option
+      DebugPoint: ILDebugPoint option
+      DebugImports: ILDebugImports option
     }
 
 /// Member Access
@@ -1833,9 +1834,9 @@ val internal mkILLocal: ILType -> (string * int * int) option -> ILLocal
 val internal mkILEmptyGenericParams: ILGenericParameterDefs
 
 /// Make method definitions.
-val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option * ILImports option -> ILMethodBody
+val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> ILMethodBody
 
-val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option * ILImports option -> MethodBody
+val internal mkMethodBody: bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> MethodBody
 
 val internal methBodyNotAvailable: Lazy<MethodBody>
 
@@ -1847,7 +1848,7 @@ val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMetho
 
 val internal mkILClassCtor: MethodBody -> ILMethodDef
 
-val internal mkILNonGenericEmptyCtor: ILType * ILSourceMarker option * ILImports option -> ILMethodDef
+val internal mkILNonGenericEmptyCtor: ILType * ILDebugPoint option * ILDebugImports option -> ILMethodDef
 
 val internal mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
@@ -1890,14 +1891,14 @@ val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 /// Injecting initialization code into a class.
 /// Add some code to the end of the .cctor for a type.  Create a .cctor
 /// if one doesn't exist already.
-val internal prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILImports option -> ILTypeDef -> ILTypeDef
+val internal prependInstrsToClassCtor: ILInstr list -> ILDebugPoint option -> ILDebugImports option -> ILTypeDef -> ILTypeDef
 
 /// Derived functions for making some simple constructors
-val internal mkILStorageCtor: ILInstr list * ILType * (string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
+val internal mkILStorageCtor: ILInstr list * ILType * (string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
 
-val internal mkILSimpleStorageCtor: ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
+val internal mkILSimpleStorageCtor: ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
 
-val internal mkILSimpleStorageCtorWithParamNames: ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess * ILSourceMarker option * ILImports option -> ILMethodDef
+val internal mkILSimpleStorageCtorWithParamNames: ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
 
 val internal mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
