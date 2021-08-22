@@ -651,7 +651,6 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         tokenTup.Token <- token
         tokenTup.LexbufState <- tokenLexbufState
         tokenTup.LastTokenPos <- lastTokenEnd
-
         tokenTup
 
     //----------------------------------------------------------------------------
