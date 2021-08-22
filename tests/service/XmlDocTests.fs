@@ -452,10 +452,14 @@ let ``union cases 02``() =
 type A =
     ///One1
     ///One2
-    | One
+    | [<Attr>]
+      ///One3
+      One
     ///Two1
     ///Two2
-    | Two
+    | [<Attr>]
+      ///Two3
+      Two
 """
        (checkXmls [
            "One", [|"One1"; "One2"|]
