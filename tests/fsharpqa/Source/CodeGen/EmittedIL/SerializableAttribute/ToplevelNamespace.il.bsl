@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {611C4D8C-218B-729A-A745-03838C4D1C61}
+// MVID: {61240635-218B-729A-A745-038335062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x072C0000
+// Image base: 0x06D90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -820,12 +820,16 @@
   .method public hidebysig specialname instance string 
           get_X() cil managed
   {
-    // Code size       7 (0x7)
-    .maxstack  8
-    .line 9,9 : 38,39 ''
+    // Code size       9 (0x9)
+    .maxstack  3
+    .locals init ([0] class XYZ.A __)
+    .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.0
-    IL_0001:  ldfld      string XYZ.A::x
-    IL_0006:  ret
+    IL_0001:  stloc.0
+    .line 9,9 : 38,39 ''
+    IL_0002:  ldarg.0
+    IL_0003:  ldfld      string XYZ.A::x
+    IL_0008:  ret
   } // end of method A::get_X
 
   .property instance string X()
@@ -1611,12 +1615,16 @@
     .method public hidebysig specialname 
             instance string  get_X() cil managed
     {
-      // Code size       7 (0x7)
-      .maxstack  8
-      .line 15,15 : 42,43 ''
+      // Code size       9 (0x9)
+      .maxstack  3
+      .locals init ([0] class XYZ.ABC/A __)
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      string XYZ.ABC/A::x
-      IL_0006:  ret
+      IL_0001:  stloc.0
+      .line 15,15 : 42,43 ''
+      IL_0002:  ldarg.0
+      IL_0003:  ldfld      string XYZ.ABC/A::x
+      IL_0008:  ret
     } // end of method A::get_X
 
     .property instance string X()
@@ -2402,12 +2410,16 @@
       .method public hidebysig specialname 
               instance string  get_X() cil managed
       {
-        // Code size       7 (0x7)
-        .maxstack  8
-        .line 25,25 : 46,47 ''
+        // Code size       9 (0x9)
+        .maxstack  3
+        .locals init ([0] class XYZ.ABC/ABC/A __)
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      string XYZ.ABC/ABC/A::x
-        IL_0006:  ret
+        IL_0001:  stloc.0
+        .line 25,25 : 46,47 ''
+        IL_0002:  ldarg.0
+        IL_0003:  ldfld      string XYZ.ABC/ABC/A::x
+        IL_0008:  ret
       } // end of method A::get_X
 
       .property instance string X()
@@ -2488,8 +2500,8 @@
   {
     // Code size       13 (0xd)
     .maxstack  3
-    .locals init ([0] string greeting,
-             [1] string V_1)
+    .locals init ([0] string 'greeting (shadowed)',
+             [1] string greeting)
     .line 19,19 : 9,31 ''
     IL_0000:  call       string XYZ.ABC::get_greeting()
     IL_0005:  stloc.0

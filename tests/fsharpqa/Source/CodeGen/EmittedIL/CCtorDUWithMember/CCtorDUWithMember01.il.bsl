@@ -36,13 +36,13 @@
   // Offset: 0x00000780 Length: 0x00000227
 }
 .module CCtorDUWithMember01.exe
-// MVID: {611C4D7E-26F1-14EE-A745-03837E4D1C61}
+// MVID: {6124062C-26F1-14EE-A745-03832C062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067A0000
+// Image base: 0x068A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -483,11 +483,15 @@
     .method public hidebysig specialname 
             instance int32  get_P() cil managed
     {
-      // Code size       2 (0x2)
-      .maxstack  8
+      // Code size       4 (0x4)
+      .maxstack  3
+      .locals init ([0] class CCtorDUWithMember01a/C x)
+      .line 100001,100001 : 0,0 ''
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
       .line 6,6 : 18,19 ''
-      IL_0000:  ldc.i4.1
-      IL_0001:  ret
+      IL_0002:  ldc.i4.1
+      IL_0003:  ret
     } // end of method C::get_P
 
     .method public hidebysig virtual final 

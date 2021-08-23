@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {611C52B3-DFDD-92DF-A745-0383B3521C61}
+// MVID: {6124063B-DFDD-92DF-A745-03833B062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x050E0000
+// Image base: 0x06D10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,12 +64,12 @@
     .maxstack  5
     .locals init ([0] class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32> dic,
              [1] int32 i,
-             [2] bool b,
+             [2] bool 'b (shadowed)',
              [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3,
              [4] int32 V_4,
              [5] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_5,
              [6] int64 l,
-             [7] bool V_7,
+             [7] bool b,
              [8] class [mscorlib]System.Tuple`2<bool,int64> t,
              [9] int64 V_9,
              [10] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int64,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_10,
@@ -114,9 +114,9 @@
     IL_0055:  ldloca.s   l
     IL_0057:  call       bool [mscorlib]System.Int64::TryParse(string,
                                                                int64&)
-    IL_005c:  stloc.s    V_7
+    IL_005c:  stloc.s    b
     .line 14,14 : 5,65 ''
-    IL_005e:  ldloc.s    V_7
+    IL_005e:  ldloc.s    b
     IL_0060:  ldloc.s    l
     IL_0062:  newobj     instance void class [mscorlib]System.Tuple`2<bool,int64>::.ctor(!0,
                                                                                          !1)
@@ -129,7 +129,7 @@
     IL_0079:  ldloc.3
     IL_007a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_007f:  ldloc.s    V_7
+    IL_007f:  ldloc.s    b
     IL_0081:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_0086:  pop
     .line 16,16 : 5,8 ''
