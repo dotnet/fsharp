@@ -11,55 +11,90 @@ open System.Reflection.Metadata
 type PdbDocumentData = ILSourceDocument
 
 type PdbLocalVar = 
-    { Name: string
+    { 
+      Name: string
+      
       Signature: byte[] 
+
       /// the local index the name corresponds to
-      Index: int32  }
+      Index: int32  
+    }
+
+/// Defines the set of 'imports' - that is, opened namespaces, types etc. - at each code location
+///
+/// Note the C# debug evaluation engine used for F# will give C# semantics to these.  That in general
+/// is very close to F# semantics, except for things like union type.
+type PdbImport =
+
+    /// Represents an 'open type XYZ' opening a type
+    | ImportType of targetTypeToken: int32 (* alias: string option *)
+
+    /// Represents an 'open XYZ' opening a namespace
+    | ImportNamespace of targetNamespace: string (* assembly: ILAssemblyRef option * alias: string option *) 
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
+
+type PdbImports =
+    {
+      Parent: PdbImports option
+      Imports: PdbImport[]
+    }
 
 type PdbMethodScope = 
-    { Children: PdbMethodScope[]
+    {
+      Children: PdbMethodScope[]
       StartOffset: int
       EndOffset: int
-      Locals: PdbLocalVar array
-      (* REVIEW open_namespaces: pdb_namespace array *) }
+      Locals: PdbLocalVar[]
+      Imports: PdbImports option
+    }
 
 type PdbSourceLoc = 
-    { Document: int
+    {
+      Document: int
       Line: int
-      Column: int }
+      Column: int
+    }
       
-type PdbSequencePoint = 
-    { Document: int
+type PdbDebugPoint = 
+    {
+      Document: int
       Offset: int
       Line: int
       Column: int
       EndLine: int
-      EndColumn: int }
-     override ToString: unit -> string
+      EndColumn: int
+    }
 
 type PdbMethodData = 
-    { MethToken: int32
+    {
+      MethToken: int32
       MethName:string
       LocalSignatureToken: int32
-      Params: PdbLocalVar array
+      Params: PdbLocalVar[]
       RootScope: PdbMethodScope option
       Range: (PdbSourceLoc * PdbSourceLoc) option
-      SequencePoints: PdbSequencePoint array }
+      DebugPoints: PdbDebugPoint[]
+    }
 
 [<NoEquality; NoComparison>]
 type PdbData = 
-    { EntryPoint: int32 option
+    {
+      EntryPoint: int32 option
       Timestamp: int32
-      ModuleID: byte[]                                              // MVID of the generated .NET module (used by MDB files to identify debug info)
+      /// MVID of the generated .NET module (used by MDB files to identify debug info)
+      ModuleID: byte[]
       Documents: PdbDocumentData[]
       Methods: PdbMethodData[] 
-      TableRowCounts: int[] }
+      TableRowCounts: int[]
+    }
 
 /// Takes the output file name and returns debug file name.
 val getDebugFileName: string -> bool -> string
 
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 val sizeof_IMAGE_DEBUG_DIRECTORY : System.Int32
+
 val logDebugInfo : string -> PdbData -> unit
 
 #if ENABLE_MONO_SUPPORT

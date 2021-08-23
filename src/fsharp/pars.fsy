@@ -1329,7 +1329,7 @@ moduleDefn:
   /* unattached custom attributes */
   | attributes recover
       { errorR(Error(FSComp.SR.parsAttributeOnIncompleteCode(), rhs parseState 1))
-        [] }
+        [ SynModuleDecl.Attributes($1, rhs parseState 1) ] }
 
   /* 'open' declarations */
   | openDecl

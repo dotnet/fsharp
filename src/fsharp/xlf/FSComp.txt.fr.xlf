@@ -3639,7 +3639,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
         <source>Incomplete expression or invalid use of indexer syntax</source>
-        <target state="needs-review-translation">Expression d'indexeur non valide</target>
+        <target state="new">Incomplete expression or invalid use of indexer syntax</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -7679,12 +7679,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">Cette valeur n'est pas une fonction et ne peut pas être appliquée. Souhaitiez-vous accéder à l'indexeur via {0}.[index] ?</target>
+        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">Cette expression n'est pas une fonction et ne peut pas être appliquée. Souhaitiez-vous accéder à l'indexeur via expr.[index] ?</target>
+        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

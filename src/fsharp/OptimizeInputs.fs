@@ -114,7 +114,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             let implFile =
                 if tcConfig.doTLR then
-                    implFile |> InnerLambdasToTopLevelFuncs.MakeTLRDecisions ccu tcGlobals
+                    implFile |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
                 else implFile
 
             let implFile =

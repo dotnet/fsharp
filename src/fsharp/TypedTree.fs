@@ -4996,6 +4996,39 @@ type ModuleOrNamespaceExprWithSig =
 
     override x.ToString() = "ModuleOrNamespaceExprWithSig(...)"
 
+/// Represents open declaration statement.
+type OpenDeclaration =
+    { /// Syntax after 'open' as it's presented in source code.
+      Target: SynOpenDeclTarget
+      
+      /// Full range of the open declaration.
+      Range: range option
+
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: ModuleOrNamespaceRef list 
+      
+      /// Types whose static content is opened with this declaration.
+      Types: TType list
+
+      /// Scope in which open declaration is visible.
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool
+    }
+
+    /// Create a new instance of OpenDeclaration.
+    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: range, isOwnNamespace: bool) =
+        { Target = target
+          Range =
+            match target with 
+            | SynOpenDeclTarget.ModuleOrNamespace (range=m)
+            | SynOpenDeclTarget.Type (range=m) -> Some m
+          Types = types
+          Modules = modules
+          AppliedScope = appliedScope
+          IsOwnNamespace = isOwnNamespace }
+    
 /// The contents of a module-or-namespace-fragment definition 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type ModuleOrNamespaceExpr = 
@@ -5005,6 +5038,9 @@ type ModuleOrNamespaceExpr =
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs of moduleOrNamespaceExprs: ModuleOrNamespaceExpr list  
 
+    /// Indicates the given 'open' declarations are active
+    | TMDefOpens of openDecls: OpenDeclaration list
+
     /// Indicates the module fragment is a 'let' definition 
     | TMDefLet of binding: Binding * range: range
 
@@ -5012,7 +5048,7 @@ type ModuleOrNamespaceExpr =
     | TMDefDo of expr: Expr * range: range
 
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
-    | TMDefRec of isRec: bool * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
+    | TMDefRec of isRec: bool * opens: OpenDeclaration list * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
