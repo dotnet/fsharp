@@ -258,6 +258,13 @@ let sortMethods showTimes info =
     reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
     ()
 
+let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
+    if scope1.StartOffset > scope2.StartOffset then 1
+    elif scope1.StartOffset < scope2.StartOffset then -1
+    elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
+    elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
+    else 0
+
 let getRowCounts tableRowCounts =
     let builder = ImmutableArray.CreateBuilder<int>(tableRowCounts |> Array.length)
     tableRowCounts |> Seq.iter(fun x -> builder.Add x)
@@ -484,42 +491,92 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
 
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit handle) + 1)
-        let writeMethodScope scope =
-            let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
-                if scope1.StartOffset > scope2.StartOffset then 1
-                elif scope1.StartOffset < scope2.StartOffset then -1
-                elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
-                elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
-                else 0
+        let writeMethodScopes rootScope =
 
-            let collectScopes scope =
+            // Smash apart scopes that have shadowed values
+            let unshadowedRootScopes =
+               let rec allNamesOfScope acc (scope: PdbMethodScope) =
+                   let acc = (acc, scope.Locals) ||> Array.fold (fun z l -> Set.add l.Name z)
+                   let acc = (acc, scope.Children) ||> Array.fold allNamesOfScope
+                   acc
+
+               let rec loop (scope: PdbMethodScope) =
+                   // Don't bother if scopes are not nested
+                   if scope.Children |> Array.forall (fun child ->
+                           child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+                       let newChildrenAndNames = scope.Children |> Array.map loop 
+                       let newChildren, childNames = newChildrenAndNames |> Array.unzip
+                       let newChildren = Array.concat newChildren |> Array.sortWith scopeSorter
+                       let childNames = Set.unionMany childNames
+                       let scopeNames = set [| for n in scope.Locals -> n.Name |]
+                       let allNames = Set.union scopeNames childNames
+                       let unshadowedScopes =
+                           if Set.isEmpty (Set.intersect scopeNames childNames) then
+                               [| { scope with Children = newChildren } |]
+                           else
+                               // Do not emit 'scope' itself. Instead, 
+                               //  1. Emit a copy of 'scope' in each true gap, with all locals
+                               //  2. Push the locals that do not have name conflicts down into each child
+                               let filled = 
+                                   [| yield (scope.StartOffset, scope.StartOffset) 
+                                      for newChild in newChildren do   
+                                         yield (newChild.StartOffset, newChild.EndOffset)
+                                      yield (scope.EndOffset, scope.EndOffset)  |]
+                               let unshadowed =
+                                   [| for ((_,a),(b,_)) in Array.pairwise filled do 
+                                         if a < b then
+                                             yield { scope with Children = [| |]; StartOffset = a; EndOffset = b}
+                                      
+                                      for newChilds, childNames in newChildrenAndNames do
+                                          let preservedScopeLocals = 
+                                             [| for l in scope.Locals do  
+                                                   if childNames.Contains l.Name then
+                                                       yield { l with Name = l.Name + " (shadowed)" }
+                                                   else   
+                                                       yield l |]
+                                          for newChild in newChilds do
+                                             yield { newChild with Locals = Array.append preservedScopeLocals newChild.Locals } |]
+
+                                   |> Array.sortWith scopeSorter
+                               unshadowed
+
+                       unshadowedScopes, allNames
+                    else
+                       [| scope |], allNamesOfScope Set.empty scope
+               let unshadowedRootScopes, _ = loop rootScope
+               unshadowedRootScopes
+
+            let flattenedScopes = 
                 let list = List<PdbMethodScope>()
-                let rec toList scope parent =
-                    let nested =
-                        match parent with
-                        | Some p -> scope.StartOffset <> p.StartOffset || scope.EndOffset <> p.EndOffset
-                        | None -> true
+                let rec flattenScopes scope parent =
 
-                    if nested then list.Add scope
-                    scope.Children |> Seq.iter(fun s -> toList s (if nested then Some scope else parent))
+                    list.Add scope
+                    for nestedScope in scope.Children do
+                        let isNested =
+                            match parent with
+                            | Some p -> nestedScope.StartOffset >= p.StartOffset && nestedScope.EndOffset <= p.EndOffset
+                            | None -> true
 
-                toList scope None
+                        flattenScopes nestedScope (if isNested then Some scope else parent)
+
+                for unshadowedRootScope in unshadowedRootScopes do
+                    flattenScopes unshadowedRootScope None
+
                 list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
-            collectScopes scope |> Seq.iter(fun s ->
-                                   metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
-                                                          Unchecked.defaultof<ImportScopeHandle>,
-                                                          nextHandle lastLocalVariableHandle,
-                                                          Unchecked.defaultof<LocalConstantHandle>,
-                                                          s.StartOffset, s.EndOffset - s.StartOffset ) |>ignore
+            for scope in flattenedScopes do
+                metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
+                                        Unchecked.defaultof<ImportScopeHandle>,
+                                        nextHandle lastLocalVariableHandle,
+                                        Unchecked.defaultof<LocalConstantHandle>,
+                                        scope.StartOffset, scope.EndOffset - scope.StartOffset ) |>ignore
 
-                                   for localVariable in s.Locals do
-                                       lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
-                                   )
+                for localVariable in scope.Locals do
+                    lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
 
         match minfo.RootScope with
         | None -> ()
-        | Some scope -> writeMethodScope scope )
+        | Some scope -> writeMethodScopes scope )
 
     let entryPoint =
         match info.EntryPoint with
@@ -821,3 +878,59 @@ let logDebugInfo (outfile: string) (info: PdbData) =
       | None -> ()
       | Some rootscope -> writeScope "" rootscope
       fprintfn sw ""
+
+let rec allNamesOfScope acc (scope: PdbMethodScope) =
+    let acc = (acc, scope.Locals) ||> Array.fold (fun z l -> Set.add l.Name z)
+    let acc = (acc, scope.Children) ||> Array.fold allNamesOfScope
+    acc
+
+// Check to see if a scope has a local with the same name as any of its children
+// 
+// If so, do not emit 'scope' itself. Instead, 
+//  1. Emit a copy of 'scope' in each true gap, with all locals
+//  2. Adjust each child scope to also contain the locals from 'scope', 
+//     adding the text " (shadowed)" to the names of those with name conflicts.
+let rec unshadowScopeAux (scope: PdbMethodScope) =
+    // Don't bother if scopes are not nested
+    if scope.Children |> Array.forall (fun child ->
+            child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+        let newChildrenAndNames = scope.Children |> Array.map unshadowScopeAux 
+        let newChildren, childNames = newChildrenAndNames |> Array.unzip
+        let newChildren = Array.concat newChildren |> Array.sortWith scopeSorter
+        let childNames = Set.unionMany childNames
+        let scopeNames = set [| for n in scope.Locals -> n.Name |]
+        let allNames = Set.union scopeNames childNames
+        let unshadowedScopes =
+            if Set.isEmpty (Set.intersect scopeNames childNames) then
+                [| { scope with Children = newChildren } |]
+            else
+                let filled = 
+                    [| yield (scope.StartOffset, scope.StartOffset) 
+                       for newChild in newChildren do   
+                          yield (newChild.StartOffset, newChild.EndOffset)
+                       yield (scope.EndOffset, scope.EndOffset)  |]
+                let unshadowed =
+                    [| for ((_,a),(b,_)) in Array.pairwise filled do 
+                          if a < b then
+                              yield { scope with Children = [| |]; StartOffset = a; EndOffset = b}
+                       
+                       for newChilds, childNames in newChildrenAndNames do
+                           let preservedScopeLocals = 
+                              [| for l in scope.Locals do  
+                                    if childNames.Contains l.Name then
+                                        yield { l with Name = l.Name + " (shadowed)" }
+                                    else   
+                                        yield l |]
+                           for newChild in newChilds do
+                              yield { newChild with Locals = Array.append preservedScopeLocals newChild.Locals } |]
+
+                    |> Array.sortWith scopeSorter
+                unshadowed
+
+        unshadowedScopes, allNames
+     else
+        [| scope |], allNamesOfScope Set.empty scope
+
+let unshadowScopes rootScope =
+   let unshadowedRootScopes, _ = unshadowScopeAux rootScope
+   unshadowedRootScopes
