@@ -209,9 +209,9 @@ namespace Microsoft.FSharp.Core
             else
                 str.Trim ()
                 
-        let private seqToArray (chars: seq<char>) =
+        let private seqToArray (chars: seq<'a>) =
             match chars with
-            | :? array<char> as charsArr -> charsArr
+            | :? array<'a> as charsArr -> charsArr
             | _ -> Seq.toArray chars
                 
         [<CompiledName("TrimChars")>]
@@ -234,3 +234,17 @@ namespace Microsoft.FSharp.Core
                 nullArg (nameof(str))
             else
                 str.TrimEnd (seqToArray chars)
+
+        [<CompiledName("Split")>]
+        let split (chars: seq<char>) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Split (seqToArray chars)
+                
+        [<CompiledName("SplitStrings")>]
+        let splitStrings (strings: seq<string>) (str: string) =
+            if isNull str then
+                nullArg (nameof(str))
+            else
+                str.Split (seqToArray strings, StringSplitOptions.None)

@@ -163,3 +163,9 @@ namespace Microsoft.FSharp.Core
         
         [<CompiledName("TrimEndChars")>]
         val trimEndChars: chars:seq<char> -> str:string -> string
+
+        [<CompiledName("Split")>]
+        val split: chars:seq<char> -> str:string -> string[]
+        
+        [<CompiledName("SplitStrings")>]
+        val splitStrings: strings:seq<string> -> str:string -> string[]

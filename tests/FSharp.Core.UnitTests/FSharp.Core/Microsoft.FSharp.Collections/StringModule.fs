@@ -454,3 +454,23 @@ type StringModule() =
         Assert.AreEqual("-_-foo-_bar", e2)
         
         CheckThrowsArgumentNullException(fun () -> String.trimEndChars "" null |> ignore) 
+
+    [<Fact>]
+    member this.Split () =
+        let e1 = String.split "\\/" "foo.bar.baz"
+        Assert.AreEqual([|"foo.bar.baz"|], e1)
+        
+        let e2 = String.split "/\\" "foo/bar/\\baz//qux"
+        Assert.AreEqual([|"foo"; "bar"; ""; "baz"; "qux"|], e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.split "" null |> ignore)
+
+    [<Fact>]
+    member this.SplitStrings () =
+        let e1 = String.splitStrings ["--"; "__"] "a--bc-def__ghi----"
+        Assert.AreEqual([|"a"; "bc-def"; "ghi"; ""; ""|], e1)
+        
+        let e2 = String.splitStrings [] "abc.def ghi"
+        Assert.AreEqual([|"abc.def"; "ghi"|], e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.splitStrings [] null |> ignore)
