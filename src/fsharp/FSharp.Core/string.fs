@@ -209,9 +209,9 @@ namespace Microsoft.FSharp.Core
             else
                 str.Trim ()
                 
-        let private seqToArray (chars: seq<char>) : char[] =
+        let private seqToArray (chars: seq<char>) =
             match chars with
-            | :? array<char> as charsArr -> charsArr :> char[]
+            | :? array<char> as charsArr -> charsArr
             | _ -> Seq.toArray chars
                 
         [<CompiledName("TrimChars")>]
