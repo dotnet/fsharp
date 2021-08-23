@@ -242,3 +242,13 @@ namespace Microsoft.FSharp.Core
         let startsWithComparison (comparisonType: StringComparison) (value: string) (str: string) =
             throwIfNull (nameof(str)) str
             str.StartsWith (value, comparisonType)
+
+        [<CompiledName("EndsWith")>]
+        let endsWith (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.EndsWith value
+
+        [<CompiledName("EndsWithComparison")>]
+        let endsWithComparison (comparisonType: StringComparison) (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.EndsWith (value, comparisonType)

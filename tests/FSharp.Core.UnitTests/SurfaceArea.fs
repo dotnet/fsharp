@@ -2001,6 +2001,8 @@ Microsoft.FSharp.Core.StringModule: System.String[] Split(System.Collections.Gen
 Microsoft.FSharp.Core.StringModule: System.String[] SplitStrings(System.Collections.Generic.IEnumerable`1[System.String], System.String)
 Microsoft.FSharp.Core.StringModule: Boolean StartsWith(System.String, System.String)
 Microsoft.FSharp.Core.StringModule: Boolean StartsWithComparison(System.StringComparison, System.String, System.String)
+Microsoft.FSharp.Core.StringModule: Boolean EndsWith(System.String, System.String)
+Microsoft.FSharp.Core.StringModule: Boolean EndsWithComparison(System.StringComparison, System.String, System.String)
 Microsoft.FSharp.Core.StructAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuralComparisonAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuralEqualityAttribute: Void .ctor()

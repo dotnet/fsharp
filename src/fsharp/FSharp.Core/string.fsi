@@ -265,4 +265,11 @@ namespace Microsoft.FSharp.Core
         val startsWith: value:string -> str:string -> bool
 
         [<CompiledName("StartsWithComparison")>]
-        val startsWithComparison : comparisonType:StringComparison -> value:string -> str:string -> bool
+        val startsWithComparison: comparisonType:StringComparison -> value:string -> str:string -> bool
+        
+        [<CompiledName("EndsWith")>]
+        val endsWith: value:string -> str:string -> bool
+
+        [<CompiledName("EndsWithComparison")>]
+        val endsWithComparison: comparisonType:StringComparison -> value:string -> str:string -> bool
+

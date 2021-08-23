@@ -505,3 +505,32 @@ type StringModule() =
         CheckThrowsArgumentNullException(fun () -> String.startsWithComparison StringComparison.CurrentCulture null "" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.startsWithComparison StringComparison.CurrentCulture "" null |> ignore)
 
+    [<Fact>]
+    member this.EndsWith () =
+        Assert.True(String.endsWith "bar" "foo bar")
+        Assert.True(String.endsWith "banana" "apple banana")
+        Assert.False(String.endsWith "baNAna" "apple banana")
+        Assert.False(String.endsWith "apple" "apple banana")
+        Assert.True(String.endsWith "." "something..")
+        Assert.True(String.endsWith "" "x")
+        Assert.True(String.endsWith "" "")
+        Assert.False(String.endsWith "x" "")
+
+        CheckThrowsArgumentNullException(fun () -> String.endsWith null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.endsWith "" null |> ignore)
+
+    [<Fact>]
+    member this.EndsWithComparison () =
+        Assert.True(String.endsWithComparison StringComparison.InvariantCulture "bar" "foo bar")
+        Assert.True(String.endsWithComparison StringComparison.InvariantCulture "banana" "apple banana")
+        Assert.False(String.endsWithComparison StringComparison.InvariantCulture "baNAna" "apple banana")
+        Assert.False(String.endsWithComparison StringComparison.InvariantCulture "apple" "apple banana")
+        Assert.True(String.endsWithComparison StringComparison.InvariantCulture "." "something..")
+        Assert.True(String.endsWithComparison StringComparison.InvariantCulture "" "x")
+        Assert.True(String.endsWithComparison StringComparison.InvariantCulture "" "")
+        Assert.False(String.endsWithComparison StringComparison.InvariantCulture "x" "")
+
+        Assert.True(String.endsWithComparison StringComparison.InvariantCultureIgnoreCase "baNAna" "apple banana")
+
+        CheckThrowsArgumentNullException(fun () -> String.endsWithComparison StringComparison.CurrentCulture null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.endsWithComparison StringComparison.CurrentCulture "" null |> ignore)
