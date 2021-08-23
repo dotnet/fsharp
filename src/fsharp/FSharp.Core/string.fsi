@@ -273,3 +273,14 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("EndsWithComparison")>]
         val endsWithComparison: comparisonType:StringComparison -> value:string -> str:string -> bool
 
+        [<CompiledName("Equals")>]
+        val equals: comparisonType:StringComparison -> strA:string -> strB:string -> bool
+
+        [<CompiledName("Compare")>]
+        val compare: strA:string -> strB:string -> int
+
+        [<CompiledName("CompareOrdinal")>]
+        val compareOrdinal: strA:string -> strB:string -> int
+
+        [<CompiledName("CompareWith")>]
+        val compareWith: comparisonType:StringComparison -> strA:string -> strB:string -> int

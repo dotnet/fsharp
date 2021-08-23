@@ -534,3 +534,32 @@ type StringModule() =
 
         CheckThrowsArgumentNullException(fun () -> String.endsWithComparison StringComparison.CurrentCulture null "" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.endsWithComparison StringComparison.CurrentCulture "" null |> ignore)
+
+    [<Fact>]
+    member this.Equals () =
+        Assert.True(String.equals StringComparison.InvariantCulture "foo" "foo")
+        Assert.False(String.equals StringComparison.InvariantCulture "FOO" "foo")
+        Assert.True(String.equals StringComparison.InvariantCulture "bar" "bar")
+        Assert.True(String.equals StringComparison.InvariantCulture "" "")
+        Assert.False(String.equals StringComparison.InvariantCulture "" null)
+        Assert.False(String.equals StringComparison.InvariantCulture null "")
+        Assert.False(String.equals StringComparison.InvariantCulture null null)
+        Assert.True(String.equals StringComparison.InvariantCultureIgnoreCase "BAR" "bar")
+        Assert.False(String.equals StringComparison.InvariantCultureIgnoreCase "BAR" "bare")
+
+    [<Fact>]
+    member this.Compare () =
+        let strings         = ["ß"; "sr"; "st"; "ij"; "iı"; "ih"; "AA"; "AB"; "AC"; "aa"; "ab"; "ac"]
+        
+        let invExpected     = ["aa"; "AA"; "ab"; "AB"; "ac"; "AC"; "ih"; "iı"; "ij"; "sr"; "ß"; "st"]
+        let invIcExpected   = ["AA"; "aa"; "AB"; "ab"; "AC"; "ac"; "ih"; "iı"; "ij"; "sr"; "ß"; "st"]
+        let ordExpected     = ["AA"; "AB"; "AC"; "aa"; "ab"; "ac"; "ih"; "ij"; "iı"; "sr"; "st"; "ß"]
+        let ordIcExpected   = ["AA"; "aa"; "AB"; "ab"; "AC"; "ac"; "ih"; "ij"; "iı"; "sr"; "st"; "ß"]
+
+        Assert.AreEqual(invExpected, List.sortWith String.compare strings)
+        Assert.AreEqual(invExpected, List.sortWith (String.compareWith StringComparison.InvariantCulture) strings)
+        Assert.AreEqual(invIcExpected, List.sortWith (String.compareWith StringComparison.InvariantCultureIgnoreCase) strings)
+        Assert.AreEqual(ordExpected, List.sortWith String.compareOrdinal strings)
+        Assert.AreEqual(ordExpected, List.sortWith (String.compareWith StringComparison.Ordinal) strings)
+        Assert.AreEqual(ordIcExpected, List.sortWith (String.compareWith StringComparison.OrdinalIgnoreCase) strings)
+        

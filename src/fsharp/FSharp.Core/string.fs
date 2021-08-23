@@ -252,3 +252,19 @@ namespace Microsoft.FSharp.Core
         let endsWithComparison (comparisonType: StringComparison) (value: string) (str: string) =
             throwIfNull (nameof(str)) str
             str.EndsWith (value, comparisonType)
+
+        [<CompiledName("Equals")>]
+        let equals (comparisonType: StringComparison) (strA: string) (strB: string) =
+            if isNull strA then
+                false
+            else strA.Equals (strB, comparisonType)
+
+        [<CompiledName("Compare")>]
+        let compare (strA: string) (strB: string) = String.Compare (strA, strB, StringComparison.InvariantCulture)
+
+        [<CompiledName("CompareOrdinal")>]
+        let compareOrdinal (strA: string) (strB: string) = String.CompareOrdinal (strA, strB)
+
+        [<CompiledName("CompareWith")>]
+        let compareWith (comparisonType: StringComparison) (strA: string) (strB: string) =
+            String.Compare (strA, strB, comparisonType)
