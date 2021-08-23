@@ -1,6 +1,0 @@
-        3.1.412 [C:\Program Files\dotnet\sdk]
-        5.0.104 [C:\Program Files\dotnet\sdk]
-        5.0.206 [C:\Program Files\dotnet\sdk]
-        5.0.303 [C:\Program Files\dotnet\sdk]
-        5.0.400 [C:\Program Files\dotnet\sdk]
-        6.0.100-preview.6.21355.2 [C:\Program Files\dotnet\sdk]
