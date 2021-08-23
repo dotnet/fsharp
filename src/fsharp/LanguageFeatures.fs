@@ -39,6 +39,8 @@ type LanguageFeature =
     | ExpandedMeasurables
     | StructActivePattern
     | PrintfBinaryFormat
+    | IndexerNotationWithoutDot
+    | RefCellNotationInformationals
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
@@ -88,6 +90,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
+            LanguageFeature.IndexerNotationWithoutDot, previewVersion
+            LanguageFeature.RefCellNotationInformationals, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
             LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
@@ -116,6 +120,14 @@ type LanguageVersion (specifiedVersionAsString) =
         match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
+
+    /// Has preview been explicitly specified
+    member _.IsExplicitlySpecifiedAs50OrBefore() =
+        match specifiedVersionAsString with
+        | "4.6" -> true
+        | "4.7" -> true
+        | "5.0" -> true
+        | _ -> false
 
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled =
@@ -169,6 +181,8 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
+        | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot()
+        | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()

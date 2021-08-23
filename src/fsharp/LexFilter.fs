@@ -4,6 +4,7 @@
 /// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
+open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open Internal.Utilities.Library
@@ -460,7 +461,7 @@ type TokenTupPool() =
     let maxSize = 100
 
     let mutable currentPoolSize = 0
-    let stack = System.Collections.Generic.Stack(10)
+    let stack = Stack(10)
 
     member this.Rent() = 
         if stack.Count = 0 then
@@ -653,7 +654,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Fetch a raw token, either from the old lexer or from our delayedStack
     //--------------------------------------------------------------------------
 
-    let delayedStack = System.Collections.Generic.Stack<TokenTup>()
+    let delayedStack = Stack<TokenTup>()
     let mutable tokensThatNeedNoProcessingCount = 0
 
     let delayToken tokenTup = delayedStack.Push tokenTup 
@@ -715,6 +716,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     //--------------------------------------------------------------------------
     
     let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
+
+    //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
     let pushCtxt tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack = 
@@ -979,13 +982,17 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         let tokenEndPos = leftTokenTup.LexbufState.EndPos
         (tokenEndPos = lparenStartPos)
     
-    let nextTokenIsAdjacentLParenOrLBrack (tokenTup: TokenTup) =
+    let nextTokenIsAdjacentLBrack (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
-        | LPAREN | LBRACK -> 
-            if isAdjacent tokenTup lookaheadTokenTup then Some(lookaheadTokenTup.Token) else None
-        | _ -> 
-            None
+        | LBRACK -> isAdjacent tokenTup lookaheadTokenTup
+        | _ -> false
+
+    let nextTokenIsAdjacentLParen (tokenTup: TokenTup) =
+        let lookaheadTokenTup = peekNextTokenTup()
+        match lookaheadTokenTup.Token with 
+        | LPAREN -> isAdjacent tokenTup lookaheadTokenTup
+        | _ -> false
 
     let nextTokenIsAdjacent firstTokenTup =
         let lookaheadTokenTup = peekNextTokenTup()
@@ -1023,7 +1030,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
                             //    M<int>(args)
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
-                            if not hasAfterOp && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
+                            if not hasAfterOp && nextTokenIsAdjacentLParen lookaheadTokenTup then
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
@@ -1037,7 +1044,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
                             //    M<C<int>>(args)
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
-                            if afterOp.IsNone && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
+                            if afterOp.IsNone && nextTokenIsAdjacentLParen lookaheadTokenTup then
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
@@ -2349,6 +2356,20 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         | _ -> 
             returnToken tokenLexbufState token  
 
+    and insertHighPrecedenceApp (tokenTup: TokenTup) = 
+        let dotTokenTup = peekNextTokenTup()
+        if debug then dprintf "inserting HIGH_PRECEDENCE_PAREN_APP at dotTokenPos = %a\n" outputPos (startPosOfTokenTup dotTokenTup)
+        let hpa = 
+            if nextTokenIsAdjacentLParen tokenTup then
+                HIGH_PRECEDENCE_PAREN_APP
+            elif nextTokenIsAdjacentLBrack tokenTup then
+                HIGH_PRECEDENCE_BRACK_APP
+            else
+                failwith "unreachable"
+        delayToken(pool.UseLocation(dotTokenTup, hpa))
+        delayToken tokenTup
+        true
+
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
           | HASH_IDENT ident ->
@@ -2358,18 +2379,15 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               delayToken(TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
               true
 
+          // Insert HIGH_PRECEDENCE_BRACK_APP if needed 
+          //    ident[3]
+          | IDENT _ when nextTokenIsAdjacentLBrack tokenTup ->
+              insertHighPrecedenceApp tokenTup
+
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
-          | IDENT _ when (nextTokenIsAdjacentLParenOrLBrack tokenTup).IsSome ->
-              let dotTokenTup = peekNextTokenTup()
-              if debug then dprintf "inserting HIGH_PRECEDENCE_PAREN_APP at dotTokenPos = %a\n" outputPos (startPosOfTokenTup dotTokenTup)
-              let hpa = 
-                  match nextTokenIsAdjacentLParenOrLBrack tokenTup with 
-                  | Some LPAREN -> HIGH_PRECEDENCE_PAREN_APP
-                  | Some LBRACK -> HIGH_PRECEDENCE_BRACK_APP
-                  | _ -> failwith "unreachable"
-              delayToken(pool.UseLocation(dotTokenTup, hpa))
-              delayToken tokenTup
-              true
+          //    ident(3)
+          | IDENT _ when nextTokenIsAdjacentLParen tokenTup ->
+              insertHighPrecedenceApp tokenTup
 
           // Insert HIGH_PRECEDENCE_TYAPP if needed 
           | DELEGATE | IDENT _ | IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _ | BIGNUM _ when peekAdjacentTypars false tokenTup ->
@@ -2510,7 +2528,7 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.
-    let delayedStack = System.Collections.Generic.Stack<token>()
+    let delayedStack = Stack<token>()
     let delayToken tok = delayedStack.Push tok 
 
     let popNextToken() = 
@@ -2528,18 +2546,16 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
 
     member _.LexBuffer = inner.LexBuffer 
 
-    member _.GetToken () = 
-        let rec loop() =
-            let token = popNextToken()
-            match token with
-            | RBRACE _ -> 
-                insertComingSoonTokens RBRACE_COMING_SOON RBRACE_IS_HERE
-                loop()
-            | RPAREN -> 
-                insertComingSoonTokens RPAREN_COMING_SOON RPAREN_IS_HERE
-                loop()
-            | OBLOCKEND -> 
-                insertComingSoonTokens OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE
-                loop()
-            | _ -> token
-        loop()
+    member lexer.GetToken () = 
+        let token = popNextToken()
+        match token with
+        | RBRACE _ -> 
+            insertComingSoonTokens RBRACE_COMING_SOON RBRACE_IS_HERE
+            lexer.GetToken()
+        | RPAREN -> 
+            insertComingSoonTokens RPAREN_COMING_SOON RPAREN_IS_HERE
+            lexer.GetToken()
+        | OBLOCKEND -> 
+            insertComingSoonTokens OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE
+            lexer.GetToken()
+        | _ -> token

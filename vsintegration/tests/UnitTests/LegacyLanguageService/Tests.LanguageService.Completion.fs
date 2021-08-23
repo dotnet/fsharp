@@ -1473,25 +1473,6 @@ let x = new MyClass2(0)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
     [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.Popup``() =
-        // Salsa is no yet capable of determining whether there would be a popup, it can only test what would appear if there were.
-        // So can't do test below.
-//        AssertAutoCompleteContainsNoCoffeeBreak 
-//          [ "System.Console..BackgroundColor" ]
-//          "System.Console.."
-//          [ ] // should be empty - in fact, there is no popup here
-//          [ "abs"; "BackgroundColor" ] // should not contain anything
-        ()
-
-    [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.CtrlSpace``() =
-        AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
-          [ "System.Console..BackgroundColor" ]
-          "System.Console.."
-          [ ] // should contain nothing - .. is not properly used range operator
-          [ "abs" ] // should not contain (from prior System.Console)
-    
-    [<Test>]
     member public this.``DotCompletionInPatternsPartOfLambda``() = 
         let content = ["let _ = fun x . -> x + 1"]
         AssertCtrlSpaceCompletionListIsEmpty content "x ."
@@ -3127,6 +3108,38 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Array.AfterOperator...Bug65732_B``() =        
         AssertCtrlSpaceCompleteContains 
           [ "let r = [System.Int32.MaxValue..42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B2``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue.. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B3``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_C``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue..]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_D``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. ]" ]
           ".."       // marker
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)

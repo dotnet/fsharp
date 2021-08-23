@@ -641,6 +641,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_unchecked_unary_plus_info  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryPlus"                         , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  , None                 , Some "Not"    , [],     mk_unop_ty v_bool_ty)
+  let v_refcell_deref_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Dereference"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]], varaTy))
+  let v_refcell_assign_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ColonEquals"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]; [varaTy]], v_unit_ty))
+  let v_refcell_incr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "incr"                                 , None                 , Some "Increment" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
+  let v_refcell_decr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "decr"                                 , None                 , Some "Decrement" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
 
   let v_checked_addition_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_checked_subtraction_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -1317,6 +1321,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
+  member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
+  member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
+  member val refcell_incr_vref = ValRefForIntrinsic v_refcell_incr_info
+  member val refcell_decr_vref = ValRefForIntrinsic v_refcell_decr_info
 
   member _.bitwise_or_info            = v_bitwise_or_info
   member _.bitwise_and_info           = v_bitwise_and_info

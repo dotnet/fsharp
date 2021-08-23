@@ -331,7 +331,7 @@ type SeqModule2() =
         Assert.False(is_emptyInt)
               
         //seq str
-        let seqStr = seq["first";"second"]
+        let seqStr = seq ["first";"second"]
         let is_emptyStr = Seq.isEmpty  seqStr
 
         Assert.False(is_emptyInt)
@@ -541,7 +541,7 @@ type SeqModule2() =
         
         // string Seq
         let funcStr (x:int) (y:string) = x+y.Length
-        let resultStr = Seq.map2 funcStr (seq[3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
+        let resultStr = Seq.map2 funcStr (seq [3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
         let expectedSeq = seq [8;9;17;15]
         
         VerifySeqsEqual expectedSeq resultStr
@@ -881,7 +881,7 @@ type SeqModule2() =
 
         // string Seq
         let funcStr (x:int) (y:int) (z:string) = x+y+z.Length
-        let resultStr = Seq.mapi2 funcStr (seq[3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
+        let resultStr = Seq.mapi2 funcStr (seq [3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
         let expectedSeq = seq [8;10;19;18]
 
         VerifySeqsEqual expectedSeq resultStr
@@ -1167,11 +1167,11 @@ type SeqModule2() =
     member this.Rev() =
         // integer Seq
         let resultInt = Seq.rev (seq [5;4;3;2;1])
-        VerifySeqsEqual (seq[1;2;3;4;5]) resultInt
+        VerifySeqsEqual (seq [1;2;3;4;5]) resultInt
 
         // string Seq
         let resultStr = Seq.rev (seq ["A"; "B";  "C" ; "D" ])
-        VerifySeqsEqual (seq["D";"C";"B";"A"]) resultStr
+        VerifySeqsEqual (seq ["D";"C";"B";"A"]) resultStr
 
         // empty Seq
         VerifySeqsEqual Seq.empty (Seq.rev Seq.empty)
@@ -1380,9 +1380,9 @@ type SeqModule2() =
         VerifySeqsEqual resultEpt Seq.empty
 
         // tuple Seq
-        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let tupSeq = (seq [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
         let resultTup = Seq.sortDescending tupSeq
-        let expectedTup = (seq[(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")])   
+        let expectedTup = (seq [(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")])   
         VerifySeqsEqual  expectedTup resultTup
          
         // float Seq
@@ -1417,9 +1417,9 @@ type SeqModule2() =
         VerifySeqsEqual resultEpt Seq.empty
 
         // tuple Seq
-        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let tupSeq = (seq [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
         let resultTup = Seq.sortByDescending snd tupSeq         
-        let expectedTup = (seq[(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")])
+        let expectedTup = (seq [(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")])
         VerifySeqsEqual  expectedTup resultTup
          
         // float Seq

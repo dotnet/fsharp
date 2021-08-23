@@ -1793,19 +1793,23 @@ module internal ParseAndCheckFile =
                             let diagnostics = errorGroupedByFileName |> Array.map(fun (_,(pe,f)) -> pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
                             let errors = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Error then yield err ]
                             let warnings = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Warning then yield err ]
+                            let infos = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Info then yield err ]
 
-                            let message = HashLoadedSourceHasIssues(warnings,errors,rangeOfHashLoad)
-                            if isNil errors then
+                            let message = HashLoadedSourceHasIssues(infos, warnings, errors, rangeOfHashLoad)
+                            if isNil errors && isNil warnings then
+                                warning message
+                            elif isNil errors then
                                 warning message
                             else
                                 errorR message
 
             // Replay other background errors.
             for phasedError, sev in otherBackgroundDiagnostics do
-                if sev = FSharpDiagnosticSeverity.Warning then
-                    warning phasedError.Exception
-                else
-                    errorR phasedError.Exception
+                match sev with
+                | FSharpDiagnosticSeverity.Info -> informationalWarning phasedError.Exception
+                | FSharpDiagnosticSeverity.Warning -> warning phasedError.Exception
+                | FSharpDiagnosticSeverity.Error -> errorR phasedError.Exception
+                | FSharpDiagnosticSeverity.Hidden -> ()
 
         | None ->
             // For non-scripts, check for disallow #r and #load.
