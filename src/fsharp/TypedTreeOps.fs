@@ -4081,9 +4081,10 @@ module DebugPrint =
 
     and mdefL g x =
         match x with
-        | TMDefRec(_, tycons, mbinds, _) -> aboveListL ((tycons |> List.map (tyconL g)) @ (mbinds |> List.map (mbindL g)))
+        | TMDefRec(_, _, tycons, mbinds, _) -> aboveListL ((tycons |> List.map (tyconL g)) @ (mbinds |> List.map (mbindL g)))
         | TMDefLet(bind, _) -> letL g bind emptyL
         | TMDefDo(e, _) -> exprL g e
+        | TMDefOpens _ -> wordL (tagText "open ... ")
         | TMDefs defs -> mdefsL g defs
         | TMAbstract mexpr -> mexprL g mexpr
 
@@ -4166,7 +4167,7 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
 
 let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
-    TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
+    TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
 let SigTypeOfImplFile (TImplFile (_, _, mexpr, _, _, _)) = mexpr.Type 
@@ -4327,12 +4328,13 @@ let abstractSlotValsOfTycons (tycons: Tycon list) =
 
 let rec accEntityRemapFromModuleOrNamespace msigty x acc = 
     match x with 
-    | TMDefRec(_, tycons, mbinds, _) -> 
+    | TMDefRec(_, _, tycons, mbinds, _) -> 
          let acc = (mbinds, acc) ||> List.foldBack (accEntityRemapFromModuleOrNamespaceBind msigty)
          let acc = (tycons, acc) ||> List.foldBack (accEntityRemap msigty) 
          let acc = (tycons, acc) ||> List.foldBack (fun e acc -> accEntityRemapFromModuleOrNamespaceType e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
          acc
     | TMDefLet _ -> acc
+    | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accEntityRemapFromModuleOrNamespaceDefs msigty defs acc
     | TMAbstract mexpr -> accEntityRemapFromModuleOrNamespaceType mexpr.Type msigty acc
@@ -4348,13 +4350,14 @@ and accEntityRemapFromModuleOrNamespaceBind msigty x acc =
 
 let rec accValRemapFromModuleOrNamespace g aenv msigty x acc = 
     match x with 
-    | TMDefRec(_, tycons, mbinds, _) -> 
+    | TMDefRec(_, _, tycons, mbinds, _) -> 
          let acc = (mbinds, acc) ||> List.foldBack (accValRemapFromModuleOrNamespaceBind g aenv msigty)
          //  Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be added to the remapping. 
          let vslotvs = abstractSlotValsOfTycons tycons
          let acc = (vslotvs, acc) ||> List.foldBack (accValRemap g aenv msigty)  
          acc
     | TMDefLet(bind, _) -> accValRemap g aenv msigty bind.Var acc
+    | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accValRemapFromModuleOrNamespaceDefs g aenv msigty defs acc
     | TMAbstract mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
@@ -4896,9 +4899,10 @@ and freeInExpr opts expr =
 // Note: these are only an approximation - they are currently used only by the optimizer  
 let rec accFreeInModuleOrNamespace opts mexpr acc = 
     match mexpr with 
-    | TMDefRec(_, _, mbinds, _) -> List.foldBack (accFreeInModuleOrNamespaceBind opts) mbinds acc
+    | TMDefRec(_, _, _, mbinds, _) -> List.foldBack (accFreeInModuleOrNamespaceBind opts) mbinds acc
     | TMDefLet(bind, _) -> accBindRhs opts bind acc
     | TMDefDo(e, _) -> accFreeInExpr opts e acc
+    | TMDefOpens _ -> acc
     | TMDefs defs -> accFreeInModuleOrNamespaces opts defs acc
     | TMAbstract(ModuleOrNamespaceExprWithSig(_, mdef, _)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
 
@@ -5649,7 +5653,7 @@ and allTyconsOfTycon (tycon: Tycon) =
 
 and allEntitiesOfModDef mdef =
     seq { match mdef with 
-          | TMDefRec(_, tycons, mbinds, _) -> 
+          | TMDefRec(_, _, tycons, mbinds, _) -> 
               for tycon in tycons do 
                   yield! allTyconsOfTycon tycon
               for mbind in mbinds do 
@@ -5660,6 +5664,7 @@ and allEntitiesOfModDef mdef =
                   yield! allEntitiesOfModDef def
           | TMDefLet _ -> ()
           | TMDefDo _ -> ()
+          | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
                   yield! allEntitiesOfModDef def
@@ -5668,7 +5673,7 @@ and allEntitiesOfModDef mdef =
 
 and allValsOfModDef mdef = 
     seq { match mdef with 
-          | TMDefRec(_, tycons, mbinds, _) -> 
+          | TMDefRec(_, _, tycons, mbinds, _) -> 
               yield! abstractSlotValsOfTycons tycons 
               for mbind in mbinds do 
                 match mbind with 
@@ -5677,6 +5682,7 @@ and allValsOfModDef mdef =
           | TMDefLet(bind, _) -> 
               yield bind.Var
           | TMDefDo _ -> ()
+          | TMDefOpens _ -> ()
           | TMDefs defs -> 
               for def in defs do 
                   yield! allValsOfModDef def
@@ -5702,13 +5708,21 @@ and copyAndRemapModDef g compgen tmenv mdef =
 and remapAndRenameModDefs g compgen tmenv x = 
     List.map (remapAndRenameModDef g compgen tmenv) x 
 
+and remapOpenDeclarations tmenv opens =
+    opens |> List.map (fun od -> 
+        { od with 
+                Modules = od.Modules |> List.map (remapTyconRef tmenv.tyconRefRemap)
+                Types = od.Types |> List.map (remapType tmenv)
+        })
+
 and remapAndRenameModDef g compgen tmenv mdef =
     match mdef with 
-    | TMDefRec(isRec, tycons, mbinds, m) -> 
+    | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         // Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be copied and renamed. 
-        let tycons = tycons |> List.map (renameTycon g tmenv)
-        let mbinds = mbinds |> List.map (remapAndRenameModBind g compgen tmenv)
-        TMDefRec(isRec, tycons, mbinds, m)
+        let opensR = remapOpenDeclarations tmenv opens
+        let tyconsR = tycons |> List.map (renameTycon g tmenv)
+        let mbindsR = mbinds |> List.map (remapAndRenameModBind g compgen tmenv)
+        TMDefRec(isRec, opensR, tyconsR, mbindsR, m)
     | TMDefLet(bind, m) ->
         let v = bind.Var
         let bind = remapAndRenameBind g compgen tmenv bind (renameVal tmenv v)
@@ -5716,6 +5730,9 @@ and remapAndRenameModDef g compgen tmenv mdef =
     | TMDefDo(e, m) ->
         let e = remapExpr g compgen tmenv e
         TMDefDo(e, m)
+    | TMDefOpens opens ->
+        let opens = remapOpenDeclarations tmenv opens
+        TMDefOpens opens
     | TMDefs defs -> 
         let defs = remapAndRenameModDefs g compgen tmenv defs
         TMDefs defs
@@ -6783,11 +6800,12 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
 
     and mdefF z x = 
         match x with
-        | TMDefRec(_, _, mbinds, _) -> 
+        | TMDefRec(_, _, _, mbinds, _) -> 
             // REVIEW: also iterate the abstract slot vspecs hidden in the _vslots field in the tycons
             let z = List.fold mbindF z mbinds
             z
         | TMDefLet(bind, _) -> valBindF false z bind
+        | TMDefOpens _ -> z
         | TMDefDo(e, _) -> exprF z e
         | TMDefs defs -> List.fold mdefF z defs 
         | TMAbstract x -> mexprF z x
@@ -8886,9 +8904,10 @@ and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef e
     
 and rewriteModuleOrNamespaceDef env x = 
     match x with 
-    | TMDefRec(isRec, tycons, mbinds, m) -> TMDefRec(isRec, tycons, rewriteModuleOrNamespaceBindings env mbinds, m)
+    | TMDefRec(isRec, opens, tycons, mbinds, m) -> TMDefRec(isRec, opens, tycons, rewriteModuleOrNamespaceBindings env mbinds, m)
     | TMDefLet(bind, m) -> TMDefLet(rewriteBind env bind, m)
     | TMDefDo(e, m) -> TMDefDo(RewriteExpr env e, m)
+    | TMDefOpens _ -> x
     | TMDefs defs -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
     | TMAbstract mexpr -> TMAbstract(rewriteModuleOrNamespaceExpr env mexpr)
 

@@ -2502,7 +2502,7 @@ and CheckNothingAfterEntryPoint cenv m =
 
 and CheckDefnInModule cenv env x = 
     match x with 
-    | TMDefRec(isRec, tycons, mspecs, m) -> 
+    | TMDefRec(isRec, _opens, tycons, mspecs, m) -> 
         CheckNothingAfterEntryPoint cenv m
         if isRec then BindVals cenv env (allValsOfModDef x |> Seq.toList)
         CheckEntityDefns cenv env tycons
@@ -2511,6 +2511,8 @@ and CheckDefnInModule cenv env x =
         CheckNothingAfterEntryPoint cenv m
         CheckModuleBinding cenv env bind 
         BindVal cenv env bind.Var
+    | TMDefOpens _ ->
+        ()
     | TMDefDo(e, m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e

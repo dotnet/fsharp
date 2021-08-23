@@ -3047,7 +3047,6 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         if isGetHashCode then None else
 
         // Inlining lambda 
-  (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
         let f2R = CopyExprForInlining cenv false f2 m
 
         // Optimizing arguments after inlining
@@ -3055,6 +3054,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // REVIEW: this is a cheapshot way of optimizing the arg expressions as well without the restriction of recursive  
         // inlining kicking into effect 
         let argsR = args |> List.map (fun e -> let eR, _einfo = OptimizeExpr cenv env e in eR) 
+
         // Beta reduce. MakeApplicationAndBetaReduce cenv.g does all the hard work. 
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce cenv.g (f2R, f2ty, [tyargs], argsR, m)
@@ -3794,11 +3794,12 @@ and OptimizeModuleExpr cenv env x =
 
             let rec elimModDef x =                  
                 match x with 
-                | TMDefRec(isRec, tycons, mbinds, m) -> 
+                | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
-                    TMDefRec(isRec, tycons, mbinds, m)
+                    TMDefRec(isRec, opens, tycons, mbinds, m)
                 | TMDefLet(bind, m) -> 
-                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
+                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], [], m) else x
+                | TMDefOpens _ -> x
                 | TMDefDo _ -> x
                 | TMDefs defs -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ -> x 
@@ -3822,17 +3823,17 @@ and OptimizeModuleExpr cenv env x =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and OptimizeModuleDef cenv (env, bindInfosColl) x = 
-    match x with 
-    | TMDefRec(isRec, tycons, mbinds, m) -> 
-        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
+and OptimizeModuleDef cenv (env, bindInfosColl) input = 
+    match input with 
+    | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
+        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef input) env else env
         let mbindInfos, (env, bindInfosColl) = OptimizeModuleBindings cenv (env, bindInfosColl) mbinds
         let mbinds, minfos = List.unzip mbindInfos
         let binds = minfos |> List.choose (function Choice1Of2 (x, _) -> Some x | _ -> None)
         let binfos = minfos |> List.choose (function Choice1Of2 (_, x) -> Some x | _ -> None)
         let minfos = minfos |> List.choose (function Choice2Of2 x -> Some x | _ -> None)
         
-        (TMDefRec(isRec, tycons, mbinds, m), 
+        (TMDefRec(isRec, opens, tycons, mbinds, m), 
          notlazy { ValInfos = ValInfos(List.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
@@ -3841,6 +3842,9 @@ and OptimizeModuleDef cenv (env, bindInfosColl) x =
         let mexpr, info = OptimizeModuleExpr cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
         (TMAbstract mexpr, info), (env, bindInfosColl)
+
+    | TMDefOpens _openDecls ->  
+        (input, EmptyModuleInfo), (env, bindInfosColl)
 
     | TMDefLet(bind, m) ->
         let bindR, binfo as bindInfo, env = OptimizeBinding cenv false env bind

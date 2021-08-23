@@ -1341,7 +1341,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
     and getDecls mdef = 
         match mdef with 
-        | TMDefRec(_isRec, tycons, mbinds, _m) ->
+        | TMDefRec(_isRec, _opens, tycons, mbinds, _m) ->
             [ for tycon in tycons do 
                   let entity = FSharpEntity(cenv, mkLocalEntityRef tycon)
                   yield FSharpImplementationFileDeclaration.Entity(entity, []) 
@@ -1355,6 +1355,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMAbstract mexpr -> getDecls2 mexpr
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
+        | TMDefOpens _ ->
+            [ ]
         | TMDefDo(expr, _m)  ->
             [ let expr = FSharpExprConvert.ConvExprOnDemand cenv (ExprTranslationEnv.Empty(cenv.g)) expr
               yield FSharpImplementationFileDeclaration.InitAction expr  ]
