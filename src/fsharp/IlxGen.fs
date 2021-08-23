@@ -194,7 +194,7 @@ type IlxGenOptions =
       mainMethodInfo: Attribs option
 
       /// Indicates if local optimizations are on
-      localOptimizationsAreOn: bool
+      localOptimizationsEnabled: bool
 
       /// Indicates if we are generating debug symbols
       generateDebugSymbols: bool
@@ -2102,7 +2102,7 @@ let CodeGenThen cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, s
 
     // When debugging, put the "this" parameter in a local that has the right name 
     match selfArgOpt with
-    | Some selfArg when selfArg.LogicalName <> "this" && not cenv.opts.localOptimizationsAreOn ->
+    | Some selfArg when selfArg.LogicalName <> "this" && not (selfArg.LogicalName.StartsWith("_")) && not cenv.opts.localOptimizationsEnabled ->
         let ilTy = selfArg.Type |> GenType cenv.amap m eenv.tyenv
         let idx = cgbuf.AllocLocal([(selfArg.LogicalName, (start, finish)) ], ilTy, false)
         cgbuf.EmitStartOfHiddenCode()
@@ -5649,7 +5649,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
 
         // We have encountered this target before. See if we should generate it now
         let targetCount = targetCounts.[targetIdx]
-        let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsAreOn && targetCount = 1 && targetNext.Value = targetIdx
+        let generateTargetNow = isTargetPostponed && cenv.opts.localOptimizationsEnabled && targetCount = 1 && targetNext.Value = targetIdx
         targetCounts.[targetIdx] <- targetCount - 1
 
         // If not binding anything we can go directly to the targetMarkBeforeBinds point
@@ -5708,7 +5708,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         // In debug mode, postpone all decision tree targets to after the switching.
         // In release mode, if a target is the target of multiple incoming success nodes, postpone it to avoid 
         // making any backward branches
-        let generateTargetNow = cenv.opts.localOptimizationsAreOn && targetCount = 1 && targetNext.Value = targetIdx
+        let generateTargetNow = cenv.opts.localOptimizationsEnabled && targetCount = 1 && targetNext.Value = targetIdx
         targetCounts.[targetIdx] <- targetCount - 1
 
         let genTargetInfoOpt =
@@ -7112,7 +7112,7 @@ and AllocLocal cenv cgbuf eenv compgen (v, ty, isFixed) (scopeMarks: Mark * Mark
      let ranges = if compgen then [] else [(v, scopeMarks)]
      // Get an index for the local
      let j, realloc =
-        if cenv.opts.localOptimizationsAreOn then
+        if cenv.opts.localOptimizationsEnabled then
             cgbuf.ReallocLocal((fun i (_, ty', isFixed') -> not isFixed' && not isFixed && not (IntMap.mem i eenv.liveLocals) && (ty = ty')), ranges, ty, isFixed)
         else
             cgbuf.AllocLocal(ranges, ty, isFixed), false
@@ -7181,7 +7181,7 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
     // decide whether to use a shadow local or not
     let useShadowLocal =
         cenv.opts.generateDebugSymbols &&
-        not cenv.opts.localOptimizationsAreOn &&
+        not cenv.opts.localOptimizationsEnabled &&
         not v.IsCompilerGenerated &&
         not v.IsMutable &&
         // Don't use shadow locals for things like functions which are not compiled as static values/properties

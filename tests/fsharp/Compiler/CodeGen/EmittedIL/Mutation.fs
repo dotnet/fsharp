@@ -28,16 +28,19 @@ type Test = struct
     .field public int32 v
             """
             """
-    .method public hidebysig instance void
-            setV<a>(!!a v) cil managed
-    {
-
-    .maxstack  8
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.0
-    IL_0002:  stfld      int32 Mutation01/Test::v
-    IL_0007:  ret
-    }
+        .method public hidebysig instance void 
+                setV<a>(!!a v) cil managed
+        {
+          
+          .maxstack  4
+          .locals init (valuetype Mutation01/Test& V_0)
+          IL_0000:  ldarg.0
+          IL_0001:  stloc.0
+          IL_0002:  ldarg.0
+          IL_0003:  ldc.i4.0
+          IL_0004:  stfld      int32 Mutation01/Test::v
+          IL_0009:  ret
+        } 
             """
             ])
 

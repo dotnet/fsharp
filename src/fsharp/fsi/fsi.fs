@@ -1114,7 +1114,7 @@ type internal FsiDynamicCompiler
 
     let valuePrinter = FsiValuePrinter(fsi, tcConfigB, tcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter)
 
-    let assemblyBuilder,moduleBuilder = mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.localOpt(), generateDebugInfo, fsiCollectible)
+    let assemblyBuilder,moduleBuilder = mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
 
     let rangeStdin = rangeN stdinMockFilename 0
 
