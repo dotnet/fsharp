@@ -597,4 +597,4 @@ type StringModule() =
         Assert.Equal ("İ", e2)
 
         let e3 = "i" |> String.toUpperInvariant
-        Assert.Equal ("i", e3)
+        Assert.Equal ("I", e3)
