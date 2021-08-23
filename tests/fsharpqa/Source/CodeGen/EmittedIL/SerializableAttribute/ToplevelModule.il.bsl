@@ -36,13 +36,13 @@
   // Offset: 0x00001148 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {61240631-37F5-C118-A745-038331062461}
+// MVID: {61242E2D-37F5-C118-A745-03832D2E2461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06970000
+// Image base: 0x06E00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -825,16 +825,12 @@
     .method public hidebysig specialname 
             instance string  get_X() cil managed
     {
-      // Code size       9 (0x9)
-      .maxstack  3
-      .locals init ([0] class ABC/A __)
-      .line 100001,100001 : 0,0 ''
-      IL_0000:  ldarg.0
-      IL_0001:  stloc.0
+      // Code size       7 (0x7)
+      .maxstack  8
       .line 8,8 : 42,43 ''
-      IL_0002:  ldarg.0
-      IL_0003:  ldfld      string ABC/A::x
-      IL_0008:  ret
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      string ABC/A::x
+      IL_0006:  ret
     } // end of method A::get_X
 
     .property instance string X()
@@ -1620,16 +1616,12 @@
       .method public hidebysig specialname 
               instance string  get_X() cil managed
       {
-        // Code size       9 (0x9)
-        .maxstack  3
-        .locals init ([0] class ABC/ABC/A __)
-        .line 100001,100001 : 0,0 ''
-        IL_0000:  ldarg.0
-        IL_0001:  stloc.0
+        // Code size       7 (0x7)
+        .maxstack  8
         .line 18,18 : 46,47 ''
-        IL_0002:  ldarg.0
-        IL_0003:  ldfld      string ABC/ABC/A::x
-        IL_0008:  ret
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      string ABC/ABC/A::x
+        IL_0006:  ret
       } // end of method A::get_X
 
       .property instance string X()

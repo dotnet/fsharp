@@ -15,6 +15,11 @@ open System.Threading.Tasks
 type U2 = U2 of int * int
 
 
+let (!) (r: 'T ref)  = r.Value
+let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
+let incr (r: int ref)  = r.Value <- r.Value + 1
+let decr (r: int ref)  = r.Value <- r.Value - 1
+
 let InnerRecursiveFunction (str: string) =
     let rec even n = if n = 0 then str else odd (n-1)
     and odd n = even (n-1)
