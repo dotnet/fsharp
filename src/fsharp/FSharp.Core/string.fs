@@ -232,3 +232,13 @@ namespace Microsoft.FSharp.Core
         let splitStrings (separators: seq<string>) (str: string) =
             throwIfNull (nameof(str)) str
             str.Split (seqToArray separators, StringSplitOptions.None)
+
+        [<CompiledName("StartsWith")>]
+        let startsWith (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.StartsWith value
+
+        [<CompiledName("StartsWithComparison")>]
+        let startsWithComparison (comparisonType: StringComparison) (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.StartsWith (value, comparisonType)

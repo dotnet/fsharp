@@ -474,3 +474,34 @@ type StringModule() =
         Assert.AreEqual([|"abc.def"; "ghi"|], e2)
         
         CheckThrowsArgumentNullException(fun () -> String.splitStrings [] null |> ignore)
+
+    [<Fact>]
+    member this.StartsWith () =
+        Assert.True(String.startsWith "foo" "foo bar")
+        Assert.True(String.startsWith "apple" "apple banana")
+        Assert.False(String.startsWith "ApPlE" "apple banana")
+        Assert.False(String.startsWith "banana" "apple banana")
+        Assert.True(String.startsWith "." "..something")
+        Assert.True(String.startsWith "" "x")
+        Assert.True(String.startsWith "" "")
+        Assert.False(String.startsWith "x" "")
+
+        CheckThrowsArgumentNullException(fun () -> String.startsWith null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.startsWith "" null |> ignore)
+
+    [<Fact>]
+    member this.StartsWithComparison () =
+        Assert.True(String.startsWithComparison StringComparison.InvariantCulture "foo" "foo bar")
+        Assert.True(String.startsWithComparison StringComparison.InvariantCulture "apple" "apple banana")
+        Assert.False(String.startsWithComparison StringComparison.InvariantCulture "ApPlE" "apple banana")
+        Assert.False(String.startsWithComparison StringComparison.InvariantCulture "banana" "apple banana")
+        Assert.True(String.startsWithComparison StringComparison.InvariantCulture "." "..something")
+        Assert.True(String.startsWithComparison StringComparison.InvariantCulture "" "x")
+        Assert.True(String.startsWithComparison StringComparison.InvariantCulture "" "")
+        Assert.False(String.startsWithComparison StringComparison.InvariantCulture "x" "")
+
+        Assert.True(String.startsWithComparison StringComparison.InvariantCultureIgnoreCase "ApPlE" "apple banana")
+
+        CheckThrowsArgumentNullException(fun () -> String.startsWithComparison StringComparison.CurrentCulture null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.startsWithComparison StringComparison.CurrentCulture "" null |> ignore)
+

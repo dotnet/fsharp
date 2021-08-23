@@ -260,3 +260,9 @@ namespace Microsoft.FSharp.Core
         /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("SplitStrings")>]
         val splitStrings: separators:seq<string> -> str:string -> string[]
+
+        [<CompiledName("StartsWith")>]
+        val startsWith: value:string -> str:string -> bool
+
+        [<CompiledName("StartsWithComparison")>]
+        val startsWithComparison : comparisonType:StringComparison -> value:string -> str:string -> bool
