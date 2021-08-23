@@ -349,31 +349,36 @@ type OptimizationSettings =
         }
 
     /// Determines if JIT optimizations are enabled
-    member x.jitOpt() = match x.jitOptUser with Some f -> f | None -> jitOptDefault
+    member x.JitOptimizationsEnabled = match x.jitOptUser with Some f -> f | None -> jitOptDefault
 
     /// Determines if intra-assembly optimization is enabled
-    member x.localOpt () = match x.localOptUser with Some f -> f | None -> localOptDefault
+    member x.LocalOptimizationsEnabled = match x.localOptUser with Some f -> f | None -> localOptDefault
 
     /// Determines if cross-assembly optimization is enabled
     member x.crossAssemblyOpt () =
-        x.localOpt () && 
+        x.LocalOptimizationsEnabled && 
         x.crossAssemblyOptimizationUser |> Option.defaultValue crossAssemblyOptimizationDefault
 
     /// Determines if we should keep optimization values
     member x.KeepOptimizationValues = x.crossAssemblyOpt ()
 
     /// Determines if we should inline calls
-    member x.InlineLambdas = x.localOpt ()  
+    member x.InlineLambdas = x.LocalOptimizationsEnabled  
 
     /// Determines if we should eliminate unused bindings with no effect 
-    member x.EliminateUnusedBindings = x.localOpt () 
+    member x.EliminateUnusedBindings = x.LocalOptimizationsEnabled 
 
     /// Determines if we should arrange things so we debug points for pipelines x |> f1 |> f2
     /// including locals "<pipe1-input>", "<pipe1-stage1>" and so on.
     /// On by default for debug code.
     member x.DebugPointsForPipeRight =
-        not (x.localOpt ()) &&
+        not x.LocalOptimizationsEnabled &&
         x.debugPointsForPipeRight |> Option.defaultValue debugPointsForPipeRightDefault
+
+    /// Determines if we should eliminate for-loops around an expr if it has no effect 
+    ///
+    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
+    member x.EliminateForLoop = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate try/with or try/finally around an expr if it has no effect 
     ///
@@ -381,27 +386,27 @@ type OptimizationSettings =
     member _.EliminateTryWithAndTryFinally = false 
 
     /// Determines if we should eliminate first part of sequential expression if it has no effect 
-    member x.EliminateSequential = x.localOpt () 
+    member x.EliminateSequential = x.LocalOptimizationsEnabled 
 
     /// Determines if we should determine branches in pattern matching based on known information, e.g.
     /// eliminate a "if true then .. else ... "
-    member x.EliminateSwitch = x.localOpt () 
+    member x.EliminateSwitch = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a record if the value is known to be a record with known info and the field is not mutable
-    member x.EliminateRecdFieldGet = x.localOpt () 
+    member x.EliminateRecdFieldGet = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a tuple if the value is known to be a tuple with known info
-    member x.EliminateTupleFieldGet = x.localOpt () 
+    member x.EliminateTupleFieldGet = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a union if the value is known to be that union case and the particular field has known info
-    member x.EliminateUnionCaseFieldGet () = x.localOpt () 
+    member x.EliminateUnionCaseFieldGet () = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate non-compiler generated immediate bindings 
-    member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
+    member x.EliminateImmediatelyConsumedLocals() = x.LocalOptimizationsEnabled
 
     /// Determines if we should expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructuralValues() = x.localOpt () 
+    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled 
 
 type cenv =
     { g: TcGlobals
@@ -2453,7 +2458,7 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
     let einfos = [e1info;e2info;e3info] 
     let eff = OrEffects einfos 
     (* neither bounds nor body has an effect, and loops always terminate, hence eliminate the loop *)
-    if not eff then 
+    if cenv.settings.EliminateForLoop && not eff then 
         mkUnit cenv.g m, { TotalSize=0; FunctionSize=0; HasEffect=false; MightMakeCriticalTailcall=false; Info=UnknownValue }
     else
         let exprR = mkFor cenv.g (spStart, v, e1R, dir, e2R, e3R, m) 
@@ -3333,7 +3338,7 @@ and OptimizeDebugPipeRights cenv env expr =
             xs0R 
             inputVals
             pipesExprR
-    expr, pipesInfo
+    expr, { pipesInfo with HasEffect=true}
     
 and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m) =
     let g = cenv.g
@@ -3529,7 +3534,7 @@ and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
 
 and OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty) =
     let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtreeR, targetsR, dinfo, tinfos)
-    let newExpr2 = if not (cenv.settings.localOpt()) then newExpr else CombineBoolLogic newExpr
+    let newExpr2 = if not cenv.settings.LocalOptimizationsEnabled then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
 
 and CombineMatchInfos dinfo tinfo = 
@@ -3754,7 +3759,7 @@ and OptimizeModuleExpr cenv env x =
          
         let _renaming, hidden as rpi = ComputeRemappingFromImplementationToSignature cenv.g def mty 
         let def = 
-            if not (cenv.settings.localOpt()) then def else 
+            if not cenv.settings.LocalOptimizationsEnabled then def else 
 
             let fvs = freeInModuleOrNamespace CollectLocals def 
             let dead = 
