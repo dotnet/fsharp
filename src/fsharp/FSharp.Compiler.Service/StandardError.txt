@@ -1,7 +1,0 @@
-Could not execute because the application was not found or a compatible .NET SDK is not installed.
-Possible reasons for this include:
-  * You intended to execute a .NET program:
-      The application '--version' does not exist.
-  * You intended to execute a .NET SDK command:
-      A compatible installed .NET SDK for global.json version [6.0.100-preview.7.21379.14] from [C:\GitHub\dsyme\fsharp\global.json] was not found.
-      Install the [6.0.100-preview.7.21379.14] .NET SDK or update [C:\GitHub\dsyme\fsharp\global.json] with an installed .NET SDK:
