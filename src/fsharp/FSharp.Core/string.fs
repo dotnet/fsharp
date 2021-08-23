@@ -209,23 +209,28 @@ namespace Microsoft.FSharp.Core
             else
                 str.Trim ()
                 
+        let private seqToArray (chars: seq<char>) : char[] =
+            match chars with
+            | :? array<char> as charsArr -> charsArr :> char[]
+            | _ -> Seq.toArray chars
+                
         [<CompiledName("TrimChars")>]
         let trimChars (chars: seq<char>) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.Trim (Seq.toArray chars)
+                str.Trim (seqToArray chars)
                 
         [<CompiledName("TrimStartChars")>]
         let trimStartChars (chars: seq<char>) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.TrimStart (Seq.toArray chars)
+                str.TrimStart (seqToArray chars)
                 
         [<CompiledName("TrimEndChars")>]
         let trimEndChars (chars: seq<char>) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.TrimEnd (Seq.toArray chars)
+                str.TrimEnd (seqToArray chars)
