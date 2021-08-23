@@ -18,6 +18,13 @@ namespace Microsoft.FSharp.Core
         /// and is equal to 80_000 / sizeof<char>
         let LOH_CHAR_THRESHOLD = 40_000
 
+        let private seqToArray (chars: seq<'a>) =
+            match chars with
+            | :? array<'a> as charsArr -> charsArr
+            | _ -> Seq.toArray chars
+                
+        let inline private throwIfNull argName arg = if isNull arg then nullArg (argName)
+
         [<CompiledName("Length")>]
         let length (str:string) = if isNull str then 0 else str.Length
 
@@ -183,68 +190,45 @@ namespace Microsoft.FSharp.Core
         
         [<CompiledName("Contains")>]
         let contains (substring: string) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Contains substring
+            throwIfNull (nameof(str)) str
+            str.Contains substring
 
         [<CompiledName("Replace")>]
         let replace (oldValue: string) (newValue: string) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Replace(oldValue, newValue)
+            throwIfNull (nameof(str)) str
+            str.Replace(oldValue, newValue)
 
         [<CompiledName("ReplaceChar")>]
         let replaceChar (oldChar: char) (newChar: char) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Replace(oldChar, newChar)
+            throwIfNull (nameof(str)) str
+            str.Replace(oldChar, newChar)
                 
         [<CompiledName("Trim")>]
         let trim (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Trim ()
-                
-        let private seqToArray (chars: seq<'a>) =
-            match chars with
-            | :? array<'a> as charsArr -> charsArr
-            | _ -> Seq.toArray chars
-                
+            throwIfNull (nameof(str)) str
+            str.Trim ()
+
         [<CompiledName("TrimChars")>]
         let trimChars (chars: seq<char>) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Trim (seqToArray chars)
+            throwIfNull (nameof(str)) str
+            str.Trim (seqToArray chars)
                 
         [<CompiledName("TrimStartChars")>]
         let trimStartChars (chars: seq<char>) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.TrimStart (seqToArray chars)
+            throwIfNull (nameof(str)) str
+            str.TrimStart (seqToArray chars)
                 
         [<CompiledName("TrimEndChars")>]
         let trimEndChars (chars: seq<char>) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.TrimEnd (seqToArray chars)
+            throwIfNull (nameof(str)) str
+            str.TrimEnd (seqToArray chars)
 
         [<CompiledName("Split")>]
         let split (separators: seq<char>) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Split (seqToArray separators)
+            throwIfNull (nameof(str)) str
+            str.Split (seqToArray separators)
                 
         [<CompiledName("SplitStrings")>]
         let splitStrings (separators: seq<string>) (str: string) =
-            if isNull str then
-                nullArg (nameof(str))
-            else
-                str.Split (seqToArray separators, StringSplitOptions.None)
+            throwIfNull (nameof(str)) str
+            str.Split (seqToArray separators, StringSplitOptions.None)
