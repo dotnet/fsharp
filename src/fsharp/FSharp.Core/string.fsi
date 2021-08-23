@@ -143,29 +143,120 @@ namespace Microsoft.FSharp.Core
         /// <param name="str">The input string.</param>
         ///
         /// <returns>True if <c>substring</c> is a substring and false otherwise.</returns> 
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Contains")>]
         val contains: substring:string -> str:string -> bool
 
+        /// <summary>
+        ///     Returns a new string in which all occurrences of a specified string in an input string are replaced
+        ///     with another string.
+        /// </summary>
+        ///
+        /// <param name="oldValue">The string to be replaced.</param>
+        /// <param name="newValue">The string to replace all occurences of <c>oldValue</c>.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>
+        ///     A string that is equivalent to this instance except that all occurences of <c>oldValue</c> are replaced
+        ///     with <c>newValue</c>. If <c>oldValue</c> is not found in <c>str</c>, the function returns <c>str</c>
+        ///     unchanged.
+        /// </returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Replace")>]
         val replace: oldValue:string -> newValue:string -> str:string -> string
 
+        /// <summary>
+        ///     Returns a new string in which all occurrences of a specified Unicode character in an input string are
+        /// replaced with another Unicode character.
+        /// </summary>
+        ///
+        /// <param name="oldChar">The Unicode character to be replaced.</param>
+        /// <param name="newChar">The Unicode character to replace all occurences of <c>oldChar</c>.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>
+        ///     A string that is equivalent to this instance except that all occurences of <c>oldChar</c> are replaced
+        ///     with <c>newChar</c>. If <c>oldChar</c> is not found in <c>str</c>, the function returns <c>str</c>
+        ///     unchanged.
+        /// </returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("ReplaceChar")>]
-        val replaceChar: oldValue:char -> newValue:char -> str:string -> string
+        val replaceChar: oldChar:char -> newChar:char -> str:string -> string
         
+        /// <summary>
+        ///     Returns a new string in which all leading and trailing white-space characters in an input string are
+        ///     removed. White-space characters are defined by any character for which <c>System.Char.IsWhiteSpace</c>
+        ///     returns <c>true</c>.
+        /// </summary>
+        ///
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Trim")>]
         val trim: str:string -> string
         
+        /// <summary>
+        ///     Returns a new string in which all leading and trailing occurences of a set of specified characters 
+        ///     in an input string are removed.
+        /// </summary>
+        ///
+        /// <param name="chars">The set of strings to remove.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("TrimChars")>]
         val trimChars: chars:seq<char> -> str:string -> string
         
+        /// <summary>
+        ///     Returns a new string in which all leading occurences of a set of specified characters in an input
+        ///     string are removed.
+        /// </summary>
+        ///
+        /// <param name="chars">The set of strings to remove.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("TrimStartChars")>]
         val trimStartChars: chars:seq<char> -> str:string -> string
         
+        /// <summary>
+        ///     Returns a new string in which all trailing occurences of a set of specified characters in an input
+        ///     string are removed.
+        /// </summary>
+        ///
+        /// <param name="chars">The set of strings to remove.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("TrimEndChars")>]
         val trimEndChars: chars:seq<char> -> str:string -> string
 
+        /// <summary>Splits a string into substrings based on specified delimiting characters.</summary>
+        ///
+        /// <param name="separators">The set of delimiting characters.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>
+        ///     An array whose elements contain the substrings from <c>str</c> that are delimited by one or more
+        ///     characters in <c>separators</c>
+        ///</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Split")>]
-        val split: chars:seq<char> -> str:string -> string[]
+        val split: separators:seq<char> -> str:string -> string[]
         
+        /// <summary>Splits a string into substrings based on specified delimiting strings.</summary>
+        ///
+        /// <param name="separators">The set of delimiting strings.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>
+        ///     An array whose elements contain the substrings from <c>str</c> that are delimited by one or more
+        ///     strings in <c>separators</c>
+        ///</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("SplitStrings")>]
-        val splitStrings: strings:seq<string> -> str:string -> string[]
+        val splitStrings: separators:seq<string> -> str:string -> string[]

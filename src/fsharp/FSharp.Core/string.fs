@@ -196,11 +196,11 @@ namespace Microsoft.FSharp.Core
                 str.Replace(oldValue, newValue)
 
         [<CompiledName("ReplaceChar")>]
-        let replaceChar (oldValue: char) (newValue: char) (str: string) =
+        let replaceChar (oldChar: char) (newChar: char) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.Replace(oldValue, newValue)
+                str.Replace(oldChar, newChar)
                 
         [<CompiledName("Trim")>]
         let trim (str: string) =
@@ -236,15 +236,15 @@ namespace Microsoft.FSharp.Core
                 str.TrimEnd (seqToArray chars)
 
         [<CompiledName("Split")>]
-        let split (chars: seq<char>) (str: string) =
+        let split (separators: seq<char>) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.Split (seqToArray chars)
+                str.Split (seqToArray separators)
                 
         [<CompiledName("SplitStrings")>]
-        let splitStrings (strings: seq<string>) (str: string) =
+        let splitStrings (separators: seq<string>) (str: string) =
             if isNull str then
                 nullArg (nameof(str))
             else
-                str.Split (seqToArray strings, StringSplitOptions.None)
+                str.Split (seqToArray separators, StringSplitOptions.None)
