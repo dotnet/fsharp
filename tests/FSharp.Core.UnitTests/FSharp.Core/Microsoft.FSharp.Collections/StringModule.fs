@@ -461,7 +461,7 @@ type StringModule() =
         Assert.AreEqual([|"foo.bar.baz"|], e1)
         
         let e2 = String.split "/\\" "foo/bar/\\baz//qux"
-        Assert.AreEqual([|"foo/bar"; "baz//qux"|], e2)
+        Assert.AreEqual([|"foo"; "bar"; ""; "baz"; "qux"|], e2)
         
         CheckThrowsArgumentNullException(fun () -> String.split "" null |> ignore)
 
