@@ -3,6 +3,7 @@
 namespace FSharp.Core.UnitTests.Collections
 
 open System
+open System.Globalization
 open Xunit
 
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -563,3 +564,37 @@ type StringModule() =
         Assert.AreEqual(ordExpected, List.sortWith (String.compareWith StringComparison.Ordinal) strings)
         Assert.AreEqual(ordIcExpected, List.sortWith (String.compareWith StringComparison.OrdinalIgnoreCase) strings)
         
+
+    [<Fact>]
+    member this.Substring () =
+        let e1 = "foobar" |> String.substring 2 3
+        Assert.Equal ("oba", e1)
+
+        let e2 = "The quick brown fox jumped over the lazy dog." |> String.substring 4 15
+        Assert.Equal ("quick brown fox", e2)
+
+        CheckThrowsArgumentNullException(fun () -> null |> String.substring 0 1 |> ignore)
+        CheckThrowsArgumentOutOfRangeException(fun () -> "" |> String.substring 0 1 |> ignore)
+        CheckThrowsArgumentOutOfRangeException(fun () -> "foo" |> String.substring -1 1 |> ignore)
+
+    [<Fact>]
+    member this.ToLower () =
+        let e1 = "I" |> String.toLower (CultureInfo.GetCultureInfo "en-US")
+        Assert.Equal ("i", e1)
+
+        let e2 = "I" |> String.toLower (CultureInfo.GetCultureInfo "tr-TR")
+        Assert.Equal ("ı", e2)
+
+        let e3 = "I" |> String.toLowerInvariant
+        Assert.Equal ("i", e3)
+
+    [<Fact>]
+    member this.ToUpper () =
+        let e1 = "i" |> String.toUpper (CultureInfo.GetCultureInfo "en-US")
+        Assert.Equal ("I", e1)
+
+        let e2 = "i" |> String.toUpper (CultureInfo.GetCultureInfo "tr-TR")
+        Assert.Equal ("İ", e2)
+
+        let e3 = "i" |> String.toUpperInvariant
+        Assert.Equal ("i", e3)

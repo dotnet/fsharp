@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Core
 
     open System
     open System.Text
+    open System.Globalization
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.Operators.Checked
@@ -268,3 +269,28 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("CompareWith")>]
         let compareWith (comparisonType: StringComparison) (strA: string) (strB: string) =
             String.Compare (strA, strB, comparisonType)
+
+        [<CompiledName("Substring")>]
+        let substring (startIndex: int) (length: int) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.Substring (startIndex, length)
+
+        [<CompiledName("ToLower")>]
+        let toLower (culture: CultureInfo) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.ToLower culture
+
+        [<CompiledName("ToLowerInvariant")>]
+        let toLowerInvariant (str: string) =
+            throwIfNull (nameof(str)) str
+            str.ToLowerInvariant ()
+
+        [<CompiledName("ToUpper")>]
+        let toUpper (culture: CultureInfo) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.ToUpper culture
+
+        [<CompiledName("ToUpperInvariant")>]
+        let toUpperInvariant (str: string) =
+            throwIfNull (nameof(str)) str
+            str.ToUpperInvariant ()

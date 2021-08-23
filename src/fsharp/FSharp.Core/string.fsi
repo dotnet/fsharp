@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Core
 
     open System
+    open System.Globalization
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
@@ -284,3 +285,18 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("CompareWith")>]
         val compareWith: comparisonType:StringComparison -> strA:string -> strB:string -> int
+
+        [<CompiledName("Substring")>]
+        val substring: startIndex: int -> length: int -> str:string -> string
+
+        [<CompiledName("ToLower")>]
+        val toLower: culture:CultureInfo -> str:string -> string
+
+        [<CompiledName("ToLowerInvariant")>]
+        val toLowerInvariant: str:string -> string
+
+        [<CompiledName("ToUpper")>]
+        val toUpper: culture:CultureInfo -> str:string -> string
+
+        [<CompiledName("ToUpperInvariant")>]
+        val toUpperInvariant: str:string -> string
