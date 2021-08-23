@@ -82,19 +82,19 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
-            LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
-            LanguageFeature.RelaxWhitespace2, previewVersion
-            LanguageFeature.OverloadsForCustomOperations, previewVersion
-            LanguageFeature.ExpandedMeasurables, previewVersion
-            LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.ResumableStateMachines, previewVersion
-            LanguageFeature.StructActivePattern, previewVersion
-            LanguageFeature.PrintfBinaryFormat, previewVersion
-            LanguageFeature.IndexerNotationWithoutDot, previewVersion
-            LanguageFeature.RefCellNotationInformationals, previewVersion
-            LanguageFeature.UseBindingValueDiscard, previewVersion
-            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
-            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
+            LanguageFeature.AdditionalTypeDirectedConversions, languageVersion50
+            LanguageFeature.RelaxWhitespace2, languageVersion50
+            LanguageFeature.OverloadsForCustomOperations, languageVersion50
+            LanguageFeature.ExpandedMeasurables, languageVersion50
+            LanguageFeature.FromEndSlicing, languageVersion50
+            LanguageFeature.ResumableStateMachines, languageVersion50
+            LanguageFeature.StructActivePattern, languageVersion50
+            LanguageFeature.PrintfBinaryFormat, languageVersion50
+            LanguageFeature.IndexerNotationWithoutDot, languageVersion50
+            LanguageFeature.RefCellNotationInformationals, languageVersion50
+            LanguageFeature.UseBindingValueDiscard, languageVersion50
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion50
+            LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion50
         ]
 
     let specified =
