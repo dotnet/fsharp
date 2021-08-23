@@ -21,6 +21,8 @@ scripts/*.patch
 /src/fsharp/FSharp.Compiler.Service/*.resources
 /src/fsharp/FSharp.Compiler.Service/*.sln
 /src/fsharp/FSharp.Compiler.Service/*.userprefs
+/src/fsharp/FSharp.Compiler.Service/StandardOutput.txt
+/src/fsharp/FSharp.Compiler.Service/StandardError.txt
 /src/*.log
 /src/fsharp/FSharp.LanguageService.Compiler/illex.*
 /src/fsharp/FSharp.LanguageService.Compiler/ilpars.*
