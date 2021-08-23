@@ -23,11 +23,11 @@ let x = ()
 let ``Union case 01 - of`` () =
     let parseResults = getParseResults """
 type U1 =
-| A of
+    | A of
 
 type U2 =
-| B of
-| C
+    | B of
+    | C
 
 let x = ()
 """
