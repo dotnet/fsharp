@@ -2033,10 +2033,11 @@ module private InferredSigPrinting =
 
         let rec isConcreteNamespace x = 
             match x with 
-            | TMDefRec(_, tycons, mbinds, _) -> 
+            | TMDefRec(_, _opens, tycons, mbinds, _) -> 
                 not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x, _) -> not x.IsNamespace))
             | TMDefLet _ -> true
             | TMDefDo _ -> true
+            | TMDefOpens _ -> false
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
             | TMAbstract(ModuleOrNamespaceExprWithSig(_, def, _)) -> isConcreteNamespace def
 
@@ -2051,7 +2052,7 @@ module private InferredSigPrinting =
             let filterExtMem (v: Val) = v.IsExtensionMember
 
             match x with 
-            | TMDefRec(_, tycons, mbinds, _) -> 
+            | TMDefRec(_, _opens, tycons, mbinds, _) -> 
                 TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
                 (mbinds 
                     |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
@@ -2079,6 +2080,8 @@ module private InferredSigPrinting =
                     |> List.map mkLocalValRef
                     |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader) 
                     |> aboveListL)
+
+            | TMDefOpens _ -> emptyL
 
             | TMDefs defs -> imdefsL denv defs
 

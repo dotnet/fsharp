@@ -1977,7 +1977,5 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let buildTcEnv tcEnv asm =
-        AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-    let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
+    let _openDecls, tcEnv = (tcEnv, asms) ||> List.collectFold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes))
     tcEnv, (dllinfos, asms)

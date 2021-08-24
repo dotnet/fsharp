@@ -997,7 +997,7 @@ type PdbMethod  = { symMethod: ISymbolMethod }
 type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
-type PdbSequencePoint =
+type PdbDebugPoint =
     { pdbSeqPointOffset: int
       pdbSeqPointDocument: PdbDocument
       pdbSeqPointLine: int
@@ -1072,7 +1072,7 @@ let pdbMethodGetToken (meth: PdbMethod) : int32 =
     let token = meth.symMethod.Token
     token.GetToken()
 
-let pdbMethodGetSequencePoints (meth: PdbMethod) : PdbSequencePoint[] =
+let pdbMethodGetDebugPoints (meth: PdbMethod) : PdbDebugPoint[] =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize
     let docs = Array.zeroCreate pSize

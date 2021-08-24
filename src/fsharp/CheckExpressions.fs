@@ -5553,12 +5553,13 @@ and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* can
     match overallTy with
     | MustConvertTo _ when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         assert (cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
-        //if not canAdhoc then
-        //    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace reqdTy actualTy
+
         // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
         UnifyOverallType cenv env m overallTy actualTy
+
         // Process the construct
         let expr, tpenv = f ()
+
         // Build the conversion
         let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
         expr2, tpenv
@@ -5575,15 +5576,16 @@ and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* can
 /// 'processExpr' does the actual processing of the construct.
 ///
 /// Used for
-///  - tuple (exception is if overallTy is a tuple type, used to propagate structness from known type)
-///  - anon record (exception is if overallTy is an anon record type, similarly)
-///  - record (exception is (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty), similarly)
+///  - tuple       (except if overallTy is a tuple type or a variable type that can become one)
+///  - anon record (except if overallTy is an anon record type or a variable type that can become one)
+///  - record      (except if overallTy is requiresCtor || haveCtor or a record type or a variable type that can become one))
 and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
     match overallTy with
     | MustConvertTo(_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
             let exprTy = NewInferenceType()
-            // Here 'processExpr' will do the unification with exprTy.
+
+            // Here 'processExpr' will eventually do the unification with exprTy.
             let expr, tpenv = processExpr exprTy
             expr, exprTy, tpenv)
     | _ ->
@@ -5601,8 +5603,10 @@ and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: Over
 and TcNonPropagatingExprLeafThenConvert cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
     // Process the construct
     let expr, exprTy, tpenv = processExpr ()
+
     // Now compute the conversion, based on the post-processing type
     UnifyOverallType cenv env m overallTy exprTy
+
     let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy exprTy env (* true  *) m expr
     expr2, tpenv
 
@@ -5750,7 +5754,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         expr, tpenv
 
     | SynExpr.Tuple (isExplicitStruct, args, _, m) ->
-        TcPossiblyPropogatingExprLeafThenConvert (isAnyTupleTy cenv.g) cenv overallTy env m (fun overallTy ->
+        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env m (fun overallTy ->
             let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
 
             let flexes = argTys |> List.map (fun _ -> false)
@@ -5760,7 +5764,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         )
 
     | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
-        TcPossiblyPropogatingExprLeafThenConvert (isAnonRecdTy cenv.g) cenv overallTy env mWholeExpr (fun overallTy ->
+        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnonRecdTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
         )
 
@@ -5837,7 +5841,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
       CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
       let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
       let haveCtor = Option.isSome inherits
-      TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+      TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
       )
 

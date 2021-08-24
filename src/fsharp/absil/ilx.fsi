@@ -36,7 +36,7 @@ type IlxUnionHasHelpers =
    
 /// Union references 
 type IlxUnionRef = 
-    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* IsNullPermitted *)  * IlxUnionHasHelpers (* HasHelpers *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -125,24 +125,27 @@ type IlxClosureInfo =
 type IlxUnionInfo = 
     { 
       /// Is the representation public? 
-      cudReprAccess: ILMemberAccess 
+      UnionCasesAccessibility: ILMemberAccess 
 
       /// Are the representation helpers public? 
-      cudHelpersAccess: ILMemberAccess 
+      HelpersAccessibility: ILMemberAccess 
 
       /// Generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers 
+      HasHelpers: IlxUnionHasHelpers 
 
-      cudDebugProxies: bool 
+      GenerateDebugProxies: bool 
 
-      cudDebugDisplayAttributes: ILAttribute list
+      DebugDisplayAttributes: ILAttribute list
 
-      cudAlternatives: IlxUnionCase[]
+      UnionCases: IlxUnionCase[]
 
-      cudNullPermitted: bool
+      IsNullPermitted: bool
 
       /// Debug info for generated code for classunions.
-      cudWhere: ILSourceMarker option  
+      DebugPoint: ILDebugPoint option  
+
+      /// Debug info for generated code for classunions 
+      DebugImports: ILDebugImports option
     }
 
 // -------------------------------------------------------------------- 
