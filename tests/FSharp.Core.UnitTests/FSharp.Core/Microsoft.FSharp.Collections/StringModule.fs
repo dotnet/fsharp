@@ -356,3 +356,21 @@ type StringModule() =
         Assert.AreEqual(str.[-3..(-4)], (""))
         Assert.AreEqual(str.[-4..(-3)], (""))
 
+    [<Fact>]
+    member this.Replace () =
+        let e1 = String.replace "oo" "aa" "foobar"
+        Assert.AreEqual("faabar", e1)
+
+        let e2 = String.replace "na" "ba" "banana"
+        Assert.AreEqual("bababa", e2)
+
+
+        let e3 = String.replace "na" "" "banana"
+        Assert.AreEqual("ba", e3)
+
+        let e4 = String.replace "na" null "banana"
+        Assert.AreEqual("ba", e4)
+
+        CheckThrowsArgumentException(fun () -> String.replace "" "x" "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.replace null "x" "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.replace "foo" "bar" null |> ignore)

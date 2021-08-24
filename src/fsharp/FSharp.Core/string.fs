@@ -18,6 +18,8 @@ namespace Microsoft.FSharp.Core
         /// and is equal to 80_000 / sizeof<char>
         let LOH_CHAR_THRESHOLD = 40_000
 
+        let inline private throwIfNull argName arg = if isNull arg then nullArg (argName)
+
         [<CompiledName("Length")>]
         let length (str:string) = if isNull str then 0 else str.Length
 
@@ -180,3 +182,8 @@ namespace Microsoft.FSharp.Core
             else
                 let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
                 check 0  
+
+        [<CompiledName("Replace")>]
+        let replace (oldValue: string) (newValue: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.Replace(oldValue, newValue)

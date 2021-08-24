@@ -137,3 +137,15 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Length")>]
         val length: str:string -> int
 
+        /// <summary>
+        ///     Replaces all occurrences of a specified substring in an input string with another substring.
+        /// </summary>
+        ///
+        /// <param name="oldValue">The substring to be replaced.</param>
+        /// <param name="newValue">The new substring to replace all occurences of <c>oldValue</c>.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
+        [<CompiledName("Replace")>]
+        val replace: oldValue:string -> newValue:string -> str:string -> string
