@@ -16,6 +16,10 @@ These release notes track our current efforts to document changes to the F# proj
 
 ### F# 5 / Visual Studio 16.9
 
+### FSharp.Core 5.0.2
+
+* [Fix #11143 - FSharp.Core 5.0.1 should not have FSharp.Core.xml in contentFiles #11160](https://github.com/dotnet/fsharp/pull/11160)
+
 ### FSharp.Core 5.0.1
 
 * [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
