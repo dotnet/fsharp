@@ -2253,7 +2253,7 @@ and CanMemberSigsMatchUpToCheck
       alwaysCheckReturn // always check the return type?
       (unifyTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)   // used to equate the formal method instantiation with the actual method instantiation for a generic method, and the return types
       (subsumeTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)  // used to compare the "obj" type 
-      (subsumeOrConvertTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>) // used to convert the "return" for MustConvertTo
+      (subsumeOrConvertTypes: bool -> TType -> TType -> OperationResult<TypeDirectedConversionUsed>) // used to convert the "return" for MustConvertTo
       (subsumeOrConvertArg: CalledArg -> CallerArg<_> -> OperationResult<TypeDirectedConversionUsed>)    // used to convert the arguments
       (reqdRetTyOpt: OverallTy option) 
       (calledMeth: CalledMeth<_>): OperationResult<TypeDirectedConversionUsed> =
@@ -2354,9 +2354,9 @@ and CanMemberSigsMatchUpToCheck
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
                         ResultD TypeDirectedConversionUsed.No
-                    | Some (MustConvertTo(_, reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                    | Some (MustConvertTo(isMethodArg, reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
-                        subsumeOrConvertTypes reqdTy methodRetTy
+                        subsumeOrConvertTypes isMethodArg reqdTy methodRetTy
                     | Some reqdRetTy ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         unifyTypes reqdRetTy.Commit methodRetTy
@@ -2464,9 +2464,9 @@ and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgT
         return TypeDirectedConversionUsed.No
     }
 
-and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m reqdTy actualTy = 
+and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConstraint m isMethodArg reqdTy actualTy = 
     trackErrors {
-        let reqdTy, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions csenv.InfoReader ad false isConstraint reqdTy actualTy m
+        let reqdTy, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions csenv.InfoReader ad isMethodArg isConstraint reqdTy actualTy m
         match eqn with 
         | Some (ty1, ty2, msg) ->
             do! SolveTypeEqualsType csenv ndeep m trace cxsln ty1 ty2 
@@ -2981,7 +2981,7 @@ and ResolveOverloading
                                 else
                                     match reqdRetTy with
                                     | MustConvertTo(isMethodArg, reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-                                        let! _usesTDC = ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln isMethodArg m reqdRetTy actualRetTy
+                                        let! _usesTDC = ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln isMethodArg m isMethodArg reqdRetTy actualRetTy
                                         return ()
                                     | _ ->
                                         let! _usesTDC = TypesEquiv csenv ndeep trace cxsln reqdRetTy.Commit actualRetTy
