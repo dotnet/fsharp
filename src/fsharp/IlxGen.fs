@@ -838,24 +838,53 @@ type ValStorage =
     | Null
 
     /// Indicates the value is stored in a static field.
-    | StaticPropertyWithField of ILFieldSpec * ValRef * (*hasLiteralAttr:*)bool * ILType * string * ILType * ILMethodRef * ILMethodRef * OptionalShadowLocal
+    | StaticPropertyWithField of
+        ilFieldSpec: ILFieldSpec *
+        valRef: ValRef *
+        hasLiteralAttr: bool *
+        ilTyForProperty: ILType *
+        name: string *
+        ilTy: ILType *
+        ilGetterMethRef: ILMethodRef *
+        ilSetterMethRef: ILMethodRef *
+        optShadowLocal: OptionalShadowLocal
 
     /// Indicates the value is represented as a property that recomputes it each time it is referenced. Used for simple constants that do not cause initialization triggers
-    | StaticProperty of ILMethodSpec * OptionalShadowLocal
+    | StaticProperty of
+        ilGetterMethSpec: ILMethodSpec *
+        optShadowLocal: OptionalShadowLocal
 
     /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
-    | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
+    | Method of
+        topValInfo: ValReprInfo *
+        valRef: ValRef *
+        ilMethSpec: ILMethodSpec *
+        ilMethSpecWithWitnesses: ILMethodSpec *
+        m: range *
+        classTypars: Typars *
+        methTypars: Typars *
+        curriedArgInfos: CurriedArgInfos *
+        paramInfos: ArgReprInfo list *
+        witnessInfos: TraitWitnessInfos *
+        methodArgTys: TType list *
+        retInfo: ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
-    | Env of ILType * ILFieldSpec * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
+    | Env of
+        ilCloTyInner: ILType *
+        ilField: ILFieldSpec *
+        localCloInfo: (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
     /// Indicates that the value is an argument of a method being generated
-    | Arg of int
+    | Arg of index: int
 
     /// Indicates that the value is stored in local of the method being generated. NamedLocalIlxClosureInfo is normally empty.
     /// It is non-empty for 'local type functions', see comments on definition of NamedLocalIlxClosureInfo.
-    | Local of idx: int * realloc: bool * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
+    | Local of
+        index: int *
+        realloc: bool *
+        localCloInfo: (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
 /// Indicates if there is a shadow local storage for a local, to make sure it gets a good name in debugging
 and OptionalShadowLocal =
@@ -6255,7 +6284,12 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isSt
             CountStaticFieldDef()
 
         // ... and the get/set properties to access it.
-        if not hasLiteralAttr then
+        if hasLiteralAttr then
+            match optShadowLocal with
+            | NoShadowLocal -> ()
+            | ShadowLocal (startMark, _storage) ->
+                cgbuf.SetMarkToHere startMark
+        else
             let ilAttribs =
                 vspec.Attribs
                 |> List.filter (fun (Attrib(_, _, _, _, _, targets, _)) -> canTarget(targets, System.AttributeTargets.Property))
