@@ -186,4 +186,29 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Replace")>]
         let replace (oldValue: string) (newValue: string) (str: string) =
             throwIfNull (nameof(str)) str
-            str.Replace(oldValue, newValue)
+            str.Replace (oldValue, newValue, StringComparison.InvariantCulture)
+
+        [<CompiledName("Contains")>]
+        let contains (substring: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.Contains (substring, StringComparison.InvariantCulture)
+
+        [<CompiledName("Split")>]
+        let split (separator: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.Split separator
+
+        [<CompiledName("StartsWith")>]
+        let startsWith (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.StartsWith (value, StringComparison.InvariantCulture)
+
+        [<CompiledName("EndsWith")>]
+        let endsWith (value: string) (str: string) =
+            throwIfNull (nameof(str)) str
+            str.EndsWith (value, StringComparison.InvariantCulture)
+
+        [<CompiledName("Trim")>]
+        let trim (str: string) =
+            throwIfNull (nameof(str)) str
+            str.Trim ()

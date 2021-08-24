@@ -138,7 +138,21 @@ namespace Microsoft.FSharp.Core
         val length: str:string -> int
 
         /// <summary>
-        ///     Replaces all occurrences of a specified substring in an input string with another substring.
+        ///     Returns whether or not <c>str</c> contains another string, <c>substring</c>, using the
+        ///     <c>System.StringComparison.InvariantCulture</c> comparison strategy.
+        /// </summary>
+        ///
+        /// <param name="substring">The substring to check for.</param>
+        /// <param name="str">The input string.</param>
+        ///
+        /// <returns>True if <c>substring</c> is a substring and false otherwise.</returns> 
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
+        [<CompiledName("Contains")>]
+        val contains: substring:string -> str:string -> bool
+
+        /// <summary>
+        ///     Replaces all occurrences of a specified substring in an input string with another substring, using the
+        ///     <c>System.StringComparison.InvariantCulture</c> comparison strategy.
         /// </summary>
         ///
         /// <param name="oldValue">The substring to be replaced.</param>
@@ -149,3 +163,29 @@ namespace Microsoft.FSharp.Core
         /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Replace")>]
         val replace: oldValue:string -> newValue:string -> str:string -> string
+        
+        /// <summary>Splits a string into substrings based on the specified delimiting text.</summary>
+        ///
+        /// <param name="separator">The delimiting string.</param>
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>
+        ///     An array whose elements contain the substrings from <c>str</c> that are delimited by occurrences
+        ///     of <c>separator</c>.
+        ///</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
+        [<CompiledName("Split")>]
+        val split: separator:string -> str:string -> string[]
+
+        /// <summary>
+        ///     Returns a new string in which all leading and trailing white-space characters in an input string are
+        ///     removed. White-space characters are defined by any character for which <c>System.Char.IsWhiteSpace</c>
+        ///     returns <c>true</c>.
+        /// </summary>
+        ///
+        /// <param name="str">The input string.</param>
+        /// 
+        /// <returns>The resulting string.</returns>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
+        [<CompiledName("Trim")>]
+        val trim: str:string -> string

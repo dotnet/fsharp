@@ -357,6 +357,29 @@ type StringModule() =
         Assert.AreEqual(str.[-4..(-3)], (""))
 
     [<Fact>]
+    member this.Contains() =
+        let e1 = String.contains "foo" "foobar"
+        Assert.True(e1)
+
+        let e2 = String.contains "bar" "foobar"
+        Assert.True(e2)
+
+        let e3 = String.contains "oba" "foobar"
+        Assert.True(e3)
+
+        let e4 = String.contains "fooo" "foobar"
+        Assert.False(e4)
+
+        let e5 = String.contains "xyz" "foobar"
+        Assert.False(e5)
+
+        let e6 = String.contains "" "foobar"
+        Assert.True(e6)
+
+        CheckThrowsArgumentNullException(fun () -> String.contains null "banana" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.contains "banana" null |> ignore)
+
+    [<Fact>]
     member this.Replace () =
         let e1 = String.replace "oo" "aa" "foobar"
         Assert.AreEqual("faabar", e1)
@@ -374,3 +397,60 @@ type StringModule() =
         CheckThrowsArgumentException(fun () -> String.replace "" "x" "banana" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.replace null "x" "banana" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.replace "foo" "bar" null |> ignore)
+
+    [<Fact>]
+    member this.Split () =
+        let e1 = String.split ".." "foo.bar.baz"
+        Assert.AreEqual([|"foo.bar.baz"|], e1)
+        
+        let e2 = String.split ".." "foo..bar....baz...qux"
+        Assert.AreEqual([|"foo"; "bar"; ""; "baz"; ".qux"|], e2)
+        
+        CheckThrowsArgumentNullException(fun () -> String.split "" null |> ignore)
+
+    [<Fact>]
+    member this.StartsWith () =
+        Assert.True(String.startsWith "foo" "foo bar")
+        Assert.True(String.startsWith "apple" "apple banana")
+        Assert.False(String.startsWith "ApPlE" "apple banana")
+        Assert.False(String.startsWith "banana" "apple banana")
+        Assert.True(String.startsWith "." "..something")
+        Assert.True(String.startsWith "" "x")
+        Assert.True(String.startsWith "" "")
+        Assert.False(String.startsWith "x" "")
+        Assert.True(String.startsWith "ß" "ssxyz")
+
+        CheckThrowsArgumentNullException(fun () -> String.startsWith null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.startsWith "" null |> ignore)
+
+    [<Fact>]
+    member this.EndsWith () =
+        Assert.True(String.endsWith "bar" "foo bar")
+        Assert.True(String.endsWith "banana" "apple banana")
+        Assert.False(String.endsWith "baNAna" "apple banana")
+        Assert.False(String.endsWith "apple" "apple banana")
+        Assert.True(String.endsWith "." "something..")
+        Assert.True(String.endsWith "" "x")
+        Assert.True(String.endsWith "" "")
+        Assert.False(String.endsWith "x" "")
+        Assert.True(String.endsWith "ß" "xyzss")
+
+        CheckThrowsArgumentNullException(fun () -> String.endsWith null "" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.endsWith "" null |> ignore)
+
+
+    [<Fact>]
+    member this.Trim () =
+        let e1 = String.trim "foo bar"
+        Assert.AreEqual("foo bar", e1)
+        
+        let e2 = String.trim " foo bar  "
+        Assert.AreEqual("foo bar", e2)
+        
+        let e3 = String.trim "\t \tfoo\t bar\t"
+        Assert.AreEqual("foo\t bar", e3)
+        
+        let e4 = String.trim "\011foo\011\133bar\133"
+        Assert.AreEqual("foo\011\133bar", e4)
+        
+        CheckThrowsArgumentNullException(fun () -> String.trim null |> ignore)  
