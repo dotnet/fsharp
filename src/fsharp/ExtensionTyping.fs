@@ -20,7 +20,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-module internal ExtensionTyping =
+module ExtensionTyping =
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -127,26 +127,26 @@ module internal ExtensionTyping =
             // No appropriate constructor found
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
-    let GetTypeProvidersOfAssembly
-            (runtimeAssemblyFilename: string, 
-             ilScopeRefOfRuntimeAssembly: ILScopeRef, 
-             designTimeName: string, 
-             resolutionEnvironment: ResolutionEnvironment, 
-             isInvalidationSupported: bool, 
-             isInteractive: bool, 
-             systemRuntimeContainsType: string -> bool, 
-             systemRuntimeAssemblyVersion: Version, 
+    let GetTypeProvidersOfAssemblyInternal
+            (runtimeAssemblyFilename: string,
+             designTimeName: string,
+             resolutionEnvironment: ResolutionEnvironment,
+             isInvalidationSupported: bool,
+             isInteractive: bool,
+             systemRuntimeContainsType: string -> bool,
+             systemRuntimeAssemblyVersion: Version,
              compilerToolPaths: string list,
+             logError: TypeProviderError -> unit,
              m:range) =
 
-        let providerSpecs = 
+        let providers =
                 try
-                    let designTimeAssemblyName = 
+                    let designTimeAssemblyName =
                         try
                             if designTimeName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                                Some (AssemblyName (Path.GetFileNameWithoutExtension designTimeName))
+                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeName))
                             else
-                                Some (AssemblyName designTimeName)
+                                Some (System.Reflection.AssemblyName designTimeName)
                         with :? ArgumentException ->
                             errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runtimeAssemblyFilename, designTimeName), m))
                             None
@@ -154,7 +154,7 @@ module internal ExtensionTyping =
                     [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
                       // Check if the attribute is pointing to the file being compiled, in which case ignore it
                       // This checks seems like legacy but is included for compat.
-                      | Some designTimeAssemblyName, Some path 
+                      | Some designTimeAssemblyName, Some path
                          when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
 
@@ -164,18 +164,16 @@ module internal ExtensionTyping =
                             let resolver =
                                 CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                     isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
-                            match box resolver with 
+                            match box resolver with
                             | null -> ()
-                            | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
+                            | _ -> yield resolver
 
-                      |   None, _ -> 
+                      |   None, _ ->
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(Error((e.Number, e.ContextualErrorMessage), m)) )
+                    logError tpe
                     []
-
-        let providers = Tainted<_>.CreateAll(providerSpecs)
 
         providers
 
@@ -217,10 +215,6 @@ module internal ExtensionTyping =
         with :? TypeProviderError as tpe ->
             tpe.Iter (fun e -> errorR(Error(FSComp.SR.etUnexpectedExceptionFromProvidedMemberMember(memberMemberName, typeName, memberName, e.ContextualErrorMessage), m)))
             mi.PApplyNoFailure(fun _ -> recover)
-
-    /// Get the string to show for the name of a type provider
-    let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: range) =
-        resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
     /// Validate a provided namespace name
     let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp: string) =
@@ -751,10 +745,111 @@ module internal ExtensionTyping =
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedVar.Create ctxt)
         override _.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
         override _.GetHashCode() = x.GetHashCode()
+        
+    [<AutoOpen>]
+    module Shim =
+
+        type TypeProvidersInstantiationContext =
+            { RuntimeAssemblyFilename: string
+              DesignerAssemblyName: string
+              ResolutionEnvironment: ResolutionEnvironment
+              IsInvalidationSupported: bool
+              IsInteractive: bool
+              SystemRuntimeContainsType: string -> bool
+              SystemRuntimeAssemblyVersion: Version
+              CompilerToolsPath: string list
+              LogError: TypeProviderError -> unit
+              Range: range }
+
+        type IExtensionTypingProvider =
+            abstract InstantiateTypeProvidersOfAssembly: TypeProvidersInstantiationContext -> ITypeProvider list
+            abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]           
+            abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType             
+            abstract GetInvokerExpression: provider: ITypeProvider * methodBase: ProvidedMethodBase * paramExprs: ProvidedVar[] -> ProvidedExpr
+            abstract DisplayNameOfTypeProvider: typeProvider: ITypeProvider * fullName: bool -> string
+
+        [<Sealed>]
+        type DefaultExtensionTypingProvider() =
+            interface IExtensionTypingProvider with
+                member this.InstantiateTypeProvidersOfAssembly
+                    ({ RuntimeAssemblyFilename = runtimeAssemblyFilename
+                       DesignerAssemblyName = designerAssemblyName
+                       ResolutionEnvironment = resolutionEnvironment
+                       IsInvalidationSupported = isInvalidationSupported
+                       IsInteractive = isInteractive
+                       SystemRuntimeContainsType = systemRuntimeContainsType
+                       SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion
+                       CompilerToolsPath = compilerToolsPath
+                       LogError = logError
+                       Range = m }) =
+
+                    GetTypeProvidersOfAssemblyInternal
+                        (runtimeAssemblyFilename,
+                         designerAssemblyName,
+                         resolutionEnvironment,
+                         isInvalidationSupported,
+                         isInteractive,
+                         systemRuntimeContainsType,
+                         systemRuntimeAssemblyVersion,
+                         compilerToolsPath,
+                         logError,
+                         m)
+
+                member this.GetProvidedTypes(pn: IProvidedNamespace) =
+                    pn.GetTypes() |> Array.map ProvidedType.CreateNoContext 
+
+                member this.ResolveTypeName(pn: IProvidedNamespace, typeName: string) =
+                    pn.ResolveTypeName typeName |> ProvidedType.CreateNoContext
+
+                member this.GetInvokerExpression(provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) =
+                    provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var (p.Handle) |]) |> ProvidedExpr.Create methodBase.Context
+
+                member this.DisplayNameOfTypeProvider(tp: ITypeProvider, fullName: bool) =
+                    if fullName then tp.GetType().FullName else tp.GetType().Name
+
+        let mutable ExtensionTypingProvider = DefaultExtensionTypingProvider() :> IExtensionTypingProvider
+
+        let internal defaultLogger (tpe: TypeProviderError) =
+            tpe.Iter(fun e -> errorR(Error((e.Number, e.ContextualErrorMessage), e.Range)))
+
+    let GetTypeProvidersOfAssembly
+        (runtimeAssemblyFilename: string,
+         ilScopeRefOfRuntimeAssembly: ILScopeRef, 
+         designTimeName: string,
+         resolutionEnvironment: ResolutionEnvironment,
+         isInvalidationSupported: bool,
+         isInteractive: bool,
+         systemRuntimeContainsType : string -> bool,
+         systemRuntimeAssemblyVersion : Version,
+         compilerToolPaths: string list,
+         m: range) =
+
+        let providers =
+            ExtensionTypingProvider.InstantiateTypeProvidersOfAssembly
+                { RuntimeAssemblyFilename = runtimeAssemblyFilename;
+                  DesignerAssemblyName = designTimeName;
+                  ResolutionEnvironment = resolutionEnvironment;
+                  IsInvalidationSupported = isInvalidationSupported;
+                  IsInteractive = isInteractive;
+                  SystemRuntimeContainsType =systemRuntimeContainsType;
+                  SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion;
+                  CompilerToolsPath = compilerToolPaths;
+                  LogError = Shim.defaultLogger;
+                  Range = m }
+              
+        Tainted<_>.CreateAll (providers |> List.map (fun p -> p, ilScopeRefOfRuntimeAssembly, ExtensionTypingProvider.DisplayNameOfTypeProvider(p, true)))
 
     /// Get the provided invoker expression for a particular use of a method.
     let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
-        provider.GetInvokerExpression(methodBase.Handle, [| for p in paramExprs -> Quotations.Expr.Var p.Handle |]) |> ProvidedExpr.Create methodBase.Context
+        ExtensionTypingProvider.GetInvokerExpression(provider, methodBase, paramExprs)
+        
+    /// Get all provided types from provided namespace
+    let GetProvidedTypes (pn: IProvidedNamespace) = 
+        ExtensionTypingProvider.GetProvidedTypes(pn)
+        
+    // Get the string to show for the name of a type provider
+    let DisplayNameOfTypeProvider (resolver: Tainted<ITypeProvider>, m: range) =
+        resolver.PUntaint((fun tp -> ExtensionTypingProvider.DisplayNameOfTypeProvider(tp, false)), m)
 
     /// Compute the Name or FullName property of a provided type, reporting appropriate errors
     let CheckAndComputeProvidedNameProperty(m, st: Tainted<ProvidedType>, proj, propertyString) =
@@ -939,7 +1034,7 @@ module internal ExtensionTyping =
 
             // Check if the provided namespace name is an exact match of the required namespace name
             if displayName = providedNamespaceName then
-                let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.CreateNoContext(providedNamespace.ResolveTypeName typeName)), range=m) 
+                let resolvedType = providedNamespace.PApply((fun providedNamespace -> ExtensionTypingProvider.ResolveTypeName(providedNamespace, typeName)), range=m) 
                 match resolvedType with
                 |   Tainted.Null -> None
                 |   result -> 

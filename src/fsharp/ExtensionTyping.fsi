@@ -13,18 +13,18 @@ open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
 
-module internal ExtensionTyping =
+module ExtensionTyping =
 
-    type TypeProviderDesignation = TypeProviderDesignation of string
+    type internal TypeProviderDesignation = TypeProviderDesignation of string
 
     /// Raised when a type provider has thrown an exception.    
-    exception ProvidedTypeResolution of range * exn
+    exception internal ProvidedTypeResolution of range * exn
 
     /// Raised when an type provider has thrown an exception.    
-    exception ProvidedTypeResolutionNoRange of exn
+    exception internal ProvidedTypeResolutionNoRange of exn
 
     /// Get the list of relative paths searched for type provider design-time components
-    val toolingCompatiblePaths: unit -> string list
+    val internal toolingCompatiblePaths: unit -> string list
 
     /// Carries information about the type provider resolution environment.
     type ResolutionEnvironment =
@@ -44,7 +44,7 @@ module internal ExtensionTyping =
       }
 
     /// Find and instantiate the set of ITypeProvider components for the given assembly reference
-    val GetTypeProvidersOfAssembly : 
+    val internal GetTypeProvidersOfAssembly :
           runtimeAssemblyFilename: string  *
           ilScopeRefOfRuntimeAssembly:ILScopeRef *
           designTimeName: string *
@@ -57,7 +57,7 @@ module internal ExtensionTyping =
           range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
-    val DisplayNameOfTypeProvider : Tainted<ITypeProvider> * range -> string
+    val internal DisplayNameOfTypeProvider : Tainted<ITypeProvider> * range -> string
 
      /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
      /// info objects coming from the type provider.
@@ -143,7 +143,7 @@ module internal ExtensionTyping =
         static member ApplyContext : ProvidedType * ProvidedTypeContext -> ProvidedType
         member Context : ProvidedTypeContext 
         interface IProvidedCustomAttributeProvider
-        static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
+        static member internal TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool
 
     and [<AllowNullLiteral>] 
         IProvidedCustomAttributeProvider =
@@ -182,8 +182,8 @@ module internal ExtensionTyping =
         member GetParameters : unit -> ProvidedParameterInfo[]
         member GetGenericArguments : unit -> ProvidedType[]
         member GetStaticParametersForMethod : ITypeProvider -> ProvidedParameterInfo[]
-        static member TaintedGetHashCode : Tainted<ProvidedMethodBase> -> int
-        static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
+        static member internal TaintedGetHashCode : Tainted<ProvidedMethodBase> -> int
+        static member internal TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedMethodInfo = 
@@ -216,7 +216,7 @@ module internal ExtensionTyping =
         member IsFamilyAndAssembly : bool
         member IsFamilyOrAssembly : bool
         member IsPrivate : bool
-        static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
+        static member internal TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool
 
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedPropertyInfo = 
@@ -227,8 +227,8 @@ module internal ExtensionTyping =
         member CanRead : bool
         member CanWrite : bool
         member PropertyType : ProvidedType
-        static member TaintedGetHashCode : Tainted<ProvidedPropertyInfo> -> int
-        static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool 
+        static member internal TaintedGetHashCode : Tainted<ProvidedPropertyInfo> -> int
+        static member internal TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool
 
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedEventInfo = 
@@ -236,8 +236,8 @@ module internal ExtensionTyping =
         member GetAddMethod : unit -> ProvidedMethodInfo
         member GetRemoveMethod : unit -> ProvidedMethodInfo
         member EventHandlerType : ProvidedType
-        static member TaintedGetHashCode : Tainted<ProvidedEventInfo> -> int
-        static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool 
+        static member internal TaintedGetHashCode : Tainted<ProvidedEventInfo> -> int
+        static member internal TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool
 
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedConstructorInfo = 
@@ -284,49 +284,52 @@ module internal ExtensionTyping =
         override GetHashCode : unit -> int
 
     /// Get the provided expression for a particular use of a method.
-    val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
+    val internal GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
 
+    /// Get all provided types from provided namespace
+    val internal GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]
+    
     /// Validate that the given provided type meets some of the rules for F# provided types
-    val ValidateProvidedTypeAfterStaticInstantiation : range * Tainted<ProvidedType> * expectedPath : string[] * expectedName : string-> unit
+    val internal ValidateProvidedTypeAfterStaticInstantiation : range * Tainted<ProvidedType> * expectedPath : string[] * expectedName : string-> unit
 
     /// Try to apply a provided type to the given static arguments. If successful also return a function 
     /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
     /// after other checks are made).
-    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
+    val internal TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
 
     /// Try to apply a provided method to the given static arguments. 
-    val TryApplyProvidedMethod : methBeforeArgs:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
+    val internal TryApplyProvidedMethod : methBeforeArgs:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
-    val TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
+    val internal TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
 
     /// Try to resolve a type in the given extension type resolver
-    val TryLinkProvidedType : Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
+    val internal TryLinkProvidedType : Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-    val GetProvidedNamespaceAsPath : range * Tainted<ITypeProvider> * string -> string list
+    val internal GetProvidedNamespaceAsPath : range * Tainted<ITypeProvider> * string -> string list
 
     /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
     /// e.g. System.Object -> ["System"; "Object"]
-    val GetFSharpPathToProvidedType : Tainted<ProvidedType> * range:range-> string list
+    val internal GetFSharpPathToProvidedType : Tainted<ProvidedType> * range:range-> string list
     
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
+    val internal GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
+    val internal GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> ILTypeRef
 
 
     /// Represents the remapping information for a generated provided type and its nested types.
     ///
     /// There is one overall tree for each root 'type X = ... type generation expr...' specification.
-    type ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
+    type internal ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
 
     /// The table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
-    type ProvidedAssemblyStaticLinkingMap = 
+    type internal ProvidedAssemblyStaticLinkingMap =
         {  /// The table of remappings from type names in the provided assembly to type
            /// names in the statically linked, embedded assembly.
            ILTypeMap: Dictionary<ILTypeRef, ILTypeRef> }
@@ -336,6 +339,35 @@ module internal ExtensionTyping =
 
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
-    val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * range -> bool
+    val internal IsGeneratedTypeDirectReference: Tainted<ProvidedType> * range -> bool
+    
+    [<AutoOpen>]
+    module Shim =
+
+        type TypeProvidersInstantiationContext =
+            { RuntimeAssemblyFilename: string
+              DesignerAssemblyName: string
+              ResolutionEnvironment: ResolutionEnvironment
+              IsInvalidationSupported: bool
+              IsInteractive: bool
+              SystemRuntimeContainsType: string -> bool
+              SystemRuntimeAssemblyVersion: Version
+              CompilerToolsPath: string list
+              LogError: TypeProviderError -> unit
+              Range: range }
+        
+        type IExtensionTypingProvider =
+            /// Find and instantiate the set of ITypeProvider components for the given assembly reference
+            abstract InstantiateTypeProvidersOfAssembly: TypeProvidersInstantiationContext -> ITypeProvider list
+            abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]           
+            abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType             
+            abstract GetInvokerExpression: provider: ITypeProvider * methodBase: ProvidedMethodBase * paramExprs: ProvidedVar[] -> ProvidedExpr
+            abstract DisplayNameOfTypeProvider: typeProvider: ITypeProvider * fullName: bool -> string
+
+        [<Sealed>]
+        type DefaultExtensionTypingProvider =
+            interface IExtensionTypingProvider
+
+        val mutable ExtensionTypingProvider: IExtensionTypingProvider
 
 #endif
