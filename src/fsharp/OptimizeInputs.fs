@@ -173,7 +173,7 @@ let GenerateIlxCode
           workAroundReflectionEmitBugs=tcConfig.isInteractive // REVIEW: is this still required?
           generateDebugSymbols= tcConfig.debuginfo
           fragName = fragName
-          localOptimizationsAreOn= tcConfig.optSettings.localOpt ()
+          localOptimizationsEnabled= tcConfig.optSettings.LocalOptimizationsEnabled
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
           mainMethodInfo= mainMethodInfo
           ilxBackend = ilxBackend
