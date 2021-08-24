@@ -7,7 +7,7 @@
   <!--
     If FSharpCompilerPath is set, we have nothing else to do, someone has already expressed a preference.
   -->
-  <PropertyGroup Condition="'$(FSharpCompilerPath)' == ''">
+  <PropertyGroup Condition="'$(FSharpCompilerPath)' == '' and '$(DisableAutoSetFscCompilerPath)' != 'true'">
     <!--
         Precompute paths to compiler for both netsdk and netframework compilers.  Settings in the project file will allow 
         Microsoft.FSharp.Targets to select which compiler to use.
@@ -18,13 +18,13 @@
     <Fsc_NetFramework_AnyCpu_ToolExe>fscAnyCpu.exe</Fsc_NetFramework_AnyCpu_ToolExe>
 
     <Fsc_DotNet_CompilerPath>$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</Fsc_DotNet_CompilerPath>
-    <Fsc_Framework_CompilerPath>$(VsInstallRoot)/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</Fsc_Framework_CompilerPath>
-
-    <FSharpCompilerPath>$(Fsc_Framework_CompilerPath)</FSharpCompilerPath>
+    <Fsc_NetFramework_ToolPath>$(VsInstallRoot)/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</Fsc_NetFramework_ToolPath>
 
     <Fsc_DotNET_ToolPath>$(NetCoreRoot)</Fsc_DotNET_ToolPath>
     <Fsc_DotNET_ToolExe>dotnet.exe</Fsc_DotNET_ToolExe>
     <Fsc_DotNET_DotnetFscCompilerPath>$(Fsc_DotNet_CompilerPath)fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+
+    <FSharpCompilerPath>$(Fsc_NetFramework_ToolPath)</FSharpCompilerPath>
   </PropertyGroup>
 
 </Project>

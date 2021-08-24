@@ -1,35 +1,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.ShimHelpers.props" />
+
   <Import Project="$(TargetsDirectory)\Microsoft.FSharp.targets" />
 
   <Target Name="Test">
-
+    <Message Importance="High" Text="===========================================================================================================" />
     <Message Importance="High" Text="Testing : $(MSBuildProjectName)" />
 
-        <FscToolPath Condition="'$(FscToolPath)' == ''">$(Fsc_Dotnet_ToolPath)</FscToolPath>
-        <FscToolExe Condition="'$(FscToolExe)' == ''">$(Fsc_Dotnet_ToolExe)</FscToolExe>
-        <DotnetFscCompilerPath>"$(Fsc_Dotnet_DotnetFscCompilerPath)"</DotnetFscCompilerPath>
+    <!-- check for expected settings -->
+    <Error Condition="'$(ExpectedFSharpShimPresent)' != '$(FSharp_Shim_Present)'" Text="FSharp_Shim_Present expected:'$(ExpectedFSharpShimPresent)' actual: '$(FSharp_Shim_Present)'" />
 
+    <Error Condition="$([System.String]::new('$(FSharpCompilerPath)').EndsWith('$(ExpectedFSharpCompilerPath)')) != true" Text="FSharpCompilerPath expected to end with:  '$(ExpectedFSharpCompilerPath)' actual:'$(FSharpCompilerPath)'" />
 
+    <Error Condition="'$(ExpectedFscToolExe)' != '$(FscToolExe)'" Text="FscToolExe:  expected:'$(ExpectedFscToolExe)' actual:'$(FscToolExe)'" />
 
-    <!-- check for invalid test settings -->
-    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and '$(ExpectedFSharpCorePackageVersion)' != ''" Text="A test cannot specify both ExepctsFSharpCore=false and provide a value for ExpectedFSharpCorePackageVersion." />
+    <Error Condition="'$(ExpectedFscToolPath)' != '$(FscToolPath)'" Text="FscToolPath:  expected:'$(ExpectedFscToolPath)' actual:'$(FscToolPath)'" />
 
-    <!-- Ensure FscToolPath -->
-    <Error Condition="'$(ExpectsFSharpCore)' == 'true' and @(FoundFSharpCorePackages->Count()) == 0" Text="No FSharp.Core reference found.  Expected version $(ExpectedFSharpCorePackageVersion)." />
-    <Error Condition="'$(ExpectsFSharpCore)' != 'true' and @(FoundFSharpCorePackages->Count()) &gt; 0" Text="Expected no FSharp.Core to be present, but found version %(FoundFSharpCorePackages.Version)." />
-    <Error Condition="@(FoundFSharpCorePackages->Count()) &gt; 1" Text="Found more than one version of FSharp.Core; this should never happen: version=%(FoundFSharpCorePackages.Version)." />
+    <Error Condition="'$(ExpectedDotnetFscCompilerPath)' == '' and '$(DotnetFscCompilerPath)' != ''" Text="DotnetFscCompilerPath expected to be empty actual:'$(DotnetFscCompilerPath)'" />
 
-    <!-- validate there is only ever 0 or 1 System.ValueTuple present -->
-    <Error Condition="'$(ExpectsValueTuple)' == 'true' and @(FoundValueTuplePackages->Count()) == 0" Text="No System.ValueTuple reference found.  Expected version $(ExpectedValueTuplePackageVersion)." />
-    <Error Condition="'$(ExpectsValueTuple)' != 'true' and @(FoundValueTuplePackages->Count()) &gt; 0" Text="Expected no System.ValueTuple to be present, but found version %(FoundValueTuplePackages.Version)." />
-    <Error Condition="@(FoundValueTuplePackages->Count()) &gt; 1" Text="Found more than one version of ValueTuple; this should never happen: version=%(FoundValueTuplePackages.Version)." />
-
-    <!-- validate the version of the listed FSharp.Core -->
-    <Error Condition="'$(ExpectsFSharpCore)' == 'true' and '%(FoundFSharpCorePackages.Version)' != '$(ExpectedFSharpCorePackageVersion)'" Text="Expected FSharp.Core version $(ExpectedFSharpCorePackageVersion) but found %(FoundFSharpCorePackages.Version)." />
-
-    <!-- validate the version of the listed System.ValueTuple -->
-    <Error Condition="'$(ExpectsValueTuple)' == 'true' and '%(FoundValueTuplePackages.Version)' != '$(ExpectedValueTuplePackageVersion)'" Text="Expected System.ValueTuple version $(ExpectedValueTuplePackageVersion) but found %(FoundValueTuplePackages.Version)." />
+    <Error Condition="'$(ExpectedDotnetFscCompilerPath)' != '' and $([System.String]::new('$(DotnetFscCompilerPath)').EndsWith('$(ExpectedDotnetFscCompilerPath)')) == true" Text="DotnetFscCompilerPath expected to end with:  '$(ExpectedDotnetFscCompilerPath)' actual:'$(DotnetFscCompilerPath)'" />
 
   </Target>
 
