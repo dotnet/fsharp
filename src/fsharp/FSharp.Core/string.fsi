@@ -189,3 +189,9 @@ namespace Microsoft.FSharp.Core
         /// <exception cref="T:System.ArgumentNullException">Thrown when <c>str</c> is null.</exception>
         [<CompiledName("Trim")>]
         val trim: str:string -> string
+
+        [<CompiledName("StartsWith")>]
+        val startsWith: value:string -> str:string -> bool
+
+        [<CompiledName("EndsWith")>]
+        val endsWith: value:string -> str:string -> bool

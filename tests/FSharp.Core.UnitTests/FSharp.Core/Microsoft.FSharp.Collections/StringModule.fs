@@ -418,7 +418,6 @@ type StringModule() =
         Assert.True(String.startsWith "" "x")
         Assert.True(String.startsWith "" "")
         Assert.False(String.startsWith "x" "")
-        Assert.True(String.startsWith "ß" "ssxyz")
 
         CheckThrowsArgumentNullException(fun () -> String.startsWith null "" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.startsWith "" null |> ignore)
@@ -433,7 +432,6 @@ type StringModule() =
         Assert.True(String.endsWith "" "x")
         Assert.True(String.endsWith "" "")
         Assert.False(String.endsWith "x" "")
-        Assert.True(String.endsWith "ß" "xyzss")
 
         CheckThrowsArgumentNullException(fun () -> String.endsWith null "" |> ignore)
         CheckThrowsArgumentNullException(fun () -> String.endsWith "" null |> ignore)

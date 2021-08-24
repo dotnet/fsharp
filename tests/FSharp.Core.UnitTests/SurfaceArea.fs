@@ -1994,7 +1994,7 @@ Microsoft.FSharp.Core.StringModule: Boolean Contains(System.String, System.Strin
 Microsoft.FSharp.Core.StringModule: System.String Replace(System.String, System.String, System.String)
 Microsoft.FSharp.Core.StringModule: System.String[] Split(System.String, System.String)
 Microsoft.FSharp.Core.StringModule: Boolean StartsWith(System.String, System.String)
-Microsoft.FSharp.Core.StringModule: Boolean EndsWithWith(System.String, System.String)
+Microsoft.FSharp.Core.StringModule: Boolean EndsWith(System.String, System.String)
 Microsoft.FSharp.Core.StringModule: System.String Trim(System.String)
 Microsoft.FSharp.Core.StructAttribute: Void .ctor()
 Microsoft.FSharp.Core.StructuralComparisonAttribute: Void .ctor()

@@ -186,17 +186,18 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Replace")>]
         let replace (oldValue: string) (newValue: string) (str: string) =
             throwIfNull (nameof(str)) str
-            str.Replace (oldValue, newValue, StringComparison.InvariantCulture)
+            str.Replace (oldValue, newValue)
 
         [<CompiledName("Contains")>]
         let contains (substring: string) (str: string) =
             throwIfNull (nameof(str)) str
-            str.Contains (substring, StringComparison.InvariantCulture)
+            str.Contains substring
 
         [<CompiledName("Split")>]
         let split (separator: string) (str: string) =
             throwIfNull (nameof(str)) str
-            str.Split separator
+            // .net standard target doesn't seem to have the ``string[] Split(string)`` overload
+            str.Split ([|separator|], StringSplitOptions.None)
 
         [<CompiledName("StartsWith")>]
         let startsWith (value: string) (str: string) =
