@@ -1009,3 +1009,34 @@ module DebuggingSteppingForMatchWithWhenWithUnionClauses=
     TestMatchWithWhen [4;5]
     TestMatchWithWhen [5;4]
     TestMatchWithWhen [6]
+
+module NestedScopesWithShadowing =
+
+    let f2 (a, b) =
+        let v1 = 1
+        if a then
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+        else
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+
+
+    f2 (true, true)
+    f2 (true, false)
+    f2 (false, true)
+    f2 (false, false)

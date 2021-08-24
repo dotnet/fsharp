@@ -996,8 +996,52 @@ let logDebugInfo (outfile: string) (info: PdbData) =
 
 let rec allNamesOfScope acc (scope: PdbMethodScope) =
     let acc = (acc, scope.Locals) ||> Array.fold (fun z l -> Set.add l.Name z)
-    let acc = (acc, scope.Children) ||> Array.fold allNamesOfScope
+    let acc = (acc, scope.Children) ||> allNamesOfScopes
     acc
+and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
+    (acc, scopes) ||> Array.fold allNamesOfScope
+
+let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
+    // Check if child scopes are properly nested
+    if scope.Children |> Array.forall (fun child ->
+            child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+
+        let children = scope.Children |> Array.sortWith scopeSorter
+
+        // Find all the names defined in this scope
+        let scopeNames = set [| for n in scope.Locals -> n.Name |]
+
+        // Rename if necessary as we push
+        let rename, unprocessed = localsToPush |> Array.partition (fun l -> scopeNames.Contains l.Name)
+        let renamed = [| for l in rename -> { l with Name = l.Name + " (shadowed)" } |]
+
+        let localsToPush2 = [| yield! renamed; yield! unprocessed; yield! scope.Locals |]
+        let newChildren, splits = children |> Array.map (pushShadowedLocals localsToPush2) |> Array.unzip
+        
+        // Check if a rename in any of the children forces a split
+        if splits |> Array.exists id then
+            let results =
+                [| 
+                    // First fill in the gaps between the children with an adjusted version of this scope.
+                    let gaps = 
+                        [| yield (scope.StartOffset, scope.StartOffset) 
+                           for newChild in children do   
+                                yield (newChild.StartOffset, newChild.EndOffset)
+                           yield (scope.EndOffset, scope.EndOffset)  |]
+
+                    for ((_,a),(b,_)) in Array.pairwise gaps do 
+                        if a < b then
+                            yield { scope with Locals=localsToPush2; Children = [| |]; StartOffset = a; EndOffset = b}
+                       
+                    yield! Array.concat newChildren
+                |]
+            let results2 = results |> Array.sortWith scopeSorter
+            results2, true
+        else 
+            let splitsParent = renamed.Length > 0
+            [| { scope with Locals=localsToPush2 } |], splitsParent
+    else
+        [| scope |], false
 
 // Check to see if a scope has a local with the same name as any of its children
 // 
@@ -1005,47 +1049,6 @@ let rec allNamesOfScope acc (scope: PdbMethodScope) =
 //  1. Emit a copy of 'scope' in each true gap, with all locals
 //  2. Adjust each child scope to also contain the locals from 'scope', 
 //     adding the text " (shadowed)" to the names of those with name conflicts.
-let rec unshadowScopeAux (scope: PdbMethodScope) =
-    // Don't bother if scopes are not nested
-    if scope.Children |> Array.forall (fun child ->
-            child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
-        let newChildrenAndNames = scope.Children |> Array.map unshadowScopeAux 
-        let newChildren, childNames = newChildrenAndNames |> Array.unzip
-        let newChildren = Array.concat newChildren |> Array.sortWith scopeSorter
-        let childNames = Set.unionMany childNames
-        let scopeNames = set [| for n in scope.Locals -> n.Name |]
-        let allNames = Set.union scopeNames childNames
-        let unshadowedScopes =
-            if Set.isEmpty (Set.intersect scopeNames childNames) then
-                [| { scope with Children = newChildren } |]
-            else
-                let filled = 
-                    [| yield (scope.StartOffset, scope.StartOffset) 
-                       for newChild in newChildren do   
-                          yield (newChild.StartOffset, newChild.EndOffset)
-                       yield (scope.EndOffset, scope.EndOffset)  |]
-                let unshadowed =
-                    [| for ((_,a),(b,_)) in Array.pairwise filled do 
-                          if a < b then
-                              yield { scope with Children = [| |]; StartOffset = a; EndOffset = b}
-                       
-                       for newChilds, childNames in newChildrenAndNames do
-                           let preservedScopeLocals = 
-                              [| for l in scope.Locals do  
-                                    if childNames.Contains l.Name then
-                                        yield { l with Name = l.Name + " (shadowed)" }
-                                    else   
-                                        yield l |]
-                           for newChild in newChilds do
-                              yield { newChild with Locals = Array.append preservedScopeLocals newChild.Locals } |]
-
-                    |> Array.sortWith scopeSorter
-                unshadowed
-
-        unshadowedScopes, allNames
-     else
-        [| scope |], allNamesOfScope Set.empty scope
-
 let unshadowScopes rootScope =
-   let unshadowedRootScopes, _ = unshadowScopeAux rootScope
-   unshadowedRootScopes
+   let result, _ = pushShadowedLocals [| |] rootScope
+   result
