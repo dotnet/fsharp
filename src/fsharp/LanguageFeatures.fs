@@ -82,7 +82,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
-            LanguageFeature.AdditionalTypeDirectedConversions, languageVersion50
+            LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
             LanguageFeature.RelaxWhitespace2, languageVersion50
             LanguageFeature.OverloadsForCustomOperations, languageVersion50
             LanguageFeature.ExpandedMeasurables, languageVersion50
