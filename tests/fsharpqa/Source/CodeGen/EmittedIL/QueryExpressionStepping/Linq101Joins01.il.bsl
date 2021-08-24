@@ -45,13 +45,13 @@
   // Offset: 0x00000310 Length: 0x000000C3
 }
 .module Linq101Joins01.exe
-// MVID: {611B0EC5-151B-685E-A745-0383C50E1B61}
+// MVID: {611C4D82-151B-685E-A745-0383824D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D00000
+// Image base: 0x06C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -955,7 +955,7 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object> 
             Invoke(class [Utils]Utils/Product _arg2) cil managed
     {
-      // Code size       65 (0x41)
+      // Code size       66 (0x42)
       .maxstack  9
       .locals init ([0] class [Utils]Utils/Product p,
                [1] string t)
@@ -963,42 +963,44 @@
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 41,41 : 17,39 ''
-      IL_0002:  ldloc.0
-      IL_0003:  box        [Utils]Utils/Product
-      IL_0008:  ldnull
-      IL_0009:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<object>(!!0,
+      IL_0002:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0003:  ldloc.0
+      IL_0004:  box        [Utils]Utils/Product
+      IL_0009:  ldnull
+      IL_000a:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<object>(!!0,
                                                                                                                                     !!0)
-      IL_000e:  brfalse.s  IL_0018
+      IL_000f:  brfalse.s  IL_0019
 
       .line 41,41 : 40,55 ''
-      IL_0010:  ldstr      "(No products)"
+      IL_0011:  ldstr      "(No products)"
       .line 100001,100001 : 0,0 ''
-      IL_0015:  nop
-      IL_0016:  br.s       IL_001f
+      IL_0016:  nop
+      IL_0017:  br.s       IL_0020
 
       .line 41,41 : 61,74 ''
-      IL_0018:  ldloc.0
-      IL_0019:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
+      IL_0019:  ldloc.0
+      IL_001a:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
       .line 100001,100001 : 0,0 ''
-      IL_001e:  nop
+      IL_001f:  nop
       .line 100001,100001 : 0,0 ''
-      IL_001f:  stloc.1
+      IL_0020:  stloc.1
       .line 42,42 : 9,22 ''
-      IL_0020:  ldarg.0
-      IL_0021:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@40-4'::builder@
-      IL_0026:  ldarg.0
-      IL_0027:  ldfld      string Linq101Joins01/'Pipe #4 input at line 37@40-4'::c
-      IL_002c:  ldarg.0
-      IL_002d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input at line 37@40-4'::ps
-      IL_0032:  ldloc.0
-      IL_0033:  ldloc.1
-      IL_0034:  newobj     instance void class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::.ctor(!0,
+      IL_0021:  ldarg.0
+      IL_0022:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@40-4'::builder@
+      IL_0027:  ldarg.0
+      IL_0028:  ldfld      string Linq101Joins01/'Pipe #4 input at line 37@40-4'::c
+      IL_002d:  ldarg.0
+      IL_002e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'Pipe #4 input at line 37@40-4'::ps
+      IL_0033:  ldloc.0
+      IL_0034:  ldloc.1
+      IL_0035:  newobj     instance void class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::.ctor(!0,
                                                                                                                                                                                                               !1,
                                                                                                                                                                                                               !2,
                                                                                                                                                                                                               !3)
-      IL_0039:  tail.
-      IL_003b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(!!0)
-      IL_0040:  ret
+      IL_003a:  tail.
+      IL_003c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(!!0)
+      IL_0041:  ret
     } // end of method 'Pipe #4 input at line 37@40-4'::Invoke
 
   } // end of class 'Pipe #4 input at line 37@40-4'

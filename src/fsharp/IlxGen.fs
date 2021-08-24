@@ -1852,13 +1852,13 @@ type CodeGenBuffer(m: range,
         | true, l -> lab2pc (n + 1) l
         | _ -> codeLabelToPC.[lbl]
 
-    let mutable lastSeqPoint = None
+    let mutable lastDebugPoint = None
 
-    // Add a nop to make way for the first sequence point.
+    // Add a nop to make way for the first debug point.
     do if mgbuf.cenv.opts.generateDebugSymbols then
           let doc = g.memoize_file m.FileIndex
           let i = FeeFeeInstr mgbuf.cenv doc
-          codebuf.Add i // for the FeeFee or a better sequence point
+          codebuf.Add i // for the FeeFee or a better debug point
 
     member _.DoPushes (pushes: Pushes) =
         for ty in pushes do
@@ -1898,10 +1898,10 @@ type CodeGenBuffer(m: range,
         is |> List.iter codebuf.Add
 
     member _.GetLastDebugPoint() =
-        lastSeqPoint
+        lastDebugPoint
 
     member private _.EnsureNopBetweenDebugPoints() =
-        // Always add a nop between sequence points to help .NET get the stepping right
+        // Always add a nop between debug points to help .NET get the stepping right
         // Don't do this after a FeeFee marker for hidden code
         if (codebuf.Count > 0 &&
              (match codebuf.[codebuf.Count-1] with
@@ -1910,23 +1910,27 @@ type CodeGenBuffer(m: range,
 
             codebuf.Add(AI_nop)
 
-    member cgbuf.EmitSeqPoint src =
+    member cgbuf.EmitDebugPoint src =
         if mgbuf.cenv.opts.generateDebugSymbols then
             let attr = GenILSourceMarker g src
             let i = I_seqpoint attr
             hasDebugPoints <- true
 
-            // Replace the FeeFee seqpoint at the entry with a better sequence point
-            if codebuf.Count = 1 then
-                assert (match codebuf.[0] with I_seqpoint _ -> true | _ -> false)
-                codebuf.[0] <- i
+            // Replace a FeeFee seqpoint with a better debug point
+            let n = codebuf.Count
+            let isSingleFeeFee =
+                match codebuf.[n-1] with
+                | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
+                | _ -> false
 
+            if isSingleFeeFee then
+                codebuf.[n-1] <- i
             else
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
 
-            // Save the last sequence point away so we can make a decision graph look consistent (i.e. reassert the sequence point at each target)
-            lastSeqPoint <- Some src
+            // Save the last debug point away so we can make a decision graph look consistent (i.e. reassert the debug point at each target)
+            lastDebugPoint <- Some src
             anyDocument <- Some attr.Document
 
     // Emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
@@ -1937,9 +1941,13 @@ type CodeGenBuffer(m: range,
             hasDebugPoints <- true
 
             // don't emit just after another FeeFee
-            match codebuf.[codebuf.Count-1] with
-            | I_seqpoint sm when sm.Line = FeeFee mgbuf.cenv -> ()
-            | _ ->
+            let n = codebuf.Count
+            let isSingleFeeFee =
+                match codebuf.[n-1] with
+                | I_seqpoint sm -> (sm.Line = FeeFee mgbuf.cenv)
+                | _ -> false
+
+            if not isSingleFeeFee then
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
 
@@ -2017,11 +2025,11 @@ type CodeGenBuffer(m: range,
 
         let instrs = codebuf.ToArray()
 
-        // Fixup the first instruction to be a FeeFee sequence point if needed
+        // Fixup the first instruction to be a FeeFee debug point if needed
         let instrs =
             instrs |> Array.mapi (fun idx i2 ->
                 if idx = 0 && (match i2 with AI_nop -> true | _ -> false) && anyDocument.IsSome then
-                    // This special dummy sequence point says skip the start of the method
+                    // This special dummy debug point says skip the start of the method
                     hasDebugPoints <- true
                     FeeFeeInstr mgbuf.cenv anyDocument.Value
                 else
@@ -2038,7 +2046,7 @@ type CodeGenBuffer(m: range,
 module CG =
     let EmitInstr (cgbuf: CodeGenBuffer) pops pushes i = cgbuf.EmitInstr(pops, pushes, i)
     let EmitInstrs (cgbuf: CodeGenBuffer) pops pushes is = cgbuf.EmitInstrs(pops, pushes, is)
-    let EmitSeqPoint (cgbuf: CodeGenBuffer) src = cgbuf.EmitSeqPoint src
+    let EmitDebugPoint (cgbuf: CodeGenBuffer) src = cgbuf.EmitDebugPoint src
     let GenerateDelayMark (cgbuf: CodeGenBuffer) nm = cgbuf.GenerateDelayMark nm
     let SetMark (cgbuf: CodeGenBuffer) m1 m2 = cgbuf.SetMark(m1, m2)
     let SetMarkToHere (cgbuf: CodeGenBuffer) m1 = cgbuf.SetMarkToHere m1
@@ -2137,8 +2145,8 @@ let CodeGenMethod cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs,
 
     let code = buildILCode methodName lab2pc instrs exns localDebugSpecs
 
-    // Attach a source range to the method. Only do this is it has some sequence points, because .NET 2.0/3.5
-    // ILDASM has issues if you emit symbols with a source range but without any sequence points
+    // Attach a source range to the method. Only do this is it has some debug points, because .NET 2.0/3.5
+    // ILDASM has issues if you emit symbols with a source range but without any debug points
     let sourceRange = if hasDebugPoints then GenPossibleILSourceMarker cenv m else None
 
     // The old union erasure phase increased maxstack by 2 since the code pushes some items, we do the same here
@@ -2171,18 +2179,18 @@ let compileStateMachineExpressions = true // try (System.Environment.GetEnvironm
 //-------------------------------------------------------------------------
 
 type EmitDebugPointState =
-    /// Indicates that we need a sequence point at first opportunity. Used on entrance to a method
+    /// Indicates that we need a debug point at first opportunity. Used on entrance to a method
     /// and whenever we drop into an expression within the stepping control structure.
     | SPAlways
 
-    /// Indicates we are not forced to emit a sequence point
+    /// Indicates we are not forced to emit a debug point
     | SPSuppress
 
 /// Determines if any code at all will be emitted for a binding
 let BindingEmitsNoCode g (b: Binding) = IsFSharpValCompiledAsMethod g b.Var
 
-/// Determines what sequence point should be emitted when generating the r.h.s of a binding.
-/// For example, if the r.h.s is a lambda then no sequence point is emitted.
+/// Determines what debug point should be emitted when generating the r.h.s of a binding.
+/// For example, if the r.h.s is a lambda then no debug point is emitted.
 ///
 /// Returns (isSticky, sequencePointForBind, sequencePointGenerationFlagForRhsOfBind)
 let ComputeDebugPointForBinding g (TBind(_, e, spBind) as bind) =
@@ -2194,13 +2202,13 @@ let ComputeDebugPointForBinding g (TBind(_, e, spBind) as bind) =
         | DebugPointAtBinding.NoneAtSticky, _ -> true, None, SPSuppress
         | DebugPointAtBinding.NoneAtDo, _ -> false, None, SPAlways
         | DebugPointAtBinding.NoneAtLet, _ -> false, None, SPSuppress
-        // Don't emit sequence points for lambdas.
+        // Don't emit debug points for lambdas.
         // SEQUENCE POINT REVIEW: don't emit for lazy either, nor any builder expressions, nor interface-implementing object expressions
         | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None, SPSuppress
         | DebugPointAtBinding.Yes m, _ -> false, Some m, SPSuppress
 
 
-/// Determines if a sequence will be emitted when we generate the code for a binding.
+/// Determines if a debug point will be emitted when we generate the code for a binding.
 ///
 /// False for Lambdas, BindingEmitsNoCode, DebugPointAtBinding.NoneAtSticky, DebugPointAtBinding.NoneAtInvisible, and DebugPointAtBinding.NoneAtLet.
 /// True for DebugPointAtBinding.Yes, DebugPointAtBinding.NoneAtDo.
@@ -2220,8 +2228,8 @@ let BindingEmitsHiddenCode (TBind(_, e, spBind)) =
     | _, (Expr.Lambda _ | Expr.TyLambda _) -> true
     | _ -> false
 
-/// Determines if generating the code for a compound expression will emit a sequence point as the first instruction
-/// through the processing of the constituent parts. Used to prevent the generation of sequence points for
+/// Determines if generating the code for a compound expression will emit a debug point as the first instruction
+/// through the processing of the constituent parts. Used to prevent the generation of debug points for
 /// compound expressions.
 let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
     match sp with
@@ -2247,6 +2255,7 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
             | DebugPointAtSequential.SuppressStmt -> FirstEmittedCodeWillBeDebugPoint g sp expr1
             | DebugPointAtSequential.SuppressBoth -> false
         | Expr.Match (DebugPointAtBinding.Yes _, _, _, _, _, _) -> true
+        | Expr.Match (_, _, TDSwitch(DebugPointAtSwitch.Yes _, _, _, _, _), _, _, _) -> true
         | Expr.Op ((TOp.TryWith (DebugPointAtTry.Yes _, _)
                   | TOp.TryFinally (DebugPointAtTry.Yes _, _)
                   | TOp.For (DebugPointAtFor.Yes _, _)
@@ -2256,7 +2265,7 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
      | SPSuppress ->
         false
 
-/// Suppress sequence points for some compound expressions - though not all - even if "SPAlways" is set.
+/// Suppress debug points for some compound expressions - though not all - even if "SPAlways" is set.
 ///
 /// Note this is only used when FirstEmittedCodeWillBeDebugPoint is false.
 let EmitDebugPointForWholeExpr g sp expr =
@@ -2265,44 +2274,48 @@ let EmitDebugPointForWholeExpr g sp expr =
     | SPAlways ->
         match stripExpr expr with
 
-        // In some cases, we emit sequence points for the 'whole' of a 'let' expression.
+        // In some cases, we emit debug points for the 'whole' of a 'let' expression.
         // Specifically, when
-        //    + SPAlways (i.e. a sequence point is required as soon as meaningful)
+        //    + SPAlways (i.e. a debug point is required as soon as meaningful)
         //    + binding is DebugPointAtBinding.NoneAtSticky, or DebugPointAtBinding.NoneAtLet.
         //    + not FirstEmittedCodeWillBeDebugPoint
         // For example if we start with
         //    let someCode () = f x
         // and by inlining 'f' the expression becomes
         //    let someCode () = (let sticky = x in y)
-        // then we place the sequence point for the whole TAST expression 'let sticky = x in y', i.e. textual range 'f x' in the source code, but
+        // then we place the debug point for the whole TAST expression 'let sticky = x in y', i.e. textual range 'f x' in the source code, but
         // _before_ the evaluation of 'x'. This will only happen for sticky 'let' introduced by inlining and other code generation
         // steps. We do _not_ do this for 'invisible' let which can be skipped.
         | Expr.Let (bind, _, _, _) when BindingIsInvisible bind -> false
         | Expr.LetRec (binds, _, _, _) when binds |> List.forall BindingIsInvisible -> false
 
-        // If the binding is a lambda then we don't emit a sequence point.
+        // If the binding is a lambda then we don't emit a debug point.
         | Expr.Let (bind, _, _, _) when BindingEmitsHiddenCode bind -> false
         | Expr.LetRec (binds, _, _, _) when binds |> List.forall BindingEmitsHiddenCode -> false
 
-        // If the binding is represented by a top-level generated constant value then we don't emit a sequence point.
+        // If the binding is represented by a top-level generated constant value then we don't emit a debug point.
         | Expr.Let (bind, _, _, _) when BindingEmitsNoCode g bind -> false
         | Expr.LetRec (binds, _, _, _) when binds |> List.forall (BindingEmitsNoCode g) -> false
 
-        // Suppress sequence points for the whole 'a;b' and do it at 'a' instead.
+        // Suppress debug points for the whole 'a;b' and do it at 'a' instead.
         | Expr.Sequential _ -> false
 
-        // Suppress sequence points at labels and gotos, it makes no sense to emit sequence points at these. We emit FeeFee instead
+        // Suppress debug points at labels and gotos, it makes no sense to emit debug points at these. We emit FeeFee instead
         | Expr.Op (TOp.Label _, _, _, _) -> false
         | Expr.Op (TOp.Goto _, _, _, _) -> false
 
-        // We always suppress at the whole 'match'/'try'/... expression because we do it at the individual parts.
+        // We suppress at 'match' with DebugPointAtBinding.NoneAtInvisible because
+        // it is the result of a typical 'match' compilation. For example,
+        //    match expr with 
+        // becomes 
+        //    let tmp = expr   // generates a debug point, BEFORE tmp is evaluated
+        //    match tmp with   // a match marked with DebugPointAtBinding.NoneAtInvisible
+        //      // decision tree accessing 'tmp'
         //
-        // These cases need documenting. For example, a typical 'match' gets compiled to
-        //    let tmp = expr   // generates a sequence point, BEFORE tmp is evaluated
-        //    match tmp with  // a match marked with NoDebugPointAtInvisibleLetBinding
-        // So since the 'let tmp = expr' has a sequence point, then no sequence point is needed for the 'match'. But the processing
-        // of the 'let' requests SPAlways for the body.
-        | Expr.Match _ -> false
+        // So since the 'let tmp = expr' has a debug point, then no debug point is needed for the 'match'. 
+        //
+        // Code 'a && b' and 'a || b' gets compiled to match with DebugPointAtBinding.NoneAtSticky
+        | Expr.Match (DebugPointAtBinding.NoneAtInvisible, _, _, _, _, _) -> false
         | Expr.Op (TOp.TryWith _, _, _, _) -> false
         | Expr.Op (TOp.TryFinally _, _, _, _) -> false
         | Expr.Op (TOp.For _, _, _, _) -> false
@@ -2342,7 +2355,7 @@ let rec RangeOfDebugPointForWholeExpr g expr =
     | Expr.Sequential (expr1, _, NormalSeq, _, _) -> RangeOfDebugPointForWholeExpr g expr1
     | _ -> expr.Range
 
-/// Used to avoid emitting multiple sequence points in decision tree generation
+/// Used to avoid emitting multiple debug points in decision tree generation
 let DoesGenExprStartWithDebugPoint g sp expr =
     FirstEmittedCodeWillBeDebugPoint g sp expr ||
     EmitDebugPointForWholeExpr g sp expr
@@ -2351,7 +2364,7 @@ let ProcessDebugPointForExpr (cenv: cenv) (cgbuf: CodeGenBuffer) sp expr =
     let g = cenv.g
     if not (FirstEmittedCodeWillBeDebugPoint g sp expr) then
       if EmitDebugPointForWholeExpr g sp expr then
-          CG.EmitSeqPoint cgbuf (RangeOfDebugPointForWholeExpr g expr)
+          CG.EmitDebugPoint cgbuf (RangeOfDebugPointForWholeExpr g expr)
       elif EmitHiddenCodeMarkerForWholeExpr g sp expr then
           cgbuf.EmitStartOfHiddenCode()
 
@@ -2659,12 +2672,14 @@ and GenSequel cenv cloc cgbuf sequel =
   | EndLocalScope _ -> failwith "EndLocalScope unexpected"
   | Br x ->
       // Emit a NOP in debug code in case the branch instruction gets eliminated
-      // because it is a "branch to next instruction". This prevents two unrelated sequence points
+      // because it is a "branch to next instruction". This prevents two unrelated debug points
       // (the one before the branch and the one after) being coalesced together
       if cgbuf.mgbuf.cenv.opts.generateDebugSymbols then
          cgbuf.EmitStartOfHiddenCode()
          CG.EmitInstr cgbuf (pop 0) Push0 AI_nop
+
       CG.EmitInstr cgbuf (pop 0) Push0 (I_br x.CodeLabel)
+
   | LeaveHandler (isFinally, whereToSaveResultOpt, afterHandler, hasResult) ->
       if hasResult then
           if isFinally then
@@ -2676,6 +2691,7 @@ and GenSequel cenv cloc cgbuf sequel =
             | Some (whereToSaveResult, _) ->
                 EmitSetLocal cgbuf whereToSaveResult
       CG.EmitInstr cgbuf (pop 0) Push0 (if isFinally then I_endfinally else I_leave(afterHandler.CodeLabel))
+
   | EndFilter ->
       CG.EmitInstr cgbuf (pop 1) Push0 I_endfilter
   )
@@ -2816,7 +2832,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         // Process the debug point and see if there's a replacement technique to process this expression
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
-        // Compiler generated sequential executions result in suppressions of sequence points on both
+        // Compiler generated sequential executions result in suppressions of debug points on both
         // left and right of the sequence
         let spStmt, spExpr =
             (match spSeq with
@@ -2846,15 +2862,15 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
         // This case implemented here to get a guaranteed tailcall
-        // Make sure we generate the sequence point outside the scope of the variable
+        // Make sure we generate the debug point outside the scope of the variable
         let startScope, endScope as scopeMarks = StartDelayedLocalScope "let" cgbuf
         let eenv = AllocStorageForBind cenv cgbuf scopeMarks eenv bind
         let spBind = GenDebugPointForBind cenv cgbuf bind
         GenBindingAfterDebugPoint cenv cgbuf eenv spBind bind false (Some startScope)
 
-        // Work out if we need a sequence point for the body. For any "user" binding then the body gets SPAlways.
+        // Work out if we need a debug point for the body. For any "user" binding then the body gets SPAlways.
         // For invisible compiler-generated bindings we just use "sp", unless its body is another invisible binding
-        // For sticky bindings arising from inlining we suppress any immediate sequence point in the body
+        // For sticky bindings arising from inlining we suppress any immediate debug point in the body
         let spBody =
            match bind.DebugPoint with
            | DebugPointAtBinding.Yes _
@@ -2871,25 +2887,11 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
         match spBind with
-        | DebugPointAtBinding.Yes m -> CG.EmitSeqPoint cgbuf m
+        | DebugPointAtBinding.Yes m -> CG.EmitDebugPoint cgbuf m
         | DebugPointAtBinding.NoneAtDo
         | DebugPointAtBinding.NoneAtLet
         | DebugPointAtBinding.NoneAtInvisible
         | DebugPointAtBinding.NoneAtSticky -> ()
-
-        // The target of branch needs a sequence point.
-        // If we don't give it one it will get entirely the wrong sequence point depending on earlier codegen
-        // Note we're not interested in having pattern matching and decision trees reveal their inner working.
-        // Hence at each branch target we 'reassert' the overall sequence point that was active as we came into the match.
-        //
-        // NOTE: sadly this causes multiple sequence points to appear for the "initial" location of an if/then/else or match.
-        let activeSP = cgbuf.GetLastDebugPoint()
-        let repeatSP() =
-            match activeSP with
-            | None -> ()
-            | Some src ->
-                if activeSP <> cgbuf.GetLastDebugPoint() then
-                    CG.EmitSeqPoint cgbuf src
 
         // First try the common cases where we don't need a join point.
         match tree with
@@ -2905,7 +2907,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
             //        match-testing (dtrees) should not contribute to the stack.
             //        Each branch-RHS (targets) may contribute to the stack, leaving it in the "stackAfterJoin" state, for the join point.
             //        Since code is branching and joining, the cgbuf stack is maintained manually.
-            GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequelOnBranches (contf << (fun Fake ->
+            GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets sequelOnBranches (contf << (fun Fake ->
                 CG.SetMarkToHere cgbuf afterJoin
 
                 //assert(cgbuf.GetCurrentStack() = stackAfterJoin)  // REVIEW: Since gen_dtree* now sets stack, stack should be stackAfterJoin at this point...
@@ -3816,7 +3818,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
     let g = cenv.g
     let sp =
         match spTry with
-        | DebugPointAtTry.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+        | DebugPointAtTry.Yes m -> CG.EmitDebugPoint cgbuf m; SPAlways
         | DebugPointAtTry.Body -> SPAlways
         | DebugPointAtTry.No -> SPSuppress
 
@@ -3843,10 +3845,10 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resultTy, spTry) =
     let exitSequel = LeaveHandler (false, whereToSaveOpt, afterHandler, true)
     let eenvinner = {eenvinner with withinSEH = true; exitSequel = exitSequel}
 
-    // Generate the body of the try. In the normal case (DebugPointAtTry.Yes) we generate a sequence point
+    // Generate the body of the try. In the normal case (DebugPointAtTry.Yes) we generate a debug point
     // both on the 'try' keyword and on the start of the expression in the 'try'. For inlined code and
     // compiler generated 'try' blocks (i.e. DebugPointAtTry.No, used for the try/finally implicit
-    // in a 'use' or 'foreach'), we suppress the sequence point
+    // in a 'use' or 'foreach'), we suppress the debug point
     GenExpr cenv cgbuf eenvinner sp e1 exitSequel
     CG.SetMarkToHere cgbuf endTryMark
     let tryMarks = (startTryMark.CodeLabel, endTryMark.CodeLabel)
@@ -3868,17 +3870,17 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
                let afterFilter = CG.GenerateDelayMark cgbuf "afterFilter"
                let sequelOnBranches, afterJoin, stackAfterJoin, sequelAfterJoin = GenJoinPoint cenv cgbuf "filter" eenv g.int_ty m EndFilter
                let eenvinner = { eenvinner with exitSequel = sequelOnBranches }
-               // We emit the sequence point for the 'with' keyword span on the start of the filter
+               // We emit the debug point for the 'with' keyword span on the start of the filter
                // block. However the targets of the filter block pattern matching should not get any
-               // sequence points (they will be 'true'/'false' values indicating if the exception has been
+               // debug points (they will be 'true'/'false' values indicating if the exception has been
                // caught or not).
                //
-               // The targets of the handler block DO get sequence points. Thus the expected behaviour
+               // The targets of the handler block DO get debug points. Thus the expected behaviour
                // for a try/with with a complex pattern is that we hit the "with" before the filter is run
                // and then jump to the handler for the successful catch (or continue with exception handling
                // if the filter fails)
                match spWith with
-               | DebugPointAtWith.Yes m -> CG.EmitSeqPoint cgbuf m
+               | DebugPointAtWith.Yes m -> CG.EmitDebugPoint cgbuf m
                | DebugPointAtWith.No -> ()
 
 
@@ -3888,7 +3890,7 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
 
                GenStoreVal cenv cgbuf eenvinner vf.Range vf
 
-               // Why SPSuppress? Because we do not emit a sequence point at the start of the List.filter - we've already put one on
+               // Why SPSuppress? Because we do not emit a debug point at the start of the List.filter - we've already put one on
                // the 'with' keyword above
                GenExpr cenv cgbuf eenvinner SPSuppress ef sequelOnBranches
                CG.SetMarkToHere cgbuf afterJoin
@@ -3915,7 +3917,7 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
                let startOfHandler = CG.GenerateMark cgbuf "startOfHandler"
 
                match spWith with
-               | DebugPointAtWith.Yes m -> CG.EmitSeqPoint cgbuf m
+               | DebugPointAtWith.Yes m -> CG.EmitDebugPoint cgbuf m
                | DebugPointAtWith.No -> ()
 
                CG.SetStack cgbuf [g.ilg.typ_Object]
@@ -3941,8 +3943,8 @@ and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, s
 
        cgbuf.EmitStartOfHiddenCode()
 
-       (* Restore the stack and load the result *)
-       EmitRestoreStack cgbuf stack (* RESTORE *)
+       // Restore the stack and load the result
+       EmitRestoreStack cgbuf stack
 
        match whereToSaveOpt with
        | Some (whereToSave, ilResultTy) ->
@@ -3966,7 +3968,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
 
        let sp =
            match spFinally with
-           | DebugPointAtFinally.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+           | DebugPointAtFinally.Yes m -> CG.EmitDebugPoint cgbuf m; SPAlways
            | DebugPointAtFinally.Body -> SPAlways
            | DebugPointAtFinally.No -> SPSuppress
 
@@ -4029,7 +4031,7 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     let _, eenvinner = AllocLocalVal cenv cgbuf v eenvinner None (start, finish)
 
     match spFor with
-    | DebugPointAtFor.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
+    | DebugPointAtFor.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
     | DebugPointAtFor.No -> ()
 
     GenExpr cenv cgbuf eenv SPSuppress e1 Continue
@@ -4062,8 +4064,8 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // CSharpStyle: if v < e2 then goto .inner
     match spFor with
-    | DebugPointAtFor.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointAtFor.No -> () //CG.EmitSeqPoint cgbuf e2.Range
+    | DebugPointAtFor.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
+    | DebugPointAtFor.No -> () //CG.EmitDebugPoint cgbuf e2.Range
 
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
@@ -4096,16 +4098,16 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
 
     let spCondition =
         match spWhile with
-        | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart; SPSuppress
+        | DebugPointAtWhile.Yes spStart -> CG.EmitDebugPoint cgbuf spStart; SPSuppress
         | DebugPointAtWhile.No -> SPSuppress
 
-    // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
+    // SEQUENCE POINTS: Emit a debug point to cover all of 'while e do'
     GenExpr cenv cgbuf eenv spCondition condExpr (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
 
     GenExpr cenv cgbuf eenv SPAlways bodyExpr (DiscardThen (Br startTest))
     CG.SetMarkToHere cgbuf finish
 
-    // SEQUENCE POINTS: Emit a sequence point to cover 'done' if present
+    // SEQUENCE POINTS: Emit a debug point to cover 'done' if present
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 //--------------------------------------------------------------------------
@@ -4991,19 +4993,19 @@ and GenSequenceExpr
         |> AddNonUserCompilerGeneratedAttribs g
 
     let closeMethod =
-        // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
+        // Note: We suppress the first debug point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "Close", eenvinner, 1, closeExpr, discardAndReturnVoid)
         mkILNonGenericVirtualMethod("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (lazy ilCode))
 
     let checkCloseMethod =
-        // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
+        // Note: We suppress the first debug point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq, [], "get_CheckClose", eenvinner, 1, checkCloseExpr, Return)
         mkILNonGenericVirtualMethod("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL (lazy ilCode))
 
     let generateNextMethod =
-        // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
+        // Note: We suppress the first debug point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         // the 'next enumerator' byref arg is at arg position 1
         let eenvinner = eenvinner |> AddStorageForLocalVals g [ (nextEnumeratorValRef.Deref, Arg 1) ]
@@ -5548,10 +5550,10 @@ and GenJoinPoint cenv cgbuf pos eenv ty m sequel =
         Br afterJoin, afterJoin, stackAfterJoin, sequel
 
 // Accumulate the decision graph as we go
-and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets repeatSP sequel contf =
+and GenDecisionTreeAndTargets cenv cgbuf stackAtTargets eenv tree targets sequel contf =
     let targetCounts = accTargetsOfDecisionTree tree [] |> List.countBy id |> Dictionary.ofList
     let targetNext = ref 0 // used to make sure we generate the targets in-order, postponing if necessary
-    GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets (targetNext, targetCounts) repeatSP (IntMap.empty()) sequel (fun targetInfos ->
+    GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv tree targets (targetNext, targetCounts) (IntMap.empty()) sequel (fun targetInfos ->
         let sortedTargetInfos =
             targetInfos
             |> Seq.sortBy (fun (KeyValue(targetIdx, _)) -> targetIdx)
@@ -5574,7 +5576,7 @@ and GenPostponedDecisionTreeTargets cenv cgbuf targetInfos stackAtTargets sequel
 ///
 /// When inplabOpt is "Some inplab", we are assuming an existing branch to "inplab" and can optionally
 /// set inplab to point to another location if no codegen is required.
-and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets targetCounts repeatSP targetInfos sequel (contf: Zmap<_,_> -> FakeUnit) =
+and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree targets targetCounts targetInfos sequel (contf: Zmap<_,_> -> FakeUnit) =
     CG.SetStack cgbuf stackAtTargets              // Set the expected initial stack.
     match tree with
     | TDBind(bind, rest) ->
@@ -5587,18 +5589,24 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
        // we effectively lose an EndLocalScope for all dtrees that go to the same target
        // So we just pretend that the variable goes out of scope here.
        CG.SetMarkToHere cgbuf endScope
-       GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv rest targets targetCounts repeatSP targetInfos sequel contf
+       GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv rest targets targetCounts targetInfos sequel contf
 
     | TDSuccess(es, targetIdx) ->
-        let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets targetCounts repeatSP targetInfos sequel
+        let targetInfos, genTargetInfoOpt = GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets targetCounts targetInfos sequel
         match genTargetInfoOpt with
         | Some (eenvAtTarget, spExprAtTarget, exprAtTarget, sequelAtTarget) ->
             GenLinearExpr cenv cgbuf eenvAtTarget spExprAtTarget exprAtTarget sequelAtTarget true (fun Fake -> contf targetInfos)
         | _ ->
             contf targetInfos
 
-    | TDSwitch(e, cases, dflt, m) ->
-       GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets targetCounts repeatSP targetInfos sequel contf
+    | TDSwitch(sp, e, cases, dflt, m) ->
+        
+        // Emit the debug point 
+        match sp with
+        | DebugPointAtSwitch.Yes dpm -> CG.EmitDebugPoint cgbuf dpm
+        | DebugPointAtSwitch.No -> ()
+
+        GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets targetCounts targetInfos sequel contf
 
 and GetTarget (targets:_[]) n =
     if n >= targets.Length then failwith "GetTarget: target not found in decision tree"
@@ -5607,12 +5615,12 @@ and GetTarget (targets:_[]) n =
 /// Generate a success node of a decision tree, binding the variables and going to the target
 /// If inplabOpt is present, this label must get set to the first logical place to execute.
 /// For example, if no variables get bound this can just be set to jump straight to the target.
-and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetNext: int ref, targetCounts: Dictionary<int,int>) repeatSP targetInfos sequel =
+and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx targets (targetNext: int ref, targetCounts: Dictionary<int,int>) targetInfos sequel =
     let (TTarget(vs, successExpr, spTarget, flags)) = GetTarget targets targetIdx
     match IntMap.tryFind targetIdx targetInfos with
     | Some (targetInfo, isTargetPostponed) ->
 
-        let (targetMarkBeforeBinds, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _, _) = targetInfo
+        let (targetMarkBeforeBinds, targetMarkAfterBinds: Mark, eenvAtTarget, _, _, _, _, _, _, _) = targetInfo
 
         // We have encountered this target before. See if we should generate it now
         let targetCount = targetCounts.[targetIdx]
@@ -5626,7 +5634,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
             cgbuf.SetMarkOrEmitBranchIfNecessary (inplabOpt, targetMarkBeforeBinds)
         else
             cgbuf.SetMarkToHereIfNecessary inplabOpt
-            repeatSP()
+            cgbuf.EmitStartOfHiddenCode()
 
             (vs, es) ||> List.iter2 (fun v e ->
 
@@ -5668,7 +5676,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                  |||> List.zip3 
                  |> List.choose (fun (v, e, flag) -> if flag then None else Some (mkInvisibleBind v e))
         let eenvAtTarget = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
-        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope)
+        let targetInfo = (targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, vs, es, flags, startScope, endScope)
 
         let targetCount = targetCounts.[targetIdx]
 
@@ -5694,22 +5702,11 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         targetInfos, genTargetInfoOpt
 
 and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
-    let targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, repeatSP, vs, es, flags, startScope, endScope = targetInfo
+    let targetMarkBeforeBinds, targetMarkAfterBinds, eenvAtTarget, successExpr, spTarget, vs, es, flags, startScope, endScope = targetInfo
     CG.SetMarkToHere cgbuf targetMarkBeforeBinds
-    let spExpr = (match spTarget with DebugPointForTarget.Yes -> SPAlways | DebugPointForTarget.No _ -> SPSuppress)
+    let spExpr = (match spTarget with DebugPointAtTarget.Yes -> SPAlways | DebugPointAtTarget.No _ -> SPSuppress)
 
-    // Repeat the sequence point to make sure each target branch has some sequence point (instead of inheriting
-    // a random sequence point from the previously generated IL code from the previous block. See comment on
-    // repeatSP() above.
-    //
-    // Only repeat the sequence point if we really have to, i.e. if the target expression doesn't start with a
-    // sequence point anyway
-    if isNil vs && DoesGenExprStartWithDebugPoint cenv.g spExpr successExpr then
-       ()
-    else
-       match spTarget with
-       | DebugPointForTarget.Yes -> repeatSP()
-       | DebugPointForTarget.No -> cgbuf.EmitStartOfHiddenCode()
+    cgbuf.EmitStartOfHiddenCode()
 
     CG.SetMarkToHere cgbuf startScope
     let binds = mkInvisibleBinds vs es
@@ -5718,22 +5715,17 @@ and GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel =
     CG.SetStack cgbuf stackAtTargets
     (eenvAtTarget, spExpr, successExpr, (EndLocalScope(sequel, endScope)))
 
-and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets targetCounts repeatSP targetInfos sequel contf =
+and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defaultTargetOpt switchm targets targetCounts targetInfos sequel contf =
     let g = cenv.g
     let m = e.Range
     cgbuf.SetMarkToHereIfNecessary inplabOpt
 
-    repeatSP()
+    cgbuf.EmitStartOfHiddenCode()
     match cases with
       // optimize a test against a boolean value, i.e. the all-important if-then-else
       | TCase(DecisionTreeTest.Const(Const.Bool b), successTree) :: _ ->
        let failureTree = (match defaultTargetOpt with None -> cases.Tail.Head.CaseTree | Some d -> d)
-       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None false eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets targetCounts repeatSP targetInfos sequel contf
-
-      // // Remove a single test for a union case . Union case tests are always exa
-      //| [ TCase(DecisionTreeTest.UnionCase _, successTree) ] when (defaultTargetOpt.IsNone) ->
-      //  GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv successTree targets repeatSP targetInfos sequel
-      //   //GenDecisionTree cenv eenv.cloc cgbuf stackAtTargets e (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx))) eenv successTree failureTree targets repeatSP targetInfos sequel
+       GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None false eenv (if b then successTree else failureTree) (if b then failureTree else successTree) targets targetCounts targetInfos sequel contf
 
       // Optimize a single test for a union case to an "isdata" test - much
       // more efficient code, and this case occurs in the generated equality testers where perf is important
@@ -5746,7 +5738,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         let idx = c.Index
         let avoidHelpers = entityRefInThisAssembly g.compilingFslib c.TyconRef
         let tester = (Some (pop 1, Push [g.ilg.typ_Bool], Choice1Of2 (avoidHelpers, cuspec, idx)))
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e tester false eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e tester false eenv successTree failureTree targets targetCounts targetInfos sequel contf
 
       // Use GenDecisionTreeTest to generate a single test for null (when no box required) where the success
       // is going to the immediate first node in the tree
@@ -5757,7 +5749,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             match defaultTargetOpt with
             | None -> rest.Head.CaseTree
             | Some tg -> tg
-        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None true eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf
+        GenDecisionTreeTest cenv eenv.cloc cgbuf stackAtTargets e None true eenv successTree failureTree targets targetCounts targetInfos sequel contf
 
       | _ ->
         let caseLabels = List.map (fun _ -> CG.GenerateDelayMark cgbuf "switch_case") cases
@@ -5788,7 +5780,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   BI_brtrue
               | _ -> failwith "internal error: GenDecisionTreeSwitch"
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (bi, (List.head caseLabels).CodeLabel))
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts repeatSP targetInfos sequel caseLabels cases contf
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases contf
 
         | DecisionTreeTest.ActivePatternCase _ -> error(InternalError("internal error in codegen: DecisionTreeTest.ActivePatternCase", switchm))
         | DecisionTreeTest.UnionCase (hdc, tyargs) ->
@@ -5804,7 +5796,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             let avoidHelpers = entityRefInThisAssembly g.compilingFslib hdc.TyconRef
             EraseUnions.emitDataSwitch g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec, dests)
             CG.EmitInstrs cgbuf (pop 1) Push0 [ ] // push/pop to match the line above
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts repeatSP targetInfos sequel caseLabels cases contf
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases contf
 
         | DecisionTreeTest.Const c ->
             GenExpr cenv cgbuf eenv SPSuppress e Continue
@@ -5847,22 +5839,22 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                     CG.EmitInstr cgbuf (pop 1) Push0 (I_switch destinationLabels)
                 else
                   error(InternalError("non-dense integer matches not implemented in codegen - these should have been removed by the pattern match compiler", switchm))
-                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts repeatSP targetInfos sequel caseLabels cases contf
+                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases contf
             | _ -> error(InternalError("these matches should never be needed", switchm))
         | DecisionTreeTest.Error m -> error(InternalError("Trying to compile error recovery branch", m))
 
-and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts repeatSP targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =
+and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =
 
     match defaultTargetOpt with
     | Some defaultTarget ->
-        GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv defaultTarget targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets targetCounts repeatSP targetInfos sequel caseLabels cases contf
+        GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv defaultTarget targets targetCounts targetInfos sequel (fun targetInfos ->
+            GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets targetCounts targetInfos sequel caseLabels cases contf
         )
     | None ->
         match caseLabels, cases with
         | caseLabel :: caseLabelsTail, TCase(_, caseTree) :: casesTail ->
-            GenDecisionTreeAndTargetsInner cenv cgbuf (Some caseLabel) stackAtTargets eenv caseTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets targetCounts repeatSP targetInfos sequel caseLabelsTail casesTail contf
+            GenDecisionTreeAndTargetsInner cenv cgbuf (Some caseLabel) stackAtTargets eenv caseTree targets targetCounts targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeCases cenv cgbuf stackAtTargets eenv None targets targetCounts targetInfos sequel caseLabelsTail casesTail contf
             )
         | _ ->
             contf targetInfos
@@ -5870,7 +5862,7 @@ and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets
 // Used for the peephole optimization below
 and (|BoolExpr|_|) = function Expr.Const (Const.Bool b1, _, _) -> Some b1 | _ -> None
 
-and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv successTree failureTree targets targetCounts repeatSP targetInfos sequel contf =
+and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv successTree failureTree targets targetCounts targetInfos sequel contf =
     let g = cenv.g
     match successTree, failureTree with
 
@@ -5919,8 +5911,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv 
                 let success = CG.GenerateDelayMark cgbuf "testSuccess"
                 let testForSuccess = if isNullTest then BI_brfalse else BI_brtrue
                 GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (testForSuccess, success.CodeLabel) ]))
-                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some success) stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel contf
+                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv failureTree targets targetCounts targetInfos sequel (fun targetInfos ->
+                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some success) stackAtTargets eenv successTree targets targetCounts targetInfos sequel contf
                 )
 
             | _ ->
@@ -5931,8 +5923,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv 
                 let failure = CG.GenerateDelayMark cgbuf "testFailure"
                 let testForFailure = if isNullTest then BI_brtrue else BI_brfalse
                 GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, [ I_brcmp (testForFailure, failure.CodeLabel) ]))
-                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+                GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts targetInfos sequel (fun targetInfos ->
+                    GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts targetInfos sequel contf
                 )
 
         // Turn 'isdata' tests that branch into EI_brisdata tests
@@ -5940,8 +5932,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv 
             let failure = CG.GenerateDelayMark cgbuf "testFailure"
             GenExpr cenv cgbuf eenv SPSuppress e (CmpThenBrOrContinue(pop 1, EraseUnions.mkBrIsData g.ilg false (avoidHelpers, cuspec, idx, failure.CodeLabel)))
 
-            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts targetInfos sequel contf
             )
 
         | Some (pops, pushes, i) ->
@@ -5952,8 +5944,8 @@ and GenDecisionTreeTest cenv cloc cgbuf stackAtTargets e tester isNullTest eenv 
             | Choice2Of2 i -> CG.EmitInstr cgbuf pops pushes i
             CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp (BI_brfalse, failure.CodeLabel))
 
-            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts repeatSP targetInfos sequel (fun targetInfos ->
-                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts repeatSP targetInfos sequel contf
+            GenDecisionTreeAndTargetsInner cenv cgbuf None stackAtTargets eenv successTree targets targetCounts targetInfos sequel (fun targetInfos ->
+                GenDecisionTreeAndTargetsInner cenv cgbuf (Some failure) stackAtTargets eenv failureTree targets targetCounts targetInfos sequel contf
             )
 
 /// Generate fixups for letrec bindings
@@ -6033,7 +6025,7 @@ and GenLetRec cenv cgbuf eenv (binds, body, m) sequel =
 
 and GenDebugPointForBind cenv cgbuf bind =
     let _, pt, sp = ComputeDebugPointForBinding cenv.g bind
-    pt |> Option.iter (CG.EmitSeqPoint cgbuf)
+    pt |> Option.iter (CG.EmitDebugPoint cgbuf)
     sp
 
 and GenBinding cenv cgbuf eenv (bind: Binding) (isStateVar: bool) =
@@ -7505,7 +7497,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     let doesSomething = CheckCodeDoesSomething topCode.Code
 
     // Make a FEEFEE instruction to mark hidden code regions
-    // We expect the first instruction to be a sequence point when generating debug symbols
+    // We expect the first instruction to be a debug point when generating debug symbols
     let feefee, seqpt =
         if topInstrs.Length > 1 then
             match topInstrs.[0] with

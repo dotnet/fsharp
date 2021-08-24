@@ -50,13 +50,13 @@
   // Offset: 0x000005F0 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {611B0EC5-D281-4783-A745-0383C50E1B61}
+// MVID: {611C52A3-D281-4783-A745-0383A3521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07220000
+// Image base: 0x06ED0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -194,7 +194,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -213,6 +213,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -276,17 +277,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 12,12 : 9,33 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method 'Pipe #1 input at line 11@12'::Close
 
     .method public strict virtual instance bool 
@@ -490,7 +494,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -509,6 +513,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -572,17 +577,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 21,21 : 9,28 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method numSum@21::Close
 
     .method public strict virtual instance bool 
@@ -824,7 +832,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -843,6 +851,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -906,17 +915,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 30,30 : 9,26 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method totalChars@30::Close
 
     .method public strict virtual instance bool 
@@ -1285,7 +1297,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1304,6 +1316,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -1367,17 +1380,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 42,42 : 13,26 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method sum@42::Close
 
     .method public strict virtual instance bool 
@@ -1589,6 +1605,7 @@
         IL_005b:  ldloc.s    V_7
         IL_005d:  isinst     [mscorlib]System.IDisposable
         IL_0062:  stloc.s    V_10
+        .line 100001,100001 : 0,0 ''
         IL_0064:  ldloc.s    V_10
         IL_0066:  brfalse.s  IL_0070
 
@@ -1795,7 +1812,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1814,6 +1831,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -1877,17 +1895,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 49,49 : 22,41 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method minNum@49::Close
 
     .method public strict virtual instance bool 
@@ -2129,7 +2150,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -2148,6 +2169,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -2211,17 +2233,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 52,52 : 28,45 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method shortestWord@52::Close
 
     .method public strict virtual instance bool 
@@ -2590,7 +2615,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -2609,6 +2634,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -2672,17 +2698,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 59,59 : 27,40 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method min@59::Close
 
     .method public strict virtual instance bool 
@@ -3184,7 +3213,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -3203,6 +3232,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -3266,17 +3296,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 69,69 : 40,53 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method cheapestProducts@69::Close
 
     .method public strict virtual instance bool 
@@ -3652,7 +3685,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -3671,6 +3704,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -3734,17 +3768,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 74,74 : 22,41 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method maxNum@74::Close
 
     .method public strict virtual instance bool 
@@ -3986,7 +4023,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -4005,6 +4042,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -4068,17 +4106,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 77,77 : 29,46 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method longestLength@77::Close
 
     .method public strict virtual instance bool 
@@ -4447,7 +4488,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -4466,6 +4507,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -4529,17 +4571,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 84,84 : 42,55 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method mostExpensivePrice@84::Close
 
     .method public strict virtual instance bool 
@@ -5023,7 +5068,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -5042,6 +5087,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -5105,17 +5151,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 93,93 : 32,45 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method maxPrice@93::Close
 
     .method public strict virtual instance bool 
@@ -5368,7 +5417,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -5387,6 +5436,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -5450,17 +5500,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 94,94 : 45,58 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method mostExpensiveProducts@94::Close
 
     .method public strict virtual instance bool 
@@ -5841,7 +5894,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       135 (0x87)
+      // Code size       136 (0x88)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -5860,6 +5913,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -5923,17 +5977,20 @@
       IL_0078:  nop
       IL_0079:  br         IL_0000
 
-      IL_007e:  ldloc.0
-      IL_007f:  ldnull
-      IL_0080:  cgt.un
-      IL_0082:  brfalse.s  IL_0086
+      .line 100,100 : 26,46 ''
+      IL_007e:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_007f:  ldloc.0
+      IL_0080:  ldnull
+      IL_0081:  cgt.un
+      IL_0083:  brfalse.s  IL_0087
 
       .line 100001,100001 : 0,0 ''
-      IL_0084:  ldloc.0
-      IL_0085:  throw
+      IL_0085:  ldloc.0
+      IL_0086:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0086:  ret
+      IL_0087:  ret
     } // end of method averageNum@100::Close
 
     .method public strict virtual instance bool 
@@ -6405,7 +6462,7 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       127 (0x7f)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -6424,6 +6481,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -6487,17 +6545,20 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      IL_0076:  ldloc.0
-      IL_0077:  ldnull
-      IL_0078:  cgt.un
-      IL_007a:  brfalse.s  IL_007e
+      .line 115,115 : 36,49 ''
+      IL_0076:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_007c:  ldloc.0
-      IL_007d:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007e:  ret
+      IL_007f:  ret
     } // end of method averagePrice@115::Close
 
     .method public strict virtual instance bool 
@@ -6679,6 +6740,7 @@
       IL_0021:  ldloc.s    V_4
       IL_0023:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
       IL_0028:  stloc.s    V_6
+      .line 100001,100001 : 0,0 ''
       IL_002a:  ldloc.s    V_6
       IL_002c:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
       IL_0031:  brtrue.s   IL_003e
@@ -6729,6 +6791,7 @@
         IL_007d:  nop
         IL_007e:  br.s       IL_0057
 
+        .line 100001,100001 : 0,0 ''
         IL_0080:  ldloc.s    V_10
         IL_0082:  brtrue.s   IL_008f
 
@@ -6757,6 +6820,7 @@
         IL_00aa:  ldloc.s    V_7
         IL_00ac:  isinst     [mscorlib]System.IDisposable
         IL_00b1:  stloc.s    V_13
+        .line 100001,100001 : 0,0 ''
         IL_00b3:  ldloc.s    V_13
         IL_00b5:  brfalse.s  IL_00bf
 
@@ -7383,6 +7447,7 @@
       IL_00ff:  ldloc.s    V_27
       IL_0101:  isinst     [mscorlib]System.IDisposable
       IL_0106:  stloc.s    V_30
+      .line 100001,100001 : 0,0 ''
       IL_0108:  ldloc.s    V_30
       IL_010a:  brfalse.s  IL_0114
 
@@ -7462,6 +7527,7 @@
       IL_01a4:  ldloc.s    V_36
       IL_01a6:  isinst     [mscorlib]System.IDisposable
       IL_01ab:  stloc.s    V_39
+      .line 100001,100001 : 0,0 ''
       IL_01ad:  ldloc.s    V_39
       IL_01af:  brfalse.s  IL_01b9
 
@@ -7770,6 +7836,7 @@
     IL_0512:  ldloc.s    V_52
     IL_0514:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_0519:  stloc.s    V_54
+    .line 100001,100001 : 0,0 ''
     IL_051b:  ldloc.s    V_54
     IL_051d:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<float64>
     IL_0522:  brtrue.s   IL_052f
@@ -7810,6 +7877,7 @@
       IL_0569:  nop
       IL_056a:  br.s       IL_0547
 
+      .line 100001,100001 : 0,0 ''
       IL_056c:  ldloc.s    V_58
       IL_056e:  brtrue.s   IL_057b
 
@@ -7837,6 +7905,7 @@
       IL_058e:  ldloc.s    V_55
       IL_0590:  isinst     [mscorlib]System.IDisposable
       IL_0595:  stloc.s    V_61
+      .line 100001,100001 : 0,0 ''
       IL_0597:  ldloc.s    V_61
       IL_0599:  brfalse.s  IL_05a3
 
@@ -7870,6 +7939,7 @@
     IL_05dc:  ldloc.s    V_64
     IL_05de:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,float64>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_05e3:  stloc.s    V_66
+    .line 100001,100001 : 0,0 ''
     IL_05e5:  ldloc.s    V_66
     IL_05e7:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>>
     IL_05ec:  brtrue.s   IL_05f9
@@ -7910,6 +7980,7 @@
       IL_0633:  nop
       IL_0634:  br.s       IL_0611
 
+      .line 100001,100001 : 0,0 ''
       IL_0636:  ldloc.s    V_70
       IL_0638:  brtrue.s   IL_0645
 
@@ -7937,6 +8008,7 @@
       IL_0658:  ldloc.s    V_67
       IL_065a:  isinst     [mscorlib]System.IDisposable
       IL_065f:  stloc.s    V_73
+      .line 100001,100001 : 0,0 ''
       IL_0661:  ldloc.s    V_73
       IL_0663:  brfalse.s  IL_066d
 

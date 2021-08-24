@@ -56,6 +56,9 @@ type Position(code:int64) =
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
+    member p.IsAdjacentTo(otherPos: Position) =
+        p.Line = otherPos.Line && p.Column + 1 = otherPos.Column
+
 and pos = Position
 
 [<RequireQualifiedAccess>]
@@ -274,6 +277,9 @@ type Range(code1:int64, code2: int64) =
 
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
+    member r.IsAdjacentTo(otherRange: Range) =
+        r.FileIndex = otherRange.FileIndex && r.End.Encoding = otherRange.Start.Encoding
+
     member r.NoteDebugPoint(kind) = 
         let code = 
             match kind with 
@@ -391,7 +397,8 @@ module Range =
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&

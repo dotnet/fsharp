@@ -36,13 +36,13 @@
   // Offset: 0x000001C8 Length: 0x00000070
 }
 .module TestFunction8.exe
-// MVID: {60B68B97-65CF-8929-A745-0383978BB660}
+// MVID: {611C4D9E-65CF-8929-A745-03839E4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07330000
+// Image base: 0x06DC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,25 +53,27 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static int32  TestFunction8(int32 x) cil managed
   {
-    // Code size       12 (0xc)
+    // Code size       13 (0xd)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 5,5 : 5,18 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction8.fs'
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.3
-    IL_0002:  ble.s      IL_0008
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  ldarg.0
+    IL_0002:  ldc.i4.3
+    IL_0003:  ble.s      IL_0009
 
     .line 6,6 : 9,12 ''
-    IL_0004:  ldarg.0
-    IL_0005:  ldc.i4.4
-    IL_0006:  add
-    IL_0007:  ret
+    IL_0005:  ldarg.0
+    IL_0006:  ldc.i4.4
+    IL_0007:  add
+    IL_0008:  ret
 
     .line 7,7 : 10,13 ''
-    IL_0008:  ldarg.0
-    IL_0009:  ldc.i4.4
-    IL_000a:  sub
-    IL_000b:  ret
+    IL_0009:  ldarg.0
+    IL_000a:  ldc.i4.4
+    IL_000b:  sub
+    IL_000c:  ret
   } // end of method TestFunction8::TestFunction8
 
 } // end of class TestFunction8

@@ -59,16 +59,45 @@ module CoreTests =
     let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
-    let ``array-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/array" FSC_BASIC_OPT_MINUS
+    let ``array-FSC_BASIC_OPT_MINUS-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC_OPT_MINUS "5.0"
 
     [<Test>]
-    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
+    let ``array-FSC_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "5.0"
 
-    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
-    // It should land into preview7, which is set to be released August 10th 2021.
-    // These tests should be reenabled then.
     [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+    let ``array-FSI_BASIC-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI_BASIC "5.0"
+
+    [<Test>]
+    let ``array-FSC_BASIC-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "preview"
+
+    [<Test>]
+    let ``array-no-dot-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_BASIC_OPT_MINUS "preview"
+
+    [<Test>]
+    let ``array-no-dot-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_BASIC "preview"
+
+    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    let ``array-no-dot-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI_BASIC "preview"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-default`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "default" "test-langversion-default"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-5_0`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-preview`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "preview" "test-langversion-preview"
+
+    [<Test>]
+    let ``ref-ops-deprecation-langversion-preview`` () =
+        let cfg = testConfig "core/ref-ops-deprecation"
+        singleVersionedNegTest cfg "preview" "test-langversion-preview"
 
     [<Test>]
     let ``auto-widen-version-5_0``() = 
@@ -2023,19 +2052,19 @@ module CoreTests =
 [<NonParallelizable>]
 module VersionTests =
     [<Test>]
-    let ``member-selfidentifier-version4.6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
+    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4.7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
 
     [<Test>]
-    let ``indent-version4.6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
+    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
-    let ``indent-version4.7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
+    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
 
     [<Test>]
-    let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
+    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
 
     [<Test>]
     let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BUILDONLY "preview"
@@ -2654,14 +2683,14 @@ module TypecheckTests =
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>]
-    let ``type check neg24 version 4.6`` () =
+    let ``type check neg24 version 4_6`` () =
         let cfg = testConfig "typecheck/sigs/version46"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "4.6" "neg24"
 
     [<Test>]
-    let ``type check neg24 version 4.7`` () =
+    let ``type check neg24 version 4_7`` () =
         let cfg = testConfig "typecheck/sigs/version47"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }

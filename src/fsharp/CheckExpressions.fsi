@@ -115,7 +115,7 @@ type TcEnv =
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -227,9 +227,11 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
       TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
@@ -246,7 +248,7 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         // forward call to CheckComputationExpressions.fs
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
         tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
@@ -656,6 +658,10 @@ val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> 
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+val RewriteRangeExpr: expr: SynExpr -> SynExpr option
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    

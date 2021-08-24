@@ -566,15 +566,22 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     member x.ResetErrorCount() = errorCount <- 0
 
     override x.DiagnosticSink(err, severity) =
-        if (severity = FSharpDiagnosticSeverity.Error) || ReportWarningAsError tcConfigB.errorSeverityOptions err  then
+        if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        else
-          DoWithDiagnosticColor severity (fun () ->
-            if ReportWarning tcConfigB.errorSeverityOptions err then
+        elif ReportDiagnosticAsWarning tcConfigB.errorSeverityOptions (err, severity) then
+            DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
+                fsiConsoleOutput.Error.WriteLine()
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
+                fsiConsoleOutput.Error.WriteLine()
+                fsiConsoleOutput.Error.WriteLine()
+                fsiConsoleOutput.Error.Flush())
+        elif ReportDiagnosticAsInfo tcConfigB.errorSeverityOptions (err, severity) then
+            DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,severity)) err
@@ -2400,7 +2407,7 @@ type internal FsiInteractionProcessor
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
-            Parser.typedSeqExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
+            Parser.typedSequentialExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
     let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) =
       istate |> InteractiveCatch errorLogger (fun istate ->

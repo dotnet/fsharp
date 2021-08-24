@@ -200,7 +200,7 @@ let (|ObjectInitializationCheck|_|) g expr =
         (
            _, _,
            TDSwitch
-            (
+            (_, 
                 Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet (RecdFieldRef(_, name)), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
             ),
            [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _, _); _ |], _, resultTy
@@ -1043,7 +1043,7 @@ and ConvConst cenv env m c ty =
 
 and ConvDecisionTree cenv env tgs typR x =
     match x with
-    | TDSwitch(e1, csl, dfltOpt, m) ->
+    | TDSwitch(_, e1, csl, dfltOpt, m) ->
         let acc =
             match dfltOpt with
             | Some d -> ConvDecisionTree cenv env tgs typR d

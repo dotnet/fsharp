@@ -630,18 +630,8 @@ let _ = arr.[..number2]
           ("val number2", (3, 13, 3, 20))
           ("val number1", (3, 4, 3, 11))
           ("val arr", (4, 8, 4, 11))
-          ("Microsoft", (4, 11, 4, 12))
-          ("OperatorIntrinsics", (4, 11, 4, 12))
-          ("Operators", (4, 11, 4, 12))
-          ("Core", (4, 11, 4, 12))
-          ("FSharp", (4, 11, 4, 12))
           ("val number1", (4, 16, 4, 23))
           ("val arr", (5, 8, 5, 11))
-          ("Microsoft", (5, 11, 5, 12))
-          ("OperatorIntrinsics", (5, 11, 5, 12))
-          ("Operators", (5, 11, 5, 12))
-          ("Core", (5, 11, 5, 12))
-          ("FSharp", (5, 11, 5, 12))
           ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
 
@@ -1503,6 +1493,67 @@ let f () =
          ((6, 15), (6, 7, 6, 18, "List.unzip3"));
          ((6, 16), (6, 7, 6, 18, "List.unzip3"));
          ((6, 17), (6, 7, 6, 18, "List.unzip3"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for lambda with pattern arg`` () =
+    let input =
+      """
+let bodyWrapper () =
+   id (fun (A(b,c)) ->
+        let x = 1
+        x)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+        [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 8), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 9), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 10), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 11), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 12), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 13), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 14), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 15), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 16), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 17), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 18), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 19), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 20), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 21), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 0), (4, 8, 4, 17, "let x = 1"));
+         ((4, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 8), (4, 8, 4, 17, "let x = 1")); ((4, 9), (4, 8, 4, 17, "let x = 1"));
+         ((4, 10), (4, 8, 4, 17, "let x = 1")); ((4, 11), (4, 8, 4, 17, "let x = 1"));
+         ((4, 12), (4, 8, 4, 17, "let x = 1")); ((4, 13), (4, 8, 4, 17, "let x = 1"));
+         ((4, 14), (4, 8, 4, 17, "let x = 1")); ((4, 15), (4, 8, 4, 17, "let x = 1"));
+         ((4, 16), (4, 8, 4, 17, "let x = 1")); ((5, 0), (5, 8, 5, 9, "x"));
+         ((5, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 8), (5, 8, 5, 9, "x")); ((5, 9), (5, 8, 5, 9, "x"))]
 
 [<Test>]
 let ``Partially valid namespaces should be reported`` () =
