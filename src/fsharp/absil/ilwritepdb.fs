@@ -963,7 +963,8 @@ let logDebugInfo (outfile: string) (info: PdbData) =
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
     fprintfn sw "DOCUMENTS"
     for i, doc in Seq.zip [0 .. info.Documents.Length-1] info.Documents do
-      fprintfn sw " [%d] %s" i doc.File
+      // File names elided because they are ephemeral during testing
+      fprintfn sw " [%d] <elided-for-testing>"  i // doc.File
       fprintfn sw "     Type: %A" doc.DocumentType
       fprintfn sw "     Language: %A" doc.Language
       fprintfn sw "     Vendor: %A" doc.Vendor

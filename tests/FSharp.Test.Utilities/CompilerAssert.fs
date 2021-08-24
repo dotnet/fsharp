@@ -21,11 +21,13 @@ open TestFramework
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (expectedIL: string list) =
+    member _.VerifyIL (expectedIL: string list) =
         ILChecker.checkIL dllFilePath expectedIL
 
-    //member this.VerifyILWithDebugPoints (expectedIL: string list) =
-    //    ILChecker.checkILWithDebugPoints dllFilePath expectedIL
+[<Sealed>]
+type PdbDebugInfo(debugInfo: string) =
+
+    member _.InfoText = debugInfo
 
 type Worker () =
     inherit MarshalByRefObject()
@@ -620,6 +622,28 @@ type CompilerAssert private () =
                 Assert.Fail (sprintf "Compile had errors: %A" errors)
 
             f (ILVerifier outputFilePath)
+        )
+
+    static member CompileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: string) =
+        let options = [| yield! options; yield"--test:DumpDebugInfo" |]
+        compile false options source (fun (errors, outputFilePath) ->
+            let errors =
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had errors: %A" errors)
+            let debugInfoFile = outputFilePath + ".debuginfo"
+            if not (File.Exists expectedFile) then 
+                File.Copy(debugInfoFile, expectedFile)
+                failwith $"debug info expected file {expectedFile} didn't exist, now copied over"
+            let debugInfo = File.ReadAllLines(debugInfoFile)
+            let expected = File.ReadAllLines(expectedFile)
+            if debugInfo <> expected then 
+                File.Copy(debugInfoFile, expectedFile, overwrite=true)
+                failwith $"""debug info mismatch
+Expected is in {expectedFile}
+Actual is in {debugInfoFile}
+Updated automatically, please check diffs in your pull request, changes must be scrutinized
+"""
         )
 
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
