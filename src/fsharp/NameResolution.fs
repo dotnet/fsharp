@@ -1601,25 +1601,6 @@ type ItemOccurence =
     /// This is a usage of a module or namespace name in open statement
     | Open
 
-type OpenDeclaration =
-    { Target: SynOpenDeclTarget
-      Range: range option
-      Modules: ModuleOrNamespaceRef list
-      Types: TType list
-      AppliedScope: range
-      IsOwnNamespace: bool }
-
-    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: range, isOwnNamespace: bool) =
-        { Target = target
-          Range =
-            match target with 
-            | SynOpenDeclTarget.ModuleOrNamespace (range=m)
-            | SynOpenDeclTarget.Type (range=m) -> Some m
-          Types = types
-          Modules = modules
-          AppliedScope = appliedScope
-          IsOwnNamespace = isOwnNamespace }
-
 type FormatStringCheckContext =
     { SourceText: ISourceText
       LineStartPositions: int[] }

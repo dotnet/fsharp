@@ -54,7 +54,7 @@ val ParseInputFiles: TcConfig * Lexhelp.LexResourceManager * conditionalCompilat
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv
+val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
                 
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
@@ -80,7 +80,15 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
+    range *
+    string *
+    TcConfig *
+    TcGlobals *
+    TcImports *
+    NiceNameGenerator *
+    TcEnv *
+    OpenDeclaration list
+        -> TcState
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInput:
@@ -112,7 +120,8 @@ val TypeCheckClosedInputSet:
     TcImports *
     TcGlobals *
     LongIdent option *
-    TcState * ParsedInput list
+    TcState *
+    ParsedInput list
       -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
