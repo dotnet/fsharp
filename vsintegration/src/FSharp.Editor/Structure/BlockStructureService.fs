@@ -23,7 +23,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Attribute
@@ -49,7 +49,6 @@ module internal BlockStructure =
         | Scope.IfThenElse-> FSharpBlockTypes.Conditional
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.SpecialFunc
         | Scope.Lambda
@@ -84,7 +83,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Type
@@ -104,7 +103,6 @@ module internal BlockStructure =
         | Scope.IfThenElse
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.Lambda
         | Scope.LetOrUseBang

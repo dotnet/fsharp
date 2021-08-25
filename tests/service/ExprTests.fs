@@ -22,6 +22,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
+open TestFramework
 
 type FSharpCore =
     | FC45
@@ -49,18 +50,16 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with Path.GetTempFileName()
+    /// Returns the filename part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
-        let tempFileName = Path.GetTempFileName()
+        let tempFileName = tryCreateTemporaryFileName ()
         try
             let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
             let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
             String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
         finally
             try
-                // Since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up.
-                // This also prevents a system to run out of available randomized temp files (the pool is only 64k large).
                 FileSystem.FileDeleteShim tempFileName
             with _ -> ()
 
@@ -950,15 +949,15 @@ let ``Test Optimized Declarations Project1`` () =
          "let start(name) = (name,name) @ (217,4--217,14)";
          "let last(name,values) = Operators.Identity<Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string> ((name,values)) @ (220,4--220,21)";
          "let last2(name) = Operators.Identity<Microsoft.FSharp.Core.string> (name) @ (223,4--223,11)";
-         "let test7(s) = let tupledArg: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = M.start (s) in let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (226,4--226,19)";
+         "let test7(s) = let Pipe #1 input at line 226: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = M.start (s) in (let name: Microsoft.FSharp.Core.string = Pipe #1 input at line 226.Item0 in let values: Microsoft.FSharp.Core.string = Pipe #1 input at line 226.Item1 in M.last (name,values); ()) @ (226,4--226,19)";
          "let test8(unitVar0) = fun tupledArg -> let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (229,4--229,8)";
-         "let test9(s) = M.last (s,s) @ (232,4--232,17)";
+         "let test9(s) = let Pipe #1 input at line 232: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = (s,s) in (let name: Microsoft.FSharp.Core.string = Pipe #1 input at line 232.Item0 in let values: Microsoft.FSharp.Core.string = Pipe #1 input at line 232.Item1 in M.last (name,values); ()) @ (232,4--232,17)";
          "let test10(unitVar0) = fun name -> M.last2 (name) @ (235,4--235,9)";
-         "let test11(s) = M.last2 (s) @ (238,4--238,14)";
+         "let test11(s) = let Pipe #1 input at line 238: Microsoft.FSharp.Core.string = s in (M.last2 (Pipe #1 input at line 238); ()) @ (238,4--238,14)";
          "let badLoop = badLoop@240.Force<Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int>(()) @ (240,8--240,15)";
          "type LetLambda";
          "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),a,b) @ (247,8--247,24)";
-         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+         "let letLambdaRes = let Pipe #1 input at line 249: (Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list = Cons((1,2),Empty()) in (ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Pipe #1 input at line 249); ()) @ (249,19--249,71)";
          "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)";
          "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"]
     let expected2 =

@@ -382,7 +382,7 @@ let setFlag r n =
 let SetOptimizeOff(tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 0 }
     tcConfigB.doDetuple <- false
     tcConfigB.doTLR <- false
@@ -391,7 +391,7 @@ let SetOptimizeOff(tcConfigB: TcConfigBuilder) =
 let SetOptimizeOn(tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
     tcConfigB.doDetuple <- true
     tcConfigB.doTLR <- true
@@ -437,7 +437,7 @@ let localoptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some (switch = OptionSwitch.On) }
 
 let crossOptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some (switch = OptionSwitch.On) }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some (switch = OptionSwitch.On) }
 
 let splittingSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with abstractBigTargets = switch = OptionSwitch.On }
@@ -557,7 +557,7 @@ let tagLangVersionValues = "{?|version|latest|preview}"
 let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  jitOptUser . . . . . . : %+A" tcConfigB.optSettings.jitOptUser
     printfn "  localOptUser . . . . . : %+A" tcConfigB.optSettings.localOptUser
-    printfn "  crossModuleOptUser . . : %+A" tcConfigB.optSettings.crossModuleOptUser
+    printfn "  crossAssemblyOptimizationUser . . : %+A" tcConfigB.optSettings.crossAssemblyOptimizationUser
     printfn "  lambdaInlineThreshold  : %+A" tcConfigB.optSettings.lambdaInlineThreshold
     printfn "  ignoreSymStoreSeqPts . : %+A" tcConfigB.ignoreSymbolStoreSequencePoints
     printfn "  doDetuple  . . . . . . : %+A" tcConfigB.doDetuple
@@ -1388,12 +1388,12 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("cross-optimize", tagNone,
-        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }),
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some true }),
         Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
 
     CompilerOption
        ("no-cross-optimize", tagNone,
-        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }),
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some false }),
         Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
 
     CompilerOption

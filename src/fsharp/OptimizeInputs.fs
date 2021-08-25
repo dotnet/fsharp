@@ -114,7 +114,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             let implFile =
                 if tcConfig.doTLR then
-                    implFile |> InnerLambdasToTopLevelFuncs.MakeTLRDecisions ccu tcGlobals
+                    implFile |> InnerLambdasToTopLevelFuncs.MakeTopLevelRepresentationDecisions ccu tcGlobals
                 else implFile
 
             let implFile =
@@ -173,7 +173,7 @@ let GenerateIlxCode
           workAroundReflectionEmitBugs=tcConfig.isInteractive // REVIEW: is this still required?
           generateDebugSymbols= tcConfig.debuginfo
           fragName = fragName
-          localOptimizationsAreOn= tcConfig.optSettings.localOpt ()
+          localOptimizationsEnabled= tcConfig.optSettings.LocalOptimizationsEnabled
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
           mainMethodInfo= mainMethodInfo
           ilxBackend = ilxBackend

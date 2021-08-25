@@ -216,7 +216,7 @@ module FSharpExprConvert =
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | Expr.Match (_, _, TDSwitch(_, Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
         // Match "init@41 <- 6"
@@ -401,7 +401,8 @@ module FSharpExprConvert =
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
-        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->  E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) 
+        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->
+            E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) |> contF
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
             ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contF
@@ -1241,7 +1242,7 @@ module FSharpExprConvert =
 
     and ConvDecisionTreePrim cenv env dtreeRetTy x = 
         match x with 
-        | TDSwitch(e1, csl, dfltOpt, m) -> 
+        | TDSwitch(_, e1, csl, dfltOpt, m) -> 
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
@@ -1340,7 +1341,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
     and getDecls mdef = 
         match mdef with 
-        | TMDefRec(_isRec, tycons, mbinds, _m) ->
+        | TMDefRec(_isRec, _opens, tycons, mbinds, _m) ->
             [ for tycon in tycons do 
                   let entity = FSharpEntity(cenv, mkLocalEntityRef tycon)
                   yield FSharpImplementationFileDeclaration.Entity(entity, []) 
@@ -1354,6 +1355,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMAbstract mexpr -> getDecls2 mexpr
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
+        | TMDefOpens _ ->
+            [ ]
         | TMDefDo(expr, _m)  ->
             [ let expr = FSharpExprConvert.ConvExprOnDemand cenv (ExprTranslationEnv.Empty(cenv.g)) expr
               yield FSharpImplementationFileDeclaration.InitAction expr  ]

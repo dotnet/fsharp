@@ -36,13 +36,13 @@
   // Offset: 0x00000238 Length: 0x00000085
 }
 .module InequalityComparison05.exe
-// MVID: {60B68B7E-263A-E751-A745-03837E8BB660}
+// MVID: {611C4D7C-263A-E751-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07350000
+// Image base: 0x06C10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,21 +58,23 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 04 00 00 00 01 00 00 00 01 00 00 00 01 00 
                                                                                                                     00 00 01 00 00 00 00 00 ) 
-    // Code size       8 (0x8)
+    // Code size       9 (0x9)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 3,3 : 40,55 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\InequalityComparison\\InequalityComparison05.fs'
-    IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  ble.s      IL_0006
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  ldarg.0
+    IL_0002:  ldarg.1
+    IL_0003:  ble.s      IL_0007
 
     .line 3,3 : 56,57 ''
-    IL_0004:  ldarg.2
-    IL_0005:  ret
+    IL_0005:  ldarg.2
+    IL_0006:  ret
 
     .line 3,3 : 63,64 ''
-    IL_0006:  ldarg.3
-    IL_0007:  ret
+    IL_0007:  ldarg.3
+    IL_0008:  ret
   } // end of method InequalityComparison05::f5
 
 } // end of class InequalityComparison05

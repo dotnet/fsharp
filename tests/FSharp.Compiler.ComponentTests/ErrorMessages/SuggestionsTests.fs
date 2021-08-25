@@ -176,25 +176,6 @@ let r = { Field1 = "hallo"; Field2 = 1 }
                                  ("The record label 'Field1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyRecord.Field1"))
 
     [<Fact>]
-    let ``Suggest To Use Indexer`` () =
-        FSharp """
-let d = [1,1] |> dict
-let y = d[1]
-
-let z = d[|1|]
-
-let f() = d
-let a = (f())[1]
-        """
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 3217, Line 3, Col 9,  Line 3, Col 10, "This value is not a function and cannot be applied. Did you intend to access the indexer via d.[index] instead?")
-            (Error 3,    Line 5, Col 9,  Line 5, Col 10, "This value is not a function and cannot be applied.")
-            (Error 3217, Line 8, Col 10, Line 8, Col 13, "This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?")]
-
-
-    [<Fact>]
     let ``Suggest Type Parameters`` () =
         FSharp """
 [<AbstractClass>]

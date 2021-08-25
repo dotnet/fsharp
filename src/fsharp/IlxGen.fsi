@@ -31,7 +31,7 @@ type internal IlxGenOptions =
       mainMethodInfo: Attribs option
 
       /// Indicates if local optimizations are active
-      localOptimizationsAreOn: bool
+      localOptimizationsEnabled: bool
 
       /// Indicates if we are generating debug symbols or not
       generateDebugSymbols: bool

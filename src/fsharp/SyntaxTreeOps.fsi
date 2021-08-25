@@ -87,7 +87,7 @@ val PushPatternToExpr: synArgNameGenerator:SynArgNameGenerator -> isMember:bool 
 ///        let (UnionCase x) = tmp1 in
 ///        let (UnionCase y) = tmp2 in
 ///        body"
-val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
+val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> arrow:Range option -> rhs:SynExpr -> SynSimplePats list * SynExpr
 
 val opNameParenGet: string
 
@@ -119,13 +119,13 @@ val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr
 
 val mkSynDotParenSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
+val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
 val mkSynQMarkSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
+//val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
-val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
+//val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
 val mkSynDotParenGet: lhsm:range -> dotm:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
@@ -141,7 +141,7 @@ val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
-val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> e:SynExpr -> SynExpr
+val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> arrow:Range option -> e:SynExpr -> SynExpr
 
 val arbExpr: debugStr:string * range:range -> SynExpr
 
@@ -263,3 +263,10 @@ val noInferredTypars: SynValTyparDecls
 val synExprContainsError: inpExpr:SynExpr -> bool
 
 val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list
+
+val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
+
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+

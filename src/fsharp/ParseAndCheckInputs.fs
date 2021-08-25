@@ -646,13 +646,18 @@ let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcI
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
+    let openDecls0, tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
 
     if tcConfig.checkOverflow then
-        try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (pathToSynLid initm (splitNamespace CoreOperatorsCheckedName), initm)
-        with e -> errorRecovery e initm; tcEnv
+        try 
+            let checkOperatorsModule = pathToSynLid initm (splitNamespace CoreOperatorsCheckedName)
+            let tcEnv, openDecls1 = TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (checkOperatorsModule, initm)
+            tcEnv, openDecls0 @ openDecls1
+        with e ->
+            errorRecovery e initm
+            tcEnv, openDecls0
     else
-        tcEnv
+        tcEnv, openDecls0
 
 /// Inject faults into checking
 let CheckSimulateException(tcConfig: TcConfig) =
@@ -699,6 +704,9 @@ type TcState =
       tcsRootSigs: RootSigs
       tcsRootImpls: RootImpls
       tcsCcuSig: ModuleOrNamespaceType
+      
+      /// The collected open declarations implied by '/checked' flag and processing F# interactive fragments that have an implied module.
+      tcsImplicitOpenDeclarations: OpenDeclaration list
     }
 
     member x.NiceNameGenerator = x.tcsNiceNameGen
@@ -723,7 +731,7 @@ type TcState =
 
 
 /// Create the initial type checking state for compiling an assembly
-let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, niceNameGen, tcEnv0) =
+let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, niceNameGen, tcEnv0, openDecls0) =
     ignore tcImports
 
     // Create a ccu to hold all the results of compilation
@@ -762,7 +770,9 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsCreatesGeneratedProvidedTypes=false
       tcsRootSigs = Zmap.empty qnameOrder
       tcsRootImpls = Zset.empty qnameOrder
-      tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
+      tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace 
+      tcsImplicitOpenDeclarations = openDecls0
+    }
 
 let mkDummyParameterVal name attribs ty =
     Construct.NewVal(
@@ -900,7 +910,15 @@ let CreateDummyTypedImplFile g qualNameOfFile sigTy =
     TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, anonRecdTypeInfos)
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
+let TypeCheckOneInput(checkForErrors,
+                      tcConfig: TcConfig,
+                      tcImports: TcImports,
+                      tcGlobals,
+                      prefixPathOpt,
+                      tcSink,
+                      tcState: TcState,
+                      inp: ParsedInput,
+                      skipImplIfSigExists: bool) =
 
     cancellable {
         try
@@ -932,9 +950,9 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
               let ccuSigForFile = CombineCcuContentFragments m [sigFileType; tcState.tcsCcuSig]
 
               // Open the prefixPath for fsi.exe
-              let tcEnv =
+              let tcEnv, _openDecls1 =
                   match prefixPathOpt with
-                  | None -> tcEnv
+                  | None -> tcEnv, []
                   | Some prefixPath ->
                       let m = qualNameOfFile.Range
                       TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
@@ -970,7 +988,7 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                     (EmptyTopAttrs, CreateEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Cancellable.ret
                   else
-                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, tcState.tcsImplicitOpenDeclarations, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring, tcImplEnv, rootSigOpt, file)
 
               let! topAttrs, implFile0, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
@@ -996,16 +1014,16 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                   else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
 
               // Open the prefixPath for fsi.exe (tcImplEnv)
-              let tcImplEnv =
+              let tcImplEnv, openDecls =
                   match prefixPathOpt with
                   | Some prefixPath -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcImplEnv (prefixPath, m)
-                  | _ -> tcImplEnv
+                  | _ -> tcImplEnv, []
 
               // Open the prefixPath for fsi.exe (tcSigEnv)
-              let tcSigEnv =
+              let tcSigEnv, _ =
                   match prefixPathOpt with
                   | Some prefixPath when not hadSig -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcSigEnv (prefixPath, m)
-                  | _ -> tcSigEnv
+                  | _ -> tcSigEnv, []
 
               let ccuSigForFile = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig]
 
@@ -1015,7 +1033,9 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                         tcsTcImplEnv=tcImplEnv
                         tcsRootImpls=rootImpls
                         tcsCcuSig=ccuSigForFile
-                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
+                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                        tcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations @ openDecls
+                    }
               return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
 
         with e ->

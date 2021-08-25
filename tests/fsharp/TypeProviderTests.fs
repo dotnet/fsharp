@@ -33,7 +33,7 @@ let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 
-let inline getTestsDirectory dir = FSharp.Test.Utilities.getTestsDirectory __SOURCE_DIRECTORY__ dir
+let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let testConfig = getTestsDirectory >> testConfig
 
 [<Test>]
@@ -227,7 +227,7 @@ let ``negative type provider tests`` (name:string) =
 
         rm cfg "provider.dll"
 
-        fsc cfg "--out:provider.dll -a" ["provider.fsx"]
+        fsc cfg "--out:provider.dll -g --optimize- -a" ["provider.fsx"]
 
         fsc cfg "--out:provider_providerAttributeErrorConsume.dll -a" ["providerAttributeError.fsx"]
 
@@ -235,11 +235,11 @@ let ``negative type provider tests`` (name:string) =
 
         rm cfg "helloWorldProvider.dll"
 
-        fsc cfg "--out:helloWorldProvider.dll -a" [".." ++ "helloWorld" ++ "provider.fsx"]
+        fsc cfg "--out:helloWorldProvider.dll -g --optimize- -a" [".." ++ "helloWorld" ++ "provider.fsx"]
 
         rm cfg "MostBasicProvider.dll"
 
-        fsc cfg "--out:MostBasicProvider.dll -a" ["MostBasicProvider.fsx"]
+        fsc cfg "--out:MostBasicProvider.dll -g --optimize- -a" ["MostBasicProvider.fsx"]
 
         let preprocess name pref =
             let dirp = (dir |> Commands.pathAddBackslash)

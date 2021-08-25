@@ -2033,10 +2033,11 @@ module private InferredSigPrinting =
 
         let rec isConcreteNamespace x = 
             match x with 
-            | TMDefRec(_, tycons, mbinds, _) -> 
+            | TMDefRec(_, _opens, tycons, mbinds, _) -> 
                 not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x, _) -> not x.IsNamespace))
             | TMDefLet _ -> true
             | TMDefDo _ -> true
+            | TMDefOpens _ -> false
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
             | TMAbstract(ModuleOrNamespaceExprWithSig(_, def, _)) -> isConcreteNamespace def
 
@@ -2051,7 +2052,7 @@ module private InferredSigPrinting =
             let filterExtMem (v: Val) = v.IsExtensionMember
 
             match x with 
-            | TMDefRec(_, tycons, mbinds, _) -> 
+            | TMDefRec(_, _opens, tycons, mbinds, _) -> 
                 TastDefinitionPrinting.layoutTyconDefns denv infoReader ad m tycons @@ 
                 (mbinds 
                     |> List.choose (function ModuleOrNamespaceBinding.Binding bind -> Some bind | _ -> None) 
@@ -2079,6 +2080,8 @@ module private InferredSigPrinting =
                     |> List.map mkLocalValRef
                     |> List.map (PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader) 
                     |> aboveListL)
+
+            | TMDefOpens _ -> emptyL
 
             | TMDefs defs -> imdefsL denv defs
 
@@ -2213,7 +2216,15 @@ let prettyLayoutOfMethInfoFreeStyle infoReader m denv typarInst minfo = InfoMemb
 let prettyLayoutOfPropInfoFreeStyle g amap m denv d = InfoMemberPrinting.prettyLayoutOfPropInfoFreeStyle g amap m denv d
 
 /// Convert a MethInfo to a string
-let stringOfMethInfo infoReader m denv d = bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf d)
+let stringOfMethInfo infoReader m denv minfo =
+    bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+
+/// Convert MethInfos to lines separated by newline including a newline as the first character
+let multiLineStringOfMethInfos infoReader m denv minfos =
+     minfos
+     |> List.map (stringOfMethInfo infoReader m denv)
+     |> List.map (sprintf "%s   %s" System.Environment.NewLine)
+     |> String.concat ""
 
 /// Convert a ParamData to a string
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)

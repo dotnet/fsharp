@@ -270,7 +270,7 @@ module MainModuleBuilder =
             let isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target = CompilerTarget.Module)
             mkILSimpleModule assemblyName ilModuleName isDLL tcConfig.subsystemVersion tcConfig.useHighEntropyVA ilTypeDefs hashAlg locale flags (mkILExportedTypes exportedTypesList) metadataVersion
 
-        let disableJitOptimizations = not (tcConfig.optSettings.jitOpt())
+        let disableJitOptimizations = not tcConfig.optSettings.JitOptimizationsEnabled
 
         let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
 
