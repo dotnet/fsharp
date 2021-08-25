@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {61242E31-218B-729A-A745-0383312E2461}
+// MVID: {61259040-218B-729A-A745-038340902561}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x070E0000
+// Image base: 0x073B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -2488,8 +2488,8 @@
   {
     // Code size       13 (0xd)
     .maxstack  3
-    .locals init ([0] string 'greeting (shadowed)',
-             [1] string greeting)
+    .locals init ([0] string greeting,
+             [1] string V_1)
     .line 19,19 : 9,31 ''
     IL_0000:  call       string XYZ.ABC::get_greeting()
     IL_0005:  stloc.0
