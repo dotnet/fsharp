@@ -12,33 +12,14 @@ open System.Collections.Generic
 open System.IO
 open FsUnit
 open NUnit.Framework
-open FSharp.Compiler.ExtensionTyping 
-open FSharp.Compiler.Range
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ExtensionTyping
 open FSharp.Compiler.Service.Tests.Common
 open Microsoft.FSharp.Core.CompilerServices
 
-module internal XmlProxyProvidersProject = 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
-module TypeProviderTests
-open FSharp.Data
-
-type Detailed = XmlProvider<"<developer>Alex</developer>">
-let info = Detailed.Parse("<developer>Eugene</developer>")
-"""
-    File.WriteAllText(fileName1, fileSource1)
-    let cleanFileName a = if a = fileName1 then "file1" else "??"
-
-    let fileNames = [fileName1]
-    let args = 
-        [| yield! mkProjectCommandLineArgs (dllName, fileNames) 
-           yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data.dll"))
-           yield @"-r:" + sysLib "System.Xml.Linq" |]
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+let fileName, options =
+    mkTestFileAndOptions ""
+     [| @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data.dll"))
+        @"-r:" + sysLib "System.Xml.Linq" |]
 
 type ProxyProvidedNamespace(pn: IProvidedNamespace, typesCache: Dictionary<_, _>) =
     interface IProvidedNamespace with
@@ -67,7 +48,7 @@ type ProxyTypeProvider(tp: ITypeProvider, typesCache: Dictionary<_,_>) =
         member this.ApplyStaticArgumentsForMethod(a,b,c) = (tp :?> ITypeProvider2).ApplyStaticArgumentsForMethod(a,b,c)         
 
     interface IDisposable with
-        member __.Dispose() = tp.Dispose()
+        member this.Dispose() = tp.Dispose()
 
 [<Test>]
 #if NETCOREAPP
@@ -80,32 +61,13 @@ let ``Extension typing proxy shim gets requests`` () =
     let mutable gotGetInvokerExpressionRequest = false
     let mutable gotDisplayNameOfTypeProviderRequest = false
     
-    let defaultExtensionTypingShim = Shim.ExtensionTypingProvider
+    let defaultExtensionTypingShim = ExtensionTypingProvider
     
     let extensionTypingProvider =
         { new IExtensionTypingProvider with
-            member this.InstantiateTypeProvidersOfAssembly
-                    (runTimeAssemblyFileName: string,
-                     designTimeAssemblyNameString: string, 
-                     resolutionEnvironment: ResolutionEnvironment, 
-                     isInvalidationSupported: bool, 
-                     isInteractive: bool, 
-                     systemRuntimeContainsType: string -> bool, 
-                     systemRuntimeAssemblyVersion: System.Version, 
-                     compilerToolPaths: string list,
-                     m: range) =
-                
+            member this.InstantiateTypeProvidersOfAssembly(context) =
                 gotInstantiateTypeProvidersOfAssemblyRequest <- true
-                defaultExtensionTypingShim.InstantiateTypeProvidersOfAssembly(
-                                                 runTimeAssemblyFileName,
-                                                 designTimeAssemblyNameString, 
-                                                 resolutionEnvironment, 
-                                                 isInvalidationSupported, 
-                                                 isInteractive, 
-                                                 systemRuntimeContainsType, 
-                                                 systemRuntimeAssemblyVersion, 
-                                                 compilerToolPaths,
-                                                 m)
+                defaultExtensionTypingShim.InstantiateTypeProvidersOfAssembly(context)
                 |> List.map(fun tp -> new ProxyTypeProvider(tp, Dictionary<_,_>()) :> _)
                 
             member this.GetProvidedTypes(pn: IProvidedNamespace) =
@@ -129,10 +91,17 @@ let ``Extension typing proxy shim gets requests`` () =
                 defaultExtensionTypingShim.DisplayNameOfTypeProvider(tp, fullName)
         }
         
-    Shim.ExtensionTypingProvider <- extensionTypingProvider
+    ExtensionTypingProvider <- extensionTypingProvider
 
-    let result = checker.ParseAndCheckProject(XmlProxyProvidersProject.options)
-                 |> Async.RunSynchronously
+    let result =
+        parseAndCheckFile fileName """
+module TypeProviderTests
+open FSharp.Data
+
+type Detailed = XmlProvider<"<developer>Alex</developer>">
+let info = Detailed.Parse("<developer>Eugene</developer>")
+"""      options
+        |> snd
 
     gotInstantiateTypeProvidersOfAssemblyRequest |> should be True
     gotGetProvidedTypesRequest |> should be True
@@ -140,6 +109,6 @@ let ``Extension typing proxy shim gets requests`` () =
     gotGetInvokerExpressionRequest |> should be True
     //TODO: example with gotDisplayNameOfTypeProviderRequest |> should be True
     
-    result.Errors.Length = 0 |> should be True
+    result.Diagnostics.Length = 0 |> should be True
     
-    Shim.ExtensionTypingProvider <- defaultExtensionTypingShim
+    ExtensionTypingProvider <- defaultExtensionTypingShim

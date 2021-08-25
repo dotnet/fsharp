@@ -359,9 +359,12 @@ module ExtensionTyping =
         type IExtensionTypingProvider =
             /// Find and instantiate the set of ITypeProvider components for the given assembly reference
             abstract InstantiateTypeProvidersOfAssembly: TypeProvidersInstantiationContext -> ITypeProvider list
+            /// Get all provided types from provided namespace
             abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]           
-            abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType             
+            abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType
+            /// Get the provided invoker expression for a particular use of a method.
             abstract GetInvokerExpression: provider: ITypeProvider * methodBase: ProvidedMethodBase * paramExprs: ProvidedVar[] -> ProvidedExpr
+            /// Get the string to show for the name of a type provider
             abstract DisplayNameOfTypeProvider: typeProvider: ITypeProvider * fullName: bool -> string
 
         [<Sealed>]

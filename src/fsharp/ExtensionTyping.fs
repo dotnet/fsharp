@@ -127,56 +127,6 @@ module ExtensionTyping =
             // No appropriate constructor found
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
-    let GetTypeProvidersOfAssemblyInternal
-            (runtimeAssemblyFilename: string,
-             designTimeName: string,
-             resolutionEnvironment: ResolutionEnvironment,
-             isInvalidationSupported: bool,
-             isInteractive: bool,
-             systemRuntimeContainsType: string -> bool,
-             systemRuntimeAssemblyVersion: Version,
-             compilerToolPaths: string list,
-             logError: TypeProviderError -> unit,
-             m:range) =
-
-        let providers =
-                try
-                    let designTimeAssemblyName =
-                        try
-                            if designTimeName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeName))
-                            else
-                                Some (System.Reflection.AssemblyName designTimeName)
-                        with :? ArgumentException ->
-                            errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runtimeAssemblyFilename, designTimeName), m))
-                            None
-
-                    [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
-                      // Check if the attribute is pointing to the file being compiled, in which case ignore it
-                      // This checks seems like legacy but is included for compat.
-                      | Some designTimeAssemblyName, Some path
-                         when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
-                          ()
-
-                      | Some _, _ ->
-                          let provImplTypes = GetTypeProviderImplementationTypes (runtimeAssemblyFilename, designTimeName, m, compilerToolPaths)
-                          for t in provImplTypes do
-                            let resolver =
-                                CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
-                                    isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
-                            match box resolver with
-                            | null -> ()
-                            | _ -> yield resolver
-
-                      |   None, _ ->
-                          () ]
-
-                with :? TypeProviderError as tpe ->
-                    logError tpe
-                    []
-
-        providers
-
     let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 
     /// Try to access a member on a provided type, catching and reporting errors
@@ -783,17 +733,40 @@ module ExtensionTyping =
                        LogError = logError
                        Range = m }) =
 
-                    GetTypeProvidersOfAssemblyInternal
-                        (runtimeAssemblyFilename,
-                         designerAssemblyName,
-                         resolutionEnvironment,
-                         isInvalidationSupported,
-                         isInteractive,
-                         systemRuntimeContainsType,
-                         systemRuntimeAssemblyVersion,
-                         compilerToolsPath,
-                         logError,
-                         m)
+                    try
+                        let designTimeAssemblyName =
+                            try
+                                if designerAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
+                                    Some (AssemblyName (Path.GetFileNameWithoutExtension designerAssemblyName))
+                                else
+                                    Some (AssemblyName designerAssemblyName)
+                            with :? ArgumentException ->
+                                errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runtimeAssemblyFilename, designerAssemblyName), m))
+                                None
+
+                        [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
+                          // Check if the attribute is pointing to the file being compiled, in which case ignore it
+                          // This checks seems like legacy but is included for compat.
+                          | Some designTimeAssemblyName, Some path
+                             when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                              ()
+
+                          | Some _, _ ->
+                              let provImplTypes = GetTypeProviderImplementationTypes (runtimeAssemblyFilename, designerAssemblyName, m, compilerToolsPath)
+                              for t in provImplTypes do
+                                let resolver =
+                                    CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
+                                        isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
+                                match box resolver with
+                                | null -> ()
+                                | _ -> yield resolver
+
+                          |   None, _ ->
+                              () ]
+
+                    with :? TypeProviderError as tpe ->
+                        logError tpe
+                        []
 
                 member this.GetProvidedTypes(pn: IProvidedNamespace) =
                     pn.GetTypes() |> Array.map ProvidedType.CreateNoContext 
