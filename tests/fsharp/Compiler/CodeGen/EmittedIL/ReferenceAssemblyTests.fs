@@ -291,7 +291,6 @@ module Nested =
         |> ignore
 
     [<Test>]
-    // TODO: This currently passes, but it's technically wrong as the parameter names for the generated Equality and Comparison functions are not the same. Does this matter?
     let ``Simple reference assembly with nested module with type should have expected IL``() =
         let src =
             """
