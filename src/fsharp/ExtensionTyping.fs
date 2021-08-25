@@ -769,7 +769,9 @@ module ExtensionTyping =
                         []
 
                 member this.GetProvidedTypes(pn: IProvidedNamespace) =
-                    pn.GetTypes() |> Array.map ProvidedType.CreateNoContext 
+                    let types = pn.GetTypes()
+                    if isNull types then null
+                    else types |> Array.map ProvidedType.CreateNoContext
 
                 member this.ResolveTypeName(pn: IProvidedNamespace, typeName: string) =
                     pn.ResolveTypeName typeName |> ProvidedType.CreateNoContext
