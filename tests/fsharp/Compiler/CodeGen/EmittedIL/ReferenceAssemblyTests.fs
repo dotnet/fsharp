@@ -2,13 +2,7 @@
 
 namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
-open System.IO
-open System.Reflection
-open System.Reflection.Metadata
-open System.Reflection.PortableExecutable
-open System.Collections.Immutable
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 open NUnit.Framework
 
 [<TestFixture>]
