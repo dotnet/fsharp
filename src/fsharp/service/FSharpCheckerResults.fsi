@@ -447,6 +447,7 @@ type public FSharpCheckProjectResults =
                  ModuleOrNamespaceType *
                  Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
+                 (unit -> IRawFSharpAssemblyData option) *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *

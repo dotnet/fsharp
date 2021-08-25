@@ -882,7 +882,7 @@ let rec CreateDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceT
         if entBindings.IsEmpty && tycons.IsEmpty then
             dummyExprs
         else
-            ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: dummyExprs
+            ModuleOrNamespaceExpr.TMDefRec(false, [], tycons, entBindings, range0) :: dummyExprs
 
     ModuleOrNamespaceExpr.TMDefs dummyExprs
 
