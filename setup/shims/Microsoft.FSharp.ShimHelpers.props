@@ -5,22 +5,26 @@
   </PropertyGroup>
 
   <!--
-    If the Directory.Build.props file in the project directory specifies 'FSharpUseNETSdkCompiler' then Visual Studio / msbuild.exe will use the NETSDK compiler.
-    Otherwise stick with desktop compiler.
+    If FSharpCompilerPath is set, we have nothing else to do, someone has already expressed a preference.
   -->
-  <PropertyGroup Condition="'$(FSharpUseNETSdkCompiler)' == 'true'">
+  <PropertyGroup Condition="'$(FSharpCompilerPath)' == '' and '$(DisableAutoSetFscCompilerPath)' != 'true'">
+    <!--
+        Precompute paths to compiler for both netsdk and netframework compilers.  Settings in the project file will allow 
+        Microsoft.FSharp.Targets to select which compiler to use.
+    -->
+    <FSharp_Shim_Present>true</FSharp_Shim_Present>
 
-    <!-- We are in the msbuild/VS build path only, we want to forward to the installed net sdk always -->
-    <FSharpCompilerPath Condition="'$(FSharpCompilerPath)' == ''">$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</FSharpCompilerPath>
+    <Fsc_NetFramework_X86_ToolExe>fsc.exe</Fsc_NetFramework_X86_ToolExe>
+    <Fsc_NetFramework_AnyCpu_ToolExe>fscAnyCpu.exe</Fsc_NetFramework_AnyCpu_ToolExe>
 
-    <FscToolPath>$(NetCoreRoot)</FscToolPath>
-    <FscToolExe>$(NetCoreRoot)dotnet.exe</FscToolExe>
-    <DotnetFscCompilerPath>"$(FSharpCompilerPath)fsc.dll"</DotnetFscCompilerPath>
+    <Fsc_DotNet_CompilerPath>$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/FSharp/</Fsc_DotNet_CompilerPath>
+    <Fsc_NetFramework_ToolPath>$(VsInstallRoot)/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</Fsc_NetFramework_ToolPath>
 
-    <FsiToolPath>$(NetCoreRoot)</FsiToolPath>
-    <FsiToolExe>$(NetCoreRoot)dotnet.exe</FsiToolExe>
-    <DotnetFsiCompilerPath>"$(FSharpCompilerPath)fsi.dll"</DotnetFsiCompilerPath>
+    <Fsc_DotNET_ToolPath>$(NetCoreRoot)</Fsc_DotNET_ToolPath>
+    <Fsc_DotNET_ToolExe>dotnet.exe</Fsc_DotNET_ToolExe>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(Fsc_DotNet_CompilerPath)fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
 
+    <FSharpCompilerPath>$(Fsc_NetFramework_ToolPath)</FSharpCompilerPath>
   </PropertyGroup>
 
 </Project>

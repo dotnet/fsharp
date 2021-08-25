@@ -64,6 +64,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="fscAnyCpu" />
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
