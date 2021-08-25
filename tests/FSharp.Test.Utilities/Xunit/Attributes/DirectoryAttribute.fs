@@ -48,7 +48,8 @@ type DirectoryAttribute(dir: string) =
           SourceKind     = SourceKind.Fsx
           Name           = Some fs
           IgnoreWarnings = false
-          References     = [] } |> FS
+          References     = []
+          CompileDirectory = None } |> FS
 
     member _.Includes with get() = includes and set v = includes <- v
 
