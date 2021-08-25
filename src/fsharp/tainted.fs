@@ -152,7 +152,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
-    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef * string) list) =
+    static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef * string) list) =
         [for (tp,nm, tpd) in providerSpecs do
              yield Tainted<_>({ TypeProvider = tp; TypeProviderAssemblyRef = nm; Lock=TypeProviderLock(); TypeProviderDesignation = tpd },tp) ]
 
