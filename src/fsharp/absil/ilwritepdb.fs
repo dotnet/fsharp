@@ -293,20 +293,6 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
     elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
     else 0
 
-let collectScopes scope =
-    let list = List<PdbMethodScope>()
-    let rec toList scope parent =
-        let nested =
-            match parent with
-            | Some p -> scope.StartOffset <> p.StartOffset || scope.EndOffset <> p.EndOffset
-            | None -> true
-
-        if nested then list.Add scope
-        scope.Children |> Seq.iter(fun s -> toList s (if nested then Some scope else parent))
-
-    toList scope None
-    list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
-
 type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, showTimes, info: PdbData, pathMap: PathMap) =
 
     let docs =
@@ -527,20 +513,40 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         importScopesTable.Add(imports, result)
         result
 
-    let writeMethodScopes methToken scope =
-        for s in collectScopes scope do
+    let flattenScopes rootScope = 
+        let list = List<PdbMethodScope>()
+        let rec flattenScopes scope parent =
+
+            list.Add scope
+            for nestedScope in scope.Children do
+                let isNested =
+                    match parent with
+                    | Some p -> nestedScope.StartOffset >= p.StartOffset && nestedScope.EndOffset <= p.EndOffset
+                    | None -> true
+
+                flattenScopes nestedScope (if isNested then Some scope else parent)
+
+        flattenScopes rootScope None
+
+        list.ToArray() 
+        |> Array.sortWith<PdbMethodScope> scopeSorter
+
+    let writeMethodScopes methToken rootScope =
+
+        let flattenedScopes = flattenScopes rootScope
             
-            // Get or create the import scope for this method
-            let importScopeHandle =
+        // Get or create the import scope for this method
+        let importScopeHandle =
 #if EMIT_IMPORT_SCOPES
-                match s.Imports with 
-                | None -> Unchecked.defaultof<_>
-                | Some imports -> getImportScopeIndex imports
+            match s.Imports with 
+            | None -> Unchecked.defaultof<_>
+            | Some imports -> getImportScopeIndex imports
 #else
-                getImportScopeIndex |> ignore // make sure this code counts as used
-                Unchecked.defaultof<_>
+            getImportScopeIndex |> ignore // make sure this code counts as used
+            Unchecked.defaultof<_>
 #endif
 
+        for scope in flattenedScopes do
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
 
@@ -548,9 +554,9 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                 importScopeHandle,
                 nextHandle,
                 Unchecked.defaultof<LocalConstantHandle>,
-                s.StartOffset, s.EndOffset - s.StartOffset ) |>ignore
+                scope.StartOffset, scope.EndOffset - scope.StartOffset ) |>ignore
 
-            for localVariable in s.Locals do
+            for localVariable in scope.Locals do
                 lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
 
     let emitMethod minfo =
@@ -957,7 +963,8 @@ let logDebugInfo (outfile: string) (info: PdbData) =
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
     fprintfn sw "DOCUMENTS"
     for i, doc in Seq.zip [0 .. info.Documents.Length-1] info.Documents do
-      fprintfn sw " [%d] %s" i doc.File
+      // File names elided because they are ephemeral during testing
+      fprintfn sw " [%d] <elided-for-testing>"  i // doc.File
       fprintfn sw "     Type: %A" doc.DocumentType
       fprintfn sw "     Language: %A" doc.Language
       fprintfn sw "     Vendor: %A" doc.Vendor
@@ -987,3 +994,62 @@ let logDebugInfo (outfile: string) (info: PdbData) =
       | None -> ()
       | Some rootscope -> writeScope "" rootscope
       fprintfn sw ""
+
+let rec allNamesOfScope acc (scope: PdbMethodScope) =
+    let acc = (acc, scope.Locals) ||> Array.fold (fun z l -> Set.add l.Name z)
+    let acc = (acc, scope.Children) ||> allNamesOfScopes
+    acc
+and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
+    (acc, scopes) ||> Array.fold allNamesOfScope
+
+let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
+    // Check if child scopes are properly nested
+    if scope.Children |> Array.forall (fun child ->
+            child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+
+        let children = scope.Children |> Array.sortWith scopeSorter
+
+        // Find all the names defined in this scope
+        let scopeNames = set [| for n in scope.Locals -> n.Name |]
+
+        // Rename if necessary as we push
+        let rename, unprocessed = localsToPush |> Array.partition (fun l -> scopeNames.Contains l.Name)
+        let renamed = [| for l in rename -> { l with Name = l.Name + " (shadowed)" } |]
+
+        let localsToPush2 = [| yield! renamed; yield! unprocessed; yield! scope.Locals |]
+        let newChildren, splits = children |> Array.map (pushShadowedLocals localsToPush2) |> Array.unzip
+        
+        // Check if a rename in any of the children forces a split
+        if splits |> Array.exists id then
+            let results =
+                [| 
+                    // First fill in the gaps between the children with an adjusted version of this scope.
+                    let gaps = 
+                        [| yield (scope.StartOffset, scope.StartOffset) 
+                           for newChild in children do   
+                                yield (newChild.StartOffset, newChild.EndOffset)
+                           yield (scope.EndOffset, scope.EndOffset)  |]
+
+                    for ((_,a),(b,_)) in Array.pairwise gaps do 
+                        if a < b then
+                            yield { scope with Locals=localsToPush2; Children = [| |]; StartOffset = a; EndOffset = b}
+                       
+                    yield! Array.concat newChildren
+                |]
+            let results2 = results |> Array.sortWith scopeSorter
+            results2, true
+        else 
+            let splitsParent = renamed.Length > 0
+            [| { scope with Locals=localsToPush2 } |], splitsParent
+    else
+        [| scope |], false
+
+// Check to see if a scope has a local with the same name as any of its children
+// 
+// If so, do not emit 'scope' itself. Instead, 
+//  1. Emit a copy of 'scope' in each true gap, with all locals
+//  2. Adjust each child scope to also contain the locals from 'scope', 
+//     adding the text " (shadowed)" to the names of those with name conflicts.
+let unshadowScopes rootScope =
+   let result, _ = pushShadowedLocals [| |] rootScope
+   result

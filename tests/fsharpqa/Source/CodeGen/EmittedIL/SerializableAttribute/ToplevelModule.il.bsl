@@ -36,13 +36,13 @@
   // Offset: 0x00001148 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {611C4D86-37F5-C118-A745-0383864D1C61}
+// MVID: {6125903C-37F5-C118-A745-03833C902561}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067D0000
+// Image base: 0x009E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

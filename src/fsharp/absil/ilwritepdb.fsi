@@ -119,10 +119,21 @@ type HashAlgorithm =
     | Sha256
 
 val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> int64 * BlobContentId * MemoryStream * string * byte[]
+
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> int64 * BlobContentId * MemoryStream
+
 val embedPortablePdbInfo: uncompressedLength: int64 -> contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
+
 val writePortablePdbInfo: contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
 
 #if !FX_NO_PDB_WRITER
 val writePdbInfo : showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
 #endif
+
+/// Check to see if a scope has a local with the same name as any of its children
+/// 
+/// If so, do not emit 'scope' itself. Instead, 
+///  1. Emit a copy of 'scope' in each true gap, with all locals
+///  2. Adjust each child scope to also contain the locals from 'scope', 
+///     adding the text " (shadowed)" to the names of those with name conflicts.
+val unshadowScopes: PdbMethodScope -> PdbMethodScope[]

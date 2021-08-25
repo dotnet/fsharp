@@ -2146,7 +2146,6 @@ module Codebuf =
                 mkScopeNode cenv importScope localSigs (s1, e1, cl.DebugMappings, children))
         trees
 
-
     // Emit the SEH tree
     let rec emitExceptionHandlerTree (codebuf: CodeBuffer) (Node (x, childSEH)) =
         List.iter (emitExceptionHandlerTree codebuf) childSEH // internal first
@@ -2183,7 +2182,10 @@ module Codebuf =
 
         // Build the locals information, ready to emit
         let localsTree = makeLocalsTree cenv importScope localSigs pc2pos code.Labels code.Locals
-        localsTree
+
+        // Adjust the scopes for shadowing
+        let unshadowed = List.collect (unshadowScopes >> Array.toList) localsTree
+        unshadowed
 
     let EmitMethodCode cenv importScope localSigs env nm code =
         use codebuf = CodeBuffer.Create nm
