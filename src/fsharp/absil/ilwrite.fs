@@ -2523,7 +2523,7 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 
 let ilMethodBodyThrowNull =
     let ilCode = IL.buildILCode "" (Dictionary()) [|ILInstr.AI_ldnull; ILInstr.I_throw|] [] []
-    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None)
+    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None, None)
 
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
     let flags = md.Attributes

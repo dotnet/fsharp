@@ -67,8 +67,8 @@ let iLdcSingle i = AI_ldc (DT_R4, ILConst.R4 i)
 let ilThrowNullInstrs = [|ILInstr.AI_ldnull; ILInstr.I_throw|]
 let emptyDict = Dictionary()
 let mkILThrowNullMethodBody name =
-    let ilCode = IL.buildILCode name emptyDict ilThrowNullInstrs [] []
-    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None)
+    let ilCode = buildILCode name emptyDict ilThrowNullInstrs [] []
+    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None, None)
 
 let mkILThrowNullStorageCtorWithParamNames (extraParams, flds, access) =
     mkILCtor(access,
@@ -1859,10 +1859,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             // Doing both a store and load keeps FxCop happier because it thinks the field is useful
             let instrs =
                 [ yield! (if condition "NO_ADD_FEEFEE_TO_CCTORS" then [] elif condition "ADD_SEQPT_TO_CCTORS" then seqpt else feefee) // mark start of hidden code
-                yield mkLdcInt32 0
-                yield mkNormalStsfld fspec
-                yield mkNormalLdsfld fspec
-                yield AI_pop]
+                  yield mkLdcInt32 0
+                  yield mkNormalStsfld fspec
+                  yield mkNormalLdsfld fspec
+                  yield AI_pop]
             gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt, imports)
 
     member _.AddEventDef (tref, edef) =
@@ -6284,7 +6284,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isSt
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, getterMethod)
             if mut || cenv.opts.isInteractiveItExpr then
                 let setterMethod =
-                    let methBody =
+                    let body =
                         if cenv.opts.metadataOnly then
                             mkILThrowNullMethodBody ilGetterMethRef.Name
                             |> notlazy
@@ -8515,7 +8515,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                let ilMethName = "get_" + fld.Name
                let ilFieldName = ComputeFieldName exnc fld
                let ilMethodDef = mkLdfldMethodDef cenv.opts.metadataOnly (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
-               let ilFieldDef = IL.mkILInstanceField(ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
+               let ilFieldDef = mkILInstanceField(ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
                let ilPropDef =
                    ILPropertyDef(name = ilPropName,
                                  attributes = PropertyAttributes.None,
