@@ -36,13 +36,13 @@
   // Offset: 0x00000460 Length: 0x00000445
 }
 .module OptionalArg01.exe
-// MVID: {611C4D9E-4F48-B5AF-A745-03839E4D1C61}
+// MVID: {6124063B-4F48-B5AF-A745-03833B062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x064B0000
+// Image base: 0x04EE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,8 +100,8 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.OptionalArgumentAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       93 (0x5d)
       .maxstack  4
-      .locals init ([0] int32 count,
-               [1] int32 V_1,
+      .locals init ([0] int32 'count (shadowed)',
+               [1] int32 count,
                [2] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> attribs,
                [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A> V_3,
                [4] class OptionalArg01/A v2)
