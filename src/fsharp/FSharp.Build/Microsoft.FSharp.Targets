@@ -57,7 +57,7 @@ this file.
       <FSharpPreferNetFrameworkTools>  boolean: true or false === default value true
 
       Suggest that the compiler used be the 64 Bit compiler.  On computers without Visual Studio this property is ignored.
-      <FSharpPrefer64BitFSCTools>      boolean: true or false === default value true
+      <FSharpPrefer64BitTools>      boolean: true or false === default value true
 
       If Shim helpers are present then the values are valid and set by the Microsoft.FSharp.Helpers.props
     -->
