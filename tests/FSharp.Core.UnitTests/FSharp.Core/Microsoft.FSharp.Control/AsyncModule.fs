@@ -216,7 +216,7 @@ type AsyncModule() =
         | true  -> Assert.Fail("Timeout expected")
         | false -> ()
 
-    [<Fact>]
+    [<Fact(Skip = "Flaky")>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
         let startTime = DateTime.UtcNow
