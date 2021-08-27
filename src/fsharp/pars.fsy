@@ -4798,17 +4798,20 @@ anonLambdaExpr:
        exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 mArrow $4) }
 
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
-     { reportParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsMissingFunctionBody())
+     { let mLambda = rhs2 parseState 1 3
+       reportParseErrorAt mLambda (FSComp.SR.parsMissingFunctionBody())
        let mArrow = Some (rhs parseState 3)
-       mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 mArrow (arbExpr("anonLambdaExpr2", (rhs parseState 3))) }
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 mArrow (arbExpr("anonLambdaExpr2", mLambda.EndRange)) }
 
   | OFUN atomicPatterns RARROW recover
      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody())
+       let mLambda = rhs2 parseState 1 3
        let mArrow = Some (rhs parseState 3)
-       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 mArrow (arbExpr("anonLambdaExpr3", (rhs parseState 3)))) }
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 mArrow (arbExpr("anonLambdaExpr3", mLambda.EndRange))) }
 
   | OFUN atomicPatterns error OEND
-     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 2) $2 None (arbExpr("anonLambdaExpr4", (rhs parseState 3)))) }
+     { let mLambda = rhs2 parseState 1 2
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mLambda $2 None (arbExpr("anonLambdaExpr4", mLambda.EndRange))) }
 
   | OFUN error OEND
      { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs parseState 1) [] None (arbExpr("anonLambdaExpr5", (rhs parseState 2)))) }
