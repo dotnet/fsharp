@@ -1103,7 +1103,7 @@ type internal TypeCheckInfo
                         |> Option.map (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
-                    DeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
+                    DeclarationListInfo.Create(infoReader,tcAccessRights,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
             (fun msg ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
                 DeclarationListInfo.Error msg)
@@ -1253,7 +1253,7 @@ type internal TypeCheckInfo
                     match declItemsOpt with
                     | None -> ToolTipText []
                     | Some(items, denv, _, m) ->
-                         ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
+                         ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader tcAccessRights m denv x.ItemWithInst)))
 
                 (fun err ->
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
@@ -1325,7 +1325,7 @@ type internal TypeCheckInfo
                         match ctors with
                         | [] -> items
                         | ctors -> ctors
-                    MethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
+                    MethodGroup.Create(infoReader, tcAccessRights, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg ->
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
                 MethodGroup(msg,[| |]))

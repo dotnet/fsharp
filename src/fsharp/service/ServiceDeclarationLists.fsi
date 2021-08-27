@@ -10,6 +10,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.AccessibilityLogic
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -135,6 +136,7 @@ type public DeclarationListInfo =
     // Implementation details used by other code in the compiler    
     static member internal Create:
         infoReader:InfoReader * 
+        ad:AccessorDomain *
         m:range * 
         denv:DisplayEnv * 
         getAccessibility:(Item -> FSharpAccessibility) * 
@@ -202,10 +204,10 @@ type public MethodGroup =
     /// The methods (or other items) in the group
     member Methods: MethodGroupItem[] 
 
-    static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> MethodGroup
+    static member internal Create: InfoReader * AccessorDomain * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 
