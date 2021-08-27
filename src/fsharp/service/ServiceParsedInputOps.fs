@@ -1004,7 +1004,7 @@ module ParsedInput =
                                         | SynPat.Tuple(_, pats, _) ->
                                             pats |> List.tryPick visitParam
                                         | _ -> visitParam pat
-                                    | SynPat.Wild range when rangeContainsPos range pos -> 
+                                    | SynPat.Wild range | SynPat.FromParseError (_, range) when rangeContainsPos range pos -> 
                                         // let foo (x|
                                         Some CompletionContext.Invalid
                                     | _ -> visitParam pat
