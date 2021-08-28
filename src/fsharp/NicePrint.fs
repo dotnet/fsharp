@@ -24,6 +24,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.AccessibilityLogic
 
 open FSharp.Core.Printf
 
@@ -1629,7 +1630,7 @@ module private TastDefinitionPrinting =
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            |> List.filter (fun v -> not v.IsClassConstructor && shouldShow v.ArbitraryValRef)
+            |> List.filter (fun v -> IsMethInfoAccessible amap m ad v && not v.IsClassConstructor && shouldShow v.ArbitraryValRef)
 
         let iimplsLs =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
@@ -1702,7 +1703,7 @@ module private TastDefinitionPrinting =
                 []
             else
                 tycon.TrueFieldsAsList
-                |> List.filter (fun f -> f.IsStatic && not (isDiscard f.Name))
+                |> List.filter (fun f -> IsAccessible ad f.Accessibility && f.IsStatic && not (isDiscard f.Name))
                 |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv infoReader tcref f)
 
         let instanceValsLs =
@@ -1710,7 +1711,7 @@ module private TastDefinitionPrinting =
                 []
             else
                 tycon.TrueInstanceFieldsAsList
-                |> List.filter (fun f -> not (isDiscard f.Name))
+                |> List.filter (fun f -> IsAccessible ad f.Accessibility && not (isDiscard f.Name))
                 |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv infoReader tcref f)
     
         let propLs =
@@ -1732,7 +1733,7 @@ module private TastDefinitionPrinting =
                 match tcref.TypeReprInfo with 
                 | TProvidedTypeExtensionPoint info ->
                     [ 
-                        for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
+                        for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes() |> Array.filter (fun t -> t.IsPublic || t.IsNestedPublic)), "GetNestedTypes", m) do 
                             yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                     ] 
                     |> List.sortBy snd

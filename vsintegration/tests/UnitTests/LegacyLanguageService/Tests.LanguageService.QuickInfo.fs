@@ -2070,8 +2070,7 @@ query."
               "  new : unit -> unit + 1 overload"
               "  member Next : unit -> int + 2 overloads";  
               "  member NextBytes : buffer: byte [] -> unit";
-              "  member NextDouble : unit -> float";
-              "  member Sample : unit -> float";]
+              "  member NextDouble : unit -> float"]
             )
 
     [<Test>]
@@ -2092,7 +2091,6 @@ query."
     /// Bug 4624: Check the order in which members are printed, C# classes
     [<Test>]
     member public this.``Regression.Class.Printing.CSharp.Classes.Bug4624``() =
-        //let f (x:System.Security.Policy.CodeConnectAccess) = x.
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
               ["#light";
@@ -2104,16 +2102,13 @@ query."
              (* expect to see in order... *)
              // Pre fix output is mixed up
              [ "type CodeConnectAccess =";
-               "  new : allowScheme: string * allowPort: int -> unit + 2 overloads";
+               "  new : allowScheme: string * allowPort: int -> unit";
                "  member Equals : o: obj -> bool";
                "  member GetHashCode : unit -> int";
                "  static member CreateAnySchemeAccess : allowPort: int -> CodeConnectAccess";
                "  static member CreateOriginSchemeAccess : allowPort: int -> CodeConnectAccess";
-               "  static member IsValidScheme : scheme: string -> bool";
-               "  static val AnyPort : int";
                "  static val AnyScheme : string";
                "  static val DefaultPort : int";
-               "  static val NoPort : int";
                "  ...";
              ])
 
