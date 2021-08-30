@@ -502,6 +502,8 @@ let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()
 
 let mlCompatWarning s m = warning(UserCompilerMessage(FSComp.SR.mlCompatMessage s, 62, m))
 
+let mlCompatError m = errorR(UserCompilerMessage(FSComp.SR.mlCompatError(), 62, m))
+
 let suppressErrorReporting f =
     let errorLogger = CompileThreadStatic.ErrorLogger
     try

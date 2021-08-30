@@ -378,7 +378,13 @@ module Keywords =
             | RESERVED ->
                 warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
-            | _ -> v
+            | _ ->
+                match s with 
+                | "mod"  | "land" |  "lor" | "lxor"
+                | "lsl" | "lsr" | "asr" ->
+                    mlCompatWarning (FSComp.SR.mlCompatKeyword(s)) lexbuf.LexemeRange
+                | _ -> ()
+                v
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->

@@ -21,6 +21,7 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
@@ -269,7 +270,10 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
     try
         let input =
             if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
-                mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
+                if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+                    errorR(Error(FSComp.SR.buildInvalidSourceFileExtensionML filename, rangeStartup))
+                else
+                    mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
 
             // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
@@ -279,7 +283,11 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
                 let intfs = Parser.signatureFile lexer lexbuf
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else
-                delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))
+                if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+                    error(Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated filename, rangeStartup))
+                else
+                    error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))
+
 
         scopedPragmas <- GetScopedPragmasForInput input
         input
