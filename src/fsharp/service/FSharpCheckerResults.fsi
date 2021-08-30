@@ -120,6 +120,7 @@ type public FSharpSymbolUse =
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
+
     member GenericArguments: (FSharpGenericParameter * FSharpType) list 
 
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
@@ -178,6 +179,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersion: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool

@@ -99,6 +99,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.MLCompatRevisions,previewVersion
         ]
 
+    static let defaultLanguageVersion = LanguageVersion("default")
+
     let specified =
         match specifiedVersionAsString with
         | "?" -> 0m
@@ -195,3 +197,12 @@ type LanguageVersion (specifiedVersionAsString) =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
+
+    override x.Equals(yobj: obj) =
+        match yobj with 
+        | :? LanguageVersion as y -> x.SpecifiedVersionString = y.SpecifiedVersionString
+        | _ -> false
+
+    override x.GetHashCode() = hash x.SpecifiedVersionString
+
+    static member Default = defaultLanguageVersion

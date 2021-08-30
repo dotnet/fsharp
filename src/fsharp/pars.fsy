@@ -2232,7 +2232,7 @@ tyconDefnOrSpfnSimpleRepr:
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError lhsm
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
        let s, _ = $5
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover (rhs parseState 5)
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion (rhs parseState 5)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm)  }
 
 
@@ -4532,7 +4532,7 @@ inlineAssemblyExpr:
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
-            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover sm
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:

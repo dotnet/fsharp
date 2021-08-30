@@ -220,7 +220,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) checkLanguageFeatureErrorRecover m : IL.ILInstr[] = 
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] = 
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -231,26 +231,22 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupporte
     try
         AsciiParser.ilInstrs
            AsciiLexer.token
-           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) (checkLanguageFeatureErrorRecover: LanguageFeature -> range -> unit) m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     ignore s
-    ignore isFeatureSupported
-    ignore checkLanguageFeatureErrorRecover
 
 #if NO_INLINE_IL_PARSER
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
-    let isFeatureSupported (_featureId:LanguageFeature) = true
-    let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     try
         AsciiParser.ilType
            AsciiLexer.token
-           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.PrimaryAssemblyILGlobals.typ_Object
