@@ -254,14 +254,11 @@ let getSingleModuleLikeDecl (input: ParsedInput) =
     | _ -> failwith "Could not get module decls"
 
 let getSingleModuleMemberDecls (input: ParsedInput) =
-    match getSingleModuleLikeDecl input with
-    | SynModuleOrNamespace (decls = decls) -> decls
+    let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl input
+    decls
 
 let getSingleExprInModule (input: ParsedInput) =
-    match getSingleModuleLikeDecl input with
-    | SynModuleOrNamespace (decls = decls) ->
-
-    match decls with
+    match getSingleModuleMemberDecls input with
     | [ SynModuleDecl.DoExpr (_, expr, _) ] -> expr
     | _ -> failwith "Can't get single expression"
 
