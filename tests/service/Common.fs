@@ -253,6 +253,16 @@ let getSingleModuleLikeDecl (input: ParsedInput) =
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
 
+let getSingleModuleMemberDecls (input: ParsedInput) =
+    let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl input
+    decls
+
+let getSingleExprInModule (input: ParsedInput) =
+    match getSingleModuleMemberDecls input with
+    | [ SynModuleDecl.DoExpr (_, expr, _) ] -> expr
+    | _ -> failwith "Can't get single expression"
+
+
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
 

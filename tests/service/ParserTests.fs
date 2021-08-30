@@ -1,28 +1,27 @@
-﻿module Tests.Parser
+﻿module FSharp.Compiler.Service.Tests.Parser.Recovery
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open NUnit.Framework
 
-module Recovery =
-    [<Test>]
-    let ``Unfinished interface member`` () =
-        let parseResults = getParseResults """
+[<Test>]
+let ``Interface impl - No members`` () =
+    let parseResults = getParseResults """
 type T =
     interface I with
     member x.P2 = ()
 
 let x = ()
 """
-        let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults
-        match decls with
-        | [ SynModuleDecl.Types ([ SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members = [ _; _ ])) ], _)
-            SynModuleDecl.Let _ ] -> ()
-        | _ -> failwith "Unexpected tree"
+    match getSingleModuleMemberDecls parseResults with
+    | [ SynModuleDecl.Types ([ SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members = [ _; _ ])) ], _)
+        SynModuleDecl.Let _ ] -> ()
+    | _ -> failwith "Unexpected tree"
 
-    [<Test>]
-    let ``Union case 01 - of`` () =
-        let parseResults = getParseResults """
+
+[<Test>]
+let ``Union case 01 - of`` () =
+    let parseResults = getParseResults """
 type U1 =
     | A of
 
@@ -31,16 +30,75 @@ type U2 =
     | C
 
 let x = ()
-    """
-        let (|UnionWithCases|_|) typeDefn =
-            match typeDefn with
-            | SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
-                cases |> List.map (fun (SynUnionCase (ident = ident)) -> ident.idText) |> Some
-            | _ -> None
+"""
+    let (|UnionWithCases|_|) typeDefn =
+        match typeDefn with
+        | SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
+            cases |> List.map (fun (SynUnionCase (ident = ident)) -> ident.idText) |> Some
+        | _ -> None
 
-        let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults
-        match decls with
-        | [ SynModuleDecl.Types ([ UnionWithCases ["A"]], _)
-            SynModuleDecl.Types ([ UnionWithCases ["B"; "C"] ], _)
-            SynModuleDecl.Let _ ] -> ()
-        | _ -> failwith "Unexpected tree"
+    match getSingleModuleMemberDecls parseResults with
+    | [ SynModuleDecl.Types ([ UnionWithCases ["A"]], _)
+        SynModuleDecl.Types ([ UnionWithCases ["B"; "C"] ], _)
+        SynModuleDecl.Let _ ] -> ()
+    | _ -> failwith "Unexpected tree"
+
+
+[<Test>]
+let ``Match clause 01`` () =
+    let parseResults = getParseResults """
+match () with
+| x
+"""
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"
+
+
+[<Test>]
+let ``Match clause 02 - When`` () =
+    let parseResults = getParseResults """
+match () with
+| x when true
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 03 - When`` () =
+    let parseResults = getParseResults """
+match () with
+| x when true
+| _ -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _); _ ], _) -> ()
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 04 - Or pat`` () =
+    let parseResults = getParseResults """
+match () with
+| x
+| _ -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 05 - Missing body`` () =
+    let parseResults = getParseResults """
+match () with
+| x ->
+| _ -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _)
+                             SynMatchClause (_, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"

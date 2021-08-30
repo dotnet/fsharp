@@ -316,6 +316,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <Ident> ident
 %type <SynType> typ typEOF
 %type <SynTypeDefnSig list> tyconSpfnList
+%type <SynArgPats * Range> atomicPatsOrNamePatPairs
+%type <SynPat list> atomicPatterns
 %type <Range * SynExpr> patternResult
 %type <SynExpr> declExpr
 %type <SynExpr> minusExpr
@@ -2337,13 +2339,6 @@ opt_explicitValTyparDecls:
   |       
       { SynValTyparDecls(None, true) }
 
-opt_explicitValTyparDecls2: 
-  | explicitValTyparDecls 
-      { Some $1 } 
-
-  | /* EMPTY */      
-      { None }
-
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 opt_typeConstraints:
@@ -3103,17 +3098,45 @@ namePatPair:
      { ($1, $3) }
 
 constrPattern:
-  | atomicPatternLongIdent explicitValTyparDecls                                                          
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls
+      { let vis, lid = $1
+        SynPat.LongIdent (lid, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2                     atomicPatsOrNamePatPairs    %prec pat_app 
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $3, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs %prec pat_app
+      { let vis, lid = $1
+        let args, argsM = $3
+        let m = unionRanges (rhs2 parseState 1 2) argsM
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs                  
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $4, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1
+        let args, argsM = $4
+        let m = unionRanges (rhs2 parseState 1 2) argsM
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs                  
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $4, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1
+        let args, argsM = $4
+        let m = unionRanges (rhs2 parseState 1 2) argsM
+        SynPat.LongIdent (lid, None, Some $2, args, vis, m) }
+
+  | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
+      { let vis, lid = $1
+        let args, argsM = $2
+        let m = unionRanges (rhs parseState 1) argsM
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
+
+  | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1
+        let args, argsM = $3
+        let m = unionRanges (rhs parseState 1) argsM
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
+
+  | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1
+        let args, argsM = $3
+        let m = unionRanges (rhs parseState 1) argsM
+        SynPat.LongIdent (lid, None, None, args, vis, m) }
 
   | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst 
       { SynPat.IsInst($2, lhs parseState) }
@@ -3123,10 +3146,12 @@ constrPattern:
 
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
-      { SynArgPats.NamePatPairs $2 }
+      { SynArgPats.NamePatPairs $2, snd $2 }
 
   | atomicPatterns
-      { SynArgPats.Pats $1 }
+      { let mWhole = rhs parseState 1
+        let m = (mWhole.StartRange, $1) ||> unionRangeWithListBy (fun p -> p.Range)
+        SynArgPats.Pats $1, m }
 
 atomicPatterns: 
   | atomicPattern atomicPatterns %prec pat_args 
@@ -3970,6 +3995,12 @@ patternClauses:
        let m = unionRanges resultExpr.Range patm
        (SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes) :: clauses), mLast }
 
+  | patternAndGuard error BAR patternClauses 
+     { let pat, guard, patm = $1 
+       let clauses, mLast = $4
+       let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
+       (SynMatchClause(pat, guard, None, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes) :: clauses), mLast }
+
   | patternAndGuard patternResult BAR error 
      { let pat, guard, patm = $1 
        let mArrow, resultExpr = $2
@@ -3989,12 +4020,9 @@ patternClauses:
   | patternAndGuard error 
      { let pat, guard, patm = $1 
        let mLast = rhs parseState 2
-       let m = 
-           match guard with 
-           | Some e -> unionRanges patm e.Range 
-           | _ -> patm
+       let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
        // silent recovery 
-       [SynMatchClause(pat, guard, None, SynExpr.Const (SynConst.Unit, mLast.EndRange), m, DebugPointAtTarget.Yes)], mLast }
+       [SynMatchClause(pat, guard, None, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes)], mLast }
  
 patternGuard: 
   | WHEN declExpr 
