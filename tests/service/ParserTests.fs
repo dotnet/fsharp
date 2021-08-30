@@ -77,3 +77,28 @@ match () with
     match getSingleExprInModule parseResults with
     | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _); _ ], _) -> ()
     | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 04 - Or pat`` () =
+    let parseResults = getParseResults """
+match () with
+| x
+| _ -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 05 - Missing body`` () =
+    let parseResults = getParseResults """
+match () with
+| x ->
+| _ -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _)
+                             SynMatchClause (_, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | _ -> failwith "Unexpected tree"
