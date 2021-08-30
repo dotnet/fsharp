@@ -34,7 +34,7 @@ type LanguageFeature =
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | ErrorOnMLCompat
+    | MLCompatRevisions
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -11,6 +11,7 @@ open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler.IO
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
@@ -380,9 +381,10 @@ module Keywords =
                 IdentifierToken args lexbuf s
             | _ ->
                 match s with 
-                | "mod"  | "land" |  "lor" | "lxor"
+                | "land" |  "lor" | "lxor"
                 | "lsl" | "lsr" | "asr" ->
-                    mlCompatWarning (FSComp.SR.mlCompatKeyword(s)) lexbuf.LexemeRange
+                    if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+                        mlCompatWarning (FSComp.SR.mlCompatKeyword(s)) lexbuf.LexemeRange
                 | _ -> ()
                 v
         | _ ->

@@ -270,7 +270,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
     try
         let input =
             if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
-                if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+                if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     errorR(Error(FSComp.SR.buildInvalidSourceFileExtensionML filename, rangeStartup))
                 else
                     mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
@@ -283,7 +283,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
                 let intfs = Parser.signatureFile lexer lexbuf
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else
-                if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+                if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     error(Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated filename, rangeStartup))
                 else
                     error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))

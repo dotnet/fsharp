@@ -567,7 +567,7 @@ rule token args skip = parse
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
 
  | "(*IF-FSHARP"
-     { if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+     { if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
           mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
        if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
@@ -932,7 +932,7 @@ rule token args skip = parse
 
  | ("#indent" | "#light") anywhite+ "\"off\""
    { args.lightStatus.Status <- false
-     if lexbuf.SupportsFeature LanguageFeature.ErrorOnMLCompat then
+     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
          mlCompatError lexbuf.LexemeRange
      else
          mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange

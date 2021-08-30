@@ -147,11 +147,6 @@
         <target state="translated">无点 float32 文本</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorOnMLCompat">
-        <source>error on ML compatibility features</source>
-        <target state="new">error on ML compatibility features</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多类型支持度量单位</target>
@@ -180,6 +175,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">具有多个泛型实例化的接口</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="new">ML compatibility revisions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">

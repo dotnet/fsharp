@@ -147,11 +147,6 @@
         <target state="translated">punktloses float32-Literal</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorOnMLCompat">
-        <source>error on ML compatibility features</source>
-        <target state="new">error on ML compatibility features</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">Maßeinheitenunterstützung durch weitere Typen</target>
@@ -180,6 +175,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">Schnittstellen mit mehrfacher generischer Instanziierung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="new">ML compatibility revisions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">

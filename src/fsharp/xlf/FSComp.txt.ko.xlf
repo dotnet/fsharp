@@ -147,11 +147,6 @@
         <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorOnMLCompat">
-        <source>error on ML compatibility features</source>
-        <target state="new">error on ML compatibility features</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
@@ -180,6 +175,11 @@
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">여러 제네릭 인스턴스화가 포함된 인터페이스</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="new">ML compatibility revisions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
