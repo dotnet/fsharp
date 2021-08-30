@@ -145,7 +145,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -153,7 +153,7 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
@@ -372,7 +372,7 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
+            let layout = NicePrint.layoutTycon denv infoReader ad m (* width *) tcref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
@@ -445,15 +445,15 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv (ItemWithNoInst item)
 
         |  _ -> 
             ToolTipElement.None
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
         ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
 [<Sealed>]
@@ -920,8 +920,8 @@ type DeclarationListItem(name: string, nameInCode: string, fullName: string, gly
 
     member _.Description = 
         match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv) -> 
-            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
+        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst))
         | Choice2Of2 result -> 
             result
 
@@ -953,7 +953,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
@@ -1097,7 +1097,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                             | ns -> Some (System.String.Join(".", ns)))
 
                     DeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv), getAccessibility item.Item,
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)
@@ -1171,7 +1171,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
     member _.Methods = methods
 
-    static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
+    static member Create (infoReader: InfoReader, ad, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
         if isNil items then MethodGroup("", [| |]) else
         let name = items.Head.Item.DisplayName 
@@ -1192,7 +1192,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv { item with Item = flatItem }]
+                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem }]
 
                         let hasParamArrayArg = 
                             match flatItem with 
