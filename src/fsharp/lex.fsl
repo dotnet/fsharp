@@ -933,7 +933,7 @@ rule token args skip = parse
  | ("#indent" | "#light") anywhite+ "\"off\""
    { args.lightStatus.Status <- false
      if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
-         mlCompatError lexbuf.LexemeRange
+         mlCompatError (FSComp.SR.mlCompatLightOffNoLongerSupported()) lexbuf.LexemeRange
      else
          mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
      if not skip then HASH_LIGHT (LexCont.Token (args.ifdefStack, args.stringNest))
