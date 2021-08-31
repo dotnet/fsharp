@@ -64,7 +64,7 @@ let p =
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 496, Line 7, Col 5, Line 8, Col 21, "The member or object constructor 'Person' requires 1 argument(s). The required signature is 'new : x:int -> Person'.")
+        |> withSingleDiagnostic (Error 496, Line 7, Col 5, Line 8, Col 21, "The member or object constructor 'Person' requires 1 argument(s). The required signature is 'new: x: int -> Person'.")
 
     [<Fact>]
     let ``Extra Argument In Ctor``() =
@@ -79,7 +79,7 @@ let p =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 501, Line 7, Col 5, Line 7, Col 14,
-                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'.")
+                                 "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> Person'.")
 
     [<Fact>]
     let ``Extra Argument In Ctor2``() =
