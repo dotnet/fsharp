@@ -327,6 +327,30 @@ FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Microsoft.FSharp.Collections.F
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] get_ArgTypes()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Void .ctor(ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILType)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String get_targetNamespace()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String targetNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType get_targetType()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType targetType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportNamespace()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportType()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportNamespace(System.String)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportType(ILType)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] Imports
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] get_Imports()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] Parent
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] get_Parent()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports], ILDebugImport[])
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Ansi
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Unicode
@@ -1730,6 +1754,8 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributes
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributesStored
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingConv
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingSignature
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImport
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImports
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILEventDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILEventDefs
@@ -2061,10 +2087,12 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalCompilationDefines()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] LightSyntax
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] get_LightSyntax()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String LangVersionText
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
@@ -10465,29 +10493,3 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String get_targetNamespace()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String targetNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType get_targetType()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType targetType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportNamespace()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportType()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportNamespace(System.String)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportType(ILType)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] Imports
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] get_Imports()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] Parent
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] get_Parent()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports], ILDebugImport[])
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImport
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImports

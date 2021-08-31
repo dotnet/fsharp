@@ -63,6 +63,9 @@ type LanguageVersion =
     /// Get the specified LanguageVersion
     member SpecifiedVersion: decimal
 
+    /// Get the text used to specify the version, several of which may map to the same version
+    member VersionText: string
+
     /// Get the specified LanguageVersion as a string
     member SpecifiedVersionString: string
 

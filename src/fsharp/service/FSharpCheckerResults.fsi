@@ -179,7 +179,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
-      LangVersion: string
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool

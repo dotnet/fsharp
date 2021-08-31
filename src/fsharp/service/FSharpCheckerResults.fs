@@ -1523,7 +1523,7 @@ type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
-      LangVersion: string
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -1537,7 +1537,7 @@ type FSharpParsingOptions =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
-          LangVersion = "default"
+          LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
@@ -1547,7 +1547,7 @@ type FSharpParsingOptions =
         { SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
-          LangVersion = tcConfig.langVersion.SpecifiedVersionString
+          LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfig.light
           CompilingFsLib = tcConfig.compilingFslib
@@ -1558,7 +1558,7 @@ type FSharpParsingOptions =
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
-          LangVersion = tcConfigB.langVersion.SpecifiedVersionString
+          LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfigB.light
           CompilingFsLib = tcConfigB.compilingFslib
@@ -1656,7 +1656,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let matchingBraces = ResizeArray<_>()
-        usingLexbufForParsing(createLexbuf options.LangVersion sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1733,7 +1733,7 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing(createLexbuf options.LangVersion sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
