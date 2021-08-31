@@ -126,7 +126,7 @@ module Test =
         ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "abstract member IMyInterface.Represent: unit -> string"
+    let expected = "abstract IMyInterface.Represent: unit -> string"
     Assert.AreEqual(expected, quickInfo)
 
 // migrated from legacy test

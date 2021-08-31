@@ -151,12 +151,12 @@ module internal PrintUtilities =
                     emptyL
                 else
                     xml.UnprocessedLines
-                    |> Array.map (fun x ->
+                    |> Array.collect (fun x ->
                         x.Split('\n') // These lines may have new-lines in them and we need to split them so we can format it
                     )
-                    |> Array.concat
-                    /// note here that we don't add a space after the triple-slash, because
-                    /// the implicit spacing hasn't been trimmed here.
+
+                    // note here that we don't add a space after the triple-slash, because
+                    // the implicit spacing hasn't been trimmed here.
                     |> Array.map (fun line -> ("///" + line) |> tagText |> wordL)
                     |> List.ofArray
                     |> aboveListL
@@ -410,19 +410,22 @@ module private PrintTypes =
         let stat = 
             if memFlags.IsInstance || (memFlags.MemberKind = SynMemberKind.Constructor) then emptyL 
             else WordL.keywordStatic
+
+        let stat = 
+            if memFlags.IsOverrideOrExplicitImpl then stat ++ WordL.keywordOverride
+            else stat
+
         let stat = 
             if memFlags.IsDispatchSlot then stat ++ WordL.keywordAbstract
-            elif memFlags.IsOverrideOrExplicitImpl then stat ++ WordL.keywordOverride
-            else stat
-        let stat = 
-            if memFlags.IsOverrideOrExplicitImpl then stat else
-            match memFlags.MemberKind with 
-            | SynMemberKind.ClassConstructor 
-            | SynMemberKind.Constructor 
-            | SynMemberKind.PropertyGetSet -> stat
-            | SynMemberKind.Member 
-            | SynMemberKind.PropertyGet 
-            | SynMemberKind.PropertySet -> stat ++ WordL.keywordMember
+            elif memFlags.IsOverrideOrExplicitImpl then stat
+            else
+                match memFlags.MemberKind with 
+                | SynMemberKind.ClassConstructor 
+                | SynMemberKind.Constructor 
+                | SynMemberKind.PropertyGetSet -> stat
+                | SynMemberKind.Member 
+                | SynMemberKind.PropertyGet 
+                | SynMemberKind.PropertySet -> stat ++ WordL.keywordMember
 
         // let stat = if memFlags.IsFinal then stat ++ wordL "final" else stat in
         stat

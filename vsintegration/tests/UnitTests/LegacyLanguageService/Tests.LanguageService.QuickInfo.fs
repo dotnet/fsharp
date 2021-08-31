@@ -2155,7 +2155,7 @@ query."
                "  override ToString: unit -> string";
                "  static member A: unit -> int";
                "  static member C: unit -> int";
-               "  abstract member AAA: int";
+               "  abstract AAA: int";
                "  member D: int";
                "  ...";
              ])

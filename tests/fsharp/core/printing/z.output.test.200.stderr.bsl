@@ -308,7 +308,7 @@ stdin(793,19): error FS0410: The type 'IAInternal' is less accessible than the v
           override x.M(a:string) = 1
   -------------------^
 
-stdin(825,20): error FS0361: The override 'M: string -> int' implements more than one abstract slot, e.g. 'abstract member Regression4232.D.M: 'U -> int' and 'abstract member Regression4232.D.M: 'T -> int'
+stdin(825,20): error FS0361: The override 'M: string -> int' implements more than one abstract slot, e.g. 'abstract Regression4232.D.M: 'U -> int' and 'abstract Regression4232.D.M: 'T -> int'
 
 
   let (|A|B|) (x:int) = A x;;

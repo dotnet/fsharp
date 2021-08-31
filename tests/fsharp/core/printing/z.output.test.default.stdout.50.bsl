@@ -5057,15 +5057,15 @@ type F1 =
   val x2: F1
   member B: unit -> int
   member D: x: int -> int + 2 overloads
-  abstract member MMM: bool -> bool
+  abstract MMM: bool -> bool
   override ToString: unit -> string
   static member A: unit -> int
   static member C: unit -> int
-  abstract member AAA: int
-  abstract member BBB: bool with set
+  abstract AAA: int
+  abstract BBB: bool with set
   member D2: int
   member E: int
-  abstract member ZZZ: int
+  abstract ZZZ: int
   static val mutable private sx: F1
   static val mutable private sx2: F1
 [<Struct>]
@@ -5134,21 +5134,21 @@ module Regression5218 =
 
 > module Regression3739 =
   type IB =
-    abstract member AbstractMember: int -> int
+    abstract AbstractMember: int -> int
   type C<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3739 =
   type IB =
-    abstract member AbstractMember: int -> int
+    abstract AbstractMember: int -> int
   type C<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3740 =
   type Writer<'a> =
-    abstract member get_path: unit -> string
+    abstract get_path: unit -> string
   type MyClass =
     interface Writer<int>
     val path: string
@@ -5977,47 +5977,47 @@ val f: (unit -> int)
 
 > > module Regression5265_PriPri =
   type private IAPrivate =
-    abstract member P: int
+    abstract P: int
   type private IBPrivate =
     inherit IAPrivate
-    abstract member Q: int
+    abstract Q: int
 
 > val it: string = "NOTE: Expect IAInternal less accessible IBPublic"
 
 > > module Regression5265_IntInt =
   type internal IAInternal =
-    abstract member P: int
+    abstract P: int
   type internal IBInternal =
     inherit IAInternal
-    abstract member Q: int
+    abstract Q: int
 
 > module Regression5265_IntPri =
   type internal IAInternal =
-    abstract member P: int
+    abstract P: int
   type private IBPrivate =
     inherit IAInternal
-    abstract member Q: int
+    abstract Q: int
 
 > module Regression5265_PubPub =
   type IAPublic =
-    abstract member P: int
+    abstract P: int
   type IBPublic =
     inherit IAPublic
-    abstract member Q: int
+    abstract Q: int
 
 > module Regression5265_PubInt =
   type IAPublic =
-    abstract member P: int
+    abstract P: int
   type internal IBInternal =
     inherit IAPublic
-    abstract member Q: int
+    abstract Q: int
 
 > module Regression5265_PubPri =
   type IAPublic =
-    abstract member P: int
+    abstract P: int
   type private IBPrivate =
     inherit IAPublic
-    abstract member Q: int
+    abstract Q: int
 
 > val it: string =
   "Regression4232: Expect an error about duplicate virtual methods from parent type"
@@ -6067,13 +6067,13 @@ val f: (unit -> int)
 
 > > module ReflectionEmit =
   type IA =
-    abstract member M: #IB -> int
+    abstract M: #IB -> int
   and IB =
-    abstract member M: #IA -> int
+    abstract M: #IA -> int
   type IA2<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
-    abstract member M: int
+    abstract M: int
   and IB2<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
-    abstract member M: int
+    abstract M: int
 
 > val it: string =
   "Regression_139182: Expect the follow code to be accepted without error"

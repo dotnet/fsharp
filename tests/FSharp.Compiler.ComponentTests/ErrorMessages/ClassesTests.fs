@@ -87,7 +87,7 @@ let x =
         |> withDiagnostics [
             (Error 767, Line 8, Col 14, Line 8, Col 34, "The member 'Function' does not correspond to any abstract or virtual method available to override or implement. Maybe you want one of the following:" + System.Environment.NewLine + "   MyFunction")
             (Error 17,  Line 8, Col 19, Line 8, Col 27, "The member 'Function: 'a * 'b -> unit' does not have the correct type to override any given virtual method")
-            (Error 366, Line 7, Col 3,  Line 9, Col 4,  "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IInterface.MyFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "\t'abstract member IInterface.SomeOtherFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (Error 366, Line 7, Col 3,  Line 9, Col 4,  "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract IInterface.MyFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "\t'abstract IInterface.SomeOtherFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
             (Error 783, Line 7, Col 9,  Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")]
 
     [<Fact>]
@@ -104,7 +104,7 @@ type Overload =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 366,  Line 7, Col 15, Line 7, Col 24, "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IOverload.Bar: double -> int'" + System.Environment.NewLine + "\t'abstract member IOverload.Bar: int -> int'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (Error 366,  Line 7, Col 15, Line 7, Col 24, "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract IOverload.Bar: double -> int'" + System.Environment.NewLine + "\t'abstract IOverload.Bar: int -> int'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
             (Error 3213, Line 8, Col 21, Line 8, Col 24, "The member 'Bar<'a0> : 'a0 -> int' matches multiple overloads of the same method.\nPlease restrict it to one of the following:" + System.Environment.NewLine + "   Bar: double -> int" + System.Environment.NewLine + "   Bar: int -> int.")]
 
     [<Fact>]
