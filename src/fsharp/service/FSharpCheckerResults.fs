@@ -2079,7 +2079,11 @@ type FSharpCheckFileResults
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
                 let (TImplFile (_, _, mexpr, _, _, _)) = implFile
-                let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr
+                let ad =
+                    match scopeOptX with
+                    | Some scope -> scope.AccessRights
+                    | _ -> AccessibleFromSomewhere
+                let layout = NicePrint.layoutInferredSigOfModuleExpr true denv infoReader ad range0 mexpr
                 layout |> LayoutRender.showL |> SourceText.ofString
             )
         )

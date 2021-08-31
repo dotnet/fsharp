@@ -908,6 +908,11 @@ module ParsedInput =
                     if isOnTheRightOfComma elements commas e then Some args else None
             | _ -> None
 
+        let (|SkipFromParseErrorPat|) pat =
+            match pat with
+            | SynPat.FromParseError(pat, _) -> pat
+            | _ -> pat
+
         let walker = 
             { 
                 new SyntaxVisitorBase<_>() with
@@ -980,7 +985,8 @@ module ParsedInput =
                         
                     member _.VisitBinding(_path, defaultTraverse, (SynBinding(headPat = headPat) as synBinding)) = 
                     
-                        let visitParam = function
+                        let visitParam (SkipFromParseErrorPat pat) =
+                            match pat with
                             | SynPat.Named (range = range)
                             | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos -> 
                                 // parameter without type hint, no completion
@@ -999,12 +1005,13 @@ module ParsedInput =
                             | SynArgPats.Pats pats ->
                                 pats |> List.tryPick (fun pat ->
                                     match pat with
+                                    | SynPat.FromParseError(pat, _)
                                     | SynPat.Paren(pat, _) -> 
                                         match pat with
                                         | SynPat.Tuple(_, pats, _) ->
                                             pats |> List.tryPick visitParam
                                         | _ -> visitParam pat
-                                    | SynPat.Wild range when rangeContainsPos range pos -> 
+                                    | SynPat.Wild range | SynPat.FromParseError (SynPat.Named _, range) when rangeContainsPos range pos -> 
                                         // let foo (x|
                                         Some CompletionContext.Invalid
                                     | _ -> visitParam pat

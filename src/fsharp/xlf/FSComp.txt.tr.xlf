@@ -19,22 +19,22 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="new">The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</target>
+        <target state="translated">F# kitaplığından gelen “:=” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops'a bakın. Örneğin, lütfen “cell := expr” ifadesini “cell.Value &lt;- expr” olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="new">The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</target>
+        <target state="translated">F# kitaplığından gelen “decr” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops'a bakın. Örneğin, lütfen “decr cell”i “cell.Value &lt;- cell.Value - 1” olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
         <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
-        <target state="new">The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</target>
+        <target state="translated">F# kitaplığından gelen “!” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops'a bakın. Örneğin, lütfen “cell”i “cell.Value” olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="new">The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</target>
+        <target state="translated">F# kitaplığından “incr” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen “incr cell”i “cell.Value &lt;- cell.Value + 1” olarak değiştirin</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">ek tür ile yönlendirilen dönüştürmeler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
-        <target state="new">expr[idx] notation for indexing and slicing</target>
+        <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
-        <target state="new">informational messages related to reference cells</target>
+        <target state="translated">başvuru hücreleriyle ilgili bilgi mesajları</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -329,12 +329,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</target>
+        <target state="translated">Bu ifade bir fonksiyon değildir ve uygulanamaz. Dizin oluşturucuya “expr[index]” aracılığıyla mı erişmeyi düşündünüz?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName2">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</target>
+        <target state="translated">Bu değer, bir işlev değil ve uygulanamaz. Dizin oluşturucuya bunun yerine “{0}[index]” üzerinden erişmeye mi çalışıyordunuz?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <target state="translated">Bu ifade '{0}' türüne sahip ve yalnızca belirsiz bir örtük dönüştürme aracılığıyla ’{1}' türüyle uyumlu hale getirilir. 'op_Implicit' için açık bir çağrı kullanmayı düşünün. Uygulanabilir örtük dönüştürmeler şunlardır: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -534,12 +534,12 @@
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</target>
+        <target state="translated">Söz dizimi “expr1[expr2]” dizin oluşturma için kullanılıyor. Dizin oluşturmayı etkinleştirmek için bir tür ek açıklama eklemeyi düşünün veya bir işlev çağırıyorsanız bir boşluk ekleyin, örn. “expr1 [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</target>
+        <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturmak için ayrılmıştır. https://aka.ms/fsharp-index-notation'a bakın. Bir işlev çağırıyorsanız, işlev ile bağımsız değişken arasına bir boşluk ekleyin, örn. “someFunction [expr]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -549,22 +549,22 @@
       </trans-unit>
       <trans-unit id="tcIndexNotationDeprecated">
         <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
-        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</target>
+        <target state="translated">Söz dizimi “arr.[idx]” artık “arr[idx]” olarak yeniden düzenlendi. Lütfen kodunuzu güncelleştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Bu ifade, '{0}' türünü '{1}' türüne dönüştürmek için yerleşik örtük dönüştürme kullanır. https://aka.ms/fsharp-implicit-convs adresine bakın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">Bu ifade '{1}' türünü '{2}' türüne dönüştürmek için '{0}' örtük dönüştürmesini kullanır.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">Bu ifade '{1}' türünü '{2}' türüne dönüştürmek için '{0}' örtük dönüştürmesini kullanır. https://aka.ms/fsharp-implicit-convs adresine bakın. Bu uyarı '#nowarn \"3391\" kullanılarak devre dışı bırakılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -599,17 +599,17 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfReverseIndex">
         <source>Invalid use of reverse index in list expression.</source>
-        <target state="new">Invalid use of reverse index in list expression.</target>
+        <target state="translated">Liste ifadesinde geçersiz ters dizin kullanımı.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">Söz dizimi “[expr1][expr2]”, bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “(expr1).[expr2]” kullanmanız gerekir. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction [expr1] [expr2]” gibi bir boşluk ekleyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
         <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">Söz dizimi “[expr1][expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction [expr1] [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -629,42 +629,42 @@
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">Bu ifade dizin oluşturmayı destekler, örn. “expr.[index]”. Söz dizimi “expr.[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
         <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">Bu değer dizin oluşturmayı destekler, örn. “{0}.[index]”. Söz dizimi “{1}[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
         <source>This expression is not a function and does not support index notation.</source>
-        <target state="new">This expression is not a function and does not support index notation.</target>
+        <target state="translated">Bu ifade bir işlev değildir ve dizin gösterimini desteklemez.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
         <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="new">The value '{0}' is not a function and does not support index notation.</target>
+        <target state="translated">“{0}” değeri bir işlev değildir ve dizin gösterimini desteklemez.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “expr1.[expr2]” kullanmalısınız. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">Söz dizimi “expr1[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction expr1 [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">Söz dizimi “(expr1)[expr2]” bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Dizin oluşturmayı veya dilimlemeyi düşünüyorsanız, bağımsız değişken konumunda “(expr1).[expr2]” kullanmalısınız. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction (expr1) [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">Söz dizimi “(expr1)[expr2]” artık dizin oluşturma için ayrılmıştır ve bağımsız değişken olarak kullanıldığında belirsizdir. https://aka.ms/fsharp-index-notation'a bakın. Birden çok curry bağımsız değişkenli bir işlev çağırıyorsanız, aralarına bir boşluk ekleyin, örn. “someFunction (expr1) [expr2]”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -704,7 +704,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Bu ifade '{0}' türünü örtülü olarak '{1}' türüne dönüştürür. https://aka.ms/fsharp-implicit-convs adresine bakın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -814,12 +814,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Listenin tüm öğeleri ilk öğenin türüne örtük şekilde dönüştürülebilmelidir. Bu öğenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Dizinin tüm öğeleri ilk öğenin türüne örtük şekilde dönüştürülebilmelidir. Bu öğenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -834,12 +834,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">'if' ifadesinin tüm dalları, örtük şekilde ilk dalın türüne dönüştürülebilir değerler döndürmelidir. Bu değerlerin '{0}' türünde olması bekleniyordu ancak bu dal '{1}' türünde bir değer döndürdü.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Desenin tüm dalları, örtük şekilde ilk dalın türüne dönüştürülebilir değerler döndürmelidir. '{0}' türünde değerler bekleniyordu ancak bu dal '{1}' türünde bir değer döndürdü.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3639,7 +3639,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
         <source>Incomplete expression or invalid use of indexer syntax</source>
-        <target state="new">Incomplete expression or invalid use of indexer syntax</target>
+        <target state="translated">Eksik ifade veya dizin oluşturucu sözdiziminin geçersiz kullanımı</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -7679,12 +7679,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</target>
+        <target state="translated">Bu değer, bir işlev değil ve uygulanamaz. Dizin oluşturucuya bunun yerine “{0}.[index]” üzerinden erişmeye mi çalışıyordunuz?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</target>
+        <target state="translated">Bu ifade bir fonksiyon değildir ve uygulanamaz. Dizin oluşturucuya “expr.[index]” aracılığıyla mı erişmeyi düşündünüz?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

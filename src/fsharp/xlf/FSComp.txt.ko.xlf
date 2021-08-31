@@ -19,22 +19,22 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="new">The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</target>
+        <target state="translated">F# 라이브러리의 ':=' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'cell := expr'을 'cell.Value &lt;- expr'로 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="new">The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</target>
+        <target state="translated">F# 라이브러리의 'decr' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'decr cell'을 'cell.Value &lt;- cell.Value - 1'로 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
         <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
-        <target state="new">The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</target>
+        <target state="translated">F# 라이브러리의 '!'의 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 '!cell'을 'cell.Value'로 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="new">The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</target>
+        <target state="translated">F# 라이브러리의 'incr' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'incr cell'을 'cell.Value &lt;- cell.Value + 1'로 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">추가 형식-디렉션 변환</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
-        <target state="new">expr[idx] notation for indexing and slicing</target>
+        <target state="translated">인덱싱 및 슬라이싱을 위한 expr[idx] 표기법</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
-        <target state="new">informational messages related to reference cells</target>
+        <target state="translated">참조 셀과 관련된 정보 메시지</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -329,12 +329,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</target>
+        <target state="translated">이 식은 함수가 아니며 적용할 수 없습니다. 'expr[index]'를 통해 인덱서에 액세스하려고 했습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName2">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</target>
+        <target state="translated">이 값은 함수가 아니며 적용할 수 없습니다. '{0}[index]'를 통해 인덱서에 액세스하려고 했습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <target state="translated">이 식은 ‘{0}’ 형식이며 모호한 암시적 변환을 통해 ‘{1}’ 형식하고만 호환됩니다. ‘op_Implicit’에 대한 명시적 호출을 사용하십시오. 해당하는 암시적 변환은 ‘{2}’입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -534,12 +534,12 @@
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</target>
+        <target state="translated">인덱싱에는 'expr1[expr2]' 구문이 사용됩니다. 인덱싱을 사용하도록 설정하기 위해 형식 주석을 추가하는 것을 고려하거나 함수를 호출하는 경우 공백을 추가하세요(예: 'expr1 [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</target>
+        <target state="translated">'expr1[expr2]' 구문은 이제 인덱싱용으로 예약되어 있습니다. https://aka.ms/fsharp-index-notation을 참조하세요. 함수를 호출하는 경우 함수와 인수 사이에 공백을 추가하세요(예: 'someFunction [expr]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -549,22 +549,22 @@
       </trans-unit>
       <trans-unit id="tcIndexNotationDeprecated">
         <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
-        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</target>
+        <target state="translated">구문 'arr.[idx]'는 이제 'arr[idx]'로 수정되었습니다. 코드를 업데이트하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">이 식은 기본 제공 암시적 변환을 사용하여 ‘{0}’ 형식을 '{1}' 형식으로 변환합니다. https://aka.ms/fsharp-implicit-convs 참조</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">이 식은 암시적 변환 ‘{0}’을 사용하여 ‘{1}’ 형식을 ‘{2}’ 형식으로 변환합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">이 식은 암시적 변환 '{0}'을 사용하여 '{1}' 형식을 '{2}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조. ’#Nowarn \ "3391\"을 (를) 사용하여 이 경고를 사용 하지 않도록 설정할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -599,17 +599,17 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfReverseIndex">
         <source>Invalid use of reverse index in list expression.</source>
-        <target state="new">Invalid use of reverse index in list expression.</target>
+        <target state="translated">목록 식에서 역방향 인덱스를 잘못 사용했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">'[expr1][expr2]' 구문은 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 인덱싱이나 슬라이싱을 하려면 인수 위치에 '(expr1).[expr2]'를 사용해야 합니다. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction [expr1] [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
         <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">구문 '[expr1][expr2]'는 이제 인덱싱을 위해 예약되었으며 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction [expr1] [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -629,42 +629,42 @@
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">이 식은 인덱싱을 지원합니다. 'expr.[index]'. 'expr[index]' 구문에는 /langversion:preview가 필요합니다. https://aka.ms/fsharp-index-notation을 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
         <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">이 값은 인덱싱을 지원합니다. '{0}.[index]'. 구문 '{1}[index]'에는 /langversion:preview가 필요합니다. https://aka.ms/fsharp-index-notation을 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
         <source>This expression is not a function and does not support index notation.</source>
-        <target state="new">This expression is not a function and does not support index notation.</target>
+        <target state="translated">이 식은 함수가 아니며 인덱스 표기법을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
         <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="new">The value '{0}' is not a function and does not support index notation.</target>
+        <target state="translated">'{0}' 값은 함수가 아니며 인덱스 표기법을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">'expr1[expr2]' 구문은 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 인덱싱이나 슬라이싱을 하려면 인수 위치에 'expr1.[expr2]'를 사용해야 합니다. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction expr1 [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">구문 'expr1[expr2]'은 이제 인덱싱용으로 예약되어 있으며 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction expr1 [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">'(expr1)[expr2]' 구문은 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 인덱싱이나 슬라이싱을 하려면 인수 위치에 '(expr1).[expr2]'를 사용해야 합니다. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction (expr1) [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">구문 '(expr1)[expr2]'는 이제 인덱싱을 위해 예약되었으며 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction (expr1) [expr2]').</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -704,7 +704,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">이 식은 암시적으로 '{0}' 형식을 '{1}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -814,12 +814,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">목록의 모든 요소는 암시적으로 ‘{0}’ 형식의 첫 번째 요소 형식으로 변환되어야 합니다. 이 요소는 형식 ‘{1}’입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">배열의 모든 요소는 암시적으로 ‘{0}’ 형식의 첫 번째 요소 형식으로 변환되어야 합니다. 이 요소는 형식 ‘{1}’입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -834,12 +834,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">“If” 식의 모든 분기는 암시적으로 ‘{0}’ 형식의 첫 번째 분기로 변환되어 값을 반환해야 합니다. 이 분기는 ‘{1}’ 형식 값을 반환합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">패턴 일치 식의 모든 분기는 암시적으로 ‘{0}’ 형식의 첫 번째 분기로 변환되어 값을 반환해야 합니다. 이 분기는 ‘{1}’ 형식 값을 반환합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3639,7 +3639,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
         <source>Incomplete expression or invalid use of indexer syntax</source>
-        <target state="new">Incomplete expression or invalid use of indexer syntax</target>
+        <target state="translated">불완전한 식 또는 잘못된 인덱서 구문 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -7679,12 +7679,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</target>
+        <target state="translated">이 값은 함수가 아니며 적용할 수 없습니다. '{0}.[index]'를 통해 인덱서에 액세스하려고 했습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</target>
+        <target state="translated">이 표현식은 함수가 아니며 적용할 수 없습니다. 'expr.[index]'를 통해 인덱서에 액세스하려고 했습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

@@ -1148,6 +1148,8 @@ type SynArgPats =
         pats: (Ident * SynPat) list *
         range: range
 
+    member Patterns: SynPat list
+
 /// Represents a syntax tree for an F# pattern
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =

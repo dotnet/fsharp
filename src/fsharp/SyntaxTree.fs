@@ -1015,6 +1015,11 @@ type SynArgPats =
         pats: (Ident * SynPat) list *
         range: range
 
+    member x.Patterns =
+        match x with
+        | Pats pats -> pats
+        | NamePatPairs (pats, _) -> pats |> List.map snd
+
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynPat =
 

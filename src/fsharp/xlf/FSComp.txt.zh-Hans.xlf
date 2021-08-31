@@ -19,22 +19,22 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="new">The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</target>
+        <target state="translated">已弃用 F# 库中的“:=”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“cell := expr”更改为“cell.Value &lt;- expr”。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="new">The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</target>
+        <target state="translated">已弃用 F# 库中的“decr”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“decr cell”更改为“cell.Value &lt;- cell.Value - 1”。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
         <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
-        <target state="new">The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</target>
+        <target state="translated">已弃用 F# 库中的“!”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“!cell”更改为“cell.Value”。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="new">The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</target>
+        <target state="translated">已弃用 F# 库中的“incr”。请参阅 https://aka.ms/fsharp-refcell-ops。 例如，请将“incr cell”更改为“cell.Value &lt;- cell.Value + 1”。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">附加类型定向转换</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
-        <target state="new">expr[idx] notation for indexing and slicing</target>
+        <target state="translated">用于索引和切片的 expr[idx] 表示法</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -204,7 +204,7 @@
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
-        <target state="new">informational messages related to reference cells</target>
+        <target state="translated">与引用单元格相关的信息性消息</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -329,12 +329,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</target>
+        <target state="translated">此表达式不是函数，无法应用。是否曾打算通过 expr[index] 访问索引器?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName2">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</target>
+        <target state="translated">此值不是一个函数，无法应用。是否曾打算通过 '{0}[index]' 访问索引器?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <target state="translated">此表达式的类型为“{0}”，仅可通过不明确的隐式转换使其与类型“{1}”兼容。请考虑使用显式调用“op_Implicit”。适用的隐式转换为: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -534,12 +534,12 @@
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</target>
+        <target state="translated">语法“expr1[expr2]”用于索引。考虑添加类型批注来启用索引，或者在调用函数添加空格，例如“expr1 [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</target>
+        <target state="translated">语法“expr1[expr2]”现在保留用于索引。请参阅 https://aka.ms/fsharp-index-notation。如果调用函数，请在函数和参数之间添加空格，例如“someFunction [expr]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -549,22 +549,22 @@
       </trans-unit>
       <trans-unit id="tcIndexNotationDeprecated">
         <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
-        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</target>
+        <target state="translated">语法“arr.[idx]”现在修改为“arr[idx]”。请更新代码。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">此表达式使用内置隐式转换将类型“{0}”转换为类型“{1}”。请参阅 https://aka.ms/fsharp-implicit-convs。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">此表达式使用隐式转换“{0}”将类型“{1}”转换为类型“{2}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">此表达式使用隐式转换“{0}”将类型“{1}”转换为类型“{2}”。请参阅 https://aka.ms/fsharp-implicit-convs。可使用 '#nowarn \"3391\" 禁用此警告。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -599,17 +599,17 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfReverseIndex">
         <source>Invalid use of reverse index in list expression.</source>
-        <target state="new">Invalid use of reverse index in list expression.</target>
+        <target state="translated">列表表达式中反向索引的使用无效。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">语法“[expr1][expr2]”用作参数时不明确。请参阅 https://aka.ms/fsharp-index-notation。如果要索引或切片，则必须在参数位置使用“(expr1).[expr2]”。如果使用多个扩充参数调用函数，请在它们之间添加空格，例如“someFunction [expr1] [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
         <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">语法“[expr1][expr2]”现在保留用于索引，用作参数时不明确。请参见 https://aka.ms/fsharp-index-notation。如果使用多个扩充参数调用函数， 请在它们之间添加空格，例如“someFunction [expr1] [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -629,42 +629,42 @@
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">此表达式支持索引，例如“expr.[index]”。语法“expr[index]”需要 /langversion:preview。请参阅 https://aka.ms/fsharp-index-notation。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
         <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">此值支持索引，例如“{0}.[index]”。语法“{1}[index]”需要 /langversion:preview。请参阅 https://aka.ms/fsharp-index-notation。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
         <source>This expression is not a function and does not support index notation.</source>
-        <target state="new">This expression is not a function and does not support index notation.</target>
+        <target state="translated">此表达式不是函数，不支持索引表示法。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
         <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="new">The value '{0}' is not a function and does not support index notation.</target>
+        <target state="translated">值 '{0}' 不是函数，不支持索引表示法。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">语法“expr1[expr2]”用作参数时不明确。请参阅 https://aka.ms/fsharp-index-notation。如果要索引或切片，则必须在参数位置使用“expr1.[expr2]”。如果使用多个扩充参数调用函数，请在它们之间添加空格，例如“someFunction expr1 [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">语法“expr1[expr2]”现在保留用于索引，用作参数时不明确。请参见 https://aka.ms/fsharp-index-notation。如果使用多个扩充参数调用函数， 请在它们之间添加空格，例如“someFunction expr1 [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">语法“(expr1)[expr2]”用作参数时不明确。请参阅 https://aka.ms/fsharp-index-notation。如果要索引或切片，则必须在参数位置使用“(expr1)[expr2]”。如果使用多个扩充参数调用函数，请在它们之间添加空格，例如“someFunction (expr1)[expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">语法“(expr1)[expr2]”现在保留用于索引，用作参数时不明确。请参见 https://aka.ms/fsharp-index-notation。如果使用多个扩充参数调用函数， 请在它们之间添加空格，例如“someFunction (expr1) [expr2]”。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -704,7 +704,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">此表达式将类型“{0}”隐式转换为类型“{1}”。请参阅 https://aka.ms/fsharp-implicit-convs。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -814,12 +814,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">列表构造函数表达式的所有元素都必须可隐式转换为同一类型，此表达式的类型应为“{0}”。但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">数组构造函数表达式的所有元素都必须可隐式转换为同一类型，此表达式的类型应为“{0}”。但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -834,12 +834,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">if 表达式的所有分支都必须返回可隐式转换为同一类型的值。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">模式匹配表达式的所有分支都必须返回可隐式转换为同一类型的值。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3639,7 +3639,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
         <source>Incomplete expression or invalid use of indexer syntax</source>
-        <target state="new">Incomplete expression or invalid use of indexer syntax</target>
+        <target state="translated">表达式不完整或无效索引器语法使用</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -7679,12 +7679,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</target>
+        <target state="translated">此值不是一个函数，无法应用。是否曾打算通过 '{0}.[index]' 访问索引器?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</target>
+        <target state="translated">此表达式不是函数，无法应用。是否曾打算通过 expr.[index] 访问索引器?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">
