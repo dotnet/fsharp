@@ -338,13 +338,33 @@
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
-        <source>This construct is deprecated. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
         <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
