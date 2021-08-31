@@ -21,7 +21,7 @@ let x =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 768, Line 7, Col 16, Line 7, Col 36, "The member 'Function' does not accept the correct number of arguments. 1 argument(s) are expected, but 2 were given. The required signature is 'member IInterface.Function: (int32 * int32) -> unit'.\nA tuple type is required for one or more arguments. Consider wrapping the given arguments in additional parentheses or review the definition of the interface.")
+            (Error 768, Line 7, Col 16, Line 7, Col 36, "The member 'Function' does not accept the correct number of arguments. 1 argument(s) are expected, but 2 were given. The required signature is 'IInterface.Function: (int32 * int32) -> unit'.\nA tuple type is required for one or more arguments. Consider wrapping the given arguments in additional parentheses or review the definition of the interface.")
             (Error 17,  Line 7, Col 21, Line 7, Col 29, "The member 'Function: 'a * 'b -> unit' does not have the correct type to override the corresponding abstract method. The required signature is 'Function: (int32 * int32) -> unit'.")
             (Error 783, Line 6, Col 9,  Line 6, Col 19, "At least one override did not correctly implement its corresponding abstract member")]
 
