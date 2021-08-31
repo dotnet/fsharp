@@ -104,6 +104,38 @@ match () with
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
+let ``Match clause 06`` () =
+    let parseResults = getParseResults """
+match () with
+| (x
+| y -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+        match pat with
+        | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _), _), _) -> ()
+        | _ -> failwith "Unexpected pattern"
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 07`` () =
+    let parseResults = getParseResults """
+match () with
+| (x,
+| y -> ()
+"""
+
+    match getSingleExprInModule parseResults with
+    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+        match pat with
+        | SynPat.Or
+            (SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _),
+             SynPat.Named _, _) -> ()
+        | _ -> failwith "Unexpected pattern"
+    | _ -> failwith "Unexpected tree"
+
+[<Test>]
 let ``Let - Parameter - Paren 01`` () =
     let parseResults = getParseResults """
 let f (x
@@ -129,3 +161,15 @@ let f (x, y
         | _ -> failwith "Unexpected tree"
     | _ -> failwith "Unexpected tree"
 
+[<Test>]
+let ``Let - Parameter - Paren 03 - Tuple`` () =
+    let parseResults = getParseResults """
+let f (x,
+"""
+
+    match getSingleDeclInModule parseResults with
+    | SynModuleDecl.Let (_, [ SynBinding (headPat = SynPat.LongIdent (argPats = SynArgPats.Pats [ pat ])) ], _) ->
+        match pat with
+        | SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _) -> ()
+        | _ -> failwith "Unexpected tree"
+    | _ -> failwith "Unexpected tree"
