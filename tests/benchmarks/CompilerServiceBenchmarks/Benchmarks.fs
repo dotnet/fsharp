@@ -135,6 +135,10 @@ type TypeCheckingBenchmark1() =
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             ClearAllILModuleReaderCache()
 
+module Test =
+   let inline f x y = x + y
+
+
 
 [<MemoryDiagnoser>]
 type CompilerService() =
