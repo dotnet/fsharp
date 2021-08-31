@@ -92,7 +92,7 @@ let c = MyClass(Property = "")
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 495, Line 7, Col 17, Line 7, Col 25,
-                                 ("The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:" + System.Environment.NewLine + "   MyProperty" + System.Environment.NewLine + "   MyProperty2" + System.Environment.NewLine + "   ABigProperty"))
+                                 ("The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new: unit -> MyClass. Maybe you want one of the following:" + System.Environment.NewLine + "   MyProperty" + System.Environment.NewLine + "   MyProperty2" + System.Environment.NewLine + "   ABigProperty"))
 
     [<Fact>]
     let ``Suggest Generic Type`` () =
