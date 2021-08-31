@@ -166,7 +166,7 @@ match ret_attrs, binding_attrs with
 let (|Foo|_|) x = ValueNone
             """
             [|(FSharpDiagnosticSeverity.Error, 3350, (2, 1, 3, 16),
-                   "Feature 'struct representation for active patterns' is not available in F# 5.0. Please use language version 'preview' or greater.")|]
+                   "Feature 'struct representation for active patterns' is not available in F# 6.0. Please use language version 'preview' or greater.")|]
 
     [<Test>]
     let ``StructAttribute must explicitly target active pattern return value`` () =

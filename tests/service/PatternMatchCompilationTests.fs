@@ -1267,5 +1267,5 @@ let f : obj -> _ =
 """
     assertHasSymbolUsages ["i"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 'preview' or greater."
+        "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 6.0. Please use language version 'preview' or greater."
     ]
