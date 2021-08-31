@@ -3149,9 +3149,9 @@ atomicPatsOrNamePatPairs:
       { SynArgPats.NamePatPairs $2, snd $2 }
 
   | atomicPatterns
-      { let mWhole = rhs parseState 1
-        let m = (mWhole.StartRange, $1) ||> unionRangeWithListBy (fun p -> p.Range)
-        SynArgPats.Pats $1, m }
+      { let mParsed = rhs parseState 1
+        let mAll = (mParsed.StartRange, $1) ||> unionRangeWithListBy (fun p -> p.Range)
+        SynArgPats.Pats $1, mAll }
 
 atomicPatterns: 
   | atomicPattern atomicPatterns %prec pat_args 
@@ -3209,20 +3209,26 @@ atomicPattern:
   | NULL 
       { SynPat.Null(lhs parseState) }
 
-  | LPAREN parenPatternBody rparen 
-      { let m = (lhs parseState)
-        SynPat.Paren($2 m, m) } 
+  | LPAREN parenPatternBody rparen
+      { let m = lhs parseState
+        SynPat.Paren($2 m, m) }
 
-  | LPAREN parenPatternBody recover 
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
-        patFromParseError ($2 (rhs2 parseState 1 2)) }
+  | LPAREN parenPatternBody recover
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
+        let m = rhs2 parseState 1 2
+        let parenPat = SynPat.Paren($2 m, m)
+        patFromParseError parenPat }
 
-  | LPAREN error rparen 
-      { (* silent recovery *) SynPat.Wild (lhs parseState) }
+  | LPAREN error rparen
+      { let innerPat = patFromParseError (SynPat.Wild (rhs parseState 2))
+        SynPat.Paren(innerPat, lhs parseState) }
 
-  | LPAREN recover 
-      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
-        SynPat.Wild (lhs parseState)}  
+  | LPAREN recover
+      { let parenM = rhs parseState 1
+        reportParseErrorAt parenM (FSComp.SR.parsUnmatchedParen())
+        let innerPat = patFromParseError (SynPat.Wild parenM.EndRange)
+        let parenPat = SynPat.Paren(innerPat, parenM)
+        patFromParseError parenPat }
 
   | STRUCT LPAREN tupleParenPatternElements rparen
       { SynPat.Tuple(true, List.rev $3, lhs parseState) }
