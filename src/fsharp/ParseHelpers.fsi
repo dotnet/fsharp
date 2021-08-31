@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
@@ -113,3 +114,7 @@ and LexCont = LexerContinuation
 val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILInstr[]
 
 val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILType
+
+val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
+
+val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc

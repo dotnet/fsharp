@@ -182,16 +182,6 @@ let checkForMultipleAugmentations m a1 a2 =
     if not (isNil a1) && not (isNil a2) then raiseParseErrorAt m (FSComp.SR.parsOnlyOneWithAugmentationAllowed())
     a1 @ a2
 
-let grabXmlDocAtRangeStart(parseState: IParseState, optAttributes: SynAttributeList list, range: range) =
-    let grabPoint =
-        match optAttributes with
-        | [] -> range
-        | h :: _ -> h.Range
-    LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
-
-let grabXmlDoc(parseState: IParseState, optAttributes: SynAttributeList list, elemIdx) =
-    grabXmlDocAtRangeStart(parseState, optAttributes, rhs parseState elemIdx)
-
 let rangeOfLongIdent(lid:LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
     (lid.Head.idRange, lid) ||> unionRangeWithListBy (fun id -> id.idRange) 

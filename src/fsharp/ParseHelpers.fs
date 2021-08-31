@@ -5,6 +5,7 @@ module FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
@@ -264,3 +265,12 @@ let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Langu
       IL.PrimaryAssemblyILGlobals.typ_Object
 #endif
 
+let grabXmlDocAtRangeStart(parseState: IParseState, optAttributes: SynAttributeList list, range: range) =
+    let grabPoint =
+        match optAttributes with
+        | [] -> range
+        | h :: _ -> h.Range
+    LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
+
+let grabXmlDoc(parseState: IParseState, optAttributes: SynAttributeList list, elemIdx) =
+    grabXmlDocAtRangeStart(parseState, optAttributes, rhs parseState elemIdx)
