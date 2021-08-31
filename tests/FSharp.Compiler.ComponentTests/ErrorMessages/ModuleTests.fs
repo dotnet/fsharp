@@ -191,8 +191,11 @@ AutoOpen>] L1 = do ()
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 10, Line 3, Col 1, Line 3, Col 9,
-                                 "Unexpected start of structured construct in attribute list")
+        |> withDiagnostics [
+            Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
+            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+        ]
+
     [<Fact>]
     let ``Offside rule works for attributes inside module declarations without preview``() =
         Fsx """
