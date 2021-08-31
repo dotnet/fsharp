@@ -126,7 +126,7 @@ module Test =
         ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "abstract member IMyInterface.Represent : unit -> string"
+    let expected = "abstract member IMyInterface.Represent: unit -> string"
     Assert.AreEqual(expected, quickInfo)
 
 // migrated from legacy test
@@ -180,7 +180,7 @@ module Test =
     ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val aa : MyEmployee"
+    let expected = "val aa: MyEmployee"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -231,7 +231,7 @@ module Test =
     ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val myTuple : int * string * float * (int -> string * int)"
+    let expected = "val myTuple: int * string * float * (int -> string * int)"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -260,7 +260,7 @@ module Test =
     ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val methodSeq : seq<(int -> string * int)>"
+    let expected = "val methodSeq: seq<(int -> string * int)>"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -283,7 +283,7 @@ module Test =
         | _ -> 1
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val p1 : MyPoint"
+    let expected = "val p1: MyPoint"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -306,7 +306,7 @@ module Test =
         | _ -> 1
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val p3 : MyPoint"
+    let expected = "val p3: MyPoint"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -328,7 +328,7 @@ module Test =
         else ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val dd : MyDistance"
+    let expected = "val dd: MyDistance"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -350,7 +350,7 @@ module Test =
             ()
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "val distance : MyDistance"
+    let expected = "val distance: MyDistance"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -380,7 +380,7 @@ module Test =
         | _ -> 1
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "static member MyDistance.toMiles : x:MyDistance -> MyDistance"
+    let expected = "static member MyDistance.toMiles: x: MyDistance -> MyDistance"
     Assert.AreEqual(expected, quickInfo)
     ()
 
@@ -408,7 +408,7 @@ module Test =
         | _ -> dd
 """
     let quickInfo = GetQuickInfoTextFromCode code
-    let expected = "member MyDistance.IncreaseBy : dist:float -> MyDistance"
+    let expected = "member MyDistance.IncreaseBy: dist: float -> MyDistance"
     Assert.AreEqual(expected, quickInfo)
     ()
 

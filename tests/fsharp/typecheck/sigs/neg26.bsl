@@ -5,7 +5,7 @@ neg26.fs(27,13,27,66): typecheck error FS0366: No implementation was given for '
 
 neg26.fs(40,27,40,32): typecheck error FS0361: The override 'Meth1 : int -> int' implements more than one abstract slot, e.g. 'abstract member ITestSub.Meth1 : int -> int' and 'abstract member ITest.Meth1 : int -> int'
 
-neg26.fs(53,27,53,32): typecheck error FS3213: The member 'Meth1 : 'a -> 'a' matches multiple overloads of the same method.
+neg26.fs(53,27,53,32): typecheck error FS3213: The member 'Meth1: 'a -> 'a' matches multiple overloads of the same method.
 Please restrict it to one of the following:
    Meth1 : int -> int
    Meth1 : int -> int.

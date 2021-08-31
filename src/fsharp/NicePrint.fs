@@ -3,6 +3,9 @@
 /// Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
 module internal FSharp.Compiler.NicePrint
 
+open System
+open System.Globalization
+open System.IO
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -40,9 +43,19 @@ module internal PrintUtilities =
 
     let braceBarL x = wordL leftBraceBar ^^ x ^^ wordL rightBraceBar
 
-    let addColonL l =  if endsWithL ">" l then l ^^ WordL.colon else l ^^ RightL.colon
+    // Use a space before a colon if there is an unusual character to the left
+    let addColonL l =
+        if endsWithL ">" l || endsWithL ")" l || endsWithL "`" l then 
+            l ^^ WordL.colon
+        else
+            l ^^ RightL.colon
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
+
+    let ensureFloat (s: string) =
+        if String.forall (fun c -> Char.IsDigit c || c = '-') s then
+            s + ".0" 
+        else s
 
     let layoutsL (ls: Layout list) : Layout =
         match ls with
@@ -100,10 +113,17 @@ module internal PrintUtilities =
                 String.dropSuffix name "Attribute"
             else 
                 name
-        let tyconTextL =
+
+        let tyconTagged =
             tagEntityRefName tcref demangled
             |> mkNav tcref.DefinitionRange
-            |> wordL
+
+        let tyconTextL =
+            if demangled.StartsWith "[" then
+                tyconTagged |> rightL
+            else
+                tyconTagged |> wordL
+
         if denv.shortTypeNames then 
             tyconTextL
         else
@@ -125,11 +145,9 @@ module internal PrintUtilities =
 
     /// layout the xml docs immediately before another block
     let layoutXmlDoc (denv: DisplayEnv) (xml: XmlDoc) restL =
-        if denv.showDocumentation
-        then
+        if denv.showDocumentation then
             let xmlDocL =
-                if xml.IsEmpty
-                then
+                if xml.IsEmpty then
                     emptyL
                 else
                     xml.UnprocessedLines
@@ -150,7 +168,7 @@ module internal PrintUtilities =
             if possibleXmlDoc.IsEmpty then
                 match info with
                 | Some(Some ccuFileName, xmlDocSig) ->
-                    infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(System.IO.Path.GetFileNameWithoutExtension ccuFileName)
+                    infoReader.amap.assemblyLoader.TryFindXmlDocumentationInfo(Path.GetFileNameWithoutExtension ccuFileName)
                     |> Option.bind (fun xmlDocInfo ->
                         xmlDocInfo.TryGetXmlDocBySig(xmlDocSig)
                     )
@@ -262,7 +280,7 @@ module private PrintIL =
         let numParams = 
             // can't find a way to see the number of generic parameters for *this* class (the GenericParams also include type variables for enclosing classes); this will have to do
             let rightMost = className |> SplitNamesForILPath |> List.last
-            match System.Int32.TryParse(rightMost, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture) with 
+            match Int32.TryParse(rightMost, NumberStyles.Integer, CultureInfo.InvariantCulture) with 
             | true, n -> n
             | false, _ -> 0 // looks like it's non-generic
         ilTyparSubst |> List.rev |> List.truncate numParams |> List.rev
@@ -306,9 +324,10 @@ module private PrintIL =
             | Some init -> 
                 match init with
                 | ILFieldInit.Bool x -> 
-                    if x
-                    then Some keywordTrue
-                    else Some keywordFalse
+                    if x then
+                        Some keywordTrue
+                    else
+                        Some keywordFalse
                 | ILFieldInit.Char c -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
                 | ILFieldInit.Int8 x -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
@@ -319,18 +338,12 @@ module private PrintIL =
                 | ILFieldInit.UInt32 x -> (x |> int64 |> string) + "u" |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt64 x -> ((x |> int64 |> string) + "UL") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Single d -> 
-                    let s = d.ToString ("g12", System.Globalization.CultureInfo.InvariantCulture)
-                    let s = 
-                        if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
-                        then s + ".0" 
-                        else s
+                    let s = d.ToString ("g12", CultureInfo.InvariantCulture)
+                    let s = ensureFloat s
                     (s + "f") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Double d -> 
-                      let s = d.ToString ("g12", System.Globalization.CultureInfo.InvariantCulture)
-                      let s = 
-                          if String.forall (fun c -> System.Char.IsDigit c || c = '-') s 
-                          then (s + ".0")
-                          else s
+                      let s = d.ToString ("g12", CultureInfo.InvariantCulture)
+                      let s = ensureFloat s
                       s |> (tagNumericLiteral >> Some)
                 | _ -> None
             | None -> None
@@ -358,15 +371,13 @@ module private PrintTypes =
             | Const.IntPtr x -> (x |> string)+"n" |> tagNumericLiteral
             | Const.UIntPtr x -> (x |> string)+"un" |> tagNumericLiteral
             | Const.Single d -> 
-                 ((let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                  if String.forall (fun c -> System.Char.IsDigit(c) || c = '-') s 
-                  then s + ".0" 
-                  else s) + "f") |> tagNumericLiteral
+                 let s = d.ToString("g12", CultureInfo.InvariantCulture)
+                 let s = ensureFloat s
+                 (s + "f") |> tagNumericLiteral
             | Const.Double d -> 
-                let s = d.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                (if String.forall (fun c -> System.Char.IsDigit(c) || c = '-') s 
-                then s + ".0" 
-                else s) |> tagNumericLiteral
+                let s = d.ToString("g12", CultureInfo.InvariantCulture)
+                let s = ensureFloat s
+                s |> tagNumericLiteral
             | Const.Char c -> "'" + c.ToString() + "'" |> tagStringLiteral
             | Const.String bs -> "\"" + bs + "\"" |> tagNumericLiteral
             | Const.Unit -> "()" |> tagPunctuation
@@ -494,17 +505,15 @@ module private PrintTypes =
         | ILAttribElem.UInt64 x -> wordL (tagNumericLiteral ((x |> string)+"UL"))
         | ILAttribElem.Single x -> 
             let str =
-                let s = x.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                (if String.forall (fun c -> System.Char.IsDigit(c) || c = '-') s 
-                 then s + ".0" 
-                 else s) + "f"
+                let s = x.ToString("g12", CultureInfo.InvariantCulture)
+                let s = ensureFloat s 
+                s + "f"
             wordL (tagNumericLiteral str)
         | ILAttribElem.Double x -> 
             let str =
-                let s = x.ToString("g12", System.Globalization.CultureInfo.InvariantCulture)
-                if String.forall (fun c -> System.Char.IsDigit(c) || c = '-') s 
-                then s + ".0" 
-                else s
+                let s = x.ToString("g12", CultureInfo.InvariantCulture)
+                let s = ensureFloat s 
+                s
             wordL (tagNumericLiteral str)
         | ILAttribElem.Null -> wordL (tagKeyword "null")
         | ILAttribElem.Array (_, xs) -> 
@@ -750,15 +759,8 @@ module private PrintTypes =
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
         // Layout a type application
+        | TType_ucase (UnionCaseRef(tc, _), args)
         | TType_app (tc, args) ->
-          let usePrefix =
-              match denv.genericParameterStyle with
-              | GenericParameterStyle.Implicit -> tc.IsPrefixDisplay
-              | GenericParameterStyle.Prefix -> true
-              | GenericParameterStyle.Suffix -> false
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl denv tc) prec usePrefix args
-
-        | TType_ucase (UnionCaseRef(tc, _), args) ->
           let usePrefix =
               match denv.genericParameterStyle with
               | GenericParameterStyle.Implicit -> tc.IsPrefixDisplay
@@ -2232,7 +2234,7 @@ let stringOfMethInfo infoReader m denv minfo =
 let multiLineStringOfMethInfos infoReader m denv minfos =
      minfos
      |> List.map (stringOfMethInfo infoReader m denv)
-     |> List.map (sprintf "%s   %s" System.Environment.NewLine)
+     |> List.map (sprintf "%s   %s" Environment.NewLine)
      |> String.concat ""
 
 /// Convert a ParamData to a string
