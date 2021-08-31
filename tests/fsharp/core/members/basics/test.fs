@@ -1588,7 +1588,7 @@ module DeepGenericInterfaceInheritance = begin
 end
 
 
-module PointTest =  struct
+module PointTest = begin
 
 
   type Point =
