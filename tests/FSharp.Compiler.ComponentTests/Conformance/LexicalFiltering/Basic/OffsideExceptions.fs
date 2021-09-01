@@ -412,7 +412,7 @@ function
                         EndLine = 3
                         EndColumn = 9 }
               Message =
-               "Incomplete pattern matches on this expression. For example, the value '{x=0}' may indicate a case not covered by the pattern(s)." };
+               "Incomplete pattern matches on this expression. For example, the value '{ x=0 }' may indicate a case not covered by the pattern(s)." };
             { Error = Warning 193
               Range = { StartLine = 3
                         StartColumn = 1

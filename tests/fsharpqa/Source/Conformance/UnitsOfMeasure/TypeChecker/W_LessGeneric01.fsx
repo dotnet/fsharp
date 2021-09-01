@@ -6,7 +6,7 @@
 //<Expects status="success">  ----------------\^\^</Expects>
 //<Expects status="warning" span="(18,17)" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The unit-of-measure variable 'u has been constrained to be measure '1'\.$</Expects>
 //<Expects status="success">val loop: f: \('a -> 'a\) -> init: 'a -> comp: \('a -> 'a -> bool\) -> 'a</Expects>
-//<Expects status="success">val fn: x:float -> float</Expects>
+//<Expects status="success">val fn: x: float -> float</Expects>
 
 let rec loop f init comp =
   let next = f init
