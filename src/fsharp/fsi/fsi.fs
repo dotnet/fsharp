@@ -204,16 +204,16 @@ module internal Utilities =
 [<AutoSerializable(false)>]
 type internal FsiTimeReporter(outWriter: TextWriter) =
     let stopwatch = Stopwatch()
-    let ptime = Process.GetCurrentProcess()
+    let ptime = lazy Process.GetCurrentProcess()
     let numGC = GC.MaxGeneration
     member tr.TimeOp(f) =
-        let startTotal = ptime.TotalProcessorTime
+        let startTotal = ptime.Value.TotalProcessorTime
         let startGC = [| for i in 0 .. numGC -> GC.CollectionCount(i) |]
         stopwatch.Reset()
         stopwatch.Start()
         let res = f ()
         stopwatch.Stop()
-        let total = ptime.TotalProcessorTime - startTotal
+        let total = ptime.Value.TotalProcessorTime - startTotal
         let spanGC = [ for i in 0 .. numGC-> GC.CollectionCount(i) - startGC.[i] ]
         let elapsed = stopwatch.Elapsed
         fprintfn outWriter "%s" (FSIstrings.SR.fsiTimeInfoMainString((sprintf "%02d:%02d:%02d.%03d" (int elapsed.TotalHours) elapsed.Minutes elapsed.Seconds elapsed.Milliseconds),(sprintf "%02d:%02d:%02d.%03d" (int total.TotalHours) total.Minutes total.Seconds total.Milliseconds),(String.concat ", " (List.mapi (sprintf "%s%d: %d" (FSIstrings.SR.fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration())) spanGC))))
