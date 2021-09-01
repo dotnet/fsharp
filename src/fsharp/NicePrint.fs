@@ -1675,13 +1675,15 @@ module private TastDefinitionPrinting =
 
         let impliedNames = 
             try 
-                Set.ofList [ for p in props do 
-                                if p.HasGetter then yield p.GetterMethod.DisplayName
-                                if p.HasSetter then yield p.SetterMethod.DisplayName
-                                for e in events do 
-                                yield e.AddMethod.DisplayName 
-                                yield e.RemoveMethod.DisplayName ]
-            with _ -> Set.empty
+                [ for p in props do 
+                    if p.HasGetter then p.GetterMethod.DisplayName
+                    if p.HasSetter then p.SetterMethod.DisplayName
+                  for e in events do 
+                    e.AddMethod.DisplayName 
+                    e.RemoveMethod.DisplayName ]
+                |> Set.ofList 
+            with _ ->
+                Set.empty
 
         let meths =
             GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
@@ -1775,176 +1777,150 @@ module private TastDefinitionPrinting =
                     [wordL (tagKeyword "inherit") ^^ (layoutType denv super)]
                 | _ -> []
 
-        let erasedL = 
-#if SHOW_ERASURE
-            match tryTcrefOfAppTy g ty with
-            | ValueSome tcref ->
-                if tcref.IsProvidedErasedTycon then 
-                    [ wordL ""; wordL (FSComp.SR.erasedTo()) ^^ PrintIL.layoutILTypeRef { denv with shortTypeNames = false } tcref.CompiledRepresentationForNamedType; wordL "" ] 
-                else
-                    []
-            | None ->
-#endif
-                []
+        let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ fieldLs @ propLs @ eventLs @ staticValsLs @ nestedTypeLs
 
-        let decls = inherits @ iimplsLs @ ctorLs @ methLs @ fieldLs @ propLs @ eventLs @ instanceValsLs @ staticValsLs @ nestedTypeLs @ erasedL
-
-        let addMembers useWithEnd reprL =
-            if isNil decls then
+        let addMaxMembers reprL =
+            if isNil allDecls then
                 reprL
             else
-                let memberLs = applyMaxMembers denv.maxMembers decls
-                if simplified || not useWithEnd then
-                    reprL @@ aboveListL memberLs
-                else
-                    reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
+                let memberLs = applyMaxMembers denv.maxMembers allDecls
+                reprL @@ aboveListL memberLs
 
-        let reprL = 
-            let repr = tycon.TypeReprInfo
+        let repr = tycon.TypeReprInfo
+
+        let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
+
+        let addStartEnd declsL =
+            match start with
+            | Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd
+            | None -> declsL
+
+        let addLhs rhsL =
+            let brk = not (isNil allDecls) || breakTypeDefnEqn repr
+            if brk then 
+                (lhsL ^^ WordL.equals) @@-- rhsL 
+            else 
+                (lhsL ^^ WordL.equals) --- rhsL
+
+        let typeDeclL = 
+
             match repr with 
-            | TFSharpRecdRepr _ 
-            | TFSharpUnionRepr _
-            | TFSharpObjectRepr _ 
-            | TAsmRepr _ 
-            | TMeasureableRepr _
-            | TILObjectRepr _ -> 
+            | TFSharpRecdRepr _ ->
+                let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
 
-                let rhsL = 
-                    let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
-                    let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
-                    match repr with 
-                    | TFSharpRecdRepr _ ->
-                        let recdFieldRefL fld = layoutRecdField false denv infoReader tcref fld
+                // For records, use multi-line layout as soon as there is XML doc 
+                //   type R =
+                //     { 
+                //         /// ABC
+                //         Field1: int 
+                //
+                //         /// ABC
+                //         Field2: int 
+                //     }
+                //
+                // For records, use multi-line layout as soon as there is more than one field
+                //   type R =
+                //     { 
+                //         Field1: int 
+                //         Field2: int 
+                //     }
+                let useMultiLine =
+                    let members =
+                        match denv.maxMembers with 
+                        | None -> tycon.TrueFieldsAsList
+                        | Some n -> tycon.TrueFieldsAsList |> List.truncate n
+                    members.Length > 1 ||
+                    members |> List.exists (fun m -> not m.XmlDoc.IsEmpty)
 
-                        // For records, use multi-line layout as soon as there is XML doc 
-                        //   type R =
-                        //     { 
-                        //         /// ABC
-                        //         Field1: int 
-                        //
-                        //         /// ABC
-                        //         Field2: int 
-                        //     }
-                        //
-                        // For records, use multi-line layout as soon as there is more than one field
-                        //   type R =
-                        //     { 
-                        //         Field1: int 
-                        //         Field2: int 
-                        //     }
-                        let useMultiLine =
-                            let members =
-                                match denv.maxMembers with 
-                                | None -> tycon.TrueFieldsAsList
-                                | Some n -> tycon.TrueFieldsAsList |> List.truncate n
-                            members.Length > 1 ||
-                            members |> List.exists (fun m -> not m.XmlDoc.IsEmpty)
+                tycon.TrueFieldsAsList
+                |> List.map (layoutRecdField false denv infoReader tcref)
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> (if useMultiLine then braceMultiLineL else braceL)
+                |> addReprAccessL
+                |> addMaxMembers
+                |> addLhs
 
-                        let recdL =
-                            tycon.TrueFieldsAsList
-                            |> List.map recdFieldRefL
-                            |> applyMaxMembers denv.maxMembers
-                            |> aboveListL
-                            |> (if useMultiLine then braceMultiLineL else braceL)
-                            |> addReprAccessL
-                            |> addMembers false
-
-                        Some recdL
-
-                    | TFSharpUnionRepr _ -> 
-                        let layoutUnionCases =
-                            tycon.UnionCasesAsList
-                            |> layoutUnionCases denv infoReader tcref
-                            |> applyMaxMembers denv.maxMembers
-                            |> aboveListL
-                        Some (addMembers false (addReprAccessL layoutUnionCases))
+            | TFSharpUnionRepr _ -> 
+                let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                tycon.UnionCasesAsList
+                |> layoutUnionCases denv infoReader tcref
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> addReprAccessL
+                |> addMaxMembers
+                |> addLhs
                   
-                    | TFSharpObjectRepr r ->
-                        match r.fsobjmodel_kind with
-                        | TFSharpDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
-                            let rty = GetFSharpViewOfReturnType denv.g rty
-                            Some (WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
+                let (TSlotSig(_, _, _, _, paraml, rty)) = slotSig
+                let rty = GetFSharpViewOfReturnType denv.g rty
+                let delegateL = WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty []
+                delegateL
+                |> addLhs
 
-                        | TFSharpEnum -> 
-                            tycon.TrueFieldsAsList
-                            |> List.map (fun f -> 
-                                match f.LiteralValue with 
-                                | None -> emptyL
-                                | Some c -> WordL.bar ^^
-                                            wordL (tagField f.Name) ^^
-                                            WordL.equals ^^ 
-                                            layoutConst denv.g ty c)
-                            |> aboveListL
-                            |> Some
+            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } ->
+                tycon.TrueFieldsAsList
+                |> List.map (fun f -> 
+                    match f.LiteralValue with 
+                    | None -> emptyL
+                    | Some c ->
+                        WordL.bar ^^
+                        wordL (tagField f.Name) ^^
+                        WordL.equals ^^ 
+                        layoutConst denv.g ty c)
+                |> aboveListL
+                |> addLhs
 
-                        | _ ->
-                            let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ propLs @ eventLs @ staticValsLs
-                            if isNil allDecls then
-                                None
-                            else
-                                let allDecls = applyMaxMembers denv.maxMembers allDecls
-                                let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
-                                if emptyMeasure then None else 
-                                let declsL = aboveListL allDecls
-                                let declsL =
-                                    match start with
-                                    | Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd
-                                    | None -> declsL
-                                Some declsL
+            | TFSharpObjectRepr _ when isNil allDecls && start.IsNone ->
+                lhsL
 
-                    | TAsmRepr _ -> 
-                        Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
+            | TFSharpObjectRepr _ ->
+                allDecls
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> addStartEnd 
+                |> addLhs
 
-                    | TMeasureableRepr ty ->
-                        Some (layoutType denv ty)
+            | TAsmRepr _ -> 
+                let asmL = wordL (tagText "(# \"<Common IL Type Omitted>\" #)")
+                asmL
+                |> addLhs
 
-                    | TILObjectRepr _ ->
-                        if tycon.ILTyconRawMetadata.IsEnum then
-                            infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
-                            |> List.filter (fun x -> x.FieldName <> "value__")
-                            |> List.map (fun x -> PrintIL.layoutILEnumDefParts x.FieldName x.LiteralValue)
-                            |> applyMaxMembers denv.maxMembers
-                            |> aboveListL
-                            |> Some
-                        else
-                            let declsL =
-                                decls
-                                |> applyMaxMembers denv.maxMembers
-                                |> aboveListL
-                                |> fun declsL ->
-                                    match start with
-                                    | Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd
-                                    | None -> declsL
+            | TMeasureableRepr ty ->
+                layoutType denv ty
+                |> addLhs
 
-                            Some declsL
+            | TILObjectRepr _ when tycon.ILTyconRawMetadata.IsEnum ->
+                infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+                |> List.filter (fun x -> x.FieldName <> "value__")
+                |> List.map (fun x -> PrintIL.layoutILEnumDefParts x.FieldName x.LiteralValue)
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> addLhs
 
-                    | _ -> None
+            | TILObjectRepr _ ->
+                allDecls
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> addStartEnd
+                |> addLhs
 
-                // Work out whether we use
-                //    type R =  // broken
-                //        ...
-                // or
-                //    type R = ...  // breakable
-                let brk = not (isNil decls) || breakTypeDefnEqn repr
+            | TNoRepr when tycon.TypeAbbrev.IsSome ->
+                let abbreviatedType = tycon.TypeAbbrev.Value
+                (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } abbreviatedType)
 
-                match rhsL with 
-                | None -> lhsL
-                | Some rhsL -> 
-                    if brk then 
-                        (lhsL ^^ WordL.equals) @@-- rhsL 
-                    else 
-                        (lhsL ^^ WordL.equals) --- rhsL
+            | _ when isNil allDecls ->
+                lhsL
 
             | TProvidedNamespaceRepr _
             | TProvidedTypeRepr _
             | TNoRepr -> 
-                match tycon.TypeAbbrev with
-                | None   -> 
-                    addMembers true (lhsL ^^ WordL.equals)
-                | Some abbreviatedType -> 
-                    (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } abbreviatedType)
+                allDecls
+                |> applyMaxMembers denv.maxMembers
+                |> aboveListL
+                |> addLhs
 
-        let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
+        let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs typeDeclL
         layoutXmlDocOfEntityRef denv infoReader tcref attribsL
 
     // Layout: exception definition
