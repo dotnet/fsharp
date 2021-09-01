@@ -41,6 +41,8 @@ module internal PrintUtilities =
 
     let braceL x = wordL leftBrace ^^ x ^^ wordL rightBrace
 
+    let braceMultiLineL x = (wordL leftBrace @@-- x) @@ wordL rightBrace
+
     let braceBarL x = wordL leftBraceBar ^^ x ^^ wordL rightBraceBar
 
     // Use a space before a colon if there is an unusual character to the left
@@ -150,16 +152,25 @@ module internal PrintUtilities =
                 if xml.IsEmpty then
                     emptyL
                 else
-                    xml.UnprocessedLines
-                    |> Array.collect (fun x ->
-                        x.Split('\n') // These lines may have new-lines in them and we need to split them so we can format it
-                    )
+                    let linesL =
+                        [ for lineText in xml.UnprocessedLines do
+                             // These lines may have new-lines in them and we need to split them so we can format it
+                             for line in lineText.Split('\n') do
+                                // note here that we don't add a space after the triple-slash, because
+                                // the implicit spacing hasn't been trimmed here.
+                                yield ("///" + line) |> tagText |> wordL
+                        ]
 
-                    // note here that we don't add a space after the triple-slash, because
-                    // the implicit spacing hasn't been trimmed here.
-                    |> Array.map (fun line -> ("///" + line) |> tagText |> wordL)
-                    |> List.ofArray
-                    |> aboveListL
+                    // Always add an empty line before any "///" comment
+                    let linesL = 
+                       if linesL.Length > 0 then 
+                           [ yield "" |> tagText |> wordL
+                             yield! linesL ]
+                       else
+                           linesL
+                     
+                    linesL |> aboveListL
+
             xmlDocL @@ restL
         else restL
 
@@ -1521,15 +1532,17 @@ module private TastDefinitionPrinting =
     /// When repn is class or datatype constructors (not single one).
     let breakTypeDefnEqn repr =
         match repr with 
+        | TILObjectRepr _ -> true
         | TFSharpObjectRepr _ -> true
-        | TUnionRepr r -> not (isNilOrSingleton r.CasesTable.UnionCasesAsList)
-        | TRecdRepr _ -> true
+        | TFSharpRecdRepr _ -> true
+        | TFSharpUnionRepr r ->
+             not (isNilOrSingleton r.CasesTable.UnionCasesAsList) ||
+             r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
         | TAsmRepr _ 
-        | TILObjectRepr _
         | TMeasureableRepr _ 
 #if !NO_EXTENSIONTYPING
-        | TProvidedTypeExtensionPoint _
-        | TProvidedNamespaceExtensionPoint _
+        | TProvidedTypeRepr _
+        | TProvidedNamespaceRepr _
 #endif
         | TNoRepr -> false
       
@@ -1588,6 +1601,7 @@ module private TastDefinitionPrinting =
 
     let layoutTyconRef (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tcref: TyconRef) =
         let g = denv.g
+        let amap = infoReader.amap
         let tycon = tcref.Deref
         let _, ty = generalizeTyconRef tcref 
         let start, name =
@@ -1609,16 +1623,17 @@ module private TastDefinitionPrinting =
                     None, tagClass n
             else
                 None, tagUnknownType n
+
         let name = mkNav tycon.DefinitionRange name
         let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
         let denv = denv.AddAccessibility tycon.Accessibility 
+
         let lhsL =
             let tps = tycon.TyparsNoRange
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             typewordL ^^ tpsL
 
         let start = Option.map tagKeyword start
-        let amap = infoReader.amap
         let sortKey (v: MethInfo) = 
             (not v.IsConstructor,
                 not v.IsInstance, // instance first
@@ -1738,7 +1753,7 @@ module private TastDefinitionPrinting =
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
                 match tcref.TypeReprInfo with 
-                | TProvidedTypeExtensionPoint info ->
+                | TProvidedTypeRepr info ->
                     [ 
                         for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes() |> Array.filter (fun t -> t.IsPublic || t.IsNestedPublic)), "GetNestedTypes", m) do 
                             yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
@@ -1773,88 +1788,109 @@ module private TastDefinitionPrinting =
                 []
 
         let decls = inherits @ iimplsLs @ ctorLs @ methLs @ fieldLs @ propLs @ eventLs @ instanceValsLs @ staticValsLs @ nestedTypeLs @ erasedL
-        let declsL =
-            decls
-            |> applyMaxMembers denv.maxMembers
-            |> aboveListL
-            |> fun declsL ->
-                match start with
-                | Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end")
-                | None -> declsL
 
-        let addMembersAsWithEnd reprL =
+        let addMembers useWithEnd reprL =
             if isNil decls then
                 reprL
             else
                 let memberLs = applyMaxMembers denv.maxMembers decls
-                if simplified then
-                    reprL @@-- aboveListL memberLs
+                if simplified || not useWithEnd then
+                    reprL @@ aboveListL memberLs
                 else
                     reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
 
         let reprL = 
             let repr = tycon.TypeReprInfo
             match repr with 
-            | TRecdRepr _ 
-            | TUnionRepr _
+            | TFSharpRecdRepr _ 
+            | TFSharpUnionRepr _
             | TFSharpObjectRepr _ 
             | TAsmRepr _ 
             | TMeasureableRepr _
             | TILObjectRepr _ -> 
-                let brk = not (isNil decls) || breakTypeDefnEqn repr
+
                 let rhsL = 
                     let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
                     let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                     match repr with 
-                    | TRecdRepr _ ->
+                    | TFSharpRecdRepr _ ->
                         let recdFieldRefL fld = layoutRecdField false denv infoReader tcref fld
+
+                        // For records, use multi-line layout as soon as there is XML doc 
+                        //   type R =
+                        //     { 
+                        //         /// ABC
+                        //         Field1: int 
+                        //
+                        //         /// ABC
+                        //         Field2: int 
+                        //     }
+                        //
+                        // For records, use multi-line layout as soon as there is more than one field
+                        //   type R =
+                        //     { 
+                        //         Field1: int 
+                        //         Field2: int 
+                        //     }
+                        let useMultiLine =
+                            let members =
+                                match denv.maxMembers with 
+                                | None -> tycon.TrueFieldsAsList
+                                | Some n -> tycon.TrueFieldsAsList |> List.truncate n
+                            members.Length > 1 ||
+                            members |> List.exists (fun m -> not m.XmlDoc.IsEmpty)
 
                         let recdL =
                             tycon.TrueFieldsAsList
                             |> List.map recdFieldRefL
                             |> applyMaxMembers denv.maxMembers
                             |> aboveListL
-                            |> braceL
+                            |> (if useMultiLine then braceMultiLineL else braceL)
+                            |> addReprAccessL
+                            |> addMembers false
 
-                        Some (addMembersAsWithEnd (addReprAccessL recdL))
+                        Some recdL
 
-                    | TUnionRepr _ -> 
+                    | TFSharpUnionRepr _ -> 
                         let layoutUnionCases =
                             tycon.UnionCasesAsList
                             |> layoutUnionCases denv infoReader tcref
                             |> applyMaxMembers denv.maxMembers
                             |> aboveListL
-                        Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
+                        Some (addMembers false (addReprAccessL layoutUnionCases))
                   
                     | TFSharpObjectRepr r ->
                         match r.fsobjmodel_kind with
-                        | TTyconDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
+                        | TFSharpDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
                             let rty = GetFSharpViewOfReturnType denv.g rty
                             Some (WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
+
+                        | TFSharpEnum -> 
+                            tycon.TrueFieldsAsList
+                            |> List.map (fun f -> 
+                                match f.LiteralValue with 
+                                | None -> emptyL
+                                | Some c -> WordL.bar ^^
+                                            wordL (tagField f.Name) ^^
+                                            WordL.equals ^^ 
+                                            layoutConst denv.g ty c)
+                            |> aboveListL
+                            |> Some
+
                         | _ ->
-                            match r.fsobjmodel_kind with
-                            | TTyconEnum -> 
-                                tycon.TrueFieldsAsList
-                                |> List.map (fun f -> 
-                                    match f.LiteralValue with 
-                                    | None -> emptyL
-                                    | Some c -> WordL.bar ^^
-                                                wordL (tagField f.Name) ^^
-                                                WordL.equals ^^ 
-                                                layoutConst denv.g ty c)
-                                |> aboveListL
-                                |> Some
-                            | _ ->
-                                let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ propLs @ eventLs @ staticValsLs
-                                if isNil allDecls then
-                                    None
-                                else
-                                    let allDecls = applyMaxMembers denv.maxMembers allDecls
-                                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
-                                    if emptyMeasure then None else 
-                                    let declsL = aboveListL allDecls
-                                    let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end") | None -> declsL
-                                    Some declsL
+                            let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ propLs @ eventLs @ staticValsLs
+                            if isNil allDecls then
+                                None
+                            else
+                                let allDecls = applyMaxMembers denv.maxMembers allDecls
+                                let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
+                                if emptyMeasure then None else 
+                                let declsL = aboveListL allDecls
+                                let declsL =
+                                    match start with
+                                    | Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd
+                                    | None -> declsL
+                                Some declsL
 
                     | TAsmRepr _ -> 
                         Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
@@ -1871,11 +1907,26 @@ module private TastDefinitionPrinting =
                             |> aboveListL
                             |> Some
                         else
+                            let declsL =
+                                decls
+                                |> applyMaxMembers denv.maxMembers
+                                |> aboveListL
+                                |> fun declsL ->
+                                    match start with
+                                    | Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd
+                                    | None -> declsL
+
                             Some declsL
 
                     | _ -> None
 
-                let brk = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _ -> brk
+                // Work out whether we use
+                //    type R =  // broken
+                //        ...
+                // or
+                //    type R = ...  // breakable
+                let brk = not (isNil decls) || breakTypeDefnEqn repr
+
                 match rhsL with 
                 | None -> lhsL
                 | Some rhsL -> 
@@ -1884,12 +1935,14 @@ module private TastDefinitionPrinting =
                     else 
                         (lhsL ^^ WordL.equals) --- rhsL
 
-            | _ -> 
+            | TProvidedNamespaceRepr _
+            | TProvidedTypeRepr _
+            | TNoRepr -> 
                 match tycon.TypeAbbrev with
                 | None   -> 
-                    addMembersAsWithEnd (lhsL ^^ WordL.equals)
-                | Some a -> 
-                    (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
+                    addMembers true (lhsL ^^ WordL.equals)
+                | Some abbreviatedType -> 
+                    (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } abbreviatedType)
 
         let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
         layoutXmlDocOfEntityRef denv infoReader tcref attribsL
@@ -1968,7 +2021,7 @@ module private TastDefinitionPrinting =
                     // If so print a "module" declaration
                     modNameL
                 elif modIsEmpty then
-                    modNameEqualsL ^^ wordL (tagKeyword "begin") ^^ wordL (tagKeyword "end")
+                    modNameEqualsL ^^ wordL (tagKeyword "begin") ^^ WordL.keywordEnd
                 else
                     // Otherwise this is an outer module contained immediately in a namespace
                     // We already printed the namespace declaration earlier. So just print the 
@@ -2170,9 +2223,11 @@ module private PrintData =
             else
                 layoutConst denv.g ty c
 
-        | Expr.Val (v, _, _) -> wordL (tagLocal v.DisplayName)
+        | Expr.Val (v, _, _) ->
+            wordL (tagLocal v.DisplayName)
 
-        | Expr.Link rX -> dataExprWrapL denv isAtomic (!rX)
+        | Expr.Link rX ->
+            dataExprWrapL denv isAtomic (!rX)
 
         | Expr.Op (TOp.UnionCase c, _, args, _) -> 
             if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")
@@ -2184,21 +2239,25 @@ module private PrintData =
             else 
                 (wordL (tagUnionCase c.CaseName) ++ bracketL (commaListL (dataExprsL denv args)))
             
-        | Expr.Op (TOp.ExnConstr c, _, args, _) -> (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
+        | Expr.Op (TOp.ExnConstr c, _, args, _) ->
+            (wordL (tagMethod c.LogicalName) ++ bracketL (commaListL (dataExprsL denv args)))
 
-        | Expr.Op (TOp.Tuple _, _, xs, _) -> tupleL (dataExprsL denv xs)
+        | Expr.Op (TOp.Tuple _, _, xs, _) ->
+            tupleL (dataExprsL denv xs)
 
         | Expr.Op (TOp.Recd (_, tc), _, xs, _) -> 
             let fields = tc.TrueInstanceFieldsAsList
             let lay fs x = (wordL (tagRecordField fs.rfield_id.idText) ^^ sepL (tagPunctuation "=")) --- (dataExprL denv x)
-            leftL (tagPunctuation "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL (tagPunctuation "}")
+            braceL (semiListL (List.map2 lay fields xs))
 
         | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RecdFieldRef (tcref, name)), _, _, _) ->
             (layoutTyconRefImpl denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
 
-        | Expr.Op (TOp.Array, [_], xs, _) -> leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
+        | Expr.Op (TOp.Array, [_], xs, _) ->
+            leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
 
-        | _ -> wordL (tagPunctuation "?")
+        | _ ->
+            wordL (tagPunctuation "?")
 
     and private dataExprsL denv xs = List.map (dataExprL denv) xs
 

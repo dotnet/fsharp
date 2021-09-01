@@ -1830,21 +1830,21 @@ let rec dummy x = x
 and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
-    | TRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
+    | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
+    | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
     | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false
 #if !NO_EXTENSIONTYPING
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
             p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
-    | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
+    | TProvidedNamespaceRepr _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))
 
@@ -1972,11 +1972,11 @@ and p_member_info (x: ValMemberInfo) st =
 
 and p_tycon_objmodel_kind x st =
     match x with
-    | TTyconClass       -> p_byte 0 st
-    | TTyconInterface   -> p_byte 1 st
-    | TTyconStruct      -> p_byte 2 st
-    | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
-    | TTyconEnum        -> p_byte 4 st
+    | TFSharpClass       -> p_byte 0 st
+    | TFSharpInterface   -> p_byte 1 st
+    | TFSharpStruct      -> p_byte 2 st
+    | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
+    | TFSharpEnum        -> p_byte 4 st
 
 and p_vrefFlags x st =
     match x with
@@ -2028,7 +2028,7 @@ and u_tycon_repr st =
         match tag2 with
         | 0 ->
             let v = u_rfield_table st
-            (fun _flagBit -> TRecdRepr v)
+            (fun _flagBit -> TFSharpRecdRepr v)
         | 1 ->
             let v = u_list u_unioncase_spec  st
             (fun _flagBit -> Construct.MakeUnionRepr v)
@@ -2257,11 +2257,11 @@ and u_member_info st : ValMemberInfo =
 and u_tycon_objmodel_kind st =
     let tag = u_byte st
     match tag with
-    | 0 -> TTyconClass
-    | 1 -> TTyconInterface
-    | 2 -> TTyconStruct
-    | 3 -> u_slotsig st |> TTyconDelegate
-    | 4 -> TTyconEnum
+    | 0 -> TFSharpClass
+    | 1 -> TFSharpInterface
+    | 2 -> TFSharpStruct
+    | 3 -> u_slotsig st |> TFSharpDelegate
+    | 4 -> TFSharpEnum
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
 and u_vrefFlags st =

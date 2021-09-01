@@ -520,7 +520,7 @@ and GenNamedTyAppAux (amap: ImportMap) m (tyenv: TypeReprEnv) ptrsOK tcref tinst
 #if !NO_EXTENSIONTYPING
         match tcref.TypeReprInfo with
         // Generate the base type, because that is always the representation of the erased type, unless the assembly is being injected
-        | TProvidedTypeExtensionPoint info when info.IsErased ->
+        | TProvidedTypeRepr info when info.IsErased ->
             GenTypeAux amap m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased (m, g.obj_ty))
         | _ ->
 #endif
@@ -1721,7 +1721,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                 tycon.SetIsStructRecordOrUnion true
 
             tycon.entity_tycon_repr <-
-                TRecdRepr
+                TFSharpRecdRepr
                   (Construct.MakeRecdFieldsTable
                     ((tps, flds) ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
                             Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false)))
@@ -7889,12 +7889,16 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with
 #if !NO_EXTENSIONTYPING
-    | TProvidedNamespaceExtensionPoint _ -> ()
-    | TProvidedTypeExtensionPoint _ -> ()
+    | TProvidedNamespaceRepr _
+    | TProvidedTypeRepr _
 #endif
-    | TNoRepr -> ()
-    | TAsmRepr _ | TILObjectRepr _ | TMeasureableRepr _ -> ()
-    | TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ ->
+    | TNoRepr
+    | TAsmRepr _
+    | TILObjectRepr _
+    | TMeasureableRepr _ -> ()
+    | TFSharpObjectRepr _
+    | TFSharpRecdRepr _
+    | TFSharpUnionRepr _ ->
         let eenvinner = EnvForTycon tycon eenv
         let thisTy = generalizedTyconRef tcref
 
@@ -8019,12 +8023,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
            match tyconRepr with
            | TFSharpObjectRepr o ->
                match o.fsobjmodel_kind with
-               | TTyconClass -> ILTypeDefKind.Class
-               | TTyconStruct -> ILTypeDefKind.ValueType
-               | TTyconInterface -> ILTypeDefKind.Interface
-               | TTyconEnum -> ILTypeDefKind.Enum
-               | TTyconDelegate _ -> ILTypeDefKind.Delegate
-           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
+               | TFSharpClass -> ILTypeDefKind.Class
+               | TFSharpStruct -> ILTypeDefKind.ValueType
+               | TFSharpInterface -> ILTypeDefKind.Interface
+               | TFSharpEnum -> ILTypeDefKind.Enum
+               | TFSharpDelegate _ -> ILTypeDefKind.Delegate
+           | TFSharpRecdRepr _
+           | TFSharpUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField =
@@ -8067,8 +8072,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                      match TryFindFSharpAttribute g g.attrib_FieldOffsetAttribute fspec.FieldAttribs with
                      | Some (Attrib(_, _, [ AttribInt32Arg fieldOffset ], _, _, _, _)) ->
                          Some fieldOffset
-                     | Some (Attrib(_, _, _, _, _, _, m)) ->
-                         errorR(Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded(), m))
+                     | Some attrib ->
+                         errorR(Error(FSComp.SR.ilFieldOffsetAttributeCouldNotBeDecoded(), attrib.Range))
                          None
                      | _ ->
                          None
@@ -8099,7 +8104,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                   let extraAttribs =
                      match tyconRepr with
-                     | TRecdRepr _ when not useGenuineField -> [ g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
+                     | TFSharpRecdRepr _ when not useGenuineField -> [ g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeMemberAccess isFieldHidden
@@ -8224,7 +8229,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
               // Build record constructors and the funky methods that go with records and delegate types.
               // Constructors and delegate methods have the same access as the representation
               match tyconRepr with
-              | TRecdRepr _ when not tycon.IsEnumTycon ->
+              | TFSharpRecdRepr _ when not tycon.IsEnumTycon ->
                  // No constructor for enum types
                  // Otherwise find all the non-static, non zero-init fields and build a constructor
                  let relevantFields =
@@ -8255,7 +8260,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                  // Build all the methods that go with a delegate type
                  match r.fsobjmodel_kind with
-                 | TTyconDelegate slotSig ->
+                 | TFSharpDelegate slotSig ->
 
                      let parameters, ret =
                          // When "type delegateTy = delegate of unit -> returnTy",
@@ -8271,7 +8276,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                  | _ ->
                      ()
 
-              | TUnionRepr _ when not (tycon.HasMember g "ToString" []) ->
+              | TFSharpUnionRepr _ when not (tycon.HasMember g "ToString" []) ->
                   yield! GenToStringMethod cenv eenv ilThisTy m
               | _ -> () ]
 
@@ -8289,7 +8294,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                let tdef = tdef.With(customAttrs = mkILCustomAttrs ilCustomAttrs, genericParams = ilGenParams)
                tdef, None
 
-           | TRecdRepr _ | TFSharpObjectRepr _ as tyconRepr ->
+           | TFSharpRecdRepr _ | TFSharpObjectRepr _ as tyconRepr ->
                let super = superOfTycon g tycon
                let ilBaseTy = GenType cenv.amap m eenvinner.tyenv super
 
@@ -8398,7 +8403,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                let tdef = tdef.WithKind(ilTypeDefKind).WithLayout(tdLayout).WithEncoding(tdEncoding)
                tdef, None
 
-           | TUnionRepr _ ->
+           | TFSharpUnionRepr _ ->
                let alternatives =
                    tycon.UnionCasesArray |> Array.mapi (fun i ucspec ->
                        { altName=ucspec.CompiledName

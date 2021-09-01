@@ -1303,12 +1303,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 match entity.TypeReprInfo with
                 // This is the first extension
                 | TNoRepr ->
-                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
+                    TProvidedNamespaceRepr(typeProviderEnvironment, [provider])
 
                 // Add to the existing list of extensions
-                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr ->
+                | TProvidedNamespaceRepr(resolutionFolder, prior) as repr ->
                     if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then
-                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider :: prior)
+                        TProvidedNamespaceRepr(resolutionFolder, provider :: prior)
                     else
                         repr
 

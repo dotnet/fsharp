@@ -2394,7 +2394,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then 
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))
 
-    // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
+    // Considers TFSharpObjectRepr, TFSharpRecdRepr and TFSharpUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr, TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
     
@@ -2434,7 +2434,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         match tycon.TypeReprInfo with 
         | TFSharpObjectRepr r ->
             match r.fsobjmodel_kind with 
-            | TTyconDelegate ss ->
+            | TFSharpDelegate ss ->
                 //ss.ClassTypars 
                 //ss.MethodTypars 
                 ss.FormalReturnType |> Option.iter visitType

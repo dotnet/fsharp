@@ -793,13 +793,13 @@ module internal DescriptionListsImpl =
             match repr with
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
-                | TTyconClass -> FSharpGlyph.Class
-                | TTyconInterface -> FSharpGlyph.Interface
-                | TTyconStruct -> FSharpGlyph.Struct
-                | TTyconDelegate _ -> FSharpGlyph.Delegate
-                | TTyconEnum _ -> FSharpGlyph.Enum
-            | TRecdRepr _ -> FSharpGlyph.Type
-            | TUnionRepr _ -> FSharpGlyph.Union
+                | TFSharpClass -> FSharpGlyph.Class
+                | TFSharpInterface -> FSharpGlyph.Interface
+                | TFSharpStruct -> FSharpGlyph.Struct
+                | TFSharpDelegate _ -> FSharpGlyph.Delegate
+                | TFSharpEnum _ -> FSharpGlyph.Enum
+            | TFSharpRecdRepr _ -> FSharpGlyph.Type
+            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct
@@ -809,8 +809,8 @@ module internal DescriptionListsImpl =
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> FSharpGlyph.Typedef 
-            | TProvidedNamespaceExtensionPoint  _-> FSharpGlyph.Typedef  
+            | TProvidedTypeRepr _-> FSharpGlyph.Typedef 
+            | TProvidedNamespaceRepr  _-> FSharpGlyph.Typedef  
 #endif
             | TNoRepr -> FSharpGlyph.Class  
          

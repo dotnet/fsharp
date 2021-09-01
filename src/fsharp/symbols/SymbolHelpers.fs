@@ -798,7 +798,7 @@ module internal SymbolHelpers =
                 if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
                     let typeBeforeArguments = 
                         match tyconRef.TypeReprInfo with 
-                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                        | TProvidedTypeRepr info -> info.ProvidedType
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
                     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
@@ -909,7 +909,7 @@ module internal SymbolHelpers =
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
 #if !NO_EXTENSIONTYPING                
-                | TProvidedNamespaceExtensionPoint _ -> 
+                | TProvidedNamespaceRepr _ -> 
                     modref.CompilationPathOpt
                     |> Option.bind (fun path ->
                         // works similar to generation of xml-docs at tastops.fs, probably too similar

@@ -866,7 +866,7 @@ let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
   | PermitDirectReferenceToGeneratedType.Yes -> ()
   | PermitDirectReferenceToGeneratedType.No ->
     match tcref.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info when not info.IsErased ->
+    | TProvidedTypeRepr info when not info.IsErased ->
         if IsGeneratedTypeDirectReference (info.ProvidedType, m) then
             error (Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
     |  _ -> ()
@@ -886,7 +886,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
 /// If necessary, incorporate the provided type or namespace into the entity.
 let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespaceRef) =
     match modref.TypeReprInfo with
-    | TProvidedNamespaceExtensionPoint(resolutionEnvironment, resolvers) ->
+    | TProvidedNamespaceRepr(resolutionEnvironment, resolvers) ->
         match modref.Deref.PublicPath with
         | Some(PubPath path) ->
             resolvers
@@ -895,13 +895,13 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
         | None -> []
 
     // We have a provided type, look up its nested types (populating them on-demand if necessary)
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
         let sty = info.ProvidedType
         let resolutionEnvironment = info.ResolutionEnvironment
 
 #if DEBUG
         if resolutionEnvironment.showResolutionMessages then
-            dprintfn "resolving name '%s' in TProvidedTypeExtensionPoint '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
+            dprintfn "resolving name '%s' in TProvidedTypeRepr '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
 #endif
 
         match sty.PApply((fun sty -> sty.GetNestedType typeName), m) with
@@ -1006,7 +1006,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
             | None ->
 #if !NO_EXTENSIONTYPING
                 match tycon.TypeReprInfo with
-                | TProvidedTypeExtensionPoint info ->
+                | TProvidedTypeRepr info ->
                     [ for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do
                         let nestedTypeName = nestedType.PUntaint((fun t -> t.Name), m)
                         yield! 

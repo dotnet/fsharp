@@ -720,7 +720,7 @@ let reduceTyconMeasureableOrProvided (g: TcGlobals) (tycon: Tycon) tyargs =
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
 #if !NO_EXTENSIONTYPING
-    | TProvidedTypeExtensionPoint info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
+    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
 
@@ -1720,7 +1720,7 @@ type TypeDefMetadata =
 let metadataOfTycon (tycon: Tycon) = 
 #if !NO_EXTENSIONTYPING
     match tycon.TypeReprInfo with 
-    | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
+    | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
 #endif
     if tycon.IsILTycon then 
@@ -1732,7 +1732,7 @@ let metadataOfTycon (tycon: Tycon) =
 let metadataOfTy g ty = 
 #if !NO_EXTENSIONTYPING
     match extensionInfoOfTy g ty with 
-    | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
+    | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
 #endif
     if isILAppTy g ty then 
@@ -1764,8 +1764,8 @@ let isFSharpObjModelRefTy g ty =
     isFSharpObjModelTy g ty && 
     let tcref = tcrefOfAppTy g ty
     match tcref.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-    | TTyconClass | TTyconInterface | TTyconDelegate _ -> true
-    | TTyconStruct | TTyconEnum -> false
+    | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> true
+    | TFSharpStruct | TFSharpEnum -> false
 
 let isFSharpClassTy g ty =
     match tryTcrefOfAppTy g ty with
@@ -3812,10 +3812,10 @@ module DebugPrint =
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TFSharpInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
-            // if TTyconInterface, the iimpls should be printed as inherited interfaces 
+            // if TFSharpInterface, the iimpls should be printed as inherited interfaces 
             if isNil adhoc && isNil iimpls then 
                 emptyL 
             else 
@@ -3842,24 +3842,24 @@ module DebugPrint =
 
         let tyconReprL (repr, tycon: Tycon) = 
             match repr with 
-            | TRecdRepr _ ->
+            | TFSharpRecdRepr _ ->
                 tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL(tagText ";")) |> aboveListL
             | TFSharpObjectRepr r -> 
                 match r.fsobjmodel_kind with 
-                | TTyconDelegate _ ->
+                | TFSharpDelegate _ ->
                     wordL(tagText "delegate ...")
                 | _ ->
                     let start = 
                         match r.fsobjmodel_kind with
-                        | TTyconClass -> "class" 
-                        | TTyconInterface -> "interface" 
-                        | TTyconStruct -> "struct" 
-                        | TTyconEnum -> "enum" 
+                        | TFSharpClass -> "class" 
+                        | TFSharpInterface -> "interface" 
+                        | TFSharpStruct -> "struct" 
+                        | TFSharpEnum -> "enum" 
                         | _ -> failwith "???"
                     let inherits = 
                        match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                       | TTyconClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
-                       | TTyconInterface, _ -> 
+                       | TFSharpClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
+                       | TFSharpInterface, _ -> 
                          tycon.ImmediateInterfacesOfFSharpTycon
                            |> List.filter (fun (_, compgen, _) -> not compgen)
                            |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
@@ -3872,7 +3872,7 @@ module DebugPrint =
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-            | TUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TFSharpUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _ -> wordL(tagText "(# ... #)")
             | TMeasureableRepr ty -> typeL ty
             | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
@@ -3881,8 +3881,8 @@ module DebugPrint =
         let reprL = 
             match tycon.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _
-            | TProvidedNamespaceExtensionPoint _
+            | TProvidedTypeRepr _
+            | TProvidedNamespaceRepr _
 #endif
             | TNoRepr -> 
                 match tycon.TypeAbbrev with
@@ -4646,7 +4646,7 @@ and accLocalTyconRepr opts b fvs =
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc: Tycon) fvs = 
-    if match tc.TypeReprInfo with TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false
+    if match tc.TypeReprInfo with TFSharpObjectRepr _ | TFSharpRecdRepr _ | TFSharpUnionRepr _ -> true | _ -> false
     then accLocalTyconRepr opts tc fvs
     else fvs
 
@@ -5508,8 +5508,8 @@ and remapFsObjData g tmenv x =
     { x with 
           fsobjmodel_kind = 
              (match x.fsobjmodel_kind with 
-              | TTyconDelegate slotsig -> TTyconDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
-              | TTyconClass | TTyconInterface | TTyconStruct | TTyconEnum -> x.fsobjmodel_kind)
+              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
+              | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind)
           fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
           fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields g tmenv } 
 
@@ -5517,13 +5517,13 @@ and remapFsObjData g tmenv x =
 and remapTyconRepr g tmenv repr = 
     match repr with 
     | TFSharpObjectRepr x -> TFSharpObjectRepr (remapFsObjData g tmenv x)
-    | TRecdRepr x -> TRecdRepr (remapRecdFields g tmenv x)
-    | TUnionRepr x -> TUnionRepr (remapUnionCases g tmenv x)
+    | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields g tmenv x)
+    | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases g tmenv x)
     | TILObjectRepr _ -> failwith "cannot remap IL type definitions"
 #if !NO_EXTENSIONTYPING
-    | TProvidedNamespaceExtensionPoint _ -> repr
-    | TProvidedTypeExtensionPoint info -> 
-       TProvidedTypeExtensionPoint 
+    | TProvidedNamespaceRepr _ -> repr
+    | TProvidedTypeRepr info -> 
+       TProvidedTypeRepr 
             { info with 
                  LazyBaseType = info.LazyBaseType.Force (range0, g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
                  // The load context for the provided type contains TyconRef objects. We must remap these.

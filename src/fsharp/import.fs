@@ -112,7 +112,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
 #if !NO_EXTENSIONTYPING
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
             //printfn "ImportTypeRefData: validating type: typeLogicalName = %A" typeName
             ValidateProvidedTypeAfterStaticInstantiation(m, info.ProvidedType, path, typeName)
     | _ -> 

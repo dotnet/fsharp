@@ -94,7 +94,7 @@ module TcResolutionsExtensions =
                     match rfinfo.TyconRef.TypeReprInfo with
                     | TFSharpObjectRepr x ->
                         match x.fsobjmodel_kind with
-                        | TTyconEnum -> Some ()
+                        | TFSharpEnum -> Some ()
                         | _ -> None
                     | _ -> None
 
@@ -259,13 +259,13 @@ module TcResolutionsExtensions =
                             match repr with
                             | TFSharpObjectRepr om -> 
                                 match om.fsobjmodel_kind with 
-                                | TTyconClass -> SemanticClassificationType.ReferenceType
-                                | TTyconInterface -> SemanticClassificationType.Interface
-                                | TTyconStruct -> SemanticClassificationType.ValueType
-                                | TTyconDelegate _ -> SemanticClassificationType.Delegate
-                                | TTyconEnum _ -> SemanticClassificationType.Enumeration
-                            | TRecdRepr _
-                            | TUnionRepr _ -> 
+                                | TFSharpClass -> SemanticClassificationType.ReferenceType
+                                | TFSharpInterface -> SemanticClassificationType.Interface
+                                | TFSharpStruct -> SemanticClassificationType.ValueType
+                                | TFSharpDelegate _ -> SemanticClassificationType.Delegate
+                                | TFSharpEnum _ -> SemanticClassificationType.Enumeration
+                            | TFSharpRecdRepr _
+                            | TFSharpUnionRepr _ -> 
                                 if isStructTyconRef tcref then
                                     SemanticClassificationType.ValueType
                                 else
@@ -284,8 +284,8 @@ module TcResolutionsExtensions =
                             | TAsmRepr _ -> SemanticClassificationType.TypeDef
                             | TMeasureableRepr _-> SemanticClassificationType.TypeDef 
 #if !NO_EXTENSIONTYPING
-                            | TProvidedTypeExtensionPoint _-> SemanticClassificationType.TypeDef 
-                            | TProvidedNamespaceExtensionPoint  _-> SemanticClassificationType.TypeDef  
+                            | TProvidedTypeRepr _-> SemanticClassificationType.TypeDef 
+                            | TProvidedNamespaceRepr  _-> SemanticClassificationType.TypeDef  
 #endif
                             | TNoRepr -> SemanticClassificationType.ReferenceType
 

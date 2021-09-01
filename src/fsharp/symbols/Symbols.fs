@@ -562,10 +562,9 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.TypeReprInfo with 
         | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
-            | TTyconDelegate ss -> FSharpDelegateSignature(cenv, ss)
+            | TFSharpDelegate ss -> FSharpDelegateSignature(cenv, ss)
             | _ -> invalidOp "not a delegate type"
         | _ -> invalidOp "not a delegate type"
-      
 
     override _.Accessibility = 
         if isUnresolved() then FSharpAccessibility taccessPublic else
@@ -673,7 +672,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
             let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 

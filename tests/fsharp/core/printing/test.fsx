@@ -929,6 +929,42 @@ type optionRecord = { x: obj }
 let x = { x = null }
 ;;
 
+type RecordWithMembers =
+    { x: obj }
+    member a.Property = 1
+    member a.Method() = 2
+;;
+type UnionWithMembers =
+    /// This is Case1
+    | Case1
+    /// This is Case2
+    | Case2 of int
+    /// This is Property
+    member a.Property = 1
+    /// This is Method
+    member a.Method() = 2
+;;
+type OneFieldRecordNoXmlDoc =
+    { OneField: obj}
+;;
+type OneFieldRecordXmlDoc =
+    { /// Hello!
+      OneField: obj}
+;;
+type TwoFieldRecordNoXmlDoc =
+    { TwoFields1: obj; TwoFields2: obj }
+;;
+type TwoFieldRecordXmlDoc =
+    { /// Goog
+      TwoFields1: obj;
+      /// Even more good
+      TwoFields2: obj }
+;;
+type System.Int32 with 
+    member a.ExtrinsicExtensionProperty = 1
+    member a.ExtrinsicExtensionMethod() = 2
+;;
+
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)

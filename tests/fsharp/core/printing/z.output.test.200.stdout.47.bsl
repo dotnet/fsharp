@@ -531,7 +531,8 @@ type 'a T1Pre with
   member E: IEvent<obj>
 
 > type r =
-  { f0: int
+  {
+    f0: int
     f1: int
     f2: int
     f3: int
@@ -540,7 +541,8 @@ type 'a T1Pre with
     f6: int
     f7: int
     f8: int
-    f9: int }
+    f9: int
+  }
 val r10: r = { f0 = 0
                f1 = 1
                f2 = 2
@@ -1817,5 +1819,41 @@ val x: optionRecord = { x = None }
 > type optionRecord =
   { x: obj }
 val x: optionRecord = { x = null }
+
+> type RecordWithMembers =
+  { x: obj }
+  member Method: unit -> int
+  member Property: int
+
+> type UnionWithMembers =
+  | Case1
+  | Case2 of int
+  member Method: unit -> int
+  member Property: int
+
+> type OneFieldRecordNoXmlDoc =
+  { OneField: obj }
+
+> type OneFieldRecordXmlDoc =
+  {
+    OneField: obj
+  }
+
+> type TwoFieldRecordNoXmlDoc =
+  {
+    TwoFields1: obj
+    TwoFields2: obj
+  }
+
+> type TwoFieldRecordXmlDoc =
+  {
+    TwoFields1: obj
+    TwoFields2: obj
+  }
+
+> type Int32 with
+  member ExtrinsicExtensionProperty: int
+type Int32 with
+  member ExtrinsicExtensionMethod: unit -> int
 
 > > > 

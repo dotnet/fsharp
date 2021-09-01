@@ -3321,7 +3321,7 @@ module EstablishTypeDefinitionCores =
                 if not inSig && not hasMeasureAttr then 
                     errorR(Error(FSComp.SR.tcTypeRequiresDefinition(), m))
                 if hasMeasureAttr then 
-                    TFSharpObjectRepr { fsobjmodel_kind = TTyconClass 
+                    TFSharpObjectRepr { fsobjmodel_kind = TFSharpClass 
                                         fsobjmodel_vslots = []
                                         fsobjmodel_rfields = Construct.MakeRecdFieldsTable [] }
                 else 
@@ -3353,7 +3353,7 @@ module EstablishTypeDefinitionCores =
                 InferTyconKind cenv.g (SynTypeDefnKind.Record, attrs, [], [], inSig, true, m) |> ignore
 
                 // Note: the table of record fields is initially empty
-                TRecdRepr (Construct.MakeRecdFieldsTable [])
+                TFSharpRecdRepr (Construct.MakeRecdFieldsTable [])
 
             | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
                 let kind = InferTyconKind cenv.g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
@@ -3363,10 +3363,10 @@ module EstablishTypeDefinitionCores =
                 | _ -> 
                     let kind = 
                         match kind with
-                        | SynTypeDefnKind.Class -> TTyconClass
-                        | SynTypeDefnKind.Interface -> TTyconInterface
-                        | SynTypeDefnKind.Delegate _ -> TTyconDelegate (MakeSlotSig("Invoke", cenv.g.unit_ty, [], [], [], None))
-                        | SynTypeDefnKind.Struct -> TTyconStruct 
+                        | SynTypeDefnKind.Class -> TFSharpClass
+                        | SynTypeDefnKind.Interface -> TFSharpInterface
+                        | SynTypeDefnKind.Delegate _ -> TFSharpDelegate (MakeSlotSig("Invoke", cenv.g.unit_ty, [], [], [], None))
+                        | SynTypeDefnKind.Struct -> TFSharpStruct 
                         | _ -> error(InternalError("should have inferred tycon kind", m))
 
                     let repr =
@@ -3377,7 +3377,7 @@ module EstablishTypeDefinitionCores =
                     TFSharpObjectRepr repr
 
             | SynTypeDefnSimpleRepr.Enum _ -> 
-                let kind = TTyconEnum
+                let kind = TFSharpEnum
                 let repr =
                     { fsobjmodel_kind = kind 
                       fsobjmodel_vslots = []
@@ -3413,7 +3413,7 @@ module EstablishTypeDefinitionCores =
 
                     let typeBeforeArguments = 
                         match tcrefBeforeStaticArguments.TypeReprInfo with 
-                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                        | TProvidedTypeRepr info -> info.ProvidedType
                         | _ -> failwith "unreachable"
 
                     if IsGeneratedTypeDirectReference (typeBeforeArguments, m) then 
@@ -3443,7 +3443,7 @@ module EstablishTypeDefinitionCores =
                    checkTypeName()
                 let resolutionEnvironment = 
                     match tcrefForContainer.TypeReprInfo with 
-                    | TProvidedTypeExtensionPoint info -> info.ResolutionEnvironment
+                    | TProvidedTypeRepr info -> info.ResolutionEnvironment
                     | _ -> failwith "unreachable"
                 resolutionEnvironment
 
@@ -3879,7 +3879,7 @@ module EstablishTypeDefinitionCores =
                     hiddenReprChecks false
                     noAllowNullLiteralAttributeCheck()
                     if hasMeasureAttr then 
-                        let repr = TFSharpObjectRepr { fsobjmodel_kind=TTyconClass 
+                        let repr = TFSharpObjectRepr { fsobjmodel_kind=TFSharpClass 
                                                        fsobjmodel_vslots=[]
                                                        fsobjmodel_rfields= Construct.MakeRecdFieldsTable [] }
                         repr, None, NoSafeInitInfo
@@ -3933,7 +3933,8 @@ module EstablishTypeDefinitionCores =
                           errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 
                     writeFakeUnionCtorsToSink unionCases
-                    Construct.MakeUnionRepr unionCases, None, NoSafeInitInfo
+                    let repr = Construct.MakeUnionRepr unionCases
+                    repr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
                     noMeasureAttributeCheck()
@@ -3944,7 +3945,8 @@ module EstablishTypeDefinitionCores =
                     let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
-                    TRecdRepr (Construct.MakeRecdFieldsTable recdFields), None, NoSafeInitInfo
+                    let repr = TFSharpRecdRepr (Construct.MakeRecdFieldsTable recdFields)
+                    repr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
                     let s = (s :?> ILType)
@@ -4005,7 +4007,7 @@ module EstablishTypeDefinitionCores =
                                     errorR (Error(FSComp.SR.tcStructTypesCannotContainAbstractMembers(), m)) 
                                   structLayoutAttributeCheck true
 
-                                  TTyconStruct
+                                  TFSharpStruct
                               | SynTypeDefnKind.Interface -> 
                                   if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   noCLIMutableAttributeCheck()
@@ -4013,12 +4015,12 @@ module EstablishTypeDefinitionCores =
                                   noAbstractClassAttributeCheck()
                                   allowNullLiteralAttributeCheck()
                                   noFieldsCheck userFields
-                                  TTyconInterface
+                                  TFSharpInterface
                               | SynTypeDefnKind.Class -> 
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
-                                  TTyconClass
+                                  TFSharpClass
                               | SynTypeDefnKind.Delegate (ty, arity) -> 
                                   noCLIMutableAttributeCheck()
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDelegate
@@ -4032,7 +4034,7 @@ module EstablishTypeDefinitionCores =
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m
                                   let fparams = curriedArgInfos.Head |> List.map MakeSlotParam 
-                                  TTyconDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
+                                  TFSharpDelegate (MakeSlotSig("Invoke", thisTy, ttps, [], [fparams], returnTy))
                               | _ -> 
                                   error(InternalError("should have inferred tycon kind", m))
 
@@ -4080,7 +4082,7 @@ module EstablishTypeDefinitionCores =
 
                 | SynTypeDefnSimpleRepr.Enum (decls, m) -> 
                     let fieldTy, fields' = TcRecdUnionAndEnumDeclarations.TcEnumDecls cenv envinner innerParent thisTy decls
-                    let kind = TTyconEnum
+                    let kind = TFSharpEnum
                     structLayoutAttributeCheck false
                     noCLIMutableAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedEnum
@@ -4390,7 +4392,7 @@ module EstablishTypeDefinitionCores =
 
         // Phase 1B. Establish the kind of each type constructor 
         // Here we run InferTyconKind and record partial information about the kind of the type constructor. 
-        // This means TyconObjModelKind is set, which means isSealedTy, isInterfaceTy etc. give accurate results. 
+        // This means TyconFSharpObjModelKind is set, which means isSealedTy, isInterfaceTy etc. give accurate results. 
         let withAttrs = 
             (envMutRecPrelim, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                 let res = 

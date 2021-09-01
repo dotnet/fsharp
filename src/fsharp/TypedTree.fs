@@ -707,7 +707,7 @@ type Entity =
     member x.Range = 
 #if !NO_EXTENSIONTYPING    
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info ->
+        | TProvidedTypeRepr info ->
             match Construct.ComputeDefinitionLocationOfProvidedItem info.ProvidedType with
             | Some range -> range
             | None -> x.entity_range
@@ -747,7 +747,7 @@ type Entity =
     member x.XmlDoc = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info ->
+        | TProvidedTypeRepr info ->
             let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
             XmlDoc (lines, x.DefinitionRange)
         | _ -> 
@@ -865,26 +865,26 @@ type Entity =
     /// Indicates if the entity is a provided type or namespace definition
     member x.IsProvided = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint _ -> true
-        | TProvidedNamespaceExtensionPoint _ -> true
+        | TProvidedTypeRepr _ -> true
+        | TProvidedNamespaceRepr _ -> true
         | _ -> false
 
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvidedNamespace = 
         match x.TypeReprInfo with 
-        | TProvidedNamespaceExtensionPoint _ -> true
+        | TProvidedNamespaceRepr _ -> true
         | _ -> false
 
     /// Indicates if the entity is an erased provided type definition
     member x.IsProvidedErasedTycon = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsErased
+        | TProvidedTypeRepr info -> info.IsErased
         | _ -> false
 
     /// Indicates if the entity is a generated provided type definition, i.e. not erased.
     member x.IsProvidedGeneratedTycon = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsGenerated
+        | TProvidedTypeRepr info -> info.IsGenerated
         | _ -> false
 #endif
 
@@ -908,7 +908,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
+        | TFSharpRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
         | _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -944,12 +944,12 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TUnionRepr _ -> true | _ -> false
+    member x.IsUnionTycon = match x.TypeReprInfo with | TFSharpUnionRepr _ -> true | _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TUnionRepr x -> ValueSome x 
+        | TFSharpUnionRepr x -> ValueSome x 
         | _ -> ValueNone
 
     /// Get the union cases for a type, if any
@@ -1036,10 +1036,10 @@ type Entity =
     member x.ILTyconRawMetadata = let (TILObjectReprData(_, _, td)) = x.ILTyconInfo in td
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
-    member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true | _ -> false
+    member x.IsRecordTycon = match x.TypeReprInfo with | TFSharpRecdRepr _ -> true | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
-    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
+    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TFSharpRecdRepr _ | TFSharpUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1075,16 +1075,16 @@ type Entity =
     member x.IsHiddenReprTycon = match x.TypeAbbrev, x.TypeReprInfo with | None, TNoRepr -> true | _ -> false
 
     /// Indicates if this is an F#-defined interface type definition 
-    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconInterface -> true | _ -> false
+    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
 
     /// Indicates if this is an F#-defined delegate type definition 
-    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconDelegate _ -> true | _ -> false
+    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
 
     /// Indicates if this is an F#-defined enum type definition 
-    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconEnum -> true | _ -> false
+    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
 
     /// Indicates if this is an F#-defined class type definition 
-    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconClass -> true | _ -> false
+    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpClass -> true | _ -> false
 
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.IsILTycon && x.ILTyconRawMetadata.IsEnum
@@ -1093,8 +1093,8 @@ type Entity =
     member x.IsEnumTycon = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsEnum 
-        | TProvidedNamespaceExtensionPoint _ -> false
+        | TProvidedTypeRepr info -> info.IsEnum 
+        | TProvidedNamespaceRepr _ -> false
         | _ ->
 #endif
         x.IsILEnumTycon || x.IsFSharpEnumTycon
@@ -1103,12 +1103,12 @@ type Entity =
     /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
-        | TRecdRepr _ -> x.IsStructRecordOrUnionTycon
-        | TUnionRepr _ -> x.IsStructRecordOrUnionTycon
+        | TFSharpRecdRepr _ -> x.IsStructRecordOrUnionTycon
+        | TFSharpUnionRepr _ -> x.IsStructRecordOrUnionTycon
         | TFSharpObjectRepr info ->
             match info.fsobjmodel_kind with
-            | TTyconClass | TTyconInterface | TTyconDelegate _ -> false
-            | TTyconStruct | TTyconEnum -> true
+            | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
+            | TFSharpStruct | TFSharpEnum -> true
         | _ -> false
 
     /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition
@@ -1120,8 +1120,8 @@ type Entity =
     member x.IsStructOrEnumTycon = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsStructOrEnum 
-        | TProvidedNamespaceExtensionPoint _ -> false
+        | TProvidedTypeRepr info -> info.IsStructOrEnum 
+        | TProvidedNamespaceRepr _ -> false
         | _ ->
 #endif
         x.IsILStructOrEnumTycon || x.IsFSharpStructOrEnumTycon
@@ -1179,18 +1179,18 @@ type Entity =
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
         // We should never be computing this property for erased types
-        | TProvidedTypeExtensionPoint info when info.IsErased -> 
+        | TProvidedTypeRepr info when info.IsErased -> 
             failwith "No compiled representation for provided erased type"
         
         // Generated types that are not relocated just point straight to the generated backing assembly, computed from "st".
         // These are used when running F# Interactive, which does not use static linking of provider-generated assemblies,
         // and also for types with relocation suppressed.
-        | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
+        | TProvidedTypeRepr info when info.IsGenerated && info.IsSuppressRelocate -> 
             let st = info.ProvidedType
             let tref = GetILTypeRefOfProvidedType (st, x.Range)
             let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
             CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
-        | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
+        | TProvidedNamespaceRepr _ -> failwith "No compiled representation for provided namespace"
         | _ ->
 #endif
             let ilTypeRefForCompilationPath (CompPath(sref, p)) item = 
@@ -1375,10 +1375,10 @@ type TyconRepresentation =
     | TFSharpObjectRepr of TyconObjModelData
 
     /// Indicates the type is a record 
-    | TRecdRepr of TyconRecdFields
+    | TFSharpRecdRepr of TyconRecdFields
 
     /// Indicates the type is a discriminated union 
-    | TUnionRepr of TyconUnionData 
+    | TFSharpUnionRepr of TyconUnionData 
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -1390,15 +1390,15 @@ type TyconRepresentation =
     | TMeasureableRepr of TType
 
 #if !NO_EXTENSIONTYPING
-    /// TProvidedTypeExtensionPoint
+    /// TProvidedTypeRepr
     ///
     /// Indicates the representation information for a provided type. 
-    | TProvidedTypeExtensionPoint of TProvidedTypeInfo
+    | TProvidedTypeRepr of TProvidedTypeInfo
 
     /// Indicates the representation information for a provided namespace.  
     //
     // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
-    | TProvidedNamespaceExtensionPoint of ResolutionEnvironment * Tainted<ITypeProvider> list
+    | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
 #endif
 
     /// The 'NoRepr' value here has four meanings: 
@@ -1492,34 +1492,34 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconObjModelKind = 
-    /// Indicates the type is a class (also used for units-of-measure)
-    | TTyconClass 
+type TyconFSharpObjModelKind = 
+    /// Indicates the type is an F#-declared class (also used for units-of-measure)
+    | TFSharpClass 
 
-    /// Indicates the type is an interface 
-    | TTyconInterface 
+    /// Indicates the type is an F#-declared interface 
+    | TFSharpInterface 
 
-    /// Indicates the type is a struct 
-    | TTyconStruct 
+    /// Indicates the type is an F#-declared struct 
+    | TFSharpStruct 
 
-    /// Indicates the type is a delegate with the given Invoke signature 
-    | TTyconDelegate of slotSig: SlotSig 
+    /// Indicates the type is an F#-declared delegate with the given Invoke signature 
+    | TFSharpDelegate of slotSig: SlotSig 
 
-    /// Indicates the type is an enumeration 
-    | TTyconEnum
+    /// Indicates the type is an F#-declared enumeration 
+    | TFSharpEnum
     
     /// Indicates if the type definition is a value type
     member x.IsValueType =
         match x with 
-        | TTyconClass | TTyconInterface | TTyconDelegate _ -> false
-        | TTyconStruct | TTyconEnum -> true
+        | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
+        | TFSharpStruct | TFSharpEnum -> true
 
 /// Represents member values and class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TyconObjModelData = 
     { 
-      /// Indicates whether the type declaration is a class, interface, enum, delegate or struct 
-      fsobjmodel_kind: TyconObjModelKind
+      /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct 
+      fsobjmodel_kind: TyconFSharpObjModelKind
 
       /// The declared abstract slots of the class, interface or struct 
       fsobjmodel_vslots: ValRef list
@@ -3079,7 +3079,7 @@ type NonLocalEntityRef =
         // type provider type linking errors in F# 3.0.
         let m = range0
         match entity.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             let resolutionEnvironment = info.ResolutionEnvironment
             let st = info.ProvidedType
                         
@@ -3096,7 +3096,7 @@ type NonLocalEntityRef =
 
             tryResolveNestedTypeOf(entity, resolutionEnvironment, st, i)
 
-        | TProvidedNamespaceExtensionPoint(resolutionEnvironment, resolvers) -> 
+        | TProvidedNamespaceRepr(resolutionEnvironment, resolvers) -> 
 
             // In this case, we're still in the realm of extensible namespaces. 
             //     <----entity-->
@@ -5473,7 +5473,7 @@ type Construct() =
                       | Some t -> importProvidedType t),
                   findOriginalException)
 
-        TProvidedTypeExtensionPoint 
+        TProvidedTypeRepr 
             { ResolutionEnvironment=resolutionEnvironment
               ProvidedType=st
               LazyBaseType=lazyBaseTy
@@ -5585,7 +5585,7 @@ type Construct() =
           CompiledRepresentation=newCache() }
 
     /// Create a node for a union type
-    static member MakeUnionRepr ucs = TUnionRepr (Construct.MakeUnionCases ucs)
+    static member MakeUnionRepr ucs = TFSharpUnionRepr (Construct.MakeUnionCases ucs)
 
     /// Create a new type parameter node
     static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 

@@ -4584,7 +4584,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv (tcref: TyconRef) (args: SynType list) m =
     let typeBeforeArguments =
         match tcref.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+        | TProvidedTypeRepr info -> info.ProvidedType
         | _ -> failwith "unreachable"
 
     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m)

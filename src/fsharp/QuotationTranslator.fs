@@ -1188,7 +1188,7 @@ and ConvILType cenv env m ty =
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
-    | TProvidedTypeExtensionPoint info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
     | _ -> None
 #endif
 
@@ -1198,7 +1198,7 @@ and ConvTyconRef cenv (tcref: TyconRef) m =
     | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
     | None ->
     match tcref.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info when not cenv.g.isInteractive && not info.IsErased ->
+    | TProvidedTypeRepr info when not cenv.g.isInteractive && not info.IsErased ->
         // Note, generated types are (currently) non-generic
         let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
         ConvILTypeRefUnadjusted cenv m tref
