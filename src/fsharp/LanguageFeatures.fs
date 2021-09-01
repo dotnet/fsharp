@@ -92,9 +92,9 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PrintfBinaryFormat, languageVersion60
             LanguageFeature.IndexerNotationWithoutDot, previewVersion
             LanguageFeature.RefCellNotationInformationals, previewVersion
-            LanguageFeature.UseBindingValueDiscard, previewVersion
-            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
-            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
+            LanguageFeature.UseBindingValueDiscard, languageVersion60
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
+            LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
