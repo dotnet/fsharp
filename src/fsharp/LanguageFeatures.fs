@@ -83,21 +83,21 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# 6.0
-
-            // F# preview
             LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
-            LanguageFeature.RelaxWhitespace2, previewVersion
+            LanguageFeature.RelaxWhitespace2, languageVersion60
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
-            LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
-            LanguageFeature.PrintfBinaryFormat, previewVersion
+            LanguageFeature.PrintfBinaryFormat, languageVersion60
             LanguageFeature.IndexerNotationWithoutDot, previewVersion
             LanguageFeature.RefCellNotationInformationals, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
             LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
+
+            // F# preview
+            LanguageFeature.FromEndSlicing, previewVersion
         ]
 
     let specified =
