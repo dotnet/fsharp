@@ -85,8 +85,8 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# 6.0
             LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
             LanguageFeature.RelaxWhitespace2, languageVersion60
-            LanguageFeature.OverloadsForCustomOperations, previewVersion
-            LanguageFeature.ExpandedMeasurables, previewVersion
+            LanguageFeature.OverloadsForCustomOperations, languageVersion60
+            LanguageFeature.ExpandedMeasurables, languageVersion60
             LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, languageVersion60
