@@ -91,7 +91,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StructActivePattern, languageVersion60
             LanguageFeature.PrintfBinaryFormat, languageVersion60
             LanguageFeature.IndexerNotationWithoutDot, previewVersion
-            LanguageFeature.RefCellNotationInformationals, previewVersion
+            LanguageFeature.RefCellNotationInformationals, languageVersion60
             LanguageFeature.UseBindingValueDiscard, languageVersion60
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
             LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
