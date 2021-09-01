@@ -87,8 +87,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.RelaxWhitespace2, languageVersion60
             LanguageFeature.OverloadsForCustomOperations, languageVersion60
             LanguageFeature.ExpandedMeasurables, languageVersion60
-            LanguageFeature.ResumableStateMachines, previewVersion
-            LanguageFeature.StructActivePattern, previewVersion
+            LanguageFeature.ResumableStateMachines, languageVersion60
+            LanguageFeature.StructActivePattern, languageVersion60
             LanguageFeature.PrintfBinaryFormat, languageVersion60
             LanguageFeature.IndexerNotationWithoutDot, previewVersion
             LanguageFeature.RefCellNotationInformationals, previewVersion
