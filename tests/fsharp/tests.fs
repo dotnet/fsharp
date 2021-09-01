@@ -2896,9 +2896,6 @@ module TypecheckTests =
     let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
 
     [<Test>]
-    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
-
-    [<Test>]
     let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"
 
     [<Test>]
