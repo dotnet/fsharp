@@ -18,7 +18,7 @@
 //<Expects status="success">  member X: float</Expects>
 //<Expects status="success">val paintObjects: Planet list</Expects>
 //<Expects status="success">type Simulator =</Expects>
-//<Expects status="success">  new : unit -> Simulator</Expects>
+//<Expects status="success">  new: unit -> Simulator</Expects>
 
 
 type Planet(ipx:float,ivx:float) =
