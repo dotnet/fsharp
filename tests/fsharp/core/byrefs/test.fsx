@@ -1519,7 +1519,7 @@ module NoTailcallToByrefsWithModReq =
 
         let record = { Value = [| 42 |] }
         let value = wrapper.Get(record)
-        value.GetEnumerator() // segmentation fault
+        value.GetEnumerator()
     App()
 
 let aa =
