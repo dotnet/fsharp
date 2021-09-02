@@ -90,11 +90,6 @@ module CoreTests =
         singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
 
     [<Test>]
-    let ``array-no-dot-warnings-langversion-preview`` () =
-        let cfg = testConfig "core/array-no-dot-warnings"
-        singleVersionedNegTest cfg "preview" "test-langversion-preview"
-
-    [<Test>]
     let ``ref-ops-deprecation-langversion-preview`` () =
         let cfg = testConfig "core/ref-ops-deprecation"
         singleVersionedNegTest cfg "preview" "test-langversion-preview"
