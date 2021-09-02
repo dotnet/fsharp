@@ -50,7 +50,6 @@ module Modules =
     [<Fact>]
     let ``Right Attribute Module Abbreviation``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
@@ -64,8 +63,9 @@ module Modules =
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
                                  "Ignoring attributes on module abbreviation")
     [<Fact>]
-    let ``Right Attribute Module Abbreviation without preview (compile)``() =
+    let ``Right Attribute Module Abbreviation with version 5.0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
+        |> withLangVersion50
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -77,7 +77,6 @@ module Modules =
     [<Fact>]
     let ``Attribute Module Abbreviation``() =
         FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] internal L1 = List"""
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
@@ -93,7 +92,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if experimental.Message <> "Hello" then failwithf "Experimental attribute did not contain the correct message: %s" experimental.Message
 | t -> failwithf "Attribute array is not of length 3 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     [<Fact>]
@@ -122,7 +120,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %O" compilationMapping.SourceConstructFlags
 | t -> failwithf "Attribute array is not of length 9 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     [<Fact>]
@@ -176,7 +173,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %O" compilationMapping.SourceConstructFlags
 | t -> failwithf "Attribute array is not of length 9 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     
