@@ -475,6 +475,12 @@ let NormalizeIdentifierBackticks (name: string) : string =
         else name
     AddBackticksToIdentifierIfNeeded s
 
+let ConvertValCoreNameToDeclarationListText name =
+    if IsMangledOpName name then
+        DecompileOpName name
+    else
+        name
+    
 let ConvertValCoreNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base" 

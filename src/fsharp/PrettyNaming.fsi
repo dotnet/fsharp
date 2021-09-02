@@ -90,6 +90,19 @@ val CompileOpName: string -> string
 /// Used on names of all kinds
 val DecompileOpName: string -> string
 
+/// Take a core display name (e.g. op_Addition or PropertyName) and convert it to text used in a declaration list
+///     Foo                   --> Foo
+///     +                     --> +
+///     op_Addition           --> +
+///     op_Multiply           --> *
+///     op_DereferencePercent --> !%
+///     A-B                   --> A-B
+///     |A|_|                 --> |A|_|
+///     base                  --> base
+///     or                    --> or
+///     mod                   --> mod
+val internal ConvertValCoreNameToDeclarationListText: name: string -> string
+
 /// Take a core display name (e.g. op_Addition or PropertyName) and convert it to display text
 ///     Foo                   --> Foo
 ///     +                     --> ``+``

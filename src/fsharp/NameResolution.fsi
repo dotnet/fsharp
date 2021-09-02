@@ -130,6 +130,8 @@ type Item =
 
     member DisplayName: string
 
+    member DeclarationListText: string
+
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
 /// a particular usage point.

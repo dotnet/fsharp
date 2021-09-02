@@ -266,6 +266,13 @@ module internal PrintUtilities =
         else
             restL
 
+    let layoutXmlDocOfILFieldInfo (denv: DisplayEnv) (infoReader: InfoReader) (finfo: ILFieldInfo) restL =
+        if denv.showDocumentation then
+            GetXmlDocSigOfILFieldInfo infoReader Range.range0 finfo
+            |> layoutXmlDocFromSig denv infoReader XmlDoc.Empty restL             
+        else
+            restL
+
     let layoutXmlDocOfRecdFieldRef (denv: DisplayEnv) (infoReader: InfoReader) (rfref: RecdFieldRef) restL =
         if denv.showDocumentation then
             GetXmlDocSigOfRecdFieldRef rfref
@@ -1581,11 +1588,12 @@ module private TastDefinitionPrinting =
 #endif
         | TNoRepr -> false
       
-    let private layoutILFieldInfo denv amap m (einfo: ILFieldInfo) =
-        let staticL = if einfo.IsStatic then WordL.keywordStatic else emptyL
-        let nameL = ConvertDisplayNameToDisplayLayout (tagField >> wordL) einfo.FieldName
-        let typL = layoutType denv (einfo.FieldType(amap, m))
-        staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+    let private layoutILFieldInfo denv (infoReader: InfoReader) m (finfo: ILFieldInfo) =
+        let staticL = if finfo.IsStatic then WordL.keywordStatic else emptyL
+        let nameL = ConvertDisplayNameToDisplayLayout (tagField >> wordL) finfo.FieldName
+        let typL = layoutType denv (finfo.FieldType(infoReader.amap, m))
+        let fieldL = staticL ^^ WordL.keywordVal ^^ (nameL |> addColonL) ^^ typL
+        layoutXmlDocOfILFieldInfo denv infoReader finfo fieldL
 
     let private layoutEventInfo denv (infoReader: InfoReader) m (einfo: EventInfo) =
         let amap = infoReader.amap
@@ -1744,7 +1752,7 @@ module private TastDefinitionPrinting =
 
         let fieldLs =
             ilFields
-            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv amap m x)
+            |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv infoReader m x)
             |> List.sortBy fst
             |> List.map snd
 

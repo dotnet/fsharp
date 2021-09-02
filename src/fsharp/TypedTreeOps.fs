@@ -8205,6 +8205,14 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
 
+    | _ when isByrefTy g ty -> 
+        let ety = destByrefTy g ty
+        typeEnc g (gtpsType, gtpsMethod) ety + "@"
+
+    | _ when isNativePtrTy g ty -> 
+        let ety = destNativePtrTy g ty
+        typeEnc g (gtpsType, gtpsMethod) ety + "*"
+
     | _ when isArrayTy g ty -> 
         let tcref, tinst = destAppTy g ty
         let arraySuffix = 
@@ -8216,25 +8224,20 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
-    | TType_ucase (UnionCaseRef(tcref, _), tinst)   
-    | TType_app (tcref, tinst) -> 
-        if tyconRefEq g g.byref_tcr tcref then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "@"
-        elif tyconRefEq g tcref g.nativeptr_tcr then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "*"
-        else
-            let tyName = 
-                let ty = stripTyEqnsAndMeasureEqns g ty
-                match ty with
-                | TType_app (tcref, _tinst) -> 
-                    // Generic type names are (name + "`" + digits) where name does not contain "`".
-                    // In XML doc, when used in type instances, these do not use the ticks.
-                    let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                    textOfPath (List.map DemangleGenericTypeName path)
-                | _ ->
-                    assert false
-                    failwith "impossible"
-            tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
+    | TType_ucase (_, tinst)   
+    | TType_app (_, tinst) -> 
+        let tyName = 
+            let ty = stripTyEqnsAndMeasureEqns g ty
+            match ty with
+            | TType_app (tcref, _tinst) -> 
+                // Generic type names are (name + "`" + digits) where name does not contain "`".
+                // In XML doc, when used in type instances, these do not use the ticks.
+                let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
+                textOfPath (List.map DemangleGenericTypeName path)
+            | _ ->
+                assert false
+                failwith "impossible"
+        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
 
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)

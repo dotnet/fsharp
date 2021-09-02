@@ -273,6 +273,16 @@ type Item =
         | Item.CustomBuilder (nm, _) -> nm
         | _ ->  ""
 
+    member d.DeclarationListText =
+        match d with
+        | Item.Value v -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
+        | Item.Property(_, FSProp(_, _, Some v, _) :: _)
+        | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
+        | Item.Property(nm, _) -> ConvertValCoreNameToDeclarationListText nm
+        | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
+        | Item.MethodGroup(nm, _, _) -> ConvertValCoreNameToDeclarationListText nm
+        | _ ->  d.DisplayName
+
 let valRefHash (vref: ValRef) =
     match vref.TryDeref with
     | ValueNone -> 0

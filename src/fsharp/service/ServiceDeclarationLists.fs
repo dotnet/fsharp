@@ -912,11 +912,11 @@ module internal DescriptionListsImpl =
 
 /// An intellisense declaration
 [<Sealed>]
-type DeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
+type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
-    member _.Name = name
+    member _.Name = textInDeclList
 
-    member _.NameInCode = nameInCode
+    member _.NameInCode = textInCode
 
     member _.Description = 
         match info with
@@ -945,6 +945,23 @@ type DeclarationListItem(name: string, nameInCode: string, fullName: string, gly
 [<Sealed>]
 type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, isError: bool) = 
     static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
+
+    // Check whether this item looks like an operator.
+    static let isOperatorItem name (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorDisplayName name
+            | _ -> false
+        | _ -> false              
+
+    static let isActivePatternItem (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
+            | _ -> false
+        | _ -> false
 
     member _.Items = declarations
 
@@ -992,7 +1009,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by full name for unresolved items and by display name for resolved ones.
-        let items = 
+        let decls = 
             items
             |> List.rev
             // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
@@ -1006,41 +1023,26 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
+
             |> List.map (fun (_, items) -> 
                 let item = items.Head
-                let name = 
+                let textInDeclList = 
+                    match item.Unresolved with
+                    | Some u -> u.DisplayName
+                    | None -> item.Item.DeclarationListText
+                let textInCode = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayName
-                name, items)
+                textInDeclList, textInCode, items)
 
-        // Filter out operators, active patterns (as values) and the empty list
-        let items = 
-            // Check whether this item looks like an operator.
-            let isOperatorItem name (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorDisplayName name
-                    | _ -> false
-                | _ -> false              
-
-            let isActivePatternItem (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
-                    | _ -> false
-                | _ -> false
-
-            items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem displayName items) && 
-                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+            // Filter out operators, active patterns (as values) and the empty list
+            |> List.filter (fun (_textInDeclList, textInCode, items) -> 
+                not (isOperatorItem textInCode items) && 
+                not (textInCode = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
                 not (isActivePatternItem items))
 
-        let decls = 
-            items 
-            |> List.map (fun (displayName, itemsWithSameFullName) -> 
+            |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 
                 match itemsWithSameFullName with
                 | [] -> failwith "Unexpected empty bag"
                 | _ ->
@@ -1053,16 +1055,8 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     let item = items.Head
                     let glyph = GlyphOfItem(denv, item.Item)
 
-                    let name, nameInCode =
-                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
-                            let cleanName = displayName.[2..displayName.Length - 3]
-                            cleanName,
-                            if IsOperatorDisplayName displayName then cleanName else "``" + cleanName + "``"
-                        else 
-                            displayName,
-                            match item.Unresolved with
-                            | Some _ -> displayName
-                            | None -> AddBackticksToIdentifierIfNeeded displayName
+                    let textInDeclList = ConvertValCoreNameToDeclarationListText textInDeclList
+                    let textInCode = textInCode
 
                     let isAttributeItem = lazy (IsAttribute infoReader item.Item)
 
@@ -1071,8 +1065,8 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 
-                    let name = cutAttributeSuffix name
-                    let nameInCode = cutAttributeSuffix nameInCode
+                    let textInDeclList = cutAttributeSuffix textInDeclList
+                    let textInCode = cutAttributeSuffix textInCode
                     
                     let fullName = 
                         match item.Unresolved with
@@ -1097,7 +1091,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                             | ns -> Some (System.String.Join(".", ns)))
 
                     DeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
+                        textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)

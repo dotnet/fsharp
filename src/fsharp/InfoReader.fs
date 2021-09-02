@@ -1056,9 +1056,10 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
             let args = 
-                match ilminfo.IsILExtensionMethod with
-                | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
+                if ilminfo.IsILExtensionMethod then
+                    filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
+                else
+                    filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
             // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
             // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 
