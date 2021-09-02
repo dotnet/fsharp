@@ -90,11 +90,6 @@ module CoreTests =
         singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
 
     [<Test>]
-    let ``array-no-dot-warnings-langversion-preview`` () =
-        let cfg = testConfig "core/array-no-dot-warnings"
-        singleVersionedNegTest cfg "preview" "test-langversion-preview"
-
-    [<Test>]
     let ``ref-ops-deprecation-langversion-preview`` () =
         let cfg = testConfig "core/ref-ops-deprecation"
         singleVersionedNegTest cfg "preview" "test-langversion-preview"
@@ -2677,9 +2672,6 @@ module TypecheckTests =
     let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
 
     [<Test>]
-    let ``type check neg22`` () = singleNegTest (testConfig "typecheck/sigs") "neg22"
-
-    [<Test>]
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>]
@@ -2897,9 +2889,6 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
-
-    [<Test>]
-    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
 
     [<Test>]
     let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"

@@ -19,11 +19,6 @@ neg20.fs(32,32,32,35): typecheck error FS0001: This expression was expected to h
 but here has type
     'obj'    
 
-neg20.fs(34,24,34,27): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(35,24,35,27): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
@@ -49,25 +44,10 @@ neg20.fs(45,19,45,22): typecheck error FS0001: This expression was expected to h
 but here has type
     'obj'    
 
-neg20.fs(47,11,47,14): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
-
 neg20.fs(48,11,48,14): typecheck error FS0001: This expression was expected to have type
     'string'    
 but here has type
     'obj'    
-
-neg20.fs(52,24,52,31): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
-
-neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to have type
-    'System.ValueType'    
-but here has type
-    'int'    
 
 neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
@@ -75,22 +55,11 @@ neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list must be im
 
 neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'C'. This element has type 'B'.
 
-neg20.fs(66,25,66,32): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'A'. This element has type 'B'.
-
-neg20.fs(67,27,67,34): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'C'.
-
-neg20.fs(70,31,70,38): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'C'.
-
 neg20.fs(71,34,71,42): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
 but given a
     'B list'    
 The type 'A' does not match the type 'B'
-
-neg20.fs(75,30,75,37): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'C'    
 
 neg20.fs(76,34,76,43): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
@@ -110,24 +79,10 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'B'. This branch returns a value of type 'C'.
-
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'B'. This branch returns a value of type 'C'.
-
-neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
-
 neg20.fs(96,26,96,33): typecheck error FS0001: This expression was expected to have type
     'B'    
 but here has type
     'A'    
-
-neg20.fs(97,26,97,33): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
 
 neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list must be implicitly convertible to the type of the first element, which here is 'B'. This element has type 'A'.
 
@@ -153,11 +108,6 @@ neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to
     'string'    
 but here has type
     'obj'    
-
-neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
 
 neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'.
 
@@ -223,10 +173,11 @@ neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
-    'unit'    
-but here has type
+neg20.fs(183,14,183,41): typecheck error FS0193: Type constraint mismatch. The type 
     'string'    
+is not compatible with type
+    'unit'    
+
 
 neg20.fs(184,28,184,33): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -276,10 +227,11 @@ neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
-    'unit'    
-but here has type
+neg20.fs(189,14,189,41): typecheck error FS0193: Type constraint mismatch. The type 
     'string'    
+is not compatible with type
+    'unit'    
+
 
 neg20.fs(190,28,190,33): typecheck error FS0001: This expression was expected to have type
     'string'    

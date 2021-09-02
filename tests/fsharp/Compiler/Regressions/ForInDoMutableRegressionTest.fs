@@ -70,5 +70,5 @@ not_a_bug ()
 test_rec [1;2;3;4]
 test_for_loop ()
             """
-        
-        CompilerAssert.RunScript script []
+        CompilerAssert.RunScriptWithOptions [| "--langversion:5.0" |] script []
+
