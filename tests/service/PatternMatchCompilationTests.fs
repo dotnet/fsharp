@@ -1257,7 +1257,7 @@ let y as ?z = 8
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 20 - limit the right of 'as' patterns to only variable patterns in F# 5`` () =
-    let _, checkResults = getParseAndCheckResults """
+    let _, checkResults = getParseAndCheckResults50 """
 let f : obj -> _ =
     function
     | :? int as i -> i
