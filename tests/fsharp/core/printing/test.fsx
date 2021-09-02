@@ -1,5 +1,4 @@
 // #Regression #Conformance #Printing #FSI #Regression 
-#light;;
 
 let repeatId = "A";;
 let repeatId = "B";;
@@ -963,6 +962,59 @@ type TwoFieldRecordXmlDoc =
 type System.Int32 with 
     member a.ExtrinsicExtensionProperty = 1
     member a.ExtrinsicExtensionMethod() = 2
+;;
+
+let ``value with spaces in name``   = true;;
+;;
+
+
+let f (``parameter with spaces in name``: int) = 1;;
+;;
+
+let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2;;
+;;
+
+let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1;;
+;;
+
+type RecordWithSpacesInNamesOfFields =
+    { 
+       ``funky name`` : obj 
+       op_Addition : obj 
+       ``+`` : obj 
+       }
+;;
+
+type UnionWithSpacesInNamesOfCases =
+    | ``Funky name``   // Check this gets double ticks
+    | ``Funky name 2``  // Check this gets double ticks
+    | op_Addition  // Check this doesn't go to (+) for types
+    | ``+``  // Check this gets double ticks
+;;
+
+type ``Type with spaces in name`` = // Check this gets double ticks
+    | A
+    | B
+;;
+
+type op_Addition = // Check this doesn't go to (+) for types
+    | A
+    | B
+;;
+
+module ``Module with spaces in name`` = // Check this gets double ticks
+    let x = 1
+;;
+
+module op_Addition = // Check this doesn't go to (+) for modules
+    let x = 1
+;;
+
+let ``+`` x y = 1  // This is not op_Addition but a function called '+'
+;;
+
+
+let (+) x y = x + y + 1  // This is op_Addition not a function called '+'
 ;;
 
 ;; (* ;; needed, to isolate error regressions *)

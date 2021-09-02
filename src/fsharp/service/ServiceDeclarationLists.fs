@@ -1021,7 +1021,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 match items with
                 | [item] ->
                     match item.Item with
-                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
+                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorDisplayName name
                     | _ -> false
                 | _ -> false              
 
@@ -1057,12 +1057,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                         if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
                             let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName,
-                            if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
+                            if IsOperatorDisplayName displayName then cleanName else "``" + cleanName + "``"
                         else 
                             displayName,
                             match item.Unresolved with
                             | Some _ -> displayName
-                            | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
+                            | None -> AddBackticksToIdentifierIfNeeded displayName
 
                     let isAttributeItem = lazy (IsAttribute infoReader item.Item)
 

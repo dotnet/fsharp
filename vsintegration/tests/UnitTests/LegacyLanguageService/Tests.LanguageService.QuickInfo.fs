@@ -813,9 +813,9 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                             exception NamedExn(*MarkerException*) of int * V2 : string * bool * Data9 : float
                             """
         //Verify the quick info as expected
-        let expectedquickinfoType = "type NamedFieldDU =  | Case1 of V1: int * bool * V3: float  | Case2 of Big Name: int * bool  | Case3 of int"
+        let expectedquickinfoType = "type NamedFieldDU =  | Case1 of V1: int * bool * V3: float  | Case2 of ``Big Name`` : int * bool  | Case3 of int"
         let expectedquickinfoCase1 = "union case NamedFieldDU.Case1: V1: int * bool * V3: float -> NamedFieldDU"
-        let expectedquickinfoCase2 = "union case NamedFieldDU.Case2: Big Name: int * bool -> NamedFieldDU"
+        let expectedquickinfoCase2 = "union case NamedFieldDU.Case2: ``Big Name`` : int * bool -> NamedFieldDU"
         let expectedquickinfoCase3 = "union case NamedFieldDU.Case3: int -> NamedFieldDU"
         let expectedquickinfoException = "exception NamedExn of int * V2: string * bool * Data9: float"
 
@@ -1793,7 +1793,8 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
              "Union", 
              (* expect to see in order... *)
              [
-              "type Union = | Case of int";
+              "type Union =";
+              "  | Case of int";
               //"Full name:"; "Module.Union";
               "Union comment";
              ]

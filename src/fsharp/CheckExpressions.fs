@@ -6357,7 +6357,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
         match info with
         | None -> None
         | Some (path, functionName, indexArgs) ->
-            let operPath = mkSynLidGet (mDot.MakeSynthetic()) path (CompileOpName functionName)
+            let operPath = mkSynLidGet (mDot.MakeSynthetic()) path functionName
             let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
             let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
             UnifyTypes cenv env mWholeExpr domainTy e1ty

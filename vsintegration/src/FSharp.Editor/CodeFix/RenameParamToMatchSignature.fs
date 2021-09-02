@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Tokenization.FSharpKeywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
@@ -36,7 +37,7 @@ type internal FSharpRenameParamToMatchSignature
                     
                         let diagnostics = ImmutableArray.Create diagnostic
                         let suggestion = parts.Groups.[1].Value
-                        let replacement = QuoteIdentifierIfNeeded suggestion
+                        let replacement = AddBackticksToIdentifierIfNeeded suggestion
                         let computeChanges() = 
                             asyncMaybe {
                                 let document = context.Document

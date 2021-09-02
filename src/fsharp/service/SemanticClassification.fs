@@ -180,7 +180,7 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.Property
                         elif vref.IsMember then
                             add m SemanticClassificationType.Method
-                        elif IsOperatorName vref.DisplayName then
+                        elif IsOperatorDisplayName vref.DisplayName then
                             add m SemanticClassificationType.Operator
                         else
                             add m SemanticClassificationType.Function

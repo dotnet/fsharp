@@ -1,7 +1,7 @@
 
 > val it: unit = ()
 
-> > val repeatId: string
+> val repeatId: string
 
 > val repeatId: string
 
@@ -192,7 +192,7 @@ val exU: exn
 val exUs: exn
 val exUSome: exn
 val exUNone: exn
-type 'a T4063 = | AT4063 of 'a
+type 'a ``T4063`1`` = | AT4063 of 'a
 
 > val valAT3063_12: int T4063
 
@@ -202,20 +202,20 @@ type 'a T4063 = | AT4063 of 'a
 
 > val valAT3063_null: System.Object T4063
 
-> type M4063<'a> =
+> type ``M4063`1``<'a> =
   new: x: 'a -> M4063<'a>
 
 > val v4063: M4063<int>
 
-> type Taaaaa<'a> =
+> type ``Taaaaa`1``<'a> =
   new: unit -> Taaaaa<'a>
 
-> type Taaaaa2<'a> =
+> type ``Taaaaa2`1``<'a> =
   inherit Taaaaa<'a>
   new: unit -> Taaaaa2<'a>
   member M: unit -> Taaaaa2<'a>
 
-> type Tbbbbb<'a> =
+> type ``Tbbbbb`1``<'a> =
   new: x: 'a -> Tbbbbb<'a>
   member M: unit -> 'a
 
@@ -223,7 +223,7 @@ type 'a T4063 = | AT4063 of 'a
   inherit Tbbbbb<string>
   new: x: string -> Tbbbbb2
 
-> val it: (unit -> string) = <fun:it@198>
+> val it: (unit -> string) = <fun:it@197>
 
 > module RepeatedModule =
   val repeatedByteLiteral: byte[]
@@ -319,9 +319,9 @@ type 'a T4063 = | AT4063 of 'a
 
 > type T0 =
   new: unit -> T0
-type T1Post<'a> =
+type ``T1Post`1``<'a> =
   new: unit -> T1Post<'a>
-type 'a T1Pre =
+type 'a ``T1Pre`1`` =
   new: unit -> 'a T1Pre
 
 > type T0 with
@@ -523,12 +523,12 @@ module Test4343e =
   val dB: D
   val dAB: D * D * D list
   module Generic =
-    type CGeneric<'a> =
+    type ``CGeneric`1``<'a> =
       new: x: 'a -> CGeneric<'a>
     val cA: C
     val cB: C
     val cAB: C * C * C list
-    type D<'a> =
+    type ``D`1``<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
     val dA: D<int>
@@ -573,7 +573,7 @@ module Regression4643 =
   [<Struct>]
   type field_is_RIP =
     val x: RIP
-type Either<'a,'b> =
+type ``Either`2``<'a,'b> =
   | This of 'a
   | That of 'b
 val catch: f: (unit -> 'a) -> Either<'a,(string * string)>
@@ -607,82 +607,82 @@ module Regression5218 =
 > module Regression3739 =
   type IB =
     abstract AbstractMember: int -> int
-  type C<'a when 'a :> IB> =
+  type ``C`1``<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3739 =
   type IB =
     abstract AbstractMember: int -> int
-  type C<'a when 'a :> IB> =
+  type ``C`1``<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3740 =
-  type Writer<'a> =
+  type ``Writer`1``<'a> =
     abstract get_path: unit -> string
   type MyClass =
     interface Writer<int>
     val path: string
 
 > type Regression4319_T2 =
-  static member ( +-+-+ ) : x: 'a * y: 'b -> string
+  static member (+-+-+) : x: 'a * y: 'b -> string
 
 > type Regression4319_T0 =
-  static member ( +-+-+ ) : string
+  static member (+-+-+) : string
 
 > type Regression4319_T1 =
-  static member ( +-+-+ ) : x: 'a -> string
+  static member (+-+-+) : x: 'a -> string
 
 > type Regression4319_T1b =
-  static member ( +-+-+ ) : x: 'a -> string
+  static member (+-+-+) : x: 'a -> string
 
 > type Regression4319_T1c =
-  static member ( +-+-+ ) : x: ('a * 'b) -> string
+  static member (+-+-+) : x: ('a * 'b) -> string
 
 > type Regression4319_T1d =
-  static member ( +-+-+ ) : x: (int * int) -> string
+  static member (+-+-+) : x: (int * int) -> string
 
 > type Regression4319_T3 =
-  static member ( +-+-+ ) : x: 'a * y: 'b * z: 'c -> string
+  static member (+-+-+) : x: 'a * y: 'b * z: 'c -> string
 
 > type Regression4319_U1 =
-  static member ( +-+-+ ) : x: 'a -> moreArgs: 'b -> string
+  static member (+-+-+) : x: 'a -> moreArgs: 'b -> string
 
 > type Regression4319_U1b =
-  static member ( +-+-+ ) : x: 'a -> moreArgs: 'b -> string
+  static member (+-+-+) : x: 'a -> moreArgs: 'b -> string
 
 > type Regression4319_U2 =
-  static member ( +-+-+ ) : x: 'a * y: 'b -> moreArgs: 'c -> string
+  static member (+-+-+) : x: 'a * y: 'b -> moreArgs: 'c -> string
 
 > type Regression4319_U3 =
-  static member ( +-+-+ ) : x: 'a * y: 'b * z: 'c -> moreArgs: 'd -> string
+  static member (+-+-+) : x: 'a * y: 'b * z: 'c -> moreArgs: 'd -> string
 
 > type Regression4319_check =
-  static member ( & ) : string
-  static member ( &^ ) : string
-  static member ( @ ) : string
-  static member ( != ) : string
-  static member ( := ) : string
-  static member ( ^ ) : string
-  static member ( / ) : string
-  static member ( $ ) : string
-  static member ( ...@ ) : string
-  static member ( ...!= ) : string
-  static member ( .../ ) : string
-  static member ( ...= ) : string
-  static member ( ...> ) : string
-  static member ( ...^ ) : string
-  static member ( ...< ) : string
+  static member (&) : string
+  static member (&^) : string
+  static member (@) : string
+  static member (!=) : string
+  static member (:=) : string
+  static member (^) : string
+  static member (/) : string
+  static member ($) : string
+  static member (...@) : string
+  static member (...!=) : string
+  static member (.../) : string
+  static member (...=) : string
+  static member (...>) : string
+  static member (...^) : string
+  static member (...<) : string
   static member ( ...* ) : string
-  static member ( ...% ) : string
-  static member ( = ) : string
+  static member (...%) : string
+  static member (=) : string
   static member ( ** ) : string
-  static member ( > ) : string
-  static member ( < ) : string
-  static member ( % ) : string
+  static member (>) : string
+  static member (<) : string
+  static member (%) : string
   static member ( * ) : string
-  static member ( - ) : string
+  static member (-) : string
 
 > Expect ABC = ABC
 type Regression4469 =
@@ -1511,19 +1511,19 @@ val f: (unit -> int)
 > > val it: string =
   "** Expect OK, since error message says constraint should work!"
 
-> val ( |A|B| ) : x: int -> Choice<int,unit>
+> val (|A|B|) : x: int -> Choice<int,unit>
 
 > val it: string = "** Expect error since active pattern is not a function!"
 
 > > val it: string =
   "** Expect OK since active pattern result is not too generic, typars depend on match val"
 
-> val ( |A|B| ) : p: bool -> 'a * 'b -> Choice<'a,'b>
+> val (|A|B|) : p: bool -> 'a * 'b -> Choice<'a,'b>
 
 > val it: string =
   "** Expect OK since active pattern result is not too generic, typars depend on parameters"
 
-> val ( |A|B| ) : aval: 'a -> bval: 'b -> x: bool -> Choice<'a,'b>
+> val (|A|B|) : aval: 'a -> bval: 'b -> x: bool -> Choice<'a,'b>
 
 > val it: string =
   "** Expect OK since active pattern result is generic, but it typar from closure, so OK"
@@ -1533,16 +1533,16 @@ val f: (unit -> int)
 > val it: string =
   "** Expect OK, BUG 472278: revert unintended breaking change to Active Patterns in F# 3.0"
 
-> val ( |Check1| ) : a: int -> int * 'a option
+> val (|Check1|) : a: int -> int * 'a option
 
 > > module ReflectionEmit =
   type IA =
     abstract M: #IB -> int
   and IB =
     abstract M: #IA -> int
-  type IA2<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
+  type ``IA2`1``<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
     abstract M: int
-  and IB2<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
+  and ``IB2`1``<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
     abstract M: int
 
 > val it: string =
@@ -1570,7 +1570,7 @@ type T =
   | Case4 of Item1: bool
   | Case5 of bool * string
   | Case6 of Val1: int * bool * string
-  | Case7 of Big Name: int
+  | Case7 of ``Big Name`` : int
 val namedFieldVar1: MyDU
 val namedFieldVar2: MyDU
 
@@ -1580,7 +1580,7 @@ exception MyNamedException3 of Data: int
 exception MyNamedException4 of bool
 exception MyNamedException5 of int * string
 exception MyNamedException6 of Val1: int * bool * string * Data8: float
-exception MyNamedException7 of Big Named Field: int
+exception MyNamedException7 of ``Big Named Field`` : int
 val namedEx1: exn
 val namedEx2: exn
 
@@ -1627,5 +1627,39 @@ val x: optionRecord
   member ExtrinsicExtensionProperty: int
 type Int32 with
   member ExtrinsicExtensionMethod: unit -> int
+
+> val ``value with spaces in name`` : bool
+
+> > val f: ``parameter with spaces in name`` : int -> int
+
+> > val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+  ``+`` : (int -> int -> int) -> int
+
+> > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
+
+> > type RecordWithSpacesInNamesOfFields =
+  {
+    ``funky name`` : obj
+    op_Addition: obj
+    ``+`` : obj
+  }
+
+> > type ``Type with spaces in name`` =
+  | A
+  | B
+
+> type op_Addition =
+  | A
+  | B
+
+> module Module with spaces in name =
+  val x: int
+
+> module op_Addition =
+  val x: int
+
+> val ``+`` : x: 'a -> y: 'b -> int
+
+> val (+) : x: int -> y: int -> int
 
 > > > 

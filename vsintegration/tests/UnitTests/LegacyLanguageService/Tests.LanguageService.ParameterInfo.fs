@@ -302,7 +302,7 @@ type UsingMSBuild()  =
 
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark1*)",[["int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark2*)",[["V1: int"; "string"; "V3: bool"]])
-        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string"]])
+        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark4*)",[["int"]])
         
     [<Test>]
@@ -319,7 +319,7 @@ type UsingMSBuild()  =
 
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark1*)",[["int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark2*)",[["V1: int"; "string"; "V3: bool" ]])
-        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string" ]])
+        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string" ]])
     
     [<Test>]
     [<Category("TypeProvider")>]

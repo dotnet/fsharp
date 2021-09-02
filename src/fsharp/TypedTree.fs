@@ -2881,9 +2881,11 @@ type Val =
         ChopPropertyName logicalName
 
     /// The name of the method. 
-    ///   - If this is a property then this is 'Foo' 
+    ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
-    ///   - If this is an operator then this is 'op_Addition'
+    ///   - If this is an active pattern               --> |A|_|
+    ///   - If this is an operator                     --> op_Addition
+    ///   - If this is an identifier needing backticks --> A-B
     member x.CoreDisplayName = 
         match x.MemberInfo with 
         | Some membInfo -> 
@@ -2896,11 +2898,13 @@ type Val =
             | SynMemberKind.PropertyGet -> x.PropertyName
         | None -> x.LogicalName
 
-    ///   - If this is a property then this is 'Foo' 
+    ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
-    ///   - If this is an operator then this is '(+)'
+    ///   - If this is an active pattern               --> (|A|_|)
+    ///   - If this is an operator                     --> (+)
+    ///   - If this is an identifier needing backticks --> ``A-B``
     member x.DisplayName = 
-        DemangleOperatorName x.CoreDisplayName
+        ConvertLogicalNameToDisplayText x.CoreDisplayName
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
