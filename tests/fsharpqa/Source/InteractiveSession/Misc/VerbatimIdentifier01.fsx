@@ -16,6 +16,8 @@
 //<Expects status="success">val A0 : bool = true</Expects>
 //<Expects status="success">val ``A-B`` : bool = true</Expects>
 //<Expects status="success">val ``A B`` : bool = true</Expects>
+//<Expects status="success">val ``base`` : bool = true</Expects>
+//<Expects status="success">val ``or`` : bool = true</Expects>
 
 let ``A.B``   = true;;
 let ``+``   = true;;
@@ -33,6 +35,8 @@ let ``0A``   = true;;
 let ``A0``   = true;;
 let ``A-B``   = true;;
 let ``A B``   = true;;
+let ``base``   = true;;
+let ``or``   = true;;
 
 exit 0;;
 

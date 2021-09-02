@@ -4113,8 +4113,8 @@ let ``Test project30 Format attributes`` () =
     |> set
     |> shouldEqual
          (set
-            [("[<CompilationRepresentationAttribute (enum<CompilationRepresentationFlags> (4))>]",
-              "[<Microsoft.FSharp.Core.CompilationRepresentationAttribute (enum<Microsoft.FSharp.Core.CompilationRepresentationFlags> (4))>]")])
+            [("[<CompilationRepresentation (enum<CompilationRepresentationFlags> (4))>]",
+              "[<Microsoft.FSharp.Core.CompilationRepresentation (enum<Microsoft.FSharp.Core.CompilationRepresentationFlags> (4))>]")])
 
     let memberSymbol = wholeProjectResults.GetAllUsesOfAllSymbols()  |> Array.find (fun su -> su.Symbol.DisplayName = "Member")
     let memberEntity = memberSymbol.Symbol :?> FSharpMemberOrFunctionOrValue
