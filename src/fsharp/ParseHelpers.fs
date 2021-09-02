@@ -115,6 +115,21 @@ module LexbufLocalXmlDocStore =
         let startPos = lexbuf.StartPos
         collector.AddGrabPoint(mkPos startPos.Line startPos.Column)
 
+    /// Allowed cases when there are comments after XmlDoc
+    ///
+    ///    /// X xmlDoc
+    ///    // comment
+    ///    //// comment
+    ///    (* multiline comment *)
+    ///    let x = ...        // X xmlDoc
+    ///
+    /// Remember the first position when a comment (//, (* *), ////) is encountered after the XmlDoc block
+    /// then add a grab point if a new XmlDoc block follows the comments
+    let AddGrabPointDelayed (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        let startPos = lexbuf.StartPos
+        collector.AddGrabPointDelayed(mkPos startPos.Line startPos.Column)
+
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
     let GrabXmlDocBeforeMarker (lexbuf: Lexbuf, markerRange: range)  =
@@ -125,6 +140,9 @@ module LexbufLocalXmlDocStore =
         | _ ->
             PreXmlDoc.Empty
 
+    let CheckInvalidXmlDocPositions (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        collector.CheckInvalidXmlDocPositions()
 
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continutations

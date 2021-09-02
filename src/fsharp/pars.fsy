@@ -812,7 +812,8 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _, d, d2, d3), e, f, g)) = $4
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g)) = $4
+        _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let mTc =
             let keywordM = rhs parseState 3
@@ -875,7 +876,8 @@ tyconSpfnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconSpfn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _, fixity, vis, rangeOfLid), typeRepr, members, range)) = $2
+           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, range)) = $2
+           _xmlDoc.MarkAsInvalid()
            SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, range)
        tyconSpfn :: $3 }
 
@@ -1296,7 +1298,8 @@ moduleDefn:
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _, d, d2, d3), e, f, g, h)) = $4
+        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h)) = $4
+        _xmlDoc.MarkAsInvalid()
         let attrs = $1@cas
         let mTc = (h, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
         let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, g, mTc))
@@ -1525,7 +1528,8 @@ tyconDefnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconDefn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _, fixity, vis, rangeOfLid), typeRepr, members, implicitConstructor, range)) = $2
+           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, implicitConstructor, range)) = $2
+           _xmlDoc.MarkAsInvalid()
            SynTypeDefn(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, implicitConstructor, range)
        tyconDefn :: $3 }
   |                             

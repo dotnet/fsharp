@@ -292,6 +292,11 @@
         <target state="translated">'InlineIfLambda' 属性はシグネチャに存在しますが、実装はありません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="new">XML comment is not placed on a valid language element.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">定数リテラルを型プロバイダーの型パラメーター引数として指定するキーワード。</target>

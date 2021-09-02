@@ -292,6 +292,11 @@
         <target state="translated">Атрибут "InlineIfLambda" присутствует в сигнатуре, но отсутствует в реализации.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="new">XML comment is not placed on a valid language element.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Ключевое слово для указания константного литерала в качестве аргумента параметра типа в поставщиках типов.</target>

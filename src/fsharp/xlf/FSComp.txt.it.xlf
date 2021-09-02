@@ -292,6 +292,11 @@
         <target state="translated">L'attributo 'InlineIfLambda' è presente nella firma, ma non nell'implementazione.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="new">XML comment is not placed on a valid language element.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Parola chiave per specificare un valore letterale di costante come argomento del parametro di tipo in Provider di tipi.</target>
