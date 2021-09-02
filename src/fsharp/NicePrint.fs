@@ -463,7 +463,7 @@ module private PrintTypes =
         | _ -> itemL
 
     /// Layout a reference to a type 
-    let layoutTyconRefImpl denv tycon = layoutTyconRefImpl false denv tycon
+    let layoutTyconRefUse denv tycon = layoutTyconRefImpl false denv tycon
 
     /// Layout the flags of a member 
     let layoutMemberFlags (memFlags: SynMemberFlags) = 
@@ -522,35 +522,22 @@ module private PrintTypes =
         | EnumExpr denv.g arg1 ->
             WordL.keywordEnum ++ bracketL (layoutAttribArg denv arg1)
 
-
         | _ -> comment "(* unsupported attribute argument *)"
 
     /// Layout arguments of an attribute 'arg1, ..., argN' 
     and private layoutAttribArgs denv args = 
-        sepListL (rightL (tagPunctuation ",")) (List.map (fun (AttribExpr(e1, _)) -> layoutAttribArg denv e1) args)
+        let argsL =  args |> List.map (fun (AttribExpr(e1, _)) -> layoutAttribArg denv e1)
+        sepListL (rightL (tagPunctuation ",")) argsL
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
     //
     // REVIEW: we are ignoring "props" here
-    and layoutAttrib denv (Attrib(_, k, args, _props, _, _, _)) = 
+    and layoutAttrib denv (Attrib(tcref, _, args, _props, _, _, _)) = 
+        let tcrefL = layoutTyconRefImpl true denv tcref
         let argsL = bracketL (layoutAttribArgs denv args)
-        match k with 
-        | ILAttrib ilMethRef -> 
-            let trimmedName = 
-                let name = ilMethRef.DeclaringTypeRef.Name
-                if name.EndsWithOrdinal("Attribute") then
-                    String.dropSuffix name "Attribute"
-                else
-                    name
-            let tref = ilMethRef.DeclaringTypeRef
-            let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
-            PrintIL.layoutILTypeRef denv tref ++ argsL
-        | FSAttrib vref -> 
-            // REVIEW: this is not trimming "Attribute" 
-            let _, _, _, rty, _ = GetTypeOfMemberInMemberForm denv.g vref
-            let rty = GetFSharpViewOfReturnType denv.g rty
-            let tcref = tcrefOfAppTy denv.g rty
-            layoutTyconRefImpl denv tcref ++ argsL
+        match args with 
+        | [] -> tcrefL
+        | _ -> tcrefL ++ argsL
 
     and layoutILAttribElement denv arg = 
         match arg with 
@@ -593,7 +580,7 @@ module private PrintTypes =
         PrintIL.layoutILType denv [] ty ++ argsL
 
     /// Layout '[<attribs>]' above another block 
-    and layoutAttribs denv isValue ty kind attrs restL = 
+    and layoutAttribs denv isValue isLiteral ty kind attrs restL = 
         
         if denv.showAttributes then
             // Don't display DllImport attributes in generated signatures
@@ -611,8 +598,12 @@ module private PrintTypes =
             | _ -> 
                 squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                 restL
+        // Always show the 'Struct' attribute
         elif not isValue && (isStructTy denv.g ty && not (isEnumTy denv.g ty)) then
             squareAngleL (wordL (tagClass "Struct")) @@ restL
+        // Always show the 'Literal' attribute
+        elif isLiteral then
+            squareAngleL (wordL (tagClass "Literal")) @@ restL
         else
             match kind with 
             | TyparKind.Type -> restL
@@ -777,7 +768,7 @@ module private PrintTypes =
         let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
         let negcs, poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
-        let unconL tc = layoutTyconRefImpl denv tc
+        let unconL tc = layoutTyconRefUse denv tc
         let rationalL e = wordL (tagNumericLiteral (RationalToString e))
         let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagPunctuation "^") -- rationalL e
         let prefix = spaceListL (List.map (fun (v, e) -> measureToPowerL (unparL v) e) posvs @
@@ -830,7 +821,7 @@ module private PrintTypes =
               | GenericParameterStyle.Implicit -> tc.IsPrefixDisplay
               | GenericParameterStyle.Prefix -> true
               | GenericParameterStyle.Suffix -> false
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefImpl denv tc) prec usePrefix args
+          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRefUse denv tc) prec usePrefix args
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->
@@ -1111,7 +1102,7 @@ module private PrintTastMemberOrVals =
             let nameL = ConvertValCoreNameToDisplayLayout v.IsBaseVal (tagFunction >> mkNav v.DefinitionRange >> wordL) name
             let nameL =
                 if denv.showMemberContainers then 
-                    layoutTyconRefImpl denv v.MemberApparentEntity ^^ SepL.dot ^^ nameL
+                    layoutTyconRefUse denv v.MemberApparentEntity ^^ SepL.dot ^^ nameL
                 else
                     nameL
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
@@ -1263,7 +1254,7 @@ module private PrintTastMemberOrVals =
         | None -> valAndTypeL
 
     let prettyLayoutOfValOrMember denv infoReader typarInst (vref: ValRef) =
-        let prettyTyparInst, vL =
+        let prettyTyparInst, valL =
             match vref.MemberInfo with 
             | None ->
                 let tps, tau = vref.TypeScheme
@@ -1277,9 +1268,12 @@ module private PrintTastMemberOrVals =
             | Some _ -> 
                 prettyLayoutOfMember denv typarInst vref.Deref
 
-        prettyTyparInst, 
-            layoutAttribs denv true vref.Type TyparKind.Type vref.Attribs vL
+        let valL =
+            valL
+            |> layoutAttribs denv true vref.LiteralValue.IsSome vref.Type TyparKind.Type vref.Attribs
             |> layoutXmlDocOfValRef denv infoReader vref
+
+        prettyTyparInst, valL
 
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
@@ -1292,9 +1286,9 @@ let layoutType denv x = x |> PrintTypes.layoutType denv
 
 let outputTypars denv nm os x = x |> PrintTypes.layoutTyparDecls denv (wordL nm) true |> bufferL os
 
-let outputTyconRef denv os x = x |> PrintTypes.layoutTyconRefImpl denv |> bufferL os
+let outputTyconRef denv os x = x |> PrintTypes.layoutTyconRefUse denv |> bufferL os
 
-let layoutTyconRef denv x = x |> PrintTypes.layoutTyconRefImpl denv
+let layoutTyconRef denv x = x |> PrintTypes.layoutTyconRefUse denv
 
 let layoutConst g ty c = PrintTypes.layoutConst g ty c
 
@@ -1403,7 +1397,7 @@ module InfoMemberPrinting =
             layout ^^
                 if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
                     let tcref = minfo.ApparentEnclosingTyconRef 
-                    PrintTypes.layoutTyconRefImpl denv tcref
+                    PrintTypes.layoutTyconRefUse denv tcref
                 else
                     emptyL
         let layout = 
@@ -1460,7 +1454,7 @@ module InfoMemberPrinting =
         match methInfo with 
         | DefaultStructCtor _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, PrintTypes.layoutTyconRefImpl denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
+            prettyTyparInst, PrintTypes.layoutTyconRefUse denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
         | FSMeth(_, _, vref, _) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } infoReader typarInst vref
             prettyTyparInst, resL
@@ -1620,7 +1614,7 @@ module private TastDefinitionPrinting =
             let overallL = modifierAndMember ^^ (nameL |> addColonL) ^^ typL
             layoutXmlDocOfPropInfo denv infoReader pinfo overallL
 
-    let layoutTyconRef (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tcref: TyconRef) =
+    let layoutTyconDefn (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tcref: TyconRef) =
         let g = denv.g
         let amap = infoReader.amap
         let tycon = tcref.Deref
@@ -1952,7 +1946,7 @@ module private TastDefinitionPrinting =
                 |> aboveListL
                 |> addLhs
 
-        let attribsL = layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs typeDeclL
+        let attribsL = layoutAttribs denv false false ty tycon.TypeOrMeasureKind tycon.Attribs typeDeclL
         layoutXmlDocOfEntityRef denv infoReader tcref attribsL
 
     // Layout: exception definition
@@ -1963,7 +1957,7 @@ module private TastDefinitionPrinting =
         let exnL = wordL (tagKeyword "exception") ^^ nameL // need to tack on the Exception at the right of the name for goto definition
         let reprL = 
             match exnc.ExceptionInfo with 
-            | TExnAbbrevRepr ecref -> WordL.equals --- layoutTyconRefImpl denv ecref
+            | TExnAbbrevRepr ecref -> WordL.equals --- layoutTyconRefUse denv ecref
             | TExnAsmRepr _ -> WordL.equals --- wordL (tagText "(# ... #)")
             | TExnNone -> emptyL
             | TExnFresh r -> 
@@ -1981,8 +1975,8 @@ module private TastDefinitionPrinting =
         | [] -> emptyL
         | [h] when h.IsExceptionDecl -> layoutExnDefn denv infoReader (mkLocalEntityRef h)
         | h :: t -> 
-            let x = layoutTyconRef denv infoReader ad m false WordL.keywordType (mkLocalEntityRef h)
-            let xs = List.map (mkLocalEntityRef >> layoutTyconRef denv infoReader ad m false (wordL (tagKeyword "and"))) t
+            let x = layoutTyconDefn denv infoReader ad m false WordL.keywordType (mkLocalEntityRef h)
+            let xs = List.map (mkLocalEntityRef >> layoutTyconDefn denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x :: xs)
 
     let rec layoutModuleOrNamespace (denv: DisplayEnv) (infoReader: InfoReader) ad m isFirstTopLevel (mspec: ModuleOrNamespace) =
@@ -2041,7 +2035,7 @@ module private TastDefinitionPrinting =
                     modNameEqualsL
 
         let headerL =
-            layoutAttribs denv false (generalizedTyconRef(mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs headerL
+            layoutAttribs denv false false (generalizedTyconRef (mkLocalEntityRef mspec)) mspec.TypeOrMeasureKind mspec.Attribs headerL
 
         let shouldShow (v: Val) =
             (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs)) &&
@@ -2091,7 +2085,7 @@ module private TastDefinitionPrinting =
         elif eref.IsExceptionDecl then
             layoutExnDefn denv infoReader eref
         else
-            layoutTyconRef denv infoReader ad m true WordL.keywordType eref
+            layoutTyconDefn denv infoReader ad m true WordL.keywordType eref
 
 //--------------------------------------------------------------------------
 
@@ -2265,7 +2259,7 @@ module private PrintData =
             braceL (semiListL (List.map2 lay fields xs))
 
         | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RecdFieldRef (tcref, name)), _, _, _) ->
-            (layoutTyconRefImpl denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
+            (layoutTyconRefUse denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
 
         | Expr.Op (TOp.Array, [_], xs, _) ->
             leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
@@ -2322,7 +2316,7 @@ let layoutExnDef denv infoReader x = x |> TastDefinitionPrinting.layoutExnDefn d
 
 let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
 
-let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconRef denv infoReader ad m true WordL.keywordType (mkLocalEntityRef x) (* |> Display.squashTo width *)
+let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconDefn denv infoReader ad m true WordL.keywordType (mkLocalEntityRef x) (* |> Display.squashTo width *)
 
 let layoutEntityRef denv infoReader ad m x = TastDefinitionPrinting.layoutEntityRef denv infoReader ad m x
 

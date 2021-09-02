@@ -1946,4 +1946,14 @@ type Int32 with
 
 > val ``.cctor`` : int = 2
 
+> [<Literal>]
+val SomeLiteralWithASomewhatLongName: string
+  = "SomeVeryLongLiteralValueWithLotsOfCharacters"
+[<Literal>]
+val SomeLiteralWithASomewhatLongName2: string
+  =
+  "SomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharacters"
+[<Literal>]
+val ShortName: string = "hi"
+
 > > > 

@@ -1073,6 +1073,16 @@ let ``.ctor`` = 2  // This is a value called '.ctor' in .NET IL, and has no spec
 let ``.cctor`` = 2  // This is a value called '.cctor' in .NET IL, and has no special properties
 ;;
 
+// Check line wrapping of very long literals
+[<Literal>]
+let SomeLiteralWithASomewhatLongName = "SomeVeryLongLiteralValueWithLotsOfCharacters"
+
+[<Literal>]
+let SomeLiteralWithASomewhatLongName2 = "SomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharacters"
+
+[<Literal>]
+let ShortName = "hi"
+;;
 
 
 ;; (* ;; needed, to isolate error regressions *)
