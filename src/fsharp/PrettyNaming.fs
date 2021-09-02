@@ -288,7 +288,14 @@ let IsOperatorDisplayName (name: string) =
 let IsMangledOpName (name: string) =
     name.StartsWithOrdinal(opNamePrefix)
 
+let IsSpecialOpName (name: string) = 
+    match name with
+    | "or" | "land" | "lor" | "lsl"
+    | "lsr" | "asr" | "lxor" -> true
+    | _ -> false
+
 let DoesIdentifierNeedBackticks (name : string) : bool =
+    not (IsSpecialOpName name) && 
     not (IsIdentifierName name) && 
     not (IsActivePatternName name)
 
@@ -357,7 +364,7 @@ let CompileOpName op =
     match standardOpNames.TryGetValue op with
     | true, x -> x
     | false, _ ->
-        if IsIdentifierName op then
+        if IsSpecialOpName op || IsIdentifierName op then
             op
         else
             compileCustomOpName op
@@ -449,34 +456,34 @@ let DecompileOpName opName =
             opName
 
 let ConvertLogicalNameToDisplayText name =
-    if IsMangledOpName name || IsActivePatternName name then
+    if IsSpecialOpName name || IsMangledOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
-        if nm.StartsWith "*" || nm.EndsWith "*" then
+        if IsMangledOpName name && (nm = name) then
+            AddBackticksToIdentifierIfNeeded nm // no decompilation, e.g. op_Implicit, op_NotAMangledOpName
+        elif nm.StartsWith "*" || nm.EndsWith "*" then
             "( " + nm + " )"
         else
             "(" + nm + ")"
-    elif DoesIdentifierNeedBackticks name then
-        AddBackticksToIdentifierIfNeeded name
     else
-        name
+        AddBackticksToIdentifierIfNeeded name
     
-let ConvertValLogicalNameToDisplayLayout nonOpLayout nm =
-    if (IsMangledOpName nm || IsActivePatternName nm) then
-        let nm = DecompileOpName nm
-        if nm.StartsWith "*" || nm.EndsWith "*" then
+let ConvertDisplayNameToDisplayLayout nonOpLayout name =
+    if DoesIdentifierNeedBackticks name then
+        leftL (TaggedText.tagPunctuation "``") ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
+    else
+        nonOpLayout name
+
+let ConvertValLogicalNameToDisplayLayout nonOpLayout name =
+    if IsSpecialOpName name || IsMangledOpName name || IsActivePatternName name then
+        let nm = DecompileOpName name
+        if IsMangledOpName name && (nm = name) then
+            ConvertDisplayNameToDisplayLayout nonOpLayout name // no decompilation, e.g. op_Implicit, op_NotAMangledOpName
+        elif nm.StartsWith "*" || nm.EndsWith "*" then
             wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
-    elif DoesIdentifierNeedBackticks nm then
-        leftL (TaggedText.tagPunctuation "``") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation "``")
     else
-        nonOpLayout nm
-
-let ConvertDisplayNameToDisplayLayout nonOpLayout nm =
-    if DoesIdentifierNeedBackticks nm then
-        leftL (TaggedText.tagPunctuation "``") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation "``")
-    else
-        nonOpLayout nm
+        ConvertDisplayNameToDisplayLayout nonOpLayout name
 
 let opNameCons = CompileOpName "::"
 

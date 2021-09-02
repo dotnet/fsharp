@@ -59,8 +59,8 @@ neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: T
 
 neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X: unit -> 'a' matches multiple overloads of the same method.
 Please restrict it to one of the following:
-   X : unit -> 'a
-   X : unit -> 'a.
+   X: unit -> 'a
+   X: unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
@@ -146,7 +146,7 @@ neg10.fs(324,17,324,29): typecheck error FS1187: An indexer property must be giv
 
 neg10.fs(333,17,333,29): typecheck error FS1187: An indexer property must be given at least one argument
 
-neg10.fs(335,17,335,39): typecheck error FS0501: The member or object constructor 'X' takes 2 argument(s) but is here given 3. The required signature is 'member T3.X : a:int -> int * int with set'.
+neg10.fs(335,17,335,39): typecheck error FS0501: The member or object constructor 'X' takes 2 argument(s) but is here given 3. The required signature is 'member T3.X: a: int -> int * int with set'.
 
 neg10.fs(345,23,345,24): typecheck error FS0001: The type 'SqlDecimal' does not support a conversion to the type 'float'
 

@@ -101,10 +101,10 @@ val DecompileOpName: string -> string
 val internal ConvertLogicalNameToDisplayText: name: string -> string
 
 /// Like ConvertLogicalNameToDisplayText but produces a tagged layout
-val internal ConvertValLogicalNameToDisplayLayout: nonOpLayout:(string -> Layout) -> nm:string -> Layout
+val internal ConvertValLogicalNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 /// Used for type names, module names etc.
-val internal ConvertDisplayNameToDisplayLayout: nonOpLayout:(string -> Layout) -> nm:string -> Layout
+val internal ConvertDisplayNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 val internal opNameCons: string
 

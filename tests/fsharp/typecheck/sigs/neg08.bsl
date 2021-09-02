@@ -21,4 +21,4 @@ neg08.fs(55,7,55,14): typecheck error FS0776: Object construction expressions ma
 
 neg08.fs(61,19,61,26): typecheck error FS0039: The type 'Type' does not define the field, constructor or member 'value__'.
 
-neg08.fs(79,5,79,44): typecheck error FS0502: The member or object constructor 'Random' takes 0 type argument(s) but is here given 1. The required signature is 'static member Variable.Random : y:Variable<'a> -> Variable<'a>'.
+neg08.fs(79,5,79,44): typecheck error FS0502: The member or object constructor 'Random' takes 0 type argument(s) but is here given 1. The required signature is 'static member Variable.Random: y: Variable<'a> -> Variable<'a>'.
