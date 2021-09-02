@@ -1215,7 +1215,7 @@ module private PrintTastMemberOrVals =
             | None -> valAndTypeL
             | Some rhsL -> (valAndTypeL ++ WordL.equals) --- rhsL
         match v.LiteralValue with
-        | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
+        | Some literalValue -> valAndTypeL --- layoutOfLiteralValue literalValue
         | None -> valAndTypeL
 
     let prettyLayoutOfValOrMember denv infoReader typarInst (vref: ValRef) =
@@ -1668,17 +1668,22 @@ module private TastDefinitionPrinting =
 
         let meths =
             GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
-            |> List.filter (fun m ->
-                not m.IsClassConstructor &&
-                not m.IsConstructor &&
-                shouldShow m.ArbitraryValRef &&
-                not (impliedNames.Contains m.DisplayName) &&
-                not (m.DisplayName.Split('.') |> Array.exists (fun part -> isDiscard part)))
+            |> List.filter (fun minfo ->
+                not minfo.IsClassConstructor &&
+                not minfo.IsConstructor &&
+                shouldShow minfo.ArbitraryValRef &&
+                not (impliedNames.Contains minfo.DisplayName) &&
+                IsMethInfoAccessible amap m ad minfo &&
+                // Discard method impls such as System.IConvertible.ToBoolean
+                not (minfo.IsILMethod && minfo.DisplayName.Contains(".")) &&
+                not (minfo.DisplayName.Split('.') |> Array.exists (fun part -> isDiscard part)))
 
         let ilFields =
             infoReader.GetILFieldInfosOfType (None, ad, m, ty)
-            |> List.filter (fun fld -> IsILFieldInfoAccessible g amap m ad fld && not (isDiscard fld.FieldName))
-            |> List.filter (fun fld -> typeEquiv g ty fld.ApparentEnclosingType)
+            |> List.filter (fun fld -> 
+                IsILFieldInfoAccessible g amap m ad fld &&
+                not (isDiscard fld.FieldName) &&
+                typeEquiv g ty fld.ApparentEnclosingType)
 
         let ctorLs =
             if denv.shrinkOverloads then
