@@ -2700,6 +2700,15 @@ type Val =
     /// Indicates if this is a 'base' or 'this' value?
     member x.BaseOrThisInfo = x.val_flags.BaseOrThisInfo
 
+    /// Indicates if this is a 'this' value for an implicit ctor?
+    member x.IsCtorThisVal = (x.BaseOrThisInfo = CtorThisVal)
+
+    /// Indicates if this is a 'this' value for a member?
+    member x.IsMemberThisVal = (x.BaseOrThisInfo = MemberThisVal)
+
+    /// Indicates if this is a 'base' value?
+    member x.IsBaseVal = (x.BaseOrThisInfo = BaseVal)
+
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
@@ -2903,8 +2912,10 @@ type Val =
     ///   - If this is an active pattern               --> (|A|_|)
     ///   - If this is an operator                     --> (+)
     ///   - If this is an identifier needing backticks --> ``A-B``
+    ///   - If this is a base value  --> base
+    ///   - If this is a value named ``base`` --> ``base``
     member x.DisplayName = 
-        ConvertLogicalNameToDisplayText x.CoreDisplayName
+        ConvertValCoreNameToDisplayName x.IsBaseVal x.CoreDisplayName
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
@@ -3773,6 +3784,15 @@ type ValRef =
 
     /// Indicates if this is a 'base' or 'this' value?
     member x.BaseOrThisInfo = x.Deref.BaseOrThisInfo
+
+    /// Indicates if this is a 'base' value?
+    member x.IsBaseVal = x.Deref.IsBaseVal
+
+    /// Indicates if this is a 'this' value for an implicit ctor?
+    member x.IsCtorThisVal = x.Deref.IsCtorThisVal
+
+    /// Indicates if this is a 'this' value for a member?
+    member x.IsMemberThisVal = x.Deref.IsMemberThisVal
 
     ///  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.Deref.IsTypeFunction

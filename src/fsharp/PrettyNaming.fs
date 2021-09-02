@@ -237,11 +237,31 @@ let keywordsWithDescription : (string * string) list =
 
 let keywordLookup = set (List.map fst keywordsWithDescription)
 
+// Some legacy compat operator names are not encode using op_XYZ and this
+// do not carry sufficient information to distinguish between 
+//     let (or) x y = x || y 
+//     let ``or`` x y = x || y 
+//     let (land) x y = x || y 
+//     let ``land`` x y = x || y 
+// All are deprecated except 'mod'. All except those two get double-backticks
+let IsUnencodedOpName (name: string) = 
+    match name with
+    | "mod" -> true
+    | _ -> false
+
+let IsUnencodedLegacyOpName (name: string) = 
+    match name with
+    | "or" | "land" | "lor" | "lsl"
+    | "lsr" | "asr" | "lxor" -> true
+    | _ -> false
+
 let IsIdentifierName (name: string) =
+    not (keywordLookup.Contains name) &&
+    not (IsUnencodedOpName name) &&
+    not (IsUnencodedLegacyOpName name) &&
     let nameLen = name.Length
     nameLen > 0 && 
     IsIdentifierFirstCharacter name.[0] &&
-    not (keywordLookup.Contains name) &&
     let rec loop i = (i >= nameLen || (IsIdentifierPartCharacter(name.[i]) && loop (i+1)))
     loop 1
 
@@ -288,29 +308,6 @@ let IsOperatorDisplayName (name: string) =
 let IsMangledOpName (name: string) =
     name.StartsWithOrdinal(opNamePrefix)
 
-let IsSpecialOpName (name: string) = 
-    match name with
-    | "or" | "land" | "lor" | "lsl"
-    | "lsr" | "asr" | "lxor" -> true
-    | _ -> false
-
-let DoesIdentifierNeedBackticks (name : string) : bool =
-    not (IsSpecialOpName name) && 
-    not (IsIdentifierName name) && 
-    not (IsActivePatternName name)
-
-/// A utility to help determine if an identifier needs to be quoted 
-let AddBackticksToIdentifierIfNeeded (name : string) : string =
-    if DoesIdentifierNeedBackticks name then "``" + name + "``" else name
-
-/// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
-let NormalizeIdentifierBackticks (name : string) : string =
-    let s =
-        if name.StartsWithOrdinal("``") && name.EndsWithOrdinal("``") then
-            name.[2..name.Length - 3]
-        else name
-    AddBackticksToIdentifierIfNeeded s
-
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
 /// This function should only be used for custom operators
@@ -322,6 +319,7 @@ let private compileCustomOpName =
         for x, y in opCharTranslateTable do
             t2.Add (x, y)
         t2
+
     /// The maximum length of the name for a custom operator character.
     /// This value is used when initializing StringBuilders to avoid resizing.
     let maxOperatorNameLength =
@@ -364,7 +362,7 @@ let CompileOpName op =
     match standardOpNames.TryGetValue op with
     | true, x -> x
     | false, _ ->
-        if IsSpecialOpName op || IsIdentifierName op then
+        if IsUnencodedOpName op || IsUnencodedLegacyOpName op || IsIdentifierName op then
             op
         else
             compileCustomOpName op
@@ -455,12 +453,37 @@ let DecompileOpName opName =
         else
             opName
 
-let ConvertLogicalNameToDisplayText name =
-    if IsSpecialOpName name || IsMangledOpName name || IsActivePatternName name then
+let DoesIdentifierNeedBackticks (name: string) : bool =
+    not (IsUnencodedOpName name) && 
+    not (IsIdentifierName name) && 
+    not (IsActivePatternName name)
+
+/// A utility to help determine if an identifier needs to be quoted 
+let AddBackticksToIdentifierIfNeeded (name: string) : string =
+    if DoesIdentifierNeedBackticks name && 
+       not (name.StartsWithOrdinal("`")) &&
+       not (name.EndsWithOrdinal("`")) then 
+        "``" + name + "``" 
+    else 
+        name
+
+/// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
+let NormalizeIdentifierBackticks (name: string) : string =
+    let s =
+        if name.StartsWithOrdinal("``") && name.EndsWithOrdinal("``") then
+            name.[2..name.Length - 3]
+        else name
+    AddBackticksToIdentifierIfNeeded s
+
+let ConvertValCoreNameToDisplayName isBaseVal name =
+    if isBaseVal && name = "base" then
+        "base" 
+    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
+        // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsMangledOpName name && (nm = name) then
-            AddBackticksToIdentifierIfNeeded nm // no decompilation, e.g. op_Implicit, op_NotAMangledOpName
-        elif nm.StartsWith "*" || nm.EndsWith "*" then
+            AddBackticksToIdentifierIfNeeded nm
+        elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             "( " + nm + " )"
         else
             "(" + nm + ")"
@@ -473,12 +496,15 @@ let ConvertDisplayNameToDisplayLayout nonOpLayout name =
     else
         nonOpLayout name
 
-let ConvertValLogicalNameToDisplayLayout nonOpLayout name =
-    if IsSpecialOpName name || IsMangledOpName name || IsActivePatternName name then
+let ConvertValCoreNameToDisplayLayout isBaseVal nonOpLayout name =
+    if isBaseVal && name = "base" then
+        nonOpLayout "base" 
+    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
+        // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsMangledOpName name && (nm = name) then
-            ConvertDisplayNameToDisplayLayout nonOpLayout name // no decompilation, e.g. op_Implicit, op_NotAMangledOpName
-        elif nm.StartsWith "*" || nm.EndsWith "*" then
+            ConvertDisplayNameToDisplayLayout nonOpLayout name
+        elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")

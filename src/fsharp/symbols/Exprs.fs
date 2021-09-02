@@ -1201,9 +1201,9 @@ module FSharpExprConvert =
         elif env.substVals.ContainsVal v then 
             let e = env.substVals.[v]
             ConvExprPrim cenv env e
-        elif v.BaseOrThisInfo = CtorThisVal then 
+        elif v.IsCtorThisVal then 
             E.ThisValue(ConvType cenv v.Type) 
-        elif v.BaseOrThisInfo = BaseVal then 
+        elif v.IsBaseVal then 
             E.BaseValue(ConvType cenv v.Type) 
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 

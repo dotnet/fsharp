@@ -2102,21 +2102,21 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = BaseVal
+        | V v -> v.IsBaseVal
 
     /// Is this the "x" in "type C() as x = ..."
     member _.IsConstructorThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _| P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = CtorThisVal
+        | V v -> v.IsCtorThisVal
 
     /// Is this the "x" in "member x.M = ..."
     member _.IsMemberThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = MemberThisVal
+        | V v -> v.IsMemberThisVal
 
     /// Is this a [<Literal>] value, and if so what value? (may be null)
     member _.LiteralValue =

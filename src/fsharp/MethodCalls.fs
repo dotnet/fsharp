@@ -847,7 +847,7 @@ let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) ad =
 /// Is this a 'base' call (in the sense of C#) 
 let IsBaseCall objArgs = 
     match objArgs with 
-    | [Expr.Val (v, _, _)] when v.BaseOrThisInfo  = BaseVal -> true
+    | [Expr.Val (v, _, _)] when v.IsBaseVal -> true
     | _ -> false
     
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 

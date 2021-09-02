@@ -1464,9 +1464,8 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
         // * provided by source code (i.e. `member _.Method = ...`)
         // We don't notify sink about it to prevent generating `FSharpSymbol` for it and appearing in completion list.
         | None when
-            let baseOrThisInfo = vspec.BaseOrThisInfo
-            baseOrThisInfo = ValBaseOrThisInfo.BaseVal || // visualfsharp#3699
-            baseOrThisInfo = ValBaseOrThisInfo.MemberThisVal && vspec.LogicalName = "__" -> false
+            vspec.IsBaseVal ||
+            vspec.IsMemberThisVal && vspec.LogicalName = "__" -> false
         | _ -> true
 
     match cenv.tcSink.CurrentSink with
@@ -2677,7 +2676,7 @@ let TcVal checkAttributes cenv env tpenv (vref: ValRef) optInst optAfterResoluti
 
           | None ->
                 // References to 'this' in classes get dereferenced from their implicit reference cell and poked
-              if v.BaseOrThisInfo = CtorThisVal && isRefCellTy cenv.g vty then
+              if v.IsCtorThisVal && isRefCellTy cenv.g vty then
                   let exprForVal = exprForValRef m vref
                   //if AreWithinCtorPreConstruct env then
                   //    warning(SelfRefObjCtor(AreWithinImplicitCtor env, m))

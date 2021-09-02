@@ -4004,7 +4004,7 @@ val exU: exn = ExUnit ()
 val exUs: exn = ExUnits ((), ())
 val exUSome: exn = ExUnitOption (Some ())
 val exUNone: exn = ExUnitOption None
-type 'a ``T4063`1`` = | AT4063 of 'a
+type 'a T4063 = | AT4063 of 'a
 
 > val valAT3063_12: int T4063 = AT4063 12
 
@@ -4014,20 +4014,20 @@ type 'a ``T4063`1`` = | AT4063 of 'a
 
 > val valAT3063_null: System.Object T4063 = AT4063 null
 
-> type ``M4063`1``<'a> =
+> type M4063<'a> =
   new: x: 'a -> M4063<'a>
 
 > val v4063: M4063<int>
 
-> type ``Taaaaa`1``<'a> =
+> type Taaaaa<'a> =
   new: unit -> Taaaaa<'a>
 
-> type ``Taaaaa2`1``<'a> =
+> type Taaaaa2<'a> =
   inherit Taaaaa<'a>
   new: unit -> Taaaaa2<'a>
   member M: unit -> Taaaaa2<'a>
 
-> type ``Tbbbbb`1``<'a> =
+> type Tbbbbb<'a> =
   new: x: 'a -> Tbbbbb<'a>
   member M: unit -> 'a
 
@@ -4131,9 +4131,9 @@ type 'a ``T4063`1`` = | AT4063 of 'a
 
 > type T0 =
   new: unit -> T0
-type ``T1Post`1``<'a> =
+type T1Post<'a> =
   new: unit -> T1Post<'a>
-type 'a ``T1Pre`1`` =
+type 'a T1Pre =
   new: unit -> 'a T1Pre
 
 > type T0 with
@@ -5037,14 +5037,14 @@ module Test4343e =
   val dB: D = D(2)
   val dAB: D * D * D list = (D(1), D(2), [D(1); D(2)])
   module Generic =
-    type ``CGeneric`1``<'a> =
+    type CGeneric<'a> =
       new: x: 'a -> CGeneric<'a>
     val cA: C
     val cB: C
     val cAB: C * C * C list =
       (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
        [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
-    type ``D`1``<'a> =
+    type D<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
     val dA: D<int> = D(1)
@@ -5089,7 +5089,7 @@ module Regression4643 =
   [<Struct>]
   type field_is_RIP =
     val x: RIP
-type ``Either`2``<'a,'b> =
+type Either<'a,'b> =
   | This of 'a
   | That of 'b
 val catch: f: (unit -> 'a) -> Either<'a,(string * string)>
@@ -5137,19 +5137,19 @@ module Regression5218 =
 > module Regression3739 =
   type IB =
     abstract AbstractMember: int -> int
-  type ``C`1``<'a when 'a :> IB> =
+  type C<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3739 =
   type IB =
     abstract AbstractMember: int -> int
-  type ``C`1``<'a when 'a :> IB> =
+  type C<'a when 'a :> IB> =
     new: unit -> C<'a>
     static member StaticMember: x: 'a -> int
 
 > module Regression3740 =
-  type ``Writer`1``<'a> =
+  type Writer<'a> =
     abstract get_path: unit -> string
   type MyClass =
     interface Writer<int>
@@ -6072,9 +6072,9 @@ val f: (unit -> int)
     abstract M: #IB -> int
   and IB =
     abstract M: #IA -> int
-  type ``IA2`1``<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
+  type IA2<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
     abstract M: int
-  and ``IB2`1``<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
+  and IB2<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
     abstract M: int
 
 > val it: string =
@@ -6162,21 +6162,58 @@ type Int32 with
 
 > val ``value with spaces in name`` : bool = true
 
-> > val f: ``parameter with spaces in name`` : int -> int
+> val functionWhichTakesLongNameMixedParameters:
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
+  -> ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
+     dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
+    -> int
 
-> > val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
+> val functionWhichTakesLongNameTupledParameters:
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int *
+  ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
+  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
+    -> int
+
+> val functionWhichTakesLongNameCurriedParameters:
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int
+  -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
+  -> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int
+  -> dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
+    -> int
+
+> val functionWhichTakesMixedLengthCurriedParametersA:
+  a: 'a -> b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd
+    -> int
+
+> val functionWhichTakesMixedLengthCurriedParametersB:
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 'a -> b: 'b -> c: 'c -> d: 'd -> int
+
+> val f: ``parameter with spaces in name`` : int -> int
+
+> val functionWhichTakesAParameterPeeciselyPlusButNotOpAddition:
   ``+`` : (int -> int -> int) -> int
 
-> > val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
+> val functionWhichTakesAParameterOpAddition: (+) : (int -> int -> int) -> int
 
-> > type RecordWithSpacesInNamesOfFields =
+> val functionWhichTakesAParameterCalled_land:
+  ``land`` : (int -> int -> int) -> int
+
+> type RecordWithStrangeNames =
   {
     ``funky name`` : obj
     op_Addition: obj
     ``+`` : obj
+    ``land`` : obj
+    ``base`` : obj
   }
 
-> > type ``Type with spaces in name`` =
+> type UnionWithSpacesInNamesOfCases =
+  | ``Funky name``
+  | ``Funky name 2``
+
+> type ``Type with spaces in name`` =
   | A
   | B
 
@@ -6184,14 +6221,33 @@ type Int32 with
   | A
   | B
 
-> module Module with spaces in name =
+> type ``land`` =
+  | A
+  | B
+
+> module ``Module with spaces in name`` =
   val x: int = 1
 
 > module op_Addition =
   val x: int = 1
 
+> module ``land`` =
+  val x: int = 1
+
 > val ``+`` : x: 'a -> y: 'b -> int
 
 > val (+) : x: int -> y: int -> int
+
+> val ``base`` : int = 2
+
+> val (mod) : int = 2
+
+> val ``or`` : int = 2
+
+> val ``land`` : int = 2
+
+> val ``.ctor`` : int = 2
+
+> val ``.cctor`` : int = 2
 
 > > > 

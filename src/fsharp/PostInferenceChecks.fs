@@ -315,10 +315,9 @@ let BindVal cenv env (v: Val) =
        not (v.DisplayName.StartsWithOrdinal("_")) && 
        not v.IsCompilerGenerated then 
 
-        match v.BaseOrThisInfo with 
-        | ValBaseOrThisInfo.CtorThisVal ->
+        if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
-        | _ -> 
+        else
             warning (Error(FSComp.SR.chkUnusedValue v.DisplayName, v.Range))
 
 let BindVals cenv env vs = List.iter (BindVal cenv env) vs
@@ -451,7 +450,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
            // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
-           ((v.BaseOrThisInfo = BaseVal) || (isByrefLikeTy cenv.g m v.Type)) &&
+           (v.IsBaseVal || isByrefLikeTy cenv.g m v.Type) &&
            not (ListSet.contains valEq v syntacticArgs)
 
         let frees = freeInExpr CollectLocals body
@@ -469,11 +468,11 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
                 // For safety, such functions are assumed to have no known arity, and so can not accept byrefs. 
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
 
-            elif v.BaseOrThisInfo = BaseVal then
+            elif v.IsBaseVal then
                 errorR(Error(FSComp.SR.chkBaseUsedInInvalidWay(), m))
 
             else
-                (* Should be dead code, unless governing tests change *)
+                // Should be dead code, unless governing tests change 
                 errorR(InternalError(FSComp.SR.chkVariableUsedInInvalidWay(v.DisplayName), m))
         Some frees
     else
@@ -789,7 +788,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
 
     if cenv.reportErrors then 
 
-        if vref.BaseOrThisInfo = BaseVal then 
+        if vref.IsBaseVal then 
             errorR(Error(FSComp.SR.chkLimitationsOfBaseKeyword(), m))
 
         let isCallOfConstructorOfAbstractType = 
@@ -821,7 +820,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         let isReturnOfStructThis = 
             context.PermitOnlyReturnable && 
             isByrefTy g vref.Type &&
-            (vref.BaseOrThisInfo = MemberThisVal)
+            (vref.IsMemberThisVal)
 
         if isReturnOfStructThis then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
@@ -1185,7 +1184,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
     // Allow base calls to F# methods
     | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(v, vFlags, _, _)  as f), _fty, tyargs, Expr.Val (baseVal, _, _) :: rest, m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
-                baseVal.BaseOrThisInfo = BaseVal) ->
+                baseVal.IsBaseVal) ->
 
         let memberInfo = Option.get v.MemberInfo
         if memberInfo.MemberFlags.IsDispatchSlot then
@@ -1203,7 +1202,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
     // Allow base calls to IL methods
     | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), tyargs, Expr.Val (baseVal, _, _) :: rest, m) 
-          when not isVirtual && baseVal.BaseOrThisInfo = BaseVal ->
+          when not isVirtual && baseVal.IsBaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
         match tryTcrefOfAppTy g baseVal.Type with
@@ -1537,7 +1536,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // C# applies a rule where the APIs to struct types can't return the addresses of fields in that struct.
         // There seems no particular reason for this given that other protections in the language, though allowing
         // it would mean "readonly" on a struct doesn't imply immutability-of-contents - it only implies 
-        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.BaseOrThisInfo = MemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
+        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.IsMemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
         if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
@@ -1562,7 +1561,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
 
-        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.BaseOrThisInfo = MemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
+        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.IsMemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
         CheckTypeInstNoByrefs cenv env m tyargs

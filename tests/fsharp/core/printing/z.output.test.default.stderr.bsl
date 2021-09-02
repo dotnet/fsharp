@@ -334,9 +334,3 @@ stdin(838,6): error FS1210: Active pattern '|A|B|' has a result type containing 
 
 stdin(844,6): error FS1209: Active pattern '|A|B|' is not a function
 
-
-      | op_Addition  // Check this doesn't go to (+) for types
-  ------^^^^^^^^^^^
-
-stdin(991,7): error FS0053: Discriminated union cases and exception labels must be uppercase identifiers
-

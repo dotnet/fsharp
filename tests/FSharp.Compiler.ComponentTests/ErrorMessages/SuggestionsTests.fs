@@ -59,7 +59,7 @@ let x = N.``longe name``
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 5, Col 11, Line 5, Col 25,
-                                 ("The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   longer name"))
+                                 ("The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   ``longer name``"))
 
     [<Fact>]
     let ``Suggest Double Backtick Unions`` () =

@@ -98,10 +98,13 @@ val DecompileOpName: string -> string
 ///     op_DereferencePercent --> (!%)
 ///     A-B                   --> ``A-B``
 ///     |A|_|                 --> (|A|_|)
-val internal ConvertLogicalNameToDisplayText: name: string -> string
+///     base                  --> base
+///     or                    --> or
+///     mod                   --> mod
+val internal ConvertValCoreNameToDisplayName: isBaseVal: bool -> name: string -> string
 
-/// Like ConvertLogicalNameToDisplayText but produces a tagged layout
-val internal ConvertValLogicalNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
+/// Like ConvertValCoreNameToDisplayName but produces a tagged layout
+val internal ConvertValCoreNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 /// Used for type names, module names etc.
 val internal ConvertDisplayNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout

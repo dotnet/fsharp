@@ -964,32 +964,62 @@ type System.Int32 with
     member a.ExtrinsicExtensionMethod() = 2
 ;;
 
-let ``value with spaces in name``   = true;;
+let ``value with spaces in name``   = true
+;;
+
+let functionWhichTakesLongNameMixedParameters 
+        (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int, 
+         bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int) 
+        (ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int, 
+         dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesLongNameTupledParameters 
+         (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int, 
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int, 
+          ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int, 
+          ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesLongNameCurriedParameters 
+        (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int)
+        (bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int)
+        (cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int)
+        (dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesMixedLengthCurriedParametersA a b c ddddddddddddddddddddddddddddddddddddddddddddd = 1 + 1
+;;
+
+let functionWhichTakesMixedLengthCurriedParametersB aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa b c d = 1 + 1
 ;;
 
 
-let f (``parameter with spaces in name``: int) = 1;;
+let f (``parameter with spaces in name``: int) = 1
 ;;
 
-let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2;;
+let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
 ;;
 
-let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1;;
+let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1
 ;;
 
-type RecordWithSpacesInNamesOfFields =
+let functionWhichTakesAParameterCalled_land (``land``: int -> int -> int) = 1 + 1
+;;
+
+type RecordWithStrangeNames =
     { 
        ``funky name`` : obj 
        op_Addition : obj 
        ``+`` : obj 
+       ``land`` : obj 
+       ``base`` : obj 
        }
 ;;
 
 type UnionWithSpacesInNamesOfCases =
     | ``Funky name``   // Check this gets double ticks
     | ``Funky name 2``  // Check this gets double ticks
-    | op_Addition  // Check this doesn't go to (+) for types
-    | ``+``  // Check this gets double ticks
 ;;
 
 type ``Type with spaces in name`` = // Check this gets double ticks
@@ -1002,20 +1032,48 @@ type op_Addition = // Check this doesn't go to (+) for types
     | B
 ;;
 
+type ``land`` = // Check this doesn't go to (land) for types, it gets double ticks because (land) is deprecated
+    | A
+    | B
+;;
+
 module ``Module with spaces in name`` = // Check this gets double ticks
     let x = 1
 ;;
 
-module op_Addition = // Check this doesn't go to (+) for modules
+module op_Addition = // Check this doesn't go to (+) for modules, nor get double ticks
+    let x = 1
+;;
+
+module ``land`` = // Check this doesn't go to (land) for modules, it gets double ticks because (land) is deprecated
     let x = 1
 ;;
 
 let ``+`` x y = 1  // This is not op_Addition but a function called '+'
 ;;
 
-
 let (+) x y = x + y + 1  // This is op_Addition not a function called '+'
 ;;
+
+let ``base`` = 2  // This is not a base value but a value called 'base'
+;;
+
+let ``mod`` = 2  // This is a value called 'mod' in .NET IL, but we can't distinguish from (mod), so print it as (mod)
+;;
+
+let ``or`` = 2  // This is a value called 'or' in .NET IL, legacy, but we can't distinguish from  (or), so print it as ``or``
+;;
+
+let ``land`` = 2  // This is a value called 'land' in .NET IL, legacy, but we can't distinguish from legacy unused (land), so print it as ``land``
+;;
+
+let ``.ctor`` = 2  // This is a value called '.ctor' in .NET IL, and has no special properties
+;;
+
+let ``.cctor`` = 2  // This is a value called '.cctor' in .NET IL, and has no special properties
+;;
+
+
 
 ;; (* ;; needed, to isolate error regressions *)
 

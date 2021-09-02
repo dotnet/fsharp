@@ -257,9 +257,9 @@ type Item =
         | Item.Event einfo -> einfo.EventName
         | Item.Property(_, FSProp(_, _, Some v, _) :: _)
         | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayName
-        | Item.Property(nm, _) -> ConvertLogicalNameToDisplayText nm
+        | Item.Property(nm, _) -> ConvertValCoreNameToDisplayName false nm
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayName
-        | Item.MethodGroup(nm, _, _) -> ConvertLogicalNameToDisplayText nm
+        | Item.MethodGroup(nm, _, _) -> ConvertValCoreNameToDisplayName false nm
         | Item.CtorGroup(nm, _) -> DemangleGenericTypeName nm
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
@@ -4266,7 +4266,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
                 match v with
                 | Item.Value x ->
                     let ty = x.Type
-                    let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
+                    let ty = if x.IsCtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                     Some ty
                 | _ -> None
             | _ -> None
@@ -4369,7 +4369,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                  match v with
                  | Item.Value x ->
                      let ty = x.Type
-                     let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
+                     let ty = if x.IsCtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                      (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest ty), true
                  | _ -> [], false
              | _ -> [], false)
@@ -4959,7 +4959,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
             match nenv.eUnqualifiedItems.TryGetValue id with
             | true, Item.Value x ->
                 let ty = x.Type
-                let ty = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
+                let ty = if x.IsCtorThisVal && isRefCellTy g ty then destRefCellTy g ty else ty
                 yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item ty
             | _ ->
                 // type.lookup: lookup a static something in a type

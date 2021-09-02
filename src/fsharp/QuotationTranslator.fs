@@ -207,7 +207,7 @@ let (|ObjectInitializationCheck|_|) g expr =
         ) when
             IsCompilerGeneratedName name &&
             name.StartsWithOrdinal("init") &&
-            selfRef.BaseOrThisInfo = MemberThisVal &&
+            selfRef.IsMemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
     | _ -> None
@@ -933,7 +933,7 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     elif env.vs.ContainsVal v then
         if not (List.isEmpty tyargs) then wfail(InternalError("ignoring generic application of local quoted variable", m))
         QP.mkVar(env.vs.[v])
-    elif v.BaseOrThisInfo = CtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
+    elif v.IsCtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
         QP.mkThisVar(ConvType cenv env m v.Type)
     else
         let vty = v.Type
