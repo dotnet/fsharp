@@ -90,7 +90,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.ResumableStateMachines, languageVersion60
             LanguageFeature.StructActivePattern, languageVersion60
             LanguageFeature.PrintfBinaryFormat, languageVersion60
-            LanguageFeature.IndexerNotationWithoutDot, previewVersion
+            LanguageFeature.IndexerNotationWithoutDot, languageVersion60
             LanguageFeature.RefCellNotationInformationals, languageVersion60
             LanguageFeature.UseBindingValueDiscard, languageVersion60
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
