@@ -171,6 +171,13 @@ let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
 //---------------------------------------------------------------------
 // Portable PDB Writer
 //---------------------------------------------------------------------
+
+let b0 n = (n &&& 0xFF)
+let b1 n = ((n >>> 8) &&& 0xFF)
+let b2 n = ((n >>> 16) &&& 0xFF)
+let b3 n = ((n >>> 24) &&& 0xFF)
+let i32AsBytes i = [| byte (b0 i); byte (b1 i); byte (b2 i); byte (b3 i) |]
+
 let cvMagicNumber = 0x53445352L
 let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) =
     let iddCvBuffer =
@@ -178,11 +185,11 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
         let path = (Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
         let offset, size = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
-        Buffer.BlockCopy(BitConverter.GetBytes cvMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int cvMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
-        Buffer.BlockCopy(BitConverter.GetBytes 1, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes 1, 0, buffer, offset, size)
         let offset, size = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
@@ -200,9 +207,9 @@ let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLeng
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let offset, size = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
-        Buffer.BlockCopy(BitConverter.GetBytes pdbMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)        // Uncompressed size
-        Buffer.BlockCopy(BitConverter.GetBytes (int uncompressedLength), 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
         let offset, size = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
