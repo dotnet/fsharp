@@ -1666,10 +1666,7 @@ module TastDefinitionPrinting =
 
         let start, tagger =
             if isStructTy g ty then
-                if denv.printVerboseSignatures then
-                    Some "struct", tagStruct
-                else
-                    None, tagStruct
+                Some "struct", tagStruct
             elif isInterfaceTy g ty then
                 if denv.printVerboseSignatures then
                     Some "interface", tagInterface
