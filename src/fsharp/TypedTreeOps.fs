@@ -3826,7 +3826,7 @@ module DebugPrint =
         let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
 
         let ucaseL prefixL (ucase: UnionCase) =
-            let nmL = wordL (tagText (ConvertValNameToDisplayName false ucase.Id.idText))
+            let nmL = wordL (tagText ucase.DisplayName)
             match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
             | [] -> (prefixL ^^ nmL)
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
@@ -8645,7 +8645,7 @@ let GetMemberCallInfo g (vref: ValRef, vFlags) =
 //---------------------------------------------------------------------------
 
 let TryGetActivePatternInfo (vref: ValRef) =  
-    // First is an optimization to prevent calls to DisplayNameCoreMangled, which calls ConvertValNameToDisplayName
+    // First is an optimization to prevent calls to string routines
     let logicalName = vref.LogicalName
     if logicalName.Length = 0 || logicalName.[0] <> '|' then 
        None 
