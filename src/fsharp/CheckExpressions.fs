@@ -3290,7 +3290,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
             match tryType (mkCoerceExpr(expr, ty, expr.Range, exprty), ty) with
             | Result res -> Some res
             | Exception e ->
-                PreserveStackTrace e
+                let e = PreserveStackTrace e
                 raise e
         else None
 
@@ -3305,7 +3305,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     match probe ienumerable with
     | Some res -> res
     | None ->
-    PreserveStackTrace e
+    let e = PreserveStackTrace e
     raise e
 
 // Used inside sequence expressions

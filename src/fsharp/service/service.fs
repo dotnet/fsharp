@@ -176,7 +176,7 @@ module CompileHelpers =
                 match exec() with 
                 | None -> ()
                 | Some exn -> 
-                    PreserveStackTrace(exn)
+                    let exn = PreserveStackTrace(exn)
                     raise exn
 
         // Register the reflected definitions for the dynamically generated assembly

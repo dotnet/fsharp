@@ -174,7 +174,7 @@ module ErrorLoggerExtensions =
     val tryAndDetectDev15: bool
 
     /// Instruct the exception not to reset itself when thrown again.
-    val PreserveStackTrace: exn:'a -> unit
+    val PreserveStackTrace: exn:#exn -> exn
 
     /// Reraise an exception if it is one we want to report to Watson.
     val ReraiseIfWatsonable: exn:exn -> unit

@@ -33,7 +33,7 @@ module Zmap =
         try Zmap.find k mp
         with e ->
             dprintf "Zmap.force: %s %s\n" str (soK k)
-            PreserveStackTrace e
+            let e = PreserveStackTrace e
             raise e
 
 //-------------------------------------------------------------------------

@@ -340,15 +340,16 @@ module ErrorLoggerExtensions =
         | _ -> false
 
     /// Instruct the exception not to reset itself when thrown again.
-    let PreserveStackTrace exn =
+    let PreserveStackTrace (exn:#exn) =
         try
             if not tryAndDetectDev15 then
                 let preserveStackTrace = typeof<Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
                 preserveStackTrace.Invoke(exn, null) |> ignore
+            exn :> exn
         with _ ->
            // This is probably only the mono case.
            Debug.Assert(false, "Could not preserve stack trace for watson exception.")
-           ()
+           AggregateException [|exn :> exn|] :> exn // wrap the exception so we can maintain the stack trace
 
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
@@ -360,7 +361,7 @@ module ErrorLoggerExtensions =
         | :? UnauthorizedAccessException -> ()
         | Failure _ // This gives reports for compiler INTERNAL ERRORs
         | :? SystemException ->
-            PreserveStackTrace exn
+            let exn = PreserveStackTrace exn
             raise exn
         | _ -> ()
 
@@ -375,7 +376,7 @@ module ErrorLoggerExtensions =
             match exn with 
             | StopProcessing 
             | ReportedError _ -> 
-                PreserveStackTrace exn
+                let exn = PreserveStackTrace exn
                 raise exn 
             | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), severity)
 
@@ -404,7 +405,7 @@ module ErrorLoggerExtensions =
             | :? System.Threading.ThreadAbortException | WrappedError(:? System.Threading.ThreadAbortException, _) ->  ()
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
-                PreserveStackTrace exn
+                let exn = PreserveStackTrace exn
                 raise exn
             | _ ->
                 try  
