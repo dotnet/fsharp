@@ -370,7 +370,8 @@ module internal FSharpEnvironment =
     let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
 
     // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
+    //let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
+    // ^^ that isn't actually *used* anywhere
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
