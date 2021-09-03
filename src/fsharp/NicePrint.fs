@@ -1666,6 +1666,7 @@ module TastDefinitionPrinting =
 
         let start, tagger =
             if isStructTy g ty then
+                // Always show [<Struct>] whether verbose or not
                 Some "struct", tagStruct
             elif isInterfaceTy g ty then
                 if denv.printVerboseSignatures then
