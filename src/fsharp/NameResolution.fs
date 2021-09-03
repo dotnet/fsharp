@@ -286,6 +286,7 @@ type Item =
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
+        | Item.TypeVar (nm, _) -> nm
         | _ ->  d.DisplayNameCore |> ConvertNameToDisplayName
 
 let valRefHash (vref: ValRef) =
@@ -2571,7 +2572,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
         let errorTextF s =
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
-                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndTypars, s)
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars, s)
             | _ ->
                 FSComp.SR.undefinedNameFieldConstructorOrMember(s)
 
@@ -2935,18 +2936,18 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                       let innerSearch = search +++ (moduleSearch AccessibleFromSomeFSharpCode) +++ (tyconSearch AccessibleFromSomeFSharpCode)
 
                       let suggestEverythingInScope (addToBuffer: string -> unit) =
-                        for kv in nenv.ModulesAndNamespaces fullyQualified do
-                            for modref in kv.Value do
+                        for (KeyValue(_,modrefs)) in nenv.ModulesAndNamespaces fullyQualified do
+                            for modref in modrefs do
                                 if IsEntityAccessible ncenv.amap m ad modref then
                                     addToBuffer modref.DisplayName
 
-                        for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                            if IsEntityAccessible ncenv.amap m ad e.Value then
-                                addToBuffer e.Value.DisplayName
+                        for (KeyValue(_,tcref)) in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                            if IsEntityAccessible ncenv.amap m ad tcref then
+                                addToBuffer tcref.DisplayName
 
-                        for e in nenv.eUnqualifiedItems do
-                            if canSuggestThisItem e.Value then
-                                addToBuffer e.Value.DisplayName
+                        for (KeyValue(_,item)) in nenv.eUnqualifiedItems do
+                            if canSuggestThisItem item then
+                                addToBuffer item.DisplayName
 
                       match innerSearch with
                       | Exception (UndefinedName(0, _, id1, suggestionsF)) when equals id.idRange id1.idRange ->

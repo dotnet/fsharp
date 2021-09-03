@@ -664,26 +664,19 @@ type Entity =
     /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayName = x.GetDisplayName(coreName=false)
 
-    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
-    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
-    ///
-    /// Backticks are added implicitly for entities with non-identifier names
-    member x.DisplayNameWithStaticParametersAndTypars =
-        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
-
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
     /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
     ///
     /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars =
-        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
     /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
     ///
     /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParameters =
-        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -692,39 +685,32 @@ type Entity =
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(coreName, ?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+    member x.GetDisplayName(coreName, ?withStaticParameters, ?withUnderscoreTypars) =
         let withStaticParameters = defaultArg withStaticParameters false
-        let withTypars = defaultArg withTypars false
         let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
-        if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName else 
-
-        let getName () =
-            match x.TyparsNoRange with 
-            | [] -> nm
-            | tps -> 
-                let nm = DemangleGenericTypeName nm
-                let nm = if coreName then nm else ConvertNameToDisplayName nm
-                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
-                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
-                    nm + "<" + String.concat "," typearNames + ">"
-                else
-                    nm
-
+        if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName 
 #if !NO_EXTENSIONTYPING
-        if x.IsProvidedErasedTycon then 
+        elif x.IsProvidedErasedTycon then 
             let nm, args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
                 nm
-        else
-            getName ()
-#else
-        ignore withStaticParameters
-        getName ()
 #endif
-
+        else
+            ignore withStaticParameters
+            match x.TyparsNoRange with 
+            | [] -> nm
+            | tps -> 
+                let nm = DemangleGenericTypeName nm
+                let isArray = nm.StartsWithOrdinal("[") && nm.EndsWithOrdinal("]")
+                let nm = if coreName || isArray then nm else ConvertNameToDisplayName nm
+                if withUnderscoreTypars then
+                    let typarNames = tps |> List.map (fun _  -> "_")
+                    nm + "<" + String.concat "," typarNames + ">"
+                else
+                    nm
 
     /// The code location where the module, namespace or type is defined.
     member x.Range = 
@@ -3384,11 +3370,6 @@ type EntityRef =
     ///
     /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayName = x.Deref.DisplayName
-
-    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
-    ///
-    /// Backticks are added implicitly for entities with non-identifier names
-    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
     ///

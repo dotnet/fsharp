@@ -372,7 +372,7 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = NicePrint.layoutTycon denv infoReader ad m (* width *) tcref.Deref
+            let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
@@ -1033,8 +1033,8 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 textInDeclList, textInCode, items)
 
             // Filter out operators, active patterns (as values)
-            |> List.filter (fun (textInDeclList, _textInCode, items) -> 
-                not (isOperatorItem textInDeclList items) && 
+            |> List.filter (fun (_textInDeclList, textInCode, items) -> 
+                not (isOperatorItem textInCode items) && 
                 not (isActivePatternItem items))
 
             |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 

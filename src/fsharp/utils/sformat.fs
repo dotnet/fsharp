@@ -226,6 +226,7 @@ module TaggedText =
     let keywordStruct = tagKeyword "struct"
     let keywordInherit = tagKeyword "inherit"
     let keywordEnd = tagKeyword "end"
+    let keywordBegin = tagKeyword "begin"
     let keywordNested = tagKeyword "nested"
     let keywordType = tagKeyword "type"
     let keywordDelegate = tagKeyword "delegate"

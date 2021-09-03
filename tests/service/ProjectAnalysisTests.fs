@@ -2206,7 +2206,7 @@ let ``Test Project13 all symbols`` () =
     let objSymbol = wholeProjectResults.GetAllUsesOfAllSymbols() |> Array.find (fun su -> su.Symbol.DisplayName = "Object")
     let objEntity = objSymbol.Symbol :?> FSharpEntity
     let objMemberNames = [ for x in objEntity.MembersFunctionsAndValues -> x.DisplayName ]
-    set objMemberNames |> shouldEqual (set [".ctor"; "ToString"; "Equals"; "Equals"; "ReferenceEquals"; "GetHashCode"; "GetType"; "Finalize"; "MemberwiseClone"])
+    set objMemberNames |> shouldEqual (set ["``.ctor``"; "ToString"; "Equals"; "Equals"; "ReferenceEquals"; "GetHashCode"; "GetType"; "Finalize"; "MemberwiseClone"])
 
     let dtSymbol = wholeProjectResults.GetAllUsesOfAllSymbols() |> Array.find (fun su -> su.Symbol.DisplayName = "DateTime")
     let dtEntity = dtSymbol.Symbol :?> FSharpEntity
@@ -2254,7 +2254,7 @@ let ``Test Project13 all symbols`` () =
              yield x.DisplayName, p.Name,  p.Type.ToString(), p.Type.Format(dtSymbol.DisplayContext) ]
     set objMethodsReturnParameter |> shouldEqual
        (set
-           [(".ctor", None, "type Microsoft.FSharp.Core.unit", "unit");
+           [("``.ctor``", None, "type Microsoft.FSharp.Core.unit", "unit");
             ("ToString", None, "type Microsoft.FSharp.Core.string", "string");
             ("Equals", None, "type Microsoft.FSharp.Core.bool", "bool");
             ("Equals", None, "type Microsoft.FSharp.Core.bool", "bool");
@@ -2352,9 +2352,9 @@ let ``Test Project14 all symbols`` () =
             ("member get_P", "P", "file1", ((6, 12), (6, 13)), ["defn"]);
             ("val x", "x", "file1", ((6, 10), (6, 11)), ["defn"]);
             ("val p", "p", "file1", ((6, 16), (6, 17)), []);
-            ("member .ctor", ".ctor", "file1", ((8, 10), (8, 11)), []);
+            ("member .ctor", "``.ctor``", "file1", ((8, 10), (8, 11)), []);
             ("val x1", "x1", "file1", ((8, 4), (8, 6)), ["defn"]);
-            ("member .ctor", ".ctor", "file1", ((9, 10), (9, 11)), []);
+            ("member .ctor", "``.ctor``", "file1", ((9, 10), (9, 11)), []);
             ("val x2", "x2", "file1", ((9, 4), (9, 6)), ["defn"]);
             ("Structs", "Structs", "file1", ((2, 7), (2, 14)), ["defn"])|]
 
@@ -3063,7 +3063,7 @@ let ``Test Project21 all symbols`` () =
             ("unit", "unit", "file1", ((12, 43), (12, 47)), ["type"], ["abbrev"]);
             ("val raise", "raise", "file1", ((13, 18), (13, 23)), [], ["val"]);
             ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("member .ctor", ".ctor", "file1", ((13, 25), (13, 55)), [], ["member"]);
+            ("member .ctor", "``.ctor``", "file1", ((13, 25), (13, 55)), [], ["member"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
 //-----------------------------------------------------------------------------------------

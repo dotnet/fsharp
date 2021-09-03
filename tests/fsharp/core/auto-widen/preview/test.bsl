@@ -635,6 +635,4 @@ test.fsx(543,36,543,37): typecheck error FS0001: All elements of a list must be 
 
 test.fsx(544,14,544,21): typecheck error FS0039: The type 'float64' is not defined. Maybe you want one of the following:
    float
-   float`1
    float32
-   float32`1

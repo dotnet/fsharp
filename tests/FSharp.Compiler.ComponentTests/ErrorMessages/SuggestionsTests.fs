@@ -103,7 +103,7 @@ type T = System.Collections.Generic.Dictionary<int11,int>
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 2, Col 48, Line 2, Col 53,
-                                 ("The type 'int11' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   int16" + Environment.NewLine + "   int8" + Environment.NewLine + "   uint16" + Environment.NewLine + "   int"))
+                                 ("The type 'int11' is not defined. Maybe you want one of the following:" + Environment.NewLine + "   int16" + Environment.NewLine + "   int8" + Environment.NewLine + "   uint16" + Environment.NewLine + "   int" + Environment.NewLine + "   int32"))
 
     [<Fact>]
     let ``Suggest Methods`` () =

@@ -208,7 +208,6 @@ let keywordsWithDescription : (string * string) list =
       "rec",       FSComp.SR.keywordDescriptionRec()
       "return",    FSComp.SR.keywordDescriptionReturn()
       "return!",   FSComp.SR.keywordDescriptionReturnBang()
-      "select",    FSComp.SR.keywordDescriptionSelect()
       "static",    FSComp.SR.keywordDescriptionStatic()
       "struct",    FSComp.SR.keywordDescriptionStruct()
       "then",      FSComp.SR.keywordDescriptionThen()
@@ -321,9 +320,10 @@ let IsOperatorDisplayName (name: string) =
 //IsOperatorDisplayName "(::)"
 //IsOperatorDisplayName "::"
 //IsOperatorDisplayName "([])"
-//IsOperatorDisplayName "( * )"
-//IsOperatorDisplayName "(  )"
-//IsOperatorDisplayName "( +)"
+//IsOperatorDisplayName "(*)"
+//IsOperatorDisplayName "( ** )"
+//IsOperatorDisplayName "(  )" // false
+//IsOperatorDisplayName "( +)" // false
 
 let IsMangledOpName (name: string) =
     name.StartsWithOrdinal(opNamePrefix)
@@ -507,7 +507,7 @@ let ConvertValNameToDisplayName isBaseVal name =
         if IsMangledOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
         // Add parentheses for multiply-like symbols, with spacing to avoid confusion with comments
-        elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
+        elif nm <> "*" && (nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*") then
             "( " + nm + " )"
         // Add parentheses for other symbols, no spacing
         else

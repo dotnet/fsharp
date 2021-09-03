@@ -489,7 +489,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member _.ArrayRank  = 
         checkIsResolved()
-        rankOfArrayTyconRef cenv.g entity
+        if isArrayTyconRef cenv.g entity then
+            rankOfArrayTyconRef cenv.g entity
+        else
+            0
 
 #if !NO_EXTENSIONTYPING
     member _.IsProvided  = 
@@ -891,7 +894,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 [
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
-                    (NicePrint.layoutEntityRef denv infoReader AccessibleFromSomewhere range0 entity)
+                    (NicePrint.layoutEntityDefn denv infoReader AccessibleFromSomewhere range0 entity)
                 ]
             |> LayoutRender.showL
             |> SourceText.ofString

@@ -8215,13 +8215,8 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
 
     | _ when isArrayTy g ty -> 
         let tcref, tinst = destAppTy g ty
-        let arraySuffix = 
-            match rankOfArrayTyconRef g tcref with
-            | 1 -> "[]"
-            | 2 -> "[0:, 0:]"
-            | 3 -> "[0:, 0:, 0:]"
-            | 4 -> "[0:, 0:, 0:, 0:]"
-            | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
+        let rank = rankOfArrayTyconRef g tcref
+        let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
     | TType_ucase (_, tinst)   

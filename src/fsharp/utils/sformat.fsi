@@ -190,6 +190,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val internal bar: TaggedText
         val internal keywordStruct: TaggedText
         val internal keywordInherit: TaggedText
+        val internal keywordBegin: TaggedText
         val internal keywordEnd: TaggedText
         val internal keywordNested: TaggedText
         val internal keywordType: TaggedText
