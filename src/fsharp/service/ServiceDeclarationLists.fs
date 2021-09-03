@@ -1038,53 +1038,48 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 not (isActivePatternItem items))
 
             |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 
-                match itemsWithSameFullName with
-                | [] -> failwith "Unexpected empty bag"
-                | _ ->
-                    let items =
-                        match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
-                        | [], unresolved -> unresolved
-                        // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
-                        | resolved, _ -> resolved 
+                let items =
+                    match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
+                    | [], unresolved -> unresolved
+                    // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
+                    | resolved, _ -> resolved 
                     
-                    let item = items.Head
-                    let glyph = GlyphOfItem(denv, item.Item)
+                let item = items.Head
+                let glyph = GlyphOfItem(denv, item.Item)
 
-                    let isAttributeItem = lazy (IsAttribute infoReader item.Item)
+                let cutAttributeSuffix (name: string) =
+                    if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && IsAttribute infoReader item.Item then
+                        name.[0..name.Length - "Attribute".Length - 1]
+                    else name
 
-                    let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
-                            name.[0..name.Length - "Attribute".Length - 1]
-                        else name
-
-                    let textInDeclList = cutAttributeSuffix textInDeclList
-                    let textInCode = cutAttributeSuffix textInCode
+                let textInDeclList = cutAttributeSuffix textInDeclList
+                let textInCode = cutAttributeSuffix textInCode
                     
-                    let fullName = 
-                        match item.Unresolved with
-                        | Some x -> x.FullName
-                        | None -> FullNameOfItem g item.Item
+                let fullName = 
+                    match item.Unresolved with
+                    | Some x -> x.FullName
+                    | None -> FullNameOfItem g item.Item
                     
-                    let namespaceToOpen = 
-                        item.Unresolved 
-                        |> Option.map (fun x -> x.Namespace)
-                        |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith fsharpNamespace then None
-                            else Some ns)
-                        |> Option.map (fun ns ->
-                            match currentNamespace with
-                            | Some currentNs ->
-                               if ns |> Array.startsWith currentNs then
-                                 ns.[currentNs.Length..]
-                               else ns
-                            | None -> ns)
-                        |> Option.bind (function
-                            | [||] -> None
-                            | ns -> Some (System.String.Join(".", ns)))
+                let namespaceToOpen = 
+                    item.Unresolved 
+                    |> Option.map (fun x -> x.Namespace)
+                    |> Option.bind (fun ns ->
+                        if ns |> Array.startsWith fsharpNamespace then None
+                        else Some ns)
+                    |> Option.map (fun ns ->
+                        match currentNamespace with
+                        | Some currentNs ->
+                            if ns |> Array.startsWith currentNs then
+                                ns.[currentNs.Length..]
+                            else ns
+                        | None -> ns)
+                    |> Option.bind (function
+                        | [||] -> None
+                        | ns -> Some (System.String.Join(".", ns)))
 
-                    DeclarationListItem(
-                        textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
-                        item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
+                DeclarationListItem(
+                    textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
+                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         DeclarationListInfo(Array.ofList decls, isForType, false)
     

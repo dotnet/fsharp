@@ -4980,9 +4980,11 @@ FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FShar
 FSharp.Compiler.Symbols.FSharpSymbol: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpSymbol: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String DisplayName
+FSharp.Compiler.Symbols.FSharpSymbol: System.String DisplayNameCore
 FSharp.Compiler.Symbols.FSharpSymbol: System.String FullName
 FSharp.Compiler.Symbols.FSharpSymbol: System.String ToString()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String get_DisplayName()
+FSharp.Compiler.Symbols.FSharpSymbol: System.String get_DisplayNameCore()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String get_FullName()
 FSharp.Compiler.Symbols.FSharpSymbolPatterns
 FSharp.Compiler.Symbols.FSharpSymbolPatterns: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpActivePatternCase] |ActivePatternCase|_|(FSharp.Compiler.Symbols.FSharpSymbol)
