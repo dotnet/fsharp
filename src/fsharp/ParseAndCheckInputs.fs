@@ -274,11 +274,11 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
             // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let impl = Parser.implementationFile lexer lexbuf
-                LexbufLocalXmlDocStore.CheckInvalidXmlDocPositions(lexbuf)
+                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let intfs = Parser.signatureFile lexer lexbuf
-                LexbufLocalXmlDocStore.CheckInvalidXmlDocPositions(lexbuf)
+                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else
                 delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))

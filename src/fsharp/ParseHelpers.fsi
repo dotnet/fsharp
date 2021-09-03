@@ -51,7 +51,7 @@ module LexbufLocalXmlDocStore =
 
     val AddGrabPointDelayed: lexbuf:UnicodeLexing.Lexbuf -> unit
 
-    val CheckInvalidXmlDocPositions: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val ReportInvalidXmlDocPositions: lexbuf:UnicodeLexing.Lexbuf -> unit
 
 type LexerIfdefStackEntry =
     | IfDefIf

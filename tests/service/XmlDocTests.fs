@@ -18,6 +18,7 @@ let getFieldXml symbolName fieldName checkResults =
     let field =
         match findSymbolByName symbolName checkResults with
         | :? FSharpEntity as e -> e.FSharpFields |> Seq.find(fun x -> x.DisplayName = fieldName)
+        | :? FSharpUnionCase as c -> c.Fields |> Seq.find(fun x -> x.DisplayName = fieldName)
         | _ -> failwith "Unexpected symbol"
     field.XmlDoc
 
@@ -613,6 +614,29 @@ type A =
             Error 3520, Line 8, Col 6, Line 8, Col 13, "XML comment is not placed on a valid language element."
             Error 3520, Line 13, Col 6, Line 13, Col 13, "XML comment is not placed on a valid language element."
         |])
+
+[<Test>]
+let ``union cases 03 - union case fields``(): unit =
+    checkSignatureAndImplementation """
+module Test
+
+type Foo =
+| Thing of
+  ///A1
+  ///A2
+  a: string *
+  ///B1
+  ///B2
+  bool
+"""
+        (fun checkResults ->
+            getFieldXml "Thing" "a" checkResults
+            |> compareXml [|"A1"; "A2"|]
+
+            getFieldXml "Thing" "Item2" checkResults
+            |> compareXml [|"B1"; "B2"|])
+
+        (checkParsingErrors [||])
 
 [<Test>]
 let ``extern``(): unit =

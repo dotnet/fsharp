@@ -140,7 +140,7 @@ module LexbufLocalXmlDocStore =
         | _ ->
             PreXmlDoc.Empty
 
-    let CheckInvalidXmlDocPositions (lexbuf: Lexbuf) =
+    let ReportInvalidXmlDocPositions (lexbuf: Lexbuf) =
         let collector = getCollector lexbuf
         collector.CheckInvalidXmlDocPositions()
 

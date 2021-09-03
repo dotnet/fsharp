@@ -7,6 +7,7 @@
 module Tests.Service.Symbols
 #endif
 
+open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -1615,11 +1616,10 @@ type Foo =
             let firstDocs = firstXml.ToXmlDoc(false, None).GetXmlText()
             let anonDocs = anonXml.ToXmlDoc(false, None).GetXmlText()
 
-            Assert.AreEqual("""<summary>
- docs for first
-</summary>""", firstDocs)
-            Assert.AreEqual("""<summary>
- docs for anon field
-</summary>""", anonDocs)
+            let nl = Environment.NewLine
+
+            Assert.AreEqual($"<summary>{nl} docs for first{nl}</summary>", firstDocs)
+            Assert.AreEqual($"<summary>{nl} docs for anon field{nl}</summary>", anonDocs)
+
         | _ ->
             failwith "Could not find SynExpr.Do"
