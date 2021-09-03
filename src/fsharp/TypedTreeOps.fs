@@ -3826,7 +3826,7 @@ module DebugPrint =
         let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
 
         let ucaseL prefixL (ucase: UnionCase) =
-            let nmL = wordL (tagText (ConvertValCoreNameToDisplayName false ucase.Id.idText))
+            let nmL = wordL (tagText (ConvertValNameToDisplayName false ucase.Id.idText))
             match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
             | [] -> (prefixL ^^ nmL)
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
@@ -3836,7 +3836,7 @@ module DebugPrint =
             List.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld: RecdField) =
-            let lhs = wordL (tagText fld.Name)
+            let lhs = wordL (tagText fld.LogicalName)
             let lhs = if fld.IsMutable then wordL(tagText "mutable") --- lhs else lhs
             (lhs ^^ rightL(tagText ":")) --- typeL fld.FormalType
 
@@ -4233,7 +4233,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                 // Find the fields that have been hidden or which were non-public anyway. 
                 let mhi = 
                     (entity.AllFieldsArray, mhi) ||> Array.foldBack (fun rfield mhi ->
-                        match sigtycon.GetFieldByName(rfield.Name) with 
+                        match sigtycon.GetFieldByName(rfield.LogicalName) with 
                         | Some _ -> 
                             // The field is in the signature. Hence it is not hidden. 
                             mhi
@@ -4244,7 +4244,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                         
                 let mhi = 
                     (entity.UnionCasesAsList, mhi) ||> List.foldBack (fun ucase mhi ->
-                        match sigtycon.GetUnionCaseByName ucase.DisplayName with 
+                        match sigtycon.GetUnionCaseByName ucase.LogicalName with 
                         | Some _ -> 
                             // The constructor is in the signature. Hence it is not hidden. 
                             mhi
@@ -8650,12 +8650,12 @@ let GetMemberCallInfo g (vref: ValRef, vFlags) =
 //---------------------------------------------------------------------------
 
 let TryGetActivePatternInfo (vref: ValRef) =  
-    // First is an optimization to prevent calls to CoreDisplayName, which calls ConvertValCoreNameToDisplayName
+    // First is an optimization to prevent calls to DisplayNameCoreMangled, which calls ConvertValNameToDisplayName
     let logicalName = vref.LogicalName
     if logicalName.Length = 0 || logicalName.[0] <> '|' then 
        None 
     else 
-       ActivePatternInfoOfValName vref.CoreDisplayName vref.Range
+       ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
 
 type ActivePatternElemRef with 
     member x.Name = 

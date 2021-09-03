@@ -2341,7 +2341,7 @@ and CanMemberSigsMatchUpToCheck
                 
                         | AssignedRecdFieldSetter(rfinfo) ->
                             let calledArgTy = rfinfo.FieldType
-                            rfinfo.Name, calledArgTy
+                            rfinfo.LogicalName, calledArgTy
             
                     subsumeOrConvertArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller
                   )
@@ -2534,7 +2534,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             if minfo.IsConstructor then
                 let suggestFields (addToBuffer: string -> unit) =
                     for p in minfo.DeclaringTyconRef.AllInstanceFieldsAsList do
-                        addToBuffer(p.Name.Replace("@", ""))
+                        addToBuffer(p.LogicalName.Replace("@", ""))
 
                 ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, suggestFields)
             else

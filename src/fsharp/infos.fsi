@@ -657,8 +657,15 @@ type RecdFieldInfo =
     /// Indicate if the field is a literal field in an F#-declared record, class or struct type
     member LiteralValue: Const option
 
-    /// Get the name of the field in an F#-declared record, class or struct type
-    member Name: string
+    /// Get the logical name of the field in an F#-declared record, class or struct type
+    member LogicalName: string
+
+    /// Get the name of the field, same as LogicalName
+    /// Note: no double-backticks added for non-identifiers
+    member DisplayNameCore: string
+
+    /// Get the name of the field, with double-backticks added if necessary
+    member DisplayName: string
 
     /// Get the F# metadata for the uninstantiated field
     member RecdField: RecdField
@@ -678,10 +685,24 @@ type RecdFieldInfo =
 /// Describes an F# use of a union case
 [<NoComparison; NoEquality>]
 type UnionCaseInfo =
-    | UnionCaseInfo of TypeInst * UnionCaseRef
+    | UnionCaseInfo of typeInst: TypeInst * unionCaseRef: UnionCaseRef
 
-    /// Get the name of the union case
-    member Name: string
+    /// Get the logical name of the union case.
+    member LogicalName: string
+
+    /// Get the core of the display name of the union case
+    ///
+    /// Backticks and parens are not added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    member DisplayNameCore: string
+
+    /// Get the display name of the union case
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    member DisplayName: string
 
     /// Get the F# metadata for the declaring union type
     member Tycon: Entity
@@ -909,7 +930,7 @@ type ILEventInfo =
     member IsStatic: bool
 
     /// Get the name of the event
-    member Name: string
+    member EventName: string
 
     /// Get the raw Abstract IL metadata for the event
     member RawMetadata: ILEventDef

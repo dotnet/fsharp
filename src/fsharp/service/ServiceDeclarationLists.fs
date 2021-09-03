@@ -238,7 +238,7 @@ module DeclarationListHelpers =
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name) |> mkNav rfield.DefinitionRange) ^^
+                wordL (tagRecordField rfield.DisplayName |> mkNav rfield.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty ^^
                 (
@@ -492,10 +492,8 @@ module internal DescriptionListsImpl =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
         let display = toArray display
         MethodGroupItemParameter(
-          name = f.Name,
+          name = f.DisplayNameCore,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
-          // Note: the instantiation of any type parameters is currently incorporated directly into the type
-          // rather than being returned separately.
           display = display,
           isOptional=false)
     
@@ -505,8 +503,6 @@ module internal DescriptionListsImpl =
             if isGenerated i f then 
                 initial.Display 
             else 
-                // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
-                // the union type containing this case.
                 let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
                 toArray display
 
@@ -959,7 +955,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
         match items with
         | [item] ->
             match item.Item with
-            | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
+            | Item.Value vref -> IsActivePatternName vref.DisplayNameCoreMangled
             | _ -> false
         | _ -> false
 
@@ -1029,7 +1025,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                 let textInDeclList = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
-                    | None -> item.Item.DeclarationListText
+                    | None -> item.Item.DisplayNameCore
                 let textInCode = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
@@ -1054,9 +1050,6 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     
                     let item = items.Head
                     let glyph = GlyphOfItem(denv, item.Item)
-
-                    let textInDeclList = ConvertValCoreNameToDeclarationListText textInDeclList
-                    let textInCode = textInCode
 
                     let isAttributeItem = lazy (IsAttribute infoReader item.Item)
 

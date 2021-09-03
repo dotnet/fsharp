@@ -1031,7 +1031,7 @@ let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) =
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
     if rfref.RecdField.XmlDocSig = "" then
-        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
+        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 

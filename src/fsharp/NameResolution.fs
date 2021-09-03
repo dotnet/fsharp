@@ -243,45 +243,50 @@ type Item =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
         Item.CtorGroup (nm, minfos)
 
+    member d.DisplayNameCore =
+        match d with
+        | Item.Value v -> v.DisplayNameCore
+        | Item.ActivePatternCase apref -> apref.Name 
+        | Item.UnionCase(uinfo, _) -> uinfo.DisplayNameCore
+        | Item.ExnCase tcref -> tcref.DisplayNameCore
+        | Item.RecdField rfinfo -> rfinfo.DisplayNameCore 
+        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).DisplayNameCore
+        | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i] 
+        | Item.NewDef id -> id.idText 
+        | Item.ILField finfo -> finfo.FieldName 
+        | Item.Event einfo -> einfo.EventName 
+        | Item.Property(_, FSProp(_, _, Some v, _) :: _)
+        | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayNameCore
+        | Item.Property(nm, _) -> nm |> DecompileOpName
+        | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayNameCore
+        | Item.MethodGroup(nm, _, _) -> nm |> DecompileOpName
+        | Item.CtorGroup(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
+        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayNameCore
+        | Item.Types(nm, _) -> nm |> DemangleGenericTypeName 
+        | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
+        | Item.TypeVar (nm, _) -> nm 
+        | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
+        | Item.ArgName (id, _, _)  -> id.idText 
+        | Item.SetterArg (id, _) -> id.idText 
+        | Item.CustomOperation (customOpName, _, _) -> customOpName 
+        | Item.CustomBuilder (nm, _) -> nm 
+        | _ ->  ""
+
     member d.DisplayName =
         match d with
         | Item.Value v -> v.DisplayName
-        | Item.ActivePatternCase apref -> apref.Name
-        | Item.UnionCase(uinfo, _) -> DecompileOpName uinfo.UnionCase.DisplayName
-        | Item.ExnCase tcref -> tcref.LogicalName
-        | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
-        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).Name
-        | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i]
-        | Item.NewDef id -> id.idText
-        | Item.ILField finfo -> finfo.FieldName
-        | Item.Event einfo -> einfo.EventName
+        | Item.UnionCase(uinfo, _) -> uinfo.DisplayName
+        | Item.ExnCase tcref -> tcref.DisplayName
+        | Item.RecdField rfinfo -> rfinfo.DisplayName
+        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).DisplayName
         | Item.Property(_, FSProp(_, _, Some v, _) :: _)
         | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayName
-        | Item.Property(nm, _) -> ConvertValCoreNameToDisplayName false nm
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayName
-        | Item.MethodGroup(nm, _, _) -> ConvertValCoreNameToDisplayName false nm
-        | Item.CtorGroup(nm, _) -> DemangleGenericTypeName nm
-        | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
-        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> DemangleGenericTypeName tcref.DisplayName
-        | Item.Types(nm, _) -> DemangleGenericTypeName nm
+        | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
         | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
-        | Item.TypeVar (nm, _) -> nm
-        | Item.ModuleOrNamespaces(modref :: _) -> modref.DemangledModuleOrNamespaceName
-        | Item.ArgName (id, _, _)  -> id.idText
-        | Item.SetterArg (id, _) -> id.idText
-        | Item.CustomOperation (customOpName, _, _) -> customOpName
-        | Item.CustomBuilder (nm, _) -> nm
-        | _ ->  ""
-
-    member d.DeclarationListText =
-        match d with
-        | Item.Value v -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
-        | Item.Property(_, FSProp(_, _, Some v, _) :: _)
-        | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
-        | Item.Property(nm, _) -> ConvertValCoreNameToDeclarationListText nm
-        | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> ConvertValCoreNameToDeclarationListText v.CoreDisplayName
-        | Item.MethodGroup(nm, _, _) -> ConvertValCoreNameToDeclarationListText nm
-        | _ ->  d.DisplayName
+        | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
+        | _ ->  d.DisplayNameCore |> ConvertNameToDisplayName
 
 let valRefHash (vref: ValRef) =
     match vref.TryDeref with
@@ -1068,7 +1073,7 @@ let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
 let ChooseFSharpFieldInfosForNameEnv g ty (rfinfos: RecdFieldInfo list) =
     rfinfos
     |> List.filter (fun rfinfo -> rfinfo.IsStatic && typeEquiv g rfinfo.DeclaringType ty)
-    |> List.map (fun rfinfo -> KeyValuePair(rfinfo.Name, Item.RecdField rfinfo))
+    |> List.map (fun rfinfo -> KeyValuePair(rfinfo.LogicalName, Item.RecdField rfinfo))
 
 let ChooseILFieldInfosForNameEnv g ty (finfos: ILFieldInfo list) =
     finfos
@@ -2242,7 +2247,6 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
                 for tcref in tcrefs do
                     if IsEntityAccessible amap m ad tcref then
                         addToBuffer tcref.DisplayName
-                        addToBuffer tcref.DemangledModuleOrNamespaceName
 
             UndefinedName(depth, error, id, suggestNames)
 
@@ -2399,10 +2403,10 @@ let TryFindAnonRecdFieldOfType g typ nm =
         | None -> None
     | ValueNone -> None
 
-let CoreDisplayName(pinfo: PropInfo) =
+let DisplayNameCoreMangled(pinfo: PropInfo) =
     match pinfo with
-    | FSProp(_, _, _, Some set) -> set.CoreDisplayName
-    | FSProp(_, _, Some get, _) -> get.CoreDisplayName
+    | FSProp(_, _, _, Some set) -> set.DisplayNameCoreMangled
+    | FSProp(_, _, Some get, _) -> get.DisplayNameCoreMangled
     | FSProp _ -> failwith "unexpected (property must have either getter or setter)"
     | ILProp(ILPropInfo(_, def))  -> def.Name
 #if !NO_EXTENSIONTYPING
@@ -2412,7 +2416,7 @@ let CoreDisplayName(pinfo: PropInfo) =
 let DecodeFSharpEvent (pinfos: PropInfo list) ad g (ncenv: NameResolver) m =
     match pinfos with
     | [pinfo] when pinfo.IsFSharpEventProperty ->
-        let nm = CoreDisplayName pinfo
+        let nm = DisplayNameCoreMangled pinfo
         let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+nm), ad) g ncenv.amap m pinfo.ApparentEnclosingType
         let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+nm), ad) g ncenv.amap m pinfo.ApparentEnclosingType
         match  minfos1, minfos2 with
@@ -2423,7 +2427,7 @@ let DecodeFSharpEvent (pinfos: PropInfo list) ad g (ncenv: NameResolver) m =
             // FOUND PROPERTY-AS-EVENT BUT DIDN'T FIND CORRESPONDING ADD/REMOVE METHODS
             Some(Item.Property (nm, pinfos))
     | pinfo :: _ ->
-        let nm = CoreDisplayName pinfo
+        let nm = DisplayNameCoreMangled pinfo
         Some(Item.Property (nm, pinfos))
     | _ ->
         None
@@ -2855,13 +2859,12 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                         for modref in kv.Value do
                                             if IsEntityAccessible ncenv.amap m ad modref then
                                                 addToBuffer modref.DisplayName
-                                                addToBuffer modref.DemangledModuleOrNamespaceName
 
                                     // check if the user forgot to use qualified access
                                     for e in nenv.eTyconsByDemangledNameAndArity do                                    
                                         let hasRequireQualifiedAccessAttribute = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
                                         if hasRequireQualifiedAccessAttribute then
-                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
+                                            if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.LogicalName = id.idText) then
                                                 addToBuffer (e.Value.DisplayName + "." + id.idText)
 
                                 raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
@@ -2936,7 +2939,6 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             for modref in kv.Value do
                                 if IsEntityAccessible ncenv.amap m ad modref then
                                     addToBuffer modref.DisplayName
-                                    addToBuffer modref.DemangledModuleOrNamespaceName
 
                         for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
                             if IsEntityAccessible ncenv.amap m ad e.Value then
@@ -3036,7 +3038,6 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
             for kv in mty.ModulesAndNamespacesByDemangledName do
                 if IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value) then
                     addToBuffer kv.Value.DisplayName
-                    addToBuffer kv.Value.DemangledModuleOrNamespaceName
 
             for e in nenv.TyconsByDemangledNameAndArity FullyQualifiedFlag.OpenQualified do
                 if IsEntityAccessible ncenv.amap m ad e.Value then
@@ -3195,7 +3196,6 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref: ModuleOrNamespaceRef)
         for e in modref.ModuleOrNamespaceType.AllEntities do
             if IsEntityAccessible amap m ad (modref.NestedTyconRef e) then
                 addToBuffer e.DisplayName
-                addToBuffer e.DemangledModuleOrNamespaceName
 
     let errorTextF s = FSComp.SR.undefinedNameTypeIn(s, fullDisplayTextOfModRef modref)
     UndefinedName(depth, errorTextF, id, suggestPossibleTypes)
@@ -3223,7 +3223,6 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv: NameRe
                     for kv in modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName do
                         if IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value) then
                             addToBuffer kv.Value.DisplayName
-                            addToBuffer kv.Value.DemangledModuleOrNamespaceName
 
                 raze (UndefinedName(depth, FSComp.SR.undefinedNameNamespaceOrModule, id, suggestPossibleModules))
 
@@ -3278,7 +3277,6 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         for kv in nenv.TyconsByDemangledNameAndArity fullyQualified do
                             if IsEntityAccessible ncenv.amap m ad kv.Value then
                                 addToBuffer kv.Value.DisplayName
-                                addToBuffer kv.Value.DemangledModuleOrNamespaceName
                                 match occurence with
                                 | ItemOccurence.UseInAttribute ->
                                     if kv.Value.DisplayName.EndsWithOrdinal("Attribute") then
@@ -3456,7 +3454,7 @@ let SuggestLabelsOfRelatedRecords g (nenv: NameResolutionEnv) (id: Ident) (allFi
             for e in nenv.eTyconsByDemangledNameAndArity do
                 let hasRequireQualifiedAccessAttribute = HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute e.Value.Attribs
                 if hasRequireQualifiedAccessAttribute then
-                    if e.Value.IsRecordTycon && e.Value.AllFieldsArray |> Seq.exists (fun x -> x.Name = id.idText) then
+                    if e.Value.IsRecordTycon && e.Value.AllFieldsArray |> Seq.exists (fun x -> x.LogicalName = id.idText) then
                         addToBuffer (e.Value.DisplayName + "." + id.idText)
 
     UndefinedName(0, FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
@@ -4057,7 +4055,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
 
       let rfinfos =
           ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-          |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
+          |> List.filter (fun fref -> fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
 
       let nestedTypes =
           ty
@@ -4746,7 +4744,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
 
           let rfinfos =
               ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
-              |> List.filter (fun fref -> fref.Name = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
+              |> List.filter (fun fref -> fref.LogicalName = id && IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef && fref.RecdField.IsStatic = statics)
 
           let nestedTypes = ty |> GetNestedTypesOfType (ad, ncenv, Some id, TypeNameResolutionStaticArgsInfo.Indefinite, false, m)
 

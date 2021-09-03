@@ -652,17 +652,38 @@ type Entity =
         | Some optData -> optData.entity_compiled_name <- name
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
+    /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters.
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// No backticks are added for entities with non-identifier names
+    member x.DisplayNameCore = x.GetDisplayName(coreName=true)
+
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName()
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayName = x.GetDisplayName(coreName=false)
 
     /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayNameWithStaticParametersAndTypars =
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars =
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayNameWithStaticParameters =
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -671,17 +692,19 @@ type Entity =
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+    member x.GetDisplayName(coreName, ?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
         let withStaticParameters = defaultArg withStaticParameters false
         let withTypars = defaultArg withTypars false
         let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
+        if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName else 
 
         let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
+                let nm = if coreName then nm else ConvertNameToDisplayName nm
                 if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
                     let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
                     nm + "<" + String.concat "," typearNames + ">"
@@ -1656,13 +1679,29 @@ type UnionCase =
         | Some (m, false) -> m
         | _ -> uc.Range 
 
+    /// Get the logical name of the union case
+    member uc.LogicalName = uc.Id.idText
+
+    /// Get the core of the display name of the union case
+    ///
+    /// Backticks and parens are not added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    member uc.DisplayNameCore = uc.LogicalName |> DecompileOpName
+
     /// Get the display name of the union case
-    member uc.DisplayName = uc.Id.idText
+    ///
+    /// Backticks and parens are added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    member uc.DisplayName = uc.DisplayNameCore |> ConvertValNameToDisplayName false
 
     /// Get the name of the case in generated IL code.
+    /// Note logical names `op_Nil` and `op_ConsCons` become `Empty` and `Cons` respectively.
+    /// This is because this is how ILX union code gen expects to see them.
     member uc.CompiledName =
         let idText = uc.Id.idText
-        if idText = opNameCons then "Cons" 
+        if idText = opNameCons then "Cons"
         elif idText = opNameNil then "Empty"
         else idText
 
@@ -1684,7 +1723,7 @@ type UnionCase =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "UnionCase(" + x.DisplayName + ")"
+    override x.ToString() = "UnionCase(" + x.LogicalName + ")"
 
 /// Represents a class, struct or record field in an F# type definition.
 /// This may represent a "field" in either a struct, class, record or union.
@@ -1764,7 +1803,13 @@ type RecdField =
     member v.Id = v.rfield_id
 
     /// Name of the field 
-    member v.Name = v.rfield_id.idText
+    member v.LogicalName = v.rfield_id.idText
+
+    /// Name of the field. For fields this is the same as the logical name.
+    member v.DisplayNameCore = v.LogicalName
+
+    /// Name of the field 
+    member v.DisplayName = v.DisplayNameCore |> ConvertNameToDisplayName
 
       /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member v.IsCompilerGenerated = v.rfield_secret
@@ -1806,7 +1851,7 @@ type RecdField =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.Name
+    override x.ToString() = x.LogicalName
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2884,18 +2929,22 @@ type Val =
 
     /// The name of the property.
     /// - If this is a property then this is 'Foo' 
-    ///  - If this is an implementation of an abstract slot then this is the name of the property implemented by the abstract slot
     member x.PropertyName = 
         let logicalName = x.LogicalName
         ChopPropertyName logicalName
 
-    /// The name of the method. 
+    /// The display name of the value or method but without operator names decompiled and without backticks etc.
+    /// This is very close to LogicalName except that properties have get_ removed.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    /// Note: here "Mangled" means "op_Addition"
+    ///
     ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
     ///   - If this is an active pattern               --> |A|_|
     ///   - If this is an operator                     --> op_Addition
     ///   - If this is an identifier needing backticks --> A-B
-    member x.CoreDisplayName = 
+    member x.DisplayNameCoreMangled = 
         match x.MemberInfo with 
         | Some membInfo -> 
             match membInfo.MemberFlags.MemberKind with 
@@ -2907,6 +2956,15 @@ type Val =
             | SynMemberKind.PropertyGet -> x.PropertyName
         | None -> x.LogicalName
 
+    /// The display name of the value or method with operator names decompiled but without backticks etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    member x.DisplayNameCore = 
+        x.DisplayNameCoreMangled |> DecompileOpName
+
+    /// The full text for the value to show in error messages and to use in code.
+    /// This includes backticks, parens etc.
+    ///
     ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
     ///   - If this is an active pattern               --> (|A|_|)
@@ -2915,7 +2973,7 @@ type Val =
     ///   - If this is a base value  --> base
     ///   - If this is a value named ``base`` --> ``base``
     member x.DisplayName = 
-        ConvertValCoreNameToDisplayName x.IsBaseVal x.CoreDisplayName
+        ConvertValNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
@@ -3318,15 +3376,28 @@ type EntityRef =
     member x.CompiledName = x.Deref.CompiledName
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
+    ///
+    /// No backticks are added for entities with non-identifier names
+    member x.DisplayNameCore = x.Deref.DisplayNameCore
+
+    /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayName = x.Deref.DisplayName
 
     /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParameters = x.Deref.DisplayNameWithStaticParameters
 
     /// The code location where the module, namespace or type is defined.
@@ -3595,7 +3666,7 @@ type EntityRef =
 
     member x.AllFieldAsRefList = x.AllFieldsAsList |> List.map x.MakeNestedRecdFieldRef
 
-    member x.MakeNestedRecdFieldRef (rf: RecdField) = RecdFieldRef (x, rf.Name)
+    member x.MakeNestedRecdFieldRef (rf: RecdField) = RecdFieldRef (x, rf.LogicalName)
 
     member x.MakeNestedUnionCaseRef (uc: UnionCase) = UnionCaseRef (x, uc.Id.idText)
 
@@ -3673,9 +3744,11 @@ type ValRef =
 
     member x.LogicalName = x.Deref.LogicalName
 
-    member x.DisplayName = x.Deref.DisplayName
+    member x.DisplayNameCoreMangled = x.Deref.DisplayNameCoreMangled
 
-    member x.CoreDisplayName = x.Deref.CoreDisplayName
+    member x.DisplayNameCore = x.Deref.DisplayNameCore
+
+    member x.DisplayName = x.Deref.DisplayName
 
     member x.Range = x.Deref.Range
 
@@ -3887,7 +3960,7 @@ type UnionCaseRef =
     member x.Index = 
         try 
            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            x.TyconRef.UnionCasesArray |> Array.findIndex (fun ucspec -> ucspec.DisplayName = x.CaseName) 
+            x.TyconRef.UnionCasesArray |> Array.findIndex (fun uc -> uc.LogicalName = x.CaseName) 
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
@@ -3913,8 +3986,11 @@ type RecdFieldRef =
     /// Get a reference to the type containing this union case
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
 
-    /// Get the name off the field
+    /// Get the name of the field
     member x.FieldName = let (RecdFieldRef(_, id)) = x in id
+
+    /// Get the name of the field, with backticks added for non-identifier names
+    member x.DisplayName = x.FieldName |> ConvertNameToDisplayName
 
     /// Get the Entity for the type containing this union case
     member x.Tycon = x.TyconRef.Deref
@@ -3947,7 +4023,7 @@ type RecdFieldRef =
         let (RecdFieldRef(tcref, id)) = x
         try 
             // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.Name = id)  
+            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.LogicalName = id)  
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
@@ -5599,13 +5675,13 @@ type Construct() =
     /// Create the field tables for a record or class type
     static member MakeRecdFieldsTable ucs: TyconRecdFields = 
         { FieldsByIndex = Array.ofList ucs 
-          FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
+          FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) }
 
     /// Create the union case tables for a union type
     static member MakeUnionCases ucs: TyconUnionData = 
         { CasesTable = 
             { CasesByIndex = Array.ofList ucs 
-              CasesByName = NameMap.ofKeyedList (fun uc -> uc.DisplayName) ucs }
+              CasesByName = NameMap.ofKeyedList (fun uc -> uc.LogicalName) ucs }
           CompiledRepresentation=newCache() }
 
     /// Create a node for a union type

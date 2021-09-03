@@ -2095,7 +2095,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                             if tcref.UnionCasesArray.Length = 1 && hasNoArgs then 
                                let ucase1 = tcref.UnionCasesArray.[0]
                                for f in ucase1.RecdFieldsArray do
-                                   if f.Name = nm then error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), f.Name, ucase1.Range))
+                                   if f.LogicalName = nm then
+                                       error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), f.LogicalName, ucase1.Range))
 
                 // Default augmentation contains the nasty 'Case<UnionCase>' etc.
                 let prefix = "New"
@@ -2112,10 +2113,10 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                     | None -> ()
 
                 match tcref.GetFieldByName nm with 
-                | Some rf -> error(NameClash(nm, kind, v.DisplayName, v.Range, "field", rf.Name, rf.Range))
+                | Some rf -> error(NameClash(nm, kind, v.DisplayName, v.Range, "field", rf.LogicalName, rf.Range))
                 | None -> ()
 
-            check false v.CoreDisplayName
+            check false v.DisplayNameCoreMangled
             check false v.DisplayName
             check false (v.CompiledName cenv.g.CompilerGlobalState)
 
@@ -2162,7 +2163,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
-    CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
+    CheckTypeForAccess cenv env (fun () -> rfield.LogicalName) access m fieldTy
 
     if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
         // Permit Span fields in IsByRefLike types

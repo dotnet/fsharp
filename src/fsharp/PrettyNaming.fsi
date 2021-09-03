@@ -90,20 +90,14 @@ val CompileOpName: string -> string
 /// Used on names of all kinds
 val DecompileOpName: string -> string
 
-/// Take a core display name (e.g. op_Addition or PropertyName) and convert it to text used in a declaration list
+/// Take a core display name (e.g. "List" or "Strange module name") and convert it to display text
+/// by adding backticks if necessary. 
 ///     Foo                   --> Foo
-///     +                     --> +
-///     op_Addition           --> +
-///     op_Multiply           --> *
-///     op_DereferencePercent --> !%
-///     A-B                   --> A-B
-///     |A|_|                 --> |A|_|
-///     base                  --> base
-///     or                    --> or
-///     mod                   --> mod
-val internal ConvertValCoreNameToDeclarationListText: name: string -> string
+///     +                     --> ``+``
+///     A-B                   --> ``A-B``
+val internal ConvertNameToDisplayName: name: string -> string
 
-/// Take a core display name (e.g. op_Addition or PropertyName) and convert it to display text
+/// Take a core display name for a value (e.g. op_Addition or PropertyName) and convert it to display text
 ///     Foo                   --> Foo
 ///     +                     --> ``+``
 ///     op_Addition           --> (+)
@@ -114,13 +108,13 @@ val internal ConvertValCoreNameToDeclarationListText: name: string -> string
 ///     base                  --> base
 ///     or                    --> or
 ///     mod                   --> mod
-val internal ConvertValCoreNameToDisplayName: isBaseVal: bool -> name: string -> string
+val internal ConvertValNameToDisplayName: isBaseVal: bool -> name: string -> string
 
-/// Like ConvertValCoreNameToDisplayName but produces a tagged layout
-val internal ConvertValCoreNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
+/// Like ConvertNameToDisplayName but produces a tagged layout
+val internal ConvertNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
 
-/// Used for type names, module names etc.
-val internal ConvertDisplayNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
+/// Like ConvertValNameToDisplayName but produces a tagged layout
+val internal ConvertValNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 val internal opNameCons: string
 

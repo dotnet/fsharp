@@ -1453,7 +1453,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
              (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
 
-    CheckForAbnormalOperatorNames cenv id.idRange vspec.CoreDisplayName memberInfoOpt
+    CheckForAbnormalOperatorNames cenv id.idRange vspec.DisplayNameCoreMangled memberInfoOpt
 
     PublishValueDefn cenv env declKind vspec
 
@@ -1960,7 +1960,7 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m cenv env overa
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.Name, ucinfo.Tycon.DisplayName) |> snd, m))
+            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m))
 
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes cenv.g ucref m |> CommitOperationResult
@@ -5105,7 +5105,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                             extraPatterns.Add pat
                             match item with
                             | Item.UnionCase(uci, _) ->
-                                errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.Name, id.idText), id.idRange))
+                                errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.DisplayName, id.idText), id.idRange))
                             | Item.ExnCase tcref ->
                                 errorR (Error (FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (tcref.DisplayName, id.idText), id.idRange))
                             | _ ->
@@ -5203,7 +5203,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
         | Item.RecdField rfinfo ->
             CheckRecdFieldInfoAccessible cenv.amap lidRange env.AccessRights rfinfo
-            if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.Name), lidRange))
+            if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), lidRange))
             CheckRecdFieldInfoAttributes cenv.g rfinfo lidRange |> CommitOperationResult
             match rfinfo.LiteralValue with
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), lidRange))
@@ -6473,7 +6473,7 @@ and TcRecordConstruction cenv (overallTy: TType) env tpenv optOrigExprInfo objTy
         [ for fname, fexpr in fldsList do
               let fspec =
                   try
-                      fspecs |> List.find (fun fspec -> fspec.Name = fname)
+                      fspecs |> List.find (fun fspec -> fspec.LogicalName = fname)
                   with :? KeyNotFoundException ->
                       error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy), m))
               let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
@@ -6496,8 +6496,8 @@ and TcRecordConstruction cenv (overallTy: TType) env tpenv optOrigExprInfo objTy
             let fieldNameUnbound nom = List.forall (fun (name, _) -> name <> nom) fldsList
             let flds =
                 fspecs |> List.choose (fun rfld ->
-                    if fieldNameUnbound rfld.Name && not rfld.IsZeroInit
-                    then Some(rfld.Name, mkRecdFieldGetViaExprAddr (oldvaddre, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
+                    if fieldNameUnbound rfld.LogicalName && not rfld.IsZeroInit
+                    then Some(rfld.LogicalName, mkRecdFieldGetViaExprAddr (oldvaddre, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
                     else None)
             flds
 
@@ -6508,7 +6508,7 @@ and TcRecordConstruction cenv (overallTy: TType) env tpenv optOrigExprInfo objTy
 
     // Check all fields are bound
     fspecs |> List.iter (fun fspec ->
-      if not (fldsList |> List.exists (fun (fname, _) -> fname = fspec.Name)) then
+      if not (fldsList |> List.exists (fun (fname, _) -> fname = fspec.LogicalName)) then
         error(Error(FSComp.SR.tcFieldRequiresAssignment(fspec.rfield_id.idText, fullDisplayTextOfTyconRef tcref), m)))
 
     // Other checks (overlap with above check now clear)
@@ -8105,7 +8105,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
                             else
                                 match item with
                                 | Item.UnionCase(uci, _) ->
-                                    error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.Name, id.idText), id.idRange))
+                                    error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.DisplayName, id.idText), id.idRange))
                                 | Item.ExnCase tcref ->
                                     error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
                                 | Item.ActivePatternResult _ ->
@@ -8547,7 +8547,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
     | Item.RecdField rfinfo ->
         // Get static F# field or literal
         CheckRecdFieldInfoAccessible cenv.amap mItem ad rfinfo
-        if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.Name), mItem))
+        if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mItem))
         CheckRecdFieldInfoAttributes g rfinfo mItem |> CommitOperationResult
         let fref = rfinfo.RecdFieldRef
         let fieldTy = rfinfo.FieldType

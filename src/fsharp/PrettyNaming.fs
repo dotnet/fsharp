@@ -475,13 +475,10 @@ let NormalizeIdentifierBackticks (name: string) : string =
         else name
     AddBackticksToIdentifierIfNeeded s
 
-let ConvertValCoreNameToDeclarationListText name =
-    if IsMangledOpName name then
-        DecompileOpName name
-    else
-        name
-    
-let ConvertValCoreNameToDisplayName isBaseVal name =
+let ConvertNameToDisplayName name =
+    AddBackticksToIdentifierIfNeeded name
+
+let ConvertValNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base" 
     elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
@@ -494,28 +491,28 @@ let ConvertValCoreNameToDisplayName isBaseVal name =
         else
             "(" + nm + ")"
     else
-        AddBackticksToIdentifierIfNeeded name
+        ConvertNameToDisplayName name
     
-let ConvertDisplayNameToDisplayLayout nonOpLayout name =
+let ConvertNameToDisplayLayout nonOpLayout name =
     if DoesIdentifierNeedBackticks name then
         leftL (TaggedText.tagPunctuation "``") ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
     else
         nonOpLayout name
 
-let ConvertValCoreNameToDisplayLayout isBaseVal nonOpLayout name =
+let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
     if isBaseVal && name = "base" then
         nonOpLayout "base" 
     elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsMangledOpName name && (nm = name) then
-            ConvertDisplayNameToDisplayLayout nonOpLayout name
+            ConvertNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
     else
-        ConvertDisplayNameToDisplayLayout nonOpLayout name
+        ConvertNameToDisplayLayout nonOpLayout name
 
 let opNameCons = CompileOpName "::"
 

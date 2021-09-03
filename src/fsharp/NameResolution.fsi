@@ -128,9 +128,15 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
-    member DisplayName: string
+    /// The text for the item to use in the declaration list.
+    /// This does not include backticks, parens etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    member DisplayNameCore: string
 
-    member DeclarationListText: string
+    /// The full text for the item to show in error messages and to use in code.
+    /// This includes backticks, parens etc.
+    member DisplayName: string
 
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 

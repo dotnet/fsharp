@@ -666,12 +666,12 @@ module internal SymbolHelpers =
             | _ -> ""
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
-            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName
+            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
         | Item.TypeVar (id, _) -> id
         | Item.ArgName (id, _, _) -> id.idText
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
-        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).Name
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
         // unreachable 
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
@@ -871,10 +871,10 @@ module internal SymbolHelpers =
             GetF1Keyword g (Item.Value apref.ActivePatternVal)
 
         | Item.UnionCase(ucinfo, _) ->
-            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.Name |> Some
+            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.DisplayName |> Some
 
         | Item.RecdField rfi ->
-            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.Name |> Some
+            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.DisplayName |> Some
         
         | Item.AnonRecdField _ -> None
         

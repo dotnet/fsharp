@@ -455,7 +455,7 @@ module TcRecdUnionAndEnumDeclarations =
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
         let seen = Dictionary()
         (synFields, tastFields) ||> List.iter2 (fun sf f ->
-            match seen.TryGetValue f.Name with
+            match seen.TryGetValue f.LogicalName with
             | true, synField ->
                 match sf, synField with
                 | SynField(_, _, Some id, _, _, _, _, _), SynField(_, _, Some _, _, _, _, _, _) ->
@@ -465,7 +465,7 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
             | _ ->
-                seen.Add(f.Name, sf))
+                seen.Add(f.LogicalName, sf))
                 
     let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
@@ -503,7 +503,7 @@ module TcRecdUnionAndEnumDeclarations =
                 if not (typeEquiv cenv.g recordTy thisTy) then 
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
                 rfields, recordTy
-        let names = rfields |> List.map (fun f -> f.Name)
+        let names = rfields |> List.map (fun f -> f.DisplayNameCore)
         let doc = xmldoc.ToXmlDoc(true, Some names)
         Construct.NewUnionCase id rfields recordTy attrs doc vis
 
@@ -1379,7 +1379,7 @@ module IncrClassChecking =
             [ for b in memberBinds do 
                   yield b.Var.CompiledName cenv.g.CompilerGlobalState
                   yield b.Var.DisplayName 
-                  yield b.Var.CoreDisplayName 
+                  yield b.Var.DisplayNameCoreMangled 
                   yield b.Var.LogicalName ] 
         let reps = IncrClassReprInfo.Empty(g, takenFieldNames)
 
@@ -2040,7 +2040,7 @@ module MutRecBindingChecking =
 
                         if needsSafeStaticInit && hasStaticBindings then
                             let rfield = MakeSafeInitField g envForDecls tcref.Range true
-                            SafeInitField(mkRecdFieldRef tcref rfield.Name, rfield)
+                            SafeInitField(mkRecdFieldRef tcref rfield.LogicalName, rfield)
                         else
                             NoSafeInitInfo
 
@@ -3147,7 +3147,7 @@ module EstablishTypeDefinitionCores =
         if InstanceMembersNeedSafeInitCheck cenv m thisTy then 
             let rfield = MakeSafeInitField cenv.g env m false
             let tcref = tcrefOfAppTy cenv.g thisTy
-            SafeInitField (mkRecdFieldRef tcref rfield.Name, rfield)
+            SafeInitField (mkRecdFieldRef tcref rfield.LogicalName, rfield)
         else
             NoSafeInitInfo
 
@@ -3848,7 +3848,7 @@ module EstablishTypeDefinitionCores =
                 for fspec in fields do
                     if not fspec.IsCompilerGenerated then
                         let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
-                        let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
+                        let nenv' = AddFakeNameToNameEnv fspec.LogicalName nenv (Item.RecdField info) 
                         // Name resolution gives better info for tooltips
                         let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec))
                         CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
@@ -3928,7 +3928,7 @@ module EstablishTypeDefinitionCores =
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst tpenv unionCases
                         
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]
+                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.LogicalName ]
                       if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
                           errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 

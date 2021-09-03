@@ -1857,6 +1857,8 @@ and p_attribs_ext f x st = p_list_ext f p_attrib x st
 and p_unioncase_spec x st =
     p_rfield_table x.FieldTable st
     p_ty x.ReturnType st
+    // The union case compiled name is now computed from Id field when needed and is not stored in UnionCase record.
+    // So this field doesn't really need to be stored but it exists for legacy compat
     p_string x.CompiledName st
     p_ident x.Id st
     // The XmlDoc are only written for the extended in-memory format. We encode their presence using a marker bit here

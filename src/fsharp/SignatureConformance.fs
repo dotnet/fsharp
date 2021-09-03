@@ -418,8 +418,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkRecordFields m aenv infoReader (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
-            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
-            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
+            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
+            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
             NameMap.suball2 
                 (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName), m)); false) 
                 (checkField aenv infoReader implTycon) m1 m2 &&
@@ -436,8 +436,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkRecordFieldsForExn _g _denv err aenv (infoReader: InfoReader) (enclosingTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
-            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
-            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name)
+            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
+            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName)
             NameMap.suball2 (fun s _ -> errorR(err (fun (x, y) -> FSComp.SR.ExceptionDefsNotCompatibleFieldInSigButNotImpl(s, x, y))); false) (checkField aenv infoReader enclosingTycon)  m1 m2 &&
             NameMap.suball2 (fun s _ -> errorR(err (fun (x, y) -> FSComp.SR.ExceptionDefsNotCompatibleFieldInImplButNotSig(s, x, y))); false) (fun x y -> checkField aenv infoReader enclosingTycon y x)  m2 m1 &&
             // This check is required because constructors etc. are externally visible 
@@ -462,8 +462,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         and checkClassFields isStruct m aenv infoReader (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
             let sigFields = sigFields.TrueFieldsAsList
-            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
-            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.Name) 
+            let m1 = implFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) 
+            let m2 = sigFields |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) 
             NameMap.suball2 
                 (fun fieldName _ -> errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldRequiredButNotSpecified(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, fieldName), m)); false) 
                 (checkField aenv infoReader implTycon) m1 m2 &&
