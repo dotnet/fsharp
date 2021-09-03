@@ -654,7 +654,7 @@ type internal FSharpNavigation
                 Uri(sfp).MakeRelativeUri(targetUri).ToString()
         relativePathEscaped |> Uri.UnescapeDataString
 
-    member _.NavigateToAux (range: range) =
+    member _.NavigateTo (range: range) =
         asyncMaybe {
             let targetPath = range.FileName
             let! targetDoc = solution.TryGetDocumentFromFSharpRange (range, initialDoc.Project.Id)
@@ -672,26 +672,17 @@ type internal FSharpNavigation
             match initialDoc.FilePath, targetPath with
             | Signature, Signature
             | Implementation, Implementation ->
-                return fun () -> gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar); async { return Some() }
+                return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar)
 
             // Adjust the target from signature to implementation.
             | Implementation, Signature  ->
-                return fun () -> asyncMaybe { return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar) }
+                return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar)
                     
             // Adjust the target from implmentation to signature.
             | Signature, Implementation ->
-                return fun () -> asyncMaybe { return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar) }
+                return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar)
         }
-
-    member this.NavigateTo (range: range) =
-        async {
-            let! goTo = this.NavigateToAux range
-            match goTo with
-            | Some goTo ->
-                return! goTo()
-            | _ ->
-                return None
-        } |> Async.Ignore |> Async.StartImmediate
+        |> Async.Ignore |> Async.StartImmediate
 
     member _.FindDefinitions(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
@@ -706,20 +697,9 @@ type internal FSharpNavigation
         )
         |> Task.FromResult
 
-    member private this.FindDefinitionTask(position, cancellationToken) =
-        async {
-            let! result = FSharpQuickInfo.getQuickInfo(initialDoc, position, cancellationToken)
-            match result with
-            | Some(symbolUseRange, _, _) ->
-                return! this.NavigateToAux(symbolUseRange)
-            | _ ->
-                return None
-        }
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
     member this.TryGoToDefinition(position, cancellationToken) =
-       // let gtd = GoToDefinition(metadataAsSource)
-        let gtdTask = this.FindDefinitionTask(position, cancellationToken) //gtd.FindDefinitionTask(initialDoc, position, cancellationToken)
+        let gtd = GoToDefinition(metadataAsSource)
+        let gtdTask = gtd.FindDefinitionTask(initialDoc, position, cancellationToken)
         
         // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
         // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
@@ -727,18 +707,15 @@ type internal FSharpNavigation
             // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
             gtdTask.Wait(cancellationToken)
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
-                let goTo = gtdTask.Result.Value
-                let goToTask = goTo() |> RoslynHelpers.StartAsyncAsTask cancellationToken
-                goToTask.Wait(cancellationToken)
-                //match result with
-                //| FSharpGoToDefinitionResult.NavigableItem(navItem) ->
-                //    gtd.NavigateToItem(navItem, statusBar)
-                //    // 'true' means do it, like Sheev Palpatine would want us to.
-                //    true
-                //| FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
-                //    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken, statusBar)
-                //    // 'true' means do it, like Sheev Palpatine would want us to.
-                true
+                match gtdTask.Result.Value with
+                | FSharpGoToDefinitionResult.NavigableItem(navItem), _ ->
+                    gtd.NavigateToItem(navItem, statusBar)
+                    // 'true' means do it, like Sheev Palpatine would want us to.
+                    true
+                | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _ ->
+                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken, statusBar)
+                    // 'true' means do it, like Sheev Palpatine would want us to.
+                    true
             else 
                 statusBar.TempMessage (SR.CannotDetermineSymbol())
                 false
