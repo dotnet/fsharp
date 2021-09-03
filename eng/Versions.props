@@ -22,7 +22,7 @@
     <FSLanguageReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)</FSLanguageReleaseNotesVersion>
     <!-- FSharp.Core version -->
     <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
-    <FSCorePackageVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersion>
+    <FSCorePackageVersionValue>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersionValue>
     <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
@@ -35,9 +35,9 @@
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionProperty>5.0.2</FSharpCoreShippedPackageVersionProperty>
+    <FSharpCoreShippedPackageVersionValue>5.0.2</FSharpCoreShippedPackageVersionValue>
     <!-- The pattern for specifying the preview package -->
-    <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
+    <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
     <FSToolsMinorVersion>0</FSToolsMinorVersion>

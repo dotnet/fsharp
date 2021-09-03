@@ -33,8 +33,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersion)" Condition="'$(VersionSuffix)'==''" />
-    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersion)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
     <NuspecProperty Include="MicrosoftBuildFrameworkPackageVersion=$(MicrosoftBuildFrameworkVersion)" />
     <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildTasksCoreVersion)" />
     <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
