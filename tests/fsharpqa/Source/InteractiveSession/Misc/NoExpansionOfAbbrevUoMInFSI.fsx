@@ -1,7 +1,7 @@
 // #Regression #NoMT #FSI 
 // Regression test for FSHARP1.0:5056
 // F# expands unit-of-measure abbreviations unnecessarily
-//<Expects status="success">val it : float<N> \* float<N> = \(2\.0, 2\.0\)</Expects>
+//<Expects status="success">val it: float<N> \* float<N> = \(2\.0, 2\.0\)</Expects>
 
 [<Measure>] type kg
 [<Measure>] type m 

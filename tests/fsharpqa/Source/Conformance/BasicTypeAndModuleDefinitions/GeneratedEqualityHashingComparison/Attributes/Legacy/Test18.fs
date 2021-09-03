@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
 
-//<Expects status="error" span="(6,5-6,22)" id="FS0501">The object constructor 'ReferenceEqualityAttribute' takes 0 argument\(s\) but is here given 1\. The required signature is 'new : unit -> ReferenceEqualityAttribute'\.$</Expects>
+//<Expects status="error" span="(6,5-6,22)" id="FS0501">The object constructor 'ReferenceEqualityAttribute' takes 0 argument\(s\) but is here given 1\. The required signature is 'new: unit -> ReferenceEqualityAttribute'\.$</Expects>
 
 module M18 = 
   [<ReferenceEquality(false)>]

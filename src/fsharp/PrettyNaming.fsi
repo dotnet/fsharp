@@ -22,28 +22,99 @@ val internal qmarkSet: string = "?<-"
 [<Literal>]
 val internal opNamePrefix: string = "op_"
 
-/// Returns `true` if given string is an operator or double backticked name, e.g. ( |>> ) or ( long identifier ).
-/// (where ( long identifier ) is the display name for ``long identifier``).
-val IsOperatorOrBacktickedName: name:string -> bool
+/// Returns `true` if given string is an operator display name, e.g. 
+///    ( |>> )
+///    |>>
+///    ..
+val IsOperatorDisplayName: name:string -> bool
 
-/// Returns `true` if given string is an operator display name, e.g. ( |>> )
-val IsOperatorName: name:string -> bool
+/// Is the name a valid F# identifier
+///     A            --> true
+///     A'           --> true
+///     _A           --> true
+///     A0           --> true
+///     |A|B|        --> false
+///     op_Addition  --> true
+///     +            --> false
+val IsIdentifierName: name:string -> bool
 
-val IsMangledOpName: n:string -> bool
+/// Determines if the specified name is a valid name for an active pattern.
+///     |A|_|        --> true 
+///     |A|B|        --> true 
+///     |A|          --> true 
+///     |            --> false
+///     ||           --> false
+///     op_Addition  --> false
+val IsActivePatternName: name:string -> bool
 
-/// Compiles an operator into a mangled operator name.
-/// For example, "!%" becomes "op_DereferencePercent".
-/// This function accepts both built-in and custom operators.
+/// Returns `true` if given string requires double backticks to be a valid identifier, e.g. 
+///     +     true, e.g. ``+``    (this is not op_Addition)
+///     |>>   true, e.g. ``|>>``  (this is not op_Addition)
+///     A-B   true, e.g. ``A-B``
+///     AB    false, e.g. AB
+///     |A|_| false   // this is an active pattern name, needs parens not backticks
+val DoesIdentifierNeedBackticks: name: string -> bool
+
+/// Adds double backticks if necessary to make a valid identifier, e.g.
+///     op_Addition  -->  op_Addition
+///     +            -->  ``+``    (this is not op_Addition)
+///     |>>          -->  ``|>>``  (this is not an op_)
+///     A-B          -->  ``A-B``
+///     AB           -->  AB
+///     |A|_|        -->  |A|_|    this is an active pattern name, needs parens not backticks
+val AddBackticksToIdentifierIfNeeded: name: string -> string
+
+/// Removes double backticks if not necessary to make a valid identifier, e.g.
+///     ``A``        --> A
+///     ``A-B``      --> ``A-B``
+val NormalizeIdentifierBackticks: name: string -> string
+
+/// Is the name a mangled operator name (approximate)
+///    op_Addition - yes
+///    op_Quack - yes
+val IsMangledOpName: name:string -> bool
+
+/// Compiles an operator into a mangled operator name. For example,
+///    +  --> op_Addition
+///    !%  --> op_DereferencePercent
+/// Only used on actual operator names
 val CompileOpName: string -> string
 
-/// Decompiles a mangled operator name back into an operator.
-/// For example, "op_DereferencePercent" becomes "!%".
-/// This function accepts mangled names for both built-in and custom operators.
+/// Decompiles a potentially-mangled operator name back into a display name. For example:
+///     Foo                   --> Foo
+///     +                     --> +
+///     op_Addition           --> +
+///     op_DereferencePercent --> !%
+///     A-B                   --> A-B
+///     |A|_|                 --> |A|_|
+/// Used on names of all kinds
 val DecompileOpName: string -> string
 
-val DemangleOperatorName: nm:string -> string
+/// Take a core display name (e.g. "List" or "Strange module name") and convert it to display text
+/// by adding backticks if necessary. 
+///     Foo                   --> Foo
+///     +                     --> ``+``
+///     A-B                   --> ``A-B``
+val internal ConvertNameToDisplayName: name: string -> string
 
-val internal DemangleOperatorNameAsLayout: nonOpTagged:(string -> #TaggedText) -> nm:string -> Layout
+/// Take a core display name for a value (e.g. op_Addition or PropertyName) and convert it to display text
+///     Foo                   --> Foo
+///     +                     --> ``+``
+///     op_Addition           --> (+)
+///     op_Multiply           --> ( * )
+///     op_DereferencePercent --> (!%)
+///     A-B                   --> ``A-B``
+///     |A|_|                 --> (|A|_|)
+///     base                  --> base
+///     or                    --> or
+///     mod                   --> mod
+val internal ConvertValNameToDisplayName: isBaseVal: bool -> name: string -> string
+
+/// Like ConvertNameToDisplayName but produces a tagged layout
+val internal ConvertNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
+
+/// Like ConvertValNameToDisplayName but produces a tagged layout
+val internal ConvertValNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 val internal opNameCons: string
 
@@ -120,9 +191,6 @@ val internal MangledGlobalName: string = "`global`"
 
 val internal IllegalCharactersInTypeAndNamespaceNames: char []
 
-/// Determines if the specified name is a valid name for an active pattern.
-val IsActivePatternName: name:string -> bool
-
 type internal ActivePatternInfo =
     | APInfo of bool * (string * range) list * range
     member ActiveTags: string list
@@ -191,4 +259,7 @@ val internal suffixForTupleElementAssignmentTarget : string = "$tupleElem"
 
 [<Literal>] 
 val internal stackVarPrefix : string = "__stack_"
+
+/// Keywords paired with their descriptions. Used in completion and quick info.
+val internal keywordsWithDescription: (string * string) list
 
