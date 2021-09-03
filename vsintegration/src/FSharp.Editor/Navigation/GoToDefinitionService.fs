@@ -23,7 +23,6 @@ type internal FSharpGoToDefinitionService
         metadataAsSource: FSharpMetadataAsSourceService
     ) =
 
-    //let gtd = GoToDefinition(metadataAsSource)
     let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
    
     interface IFSharpGoToDefinitionService with
