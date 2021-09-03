@@ -1680,7 +1680,7 @@ type UnionCase =
     /// Backticks and parens are added for non-identifiers.
     ///
     /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
-    member uc.DisplayName = uc.DisplayNameCore |> ConvertValNameToDisplayName false
+    member uc.DisplayName = uc.LogicalName |> ConvertValNameToDisplayName false
 
     /// Get the name of the case in generated IL code.
     /// Note logical names `op_Nil` and `op_ConsCons` become `Empty` and `Cons` respectively.
