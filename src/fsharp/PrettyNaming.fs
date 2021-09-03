@@ -27,7 +27,7 @@ let [<Literal>] qmarkSet = "?<-"
 /// Prefix for compiled (mangled) operator names.
 let [<Literal>] opNamePrefix = "op_"
 
-let private opNameTable = 
+let opNameTable = 
     [|("[]", "op_Nil")
       ("::", "op_ColonColon")
       ("+", "op_Addition")
@@ -85,7 +85,7 @@ let private opNameTable =
       (parenSet, "op_ArrayAssign")
     |]
 
-let private opCharTranslateTable =
+let opCharTranslateTable =
     [|( '>', "Greater")
       ( '<', "Less") 
       ( '+', "Plus")
@@ -113,7 +113,7 @@ let private opCharTranslateTable =
       ( ']', "RBrack") |]
 
 /// The set of characters usable in custom operators.
-let private opCharSet =
+let opCharSet =
     let t = HashSet<_>()
     for c, _ in opCharTranslateTable do
         t.Add(c) |> ignore
@@ -265,6 +265,16 @@ let IsIdentifierName (name: string) =
     let rec loop i = (i >= nameLen || (IsIdentifierPartCharacter(name.[i]) && loop (i+1)))
     loop 1
 
+let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
+    if idx = name.Length - 1 then
+        seenNonOpChar
+    else
+        let c = name.[idx]
+        if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
+            false
+        else
+            isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
+
 /// Determines if the specified name is a valid name for an active pattern.
 let IsActivePatternName (name: string) =
     // The name must contain at least one character between the starting and ending delimiters.
@@ -272,22 +282,20 @@ let IsActivePatternName (name: string) =
     if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
         false
     else
-        let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
-            if idx = name.Length - 1 then
-                seenNonOpChar
-            else
-                let c = name.[idx]
-                if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
-                    false
-                else
-                    isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
-
         isCoreActivePatternName name 1 false
 
-/// Returns `true` if given string is an operator display name, e.g. 
-///    ( |>> )
+/// Returns `true` if given string is an operator display name (DisplayName), e.g. 
+///    (::)
+///    ([])
+///    (|>>)
+///    (+)
+///    ( * )
+/// Also returns true for core display names (DisplayNameCore) without the parens:
+///    ::
+///    []
 ///    |>>
-///    ..
+///    +
+///    *
 let IsOperatorDisplayName (name: string) =
     let rec loop (name: string) idx endIndex =
         if idx = endIndex then
@@ -299,11 +307,23 @@ let IsOperatorDisplayName (name: string) =
             else
                 loop name (idx + 1) endIndex
 
-    let skipParens = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
-    let startIndex = if skipParens then 2 else 0
-    let endIndex = if skipParens then name.Length - 2 else name.Length
+    let skipParens2 = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
+    let skipParens1 = name.StartsWithOrdinal("(") && name.EndsWithOrdinal(")")
+    let skip = if skipParens2 then 2 elif skipParens1 then 1 else 0
+    let startIndex = skip
+    let endIndex = name.Length - skip
+    (startIndex < endIndex && loop name startIndex endIndex) ||
+    (name = ".. ..") ||
+    (name = "(.. ..)")
 
-    loop name startIndex endIndex || name = ".. .."
+//IsOperatorDisplayName "+"
+//IsOperatorDisplayName "(+)"
+//IsOperatorDisplayName "(::)"
+//IsOperatorDisplayName "::"
+//IsOperatorDisplayName "([])"
+//IsOperatorDisplayName "( * )"
+//IsOperatorDisplayName "(  )"
+//IsOperatorDisplayName "( +)"
 
 let IsMangledOpName (name: string) =
     name.StartsWithOrdinal(opNamePrefix)
@@ -313,7 +333,7 @@ let IsMangledOpName (name: string) =
 /// This function should only be used for custom operators
 /// if an operator is or potentially may be a built-in operator,
 /// use the 'CompileOpName' function instead.
-let private compileCustomOpName =
+let compileCustomOpName =
     let t2 =
         let t2 = Dictionary<_, _> opCharTranslateTable.Length
         for x, y in opCharTranslateTable do
@@ -372,7 +392,7 @@ let CompileOpName op =
 /// This function should only be used for mangled names of custom operators
 /// if a mangled name potentially represents a built-in operator,
 /// use the 'DecompileOpName' function instead.
-let private decompileCustomOpName =
+let decompileCustomOpName =
     // Memoize this operation. Custom operators are typically used more than once
     // so this avoids repeating decompilation.
     let decompiledOperators = ConcurrentDictionary<_, _> StringComparer.Ordinal
@@ -486,8 +506,10 @@ let ConvertValNameToDisplayName isBaseVal name =
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
         if IsMangledOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
+        // Add parentheses for multiply-like symbols, with spacing to avoid confusion with comments
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             "( " + nm + " )"
+        // Add parentheses for other symbols, no spacing
         else
             "(" + nm + ")"
     else
@@ -637,9 +659,9 @@ let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     | _ ->
         Other
 
-let [<Literal>] private compilerGeneratedMarker = "@"
+let [<Literal>] compilerGeneratedMarker = "@"
 
-let [<Literal>] private compilerGeneratedMarkerChar = '@'
+let [<Literal>] compilerGeneratedMarkerChar = '@'
     
 let IsCompilerGeneratedName (nm: string) =
     nm.IndexOf compilerGeneratedMarkerChar <> -1
@@ -659,7 +681,7 @@ let CompilerGeneratedNameSuffix (basicName: string) suffix =
 // Handle mangled .NET generic type names
 //------------------------------------------------------------------------- 
      
-let [<Literal>] private mangledGenericTypeNameSym = '`'
+let [<Literal>] mangledGenericTypeNameSym = '`'
 
 let TryDemangleGenericNameAndPos (n: string) =
     // check what comes after the symbol is a number 
@@ -697,7 +719,7 @@ let DecodeGenericTypeName (mangledName: string) =
     | ValueSome pos -> DecodeGenericTypeNameWithPos pos mangledName
     | _ -> NameArityPair(mangledName, 0)
 
-let private chopStringTo (s: string) (c: char) =
+let chopStringTo (s: string) (c: char) =
     match s.IndexOf c with
     | -1 -> s
     | idx ->
@@ -732,9 +754,9 @@ let SplitNamesForILPath (s : string) : string list =
         
 /// Return a string array delimited by the given separator.
 /// Note that a quoted string is not going to be mangled into pieces. 
-let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
+let inline isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
 
-let private splitAroundQuotation (text: string) (separator: char) =
+let splitAroundQuotation (text: string) (separator: char) =
     let length = text.Length
     let result = ResizeArray()
     let mutable insideQuotation = false
@@ -761,7 +783,7 @@ let private splitAroundQuotation (text: string) (separator: char) =
 
 /// Return a string array delimited by the given separator up to the maximum number.
 /// Note that a quoted string is not going to be mangled into pieces.
-let private splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
+let splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
     if count <= 1 then [| text |] else
     let mangledText  = splitAroundQuotation text separator
     match mangledText.Length > count with
@@ -808,10 +830,10 @@ let ActivePatternInfoOfValName nm (m: range) =
     else 
         None
     
-let private mangleStaticStringArg (nm: string, v: string) = 
+let mangleStaticStringArg (nm: string, v: string) = 
     nm + "=" + "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
 
-let private tryDemangleStaticStringArg (mangledText: string) =
+let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then

@@ -401,6 +401,9 @@ type MethInfo =
     /// Get the method name in DisplayName form
     member DisplayName: string
 
+    /// Get the method name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
+
     /// Get the extension method priority of the method. If it is not an extension method
     /// then use the highest possible value since non-extension methods always take priority
     /// over extension members.

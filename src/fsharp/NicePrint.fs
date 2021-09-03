@@ -1515,7 +1515,7 @@ module private TastDefinitionPrinting =
 
     let layoutExtensionMember denv infoReader (vref: ValRef) =
         let tycon = vref.MemberApparentEntity.Deref
-        let nameL = tagMethod tycon.DisplayName |> mkNav vref.DefinitionRange |> wordL
+        let nameL = ConvertNameToDisplayLayout (tagMethod >> mkNav vref.DefinitionRange >> wordL) tycon.DisplayNameCore
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g vref.Deref with
@@ -1648,7 +1648,7 @@ module private TastDefinitionPrinting =
             else
                 None, tagUnknownType
 
-        let nameL = ConvertNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayName
+        let nameL = ConvertNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
         let nameL = layoutAccessibility denv tycon.Accessibility nameL
         let denv = denv.AddAccessibility tycon.Accessibility 
@@ -1662,10 +1662,10 @@ module private TastDefinitionPrinting =
 
         let sortKey (v: MethInfo) = 
             (not v.IsConstructor,
-                not v.IsInstance, // instance first
-                v.DisplayName, // sort by name 
-                List.sum v.NumArgs, // sort by #curried
-                v.NumArgs.Length)     // sort by arity 
+             not v.IsInstance, // instance first
+             v.DisplayNameCore, // sort by name 
+             List.sum v.NumArgs, // sort by #curried
+             v.NumArgs.Length)     // sort by arity 
 
         let shouldShow (valRef: ValRef option) =
             match valRef with
@@ -1738,7 +1738,7 @@ module private TastDefinitionPrinting =
 
         let methLs = 
             meths
-            |> List.groupBy (fun md -> md.DisplayName)
+            |> List.groupBy (fun md -> md.DisplayNameCore)
             |> List.collect (fun (_, group) ->
                 if denv.shrinkOverloads then
                     shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle infoReader m denv) (fun x xL -> (sortKey x, xL)) group
@@ -1959,7 +1959,7 @@ module private TastDefinitionPrinting =
     // Layout: exception definition
     let layoutExnDefn denv infoReader (exncref: EntityRef) =
         let exnc = exncref.Deref
-        let nameL = ConvertNameToDisplayLayout (tagClass >> mkNav exncref.DefinitionRange >> wordL) exnc.DisplayName
+        let nameL = ConvertNameToDisplayLayout (tagClass >> mkNav exncref.DefinitionRange >> wordL) exnc.DisplayNameCore
         let nameL = layoutAccessibility denv exnc.TypeReprAccessibility nameL
         let exnL = wordL (tagKeyword "exception") ^^ nameL // need to tack on the Exception at the right of the name for goto definition
         let reprL = 
@@ -2061,7 +2061,7 @@ module private TastDefinitionPrinting =
                 mspec.ModuleOrNamespaceType.AllValsAndMembers
                 |> QueueList.toList
                 |> List.filter shouldShow
-                |> List.sortBy (fun v -> v.DisplayName)
+                |> List.sortBy (fun v -> v.DisplayNameCore)
                 |> List.map (mkLocalValRef >> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader)
 
         if List.isEmpty entityLs && List.isEmpty valLs then

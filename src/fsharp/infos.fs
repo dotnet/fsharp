@@ -1000,7 +1000,13 @@ type MethInfo =
     member x.DisplayName =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayName
-        | _ -> x.LogicalName |> PrettyNaming.ConvertNameToDisplayName
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValNameToDisplayName false
+
+     /// Get the method name in DisplayName form
+    member x.DisplayNameCore =
+        match x with
+        | FSMeth(_, _, vref, _) -> vref.DisplayNameCore
+        | _ -> x.LogicalName |> PrettyNaming.DecompileOpName
 
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =

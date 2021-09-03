@@ -1032,10 +1032,9 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | None -> item.Item.DisplayName
                 textInDeclList, textInCode, items)
 
-            // Filter out operators, active patterns (as values) and the empty list
-            |> List.filter (fun (_textInDeclList, textInCode, items) -> 
-                not (isOperatorItem textInCode items) && 
-                not (textInCode = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+            // Filter out operators, active patterns (as values)
+            |> List.filter (fun (textInDeclList, _textInCode, items) -> 
+                not (isOperatorItem textInDeclList items) && 
                 not (isActivePatternItem items))
 
             |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 
