@@ -26,6 +26,7 @@ doSomething {Record.field1=0; field2=0}
 type Person = { Name : string; Age : int; City : string }
 let x = { Name = "Isaac", Age = 21, City = "London" }
         """
+        |> withLangVersion50
         |> typecheck
         |> shouldFail
         |> withDiagnostics [

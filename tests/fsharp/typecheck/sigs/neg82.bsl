@@ -1,9 +1,7 @@
 
 neg82.fsx(84,5,84,6): parse error FS0010: Unexpected symbol '|' in expression
 
-neg82.fsx(84,17,84,18): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (83:19). Try indenting this token further or using standard formatting conventions.
-
-neg82.fsx(88,1,88,4): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (83:19). Try indenting this token further or using standard formatting conventions.
+neg82.fsx(88,1,88,4): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (81:9). Try indenting this token further or using standard formatting conventions.
 
 neg82.fsx(90,5,90,8): parse error FS0010: Incomplete structured construct at or before this point in expression. Expected incomplete structured construct at or before this point or other token.
 

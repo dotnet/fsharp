@@ -32,11 +32,11 @@ neg03.fs(28,15,28,19): typecheck error FS0001: This expression was expected to h
 but here has type
     'bool'    
 
-neg03.fs(40,31,40,36): typecheck error FS0001: Type mismatch. Expecting a
-    'Map<string,string>'    
-but given a
+neg03.fs(40,31,40,36): typecheck error FS0193: Type constraint mismatch. The type 
     'Map<string,int>'    
-The type 'string' does not match the type 'int'
+is not compatible with type
+    'Map<string,string>'    
+
 
 neg03.fs(45,20,45,26): typecheck error FS0685: The generic function 'typeof' must be given explicit type argument(s)
 
