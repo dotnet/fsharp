@@ -940,17 +940,16 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
         FSharpLineTokenizer(lexbuf, None, filename, lexargs)
 
 module FSharpKeywords =
-    open FSharp.Compiler.Lexhelp.Keywords
 
-    let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
+    let DoesIdentifierNeedBackticks s = PrettyNaming.DoesIdentifierNeedBackticks s
 
-    let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    let AddBackticksToIdentifierIfNeeded s = PrettyNaming.AddBackticksToIdentifierIfNeeded s
 
-    let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    let NormalizeIdentifierBackticks s = PrettyNaming.NormalizeIdentifierBackticks s
 
-    let KeywordsWithDescription = keywordsWithDescription
+    let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
 
-    let KeywordNames = keywordNames
+    let KeywordNames = Lexhelp.Keywords.keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =

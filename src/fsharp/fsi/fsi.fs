@@ -433,7 +433,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
         // Ilreflect knows what the AbsIL was generated to.
         // Combining these allows for obtaining the (obj,objTy) by reflection where possible.
         // This assumes the v:Val was given appropriate storage, e.g. StaticField.
-        if fsi.ShowDeclarationValues then
+        if fsi.ShowDeclarationValues && not v.LiteralValue.IsSome then
             // Adjust "opts" for printing for "declared-values":
             // - No sequences, because they may have effects or time cost.
             // - No properties, since they may have unexpected effects.
@@ -454,10 +454,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
 #endif
                     None // lookup may fail
             match res with
-              | None             -> None
-              | Some (obj,objTy) ->
-                  let lay = valuePrinter.PrintValue (FsiValuePrinterMode.PrintDecl, opts, obj, objTy)
-                  if isEmptyL lay then None else Some lay // suppress empty layout
+            | None             -> None
+            | Some (obj,objTy) ->
+                let lay = valuePrinter.PrintValue (FsiValuePrinterMode.PrintDecl, opts, obj, objTy)
+                if isEmptyL lay then None else Some lay // suppress empty layout
 
         else
             None

@@ -1031,7 +1031,7 @@ let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) =
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
     if rfref.RecdField.XmlDocSig = "" then
-        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
+        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
@@ -1056,9 +1056,10 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
             let args = 
-                match ilminfo.IsILExtensionMethod with
-                | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
+                if ilminfo.IsILExtensionMethod then
+                    filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
+                else
+                    filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
             // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
             // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 

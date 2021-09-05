@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:3748
 // Now we emit an error.
 
-//<Expects id="FS0366" span="(14,14-14,20)" status="error">No implementation was given for 'abstract member IThing\.Name : string'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'</Expects>
+//<Expects id="FS0366" span="(14,14-14,20)" status="error">No implementation was given for 'abstract IThing\.Name: string'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'</Expects>
 
 open System
 type IThing =

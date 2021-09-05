@@ -4248,7 +4248,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
         <target state="translated">Pokud se definuje také hodnota konstanty, třeba val x : int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
         <note />
       </trans-unit>

@@ -718,7 +718,7 @@ tcUnnamedArgumentsDoNotFormPrefix,"The unnamed arguments do not form a prefix of
 873,tcOnlySimplePatternsInLetRec,"Only simple variable patterns can be bound in 'let rec' constructs"
 874,tcOnlyRecordFieldsAndSimpleLetCanBeMutable,"Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces"
 875,tcMemberIsNotSufficientlyGeneric,"This member is not sufficiently generic"
-876,tcLiteralAttributeRequiresConstantValue,"A declaration may only be the [<Literal>] attribute if a constant value is also given, e.g. 'val x : int = 1'"
+876,tcLiteralAttributeRequiresConstantValue,"A declaration may only be the [<Literal>] attribute if a constant value is also given, e.g. 'val x: int = 1'"
 877,tcValueInSignatureRequiresLiteralAttribute,"A declaration may only be given a value in a signature if the declaration has the [<Literal>] attribute"
 878,tcThreadStaticAndContextStaticMustBeStatic,"Thread-static and context-static variables must be static and given the [<DefaultValue>] attribute to indicate that the value is initialized to the default value on each new thread"
 879,tcVolatileFieldsMustBeMutable,"Volatile fields must be marked 'mutable' and cannot be thread-static"

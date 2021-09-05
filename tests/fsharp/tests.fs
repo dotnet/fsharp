@@ -1061,39 +1061,39 @@ module CoreTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-1 --langversion:4_7`` () =
+    let ``printing-default-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-1 --langversion:5_0`` () =
+    let ``printing-default-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:4_7`` () =
+    let ``printing-1000-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.47.txt" "z.output.test.1000.stdout.47.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:5_0`` () =
+    let ``printing-1000-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:4_7`` () =
+    let ``printing-200-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.47.txt" "z.output.test.200.stdout.47.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:5_0`` () =
+    let ``printing-200-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:4_7`` () =
+    let ``printing-off-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.47.txt" "z.output.test.off.stdout.47.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:5_0`` () =
+    let ``printing-off-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-5`` () =
+    let ``printing-quiet-stdout`` () =
          printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
     type SigningType =
@@ -1347,9 +1347,6 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
-
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
 
     [<Test>]
     let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
@@ -3214,15 +3211,18 @@ namespace CST.RI.Anshun
 
 module GeneratedSignatureTests =
     [<Test>]
+    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
+
+    [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
 
-    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
+    [<Test>]
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]
     let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
 
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
+    [<Test>]
     let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
 
     [<Test>]

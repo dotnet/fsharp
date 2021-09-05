@@ -1167,8 +1167,8 @@ type internal TypeCheckInfo
                         let isOpItem(nm, item: CompletionItem list) =
                             match item |> List.map (fun x -> x.Item) with
                             | [Item.Value _]
-                            | [Item.MethodGroup(_,[_],_)] -> IsOperatorName nm
-                            | [Item.UnionCase _] -> IsOperatorName nm
+                            | [Item.MethodGroup(_,[_],_)] -> IsOperatorDisplayName nm
+                            | [Item.UnionCase _] -> IsOperatorDisplayName nm
                             | _ -> false
 
                         let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense

@@ -21,8 +21,8 @@ let x =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 768, Line 7, Col 16, Line 7, Col 36, "The member 'Function' does not accept the correct number of arguments. 1 argument(s) are expected, but 2 were given. The required signature is 'member IInterface.Function : (int32 * int32) -> unit'.\nA tuple type is required for one or more arguments. Consider wrapping the given arguments in additional parentheses or review the definition of the interface.")
-            (Error 17,  Line 7, Col 21, Line 7, Col 29, "The member 'Function : 'a * 'b -> unit' does not have the correct type to override the corresponding abstract method. The required signature is 'Function : (int32 * int32) -> unit'.")
+            (Error 768, Line 7, Col 16, Line 7, Col 36, "The member 'Function' does not accept the correct number of arguments. 1 argument(s) are expected, but 2 were given. The required signature is 'IInterface.Function: (int32 * int32) -> unit'.\nA tuple type is required for one or more arguments. Consider wrapping the given arguments in additional parentheses or review the definition of the interface.")
+            (Error 17,  Line 7, Col 21, Line 7, Col 29, "The member 'Function: 'a * 'b -> unit' does not have the correct type to override the corresponding abstract method. The required signature is 'Function: (int32 * int32) -> unit'.")
             (Error 783, Line 6, Col 9,  Line 6, Col 19, "At least one override did not correctly implement its corresponding abstract member")]
 
     [<Fact>]
@@ -67,7 +67,7 @@ let foo =
         |> shouldFail
         |> withDiagnostics [
             (Error 767, Line 8, Col 16, Line 8, Col 23, "The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement.")
-            (Error 17,  Line 8, Col 18, Line 8, Col 21, "The member 'MyX : unit -> int' does not have the correct type to override any given virtual method")
+            (Error 17,  Line 8, Col 18, Line 8, Col 21, "The member 'MyX: unit -> int' does not have the correct type to override any given virtual method")
             (Error 783, Line 6, Col 11, Line 6, Col 14, "At least one override did not correctly implement its corresponding abstract member")]
 
     [<Fact>]
@@ -86,8 +86,8 @@ let x =
         |> shouldFail
         |> withDiagnostics [
             (Error 767, Line 8, Col 14, Line 8, Col 34, "The member 'Function' does not correspond to any abstract or virtual method available to override or implement. Maybe you want one of the following:" + System.Environment.NewLine + "   MyFunction")
-            (Error 17,  Line 8, Col 19, Line 8, Col 27, "The member 'Function : 'a * 'b -> unit' does not have the correct type to override any given virtual method")
-            (Error 366, Line 7, Col 3,  Line 9, Col 4,  "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IInterface.MyFunction : int32 * int32 -> unit'" + System.Environment.NewLine + "\t'abstract member IInterface.SomeOtherFunction : int32 * int32 -> unit'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (Error 17,  Line 8, Col 19, Line 8, Col 27, "The member 'Function: 'a * 'b -> unit' does not have the correct type to override any given virtual method")
+            (Error 366, Line 7, Col 3,  Line 9, Col 4,  "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract IInterface.MyFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "\t'abstract IInterface.SomeOtherFunction: int32 * int32 -> unit'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
             (Error 783, Line 7, Col 9,  Line 7, Col 19, "At least one override did not correctly implement its corresponding abstract member")]
 
     [<Fact>]
@@ -104,8 +104,8 @@ type Overload =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 366,  Line 7, Col 15, Line 7, Col 24, "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IOverload.Bar : double -> int'" + System.Environment.NewLine + "\t'abstract member IOverload.Bar : int -> int'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (Error 3213, Line 8, Col 21, Line 8, Col 24, "The member 'Bar<'a0> : 'a0 -> int' matches multiple overloads of the same method.\nPlease restrict it to one of the following:" + System.Environment.NewLine + "   Bar : double -> int" + System.Environment.NewLine + "   Bar : int -> int.")]
+            (Error 366,  Line 7, Col 15, Line 7, Col 24, "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract IOverload.Bar: double -> int'" + System.Environment.NewLine + "\t'abstract IOverload.Bar: int -> int'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (Error 3213, Line 8, Col 21, Line 8, Col 24, "The member 'Bar<'a0> : 'a0 -> int' matches multiple overloads of the same method.\nPlease restrict it to one of the following:" + System.Environment.NewLine + "   Bar: double -> int" + System.Environment.NewLine + "   Bar: int -> int.")]
 
     [<Fact>]
     let ``Do Cannot Have Visibility Declarations``() =
