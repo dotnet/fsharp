@@ -44,9 +44,10 @@ type LanguageFeature =
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
+    | MLCompatRevisions
 
 /// LanguageVersion management
-type LanguageVersion (specifiedVersionAsString) =
+type LanguageVersion (versionText) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -95,10 +96,13 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
             LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
+            LanguageFeature.MLCompatRevisions,previewVersion
         ]
 
+    static let defaultLanguageVersion = LanguageVersion("default")
+
     let specified =
-        match specifiedVersionAsString with
+        match versionText with
         | "?" -> 0m
         | "preview" -> previewVersion
         | "default" -> defaultVersion
@@ -123,7 +127,7 @@ type LanguageVersion (specifiedVersionAsString) =
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
-        match specifiedVersionAsString with
+        match versionText with
         | "4.6" -> true
         | "4.7" -> true
         | "5.0" -> true
@@ -148,6 +152,9 @@ type LanguageVersion (specifiedVersionAsString) =
             for v in languageVersions |> Seq.sort ->
                 sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
+
+    /// Get the text used to specify the version
+    member _.VersionText = versionText
 
     /// Get the specified LanguageVersion
     member _.SpecifiedVersion = specified
@@ -186,9 +193,19 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
+        | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
+
+    override x.Equals(yobj: obj) =
+        match yobj with 
+        | :? LanguageVersion as y -> x.SpecifiedVersion = y.SpecifiedVersion
+        | _ -> false
+
+    override x.GetHashCode() = hash x.SpecifiedVersion
+
+    static member Default = defaultLanguageVersion

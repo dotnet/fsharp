@@ -82,6 +82,7 @@ type TypeCheckingBenchmark1() =
             SourceFiles = [|"decentlySizedStandAloneFile.fsx"|]
             ConditionalCompilationDefines = []
             ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+            LangVersionText = "default"
             IsInteractive = false
             LightSyntax = None
             CompilingFsLib = false
@@ -134,6 +135,10 @@ type TypeCheckingBenchmark1() =
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             ClearAllILModuleReaderCache()
 
+module Test =
+   let inline f x y = x + y
+
+
 
 [<MemoryDiagnoser>]
 type CompilerService() =
@@ -147,6 +152,7 @@ type CompilerService() =
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalCompilationDefines = []
             ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+            LangVersionText = "default"
             IsInteractive = false
             LightSyntax = None
             CompilingFsLib = false
