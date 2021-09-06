@@ -10,7 +10,6 @@ open System.Runtime.CompilerServices
 
 /// Acts as a template for struct state machines introduced by __stateMachine, and also as a reflective implementation
 [<Struct; NoComparison; NoEquality>]
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type ResumableStateMachine<'Data> =
 
     /// When statically compiled, holds the data for the state machine
@@ -32,7 +31,6 @@ type ResumableStateMachine<'Data> =
     interface IAsyncStateMachine
 
 and 
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     IResumableStateMachine<'Data> =
     /// Get the resumption point of the state machine
     abstract ResumptionPoint: int
@@ -42,7 +40,7 @@ and
 
 /// Represents the delegated runtime continuation of a resumable state machine created dynamically
 and
-    [<AbstractClass; Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<AbstractClass>]
     ResumptionDynamicInfo<'Data> =
 
     /// Create dynamic information for a state machine
@@ -61,12 +59,10 @@ and
     abstract SetStateMachine: machine: byref<ResumableStateMachine<'Data>> * machineState: IAsyncStateMachine -> unit
 
 /// Represents the runtime continuation of a resumable state machine created dynamically
-and [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
+and ResumptionFunc<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// A special compiler-recognised delegate type for specifying blocks of resumable code
 /// with access to the state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// Contains functions for composing resumable code blocks
@@ -75,75 +71,57 @@ type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> 
 module ResumableCode =
 
     /// Sequences one section of resumable code after another
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline Combine: code1: ResumableCode<'Data, unit> * code2: ResumableCode<'Data, 'T> -> ResumableCode<'Data, 'T>
 
     /// Creates resumable code whose definition is a delayed function
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline Delay: f: (unit -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T>
 
     /// Specifies resumable code which iterates an input sequence
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline For: sequence: seq<'T> * body: ('T -> ResumableCode<'Data, unit>) -> ResumableCode<'Data, unit>
 
     /// Specifies resumable code which iterates yields
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline Yield: unit -> ResumableCode<'Data, unit>
 
     /// Specifies resumable code which executes with try/finally semantics
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline TryFinally: body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> ResumableCode<'Data, 'T>
 
     /// Specifies resumable code which executes with try/finally semantics
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline TryFinallyAsync: body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> ResumableCode<'Data, 'T>
 
     /// Specifies resumable code which executes with try/with semantics
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline TryWith: body: ResumableCode<'Data, 'T> * catch: (exn -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T>
 
     /// Specifies resumable code which executes with 'use' semantics
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline Using: resource: 'Resource * body: ('Resource -> ResumableCode<'Data, 'T>) -> ResumableCode<'Data, 'T> when 'Resource :> IDisposable
 
     /// Specifies resumable code which executes a loop
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline While: [<InlineIfLambda>] condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> ResumableCode<'Data, unit>
 
     /// Specifies resumable code which does nothing
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val inline Zero: unit -> ResumableCode<'Data, unit>
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val CombineDynamic: sm: byref<ResumableStateMachine<'Data>> * code1: ResumableCode<'Data, unit> * code2: ResumableCode<'Data, 'T> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val WhileDynamic: sm: byref<ResumableStateMachine<'Data>> * condition: (unit -> bool) * body: ResumableCode<'Data, unit> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val TryFinallyAsyncDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * compensation: ResumableCode<'Data,unit> -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val TryWithDynamic: sm: byref<ResumableStateMachine<'Data>> * body: ResumableCode<'Data, 'T> * handler: (exn -> ResumableCode<'Data, 'T>) -> bool
 
     /// The dynamic implementation of the corresponding operation. This operation should not be used directly.
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val YieldDynamic: sm: byref<ResumableStateMachine<'Data>> -> bool
 
 /// Defines the implementation of the MoveNext method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> unit
 
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
 /// Defines the implementation of the code run after the creation of a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 /// Contains compiler intrinsics related to the definition of state machines.
@@ -156,14 +134,12 @@ module StateMachineHelpers =
     /// if not.
     /// </summary>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val __useResumableCode<'T> : bool 
 
     /// <summary>
     /// Indicates a resumption point within resumable code
     /// </summary>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val __resumableEntry: unit -> int option
 
     /// <summary>
@@ -173,7 +149,6 @@ module StateMachineHelpers =
     /// </summary>
     /// <param name="programLabel"></param>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val __resumeAt : programLabel: int -> 'T
 
     /// <summary>
@@ -194,7 +169,6 @@ module StateMachineHelpers =
     /// <param name="setStateMachineMethod">Gives the implementation of the SetStateMachine method on IAsyncStateMachine.</param>
     /// <param name="afterCode">Gives code to execute after the generation of the state machine and to produce the final result.</param>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val __stateMachine<'Data, 'Result> :
         moveNextMethod: MoveNextMethodImpl<'Data> -> 
         setStateMachineMethod: SetStateMachineMethodImpl<'Data> -> 

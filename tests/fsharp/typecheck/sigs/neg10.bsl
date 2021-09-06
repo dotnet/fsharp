@@ -198,9 +198,9 @@ neg10.fs(407,27,407,42): typecheck error FS0093: The type 'C' does not support a
 
 neg10.fs(408,27,408,42): typecheck error FS0093: The type 'C' does not support a conversion to the type 'uint64'
 
-neg10.fs(409,26,409,41): typecheck error FS0093: The type 'C' does not support a conversion to the type 'int64'
+neg10.fs(410,28,410,43): typecheck error FS3391: This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
-neg10.fs(410,28,410,43): typecheck error FS0093: The type 'C' does not support a conversion to the type 'decimal'
+neg10.fs(410,28,410,43): typecheck error FS3391: This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
 neg10.fs(422,24,422,25): typecheck error FS0001: The type 'C' does not support a conversion to the type 'float'
 

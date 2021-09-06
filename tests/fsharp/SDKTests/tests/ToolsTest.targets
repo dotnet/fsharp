@@ -1,0 +1,26 @@
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.ShimHelpers.props" />
+
+  <Import Project="$(TargetsDirectory)\Microsoft.FSharp.targets" />
+
+  <Target Name="Test">
+    <Message Importance="High" Text="===========================================================================================================" />
+    <Message Importance="High" Text="Testing : $(MSBuildProjectName)" />
+
+    <!-- check for expected settings -->
+    <Error Condition="'$(ExpectedFSharpShimPresent)' != '$(FSharp_Shim_Present)'" Text="FSharp_Shim_Present expected:'$(ExpectedFSharpShimPresent)' actual: '$(FSharp_Shim_Present)'" />
+
+    <Error Condition="$([System.String]::new('$(FSharpCompilerPath)').EndsWith('$(ExpectedFSharpCompilerPath)')) != true" Text="FSharpCompilerPath expected to end with:  '$(ExpectedFSharpCompilerPath)' actual:'$(FSharpCompilerPath)'" />
+
+    <Error Condition="'$(ExpectedFscToolExe)' != '$(FscToolExe)'" Text="FscToolExe:  expected:'$(ExpectedFscToolExe)' actual:'$(FscToolExe)'" />
+
+    <Error Condition="'$(ExpectedFscToolPath)' != '$(FscToolPath)'" Text="FscToolPath:  expected:'$(ExpectedFscToolPath)' actual:'$(FscToolPath)'" />
+
+    <Error Condition="'$(ExpectedDotnetFscCompilerPath)' == '' and '$(DotnetFscCompilerPath)' != ''" Text="DotnetFscCompilerPath expected to be empty actual:'$(DotnetFscCompilerPath)'" />
+
+    <Error Condition="'$(ExpectedDotnetFscCompilerPath)' != '' and $([System.String]::new('$(DotnetFscCompilerPath)').EndsWith('$(ExpectedDotnetFscCompilerPath)')) == true" Text="DotnetFscCompilerPath expected to end with:  '$(ExpectedDotnetFscCompilerPath)' actual:'$(DotnetFscCompilerPath)'" />
+
+  </Target>
+
+</Project>

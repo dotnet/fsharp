@@ -53,13 +53,14 @@ type LanguageVersion (versionText) =
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
+    static let languageVersion60 = 6.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion50       // Language version when default specified
+    static let defaultVersion = languageVersion60       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion50   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion60   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 ; languageVersion50 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60 |]
 
     static let features =
         dict [
@@ -82,20 +83,22 @@ type LanguageVersion (versionText) =
             LanguageFeature.NameOf, languageVersion50
             LanguageFeature.StringInterpolation, languageVersion50
 
+            // F# 6.0
+            LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
+            LanguageFeature.RelaxWhitespace2, languageVersion60
+            LanguageFeature.OverloadsForCustomOperations, languageVersion60
+            LanguageFeature.ExpandedMeasurables, languageVersion60
+            LanguageFeature.ResumableStateMachines, languageVersion60
+            LanguageFeature.StructActivePattern, languageVersion60
+            LanguageFeature.PrintfBinaryFormat, languageVersion60
+            LanguageFeature.IndexerNotationWithoutDot, languageVersion60
+            LanguageFeature.RefCellNotationInformationals, languageVersion60
+            LanguageFeature.UseBindingValueDiscard, languageVersion60
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
+            LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
+
             // F# preview
-            LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
-            LanguageFeature.RelaxWhitespace2, previewVersion
-            LanguageFeature.OverloadsForCustomOperations, previewVersion
-            LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.ResumableStateMachines, previewVersion
-            LanguageFeature.StructActivePattern, previewVersion
-            LanguageFeature.PrintfBinaryFormat, previewVersion
-            LanguageFeature.IndexerNotationWithoutDot, previewVersion
-            LanguageFeature.RefCellNotationInformationals, previewVersion
-            LanguageFeature.UseBindingValueDiscard, previewVersion
-            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
-            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
         ]
 
@@ -111,6 +114,7 @@ type LanguageVersion (versionText) =
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
         | "5.0" -> languageVersion50
+        | "6.0" -> languageVersion60
         | _ -> 0m
 
     let versionToString v =

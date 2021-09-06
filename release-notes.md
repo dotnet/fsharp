@@ -14,7 +14,12 @@ This document contains current and historical release notes information. They ar
 
 These release notes track our current efforts to document changes to the F# project over time. They are split into the language, core library, compiler/tools, and compiler service.
 
-### F# 5 / Visual Studio 16.9
+### F# 6.0 / Visual Studio 17.0
+
+
+### FSharp.Core 6.0.0
+
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
 
 ### FSharp.Core 5.0.2
 
@@ -23,6 +28,11 @@ These release notes track our current efforts to document changes to the F# proj
 ### FSharp.Core 5.0.1
 
 * [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
+
+
+### FSharp tools 12.0.0
+
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
 
 ### FSharp tools 11.0.1
 
@@ -53,6 +63,9 @@ These release notes track our current efforts to document changes to the F# proj
 * Emitting IsReadOnly/In attributes on abstract properties [#10542](https://github.com/dotnet/fsharp/pull/10542)
 * Disable partial type checking when getting full results for a file [#10448](https://github.com/dotnet/fsharp/pull/10448)
 * Fix unused open type declaration detection [#10510](https://github.com/dotnet/fsharp/pull/10510), by [André Slupik](https://github.com/asik)
+
+### FSharp Compiler Service 41.0.0
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
 
 ### FSharp Compiler Service 40.0.0
 

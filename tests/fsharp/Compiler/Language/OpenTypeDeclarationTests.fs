@@ -1037,7 +1037,6 @@ module Test2 =
         match x with
         | UCase1 x -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1121,7 +1120,6 @@ module Test3 =
         match x with
         | { X = x } -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -2345,18 +2343,14 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2382,18 +2376,14 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2420,18 +2410,14 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2440,7 +2426,6 @@ open type FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersion50
             |> withReferences [provider;provided]
             |> ignoreWarnings
 
