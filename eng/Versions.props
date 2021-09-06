@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>1</FSBuildVersion>
+    <FSBuildVersion>3</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
@@ -27,15 +27,15 @@
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
     <!-- FSharp.Compiler.Service version -->
-    <FCSMajorVersion>39</FCSMajorVersion>
+    <FCSMajorVersion>40</FCSMajorVersion>
     <FCSMinorVersion>0</FCSMinorVersion>
-    <FCSBuildVersion>0</FCSBuildVersion>
+    <FCSBuildVersion>1</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>5.0.0</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersionProperty>5.0.2</FSharpCoreShippedPackageVersionProperty>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
     <FSToolsMajorVersion>11</FSToolsMajorVersion>
@@ -48,7 +48,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>9</VSMinorVersion>
+    <VSMinorVersion>10</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -87,7 +87,7 @@
     <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
     <SystemMemoryVersion>4.5.4</SystemMemoryVersion>
     <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
-    <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
+    <SystemNetSecurityVersion>4.3.1</SystemNetSecurityVersion>
     <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
     <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
     <SystemReflectionTypeExtensionsVersion>4.3.0</SystemReflectionTypeExtensionsVersion>
@@ -95,7 +95,6 @@
     <SystemRuntimeVersion>4.3.0</SystemRuntimeVersion>
     <SystemRuntimeInteropServicesVersion>4.3.0</SystemRuntimeInteropServicesVersion>
     <SystemRuntimeLoaderVersion>4.3.0</SystemRuntimeLoaderVersion>
-    <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
     <SystemSecurityClaimsVersion>4.3.0</SystemSecurityClaimsVersion>
     <SystemSecurityCryptographyAlgorithmsVersion>4.3.0</SystemSecurityCryptographyAlgorithmsVersion>
     <SystemSecurityPrincipalVersion>4.3.0</SystemSecurityPrincipalVersion>

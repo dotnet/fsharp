@@ -2,7 +2,6 @@
 
 namespace Internal.Utilities.Collections
 
-open FSharp.Compiler.AbstractIL 
 open System.Collections.Generic
 
 /// Sets with a specific comparison function

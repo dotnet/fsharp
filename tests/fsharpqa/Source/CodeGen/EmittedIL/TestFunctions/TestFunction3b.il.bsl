@@ -36,13 +36,13 @@
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3b.exe
-// MVID: {60B68B97-A662-4FC9-A745-0383978BB660}
+// MVID: {611C4D9E-A662-4FC9-A745-03839E4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x090C0000
+// Image base: 0x053D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -75,56 +75,56 @@
 
   .method public static void  TestFunction3b() cil managed
   {
-    // Code size       69 (0x45)
+    // Code size       66 (0x42)
     .maxstack  3
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
-             [1] int32 x,
-             [2] string V_2,
-             [3] class [mscorlib]System.Exception V_3,
-             [4] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_4)
-    .line 11,11 : 8,31 ''
+    .locals init ([0] int32 x,
+             [1] string V_1,
+             [2] class [mscorlib]System.Exception V_2,
+             [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> V_3)
+    .line 10,10 : 5,8 ''
     .try
     {
-      IL_0000:  call       int32 TestFunction3b::TestFunction1()
-      IL_0005:  stloc.1
+      IL_0000:  nop
+      .line 11,11 : 8,31 ''
+      IL_0001:  call       int32 TestFunction3b::TestFunction1()
+      IL_0006:  stloc.0
       .line 12,12 : 8,24 ''
-      IL_0006:  ldstr      "hello"
-      IL_000b:  stloc.2
-      IL_000c:  ldloc.2
-      IL_000d:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-      IL_0012:  throw
+      IL_0007:  ldstr      "hello"
+      IL_000c:  stloc.1
+      IL_000d:  ldloc.1
+      IL_000e:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+      IL_0013:  throw
 
       .line 13,13 : 5,9 ''
     }  // end .try
     catch [mscorlib]System.Object 
     {
-      IL_0013:  castclass  [mscorlib]System.Exception
-      IL_0018:  stloc.3
-      IL_0019:  ldloc.3
-      IL_001a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [mscorlib]System.Exception)
-      IL_001f:  stloc.s    V_4
-      IL_0021:  ldloc.s    V_4
-      IL_0023:  brfalse.s  IL_0037
+      IL_0014:  castclass  [mscorlib]System.Exception
+      IL_0019:  stloc.2
+      IL_001a:  ldloc.2
+      IL_001b:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [mscorlib]System.Exception)
+      IL_0020:  stloc.3
+      .line 100001,100001 : 0,0 ''
+      IL_0021:  ldloc.3
+      IL_0022:  brfalse.s  IL_0036
 
       .line 14,14 : 8,23 ''
-      IL_0025:  ldstr      "World"
-      IL_002a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_002f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0034:  stloc.0
-      IL_0035:  leave.s    IL_0042
+      IL_0024:  ldstr      "World"
+      IL_0029:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_002e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0033:  pop
+      IL_0034:  leave.s    IL_0041
 
       .line 100001,100001 : 0,0 ''
-      IL_0037:  rethrow
-      IL_0039:  ldnull
-      IL_003a:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_003f:  stloc.0
-      IL_0040:  leave.s    IL_0042
+      IL_0036:  rethrow
+      IL_0038:  ldnull
+      IL_0039:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_003e:  pop
+      IL_003f:  leave.s    IL_0041
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0042:  ldloc.0
-    IL_0043:  pop
-    IL_0044:  ret
+    IL_0041:  ret
   } // end of method TestFunction3b::TestFunction3b
 
 } // end of class TestFunction3b

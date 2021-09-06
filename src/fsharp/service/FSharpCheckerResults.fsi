@@ -121,6 +121,8 @@ type public FSharpSymbolUse =
     /// The symbol referenced
     member Symbol: FSharpSymbol 
 
+    member GenericArguments: (FSharpGenericParameter * FSharpType) list 
+
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
     /// and other methods to format items in a way that is suitable for a specific source code location.
     member DisplayContext: FSharpDisplayContext
@@ -156,7 +158,7 @@ type public FSharpSymbolUse =
     member IsPrivateToFile: bool 
 
     // For internal use only
-    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new: denv: DisplayEnv * symbol:FSharpSymbol * inst: TyparInst * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -177,6 +179,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -305,7 +308,7 @@ type public FSharpCheckFileResults =
     member GetSemanticClassification : range option -> SemanticClassificationItem[]
 
     /// <summary>Get the locations of format specifiers</summary>
-    [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
+    [<Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
     member GetFormatSpecifierLocations : unit -> range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
@@ -434,8 +437,6 @@ type public FSharpCheckProjectResults =
     /// in the documentation for compiler service.
     member DependencyFiles: string[]
 
-    member internal RawFSharpAssemblyData : IRawFSharpAssemblyData option
-
     // Internal constructor.
     internal new : 
         projectFileName:string *
@@ -448,7 +449,6 @@ type public FSharpCheckProjectResults =
                  ModuleOrNamespaceType *
                  Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
-                 IRawFSharpAssemblyData option *
                  ILAssemblyRef *
                  AccessorDomain *
                  TypedImplFile list option *

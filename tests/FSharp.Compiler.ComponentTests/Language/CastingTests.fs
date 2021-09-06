@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module CastingTests =
 

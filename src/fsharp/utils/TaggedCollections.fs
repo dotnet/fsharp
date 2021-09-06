@@ -358,8 +358,8 @@ namespace Internal.Utilities.Collections.Tagged
             // true when MoveNext has been called   
             let mutable started = false 
 
-            let notStarted() = raise (new System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
-            let alreadyFinished() = raise (new System.InvalidOperationException("Enumeration already finished."))
+            let notStarted() = raise (System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
+            let alreadyFinished() = raise (System.InvalidOperationException("Enumeration already finished."))
 
             member _.Current =
                 if started then
@@ -401,12 +401,12 @@ namespace Internal.Utilities.Collections.Tagged
         let rec compareStacks (comparer: IComparer<'T>) (l1:SetTree<'T> list) (l2:SetTree<'T> list) : int =
             let cont() =
                 match l1, l2 with 
-                | (x1 :: t1), _ when not (isEmpty x1) ->
+                | x1 :: t1, _ when not (isEmpty x1) ->
                     match x1 with
                     | :? SetTreeNode<'T> as x1n ->
                         compareStacks comparer (x1n.Left :: (SetTreeNode (x1n.Key, empty, x1n.Right, 0) :> SetTree<'T>) :: t1) l2
                     | _ -> compareStacks comparer (empty :: SetTree x1.Key :: t1) l2
-                | _, (x2 :: t2) when not (isEmpty x2) ->
+                | _, x2 :: t2 when not (isEmpty x2) ->
                     match x2 with
                     | :? SetTreeNode<'T> as x2n ->
                         compareStacks comparer l1 (x2n.Left :: (SetTreeNode (x2n.Key, empty, x2n.Right, 0) :> SetTree<'T>  ) :: t2)
@@ -417,7 +417,7 @@ namespace Internal.Utilities.Collections.Tagged
             | [], [] ->  0
             | [], _  -> -1
             | _, [] ->  1
-            | (x1 :: t1), (x2 :: t2) ->
+            | x1 :: t1, x2 :: t2 ->
                 if isEmpty x1 then
                     if isEmpty x2 then compareStacks comparer t1 t2
                     else cont()
@@ -488,7 +488,7 @@ namespace Internal.Utilities.Collections.Tagged
         let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) empty l    
 
 
-    [<System.Diagnostics.DebuggerDisplay ("Count = {Count}")>]
+    [<System.Diagnostics.DebuggerDisplay "Count = {Count}">]
     [<Sealed>]
     type internal Set<'T,'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
@@ -524,11 +524,11 @@ namespace Internal.Utilities.Collections.Tagged
 
         member s.ForAll predicate = SetTree.forall predicate tree
 
-        static member (-) ((a: Set<'T,'ComparerTag>),(b: Set<'T,'ComparerTag>)) = Set<_,_>.Difference(a,b)
+        static member (-) (a: Set<'T,'ComparerTag>,b: Set<'T,'ComparerTag>) = Set<_,_>.Difference(a,b)
 
-        static member (+)  ((a: Set<'T,'ComparerTag>),(b: Set<'T,'ComparerTag>)) = Set<_,_>.Union(a,b)
+        static member (+)  (a: Set<'T,'ComparerTag>,b: Set<'T,'ComparerTag>) = Set<_,_>.Union(a,b)
 
-        static member Intersection((a: Set<'T,'ComparerTag>),(b: Set<'T,'ComparerTag>)) : Set<'T,'ComparerTag>  = 
+        static member Intersection(a: Set<'T,'ComparerTag>,b: Set<'T,'ComparerTag>) : Set<'T,'ComparerTag>  = 
             if SetTree.isEmpty b.Tree then b  (* A INTER 0 = 0 *)
             else
                 if SetTree.isEmpty a.Tree then a (* 0 INTER B = 0 *)
@@ -575,21 +575,21 @@ namespace Internal.Utilities.Collections.Tagged
         interface System.IComparable with
             // Cast s2 to the exact same type as s1, see 4884.
             // It is not OK to cast s2 to seq<'T>, since different compares could permute the elements.
-            member s1.CompareTo(s2: obj) = SetTree.compare s1.Comparer s1.Tree ((s2 :?> Set<'T,'ComparerTag>).Tree)
+            member s1.CompareTo(s2: obj) = SetTree.compare s1.Comparer s1.Tree (s2 :?> Set<'T,'ComparerTag>).Tree
 
         member this.ComputeHashCode() = 
                 let combineHash x y = (x <<< 1) + y + 631 
                 let mutable res = 0
                 for x in this do
                     res <- combineHash res (Unchecked.hash x)
-                abs res
+                res
 
         override this.GetHashCode() = this.ComputeHashCode()
           
         interface ICollection<'T> with 
-            member s.Add(_) = raise (new System.NotSupportedException("ReadOnlyCollection"))
-            member s.Clear() = raise (new System.NotSupportedException("ReadOnlyCollection"))
-            member s.Remove(_) = raise (new System.NotSupportedException("ReadOnlyCollection"))
+            member s.Add _ = raise (System.NotSupportedException("ReadOnlyCollection"))
+            member s.Clear() = raise (System.NotSupportedException("ReadOnlyCollection"))
+            member s.Remove _ = raise (System.NotSupportedException("ReadOnlyCollection"))
             member s.Contains(x) = SetTree.contains comparer x tree
             member s.CopyTo(arr,i) = SetTree.copyToArray tree arr i
             member s.IsReadOnly = true
@@ -699,7 +699,7 @@ namespace Internal.Utilities.Collections.Tagged
                     elif c = 0 then MapTree(k,v)
                     else            MapTreeNode (k,v,m,empty,2) :> MapTree<'Key, 'Value> 
 
-        let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+        let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
         let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =                     
             if isEmpty m then false
@@ -929,7 +929,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
             if e.MoveNext() then 
-                let (x,y) = e.Current 
+                let x,y = e.Current 
                 mkFromEnumerator comparer (add comparer x y acc) e
             else acc
           
@@ -962,8 +962,8 @@ namespace Internal.Utilities.Collections.Tagged
                /// true when MoveNext has been called   
             let mutable started = false
 
-            let notStarted() = raise (new System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
-            let alreadyFinished() = raise (new System.InvalidOperationException("Enumeration already finished."))
+            let notStarted() = raise (System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
+            let alreadyFinished() = raise (System.InvalidOperationException("Enumeration already finished."))
 
             member _.Current =
                 if started then
@@ -972,7 +972,7 @@ namespace Internal.Utilities.Collections.Tagged
                     | m :: _ ->
                         match m with
                         | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for current"
-                        | _ -> new KeyValuePair<_, _>(m.Key, m.Value)
+                        | _ -> KeyValuePair<_, _>(m.Key, m.Value)
                 else
                     notStarted()
 
@@ -1002,7 +1002,7 @@ namespace Internal.Utilities.Collections.Tagged
                   member self.Dispose() = ()}
 
 
-    [<System.Diagnostics.DebuggerDisplay ("Count = {Count}")>]
+    [<System.Diagnostics.DebuggerDisplay "Count = {Count}">]
     [<Sealed>]
     type internal Map<'Key,'T,'ComparerTag> when 'ComparerTag :> IComparer<'Key>( comparer: IComparer<'Key>, tree: MapTree<'Key,'T>) =
 
@@ -1072,7 +1072,7 @@ namespace Internal.Utilities.Collections.Tagged
             for KeyValue(x,y) in this do
                 res <- combineHash res (Unchecked.hash x)
                 res <- combineHash res (Unchecked.hash y)
-            abs res
+            res
 
         override this.GetHashCode() = this.ComputeHashCode()
 

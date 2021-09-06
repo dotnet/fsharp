@@ -1,8 +1,8 @@
 // Regression test for FSHARP1.0:6433
 // This is really a bug in Mono
-//<Expects status="success">val mul : MM</Expects>
-//<Expects status="success">val factorial : x:int -> int</Expects>
-//<Expects status="success">val k : int = 120</Expects>
+//<Expects status="success">val mul: MM</Expects>
+//<Expects status="success">val factorial: x: int -> int</Expects>
+//<Expects status="success">val k: int = 120</Expects>
 
 type MM() = 
  member x.Combine(a,b) = a * b

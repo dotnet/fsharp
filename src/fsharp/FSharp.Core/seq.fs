@@ -1488,3 +1488,67 @@ namespace Microsoft.FSharp.Collections
                                 [|SR.GetString SR.inputMustBePositive; count|]
             mkDelayedSeq (fun () ->
                 source |> toArray |> Array.splitInto count :> seq<_>)
+
+        [<CompiledName("RemoveAt")>]
+        let removeAt (index: int) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i <> index then 
+                        yield item
+                    i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
+            }
+    
+        [<CompiledName("RemoveManyAt")>]
+        let removeManyAt (index: int) (count: int) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i < index || i >= index + count then 
+                        yield item
+                    i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
+            }
+    
+        [<CompiledName("UpdateAt")>]
+        let updateAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i <> index then
+                        yield item
+                    else yield value
+                    i <- i + 1
+                if i <= index then invalidArg "index" "index must be within bounds of the array"
+            }
+    
+        [<CompiledName("InsertAt")>]
+        let insertAt (index: int) (value: 'T) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i = index then
+                        yield value
+                    yield item
+                    i <- i + 1
+                if i = index then yield value
+                if i < index then invalidArg "index" "index must be within bounds of the array"
+            }
+    
+        [<CompiledName("InsertManyAt")>]
+        let insertManyAt (index: int) (values: seq<'T>) (source: seq<'T>) : seq<'T> =
+            if index < 0 then invalidArg "index" "index must be within bounds of the array"
+            seq {
+                let mutable i = 0
+                for item in source do
+                    if i = index then yield! values
+                    yield item 
+                    i <- i + 1
+                if i = index then yield! values // support inserting at the end
+                if i < index then invalidArg "index" "index must be within bounds of the array"
+            }

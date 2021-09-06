@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #Overloading 
 // Verify error message when returning a 'a which is of type unit
-//<Expects id="FS0017" status="error">The member 'M : unit -> unit' does not have the correct type to override the corresponding abstract method</Expects>
+//<Expects id="FS0017" status="error">The member 'M: unit -> unit' does not have the correct type to override the corresponding abstract method</Expects>
 
 [<AbstractClass>]
 type 'a ``base`` =

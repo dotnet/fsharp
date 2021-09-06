@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.AbstractIL.ILX.EraseClosures
 
 open Internal.Utilities.Library 
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
@@ -238,7 +237,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
             let storers, (loaders2 : ILInstr list list) =  unwind rest
             (List.rev (List.concat storers) : ILInstr list) , List.concat loaders2
         else 
-            stripUpTo n (function (_x :: _y) -> true | _ -> false) (function (x :: y) -> (x, y) | _ -> failwith "no!") loaders
+            stripUpTo n (function _x :: _y -> true | _ -> false) (function x :: y -> (x, y) | _ -> failwith "no!") loaders
             
     let rec buildApp fst loaders apps =
         // Strip off one valid indirect call.  [fst] indicates if this is the 
@@ -249,7 +248,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
         // Type applications: REVIEW: get rid of curried tyapps - just tuple them 
         | tyargs, [], _ when not (isNil tyargs) ->
             // strip again, instantiating as we go.  we could do this while we count. 
-            let (revInstTyArgs, rest') = 
+            let revInstTyArgs, rest' = 
                 (([], apps), tyargs) ||> List.fold (fun (revArgsSoFar, cs) _  -> 
                         let actual, rest' = destTyFuncApp cs
                         let rest'' = instAppsAux varCount [ actual ] rest'
@@ -323,7 +322,7 @@ let convMethodBody thisClo = function
     | x -> x
 
 let convMethodDef thisClo (md: ILMethodDef)  =
-    let b' = convMethodBody thisClo (md.Body)
+    let b' = convMethodBody thisClo md.Body
     md.With(body=notlazy b')
 
 // -------------------------------------------------------------------- 
@@ -367,7 +366,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let nowCloRef = IlxClosureRef(nowTypeRef, clo.cloStructure, nowFields)
       let nowCloSpec = mkILFormalCloRef td.GenericParams nowCloRef clo.cloUseStaticField
       let nowMethods = List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList
-      let tagApp = (Lazy.force clo.cloCode).SourceMarker
+      let ilCloCode = Lazy.force clo.cloCode
+      let cloTag = ilCloCode.DebugPoint
+      let cloImports = ilCloCode.DebugImports
       
       let tyargsl, tmargsl, laterStruct = stripSupportedAbstraction clo.cloStructure
 
@@ -379,7 +380,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let fixupArg mkEnv mkArg n = 
                   let rec findMatchingArg l c = 
                       match l with 
-                      | ((m, _) :: t) -> 
+                      | (m, _) :: t -> 
                           if n = m then mkEnv c
                           else findMatchingArg t (c+1)
                       | [] -> mkArg (n - argToFreeVarMap.Length + 1)
@@ -414,7 +415,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
       match tyargsl, tmargsl, laterStruct with 
       // CASE 1 - Type abstraction 
-      | (_ :: _), [], _ ->
+      | _ :: _, [], _ ->
           let addedGenParams = tyargsl
           let nowReturnTy = (mkTyOfLambdas cenv laterStruct)
           
@@ -446,19 +447,16 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             // This is the code which will get called when then "now" 
             // arguments get applied. Convert it with the information 
             // that it is the code for a closure... 
-              let nowCode = 
-                mkILMethodBody
-                  (false, [], nowFields.Length + 1, 
-                   nonBranchingInstrsToCode
-                     begin 
-                       // Load up the environment, including self... 
-                       (nowFields |> Array.toList |> List.collect (mkLdFreeVar nowCloSpec))  @
-                       [ mkLdarg0 ] @
-                       // Make the instance of the delegated closure && return it. 
-                       // This passes the method type params. as class type params. 
-                       [ I_newobj (laterCloSpec.Constructor, None) ] 
-                     end, 
-                   tagApp)
+              let nowInstrs = 
+                // Load up the environment, including self... 
+                [ for fld in nowFields do
+                    yield! mkLdFreeVar nowCloSpec fld
+                  mkLdarg0 
+                  // Make the instance of the delegated closure && return it. 
+                  // This passes the method type params. as class type params. 
+                  I_newobj (laterCloSpec.Constructor, None) ] 
+
+              let nowCode = mkILMethodBody (false, [], nowFields.Length + 1, nonBranchingInstrsToCode nowInstrs, cloTag, cloImports)
 
               let nowTypeDefs = 
                 convIlxClosureDef cenv encl td {clo with cloStructure=nowStruct 
@@ -481,11 +479,12 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    MethodBody.IL (lazy convil))
               let ctorMethodDef = 
                   mkILStorageCtor 
-                    (None, 
-                     [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
+                    ([ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
                      nowTy, 
                      mkILCloFldSpecs cenv nowFields, 
-                     ILMemberAccess.Assembly)
+                     ILMemberAccess.Assembly,
+                     None,
+                     None)
                    |> cenv.addMethodGeneratedAttrs 
 
               let cloTypeDef = 
@@ -529,21 +528,19 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterFields = Array.append nowFields laterFreeVars
               let laterCloRef = IlxClosureRef(laterTypeRef, laterStruct, laterFields)
               let laterCloSpec = mkILFormalCloRef laterGenericParams laterCloRef false
-              
+
+              let nowInstrs =              
+                  [ // Load up the environment 
+                    for nowField in nowFields do 
+                        yield! mkLdFreeVar nowCloSpec nowField
+                    // Load up all the arguments (including self), which become free variables in the delegated closure 
+                    for (n, _) in argToFreeVarMap do
+                        mkLdarg (uint16 n)
+                    // Make the instance of the delegated closure && return it. 
+                    I_newobj (laterCloSpec.Constructor, None) ] 
+
               // This is the code which will first get called. 
-              let nowCode = 
-                  mkILMethodBody
-                    (false, [], argToFreeVarMap.Length + nowFields.Length, 
-                     nonBranchingInstrsToCode
-                       begin 
-                         // Load up the environment 
-                         (nowFields |> Array.toList |> List.collect (mkLdFreeVar nowCloSpec))  @
-                         // Load up all the arguments (including self), which become free variables in the delegated closure 
-                         (argToFreeVarMap  |> List.map (fun (n, _) -> mkLdarg (uint16 n))) @
-                         // Make the instance of the delegated closure && return it. 
-                         [ I_newobj (laterCloSpec.Constructor, None) ] 
-                       end, 
-                     tagApp)
+              let nowCode =  mkILMethodBody (false, [], argToFreeVarMap.Length + nowFields.Length, nonBranchingInstrsToCode nowInstrs, cloTag, cloImports)
 
               let nowTypeDefs = 
                 convIlxClosureDef cenv encl td {clo with cloStructure=nowStruct
@@ -580,11 +577,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     let ctorMethodDef = 
                         mkILStorageCtor 
-                           (None, 
-                            [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ], 
+                           ([ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ], 
                             nowTy, 
                             mkILCloFldSpecs cenv nowFields, 
-                            ILMemberAccess.Assembly)
+                            ILMemberAccess.Assembly,
+                            None, cloImports)
                         |> cenv.addMethodGeneratedAttrs 
 
                     ILTypeDef(name = td.Name,
@@ -614,27 +611,29 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       |  [], [], Lambdas_return _ -> 
 
           // No code is being declared: just bake a (mutable) environment 
-          let cloCode' = 
+          let cloCodeR = 
             match td.Extends with 
-            | None ->  (mkILNonGenericEmptyCtor None cenv.ilg.typ_Object).MethodBody 
+            | None ->  (mkILNonGenericEmptyCtor (cenv.ilg.typ_Object, None, cloImports)).MethodBody 
             | Some  _ -> convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)
 
           let ctorMethodDef = 
             let flds = (mkILCloFldSpecs cenv nowFields)
-            mkILCtor(ILMemberAccess.Public, 
-                    List.map mkILParamNamed flds, 
-                    mkMethodBody
-                      (cloCode'.IsZeroInit, 
-                       cloCode'.Locals, 
-                       cloCode'.MaxStack, 
-                       prependInstrsToCode
-                          (List.concat (List.mapi (fun n (nm, ty) -> 
-                               [ mkLdarg0
-                                 mkLdarg (uint16 (n+1))
-                                 mkNormalStfld (mkILFieldSpecInTy (nowTy, nm, ty))
-                               ])  flds))
-                         cloCode'.Code, 
-                       None))
+            mkILCtor(
+                ILMemberAccess.Public, 
+                List.map mkILParamNamed flds, 
+                mkMethodBody
+                    (cloCodeR.IsZeroInit, 
+                     cloCodeR.Locals, 
+                     cloCodeR.MaxStack, 
+                     prependInstrsToCode
+                        (List.concat (List.mapi (fun n (nm, ty) -> 
+                            [ mkLdarg0
+                              mkLdarg (uint16 (n+1))
+                              mkNormalStfld (mkILFieldSpecInTy (nowTy, nm, ty))
+                            ])  flds))
+                        cloCodeR.Code, 
+                     None,
+                     None))
           
           let cloTypeDef = 
             td.With(implements= td.Implements,

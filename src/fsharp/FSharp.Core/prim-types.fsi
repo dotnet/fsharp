@@ -520,7 +520,7 @@ namespace Microsoft.FSharp.Core
     /// </summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field|||AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
         inherit Attribute
@@ -772,6 +772,22 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
         member Message: string
+
+    /// <summary>Adding this attribute to a parameter of function type indicates that, if the overall function or method is inlined and the parameter is
+    /// determined to be a known lambda, then this function should be statically inlined throughout the body of the function of method.</summary>
+    ///
+    /// <remarks>If the function parameter is called multiple times in the implementation of the function or method this attribute may cause code explosion and slow compilation times.</remarks>
+    ///
+    /// <category>Attributes</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type InlineIfLambdaAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>InlineIfLambdaAttribute</returns>
+        new : unit -> InlineIfLambdaAttribute
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
     /// that accept a partial application of some of their arguments and return a residual function.
@@ -1994,7 +2010,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="func"></param>
         ///
         /// <returns>'U</returns>
-        abstract member Invoke : func:'T -> 'U
+        abstract Invoke : func:'T -> 'U
 
         /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
@@ -2221,7 +2237,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg2">The second arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept two curried arguments without intervening execution. </summary>
@@ -2252,7 +2268,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg3">The third arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept three curried arguments without intervening execution. </summary>
@@ -2283,7 +2299,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg4">The fourth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept four curried arguments without intervening execution. </summary>
@@ -2315,7 +2331,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg5">The fifth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept five curried arguments without intervening execution. </summary>
@@ -2394,6 +2410,8 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="value">The input value</param>
         ///
+        /// <remarks>The F# compiler ignored this method when determining possible type-directed conversions. Instead, use <c>Some</c> or <c>None</c> explicitly.</remarks>
+        ///
         /// <returns>An option representing the value.</returns>
         /// <exclude />
         static member op_Implicit : value:'T -> 'T option
@@ -2468,6 +2486,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Implicitly converts a value into an optional that is a 'ValueSome' value.</summary>
         ///
         /// <param name="value">The input value</param>
+        ///
+        /// <remarks>The F# compiler ignored this method when determining possible type-directed conversions. Instead, use <c>Some</c> or <c>None</c> explicitly.</remarks>
         ///
         /// <returns>A voption representing the value.</returns>
         /// <exclude />

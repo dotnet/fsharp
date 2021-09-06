@@ -36,13 +36,13 @@
   // Offset: 0x00000208 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {60B68B7F-2D6C-0B5D-A745-03837F8BB660}
+// MVID: {611C4D7C-2D6C-0B5D-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DD0000
+// Image base: 0x06B70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -128,7 +128,7 @@
                      !a z,
                      !a w) cil managed
       {
-        // Code size       16 (0x10)
+        // Code size       17 (0x11)
         .maxstack  7
         .locals init ([0] class IfThenElse01/M/f5@5 V_0)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
@@ -136,17 +136,19 @@
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class IfThenElse01/M/f5@5 class IfThenElse01/M/f5@5T<!a>::self0@
         IL_0006:  stloc.0
-        IL_0007:  ldarg.1
-        IL_0008:  ldarg.2
-        IL_0009:  ble.s      IL_000d
+        IL_0007:  nop
+        .line 100001,100001 : 0,0 ''
+        IL_0008:  ldarg.1
+        IL_0009:  ldarg.2
+        IL_000a:  ble.s      IL_000e
 
         .line 5,5 : 64,65 ''
-        IL_000b:  ldarg.3
-        IL_000c:  ret
+        IL_000c:  ldarg.3
+        IL_000d:  ret
 
         .line 5,5 : 71,72 ''
-        IL_000d:  ldarg.s    w
-        IL_000f:  ret
+        IL_000e:  ldarg.s    w
+        IL_0010:  ret
       } // end of method f5@5T::Invoke
 
     } // end of class f5@5T
