@@ -135,11 +135,17 @@ type X () =
     let ``Zero init performed to get defaults despite the attribute``() =
         FSharp """
 module SkipLocalsInit
+open System
 
 [<System.Runtime.CompilerServices.SkipLocalsInit>]
 let z () =
     let mutable a = Unchecked.defaultof<System.DateTime>
     a
+
+[<System.Runtime.CompilerServices.SkipLocalsInitAttribute>]
+let x f =
+    let a = if 1 / 1 = 1 then Nullable () else Nullable 5L
+    printfn "%A" (f a)
         """
         |> compile
         |> shouldSucceed
@@ -149,5 +155,33 @@ IL_0000:  ldloca.s   V_0
 IL_0002:  initobj    [runtime]System.DateTime
 IL_0008:  ldloc.0
 IL_0009:  ret
-        """]
+        """
+        
+                     """
+.locals (valuetype [runtime]System.Nullable`1<int64> V_0,
+         valuetype [runtime]System.Nullable`1<int64> V_1)
+IL_0000:  ldc.i4.1
+IL_0001:  ldc.i4.1
+IL_0002:  div
+IL_0003:  ldc.i4.1
+IL_0004:  bne.un.s   IL_0011
+
+IL_0006:  ldloca.s   V_1
+IL_0008:  initobj    valuetype [runtime]System.Nullable`1<int64>
+IL_000e:  ldloc.1
+IL_000f:  br.s       IL_0018
+
+IL_0011:  ldc.i4.5
+IL_0012:  conv.i8
+IL_0013:  newobj     instance void valuetype [runtime]System.Nullable`1<int64>::.ctor(!0)
+IL_0018:  stloc.0
+IL_0019:  ldstr      "%A"
+IL_001e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,!!a>::.ctor(string)
+IL_0023:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+IL_0028:  ldarg.0
+IL_0029:  ldloc.0
+IL_002a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [runtime]System.Nullable`1<int64>,!!a>::Invoke(!0)
+IL_002f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!a,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+IL_0034:  pop
+IL_0035:  ret"""]
 #endif
