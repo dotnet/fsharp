@@ -88,7 +88,7 @@ if a[^2,^1] <> 24 then failwithf "expected 23 but got %A" a[^2,^1]
 
     [<Test>]
     let ``Custom collection with Item and no GetReverseIndex should not support reverse index indexing``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.TypeCheckSingleErrorWithOptions [| "--langversion:preview" |]
             """
 open System
 

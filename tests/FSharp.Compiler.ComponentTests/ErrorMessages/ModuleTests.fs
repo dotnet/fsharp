@@ -56,13 +56,6 @@ module Modules =
                                  "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
-    let ``Right Attribute Module Abbreviation without preview (typecheck)``() =
-        FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
-                                 "Ignoring attributes on module abbreviation")
-    [<Fact>]
     let ``Right Attribute Module Abbreviation with version 5.0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
         |> withLangVersion50
@@ -184,8 +177,10 @@ AutoOpen>] L1 = do ()
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 10, Line 3, Col 1, Line 3, Col 9,
-                                 "Unexpected start of structured construct in attribute list")
+        |> withDiagnostics [
+            Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
+        ]
+
     [<Fact>]
     let ``Offside rule works for attributes inside module declarations in F# 5.0``() =
         Fsx """
