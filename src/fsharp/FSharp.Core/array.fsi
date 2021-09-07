@@ -21,6 +21,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     ([| "a"; "b" |], [| 1; 2 |]) ||> Array.allPairs // evaluates to [| ("a", 1); ("a", 2); ("b", 1); ("b", 2) |]
+        /// </code>
+        /// </example>
+        /// 
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         ///
         /// <returns>The resulting array of pairs.</returns>
@@ -32,6 +38,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     ([| 1; 2 |], [| 3; 4 |]) ||> Array.append // evaluates to [| 1; 2; 3; 4 |]
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The resulting array.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
@@ -41,7 +53,13 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns the average of the elements in the array.</summary>
         ///
         /// <param name="array">The input array.</param>
-        ///
+        /// 
+        /// <example>
+        /// <code>
+        ///     [| 1.0; 2.0 |] |> Array.average // evaluates to 1.5
+        /// </code>
+        /// </example>
+        /// 
         /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
@@ -57,7 +75,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="projection">The function to transform the array elements before averaging.</param>
         /// <param name="array">The input array.</param>
-        ///
+        /// 
+        /// <example>
+        /// <code>
+        ///     [| 1.0; 2.0 |] |> Array.averageBy (fun x -> -1.0 * x) // evaluates to -1.5
+        /// </code>
+        /// </example>
+        /// 
         /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
         ///
         /// <returns>The computed average.</returns>
@@ -77,6 +101,18 @@ namespace Microsoft.FSharp.Collections
         /// <param name="targetIndex">The starting index of the target array.</param>
         /// <param name="count">The number of elements to copy.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     let source = [| 1; 2; 3 |]
+        ///     let sourceIndex = 0
+        ///     let target = [| 0; 0; 0 |]
+        ///     let targetIndex = 1
+        ///     let count = 2
+        ///     Array.blit source sourceIndex target targetIndex count 
+        ///     target // evaluates to [| 0; 1; 2 |]
+        /// </code>
+        /// </example>
+        /// 
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when any of sourceIndex, targetIndex or count are negative,
         /// or when there aren't enough elements in source or target.</exception>
@@ -88,6 +124,21 @@ namespace Microsoft.FSharp.Collections
         /// <param name="mapping">The function to create sub-arrays from the input array elements.</param>
         /// <param name="array">The input array.</param>
         ///
+        /// <example>
+        /// <code>
+        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect id // evaluates to [| 1; 2; 3; 4 |]
+        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect (fun xs -> xs |> Array.map (fun x -> -1 * x)) // evaluates to [| -1; -2; -3; -4 |]
+        ///     
+        ///     let negative xs = xs |> Array.map (fun x -> -1 * x)
+        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect negative // evaluates to [| -1; -2; -3; -4 |]
+        ///     
+        ///     let negative xs = xs |> Array.map (fun x -> -1 * x)
+        ///     negative [| 1; 2 |] // evaluates to [-1; -2]
+        ///     let ys = [| [| 1; 2 |]; [| 3; 4 |] |]
+        ///     ys |> Array.collect negative // evaluates to [| -1; -2; -3; -4 |]
+        /// </code>
+        /// </example>
+        /// 
         /// <returns>The concatenation of the sub-arrays.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
