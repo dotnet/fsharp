@@ -1523,6 +1523,7 @@ type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -1536,6 +1537,7 @@ type FSharpParsingOptions =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+          LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
@@ -1545,6 +1547,7 @@ type FSharpParsingOptions =
         { SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
+          LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfig.light
           CompilingFsLib = tcConfig.compilingFslib
@@ -1555,6 +1558,7 @@ type FSharpParsingOptions =
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
+          LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfigB.light
           CompilingFsLib = tcConfigB.compilingFslib
@@ -1635,13 +1639,9 @@ module internal ParseAndCheckFile =
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())
 
-    // Public callers are unable to answer LanguageVersion feature support questions.
-    // External Tools including the VS IDE will enable the default LanguageVersion
-    let isFeatureSupported (_featureId:LanguageFeature) = true
-    let checkLanguageFeatureErrorRecover _featureId _range = ()
 
-    let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
+    let createLexbuf langVersion sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1656,7 +1656,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let matchingBraces = ResizeArray<_>()
-        usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1733,7 +1733,7 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =

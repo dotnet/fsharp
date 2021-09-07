@@ -2232,7 +2232,7 @@ tyconDefnOrSpfnSimpleRepr:
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError lhsm
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
        let s, _ = $5
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover (rhs parseState 5)
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion (rhs parseState 5)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm)  }
 
 
@@ -4281,7 +4281,10 @@ atomicExprQualification:
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
                 mkSynDot dotm lhsm e (ident(CompileOpName "*", opm))
             | _ ->
-                mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
+                if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+                    mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (lhs parseState) 
+                else
+                    mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
                 mkSynDotParenGet lhsm dotm e $2) }
 
   | LBRACK  typedSequentialExpr RBRACK
@@ -4535,7 +4538,7 @@ inlineAssemblyExpr:
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
-            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover sm
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.LanguageVersion sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:
@@ -5003,7 +5006,10 @@ appType:
 
   | LPAREN appTypePrefixArguments rparen  appTypeConPower
       { let args, commas = $2
-        mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range); 
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+            mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (unionRanges (rhs parseState 1) $4.Range)
+        else
+            mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range)
         SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
 
   | powerType 
@@ -5062,7 +5068,10 @@ powerType:
 atomTypeNonAtomicDeprecated:
   | LPAREN appTypePrefixArguments rparen  appTypeConPower
       { let args, commas = $2
-        mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range); 
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+            mlCompatError (FSComp.SR.mlCompatMultiPrefixTyparsNoLongerSupported()) (unionRanges (rhs parseState 1) $4.Range)
+        else
+            mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range)
         SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
 
   | atomType
@@ -5566,15 +5575,30 @@ doneDeclEnd:
   | ODECLEND { }  /* DONE gets thrown away by the lexfilter in favour of ODECLEND */
 
 structOrBegin: 
-  | STRUCT { mlCompatWarning (FSComp.SR.parsSyntaxModuleStructEndDeprecated()) (lhs parseState); }
+  | STRUCT
+    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+          mlCompatError (FSComp.SR.mlCompatStructEndNoLongerSupported()) (lhs parseState)
+      else
+          mlCompatWarning (FSComp.SR.parsSyntaxModuleStructEndDeprecated()) (lhs parseState)
+    }
   | BEGIN { } 
 
 sigOrBegin: 
-  | SIG { mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState); }
+  | SIG
+    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+          mlCompatError (FSComp.SR.mlCompatSigEndNoLongerSupported())(lhs parseState)
+      else
+          mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState)
+    }
   | BEGIN { } 
 
 colonOrEquals: 
-  | COLON { mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState); }
+  | COLON
+    { if parseState.LexBuffer.SupportsFeature LanguageFeature.MLCompatRevisions then
+          mlCompatError (FSComp.SR.mlCompatSigColonNoLongerSupported())(lhs parseState)
+      else
+          mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState)
+    }
   | EQUALS { } 
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
