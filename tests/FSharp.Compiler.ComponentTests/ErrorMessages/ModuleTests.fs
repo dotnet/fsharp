@@ -56,15 +56,6 @@ module Modules =
                                  "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
-    let ``Right Attribute Module Abbreviation without preview (typecheck)``() =
-        FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
-        ]
-
-    [<Fact>]
     let ``Right Attribute Module Abbreviation with version 5.0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
         |> withLangVersion50
