@@ -61,7 +61,6 @@ module Modules =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            Error 3350, Line 1, Col 33, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
         ]
 
@@ -189,7 +188,6 @@ AutoOpen>] L1 = do ()
         |> shouldFail
         |> withDiagnostics [
             Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
-            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
         ]
 
     [<Fact>]
