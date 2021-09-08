@@ -200,12 +200,14 @@ type OverloadInformation =
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
-  | NoOverloadsFound   of methodName: string
-                        * candidates: OverloadInformation list 
-                        * cx: TraitConstraintInfo option
-  | PossibleCandidates of methodName: string 
-                        * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
-                        * cx: TraitConstraintInfo option
+  | NoOverloadsFound  of
+      methodName: string *
+      candidates: OverloadInformation list *
+      cx: TraitConstraintInfo option
+  | PossibleCandidates of 
+      methodName: string *
+      candidates: OverloadInformation list *
+      cx: TraitConstraintInfo option
 
 type OverallTy = 
     /// Each branch of the expression must have the type indicated
@@ -723,8 +725,18 @@ let SimplifyMeasure g vars ms =
                                                 else NewNamedInferenceMeasureVar (v.Range, TyparRigidity.Flexible, v.StaticReq, v.Id)
           let remainingvars = ListSet.remove typarEq v vars
           let newvarExpr = if SignRational e < 0 then Measure.Inv (Measure.Var newvar) else Measure.Var newvar
-          let newms = (ProdMeasures (List.map (fun (c, e') -> Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e))) (ListMeasureConOccsWithNonZeroExponents g false ms)
-                                   @ List.map (fun (v', e') -> if typarEq v v' then newvarExpr else Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)))
+          let nonZeroCon = ListMeasureConOccsWithNonZeroExponents g false ms
+          let nonZeroVar = ListMeasureVarOccsWithNonZeroExponents ms
+          let newms =
+              ProdMeasures [
+                  for (c, e') in nonZeroCon do
+                      Measure.RationalPower (Measure.Con c, NegRational (DivRational e' e)) 
+                  for (v', e') in nonZeroVar do
+                      if typarEq v v' then 
+                          newvarExpr 
+                      else 
+                          Measure.RationalPower (Measure.Var v', NegRational (DivRational e' e))
+              ]
           SubstMeasure v newms
           match vs with 
           | [] -> (remainingvars, Some newvar) 
@@ -1367,7 +1379,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       | [], [ty], true, "get_Item", argtys
           when isArrayTy g ty -> 
 
-          if rankOfArrayTy g ty <> argtys.Length then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
+          if rankOfArrayTy g ty <> argtys.Length then
+              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
           for argty in argtys do
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty g.int_ty
           let ety = destArrayTy g ty
@@ -1377,7 +1390,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       | [], [ty], true, "set_Item", argtys
           when isArrayTy g ty -> 
           
-          if rankOfArrayTy g ty <> argtys.Length - 1 then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
+          if rankOfArrayTy g ty <> argtys.Length - 1 then
+              do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
           let argtys, ety = List.frontAndBack argtys
           for argty in argtys do
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty g.int_ty
@@ -1540,7 +1554,10 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm), m, m2)) 
               else
                   match nm, argtys with 
-                  | "op_Explicit", [argty] -> return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportConversion((NicePrint.prettyStringOfTy denv argty), (NicePrint.prettyStringOfTy denv rty)), m, m2))
+                  | "op_Explicit", [argty] ->
+                      let argTyString = NicePrint.prettyStringOfTy denv argty
+                      let rtyString = NicePrint.prettyStringOfTy denv rty
+                      return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportConversion(argTyString, rtyString), m, m2))
                   | _ -> 
                       let tyString = 
                          match tys with 
@@ -2170,8 +2187,10 @@ and SolveTypeChoice (csenv: ConstraintSolverEnv) ndeep m2 trace ty tys =
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(tys, m)) 
     | _ ->
         if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
-        else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))), m, m2))
-
+        else
+            let tyString = NicePrint.minimalStringOfType denv ty
+            let tysString = tys |> List.map (NicePrint.prettyStringOfTy denv) |> String.concat ","
+            ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf(tyString, tysString), m, m2))
 
 and SolveTypeIsReferenceType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
     let g = csenv.g
@@ -2249,12 +2268,19 @@ and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace or
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
 and CanMemberSigsMatchUpToCheck 
       (csenv: ConstraintSolverEnv) 
-      permitOptArgs // are we allowed to supply optional and/or "param" arguments?
-      alwaysCheckReturn // always check the return type?
-      (unifyTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)   // used to equate the formal method instantiation with the actual method instantiation for a generic method, and the return types
-      (subsumeTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)  // used to compare the "obj" type 
-      (subsumeOrConvertTypes: bool -> TType -> TType -> OperationResult<TypeDirectedConversionUsed>) // used to convert the "return" for MustConvertTo
-      (subsumeOrConvertArg: CalledArg -> CallerArg<_> -> OperationResult<TypeDirectedConversionUsed>)    // used to convert the arguments
+      // are we allowed to supply optional and/or "param" arguments?
+      permitOptArgs 
+      // always check the return type?
+      alwaysCheckReturn 
+      // Used to equate the formal method instantiation with the actual method instantiation
+      // for a generic method, and the return types
+      (unifyTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)
+      // Used to compare the "obj" type 
+      (subsumeTypes: TType -> TType -> OperationResult<TypeDirectedConversionUsed>)
+      // Used to convert the "return" for MustConvertTo
+      (subsumeOrConvertTypes: bool -> TType -> TType -> OperationResult<TypeDirectedConversionUsed>)
+      // Used to convert the arguments
+      (subsumeOrConvertArg: CalledArg -> CallerArg<_> -> OperationResult<TypeDirectedConversionUsed>)
       (reqdRetTyOpt: OverallTy option) 
       (calledMeth: CalledMeth<_>): OperationResult<TypeDirectedConversionUsed> =
         trackErrors {
@@ -2341,7 +2367,7 @@ and CanMemberSigsMatchUpToCheck
                 
                         | AssignedRecdFieldSetter(rfinfo) ->
                             let calledArgTy = rfinfo.FieldType
-                            rfinfo.Name, calledArgTy
+                            rfinfo.LogicalName, calledArgTy
             
                     subsumeOrConvertArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller
                   )
@@ -2534,7 +2560,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             if minfo.IsConstructor then
                 let suggestFields (addToBuffer: string -> unit) =
                     for p in minfo.DeclaringTyconRef.AllInstanceFieldsAsList do
-                        addToBuffer(p.Name.Replace("@", ""))
+                        addToBuffer(p.LogicalName.Replace("@", ""))
 
                 ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, suggestFields)
             else
@@ -2908,7 +2934,6 @@ and ResolveOverloading
                         if indexedApplicableMeths |> List.forall (fun (j, other) -> 
                              i = j ||
                              let res = better candidate other
-                             //eprintfn "\n-------\nCandidate: %s\nOther: %s\nResult: %d\n" (NicePrint.stringOfMethInfo amap m denv (fst candidate).Method) (NicePrint.stringOfMethInfo amap m denv (fst other).Method) res
                              res > 0) then 
                            Some candidate
                         else 

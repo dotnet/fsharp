@@ -69,9 +69,9 @@ val layoutExnDef: denv:DisplayEnv -> infoReader:InfoReader -> x:EntityRef -> Lay
 
 val stringOfTyparConstraints: denv:DisplayEnv -> x:(Typar * TyparConstraint) list -> string
 
-val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
+val layoutTyconDefn: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
 
-val layoutEntityRef: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
+val layoutEntityDefn: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
 
 val layoutUnionCases: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:RecdField list -> Layout
 

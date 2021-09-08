@@ -2010,7 +2010,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="func"></param>
         ///
         /// <returns>'U</returns>
-        abstract member Invoke : func:'T -> 'U
+        abstract Invoke : func:'T -> 'U
 
         /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
@@ -2237,7 +2237,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg2">The second arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept two curried arguments without intervening execution. </summary>
@@ -2268,7 +2268,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg3">The third arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept three curried arguments without intervening execution. </summary>
@@ -2299,7 +2299,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg4">The fourth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept four curried arguments without intervening execution. </summary>
@@ -2331,7 +2331,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg5">The fifth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
+            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept five curried arguments without intervening execution. </summary>

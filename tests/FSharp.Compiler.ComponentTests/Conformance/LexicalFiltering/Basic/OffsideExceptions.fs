@@ -25,6 +25,7 @@ module OffsideExceptions =
     let RelaxWhitespace2 compilation =
         compilation
         |> asFsx
+        |> withLangVersionPreview
         |> withOptions ["--nowarn:25"] // Incomplete pattern matches on this expression.
         |> typecheck
         |> shouldSucceed
@@ -34,6 +35,7 @@ module OffsideExceptions =
     let RelaxWhitespace2_Warning25 compilation =
         compilation
         |> asFsx
+        |> withLangVersionPreview
         |> verifyBaseline
         |> ignore
         
@@ -56,6 +58,7 @@ while (
 true
 ) do ()
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -225,6 +228,7 @@ module [<
                    Experimental "c"
                    >] c = 1
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -272,6 +276,7 @@ module A
     y = 1
 |}
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -323,6 +328,7 @@ module A
     1
 |}
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -412,7 +418,7 @@ function
                         EndLine = 3
                         EndColumn = 9 }
               Message =
-               "Incomplete pattern matches on this expression. For example, the value '{x=0}' may indicate a case not covered by the pattern(s)." };
+               "Incomplete pattern matches on this expression. For example, the value '{ x=0 }' may indicate a case not covered by the pattern(s)." };
             { Error = Warning 193
               Range = { StartLine = 3
                         StartColumn = 1

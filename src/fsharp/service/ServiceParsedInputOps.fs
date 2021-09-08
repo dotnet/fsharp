@@ -1003,9 +1003,8 @@ module ParsedInput =
                         | SynPat.LongIdent(_, _, _, ctorArgs, _, _) ->
                             match ctorArgs with
                             | SynArgPats.Pats pats ->
-                                pats |> List.tryPick (fun pat ->
+                                pats |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
                                     match pat with
-                                    | SynPat.FromParseError(pat, _)
                                     | SynPat.Paren(pat, _) -> 
                                         match pat with
                                         | SynPat.Tuple(_, pats, _) ->

@@ -89,7 +89,7 @@ type Joint =
 [<NoEquality; NoComparison>]
 type Layout =
     | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
-    | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+    | Leaf of juxtLeft: bool * text: TaggedText * juxtRight: bool
     | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
     | Attr of text: string * attributes: (string * string) list * layout: Layout
 
@@ -226,6 +226,7 @@ module TaggedText =
     let keywordStruct = tagKeyword "struct"
     let keywordInherit = tagKeyword "inherit"
     let keywordEnd = tagKeyword "end"
+    let keywordBegin = tagKeyword "begin"
     let keywordNested = tagKeyword "nested"
     let keywordType = tagKeyword "type"
     let keywordDelegate = tagKeyword "delegate"
@@ -268,6 +269,15 @@ module Layout =
         match layout with 
         | Leaf(true, s, true) -> s.Text = ""
         | _ -> false
+
+#if COMPILER
+    let rec endsWithL (text: string) layout = 
+        match layout with 
+        | Leaf(_, s, _) -> s.Text.EndsWith(text)
+        | Node(_, r, _) -> endsWithL text r
+        | Attr(_, _, l) -> endsWithL text l
+        | ObjLeaf _ -> false
+#endif
 
     let mkNode l r joint =
         if isEmptyL l then r else

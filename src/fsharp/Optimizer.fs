@@ -3009,7 +3009,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
             
         let isBaseCall = not (List.isEmpty args) &&
                               match args.[0] with
-                              | Expr.Val (vref, _, _) when vref.BaseOrThisInfo = BaseVal -> true
+                              | Expr.Val (vref, _, _) when vref.IsBaseVal -> true
                               | _ -> false
         
         if isBaseCall then None else

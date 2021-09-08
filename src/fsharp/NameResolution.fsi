@@ -128,6 +128,14 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
+    /// The text for the item to use in the declaration list.
+    /// This does not include backticks, parens etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    member DisplayNameCore: string
+
+    /// The full text for the item to show in error messages and to use in code.
+    /// This includes backticks, parens etc.
     member DisplayName: string
 
 [<RequireQualifiedAccess>]

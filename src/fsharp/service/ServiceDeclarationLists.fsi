@@ -94,19 +94,22 @@ type internal CompletionItem =
 //
 // Note: this type holds a weak reference to compiler resources. 
 type public DeclarationListItem =
-    /// Get the display name for the declaration.
+    /// Get the text to display in the declaration list for the declaration.
     member Name: string
 
-    /// Get the name for the declaration as it's presented in source code.
+    /// Get the text for the declaration as it's to be inserted into source code.
     member NameInCode: string
 
     /// Get the description
     member Description: ToolTipText
 
+    /// Get the glyph to use
     member Glyph: FSharpGlyph
 
+    /// Get the accessibility of the item
     member Accessibility: FSharpAccessibility
 
+    /// Get the completion kind of the item
     member Kind: CompletionItemKind
 
     member IsOwnMember: bool

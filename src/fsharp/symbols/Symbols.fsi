@@ -93,7 +93,10 @@ type FSharpSymbol =
     /// Get the declaration location for the symbol
     member DeclarationLocation: range option
 
-    /// Gets the short display name for the symbol
+    /// Gets the display name for the symbol where double backticks are not added for non-identifiers
+    member DisplayNameCore: string
+
+    /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
