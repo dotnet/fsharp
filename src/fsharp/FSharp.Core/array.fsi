@@ -22,8 +22,9 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array2">The second input array.</param>
         ///
         /// <example>
-        /// <code>
-        ///     ([| "a"; "b" |], [| 1; 2 |]) ||> Array.allPairs // evaluates to [| ("a", 1); ("a", 2); ("b", 1); ("b", 2) |]
+        /// <code lang="fsharp">
+        ///     ([| "a"; "b" |], [| 1; 2 |]) ||> Array.allPairs 
+        ///     // evaluates to [| ("a", 1); ("a", 2); ("b", 1); ("b", 2) |]
         /// </code>
         /// </example>
         /// 
@@ -39,7 +40,10 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array2">The second input array.</param>
         ///
         /// <example>
-        /// <code>
+        /// This example appends an array containing <c>[| 3; 4 |]</c> 
+        /// to an array containing <c>[| 1; 2 |]</c>.
+        /// 
+        /// <code lang="fsharp">
         ///     ([| 1; 2 |], [| 3; 4 |]) ||> Array.append // evaluates to [| 1; 2; 3; 4 |]
         /// </code>
         /// </example>
@@ -55,7 +59,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// 
         /// <example>
-        /// <code>
+        /// <code lang="fsharp">
         ///     [| 1.0; 2.0 |] |> Array.average // evaluates to 1.5
         /// </code>
         /// </example>
@@ -77,7 +81,10 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// 
         /// <example>
-        /// <code>
+        /// This example multiplies each element of the input array by <c>-1.0</c> and 
+        /// then calculates the average of the transformed array:
+        /// 
+        /// <code lang="fsharp">
         ///     [| 1.0; 2.0 |] |> Array.averageBy (fun x -> -1.0 * x) // evaluates to -1.5
         /// </code>
         /// </example>
@@ -102,7 +109,10 @@ namespace Microsoft.FSharp.Collections
         /// <param name="count">The number of elements to copy.</param>
         ///
         /// <example>
-        /// <code>
+        /// This example shows how to copy the first two elements of a source array to the 
+        /// second and third positions of a target array:
+        ///
+        /// <code lang="fsharp">
         ///     let source = [| 1; 2; 3 |]
         ///     let sourceIndex = 0
         ///     let target = [| 0; 0; 0 |]
@@ -125,17 +135,11 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         ///
         /// <example>
-        /// <code>
-        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect id // evaluates to [| 1; 2; 3; 4 |]
-        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect (fun xs -> xs |> Array.map (fun x -> -1 * x)) // evaluates to [| -1; -2; -3; -4 |]
-        ///     
-        ///     let negative xs = xs |> Array.map (fun x -> -1 * x)
-        ///     [| [| 1; 2 |]; [| 3; 4 |] |] |> Array.collect negative // evaluates to [| -1; -2; -3; -4 |]
-        ///     
-        ///     let negative xs = xs |> Array.map (fun x -> -1 * x)
-        ///     negative [| 1; 2 |] // evaluates to [-1; -2]
+        /// <code lang="fsharp">
+        ///     let squares xs = xs |> Array.map (fun x -> x * x)
+        ///     squares [| 1; 2 |] // evaluates to [ 1; 4]
         ///     let ys = [| [| 1; 2 |]; [| 3; 4 |] |]
-        ///     ys |> Array.collect negative // evaluates to [| -1; -2; -3; -4 |]
+        ///     ys |> Array.collect squares // evaluates to [| 1; 4; 9; 16 |]
         /// </code>
         /// </example>
         /// 
