@@ -58,10 +58,11 @@ namespace Microsoft.FSharp.Core
         /// input1 |> String.concat " "  // evaluates "Stefan says: Hello there!"
         /// 
         /// let input2 = [0..9] |> List.map string 
-        /// input2 |> String.concat ""  // evaluates "0123456789"
+        /// input2 |> String.concat ""    // evaluates "0123456789"
+        /// input2 |> String.concat ", "  // evaluates "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         /// 
-        /// let input3 = ["No exclamation point here"]
-        /// input3 |> String.concat "!"  // evaluates "No exclamation point here"
+        /// let input3 = ["No comma"]
+        /// input3 |> String.concat ","   // evaluates "No comma"
         /// </code>
         /// </example>
         [<CompiledName("Concat")>]
