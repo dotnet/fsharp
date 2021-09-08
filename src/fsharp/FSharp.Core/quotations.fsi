@@ -563,8 +563,8 @@ and [<CompiledName("FSharpExpr`1")>]
         member Raw : Expr
 
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of primitive F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Patterns =
     
     /// <summary>An active pattern to recognize expressions that represent getting the address of a value</summary>
@@ -872,8 +872,8 @@ module Patterns =
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
     
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of derived F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module DerivedPatterns =    
 
     /// <summary>An active pattern to recognize expressions that represent a (possibly curried or tupled) first class function value</summary>

@@ -6,8 +6,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    [<RequireQualifiedAccess>]
     /// <summary>Contains operations for working with 2-dimensional arrays.</summary>
     ///
     /// <remarks>
@@ -23,6 +21,8 @@ namespace Microsoft.FSharp.Collections
     /// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>, 
     /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</para>
     /// </remarks>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module Array2D = 
 
         /// <summary>Fetches the base-index for the first dimension of the array.</summary>

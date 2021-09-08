@@ -7,10 +7,10 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
 
-    [<Sealed; CompiledName("FSharpAsyncReplyChannel`1")>]
     /// <summary>A handle to a capability to reply to a PostAndReply message.</summary>
     ///
     /// <category index="4">Agents</category>
+    [<Sealed; CompiledName("FSharpAsyncReplyChannel`1")>]
     type AsyncReplyChannel<'Reply> =
         /// <summary>Sends a reply to a PostAndReply message.</summary>
         /// <param name="value">The value to send.</param>

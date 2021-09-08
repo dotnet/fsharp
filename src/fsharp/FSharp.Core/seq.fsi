@@ -878,7 +878,6 @@ namespace Microsoft.FSharp.Collections
         [<Obsolete("please use Seq.item")>]
         val nth: index:int -> source:seq<'T> -> 'T
 
-        [<CompiledName("OfArray")>]
         /// <summary>Views the given array as a sequence.</summary>
         ///
         /// <param name="source">The input array.</param>
@@ -886,14 +885,15 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("OfArray")>]
         val ofArray: source:'T[] -> seq<'T>
 
-        [<CompiledName("OfList")>]
         /// <summary>Views the given list as a sequence.</summary>
         ///
         /// <param name="source">The input list.</param>
         ///
         /// <returns>The result sequence.</returns>
+        [<CompiledName("OfList")>]
         val ofList: source:'T list -> seq<'T>
 
         /// <summary>Returns a sequence of each element in the input sequence and its predecessor, with the

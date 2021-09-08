@@ -64,8 +64,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
-    [<RequireQualifiedAccess>]
     /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
+    [<RequireQualifiedAccess>]
     module RuntimeHelpers = 
 
         [<Struct; NoComparison; NoEquality>]
@@ -122,8 +122,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns>The initialized event.</returns>
         val CreateEvent : addHandler : ('Delegate -> unit) -> removeHandler : ('Delegate -> unit) -> createHandler : ((obj -> 'Args -> unit) -> 'Delegate) -> Microsoft.FSharp.Control.IEvent<'Delegate,'Args>
 
-    [<AbstractClass>]
     /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
+    [<AbstractClass>]
     type GeneratedSequenceBase<'T> =
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
