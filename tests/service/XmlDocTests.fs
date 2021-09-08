@@ -568,7 +568,10 @@ module ///M2
        rec M
 """
         (checkXml "M" [|"M1"|])
-        (checkParsingErrors [|Error 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|
+            Error 3350, Line 5, Col 7, Line 5, Col 10, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+            Error 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
+         |])
 
 [<Test>]
 let ``union cases 01 - without bar``(): unit =
