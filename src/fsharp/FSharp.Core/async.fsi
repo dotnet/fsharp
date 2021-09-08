@@ -174,7 +174,7 @@ namespace Microsoft.FSharp.Control
         /// 
         /// <remarks>This method should normally be used as the immediate 
         /// right-hand-side of a <c>let!</c> binding in an F# asynchronous workflow, that is,
-        /// <code>
+        /// <code lang="fsharp">
         ///        async { ...
         ///                let! completor1 = childComputation1 |> Async.StartChild  
         ///                let! completor2 = childComputation2 |> Async.StartChild  
