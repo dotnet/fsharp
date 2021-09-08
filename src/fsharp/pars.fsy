@@ -1733,8 +1733,8 @@ memberCore:
        let optPropertyType = $3 
        let isMutable = false
        (fun visNoLongerUsed memFlagsBuilder attrs rangeStart -> 
-             let hasGet = ref false
-             let hasSet = ref false
+             let mutable hasGet = false
+             let mutable hasSet = false
 
              // Iterate over 1 or 2 'get'/'set' entries
              $4 |> List.choose (fun (optInline, optAttrs, (bindingBuilder, mBindLhs), optReturnType, expr, exprm) ->
@@ -1761,18 +1761,18 @@ memberCore:
                                    | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
                                go pv 
                          if getset = "get" then
-                             if !hasGet then 
+                             if hasGet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
-                                 hasGet := true
+                                 hasGet <- true
                                  Some SynMemberKind.PropertyGet
                          else if getset = "set" then
-                             if !hasSet then 
+                             if hasSet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
-                                 hasSet := true
+                                 hasSet <- true
                                  Some SynMemberKind.PropertySet
                          else
                              raiseParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())

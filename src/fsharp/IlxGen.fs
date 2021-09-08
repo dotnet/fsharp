@@ -146,9 +146,9 @@ let ReportStatistics (oc: TextWriter) =
     reports oc
 
 let NewCounter nm =
-    let count = ref 0
-    AddReport (fun oc -> if !count <> 0 then oc.WriteLine (string !count + " " + nm))
-    (fun () -> incr count)
+    let mutable count = 0
+    AddReport (fun oc -> if count <> 0 then oc.WriteLine (string count + " " + nm))
+    (fun () -> count <- count + 1)
 
 let CountClosure = NewCounter "closures"
 
@@ -5750,7 +5750,8 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         
         let genTargetInfoOpt =
             if generateTargetNow then
-                incr targetNext // generate the targets in-order only
+                // Fenerate the targets in-order only
+                targetNext.Value <- targetNext.Value + 1
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 None
@@ -5792,7 +5793,8 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let genTargetInfoOpt =
             if generateTargetNow then
                 // Here we are generating the target immediately
-                incr targetNext // generate the targets in-order only
+                // Generate the targets in-order only
+                targetNext.Value <- targetNext.Value + 1
                 cgbuf.SetMarkToHereIfNecessary inplabOpt
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
@@ -6072,23 +6074,27 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             | Null -> false
             | _ -> true)
 
-    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet fixups thisVars access set e =
+    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
         match e with
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
             let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
             let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
             let canUseStaticField = (match e with Expr.Obj _ -> false | _ -> true)
             let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
-            clo.cloFreeVars |> List.iter (fun fv ->
+            for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal cenv.g m fv eenvclo with
-                    | Env (_, ilField, _) -> fixups := (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m))) :: !fixups
-                    | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment", m)) )
+                    | Env (_, ilField, _) ->
+                        let fixup = (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m)))
+                        fixups.Value <- fixup :: fixups.Value
+                    | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment", m))
 
         | Expr.Val (vref, _, _) ->
             let fv = vref.Deref
             let needsFixup = Zset.contains fv forwardReferenceSet
-            if needsFixup then fixups := (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv SPSuppress (set e) discard)) :: !fixups
+            if needsFixup then
+                let fixup = (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv SPSuppress (set e) discard))
+                fixups.Value <- fixup :: fixups.Value
         | _ -> failwith "compute real fixup vars"
 
 
@@ -6114,7 +6120,14 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
 
             // Execute and discard any fixups that can now be committed
-            fixups := !fixups |> List.filter (fun (boundv, fv, action) -> if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then true else (action(); false))
+            let newFixups =
+                fixups.Value |> List.filter (fun (boundv, fv, action) ->
+                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
+                        true
+                    else
+                        action()
+                        false)
+            fixups.Value <- newFixups
 
             forwardReferenceSet)
     ()
@@ -7253,9 +7266,11 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
            match repr with
            | Local(_, _, Some (_, g))
            | Env(_, _, Some (_, g)) ->
-               match !g with
-               | NamedLocalIlxClosureInfoGenerator f -> g := NamedLocalIlxClosureInfoGenerated (f eenv)
-               | NamedLocalIlxClosureInfoGenerated _ -> ()
+               match g.Value with
+               | NamedLocalIlxClosureInfoGenerator f ->
+                   g.Value <- NamedLocalIlxClosureInfoGenerated (f eenv)
+               | NamedLocalIlxClosureInfoGenerated _ ->
+                   ()
            | _ -> ()
        | _ -> ())
 
