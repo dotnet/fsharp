@@ -456,8 +456,8 @@ module DeclarationListHelpers =
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-/// Represents one parameter for one method (or other item) in a group. 
 type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.

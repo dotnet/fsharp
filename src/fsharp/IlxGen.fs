@@ -1472,7 +1472,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 let GenILSourceMarker (g: TcGlobals) (m: range) =
     ILDebugPoint.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
-                          /// NOTE: .NET && VS measure first column as column 1
+                          // NOTE: .NET && VS measure first column as column 1
                           column= m.StartColumn+1,
                           endLine= m.EndLine,
                           endColumn=m.EndColumn+1)
@@ -5131,7 +5131,7 @@ and GenSequenceExpr
 
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
     for fv in cloFreeVars do
-       /// State variables always get zero-initialized
+       // State variables always get zero-initialized
        if stateVarsSet.Contains fv then
            GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
        else

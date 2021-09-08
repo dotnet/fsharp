@@ -193,7 +193,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
     member _.FileName = fileName
 
-    /// Get the bytes for the file
+    // Get the bytes for the file
     interface BinaryFile with
 
         override this.GetView() =
@@ -3877,7 +3877,7 @@ type ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
 
-    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    // ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     inherit IDisposable
 
 [<Sealed>]
