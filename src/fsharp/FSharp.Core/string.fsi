@@ -27,15 +27,16 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The concatenated string.</returns>
         /// 
-        /// <example> The following samples shows how to interspace spaces in a text
+        /// <example id="collect-example-1"> The following samples shows how to interspace spaces in a text
         /// <code lang="fsharp">
-        /// String.collect (sprintf "%c ") "Stefan says: Hi!"  // evaluates "S t e f a n   s a y s :   H i ! "
+        /// let input = "Stefan says: Hi!"
+        /// input |> String.collect (sprintf "%c ") // evaluates "S t e f a n   s a y s :   H i ! "
         /// </code>
         /// </example>
         /// 
-        /// <example>How to show the ASCII representation of a very secret text:
+        /// <example id="collect-example-2"> How to show the ASCII representation of a very secret text
         /// <code lang="fsharp">
-        /// String.collect (fun chr -> int chr |> sprintf "%d ") "Secret"  // evaluates "83 101 99 114 101 116 "
+        /// "Secret" |> String.collect (fun chr -> int chr |> sprintf "%d ")  // evaluates "83 101 99 114 101 116 "
         /// </code>
         /// </example>
         [<CompiledName("Collect")>]
@@ -51,11 +52,16 @@ namespace Microsoft.FSharp.Core
         /// the separation string.</returns>
         /// <exception cref="T:System.ArgumentNullException">Thrown when <c>strings</c> is null.</exception>
         /// 
-        /// <example>
+        /// <example id="concat-example-1">
         /// <code lang="fsharp">
-        /// String.concat " " ["Stefan"; "says:"; "Hello"; "there!"]  // evaluates "Stefan says: Hello there!"
-        /// [0..9] |> List.map string |> String.concat ""             // evaluates "0123456789"
-        /// String.concat "!" ["No exclamation point here"]           // evaluates "No exclamation point here"
+        /// let input1 = ["Stefan"; "says:"; "Hello"; "there!"]
+        /// input1 |> String.concat " "  // evaluates "Stefan says: Hello there!"
+        /// 
+        /// let input2 = [0..9] |> List.map string 
+        /// input2 |> String.concat ""  // evaluates "0123456789"
+        /// 
+        /// let input3 = ["No exclamation point here"]
+        /// input3 |> String.concat "!"  // evaluates "No exclamation point here"
         /// </code>
         /// </example>
         [<CompiledName("Concat")>]
@@ -68,10 +74,13 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>True if any character returns true for the predicate and false otherwise.</returns>
         /// 
-        /// <example> Looking for uppercase characters
+        /// <example id="exists-example-1"> Looking for uppercase characters
         /// <code lang="fsharp">
-        /// String.exists System.Char.IsUpper "Yoda"  // evaluates true
-        /// String.exists System.Char.IsUpper "nope"  // evaluates false
+        /// open System
+        /// 
+        /// "Yoda" |> String.exists Char.IsUpper  // evaluates true
+        /// 
+        /// "nope" |> String.exists Char.IsUpper  // evaluates false
         /// </code>
         /// </example>
         [<CompiledName("Exists")>]
@@ -87,10 +96,19 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The resulting string.</returns>
         /// 
-        /// <example> Filtering out just alphanumeric characters or just digits
+        /// <example id="filter-example-1"> Filtering out just alphanumeric characters
         /// <code lang="fsharp">
-        /// String.filter System.Uri.IsHexDigit "0 1 2 3 4 5 6 7 8 9 a A m M"  // evaluates "123456789aA"
-        /// String.filter System.Char.IsDigit "hello"                          // evaluates ""
+        /// open System
+        /// 
+        /// let input = "0 1 2 3 4 5 6 7 8 9 a A m M"
+        /// input |> String.filter Uri.IsHexDigit  // evaluates "123456789aA"
+        /// </code>
+        /// </example>
+        /// <example id="filter-example-2"> Filtering out just digits
+        /// <code lang="fsharp">
+        /// open System
+        /// 
+        /// "hello" |> String.filter Char.IsDigit  // evaluates ""
         /// </code>
         /// </example>
         [<CompiledName("Filter")>]
@@ -103,10 +121,13 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>True if all characters return true for the predicate and false otherwise.</returns>
         ///         
-        /// <example> Looking for lowercase characters
+        /// <example id="forall-example-1"> Looking for lowercase characters
         /// <code lang="fsharp">
-        /// String.forall System.Char.IsLower "all are lower"  // evaluates false
-        /// String.forall System.Char.IsLower "allarelower"    // evaluates true
+        /// open System
+        /// 
+        /// "all are lower" |> String.forall Char.IsLower  // evaluates false
+        /// 
+        /// "allarelower" |> String.forall Char.IsLower    // evaluates true
         /// </code>
         /// </example>
         [<CompiledName("ForAll")>]
@@ -123,7 +144,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The constructed string.</returns>
         /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         /// 
-        /// <example> Enumerate digits ASCII codes
+        /// <example id="init-example-1"> Enumerate digits ASCII codes
         /// <code lang="fsharp">
         /// String.init 10 (fun i -> int '0' + i |> sprintf "%d ")  // evaluates "48 49 50 51 52 53 54 55 56 57 "
         /// </code>
@@ -136,9 +157,10 @@ namespace Microsoft.FSharp.Core
         /// <param name="action">The function to be applied to each character of the string.</param>
         /// <param name="str">The input string.</param>
         /// 
-        /// <example>
+        /// <example id="iter-example-1"> Printing the ASCII code for each characater in the string
         /// <code lang="fsharp">
-        /// String.iter (fun c -> printfn "%c %d" c (int c)) "Hello"  
+        /// let input = "Hello"
+        /// input |> String.iter (fun c -> printfn "%c %d" c (int c))
         /// // evaluates unit
         /// // prints:
         /// H 72
@@ -157,17 +179,11 @@ namespace Microsoft.FSharp.Core
         /// <param name="action">The function to apply to each character and index of the string.</param>
         /// <param name="str">The input string.</param>
         /// 
-        /// <example>
+        /// <example id="iteri-example-1"> Numbering the characters and printing the associated ASCII code 
+        /// for each characater in the input string
         /// <code lang="fsharp">
-        /// String.length null   // evaluates 0
-        /// String.length ""     // evaluates 0
-        /// String.length "123"  // evaluates 3
-        /// </code>
-        /// </example>
-        /// 
-        /// <example>
-        /// <code lang="fsharp">
-        /// String.iteri (fun i c -> printfn "%d. %c %d" (i + 1) c (int c)) "Hello"
+        /// let input = "Hello"
+        /// input |> String.iteri (fun i c -> printfn "%d. %c %d" (i + 1) c (int c))
         /// // evaluates unit
         /// // prints:
         /// 1. H 72
@@ -186,7 +202,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The number of characters in the string.</returns>
         /// 
-        /// <example>
+        /// <example id="length-example-1"> Getting the length of different strings
         /// <code lang="fsharp">
         /// String.length null   // evaluates 0
         /// String.length ""     // evaluates 0
@@ -204,9 +220,11 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The resulting string.</returns>
         /// 
-        /// <example> Changing case to upper for all characters in the input string
+        /// <example id="map-example-1"> Changing case to upper for all characters in the input string
         /// <code lang="fsharp">
-        /// String.map System.Char.ToUpper "Hello there!"   // evaluates "HELLO THERE!"
+        /// open System
+        /// let input = "Hello there!"
+        /// input |> String.map Char.ToUpper  // evaluates "HELLO THERE!"
         /// </code>
         /// </example>
         [<CompiledName("Map")>]
@@ -220,13 +238,16 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The resulting string.</returns>
         /// 
-        /// <example> Alternating case for all characters in the input string
+        /// <example id="mapi-example-1"> Alternating case for all characters in the input string
         /// <code lang="fsharp">
+        /// open System
+        /// 
         /// let alternateCase indx chr =
         ///     if 0 = indx % 2 
-        ///         then System.Char.ToUpper chr 
-        ///         else System.Char.ToLower chr
-        /// String.mapi alternateCase "Hello there!"   // evaluates "HeLlO ThErE!"
+        ///         then Char.ToUpper chr 
+        ///         else Char.ToLower chr
+        /// let input = "Hello there!"
+        /// input |> String.mapi alternateCase  // evaluates "HeLlO ThErE!"
         /// </code>
         /// </example>
         [<CompiledName("MapIndexed")>]
@@ -240,9 +261,9 @@ namespace Microsoft.FSharp.Core
         /// <returns>The concatenated string.</returns>
         /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         /// 
-        /// <example>
+        /// <example id="replicate-example-1">
         /// <code lang="fsharp">
-        /// String.replicate 3 "Do it! "  // evaluates "Do it! Do it! Do it! "
+        /// "Do it!" |> String.replicate 3   // evaluates "Do it!Do it!Do it!"
         /// </code>
         /// </example>
         [<CompiledName("Replicate")>]
