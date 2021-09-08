@@ -305,8 +305,9 @@ namespace Microsoft.FSharp.Control
             contents.aux.ccont (OperationCanceledException (contents.aux.token))
 
         /// Check for trampoline hijacking.
-        /// Note, this must make tailcalls, so may not be an instance member taking a byref argument,
-        /// nor call any members taking byref arguments.
+        //
+        // Note, this must make tailcalls, so may not be an instance member taking a byref argument,
+        // nor call any members taking byref arguments.
         static member inline HijackCheckThenCall (ctxt: AsyncActivation<'T>) cont arg =
             ctxt.aux.trampolineHolder.HijackCheckThenCall cont arg
 
