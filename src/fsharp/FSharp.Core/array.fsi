@@ -93,12 +93,12 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// 
         /// <example id="averageBy-example-minusOne">
-        /// This example multiplies each element of the input array by <c>-1.0</c> and 
+        /// This example substracts <c>1.0</c> from each element of the input array and 
         /// then calculates the average of the transformed array:
         /// 
         /// <code lang="fsharp">
-        ///     [| 1.0; 2.0 |] |> Array.averageBy (fun x -> -1.0 * x) 
-        ///     // evaluates to -1.5
+        ///     [| 1.0; 2.0 |] |> Array.averageBy (fun x -> x - 1.0) 
+        ///     // evaluates to 0.5
         /// </code>
         /// </example>
         /// 
