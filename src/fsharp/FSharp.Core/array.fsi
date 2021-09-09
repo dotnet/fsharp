@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
-        /// 
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         ///
         /// <returns>The resulting array of pairs.</returns>
@@ -38,7 +38,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
-        /// 
+        ///
         /// <returns>The resulting array.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
@@ -46,7 +46,7 @@ namespace Microsoft.FSharp.Collections
         /// <example id="append-example-1234">
         /// This example appends an array containing <c>[| 3; 4 |]</c> 
         /// to an array containing <c>[| 1; 2 |]</c>.
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     ([| 1; 2 |], [| 3; 4 |]) ||> Array.append 
         ///     // evaluates to [| 1; 2; 3; 4 |]
@@ -58,12 +58,12 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns the average of the elements in the array.</summary>
         ///
         /// <param name="array">The input array.</param>
-        /// 
+        ///
         /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The average of the elements in the array.</returns>
-        /// 
+        ///
         /// <example id="average-example-numeric">
         /// <code lang="fsharp">
         ///     [| 1.0; 2.0 |] |> Array.average // evaluates to 1.5
@@ -85,27 +85,27 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="projection">The function to transform the array elements before averaging.</param>
         /// <param name="array">The input array.</param>
-        /// 
+        ///
         /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
         ///
         /// <returns>The computed average.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// 
+        ///
         /// <example id="averageBy-example-minusOne">
         /// This example substracts <c>1.0</c> from each element of the input array and 
         /// then calculates the average of the transformed array:
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     [| 1.0; 2.0 |] |> Array.averageBy (fun x -> x - 1.0) 
         ///     // evaluates to 0.5
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="averageBy-example-intAvg">
         /// This example converts each integer in the input array to a float
         /// and then computes the average of these floats:
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     [| 1; 2 |] |> Array.averageBy float 
         ///     // evaluates to 1.5
@@ -139,7 +139,7 @@ namespace Microsoft.FSharp.Collections
         ///     target // evaluates to [| 0; 1; 2 |]
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when any of sourceIndex, targetIndex or count are negative,
         /// or when there aren't enough elements in source or target.</exception>
@@ -150,7 +150,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="mapping">The function to create sub-arrays from the input array elements.</param>
         /// <param name="array">The input array.</param>
-        /// 
+        ///
         /// <returns>The concatenation of the sub-arrays.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
@@ -159,7 +159,7 @@ namespace Microsoft.FSharp.Collections
         /// This example takes an array of integer sub-arrays as input.
         /// It squares the integers in each sub-array and then concatenates 
         /// the result into a single array.
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     let squares xs = xs |> Array.map (fun x -> x * x)
         ///     squares [| 1; 2 |] // evaluates to [ 1; 4]
@@ -185,7 +185,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays
         /// is null.</exception>
-        /// 
+        ///
         /// <example id="compareWith-example-ints">
         /// <code lang="fsharp">
         ///     ([| 1; 2 |], [| 2; 1 |]) 
@@ -213,7 +213,7 @@ namespace Microsoft.FSharp.Collections
         ///     // evaluates to 1
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="compareWith-example-strings">
         /// <code lang="fsharp">
         ///     ([| "a"; "b" |], [| "a"; "c" |])
@@ -234,14 +234,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The concatenation of the sequence of input arrays.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// 
+        ///
         /// <example id="concat-example-ints">
         /// <code lang="fsharp">
         ///     [| [| 1; 2; 3 |]; [| 4; 5 |] |] |> Array.concat
         ///     // evaluates to [| 1; 2; 3; 4; 5 |]
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="concat-example-strings">
         /// <code lang="fsharp">
         ///     [| [| "a" |]
@@ -262,21 +262,21 @@ namespace Microsoft.FSharp.Collections
         /// <returns>True if the input array contains the specified element; false otherwise.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// 
+        ///
         /// <example id="contains-example-ints">
         /// <code lang="fsharp">
         ///     [| 1; 2; 3 |] |> Array.contains 2 // evaluates to true
         ///     [| 1; 2; 3 |] |> Array.contains 4 // evaluates to false
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="contains-example-strings">
         /// <code lang="fsharp">
         ///     [| "a"; "b"; "c" |] |> Array.contains "b" // evaluates to true
         ///     [| "a"; "b"; "c" |] |> Array.contains "d" // evaluates to false
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="contains-example-subArray">
         /// <code lang="fsharp">
         ///     [| [| 1; 2; 3 |]; [| 4; 5 |] |] 

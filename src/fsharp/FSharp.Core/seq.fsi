@@ -22,7 +22,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
-        /// 
+        ///
         /// <example id="allPairs-example-ab12">
         /// <code lang="fsharp">
         ///     (seq { "a"; "b" }, seq { 1; 2 }) ||> Seq.allPairs 
@@ -50,7 +50,7 @@ namespace Microsoft.FSharp.Collections
         /// <example id="append-example-1234">
         /// This example appends a sequence containing <c>seq { 3; 4 }</c> 
         /// to a sequence containing <c>seq { 1; 2 }</c>.
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     (seq { 1; 2 }, seq { 3; 4 }) ||> Seq.append 
         ///     // evaluates to seq [1; 2; 3; 4]
@@ -70,7 +70,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
-        /// 
+        ///
         /// <example id="average-example-numeric">
         /// <code lang="fsharp">
         ///     seq { 1.0; 2.0 } |> Seq.average // evaluates to 1.5
@@ -105,17 +105,17 @@ namespace Microsoft.FSharp.Collections
         /// <example id="averageBy-example-minusOne">
         /// This example substracts <c>1.0</c> from each element of the input sequence and 
         /// then calculates the average of the transformed sequence:
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     seq { 1.0; 2.0 } |> Seq.averageBy (fun x -> x - 1.0) 
         ///     // evaluates to 0.5
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="averageBy-example-intAvg">
         /// This example converts each integer in the input sequence to a float
         /// and then computes the average of these floats:
-        /// 
+        ///
         /// <code lang="fsharp">
         ///     seq { 1; 2 } |> Seq.averageBy float 
         ///     // evaluates to 1.5
@@ -214,7 +214,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// 
+        ///
         /// <example id="collect-example-squares">
         /// This example takes a sequence of integer sub-sequences as input.
         /// It squares the integers in each sub-sequence and then concatenates 
@@ -243,7 +243,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
         /// is null.</exception>
-        /// 
+        ///
         /// <example id="compareWith-example-ints">
         /// <code lang="fsharp">
         ///     (seq { 1; 2 }, seq { 2; 1 }) 
@@ -296,14 +296,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// 
+        ///
         /// <example id="concat-example-ints">
         /// <code lang="fsharp">
         ///     seq { seq { 1; 2; 3 }; seq { 4; 5 } } |> Seq.concat
         ///     // evaluates to seq [ 1; 2; 3; 4; 5 ]
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="concat-example-strings">
         /// <code lang="fsharp">
         ///     seq { seq { "a" }
@@ -323,21 +323,21 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// 
+        ///
         /// <example id="contains-example-ints">
         /// <code lang="fsharp">
         ///     seq { 1; 2; 3 } |> Seq.contains 2 // evaluates to true
         ///     seq { 1; 2; 3 } |> Seq.contains 4 // evaluates to false
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="contains-example-strings">
         /// <code lang="fsharp">
         ///     seq { "a"; "b"; "c" } |> Seq.contains "b" // evaluates to true
         ///     seq { "a"; "b"; "c" } |> Seq.contains "d" // evaluates to false
         /// </code>
         /// </example>
-        /// 
+        ///
         /// <example id="contains-example-subSeq">
         /// <code lang="fsharp">
         ///     seq { seq { 1; 2; 3 }; seq { 4; 5 } } 
