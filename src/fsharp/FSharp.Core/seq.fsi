@@ -63,7 +63,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [ 1f; 2f; 3f ] |> Seq.average // evaluates to 2.0f
+        ///     [ 1.0; 2.0; 3.0 ] |> Seq.average // evaluates to 2.0
         /// </code>
         /// </example>
         ///
@@ -85,6 +85,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="projection">A function applied to transform each element of the sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     type Foo = { Bar: float }
+        ///     [ { Bar = 2.0 }; { Bar = 4.0 } ] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
+        /// </code>
+        /// </example>
         ///
         /// <returns>The average.</returns>
         ///
