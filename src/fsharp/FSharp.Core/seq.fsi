@@ -44,7 +44,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([1; 2], [3; 4;]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
+        ///     ([1; 2], [3; 4]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
         /// </code>
         /// </example>
         ///
@@ -137,7 +137,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [1; 2; 3;] |> Seq.cache // evaluates to seq [1; 2; 3]
+        ///     [1; 2; 3] |> Seq.cache // evaluates to seq [1; 2; 3]
         ///     null |> Seq.cache // trhows exception!
         /// </code>
         /// </example>
@@ -159,7 +159,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([1; 2; 3;] :> IEnumerable) |> Seq.cast{int} // evaluates to seq [1; 2; 3], explicitly typed as int seq
+        ///     ([1; 2; 3] :> IEnumerable) |> Seq.cast{int} // evaluates to seq [1; 2; 3], explicitly typed as int seq
         ///     (null :> IEnumerable) |> Seq.cast{int} // throws exception!
         /// </code>
         /// </example>
@@ -183,7 +183,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [Some 1; None; Some 2;] |> Seq.choose id // evaluates to seq [1; 2]
+        ///     [Some 1; None; Some 2] |> Seq.choose id // evaluates to seq [1; 2]
         ///     [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None) // evaluates to seq [2]
         ///     null |> Seq.choose id // throws exception!
         /// </code>
@@ -248,6 +248,19 @@ namespace Microsoft.FSharp.Collections
         /// <returns>Returns the first non-zero result from the comparison function.  If the end of a sequence
         /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
         /// is shorter.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     ([1; 2], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 0
+        ///     ([1; 2], [1; 3]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to -1
+        ///     ([1; 3], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 1
+        ///     ([1; 2], [1]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to -1
+        ///     ([1], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 0
+        ///     ([1; 2], null) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
+        ///     (null, [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
+        ///     (null, null) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
+        /// </code>
+        /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
         /// is null.</exception>
