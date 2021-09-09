@@ -61,6 +61,12 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="source">The input sequence.</param>
         ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [ 1f; 2f; 3f ] |> Seq.average // evaluates to 2.0f
+        /// </code>
+        /// </example>
+        ///
         /// <returns>The average.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
