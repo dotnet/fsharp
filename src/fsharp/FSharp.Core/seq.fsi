@@ -41,6 +41,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
+        /// </code>
+        /// </example>
+        ///
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two provided sequences is
