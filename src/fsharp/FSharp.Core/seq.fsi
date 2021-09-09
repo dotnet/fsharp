@@ -131,6 +131,12 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [ 1; 2; 3; ] |> Seq.cache // evaluates to seq [1; 2; 3]
+        /// </code>
+        /// </example>
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Cache")>]
         val cache: source:seq<'T> -> seq<'T>
