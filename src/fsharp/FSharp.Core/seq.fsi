@@ -19,6 +19,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.allPairs // evaluates to seq [(1, 3); (1, 4); (2, 3); (2, 4)]
+        /// </code>
+        /// </example>
+        ///
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
