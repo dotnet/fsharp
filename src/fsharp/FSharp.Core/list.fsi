@@ -27,7 +27,11 @@ namespace Microsoft.FSharp.Collections
         /// <code lang="fsharp">
         /// let people = ["Kirk"; "Spock";"McCoy"]
         /// let numbers = [1;2]
-        /// people |> List.allPairs numbers  // evaluates [(1, "Kirk"); (1, "Spock"); (1, "McCoy"); (2, "Kirk"); (2, "Spock"); (2, "McCoy")]
+        /// people |> List.allPairs numbers 
+        /// </code>
+        /// The sample evaluates to 
+        /// <code>
+        /// [(1, "Kirk"); (1, "Spock"); (1, "McCoy"); (2, "Kirk"); (2, "Spock"); (2, "McCoy")]
         /// </code>
         /// </example>
         [<CompiledName("AllPairs")>]
@@ -68,9 +72,10 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="average-example-2">
         /// <code lang="fsharp">
-        /// [1 .. 9] |> List.average  // does not compile because error FS0001: The type 'int' does not support the operator 'DivideByInt'
-        ///                                 (see averageBy example below for a solution)
+        /// [1 .. 9] |> List.average
         /// </code>
+        /// The sample does not compile because <c>The type 'int' does not support the operator 'DivideByInt'</c>
+        /// (see <c>averageBy</c> examples for a solution)
         /// </example>
         [<CompiledName("Average")>]
         val inline average   : list:^T list -> ^T
@@ -134,8 +139,9 @@ namespace Microsoft.FSharp.Collections
         /// let candidatesForTheTrip = [ { name = "SpongeBob"; happiness = AlwaysHappy }
         ///                              { name = "Patrick"; happiness = AlwaysHappy }
         ///                              { name = "Squidward"; happiness = MostOfTheTimeGrumpy } ]
-        /// candidatesForTheTrip |> List.choose takeJustHappyPersons  // evaluates [ "SpongeBob"; "Patrick" ]
+        /// candidatesForTheTrip |> List.choose takeJustHappyPersons
         /// </code>
+        /// The sample evaluates to <c>[ "SpongeBob"; "Patrick" ]</c>
         /// </example>
         /// 
         /// <example id="choose-example-2">
@@ -165,13 +171,20 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="chunkBySize-example-1">
         /// <code lang="fsharp">
-        /// [1 .. 10 ] |> List.chunkBySize 3  // evaluates [[1; 2; 3]; [4; 5; 6]; [7; 8; 9]; [10]]    (notice the last chunk)
-        /// 
-        /// [1 .. 5 ] |> List.chunkBySize 10  // evaluates [[1; 2; 3; 4; 5]]
-        /// 
-        /// let input : string list = []
-        /// input |> List.chunkBySize 10  // evaluates []    (notice that has the type "string list list")
+        /// [1 .. 10 ] |> List.chunkBySize 3  // evaluates     
         /// </code>
+        /// Evaluates to <c>[[1; 2; 3]; [4; 5; 6]; [7; 8; 9]; [10]]</c> . Please notice the last chunk.
+        /// 
+        /// <code lang="fsharp">
+        /// let output2 = [1 .. 5 ] |> List.chunkBySize 10
+        /// </code>
+        /// Evaluates to <c>[[1; 2; 3; 4; 5]]</c>
+        /// 
+        /// <code lang="fsharp">
+        /// let input : string list = []
+        /// let output3 = input |> List.chunkBySize 10
+        /// </code>
+        /// Evaluates to <c>[]</c>. Please notice that has the type <c>string list list</c>.
         /// </example>
         [<CompiledName("ChunkBySize")>]
         val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
@@ -185,8 +198,9 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="collect-example-1"> For each positive number in the array we are generating all the previous positive numbers
         /// <code lang="fsharp">
-        /// [1..4] |> List.collect (fun x -> [1..x]) // evaluates [1;   1; 2;   1; 2; 3;   1; 2; 3; 4]
+        /// [1..4] |> List.collect (fun x -> [1..x])
         /// </code>
+        /// The sample evaluates to <c>[1;   1; 2;   1; 2; 3;   1; 2; 3; 4]</c> (added extra spaces for easy reading)
         /// </example>
         [<CompiledName("Collect")>]
         val collect: mapping:('T -> 'U list) -> list:'T list -> 'U list
