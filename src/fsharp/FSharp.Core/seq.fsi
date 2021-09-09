@@ -19,13 +19,13 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         ///
+        /// <returns>The result sequence.</returns>
+        ///
         /// <example>
         /// <code lang="fsharp">
         ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.allPairs // evaluates to seq [(1, 3); (1, 4); (2, 3); (2, 4)]
         /// </code>
         /// </example>
-        ///
-        /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("AllPairs")>]
@@ -41,13 +41,13 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         ///
+        /// <returns>The result sequence.</returns>
+        ///
         /// <example>
         /// <code lang="fsharp">
         ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
         /// </code>
         /// </example>
-        ///
-        /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two provided sequences is
         /// null.</exception>
@@ -61,13 +61,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="source">The input sequence.</param>
         ///
+        /// <returns>The average.</returns>
+        ///
         /// <example>
         /// <code lang="fsharp">
         ///     [ 1.0; 2.0; 3.0 ] |> Seq.average // evaluates to 2.0
         /// </code>
         /// </example>
-        ///
-        /// <returns>The average.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
@@ -86,14 +86,14 @@ namespace Microsoft.FSharp.Collections
         /// <param name="projection">A function applied to transform each element of the sequence.</param>
         /// <param name="source">The input sequence.</param>
         ///
+        /// <returns>The average.</returns>
+        ///
         /// <example>
         /// <code lang="fsharp">
         ///     type Foo = { Bar: float }
         ///     [ { Bar = 2.0 }; { Bar = 4.0 } ] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
         /// </code>
         /// </example>
-        ///
-        /// <returns>The average.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
