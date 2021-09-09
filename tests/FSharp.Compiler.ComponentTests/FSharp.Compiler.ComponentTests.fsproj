@@ -10,7 +10,6 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104;FS0988</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
