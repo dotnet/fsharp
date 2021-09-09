@@ -23,7 +23,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.allPairs // evaluates to seq [(1, 3); (1, 4); (2, 3); (2, 4)]
+        ///     ([1; 2], [3; 4;]) ||> Seq.allPairs // evaluates to seq [(1, 3); (1, 4); (2, 3); (2, 4)]
         /// </code>
         /// </example>
         ///
@@ -45,7 +45,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([ 1; 2 ], [ 3; 4; ]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
+        ///     ([1; 2], [3; 4;]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
         /// </code>
         /// </example>
         ///
@@ -65,7 +65,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [ 1.0; 2.0; 3.0 ] |> Seq.average // evaluates to 2.0
+        ///     [1.0; 2.0; 3.0] |> Seq.average // evaluates to 2.0
         ///     null |> Seq.average // throws exception!
         ///     [] |> Seq.average // throws exception!
         /// </code>
@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Collections
         /// <code lang="fsharp">
         ///     type Foo = { Bar: float }
         ///
-        ///     [ { Bar = 2.0 }; { Bar = 4.0 } ] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
+        ///     [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
         ///     [] |> Seq.averageBy (fun foo -> foo.Bar) // throws exception!
         ///     null |> Seq.averageBy (fun foo -> foo.Bar) // throws exception!
         /// </code>
@@ -138,7 +138,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [ 1; 2; 3; ] |> Seq.cache // evaluates to seq [1; 2; 3]
+        ///     [1; 2; 3;] |> Seq.cache // evaluates to seq [1; 2; 3]
         ///     null |> Seq.cache // trhows exception!
         /// </code>
         /// </example>
@@ -160,8 +160,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([ 1; 2; 3; ] :> IEnumerable) |> Seq.cast<int> // evaluates to seq [1; 2; 3], explicitly typed as seq<int>
-        ///     (null :> IEnumerable) |> Seq.cast<int> // throws exception!
+        ///     ([1; 2; 3;] :> IEnumerable) |> Seq.cast{int} // evaluates to seq [1; 2; 3], explicitly typed as int seq
+        ///     (null :> IEnumerable) |> Seq.cast{int} // throws exception!
         /// </code>
         /// </example>
         ///
@@ -181,6 +181,14 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence of type T.</param>
         ///
         /// <returns>The result sequence.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [Some 1; None; Some 2;] |> Seq.choose id // evaluates to seq [1; 2]
+        ///     [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None) // evaluates to seq [2]
+        ///     null |> Seq.choose id // throws exception!
+        /// </code>
+        /// </example>
         /// 
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Choose")>]
@@ -192,6 +200,15 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The sequence divided into chunks.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [1; 2; 3] |> Seq.chunkBySize 2 // evaluates to seq [[|1; 2|]; [|3|]]
+        ///     [1; 2; 3] |> Seq.chunkBySize -2 // throws exception!
+        ///     null |> Seq.chunkBySize 2 // throws exception!
+        /// </code>
+        /// </example>
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
         [<CompiledName("ChunkBySize")>]
@@ -207,6 +224,16 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     type Foo = { Bar: int seq }
+        ///
+        ///     [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar) // evaluates to seq [1; 2; 3; 4]
+        ///     [[1; 2]; [3; 4]] |> Seq.collect id // evaluates to seq [1; 2; 3; 4]
+        ///     null |> Seq.collect (fun foo -> foo.Bar) // throws exception!
+        /// </code>
+        /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Collect")>]
