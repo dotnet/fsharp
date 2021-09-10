@@ -162,7 +162,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <code lang="fsharp">
         ///     let squares xs = xs |> Array.map (fun x -> x * x)
-        ///     squares [| 1; 2 |] // evaluates to [ 1; 4]
+        ///     squares [| 1; 2 |] // evaluates to [| 1; 4 |]
         ///     let ys = [| [| 1; 2 |]; [| 3; 4 |] |]
         ///     ys |> Array.collect squares // evaluates to [| 1; 4; 9; 16 |]
         /// </code>
