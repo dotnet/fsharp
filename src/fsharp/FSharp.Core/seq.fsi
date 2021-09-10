@@ -137,7 +137,9 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [1; 2; 3] |> Seq.cache // evaluates to seq [1; 2; 3]
+        ///     let fibSeq = Seq.unfold (fun (a,b) -> Some(a + b, (b, a + b))) (0,1)
+        ///     let fibSeq3 = fibSeq |> Seq.take 3 |> Seq.cache
+        ///     fibSeq3 // evaluates to seq [1; 2; 3], and it will not do the calculation again when called.
         ///     null |> Seq.cache // trhows exception!
         /// </code>
         /// </example>
