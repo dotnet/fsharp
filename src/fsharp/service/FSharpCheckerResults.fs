@@ -1732,22 +1732,26 @@ module internal ParseAndCheckFile =
         use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-        let parseResult =
-            usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
+        try
+            let parseResult =
+                usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
-                let lexfun = createLexerFunction fileName options lexbuf errHandler
-                let isLastCompiland =
-                    fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
-                    IsScript(fileName)
-                let isExe = options.IsExe
+                    let lexfun = createLexerFunction fileName options lexbuf errHandler
+                    let isLastCompiland =
+                        fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
+                        IsScript(fileName)
+                    let isExe = options.IsExe
 
-                try
-                    ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
-                with e ->
-                    errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
-                    EmptyParsedInput(fileName, (isLastCompiland, isExe)))
+                    try
+                        ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
+                    with e ->
+                        errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
+                        EmptyParsedInput(fileName, (isLastCompiland, isExe)))
 
-        errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
+            errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
+        with
+        | WrappedError(e, _) -> raise (exn ("wrapped error", e))
+        | _ -> reraise ()
 
 
     let ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure: LoadClosure option, tcImports: TcImports, backgroundDiagnostics) =
