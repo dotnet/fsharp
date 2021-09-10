@@ -289,6 +289,15 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence.</param>
         ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [1; 2; 3] |> Seq.contains 2 // evaluates to true
+        ///     [1; 2; 3] |> Seq.contains 5 // evaluates to false
+        ///     null |> Seq.contains 2 // throws exception!
+        /// </code>
+        /// </example>
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Contains")>]
         val inline contains: value:'T -> source:seq<'T> -> bool when 'T : equality
@@ -308,8 +317,16 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     type Foo = { Bar: string }
+        ///     [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}] |> Seq.countBy (fun foo -> foo.Bar) // evaluates to seq [("a", 2); ("b", 1)]
+        ///     null |> Seq.countBy (fun foo -> foo.Bar) // throws exception!
+        /// </code>
+        /// </example>
         [<CompiledName("CountBy")>]
-        val countBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * int> when 'Key : equality
+        val countBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * int> when 'Key : equality
 
         /// <summary>Returns a sequence that is built from the given delayed specification of a
         /// sequence.</summary>
@@ -318,8 +335,15 @@ namespace Microsoft.FSharp.Collections
         /// is requested.</remarks>
         ///
         /// <param name="generator">The generating function for the sequence.</param>
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <example>
+        /// <code lang="fsharp">
+        ///     [(fun () -> Seq.ofList [1; 2; 3]) |> Seq.delay // evaluates to seq [1; 2; 3], calling the gnerator every time.
+        /// </code>
+        /// </example>
         [<CompiledName("Delay")>]
-        val delay   : generator:(unit -> seq<'T>) -> seq<'T>
+        val delay: generator:(unit -> seq<'T>) -> seq<'T>
 
         /// <summary>Returns a sequence that contains no duplicate entries according to generic hash and
         /// equality comparisons on the entries.
