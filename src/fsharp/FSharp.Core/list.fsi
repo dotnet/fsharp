@@ -303,7 +303,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result list.</returns>
         /// 
-        /// <example id="countBy -example-1">
+        /// <example id="countBy-example-1">
         /// <code lang="fsharp">
         /// let isEven x = 0 = x % 2
         /// let reminderOfTheDivisionBy3 x = x % 3
@@ -350,6 +350,20 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A list that contains the distinct elements of <c>list</c> that do not appear in <c>itemsToExclude</c>.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when itemsToExclude is null.</exception>
+        /// 
+        /// <example id="except-example-1">
+        /// <code lang="fsharp">
+        /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
+        /// input |> List.except [3, "Kenobi"]  // evaluates [(1, "Kirk"); (2, "Spock")]
+        /// </code>
+        /// </example>
+        /// 
+        /// <example id="except-example-2">
+        /// <code lang="fsharp">
+        /// [0..10] |> List.except [1..5]  // evaluates [0; 6; 7; 8; 9; 10]
+        /// [1..5] |> List.except [0..10]  // evaluates []
+        /// </code>
+        /// </example>
         [<CompiledName("Except")>]
         val except: itemsToExclude:seq<'T> -> list:'T list -> 'T list when 'T : equality
 
@@ -360,6 +374,12 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The only element of the list.</returns>
         ///        
         /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        /// 
+        /// <example id="exactlyOne-example-1">
+        /// <code lang="fsharp">
+        /// ["the chosen one"] |> List.exactlyOne // evaluates "the chosen one"
+        /// </code>
+        /// </example>
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: list:'T list -> 'T
 
@@ -368,6 +388,13 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         ///
         /// <returns>The only element of the list or None.</returns>
+        /// 
+        /// <example id="tryExactlyOne-example-1">
+        /// <code lang="fsharp">
+        /// [1] |> List.tryExactlyOne // evaluates Some 1
+        /// [1;2] |> List.tryExactlyOne // evaluates None
+        /// </code>
+        /// </example>
         [<CompiledName("TryExactlyOne")>]
         val tryExactlyOne: list:'T list -> 'T option
 
@@ -380,6 +407,16 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         ///
         /// <returns>True if any element satisfies the predicate.</returns>
+        /// 
+        /// <example id="exists-example-1">
+        /// <code lang="fsharp">
+        /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
+        /// 
+        /// input |> List.exists (fun x -> x = (3, "Kenobi"))  // evaluates true
+        /// 
+        /// input |> List.exists (fun (nr, name) -> nr > 5)    // evaluates false
+        /// </code>
+        /// </example>
         [<CompiledName("Exists")>]
         val exists: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -398,6 +435,16 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentException">Thrown when the input lists differ in length.</exception>
         ///
         /// <returns>True if any pair of elements satisfy the predicate.</returns>
+        /// 
+        /// <example id="exists2-example-1"> Check if the sum of pairs (from 2 different lists) have at least one even number
+        /// <code lang="fsharp">
+        /// let anEvenSum a b  = 0 = (a + b) % 2
+        /// 
+        /// [1..4] |> List.exists2 anEvenSum [2..5]     // evaluates false
+        /// 
+        /// [1..4] |> List.exists2 anEvenSum [2;4;5;6]  // evaluates true
+        /// </code>
+        /// </example>
         [<CompiledName("Exists2")>]
         val exists2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
@@ -411,6 +458,17 @@ namespace Microsoft.FSharp.Collections
         /// all the elements of the list.</exception>
         ///
         /// <returns>The first element that satisfies the predicate.</returns>
+        /// 
+        /// <example id="find-example-1">
+        /// <code lang="fsharp">
+        /// let isEven x  = 0 = x % 2
+        /// let isGreaterThan x y = y > x
+        /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
+        /// 
+        /// input |> List.find (fst >> isEven)           // evaluates (2, "Kirk")
+        /// input |> List.find (fst >> isGreaterThan 6)  // raises an exception
+        /// </code>
+        /// </example>
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -424,6 +482,17 @@ namespace Microsoft.FSharp.Collections
         /// all the elements of the list.</exception>
         ///
         /// <returns>The last element that satisfies the predicate.</returns>
+        /// 
+        /// <example id="findback-example-1">
+        /// <code lang="fsharp">
+        /// let isEven x  = 0 = x % 2
+        /// let isGreaterThan x y = y > x
+        /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
+        /// 
+        /// input |> List.findBack (fst >> isEven)           // evaluates (4, "Kenobi")
+        /// input |> List.findBack (fst >> isGreaterThan 6)  // raises an exception
+        /// </code>
+        /// </example>
         [<CompiledName("FindBack")>]
         val findBack: predicate:('T -> bool) -> list:'T list -> 'T
 
@@ -438,6 +507,17 @@ namespace Microsoft.FSharp.Collections
         /// elements of the list.</exception>
         ///
         /// <returns>The index of the first element that satisfies the predicate.</returns>
+        /// 
+        /// <example id="findindex-example-1">
+        /// <code lang="fsharp">
+        /// let isEven x  = 0 = x % 2
+        /// let isGreaterThan x y = y > x
+        /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
+        /// 
+        /// input |> List.findIndex (fst >> isEven)           // evaluates 1
+        /// input |> List.findIndex (fst >> isGreaterThan 6)  // raises an exception
+        /// </code>
+        /// </example>
         [<CompiledName("FindIndex")>]
         val findIndex: predicate:('T -> bool) -> list:'T list -> int
 
@@ -452,6 +532,17 @@ namespace Microsoft.FSharp.Collections
         /// elements of the list.</exception>
         ///
         /// <returns>The index of the last element that satisfies the predicate.</returns>
+        /// 
+        /// <example id="findindexback-example-1">
+        /// <code lang="fsharp">
+        /// let isEven x  = 0 = x % 2
+        /// let isGreaterThan x y = y > x
+        /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
+        /// 
+        /// input |> List.findIndexBack (fst >> isEven)           // evaluates 3
+        /// input |> List.findIndexBack (fst >> isGreaterThan 6)  // raises an exception
+        /// </code>
+        /// </example>
         [<CompiledName("FindIndexBack")>]
         val findIndexBack: predicate:('T -> bool) -> list:'T list -> int
 
@@ -462,6 +553,16 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         ///
         /// <returns>A list containing only the elements that satisfy the predicate.</returns>
+        /// 
+        /// <example id="filter-example-1">
+        /// <code lang="fsharp">
+        /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
+        /// let isComingFromStarTrek = fst >> isEven
+        /// 
+        /// input |> List.filter isComingFromStarTrek
+        /// </code>
+        /// Evaluates to <c>[(2, "Kirk"); (4, "Spock")]</c>
+        /// </example>
         [<CompiledName("Filter")>]
         val filter: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -477,6 +578,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         ///
         /// <returns>The final state value.</returns>
+        /// 
+        /// <example id="filter-example-1"> Making the sum of squares for the first 5 natural numbers
+        /// <code lang="fsharp">
+        /// [1..5] |> List.fold (fun s v -> s + v * v ) 0  // evaluates 55
+        /// </code>
+        /// </example>
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 
