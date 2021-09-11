@@ -25,7 +25,7 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="allPairs-example-1">
         /// <code lang="fsharp">
-        /// let people = ["Kirk"; "Spock";"McCoy"]
+        /// let people = ["Kirk"; "Spock"; "McCoy"]
         /// let numbers = [1;2]
         /// people |> List.allPairs numbers 
         /// </code>
@@ -391,7 +391,7 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="tryExactlyOne-example-1">
         /// <code lang="fsharp">
-        /// [1] |> List.tryExactlyOne // evaluates Some 1
+        /// [1] |> List.tryExactlyOne   // evaluates Some 1
         /// [1;2] |> List.tryExactlyOne // evaluates None
         /// </code>
         /// </example>
@@ -579,9 +579,31 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The final state value.</returns>
         /// 
-        /// <example id="filter-example-1"> Making the sum of squares for the first 5 natural numbers
+        /// <example id="fold-example-1"> Making the sum of squares for the first 5 natural numbers
         /// <code lang="fsharp">
         /// [1..5] |> List.fold (fun s v -> s + v * v ) 0  // evaluates 55
+        /// </code>
+        /// </example>
+        /// 
+        /// <example id="fold-example-2"> Shoping for fruits hungry, you tend to take more of each as the hunger grows
+        /// <code lang="fsharp">
+        /// type Fruit = Apple | Pear | Orange
+        /// type BagItem = { fruit: Fruit; quantity: int }
+        /// let takeMore (previous: BagItem list) fruit = 
+        ///     let toTakeThisTime = 
+        ///         match previous with 
+        ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
+        ///         | [] -> 1 
+        ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
+        /// let input = [ Apple; Pear; Orange ]
+        /// 
+        /// input |> List.fold takeMore []
+        /// </code>
+        /// Evaluates to
+        /// <code>
+        ///  [{ fruit = Orange; quantity = 3 }
+        ///   { fruit = Pear; quantity = 2 }
+        ///   { fruit = Apple; quantity = 1 }]
         /// </code>
         /// </example>
         [<CompiledName("Fold")>]
@@ -610,6 +632,28 @@ namespace Microsoft.FSharp.Collections
         /// <param name="state">The initial state.</param>
         ///
         /// <returns>The state object after the folding function is applied to each element of the list.</returns>
+        /// 
+        /// <example id="foldback-example-1"> Shoping for fruits hungry, you tend to take more of each as the hunger grows
+        /// <code lang="fsharp">
+        /// type Fruit = Apple | Pear | Orange
+        /// type BagItem = { fruit: Fruit; quantity: int }
+        /// let takeMore fruit (previous: BagItem list) =
+        ///     let toTakeThisTime = 
+        ///         match previous with 
+        ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
+        ///         | [] -> 1 
+        ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
+        /// let input = [ Apple; Pear; Orange ]
+        /// 
+        /// [] |> List.foldBack takeMore input
+        /// </code>
+        /// Evaluates to
+        /// <code>
+        ///  [{ fruit = Apple; quantity = 3 }
+        ///   { fruit = Pear; quantity = 2 }
+        ///   { fruit = Orange; quantity = 3 }]
+        /// </code>
+        /// </example>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State
 
