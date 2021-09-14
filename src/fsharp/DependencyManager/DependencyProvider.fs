@@ -55,7 +55,7 @@ module ReflectionHelper =
                 None
             else
                 let getMethod = property.GetGetMethod()
-                if not (isNull getMethod) && not (getMethod.IsStatic) then
+                if not (isNull getMethod) && not getMethod.IsStatic then
                     Some property
                 else
                     None
@@ -117,7 +117,7 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -142,7 +142,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
         | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
         | None -> fun _ -> Array.empty<string>
 
-    static member InstanceMaker (theType: System.Type, outputDir: string option) =
+    static member InstanceMaker (theType: Type, outputDir: string option) =
         match getAttributeNamed theType dependencyManagerAttributeName,
               getInstanceProperty<string> theType namePropertyName,
               getInstanceProperty<string> theType keyPropertyName,
@@ -156,13 +156,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
             let resolveDepsExWithScriptInfoAndTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout,outputDir) :> IDependencyManagerProvider)
+            Some (fun () -> ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout,outputDir) :> IDependencyManagerProvider)
         | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int>; |] resolveDependenciesMethodName
             let resolveDepsExWithScriptInfoAndTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout, outputDir) :> IDependencyManagerProvider)
+            Some (fun () -> ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, resolveDepsExWithScriptInfoAndTimeout, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
@@ -256,7 +256,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                                     box scriptName
                                     box (packageManagerTextLines
                                          |> Seq.filter(fun (dv, _) -> dv = "r") 
-                                         |> Seq.map(fun (_, line) -> line))
+                                         |> Seq.map snd)
                                     box tfm |]
                 else
                     None, [||]
@@ -269,7 +269,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                 //     1 - object with properties
                 //     3 - (bool * string list * string list)
                 // Support legacy api return shape (bool, string seq, string seq) --- original paket packagemanager
-                if Microsoft.FSharp.Reflection.FSharpType.IsTuple (result.GetType()) then
+                if FSharpType.IsTuple (result.GetType()) then
                     // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                     //     3 - (bool * string list * string list)
                     let success, sourceFiles, packageRoots =
@@ -380,7 +380,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
                 match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
                 | None ->
-                    let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
+                    let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, path.Split(':').[0], reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
                     null, Unchecked.defaultof<IDependencyManagerProvider>
 

@@ -63,4 +63,4 @@ neg15.fs(190,1,190,6): typecheck error FS0491: The member or object constructor 
 
 neg15.fs(191,1,191,8): typecheck error FS0491: The member or object constructor 'SM' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.
 
-neg15.fs(204,11,204,16): typecheck error FS0501: The object constructor 'X2' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> X2'.
+neg15.fs(204,11,204,16): typecheck error FS0501: The object constructor 'X2' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> X2'.

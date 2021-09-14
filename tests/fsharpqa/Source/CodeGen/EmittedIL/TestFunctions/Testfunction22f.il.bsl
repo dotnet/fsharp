@@ -41,13 +41,13 @@
   // Offset: 0x00000160 Length: 0x00000056
 }
 .module Testfunction22f.exe
-// MVID: {60B68B97-C040-2523-A745-0383978BB660}
+// MVID: {611C4D9E-C040-2523-A745-03839E4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DC0000
+// Image base: 0x04D20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -75,6 +75,7 @@
     .line 3,3 : 1,15 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22f.fs'
     IL_0000:  ldstr      "A"
     IL_0005:  stloc.0
+    .line 100001,100001 : 0,0 ''
     IL_0006:  ldloc.0
     IL_0007:  ldstr      "A"
     IL_000c:  call       bool [netstandard]System.String::Equals(string,

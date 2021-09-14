@@ -8,18 +8,18 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf =  LexBuffer<char>
 
-let StringAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, s: string) =
-    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, s.ToCharArray())
+let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, s: string) =
+    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, s.ToCharArray())
 
-let FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, bufferFiller) =
-    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, bufferFiller)
+let FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, bufferFiller) =
+    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, langVersion, bufferFiller)
 
-let SourceTextAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, sourceText) =
-    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, sourceText)
+let SourceTextAsLexbuf (reportLibraryOnlyFeatures, langVersion, sourceText) =
+    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, langVersion, sourceText)
 
-let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, reader: StreamReader) =
+let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, langVersion, reader: StreamReader) =
     let mutable isFinished = false
-    FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, fun (chars, start, length) ->
+    FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, fun (chars, start, length) ->
         if isFinished then 0
         else
             let nBytesRead = reader.Read(chars, start, length)

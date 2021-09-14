@@ -282,7 +282,7 @@ let ``ParseAndCheckInteraction test 1``() =
         | FSharpToolTipText [FSharpToolTipElement.Single(text, FSharpXmlDoc.None)] -> text
         | _ -> failwith "incorrect tool tip"
 
-    Assert.True(tooltip.Contains("val xxxxxx : int"))
+    Assert.True(tooltip.Contains("val xxxxxx: int"))
 
 [<Test>]
 let ``ParseAndCheckInteraction test 2``() = 

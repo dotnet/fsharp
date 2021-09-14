@@ -74,7 +74,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -408,7 +408,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <None Include="..\pplex.fsl">
@@ -502,7 +502,7 @@
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="..\TypedTree.fs">
-      <Link>TypedTree\TypedTreeBasics.fs</Link>
+      <Link>TypedTree\TypedTree.fs</Link>
     </Compile>
     <Compile Include="..\TypedTreeBasics.fsi">
       <Link>TypedTree\TypedTreeBasics.fsi</Link>

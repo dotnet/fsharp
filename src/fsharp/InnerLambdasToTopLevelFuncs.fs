@@ -1088,7 +1088,6 @@ module Pass4_RewriteAssembly =
             if isNil tys && isNil args then
                 fx
             else Expr.App (fx, fty, tys, args, m)
-                              (* no change, f is expr *)
 
     //-------------------------------------------------------------------------
     // pass4: pass (over expr)
@@ -1279,11 +1278,13 @@ module Pass4_RewriteAssembly =
        | TDSuccess (es, n) ->
            let es, z = List.mapFold (TransExpr penv) z es
            TDSuccess(es, n), z
+
        | TDBind (bind, rest) ->
            let bind, z       = TransBindingRhs penv z bind
            let rest, z = TransDecisionTree penv z rest
            TDBind(bind, rest), z
-       | TDSwitch (e, cases, dflt, m) ->
+
+       | TDSwitch (sp, e, cases, dflt, m) ->
            let e, z = TransExpr penv z e
            let TransDecisionTreeCase penv z (TCase (discrim, dtree)) =
                let dtree, z = TransDecisionTree penv z dtree
@@ -1291,7 +1292,7 @@ module Pass4_RewriteAssembly =
 
            let cases, z = List.mapFold (TransDecisionTreeCase penv) z cases
            let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
-           TDSwitch (e, cases, dflt, m), z
+           TDSwitch (sp, e, cases, dflt, m), z
 
     and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget, flags)) =
         let z = EnterInner z
@@ -1300,7 +1301,9 @@ module Pass4_RewriteAssembly =
         TTarget(vs, e, spTarget, flags), z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind
+
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
+
     and TransModuleExpr penv z x =
         match x with
         | ModuleOrNamespaceExprWithSig(mty, def, m) ->
@@ -1308,11 +1311,12 @@ module Pass4_RewriteAssembly =
             ModuleOrNamespaceExprWithSig(mty, def, m), z
 
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
+
     and TransModuleDef penv (z: RewriteState) x: ModuleOrNamespaceExpr * RewriteState =
         match x with
-        | TMDefRec(isRec, tycons, mbinds, m) ->
+        | TMDefRec(isRec, opens, tycons, mbinds, m) ->
             let mbinds, z = TransModuleBindings penv z mbinds
-            TMDefRec(isRec, tycons, mbinds, m), z
+            TMDefRec(isRec, opens, tycons, mbinds, m), z
         | TMDefLet(bind, m)            ->
             let bind, z = TransValBinding penv z bind
             TMDefLet(bind, m), z
@@ -1322,10 +1326,14 @@ module Pass4_RewriteAssembly =
         | TMDefs defs   ->
             let defs, z = TransModuleDefs penv z defs
             TMDefs defs, z
+        | TMDefOpens _ ->
+            x, z
         | TMAbstract mexpr ->
             let mexpr, z = TransModuleExpr penv z mexpr
             TMAbstract mexpr, z
+
     and TransModuleBindings penv z binds = List.mapFold (TransModuleBinding penv) z  binds
+
     and TransModuleBinding penv z x =
         match x with
         | ModuleOrNamespaceBinding.Binding bind ->
@@ -1350,7 +1358,7 @@ let RecreateUniqueBounds g expr =
 // entry point
 //-------------------------------------------------------------------------
 
-let MakeTLRDecisions ccu g expr =
+let MakeTopLevelRepresentationDecisions ccu g expr =
    try
       // pass1: choose the f to be TLR with arity(f)
       let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr

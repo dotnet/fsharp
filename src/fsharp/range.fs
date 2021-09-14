@@ -56,6 +56,9 @@ type Position(code:int64) =
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
+    member p.IsAdjacentTo(otherPos: Position) =
+        p.Line = otherPos.Line && p.Column + 1 = otherPos.Column
+
 and pos = Position
 
 [<RequireQualifiedAccess>]
@@ -156,8 +159,8 @@ module RangeImpl =
 
 /// A unique-index table for file names.
 type FileIndexTable() =
-    let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new ConcurrentDictionary<string, int>()
+    let indexToFileTable = ResizeArray<_>(11)
+    let fileToIndexTable = ConcurrentDictionary<string, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -211,7 +214,7 @@ module FileIndex =
 
     // ++GLOBAL MUTABLE STATE
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
-    let fileIndexTable = new FileIndexTable()
+    let fileIndexTable = FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex
@@ -273,6 +276,9 @@ type Range(code1:int64, code2: int64) =
     member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
 
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+
+    member r.IsAdjacentTo(otherRange: Range) =
+        r.FileIndex = otherRange.FileIndex && r.End.Encoding = otherRange.Start.Encoding
 
     member r.NoteDebugPoint(kind) = 
         let code = 
@@ -376,7 +382,7 @@ module Range =
     /// rangeOrder: not a total order, but enough to sort on ranges
     let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
-    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
 
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) =
@@ -391,19 +397,20 @@ module Range =
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
-        Position.posGeq m2.Start m1.Start &&
-        Position.posGeq m1.End m2.End
+        posGeq m2.Start m1.Start &&
+        posGeq m1.End m2.End
 
     let rangeContainsPos (m1:range) p =
-        Position.posGeq p m1.Start &&
-        Position.posGeq m1.End p
+        posGeq p m1.Start &&
+        posGeq m1.End p
 
     let rangeBeforePos (m1:range) p =
-        Position.posGeq p m1.End
+        posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
@@ -422,9 +429,9 @@ module Range =
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
           range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Position.stringOfPos r.Start) (Position.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
-    let toZ (m:range) = Position.toZ m.Start, Position.toZ m.End
+    let toZ (m:range) = toZ m.Start, toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
 

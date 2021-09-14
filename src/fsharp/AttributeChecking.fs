@@ -100,7 +100,7 @@ type AttribInfo =
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
-              [ for (argty, argval) in Seq.zip cattr.Method.FormalArgTypes parms ->
+              [ for argty, argval in Seq.zip cattr.Method.FormalArgTypes parms ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
                     ty, obj ]
@@ -115,7 +115,7 @@ type AttribInfo =
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
-              [ for (nm, argty, isProp, argval) in namedArgs ->
+              [ for nm, argty, isProp, argval in namedArgs ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
                     let isField = not isProp 
@@ -214,9 +214,9 @@ let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) m
 /// This is just used for the 'ConditionalAttribute' attribute
 let TryFindMethInfoStringAttribute g (m: range) attribSpec minfo  =
     TryBindMethInfoAttribute g m attribSpec minfo 
-                    (function ([ILAttribElem.String (Some msg) ], _) -> Some msg | _ -> None) 
-                    (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
-                    (function ([ Some ((:? string as msg) : obj) ], _) -> Some msg | _ -> None)
+                    (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None) 
+                    (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                    (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
 
 /// Check if a method has a specific attribute.
 let MethInfoHasAttribute g m attribSpec minfo  =
@@ -362,7 +362,7 @@ let CheckFSharpAttributesForUnseen g attribs _m =
 #if !NO_EXTENSIONTYPING
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
-    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<System.ObsoleteAttribute>.FullName).IsSome), m)
+    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<ObsoleteAttribute>.FullName).IsSome), m)
 #endif
 
 /// Check the attributes associated with a property, returning warnings and errors as data.
@@ -434,7 +434,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
         | _ -> 
         // This attribute check is done by name to ensure compilation doesn't take a dependency 

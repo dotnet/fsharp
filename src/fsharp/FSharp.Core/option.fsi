@@ -16,7 +16,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.isSome // evaluates to false
     ///     Some 42 |> Option.isSome // evaluates to true
     /// </code>
@@ -31,7 +31,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.isNone // evaluates to true
     ///     Some 42 |> Option.isNone // evaluates to false
     /// </code>
@@ -51,7 +51,7 @@ module Option =
     /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (99, None) ||> Option.defaultValue // evaluates to 99
     ///     (99, Some 42) ||> Option.defaultValue // evaluates to 42
     /// </code>
@@ -68,7 +68,7 @@ module Option =
     /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.defaultWith (fun () -> 99) // evaluates to 99
     ///     Some 42 |> Option.defaultWith (fun () -> 99) // evaluates to 42
     /// </code>
@@ -82,7 +82,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (None, None) ||> Option.orElse // evaluates to None
     ///     (Some 99, None) ||> Option.orElse // evaluates to Some 99
     ///     (None, Some 42) ||> Option.orElse // evaluates to Some 42
@@ -103,7 +103,7 @@ module Option =
     /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.orElseWith (fun () -> None) // evaluates to None
     ///     None |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 99
     ///     Some 42 |> Option.orElseWith (fun () -> None) // evaluates to Some 42
@@ -118,7 +118,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     Some 42 |> Option.get // evaluates to 42
     ///     None |> Option.get // throws exception!
     /// </code>
@@ -134,7 +134,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.count // evaluates to 0
     ///     Some 99 |> Option.count // evaluates to 1
     /// </code>
@@ -151,7 +151,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (0, None) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 0
     ///     (0, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 2
     ///     (10, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 12
@@ -170,7 +170,7 @@ module Option =
     /// <param name="state">The initial state.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (None, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 0
     ///     (Some 1, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 2
     ///     (Some 1, 10) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 12
@@ -188,7 +188,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.exists (fun x -> x >= 5) // evaluates to false
     ///     Some 42 |> Option.exists (fun x -> x >= 5) // evaluates to true
     ///     Some 4 |> Option.exists (fun x -> x >= 5) // evaluates to false
@@ -206,7 +206,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.forall (fun x -> x >= 5) // evaluates to true
     ///     Some 42 |> Option.forall (fun x -> x >= 5) // evaluates to true
     ///     Some 4 |> Option.forall (fun x -> x >= 5) // evaluates to false
@@ -224,7 +224,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (99, None) ||> Option.contains // evaluates to false
     ///     (99, Some 99) ||> Option.contains // evaluates to true
     ///     (99, Some 100) ||> Option.contains // evaluates to false
@@ -241,7 +241,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.iter (printfn "%s") // does nothing
     ///     Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
     /// </code>
@@ -258,7 +258,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.map (fun x -> x * 2) // evaluates to None
     ///     Some 42 |> Option.map (fun x -> x * 2) // evaluates to Some 84
     /// </code>
@@ -275,7 +275,7 @@ module Option =
     /// <param name="option2">The second option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (None, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
     ///     (Some 5, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
     ///     (None, Some 10) ||> Option.map2 (fun x y -> x + y) // evaluates to None
@@ -295,7 +295,7 @@ module Option =
     /// <param name="option3">The third option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (None, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
     ///     (Some 100, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
     ///     (None, Some 100, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
@@ -315,7 +315,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     let tryParse input =
     ///         match System.Int32.TryParse input with
     ///         | true, v -> Some v
@@ -338,7 +338,7 @@ module Option =
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.flatten // evaluates to None
     ///     (Some (None)) |> Option.flatten // evaluates to None
     ///     (Some (Some 42)) |> Option.flatten // evaluates to Some 42
@@ -353,7 +353,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.filter (fun x -> x >= 5) // evaluates to None
     ///     Some 42 |> Option.filter (fun x -> x >= 5) // evaluates to Some 42
     ///     Some 4 |> Option.filter (fun x -> x >= 5) // evaluates to None
@@ -369,7 +369,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.toArray // evaluates to [||]
     ///     Some 42 |> Option.toArray // evaluates to [|42|]
     /// </code>
@@ -384,7 +384,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.toList // evaluates to []
     ///     Some 42 |> Option.toList // evaluates to [42]
     /// </code>
@@ -399,7 +399,7 @@ module Option =
     /// <param name="option">The input option.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
     ///     Some 42 |> Option.toNullable // evaluates to new System.Nullable(42)
     /// </code>
@@ -414,7 +414,7 @@ module Option =
     /// <param name="value">The input nullable value.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     System.Nullable&lt;int&gt;() |> Option.ofNullable // evaluates to None
     ///     System.Nullable(42) |> Option.ofNullable // evaluates to Some 42
     /// </code>
@@ -429,7 +429,7 @@ module Option =
     /// <param name="value">The input value.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     (null: string) |> Option.ofObj // evaluates to None
     ///     "not a null string" |> Option.ofObj // evaluates to (Some "not a null string")
     /// </code>
@@ -444,7 +444,7 @@ module Option =
     /// <param name="value">The input value.</param>
     ///
     /// <example>
-    /// <code>
+    /// <code lang="fsharp">
     ///     None |> Option.toObj // evaluates to null
     ///     Some "not a null string" |> Option.toObj // evaluates to "not a null string"
     /// </code>

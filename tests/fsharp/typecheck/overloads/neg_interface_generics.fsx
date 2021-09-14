@@ -2,12 +2,12 @@ open System
 open System.Xml
 open System.IO
 type IFoo =
-  abstract member Foo : t:string * r:XmlReader -> obj
-  abstract member Foo : t:Type * r:TextReader -> obj
-  abstract member Foo<'t> : t:string * r:TextReader -> obj * 't
-  abstract member Foo<'t> : t:Type * r:TextReader -> obj * 't
-  abstract member Foo<'t when 't : struct> : TextReader -> 't
-  abstract member Foo<'t when 't :> IDisposable > : XmlReader -> 't
+  abstract Foo: t: string * r: XmlReader -> obj
+  abstract Foo: t: Type * r: TextReader -> obj
+  abstract Foo<'t> : t: string * r: TextReader -> obj * 't
+  abstract Foo<'t> : t: Type * r: TextReader -> obj * 't
+  abstract Foo<'t when 't : struct> : TextReader -> 't
+  abstract Foo<'t when 't :> IDisposable > : XmlReader -> 't
 
 let foo = Unchecked.defaultof<IFoo>
 let r = Unchecked.defaultof<XmlReader>

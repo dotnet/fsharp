@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly AsyncExpressionSteppingTest2
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000000 Length: 0x0000026C
+  // Offset: 0x00000000 Length: 0x00000260
 }
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000270 Length: 0x000000B1
+  // Offset: 0x00000268 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest2.dll
-// MVID: {5AF5DDAE-6394-D499-A745-0383AEDDF55A}
+// MVID: {611B0EC4-6394-D499-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04520000
+// Image base: 0x06860000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,7 +80,7 @@
         // Code size       15 (0xf)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 6,6 : 23,29 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest2.fs'
+        .line 6,6 : 23,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest2.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/'f2@6-1'::x
         IL_0006:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
@@ -237,11 +237,12 @@
   {
     // Code size       18 (0x12)
     .maxstack  5
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
+    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> 'Pipe #1 input at line 11',
              [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1)
-    .line 11,11 : 13,43 ''
+    .line 11,11 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2::f2()
     IL_0005:  stloc.0
+    .line 11,11 : 21,43 ''
     IL_0006:  ldloc.0
     IL_0007:  stloc.1
     IL_0008:  ldloc.1
