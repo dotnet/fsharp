@@ -597,8 +597,7 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="fold-example-1"> Making the sum of squares for the first 5 natural numbers
         /// <code lang="fsharp">
-        /// (0, [1..5])
-        /// ||> List.fold (fun s v -> s + v * v )  // evaluates 55
+        /// (0, [1..5]) ||> List.fold (fun s v -> s + v * v )  // evaluates 55
         /// </code>
         /// </example>
         /// 
@@ -614,8 +613,7 @@ namespace Microsoft.FSharp.Collections
         ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
         /// let input = [ Apple; Pear; Orange ]
         /// 
-        /// ([], input)
-        /// ||> List.fold takeMore
+        /// ([], input) ||> List.fold takeMore
         /// </code>
         /// Evaluates to
         /// <code>
@@ -653,8 +651,7 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="foldback-example-1"> Making the sum of squares for the first 5 natural numbers
         /// <code lang="fsharp">
-        /// ([1..5], 0)
-        /// ||> List.foldBack (fun v s -> s + v * v )  // evaluates 55
+        /// ([1..5], 0) ||> List.foldBack (fun v s -> s + v * v )  // evaluates 55
         /// </code>
         /// </example>
         /// 
@@ -670,8 +667,7 @@ namespace Microsoft.FSharp.Collections
         ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
         /// let input = [ Apple; Pear; Orange ]
         /// 
-        /// (input, [])
-        /// ||> List.foldBack takeMore
+        /// (input, []) ||> List.foldBack takeMore
         /// </code>
         /// Evaluates to
         /// <code>
