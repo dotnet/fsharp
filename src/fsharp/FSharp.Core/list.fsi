@@ -99,9 +99,10 @@ namespace Microsoft.FSharp.Collections
         ///    name: string
         ///    age: int }
         /// let getAgeAsFloat person = float person.age
-        /// let people = [ { name = "Kirk"; age = 26 }
-        ///                { name = "Spock"; age = 90 }
-        ///                { name = "McCoy"; age = 37 } ]
+        /// let people = 
+        ///     [ { name = "Kirk"; age = 26 }
+        ///       { name = "Spock"; age = 90 }
+        ///       { name = "McCoy"; age = 37 } ]
         /// people |> List.averageBy getAgeAsFloat  // evaluates 51.0
         /// </code>
         /// </example>
@@ -136,9 +137,10 @@ namespace Microsoft.FSharp.Collections
         ///     match person.happiness with
         ///     | AlwaysHappy -> Some person.name
         ///     | MostOfTheTimeGrumpy -> None
-        /// let candidatesForTheTrip = [ { name = "SpongeBob"; happiness = AlwaysHappy }
-        ///                              { name = "Patrick"; happiness = AlwaysHappy }
-        ///                              { name = "Squidward"; happiness = MostOfTheTimeGrumpy } ]
+        /// let candidatesForTheTrip = 
+        ///     [ { name = "SpongeBob"; happiness = AlwaysHappy }
+        ///       { name = "Patrick"; happiness = AlwaysHappy }
+        ///       { name = "Squidward"; happiness = MostOfTheTimeGrumpy } ]
         /// candidatesForTheTrip |> List.choose takeJustHappyPersons
         /// </code>
         /// The sample evaluates to <c>[ "SpongeBob"; "Patrick" ]</c>
@@ -303,16 +305,12 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result list.</returns>
         /// 
-        /// <example id="countBy-example-1">
+        /// <example id="countBy-example-1"> Counting the number of occurrences of chars
         /// <code lang="fsharp">
-        /// let isEven x = 0 = x % 2
-        /// let reminderOfTheDivisionBy3 x = x % 3
-        /// let input = [6; 1; 2; 3; 1; 4; 5; 5]
-        /// 
-        /// input |> List.countBy isEven                    // evaluates [(true, 3); (false, 5)]
-        /// 
-        /// input |> List.countBy reminderOfTheDivisionBy3  // evaluates [(0, 2); (1, 3); (2, 3)]
+        /// let input = ['H'; 'a'; 'p'; 'p'; 'i'; 'n'; 'e'; 's'; 's']
+        /// input |> List.countBy id
         /// </code>
+        /// Evalutes <c>[('H', 1); ('a', 1); ('p', 2); ('i', 1); ('n', 1); ('e', 1); ('s', 2)]</c>
         /// </example>
         [<CompiledName("CountBy")>]
         val countBy : projection:('T -> 'Key) -> list:'T list -> ('Key * int) list when 'Key : equality
@@ -380,6 +378,21 @@ namespace Microsoft.FSharp.Collections
         /// ["the chosen one"] |> List.exactlyOne // evaluates "the chosen one"
         /// </code>
         /// </example>
+        /// 
+        /// <example id="exactlyOne-example-2">
+        /// <code lang="fsharp">
+        /// let input : string list = []
+        /// input |> List.exactlyOne
+        /// </code>
+        /// Will throw the exception: <c>System.ArgumentException: The input sequence was empty</c>
+        /// </example>
+        /// 
+        /// <example id="exactlyOne-example-3">
+        /// <code lang="fsharp">
+        /// [1..5] |> List.exactlyOne
+        /// </code>
+        /// Will throw the exception: <c>System.ArgumentException: The input sequence contains more than one element</c>
+        /// </example>
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: list:'T list -> 'T
 
@@ -391,8 +404,9 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="tryExactlyOne-example-1">
         /// <code lang="fsharp">
-        /// [1] |> List.tryExactlyOne   // evaluates Some 1
-        /// [1;2] |> List.tryExactlyOne // evaluates None
+        /// [1] |> List.tryExactlyOne               // evaluates Some 1
+        /// [1;2] |> List.tryExactlyOne             // evaluates None
+        /// ([] : int list) |> List.tryExactlyOne   // evaluates None
         /// </code>
         /// </example>
         [<CompiledName("TryExactlyOne")>]
@@ -414,7 +428,7 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// input |> List.exists (fun x -> x = (3, "Kenobi"))  // evaluates true
         /// 
-        /// input |> List.exists (fun (nr, name) -> nr > 5)    // evaluates false
+        /// input |> List.exists (fun (n, name) -> n > 5)      // evaluates false
         /// </code>
         /// </example>
         [<CompiledName("Exists")>]
@@ -440,9 +454,11 @@ namespace Microsoft.FSharp.Collections
         /// <code lang="fsharp">
         /// let anEvenSum a b  = 0 = (a + b) % 2
         /// 
-        /// [1..4] |> List.exists2 anEvenSum [2..5]     // evaluates false
+        /// ([1..4], [2..5]) 
+        /// ||> List.exists2 anEvenSum     // evaluates false
         /// 
-        /// [1..4] |> List.exists2 anEvenSum [2;4;5;6]  // evaluates true
+        /// ([1..4], [2;4;5;6])
+        /// ||> List.exists2 anEvenSum   // evaluates true
         /// </code>
         /// </example>
         [<CompiledName("Exists2")>]
@@ -465,8 +481,8 @@ namespace Microsoft.FSharp.Collections
         /// let isGreaterThan x y = y > x
         /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
         /// 
-        /// input |> List.find (fst >> isEven)           // evaluates (2, "Kirk")
-        /// input |> List.find (fst >> isGreaterThan 6)  // raises an exception
+        /// input |> List.find (fun (x,_) -> isEven x)              // evaluates (2, "Kirk")
+        /// input |> List.find (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
         /// </code>
         /// </example>
         [<CompiledName("Find")>]
@@ -489,8 +505,8 @@ namespace Microsoft.FSharp.Collections
         /// let isGreaterThan x y = y > x
         /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
         /// 
-        /// input |> List.findBack (fst >> isEven)           // evaluates (4, "Kenobi")
-        /// input |> List.findBack (fst >> isGreaterThan 6)  // raises an exception
+        /// input |> List.findBack (fun (x,_) -> isEven x)              // evaluates (4, "Kenobi")
+        /// input |> List.findBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
         /// </code>
         /// </example>
         [<CompiledName("FindBack")>]
@@ -514,8 +530,8 @@ namespace Microsoft.FSharp.Collections
         /// let isGreaterThan x y = y > x
         /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
         /// 
-        /// input |> List.findIndex (fst >> isEven)           // evaluates 1
-        /// input |> List.findIndex (fst >> isGreaterThan 6)  // raises an exception
+        /// input |> List.findIndex (fun (x,_) -> isEven x)              // evaluates 1
+        /// input |> List.findIndex (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
         /// </code>
         /// </example>
         [<CompiledName("FindIndex")>]
@@ -539,8 +555,8 @@ namespace Microsoft.FSharp.Collections
         /// let isGreaterThan x y = y > x
         /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
         /// 
-        /// input |> List.findIndexBack (fst >> isEven)           // evaluates 3
-        /// input |> List.findIndexBack (fst >> isGreaterThan 6)  // raises an exception
+        /// input |> List.findIndexBack (fun (x,_) -> isEven x)              // evaluates 3
+        /// input |> List.findIndexBack (fun (x,_) -> x |> isGreaterThan 6)  // raises an exception
         /// </code>
         /// </example>
         [<CompiledName("FindIndexBack")>]
@@ -557,7 +573,7 @@ namespace Microsoft.FSharp.Collections
         /// <example id="filter-example-1">
         /// <code lang="fsharp">
         /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
-        /// let isComingFromStarTrek = fst >> isEven
+        /// let isComingFromStarTrek (x,_) = isEven x
         /// 
         /// input |> List.filter isComingFromStarTrek
         /// </code>
@@ -581,11 +597,12 @@ namespace Microsoft.FSharp.Collections
         /// 
         /// <example id="fold-example-1"> Making the sum of squares for the first 5 natural numbers
         /// <code lang="fsharp">
-        /// [1..5] |> List.fold (fun s v -> s + v * v ) 0  // evaluates 55
+        /// (0, [1..5])
+        /// ||> List.fold (fun s v -> s + v * v )  // evaluates 55
         /// </code>
         /// </example>
         /// 
-        /// <example id="fold-example-2"> Shoping for fruits hungry, you tend to take more of each as the hunger grows
+        /// <example id="fold-example-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
         /// <code lang="fsharp">
         /// type Fruit = Apple | Pear | Orange
         /// type BagItem = { fruit: Fruit; quantity: int }
@@ -597,7 +614,8 @@ namespace Microsoft.FSharp.Collections
         ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
         /// let input = [ Apple; Pear; Orange ]
         /// 
-        /// input |> List.fold takeMore []
+        /// ([], input)
+        /// ||> List.fold takeMore
         /// </code>
         /// Evaluates to
         /// <code>
@@ -633,7 +651,14 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The state object after the folding function is applied to each element of the list.</returns>
         /// 
-        /// <example id="foldback-example-1"> Shoping for fruits hungry, you tend to take more of each as the hunger grows
+        /// <example id="foldback-example-1"> Making the sum of squares for the first 5 natural numbers
+        /// <code lang="fsharp">
+        /// ([1..5], 0)
+        /// ||> List.foldBack (fun v s -> s + v * v )  // evaluates 55
+        /// </code>
+        /// </example>
+        /// 
+        /// <example id="foldback-example-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
         /// <code lang="fsharp">
         /// type Fruit = Apple | Pear | Orange
         /// type BagItem = { fruit: Fruit; quantity: int }
@@ -645,13 +670,14 @@ namespace Microsoft.FSharp.Collections
         ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
         /// let input = [ Apple; Pear; Orange ]
         /// 
-        /// [] |> List.foldBack takeMore input
+        /// (input, [])
+        /// ||> List.foldBack takeMore
         /// </code>
         /// Evaluates to
         /// <code>
         ///  [{ fruit = Apple; quantity = 3 }
         ///   { fruit = Pear; quantity = 2 }
-        ///   { fruit = Orange; quantity = 3 }]
+        ///   { fruit = Orange; quantity = 1 }]
         /// </code>
         /// </example>
         [<CompiledName("FoldBack")>]
