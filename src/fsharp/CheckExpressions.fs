@@ -5622,8 +5622,8 @@ and TcNonPropagatingExprLeafThenConvert cenv (overallTy: OverallTy) (env: TcEnv)
 and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy (env: TcEnv) (* canAdhoc *) m expr =
     match overallTy with
     | MustConvertTo (_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
-        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext
+        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap env.TraitContext cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
         expr
 
@@ -9276,7 +9276,7 @@ and TcMethodApplication
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
-        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext
         AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad env.TraitContext finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
     // Record the resolution of the named argument for the Language Service
@@ -9387,7 +9387,7 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
         | AssignedPropSetter (pinfo, pminfo, pminst) ->
             MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
-            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext
             let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap env.TraitContext cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
             let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst
@@ -9397,7 +9397,7 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             // Get or set instance IL field
             ILFieldInstanceChecks cenv.g cenv.amap ad m finfo
             let calledArgTy = finfo.FieldType (cenv.amap, m)
-            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext
             let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap env.TraitContext cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildILFieldSet cenv.g m objExpr finfo argExpr
             argExprPrebinder, action, Item.ILField finfo
@@ -9406,7 +9406,7 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo
             let calledArgTy = rfinfo.FieldType
             CheckRecdFieldMutation m denv rfinfo
-            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext
             let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap env.TraitContext cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr
             argExprPrebinder, action, Item.RecdField rfinfo
@@ -10215,7 +10215,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
     let isInline = 
         (checkedBinds |> List.forall (fun tbinfo -> 
             let (CheckedBindingInfo(inl, _, _, _, _, _, _, _, _, _, _, _, _, _)) = tbinfo
-            (inl = ValInline.PseudoVal)))
+            (inl = ValInline.Always)))
     CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
         (checkedBinds |> List.collect (fun tbinfo ->
             let (CheckedBindingInfo(_, _, _, _, explicitTyparInfo, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
@@ -11154,7 +11154,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
                 let isInline = 
                     (newGeneralizableBindings |> List.forall (fun tbinfo -> 
                         let (CheckedBindingInfo(inl, _, _, _, _, _, _, _, _, _, _, _, _, _)) = tbinfo.CheckedBinding
-                        (inl = ValInline.PseudoVal)))
+                        (inl = ValInline.Always)))
 
                 CanonicalizePartialInferenceProblem cenv.css denv scopem supportForBindings isInline
 

@@ -3551,7 +3551,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad traitCtxt ty (mp, id: Id
                 let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
                 let tyconSearch = ResolveLongIdentInTyconRefs ResultCollectionSettings.AllResults ncenv nenv LookupKind.RecdField 1 m ad traitCtxt id2 rest2 typeNameResInfo tn.idRange tcrefs
                 // choose only fields
-                let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv m traitCtxt rfref, false), rest) | _ -> None)
+                let tyconSearch = tyconSearch |?> List.choose (function resInfo, Item.RecdField(RecdFieldInfo(_, rfref)), rest -> Some(resInfo, FieldResolution(FreshenRecdFieldRef ncenv traitCtxt m rfref, false), rest) | _ -> None)
                 tyconSearch
             | _ -> NoResultsOrUsefulErrors
 

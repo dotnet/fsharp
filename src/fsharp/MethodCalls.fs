@@ -1415,7 +1415,7 @@ let MakeNullableExprIfNeeded (infoReader: InfoReader) calledArgTy callerArgTy ca
         MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
 
 // Adjust all the optional arguments, filling in values for defaults, 
-let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
+let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) traitCtxt ad (assignedArg: AssignedCalledArg<_>) =
     let g = infoReader.g
     let amap = infoReader.amap
     let callerArg = assignedArg.CallerArg
@@ -1450,7 +1450,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                         callerArgExpr
                     else
                         let calledNonOptTy = destNullableTy g calledArgTy
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap traitCtxt infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
                         MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
                 else
                     failwith "unreachable" // see case above
@@ -1481,11 +1481,11 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                         else
                             // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
                             let calledNonOptTy = destNullableTy g calledArgTy
-                            let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                            let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap traitCtxt infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
                             MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap traitCtxt infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
                         callerArgExpr2
 
             | CalleeSide -> 
@@ -1496,7 +1496,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                     // FSharpMethod(x=b) when FSharpMethod(A) --> FSharpMethod(?x=Some(b :> A))
                     if isOptionTy g calledArgTy then 
                         let calledNonOptTy = destOptionTy g calledArgTy 
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
+                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap traitCtxt infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
                         mkSome g calledNonOptTy callerArgExpr2 m
                     else 
                         assert false
@@ -1524,7 +1524,7 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
 //    - VB also allows you to pass intrinsic values as optional values to parameters 
 //        typed as Object. What we do in this case is we box the intrinsic value."
 //
-let AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (calledMeth: CalledMeth<_>) mItem mMethExpr =
+let AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) traitCtxt ad (calledMeth: CalledMeth<_>) mItem mMethExpr =
     let g = infoReader.g
 
     let assignedNamedArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
@@ -1541,8 +1541,8 @@ let AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName (infoReader
             let preBinder2, arg = GetDefaultExpressionForOptionalArg tcFieldInit g calledArg eCallerMemberName mItem mMethExpr
             arg, (preBinder >> preBinder2))
 
-    let adjustedNormalUnnamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName infoReader ad) unnamedArgs
-    let adjustedAssignedNamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName infoReader ad) assignedNamedArgs
+    let adjustedNormalUnnamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName infoReader traitCtxt ad) unnamedArgs
+    let adjustedAssignedNamedArgs = List.map (AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName infoReader traitCtxt ad) assignedNamedArgs
 
     optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedAssignedNamedArgs
 
@@ -1612,7 +1612,7 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         AdjustParamArrayCallerArgs tcVal g amap traitCtxt infoReader ad calledMeth mMethExpr
 
     let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
-        AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName infoReader ad calledMeth mItem mMethExpr
+        AdjustCallerArgsForOptionals tcVal tcFieldInit eCallerMemberName infoReader traitCtxt ad calledMeth mItem mMethExpr
 
     let outArgs, outArgExprs, outArgTmpBinds =
         AdjustOutCallerArgs g calledMeth mMethExpr
