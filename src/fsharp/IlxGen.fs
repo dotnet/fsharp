@@ -26,6 +26,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.LowerStateMachines
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -4894,7 +4895,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 | [meth] when meth.IsInstance -> meth
                 | _ -> error(InternalError(sprintf "expected method %s not found" imethName, m))
 
-            let slotsig = implementedMeth.GetSlotSig(amap, m)
+            let slotsig = implementedMeth.GetSlotSig(amap, m, traitCtxtNone)
             let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m
             let ilOverrideBy = mkILInstanceMethSpecInTy(ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
             { Overrides = ilOverridesSpec
