@@ -65,8 +65,7 @@ namespace Microsoft.FSharp.Collections
         /// <example>
         /// <code lang="fsharp">
         ///     [1.0; 2.0; 3.0] |> Seq.average // evaluates to 2.0
-        ///     null |> Seq.average // throws exception!
-        ///     [] |> Seq.average // throws exception!
+        ///     [] |> Seq.average // throws ArgumentException!
         /// </code>
         /// </example>
         ///
@@ -94,8 +93,7 @@ namespace Microsoft.FSharp.Collections
         ///     type Foo = { Bar: float }
         ///
         ///     [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
-        ///     [] |> Seq.averageBy (fun foo -> foo.Bar) // throws exception!
-        ///     null |> Seq.averageBy (fun foo -> foo.Bar) // throws exception!
+        ///     [] |> Seq.averageBy (fun foo -> foo.Bar) // throws ArgumentException!
         /// </code>
         /// </example>
         ///
@@ -140,7 +138,6 @@ namespace Microsoft.FSharp.Collections
         ///     let fibSeq = Seq.unfold (fun (a,b) -> Some(a + b, (b, a + b))) (0,1)
         ///     let fibSeq3 = fibSeq |> Seq.take 3 |> Seq.cache
         ///     fibSeq3 // evaluates to seq [1; 2; 3], and it will not do the calculation again when called.
-        ///     null |> Seq.cache // trhows exception!
         /// </code>
         /// </example>
         ///
@@ -161,8 +158,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     ([1; 2; 3] :> IEnumerable) |> Seq.cast{int} // evaluates to seq [1; 2; 3], explicitly typed as int seq
-        ///     (null :> IEnumerable) |> Seq.cast{int} // throws exception!
+        ///     ([1; 2; 3] :> IEnumerable) |> Seq.cast&lt;int&gt; // evaluates to seq [1; 2; 3], explicitly typed as int seq
         /// </code>
         /// </example>
         ///
@@ -187,7 +183,6 @@ namespace Microsoft.FSharp.Collections
         /// <code lang="fsharp">
         ///     [Some 1; None; Some 2] |> Seq.choose id // evaluates to seq [1; 2]
         ///     [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None) // evaluates to seq [2]
-        ///     null |> Seq.choose id // throws exception!
         /// </code>
         /// </example>
         /// 
@@ -205,8 +200,7 @@ namespace Microsoft.FSharp.Collections
         /// <example>
         /// <code lang="fsharp">
         ///     [1; 2; 3] |> Seq.chunkBySize 2 // evaluates to seq [[|1; 2|]; [|3|]]
-        ///     [1; 2; 3] |> Seq.chunkBySize -2 // throws exception!
-        ///     null |> Seq.chunkBySize 2 // throws exception!
+        ///     [1; 2; 3] |> Seq.chunkBySize -2 // throws ArgumentException!
         /// </code>
         /// </example>
         ///
@@ -232,7 +226,6 @@ namespace Microsoft.FSharp.Collections
         ///
         ///     [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar) // evaluates to seq [1; 2; 3; 4]
         ///     [[1; 2]; [3; 4]] |> Seq.collect id // evaluates to seq [1; 2; 3; 4]
-        ///     null |> Seq.collect (fun foo -> foo.Bar) // throws exception!
         /// </code>
         /// </example>
         ///
@@ -258,9 +251,6 @@ namespace Microsoft.FSharp.Collections
         ///     ([1; 3], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 1
         ///     ([1; 2], [1]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to -1
         ///     ([1], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 0
-        ///     ([1; 2], null) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
-        ///     (null, [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
-        ///     (null, null) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // throws exception!
         /// </code>
         /// </example>
         ///
@@ -294,7 +284,6 @@ namespace Microsoft.FSharp.Collections
         /// <code lang="fsharp">
         ///     [1; 2; 3] |> Seq.contains 2 // evaluates to true
         ///     [1; 2; 3] |> Seq.contains 5 // evaluates to false
-        ///     null |> Seq.contains 2 // throws exception!
         /// </code>
         /// </example>
         ///
@@ -339,7 +328,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     [(fun () -> Seq.ofList [1; 2; 3]) |> Seq.delay // evaluates to seq [1; 2; 3], calling the gnerator every time.
+        ///   Seq.delay (fun () -> Seq.ofList [1; 2; 3]) // evaluates to seq [1; 2; 3], calling the gnerator every time.
         /// </code>
         /// </example>
         [<CompiledName("Delay")>]
