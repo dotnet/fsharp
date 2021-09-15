@@ -348,6 +348,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
+        /// <example id="concat-1">
+        /// <code lang="fsharp">
+        /// [[1; 2]; [3]; [4; 5]] |> Seq.concat
+        /// </code>
+        /// Evaluates to <c>seq [1; 2; 3; 4; 5]</c>
+        /// </example>
+        ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Concat")>]
         val concat: sources:seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
