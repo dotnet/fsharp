@@ -359,10 +359,10 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
         ///
-        /// <example>
+        /// <example id="contains-example-1">
         /// <code lang="fsharp">
-        ///     [1; 2; 3] |> Seq.contains 2 // evaluates to true
-        ///     [1; 2; 3] |> Seq.contains 5 // evaluates to false
+        /// [1; 2] |> Seq.contains 2 // evaluates to true
+        /// [1; 2] |> Seq.contains 5 // evaluates to false
         /// </code>
         /// </example>
         ///
