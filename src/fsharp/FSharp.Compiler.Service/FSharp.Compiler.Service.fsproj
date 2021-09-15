@@ -972,7 +972,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)" />
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionProperty)" />
   </ItemGroup>
 
   <ItemGroup>
