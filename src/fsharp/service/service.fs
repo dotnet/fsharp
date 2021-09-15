@@ -140,7 +140,7 @@ module CompileHelpers =
 
         errors.ToArray(), result
 
-    let createDynamicAssembly (debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
+    let createDynamicAssembly (debugInfo: bool, tcImports: TcImports option, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
 
         // Create an assembly builder
         let assemblyName = AssemblyName(Path.GetFileNameWithoutExtension outfile)
@@ -163,7 +163,7 @@ module CompileHelpers =
 
         // The function used to resolve types while emitting the code
         let assemblyResolver s = 
-            match tcImportsRef.Value.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef s with 
+            match tcImports.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef s with 
             | Some res -> Some (Choice1Of2 res)
             | None -> None
 
@@ -185,7 +185,7 @@ module CompileHelpers =
                 Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
         // Save the result
-        assemblyBuilderRef := Some assemblyBuilder
+        assemblyBuilderRef.Value <- Some assemblyBuilder
         
     let setOutputStreams execute = 
         // Set the output streams, if requested
@@ -1133,13 +1133,13 @@ type FSharpChecker(legacyReferenceResolver,
         CompileHelpers.setOutputStreams execute
         
         // References used to capture the results of compilation
-        let tcImportsRef = ref None
+        let mutable tcImportsOpt = None
         let assemblyBuilderRef = ref None
-        let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
+        let tcImportsCapture = Some (fun tcImports -> tcImportsOpt <- Some tcImports)
 
         // Function to generate and store the results of compilation 
         let debugInfo =  otherFlags |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
-        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsOpt, execute.IsSome, assemblyBuilderRef))
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)
@@ -1160,9 +1160,9 @@ type FSharpChecker(legacyReferenceResolver,
         CompileHelpers.setOutputStreams execute
 
         // References used to capture the results of compilation
-        let tcImportsRef = ref (None: TcImports option)
+        let mutable tcImportsOpt : TcImports option = None
         let assemblyBuilderRef = ref None
-        let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
+        let tcImportsCapture = Some (fun tcImports -> tcImportsOpt <- Some tcImports)
 
         let debugInfo = defaultArg debug false
         let noframework = defaultArg noframework false
@@ -1172,7 +1172,7 @@ type FSharpChecker(legacyReferenceResolver,
         let outFile = Path.Combine(location, assemblyName + ".dll")
 
         // Function to generate and store the results of compilation 
-        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+        let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsOpt, execute.IsSome, assemblyBuilderRef))
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = 
