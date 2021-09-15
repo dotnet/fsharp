@@ -1837,18 +1837,18 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
 //-------------------------------------------------------------------------
 // Helpers to freshen existing types and values, i.e. when a reference
 // to C<_> occurs then generate C<?ty> for a fresh type inference variable ?ty.
-//------------------------------------------------------------------------- 
-   
-let FreshenTyconRef traitFreshner m rigid (tcref: TyconRef) declaredTyconTypars = 
+//-------------------------------------------------------------------------
+
+let FreshenTyconRef traitFreshner m rigid (tcref: TyconRef) declaredTyconTypars =
     let tpsorig = declaredTyconTypars
     let tps = copyTypars tpsorig
-    if rigid <> TyparRigidity.Rigid then 
-      tps |> List.iter (fun tp -> tp.SetRigidity rigid)  
-        
+    if rigid <> TyparRigidity.Rigid then
+      tps |> List.iter (fun tp -> tp.SetRigidity rigid)
+
     let renaming, tinst = FixupNewTypars traitFreshner m [] [] tpsorig tps
     (TType_app(tcref, List.map mkTyparTy tpsorig), tps, renaming, TType_app(tcref, tinst))
-    
-let FreshenPossibleForallTy traitFreshner g m rigid ty = 
+
+let FreshenPossibleForallTy traitFreshner g m rigid ty =
     let tpsorig, tau = tryDestForallTy g ty
     if isNil tpsorig then
         [], [], [], tau
@@ -2441,10 +2441,10 @@ module BindingNormalization =
             | SynPat.FromParseError(p, _) -> normPattern p
             | SynPat.LongIdent (LongIdentWithDots(longId, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
-                match memberFlagsOpt with 
-                | None ->                
+                match memberFlagsOpt with
+                | None ->
                     match ResolvePatternLongIdent cenv.tcSink nameResolver AllIdsOK true m ad env.TraitContext env.NameEnv TypeNameResolutionInfo.Default longId with
-                    | Item.NewDef id -> 
+                    | Item.NewDef id ->
                         if id.idText = opNameCons then
                             NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
                         else
@@ -2584,7 +2584,7 @@ module EventDeclarationNormalization =
 
 /// Make a copy of the "this" type for a generic object type, e.g. List<'T> --> List<'?> for a fresh inference variable.
 /// Also adjust the "this" type to take into account whether the type is a struct.
-let FreshenObjectArgType cenv traitFreshner m rigid tcref isExtrinsic declaredTyconTypars = 
+let FreshenObjectArgType cenv traitFreshner m rigid tcref isExtrinsic declaredTyconTypars =
 #if EXTENDED_EXTENSION_MEMBERS // indicates if extension members can add additional constraints to type parameters
     let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy = FreshenTyconRef m (if isExtrinsic then TyparRigidity.Flexible else rigid) tcref declaredTyconTypars
 #else
@@ -2709,7 +2709,7 @@ let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst op
                               tpsorig, NormalValUse, tinst, tau, tpenv
                           | ValInRecScope true
                           | ValNotInRecScope ->
-                              let tpsorig, _, tinst, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty 
+                              let tpsorig, _, tinst, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty
                               tpsorig, NormalValUse, tinst, tau, tpenv
 
                       // If we have got an explicit instantiation then use that
@@ -2730,7 +2730,7 @@ let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst op
                                 tpsorig, vrefFlags, tinst, tau2, tpenv
                             | ValInRecScope true
                             | ValNotInRecScope ->
-                                let tpsorig, tps, tptys, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty 
+                                let tpsorig, tps, tptys, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty
                                 //dprintfn "After Freshen: tau = %s" (LayoutRender.showL (typeL tau))
                                 let (tinst: TypeInst), tpenv = checkTys tpenv (tps |> List.map (fun tp -> tp.Kind))
                                 checkInst tinst
@@ -2740,7 +2740,7 @@ let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst op
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, vrec, tinst, vty, tau, m)
 
                                 //dprintfn "After Unify: tau = %s" (LayoutRender.showL (typeL tau))
-                                tpsorig, vrefFlags, tptys, tau, tpenv  
+                                tpsorig, vrefFlags, tptys, tau, tpenv
 
                   let exprForVal = Expr.Val (vref, vrefFlags, m)
                   let exprForVal = mkTyAppExpr m (exprForVal, vty) tinst
@@ -2760,22 +2760,22 @@ let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst op
 
 /// simplified version of TcVal used in calls to BuildMethodCall (typrelns.fs)
 /// this function is used on typechecking step for making calls to provided methods and on optimization step (for the same purpose).
-let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFlags (vrefTypeInst: TTypes) m = 
-    let v = vref.Deref 
-    let vty = vref.Type 
-    // byref-typed values get dereferenced 
-    if isByrefTy g vty then 
-        mkAddrGet m vref, destByrefTy g vty 
-    else 
-      match v.LiteralValue with 
-      | Some c -> 
-          let _, _, _, tau = FreshenPossibleForallTy traitCtxt g m TyparRigidity.Flexible vty 
+let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFlags (vrefTypeInst: TTypes) m =
+    let v = vref.Deref
+    let vty = vref.Type
+    // byref-typed values get dereferenced
+    if isByrefTy g vty then
+        mkAddrGet m vref, destByrefTy g vty
+    else
+      match v.LiteralValue with
+      | Some c ->
+          let _, _, _, tau = FreshenPossibleForallTy traitCtxt g m TyparRigidity.Flexible vty
           Expr.Const (c, m, tau), tau
-      | None -> 
-              // Instantiate the value 
-              let tau = 
-                  // If we have got an explicit instantiation then use that 
-                  let _, tps, tptys, tau = FreshenPossibleForallTy traitCtxtNone g m TyparRigidity.Flexible vty 
+      | None ->
+              // Instantiate the value
+              let tau =
+                  // If we have got an explicit instantiation then use that
+                  let _, tps, tptys, tau = FreshenPossibleForallTy traitCtxtNone g m TyparRigidity.Flexible vty
                   if tptys.Length <> vrefTypeInst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, vrefTypeInst.Length), m))
                   instType (mkTyparInst tps vrefTypeInst) tau
 
@@ -2786,7 +2786,6 @@ let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFla
 /// Mark points where we decide whether an expression will support automatic
 /// decondensation or not. This is somewhat a relic of a previous implementation of decondensation and could
 /// be removed
-
 type ApplicableExpr =
     | ApplicableExpr of
            // context
@@ -2949,9 +2948,9 @@ let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseF
             let _, retExpt, retTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall tcVal (cenv.g, cenv.amap, env.TraitContext, mi, objArgs, isMutable, isProp, valUseFlags, args, m)
             retExpt, retTy
 
-        | _ -> 
-#endif    
-        let tcVal valref valUse ttypes m = 
+        | _ ->
+#endif
+        let tcVal valref valUse ttypes m =
             let _, a, _, b, _, _ = TcVal env.TraitContext true cenv env emptyUnscopedTyparEnv valref (Some (valUse, (fun x _ -> ttypes, x))) None m
             a, b
         BuildMethodCall tcVal cenv.g cenv.amap isMutable m isProp minfo valUseFlags minst objArgs args
@@ -3975,9 +3974,9 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
 
     | SynTypeConstraint.WhereTyparSupportsMember(tps, memSpfn, m) ->
         let traitInfo, tpenv = TcPseudoMemberSpec cenv newOk env tps tpenv memSpfn m
-        match traitInfo with 
-        | TTrait(objtys, ".ctor", memberFlags, argTys, returnTy, _, _) when  memberFlags.MemberKind = SynMemberKind.Constructor ->
-            match objtys, argTys with 
+        match traitInfo with
+        | TTrait(objtys, ".ctor", memberFlags, argTys, returnTy, _, _) when memberFlags.MemberKind = SynMemberKind.Constructor ->
+            match objtys, argTys with
             | [ty], [] when typeEquiv cenv.g ty (GetFSharpViewOfReturnType cenv.g returnTy) ->
                 AddCxTypeMustSupportDefaultCtor env.DisplayEnv cenv.css m NoTrace ty
                 tpenv
@@ -4029,9 +4028,6 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
         | Some(MemberOrValContainerInfo(tcref, _, _, _, declaredTyconTypars)) ->
             let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
             let _, enclosingDeclaredTypars, _, _, thisTy = FreshenObjectArgType cenv env.TraitContext m TyparRigidity.Rigid tcref isExtrinsic declaredTyconTypars
-            // An implemented interface type is in terms of the type's type parameters. 
-            // We need a signature in terms of the values' type parameters. 
-            // let optIntfSlotTy = Option.map (instType renaming) optIntfSlotTy in  
             enclosingDeclaredTypars, Some tcref, Some thisTy, declKind
         | None ->
             [], None, thisTyOpt, ModuleOrMemberBinding
@@ -4290,7 +4286,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         match ltyp with
         | AppTy g (tcref, tinst) ->
             let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad env.TraitContext m tcref longId 
-            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args
         | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
     | SynType.Tuple(isStruct, args, m) ->
@@ -4721,7 +4717,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
 
 and TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with 
-    | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) -> 
+    | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.TraitContext env.eNameResEnv TypeNameResolutionInfo.Default [id] with 
         | Item.NewDef _ -> None // the name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
         | _ -> altNameRefCell := SynSimplePatAlternativeIdInfo.Decided altId; Some altId // the name is in scope as a pattern identifier, so use the alternate ID
@@ -5050,7 +5046,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
             let args = getArgPatterns ()
 
-            // TOTAL/PARTIAL ACTIVE PATTERNS 
+            // TOTAL/PARTIAL ACTIVE PATTERNS
             let _, vexp, _, _, tinst, _ = TcVal env.TraitContext true cenv env tpenv vref None None m
             let vexp = MakeApplicableExprWithFlex cenv env vexp
             let vexpty = vexp.Type
@@ -5231,7 +5227,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         | Item.Value vref ->
             match vref.LiteralValue with
             | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))
-            | Some lit -> 
+            | Some lit ->
                 let _, _, _, vexpty, _, _ = TcVal env.TraitContext true cenv env tpenv vref None None lidRange
                 CheckValAccessible lidRange env.AccessRights vref
                 CheckFSharpAttributes cenv.g vref.Attribs lidRange |> CommitOperationResult
@@ -7825,9 +7821,9 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 if (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) then
                     let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
                     match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad env.TraitContext longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
-                    | Result (tinstEnclosing, tcref) when IsEntityAccessible cenv.amap m ad tcref -> 
-                        match delayed with 
-                        | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] -> 
+                    | Result (tinstEnclosing, tcref) when IsEntityAccessible cenv.amap m ad tcref ->
+                        match delayed with
+                        | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] ->
                             TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref tinstEnclosing tyargs |> ignore
                         | _ -> ()
                         true // resolved to a type name, done with checks
@@ -8475,14 +8471,14 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
             | _ ->
             let checkTys tpenv kinds = TcTypesOrMeasures (Some kinds) cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tys mItem
             let _, vexp, isSpecial, _, _, tpenv = TcVal env.TraitContext true cenv env tpenv vref (Some (NormalValUse, checkTys)) (Some afterResolution) mItem
-            
+
             let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env vexp)
             // We need to eventually record the type resolution for an expression, but this is done
             // inside PropagateThenTcDelayed, so we don't have to explicitly call 'CallExprHasTypeSink' here
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndTypeArgs vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic otherDelayed
 
-        // Value get 
-        | _ ->  
+        // Value get
+        | _ ->
             let _, vexp, isSpecial, _, _, tpenv = TcVal env.TraitContext true cenv env tpenv vref None (Some afterResolution) mItem
             let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env vexp)
             PropagateThenTcDelayed cenv overallTy env tpenv mItem vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic delayed
@@ -9073,10 +9069,10 @@ and TcMethodApplication
 
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
 
-        let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) = 
+        let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
             let minst = FreshenMethInfo env.TraitContext mItem minfo
-            let callerTyArgs = 
-                match tyargsOpt with 
+            let callerTyArgs =
+                match tyargsOpt with
                 | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
                 | None -> minst
             CalledMeth<SynExpr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt)
@@ -9180,10 +9176,10 @@ and TcMethodApplication
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers tyargs
                     | None -> minst
                 CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo env.TraitContext, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt))
-          
-        // Commit unassociated constraints prior to member overload resolution where there is ambiguity 
-        // about the possible target of the call. 
-        if not uniquelyResolved then 
+
+        // Commit unassociated constraints prior to member overload resolution where there is ambiguity
+        // about the possible target of the call.
+        if not uniquelyResolved then
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.CallerArgumentType))
                  false
@@ -9510,8 +9506,8 @@ and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg d
         let m = arg.Range
         let callerArg, (_, tpenv) = TcMethodArg cenv env (Array.empty, tpenv) (Array.empty, CallerArg(fty, m, false, farg))
         let expr = BuildNewDelegateExpr (None, cenv.g, cenv.amap, env.TraitContext, delegateTy, invokeMethInfo, delArgTys, callerArg.Expr, fty, m)
-        PropagateThenTcDelayed cenv overallTy env tpenv m (MakeApplicableExprNoFlex cenv expr) delegateTy atomicFlag delayed  
-    | _ ->  
+        PropagateThenTcDelayed cenv overallTy env tpenv m (MakeApplicableExprNoFlex cenv expr) delegateTy atomicFlag delayed
+    | _ ->
         error(Error(FSComp.SR.tcDelegateConstructorMustBePassed(), mExprAndArg))
 
 
@@ -10115,10 +10111,10 @@ and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribut
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
                     let m = callerArgExpr.Range
                     let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr m ad env.TraitContext id IgnoreOverrides TypeNameResolutionInfo.Default ty
-                    let nm, isProp, argty = 
-                      match setterItem with   
-                      | Item.Property (_, [pinfo]) -> 
-                          if not pinfo.HasSetter then 
+                    let nm, isProp, argty =
+                      match setterItem with
+                      | Item.Property (_, [pinfo]) ->
+                          if not pinfo.HasSetter then
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
                           id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo ->
@@ -10232,7 +10228,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         let enclosingDeclaredTypars = []
         let (ExplicitTyparInfo(_, declaredTypars, canInferTypars)) = explicitTyparInfo
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
-        let generalizedTypars, prelimValSchemes2 = 
+        let generalizedTypars, prelimValSchemes2 =
             let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
 
             let maxInferredTypars = freeInTypeLeftToRight cenv.g false tauTy
@@ -10457,7 +10453,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (bindingTy, m, syn
                  | uniqueAbstractMeth :: _ ->
 
                      let uniqueAbstractMeth = uniqueAbstractMeth.Instantiate(cenv.amap, m, renaming)
-                     
+
                      let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot = 
                          FreshenAbstractSlot envinner.TraitContext cenv.g cenv.amap m synTyparDecls uniqueAbstractMeth
 
@@ -10515,7 +10511,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (bindingTy, m, syn
 
                let uniqueAbstractMeth = uniqueAbstractMeth.Instantiate(cenv.amap, m, renaming)
 
-               let _, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot = 
+               let _, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot =
                     FreshenAbstractSlot envinner.TraitContext cenv.g cenv.amap m synTyparDecls uniqueAbstractMeth
 
                if not (isNil typarsFromAbsSlot) then

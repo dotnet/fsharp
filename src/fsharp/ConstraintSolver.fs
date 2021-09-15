@@ -1675,15 +1675,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   minfos 
                     // curried members may not be used to satisfy constraints
                     |> List.choose (fun minfo ->
-                          if minfo.IsCurried then 
-                              None 
-                          else
-                              let callerArgs = 
-                                { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
-                                  Named = [ [ ] ] }
-                              let minst = FreshenMethInfo traitCtxt m minfo
-                              let callerObjTys = if memFlags.IsInstance then [ List.head traitObjAndArgTys  ] else []
-                              Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo traitCtxt, m, traitAD, minfo, minst, minst, None, callerObjTys, callerArgs, false, false, None)))
+                          if minfo.IsCurried then None else
+                          let callerArgs = 
+                            { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
+                              Named = [ [ ] ] }
+                          let minst = FreshenMethInfo traitCtxt m minfo
+                          let callerObjTys = if memFlags.IsInstance then [ List.head traitObjAndArgTys  ] else []
+                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo traitCtxt, m, traitAD, minfo, minst, minst, None, callerObjTys, callerArgs, false, false, None)))
               
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
@@ -1829,7 +1827,6 @@ and GetRelevantExtensionMethodsForTrait m (infoReader: InfoReader) (traitInfo: T
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln, traitCtxt) as traitInfo) : MethInfo list =
-    //let traitAD = traitCtxt.AccessRights :?> AccessorDomain
     
     let results = 
         if permitWeakResolution.PerformWeakOverloadResolution csenv.g || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
@@ -3478,7 +3475,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let ftps, _renaming, tinst = FreshenTypeInst traitCtxtNone m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
-    let witnessArgs = MethodCalls.GenWitnessArgs amap g m traitInfos
+    let witnessArgs = GenWitnessArgs amap g m traitInfos
     for witnessArg in witnessArgs do
         match witnessArg with 
         | Choice1Of2 _traitInfo -> ()

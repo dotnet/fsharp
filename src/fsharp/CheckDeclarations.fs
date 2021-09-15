@@ -5725,19 +5725,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
 
         CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved false
 
-        // The priority order comes from the order of declaration of the defaults in FSharp.Core.
-        for priority = 10 downto 0 do
-            unsolved |> List.iter (fun tp -> 
-                if not tp.IsSolved then 
-                    // Apply the first default. If we're defaulting one type variable to another then 
-                    // the defaults will be propagated to the new type variable. 
-                    ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
-
-        // OK, now apply defaults for any unsolved TyparStaticReq.HeadType 
-        unsolved |> List.iter (fun tp ->     
-            if not tp.IsSolved then 
-                if (tp.StaticReq <> TyparStaticReq.None) then
-                    ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+        ApplyDefaultsForUnsolved cenv.css denvAtEnd unsolved
     with e -> errorRecovery e m
 
 let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
@@ -5763,9 +5751,7 @@ let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig
 let SolveInternalUnknowns g (cenv: cenv) denvAtEnd mexpr extraAttribs =
     let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-    unsolved |> List.iter (fun tp -> 
-            if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+    ChooseSolutionsForUnsolved cenv.css denvAtEnd unsolved
 
 let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr =
     match rootSigOpt with 
