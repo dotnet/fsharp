@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="all-pairs-example-1">
+        /// <example id="all-pairs-1">
         /// <code lang="fsharp">
         /// ([1; 2], [3; 4]) ||> Seq.allPairs
         /// </code>
@@ -46,7 +46,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="append-example-1">
+        /// <example id="append-1">
         /// <code lang="fsharp">
         /// ([1; 2], [3; 4]) ||> Seq.append
         /// </code>
@@ -67,14 +67,14 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <example id="average-example-1">
+        /// <example id="average-1">
         /// <code lang="fsharp">
         /// [1.0; 2.0; 3.0] |> Seq.average
         /// </code>
         /// Evaluates to <c>2.0</c>
         /// </example>
         ///
-        /// <example id="average-example-2">
+        /// <example id="average-2">
         /// <code lang="fsharp">
         /// [] |> Seq.average
         /// </code>
@@ -100,7 +100,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <example id="average-by-example-1">
+        /// <example id="average-by-1">
         /// <code lang="fsharp">
         /// type Foo = { Bar: float }
         ///
@@ -109,7 +109,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>3.0</c>
         /// </example>
         ///
-        /// <example id="average-by-example-2">
+        /// <example id="average-by-2">
         /// <code lang="fsharp">
         /// type Foo = { Bar: float }
         /// [] |> Seq.averageBy (fun foo -> foo.Bar)
@@ -153,7 +153,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="cache-example-1">
+        /// <example id="cache-1">
         /// <code lang="fsharp">
         /// let fibSeq =
         ///   Seq.unfold
@@ -184,7 +184,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="cast-example-1">
+        /// <example id="cast-1">
         /// <code lang="fsharp">
         /// ([1; 2; 3] :> IEnumerable) |> Seq.cast&lt;int&gt;
         /// </code>
@@ -208,14 +208,14 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="choose-example-1">
+        /// <example id="choose-1">
         /// <code lang="fsharp">
         /// [Some 1; None; Some 2] |> Seq.choose id
         /// </code>
         /// Evaluates to <c>seq [1; 2]</c>
         /// </example>
         ///
-        /// <example id="choose-example-2">
+        /// <example id="choose-2">
         /// <code lang="fsharp">
         /// [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None)
         /// </code>
@@ -263,7 +263,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example id="collec-example-1">
+        /// <example id="collec-1">
         /// <code lang="fsharp">
         /// type Foo = { Bar: int seq }
         /// [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar)
@@ -271,7 +271,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>seq [1; 2; 3; 4]</c>
         /// </example>
         ///
-        /// <example id="collec-example-2">
+        /// <example id="collec-2">
         /// <code lang="fsharp">
         /// [[1; 2]; [3; 4]] |> Seq.collect id
         /// </code>
@@ -293,7 +293,7 @@ namespace Microsoft.FSharp.Collections
         /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
         /// is shorter.</returns>
         ///
-        /// <example id="compare-with-example-1">
+        /// <example id="compare-with-1">
         /// <code lang="fsharp">
         /// ([1; 2], [1; 2])
         /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
@@ -301,7 +301,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>0</c>
         /// </example>
         ///
-        /// <example id="compare-with-example-2">
+        /// <example id="compare-with-2">
         /// <code lang="fsharp">
         /// ([1; 2], [1; 3])
         /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
@@ -309,7 +309,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>-1</c>
         /// </example>
         ///
-        /// <example id="compare-with-example-3">
+        /// <example id="compare-with-3">
         /// <code lang="fsharp">
         /// ([1; 3], [1; 2])
         /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
@@ -317,7 +317,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>1</c>
         /// </example>
         ///
-        /// <example id="compare-with-example-4">
+        /// <example id="compare-with-4">
         /// <code lang="fsharp">
         /// ([1; 2], [1])
         /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
@@ -325,7 +325,7 @@ namespace Microsoft.FSharp.Collections
         /// Evaluates to <c>1</c>
         /// </example>
         ///
-        /// <example id="compare-with-example-5">
+        /// <example id="compare-with-5">
         /// <code lang="fsharp">
         /// ([1], [1; 2])
         /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
@@ -359,7 +359,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
         ///
-        /// <example id="contains-example-1">
+        /// <example id="contains-1">
         /// <code lang="fsharp">
         /// [1; 2] |> Seq.contains 2 // evaluates to true
         /// [1; 2] |> Seq.contains 5 // evaluates to false
@@ -386,12 +386,14 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         ///
-        /// <example>
+        /// <example id="count-by-1">
         /// <code lang="fsharp">
-        ///     type Foo = { Bar: string }
-        ///     [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}] |> Seq.countBy (fun foo -> foo.Bar) // evaluates to seq [("a", 2); ("b", 1)]
-        ///     null |> Seq.countBy (fun foo -> foo.Bar) // throws exception!
+        /// type Foo = { Bar: string }
+        ///
+        /// [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
+        /// |> Seq.countBy (fun foo -> foo.Bar)
         /// </code>
+        /// Evaluates to <c>seq [("a", 2); ("b", 1)]</c>
         /// </example>
         [<CompiledName("CountBy")>]
         val countBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * int> when 'Key : equality
@@ -405,10 +407,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="generator">The generating function for the sequence.</param>
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="delay-1">
         /// <code lang="fsharp">
-        ///   Seq.delay (fun () -> Seq.ofList [1; 2; 3]) // evaluates to seq [1; 2; 3], calling the gnerator every time.
+        /// Seq.delay (fun () -> Seq.ofList [1; 2; 3])
         /// </code>
+        /// Evaluates to <c>seq [1; 2; 3]</c>, executing
+        /// the generator function every time is consumed.
         /// </example>
         [<CompiledName("Delay")>]
         val delay: generator:(unit -> seq<'T>) -> seq<'T>
@@ -454,7 +458,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Creates an empty sequence.</summary>
         ///
         /// <returns>An empty sequence.</returns>
-        [<GeneralizableValueAttribute>]
+        [<GeneralizableValue>]
         [<CompiledName("Empty")>]
         val empty<'T> : seq<'T>
 
