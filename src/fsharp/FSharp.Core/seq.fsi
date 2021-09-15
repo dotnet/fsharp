@@ -233,11 +233,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The sequence divided into chunks.</returns>
         ///
-        /// <example>
+        /// <example id="chunk-by-size-1">
         /// <code lang="fsharp">
-        ///     [1; 2; 3] |> Seq.chunkBySize 2 // evaluates to seq [[|1; 2|]; [|3|]]
-        ///     [1; 2; 3] |> Seq.chunkBySize -2 // throws ArgumentException!
+        /// [1; 2; 3] |> Seq.chunkBySize 2
         /// </code>
+        /// Evaluates to <c>seq [[|1; 2|]; [|3|]]</c>
+        /// </example>
+        ///
+        /// <example id="chunk-by-size-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3] |> Seq.chunkBySize -2
+        /// </code>
+        /// Throws <c>ArgumentException</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -256,13 +263,19 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="collec-example-1">
         /// <code lang="fsharp">
-        ///     type Foo = { Bar: int seq }
-        ///
-        ///     [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar) // evaluates to seq [1; 2; 3; 4]
-        ///     [[1; 2]; [3; 4]] |> Seq.collect id // evaluates to seq [1; 2; 3; 4]
+        /// type Foo = { Bar: int seq }
+        /// [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar)
         /// </code>
+        /// Evaluates to <c>seq [1; 2; 3; 4]</c>
+        /// </example>
+        ///
+        /// <example id="collec-example-2">
+        /// <code lang="fsharp">
+        /// [[1; 2]; [3; 4]] |> Seq.collect id
+        /// </code>
+        /// Evaluates to <c>seq [1; 2; 3; 4]</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -280,14 +293,44 @@ namespace Microsoft.FSharp.Collections
         /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
         /// is shorter.</returns>
         ///
-        /// <example>
+        /// <example id="compare-with-example-1">
         /// <code lang="fsharp">
-        ///     ([1; 2], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 0
-        ///     ([1; 2], [1; 3]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to -1
-        ///     ([1; 3], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 1
-        ///     ([1; 2], [1]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to -1
-        ///     ([1], [1; 2]) ||> Seq.compareWith (fun a b -> a.CompareTo(b)) // evaluates to 0
+        /// ([1; 2], [1; 2])
+        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
         /// </code>
+        /// Evaluates to <c>0</c>
+        /// </example>
+        ///
+        /// <example id="compare-with-example-2">
+        /// <code lang="fsharp">
+        /// ([1; 2], [1; 3])
+        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// </code>
+        /// Evaluates to <c>-1</c>
+        /// </example>
+        ///
+        /// <example id="compare-with-example-3">
+        /// <code lang="fsharp">
+        /// ([1; 3], [1; 2])
+        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// </code>
+        /// Evaluates to <c>1</c>
+        /// </example>
+        ///
+        /// <example id="compare-with-example-4">
+        /// <code lang="fsharp">
+        /// ([1; 2], [1])
+        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// </code>
+        /// Evaluates to <c>1</c>
+        /// </example>
+        ///
+        /// <example id="compare-with-example-5">
+        /// <code lang="fsharp">
+        /// ([1], [1; 2])
+        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// </code>
+        /// Evaluates to <c>-1</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
