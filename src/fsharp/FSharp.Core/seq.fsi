@@ -638,7 +638,15 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>    
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="where-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.where (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>seq [2; 4]</c>
+        /// </example>
         [<CompiledName("Where")>]
         val where: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
