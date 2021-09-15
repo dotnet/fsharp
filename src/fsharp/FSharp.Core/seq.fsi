@@ -155,12 +155,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example id="cache-1">
         /// <code lang="fsharp">
-        /// let fibSeq =
-        ///   Seq.unfold
-        ///     (fun (a,b) ->
-        ///       Some(a + b, (b, a + b))
-        ///     )
-        ///     (0,1)
+        /// let fibSeq =(0, 1) |> Seq.unfold (fun (a,b) -> Some(a + b, (b, a + b)))
         ///
         /// let fibSeq3 = fibSeq |> Seq.take 3 |> Seq.cache
         /// fibSeq3
