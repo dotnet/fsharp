@@ -499,6 +499,12 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Creates an empty sequence.</summary>
         ///
         /// <returns>An empty sequence.</returns>
+        ///
+        /// <example id="empty">
+        /// <code lang="fsharp">
+        /// Seq.empty // Evaluates to seq []
+        /// </code>
+        /// </example>
         [<GeneralizableValue>]
         [<CompiledName("Empty")>]
         val empty<'T> : seq<'T>
