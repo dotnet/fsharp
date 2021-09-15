@@ -525,7 +525,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
         ///
-        /// <example id="excep-1">
+        /// <example id="except-1">
         /// <code lang="fsharp">
         /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
         /// </code>
@@ -546,6 +546,22 @@ namespace Microsoft.FSharp.Collections
         /// <returns>True if any result from the predicate is true; false otherwise.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="exists-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.exists (fun elm -> elm % 4 = 0)
+        /// </code>
+        /// Evaluates to <c>true</c>
+        /// </example>
+        ///
+        /// <example id="exists-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.exists (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Evaluates to <c>false</c>
+        /// </example>
         [<CompiledName("Exists")>]
         val exists: predicate:('T -> bool) -> source:seq<'T> -> bool
 
