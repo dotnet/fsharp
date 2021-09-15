@@ -479,6 +479,20 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
+        ///
+        /// <example id="split-into-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5] |> Seq.splitInto 3
+        /// </code>
+        /// Evaluates to <c>seq [[|1; 2|]; [|3; 4|]; [|5|]]</c>
+        /// </example>
+        ///
+        /// <example id="split-into-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5] |> Seq.splitInto -1
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
         [<CompiledName("SplitInto")>]
         val splitInto: count:int -> source:seq<'T> -> seq<'T[]>
 
