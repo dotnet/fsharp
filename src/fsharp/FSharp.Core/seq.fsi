@@ -20,9 +20,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="all-pairs-example-1">
         /// <code lang="fsharp">
-        ///     ([1; 2], [3; 4]) ||> Seq.allPairs // evaluates to seq [(1, 3); (1, 4); (2, 3); (2, 4)]
+        /// ([1; 2], [3; 4]) ||> Seq.allPairs
+        /// </code>
+        /// Evaluates to
+        /// <code>
+        /// seq [(1, 3); (1, 4); (2, 3); (2, 4)]
         /// </code>
         /// </example>
         ///
@@ -42,10 +46,11 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="append-example-1">
         /// <code lang="fsharp">
-        ///     ([1; 2], [3; 4]) ||> Seq.append // evaluates to seq [1; 2; 3; 4]
+        /// ([1; 2], [3; 4]) ||> Seq.append
         /// </code>
+        /// Evaluates to <c>seq [1; 2; 3; 4]</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two provided sequences is
@@ -62,11 +67,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <example>
+        /// <example id="average-example-1">
         /// <code lang="fsharp">
-        ///     [1.0; 2.0; 3.0] |> Seq.average // evaluates to 2.0
-        ///     [] |> Seq.average // throws ArgumentException!
+        /// [1.0; 2.0; 3.0] |> Seq.average
         /// </code>
+        /// Evaluates to <c>2.0</c>
+        /// </example>
+        ///
+        /// <example id="average-example-2">
+        /// <code lang="fsharp">
+        /// [] |> Seq.average
+        /// </code>
+        /// Throws <c>ArgumentException</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -88,13 +100,21 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <example>
+        /// <example id="average-by-example-1">
         /// <code lang="fsharp">
-        ///     type Foo = { Bar: float }
+        /// type Foo = { Bar: float }
         ///
-        ///     [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar) // evaluates to 3.0
-        ///     [] |> Seq.averageBy (fun foo -> foo.Bar) // throws ArgumentException!
+        /// [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar)
         /// </code>
+        /// Evaluates to <c>3.0</c>
+        /// </example>
+        ///
+        /// <example id="average-by-example-2">
+        /// <code lang="fsharp">
+        /// type Foo = { Bar: float }
+        /// [] |> Seq.averageBy (fun foo -> foo.Bar)
+        /// </code>
+        /// Throws <c>ArgumentException</c>
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -133,12 +153,20 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="cache-example-1">
         /// <code lang="fsharp">
-        ///     let fibSeq = Seq.unfold (fun (a,b) -> Some(a + b, (b, a + b))) (0,1)
-        ///     let fibSeq3 = fibSeq |> Seq.take 3 |> Seq.cache
-        ///     fibSeq3 // evaluates to seq [1; 2; 3], and it will not do the calculation again when called.
+        /// let fibSeq =
+        ///   Seq.unfold
+        ///     (fun (a,b) ->
+        ///       Some(a + b, (b, a + b))
+        ///     )
+        ///     (0,1)
+        ///
+        /// let fibSeq3 = fibSeq |> Seq.take 3 |> Seq.cache
+        /// fibSeq3
         /// </code>
+        /// Evaluates to <c>seq [1; 2; 3]</c>,
+        /// and it will not do the calculation again when called.
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -156,10 +184,11 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="cast-example-1">
         /// <code lang="fsharp">
-        ///     ([1; 2; 3] :> IEnumerable) |> Seq.cast&lt;int&gt; // evaluates to seq [1; 2; 3], explicitly typed as int seq
+        /// ([1; 2; 3] :> IEnumerable) |> Seq.cast&lt;int&gt;
         /// </code>
+        /// Evaluates to <c>seq [1; 2; 3]</c>, explicitly typed as int seq
         /// </example>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
@@ -179,11 +208,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <example>
+        /// <example id="choose-example-1">
         /// <code lang="fsharp">
-        ///     [Some 1; None; Some 2] |> Seq.choose id // evaluates to seq [1; 2]
-        ///     [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None) // evaluates to seq [2]
+        /// [Some 1; None; Some 2] |> Seq.choose id
         /// </code>
+        /// Evaluates to <c>seq [1; 2]</c>
+        /// </example>
+        ///
+        /// <example id="choose-example-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3] |> Seq.choose (fun n -> if n % 2 = 0 then Some n else None)
+        /// </code>
+        /// Evaluates to <c>seq [2]</c>
         /// </example>
         /// 
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
