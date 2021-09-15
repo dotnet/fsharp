@@ -15,7 +15,6 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --extraoptimizationloops:1 --times</OtherFlags>
-    <OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
