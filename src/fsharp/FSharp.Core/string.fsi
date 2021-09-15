@@ -30,14 +30,16 @@ namespace Microsoft.FSharp.Core
         /// <example id="collect-example-1"> The following samples shows how to interspace spaces in a text
         /// <code lang="fsharp">
         /// let input = "Stefan says: Hi!"
-        /// input |> String.collect (sprintf "%c ") // evaluates "S t e f a n   s a y s :   H i ! "
+        /// input |> String.collect (sprintf "%c ")
         /// </code>
+        /// The sample evaluates to <c>"S t e f a n   s a y s :   H i ! "</c>
         /// </example>
         /// 
         /// <example id="collect-example-2"> How to show the ASCII representation of a very secret text
         /// <code lang="fsharp">
-        /// "Secret" |> String.collect (fun chr -> int chr |> sprintf "%d ")  // evaluates "83 101 99 114 101 116 "
+        /// "Secret" |> String.collect (fun chr -> int chr |> sprintf "%d ")
         /// </code>
+        /// The sample evaluates to <c>"83 101 99 114 101 116 "</c>
         /// </example>
         [<CompiledName("Collect")>]
         val collect: mapping:(char -> string) -> str:string -> string
@@ -147,8 +149,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="init-example-1"> Enumerate digits ASCII codes
         /// <code lang="fsharp">
-        /// String.init 10 (fun i -> int '0' + i |> sprintf "%d ")  // evaluates "48 49 50 51 52 53 54 55 56 57 "
+        /// String.init 10 (fun i -> int '0' + i |> sprintf "%d ")
         /// </code>
+        /// The sample evaluates to: <c>"48 49 50 51 52 53 54 55 56 57 "</c>
         /// </example>
         [<CompiledName("Initialize")>]
         val init: count:int -> initializer:(int -> string) -> string
@@ -162,8 +165,9 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// let input = "Hello"
         /// input |> String.iter (fun c -> printfn "%c %d" c (int c))
-        /// // evaluates unit
-        /// // prints:
+        /// </code>
+        /// The sample evaluates as <c>unit</c>, but prints:
+        /// <code>
         /// H 72
         /// e 101
         /// l 108
@@ -185,8 +189,9 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// let input = "Hello"
         /// input |> String.iteri (fun i c -> printfn "%d. %c %d" (i + 1) c (int c))
-        /// // evaluates unit
-        /// // prints:
+        /// </code>
+        /// The sample evaluates as <c>unit</c>, but prints:
+        /// <code>
         /// 1. H 72
         /// 2. e 101
         /// 3. l 108
