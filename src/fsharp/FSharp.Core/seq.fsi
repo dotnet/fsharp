@@ -433,6 +433,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="distinct-1">
+        /// <code lang="fsharp">
+        /// [1; 1; 2; 3] |> Seq.distinct
+        /// </code>
+        /// Evaluates to <c>seq [1; 2; 3]</c>
+        /// </example>
         [<CompiledName("Distinct")>]
         val distinct: source:seq<'T> -> seq<'T> when 'T : equality
 
@@ -446,6 +453,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="distinct-by-1">
+        /// <code lang="fsharp">
+        /// [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
+        /// |> Seq.distinctBy (fun foo -> foo.Bar)
+        /// </code>
+        /// Evaluates to <c>seq [{ Bar = 1 }; { Bar = 2 }; { Bar = 3 }]</c>
+        /// </example>
         [<CompiledName("DistinctBy")>]
         val distinctBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : equality
 
