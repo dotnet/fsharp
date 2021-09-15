@@ -290,40 +290,50 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example id="compare-with-1">
         /// <code lang="fsharp">
-        /// ([1; 2], [1; 2])
-        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// let closerToNextDozen a b =
+        ///   (a % 12).CompareTo(b % 12)
+        /// ([1; 10], [1; 10])
+        /// ||> Seq.compareWith closerToNextDozen
         /// </code>
         /// Evaluates to <c>0</c>
         /// </example>
         ///
         /// <example id="compare-with-2">
         /// <code lang="fsharp">
-        /// ([1; 2], [1; 3])
-        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// let closerToNextDozen a b =
+        ///   (a % 12).CompareTo(b % 12)
+        /// ([1; 5], [1; 8])
+        /// ||> Seq.compareWith closerToNextDozen
         /// </code>
         /// Evaluates to <c>-1</c>
         /// </example>
         ///
         /// <example id="compare-with-3">
+        /// let closerToNextDozen a b =
+        ///   (a % 12).CompareTo(b % 12)
         /// <code lang="fsharp">
-        /// ([1; 3], [1; 2])
-        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// ([1; 11], [1; 13])
+        /// ||> Seq.compareWith closerToNextDozen
         /// </code>
         /// Evaluates to <c>1</c>
         /// </example>
         ///
         /// <example id="compare-with-4">
-        /// <code lang="fsharp">
+        /// let closerToNextDozen a b =
+        ///   (a % 12).CompareTo(b % 12)
+        /// <code lang="fsharp">R
         /// ([1; 2], [1])
-        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// ||> Seq.compareWith closerToNextDozen
         /// </code>
         /// Evaluates to <c>1</c>
         /// </example>
         ///
         /// <example id="compare-with-5">
+        /// let closerToNextDozen a b =
+        ///   (a % 12).CompareTo(b % 12)
         /// <code lang="fsharp">
         /// ([1], [1; 2])
-        /// ||> Seq.compareWith (fun a b -> a.CompareTo(b))
+        /// ||> Seq.compareWith closerToNextDozen
         /// </code>
         /// Evaluates to <c>-1</c>
         /// </example>
