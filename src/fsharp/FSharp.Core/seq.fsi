@@ -524,6 +524,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A sequence that contains the set difference of the elements of two sequences.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+        ///
+        /// <example id="excep-1">
+        /// <code lang="fsharp">
+        /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
+        /// </code>
+        /// Evaluates to <c>seq [2; 4]</c>
+        /// </example>
         [<CompiledName("Except")>]
         val except: itemsToExclude:seq<'T> -> source:seq<'T> -> seq<'T> when 'T : equality
 
