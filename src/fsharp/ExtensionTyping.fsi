@@ -340,37 +340,89 @@ module ExtensionTyping =
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
     val internal IsGeneratedTypeDirectReference: Tainted<ProvidedType> * range -> bool
-    
+
+    /// The public API hook for instantiating type providers and getting provided types.
     [<AutoOpen>]
     module Shim =
 
+        /// Context for instantiating type providers.
         type TypeProvidersInstantiationContext =
-            { RuntimeAssemblyFilename: string
+            { /// Type providers runtime component filename.
+              RuntimeAssemblyFilename: string
+              /// Type providers design-time component name,
+              /// that have a class that implements ITypeProvider, and on which there is a type provider attribute.
               DesignerAssemblyName: string
+              /// Type providers resolution environment.
               ResolutionEnvironment: ResolutionEnvironment
+              /// Is invalidation supported for type providers.
               IsInvalidationSupported: bool
+              /// Is instantiation called from F# interactive.
               IsInteractive: bool
+              /// Query information about types available in target system runtime library.
               SystemRuntimeContainsType: string -> bool
+              /// System.Runtime assembly version
               SystemRuntimeAssemblyVersion: Version
+              /// Compiler tools path
               CompilerToolsPath: string list
+              /// Error logging function
               LogError: TypeProviderError -> unit
+              /// Range
               Range: range }
-        
+
+        /// <summary>
+        /// Contains API for instantiating type providers and getting provided types.
+        /// </summary>
+        /// <remarks>
+        /// This interface operates with <c>Provided-</c> wrappers and can be used to host type providers out-of-process.
+        /// For example, in the FCS process for an IDE, the implementation of this interface can receive data from another process
+        /// in which type providers are instantiated using <c>DefaultExtensionTypingProvider</c>.
+        /// </remarks>
         type IExtensionTypingProvider =
-            /// Find and instantiate the set of ITypeProvider components for the given assembly reference
-            abstract InstantiateTypeProvidersOfAssembly: TypeProvidersInstantiationContext -> ITypeProvider list
-            /// Get all provided types from provided namespace
-            abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]           
+            /// <summary>
+            /// Called by the FCS to find and instantiate the set of ITypeProvider components for the given assembly reference.
+            /// </summary>
+            /// <param name='context'>Instantiation context.</param>
+            /// <returns>List of found and instantiated ITypeProvider components.</returns>
+            abstract InstantiateTypeProvidersOfAssembly: context: TypeProvidersInstantiationContext -> ITypeProvider list
+
+            /// <summary>
+            /// Called by the FCS to get top-level provided types from provided namespace.
+            /// </summary>
+            /// <param name='pn'>Provided namespace in which to search.</param>
+            /// <returns>Top-level provided types from namespace.</returns>
+            abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]
+
+            /// <summary>
+            /// Called by the FCS to query a type provider for a type <c>name</c>.
+            /// </summary>
+            /// <param name='pn'>Provided namespace in which to search.</param>
+            /// <param name='typeName'>Name of the searched type.</param>
+            /// <returns>Resolver should return a type called <c>name</c> in namespace <c>NamespaceName</c> or <c>null</c> if the type is unknown.</returns>
             abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType
-            /// Get the provided invoker expression for a particular use of a method.
+
+            /// <summary>
+            /// Called by the FCS to ask for an Expression tree to replace the given MethodBase with.
+            /// </summary>
+            /// <param name='provider'>ITypeProvider component.</param>
+            /// <param name="methodBase">MethodBase that was given to the compiler by a type returned by a GetType(s) call.</param>
+            /// <param name="paramExprs">Expressions that represent the parameters to this call.</param>
+            /// <returns>An expression that the compiler will use in place of the given method base.</returns>
             abstract GetInvokerExpression: provider: ITypeProvider * methodBase: ProvidedMethodBase * paramExprs: ProvidedVar[] -> ProvidedExpr
-            /// Get the string to show for the name of a type provider
+
+            /// <summary>
+            /// Get the name of the type provider to display in error messages.
+            /// </summary>
+            /// <param name='typeProvider'>ITypeProvider component.</param>
+            /// <param name='fullName'>Get full name including namespace.</param>
+            /// <returns>Type provider name.</returns>
             abstract DisplayNameOfTypeProvider: typeProvider: ITypeProvider * fullName: bool -> string
 
+        /// Default IExtensionTypingProvider implementation for creating type providers in the current FCS process.
         [<Sealed>]
         type DefaultExtensionTypingProvider =
             interface IExtensionTypingProvider
 
+        /// IExtensionTypingProvider implementation currently used by FCS.
         val mutable ExtensionTypingProvider: IExtensionTypingProvider
 
 #endif
