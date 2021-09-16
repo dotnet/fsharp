@@ -817,6 +817,22 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The final state value.</returns>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+        ///
+        /// <example id="fold2-1">
+        /// <code lang="fsharp">
+        /// type CoinToss = Head | Tails
+        ///
+        /// ([Tails; Head; Tails], [Tails; Head; Head])
+        /// ||> Seq.fold2
+        ///       (fun acc a b ->
+        ///         match (a, b) with
+        ///         | Head, Head -> acc + 1
+        ///         | Tails, Tails -> acc + 1
+        ///         | _ -> acc - 1)
+        ///       0
+        /// </code>
+        /// Evaluates to <c>1</c>
+        /// </example>
         [<CompiledName("Fold2")>]
         val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
 
