@@ -752,6 +752,22 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        ///
+        /// <example id="find-index-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>3</c>
+        /// </example>
+        ///
+        /// <example id="find-index-back-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Throws <c>KeyNotFoundException</c>
+        /// </example>
         [<CompiledName("FindIndexBack")>]
         val findIndexBack: predicate:('T -> bool) -> source:seq<'T> -> int
 
