@@ -30,6 +30,7 @@ namespace Microsoft.FSharp.Core
         /// <example id="collect-example-1"> The following samples shows how to interspace spaces in a text
         /// <code lang="fsharp">
         /// let input = "Stefan says: Hi!"
+        /// 
         /// input |> String.collect (sprintf "%c ")
         /// </code>
         /// The sample evaluates to <c>"S t e f a n   s a y s :   H i ! "</c>
@@ -57,13 +58,16 @@ namespace Microsoft.FSharp.Core
         /// <example id="concat-example-1">
         /// <code lang="fsharp">
         /// let input1 = ["Stefan"; "says:"; "Hello"; "there!"]
+        /// 
         /// input1 |> String.concat " "  // evaluates "Stefan says: Hello there!"
         /// 
         /// let input2 = [0..9] |> List.map string 
+        /// 
         /// input2 |> String.concat ""    // evaluates "0123456789"
         /// input2 |> String.concat ", "  // evaluates "0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
         /// 
         /// let input3 = ["No comma"]
+        /// 
         /// input3 |> String.concat ","   // evaluates "No comma"
         /// </code>
         /// </example>
@@ -104,6 +108,7 @@ namespace Microsoft.FSharp.Core
         /// open System
         /// 
         /// let input = "0 1 2 3 4 5 6 7 8 9 a A m M"
+        /// 
         /// input |> String.filter Uri.IsHexDigit  // evaluates "123456789aA"
         /// </code>
         /// </example>
@@ -145,6 +150,7 @@ namespace Microsoft.FSharp.Core
         /// be concatenated with the others.</param>
         ///
         /// <returns>The constructed string.</returns>
+        ///
         /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         /// 
         /// <example id="init-example-1"> Enumerate digits ASCII codes
@@ -229,7 +235,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="map-example-1"> Changing case to upper for all characters in the input string
         /// <code lang="fsharp">
         /// open System
+        /// 
         /// let input = "Hello there!"
+        /// 
         /// input |> String.map Char.ToUpper  // evaluates "HELLO THERE!"
         /// </code>
         /// </example>
@@ -249,10 +257,13 @@ namespace Microsoft.FSharp.Core
         /// open System
         /// 
         /// let alternateCase indx chr =
-        ///     if 0 = indx % 2 
-        ///         then Char.ToUpper chr 
-        ///         else Char.ToLower chr
+        ///     if 0 = indx % 2 then
+        ///         Char.ToUpper chr 
+        ///     else
+        ///         Char.ToLower chr
+        /// 
         /// let input = "Hello there!"
+        /// 
         /// input |> String.mapi alternateCase  // evaluates "HeLlO ThErE!"
         /// </code>
         /// </example>
