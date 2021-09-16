@@ -782,6 +782,23 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="fold-1">
+        /// <code lang="fsharp">
+        /// type Charge =
+        ///   | In of int
+        ///   | Out of int
+        ///
+        /// [In 1; Out 2; In 3]
+        /// |> Seq.fold
+        ///       (fun acc charge ->
+        ///         match charge with
+        ///         | In i -> acc + i
+        ///         | Out o -> acc - o)
+        ///       0
+        /// </code>
+        /// Evaluates to <c>2</c>
+        /// </example>
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> 'State
 
