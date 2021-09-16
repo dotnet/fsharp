@@ -326,7 +326,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExpr> typedSequentialExprBlock
 %type <SynExpr * bool> atomicExpr
 %type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
-%type <(SynEnumCase, SynUnionCase) Choice list> unionTypeRepr
+%type <Choice<SynEnumCase, SynUnionCase> list> unionTypeRepr
 %type <SynMemberDefns> tyconDefnAugmentation
 %type <SynExceptionDefn> exconDefn
 %type <SynExceptionDefnRepr> exconCore
@@ -1748,9 +1748,9 @@ memberCore:
        let propertyNameBindingBuilder, _ = $2 
        let optPropertyType = $3 
        let isMutable = false
-       (fun visNoLongerUsed memFlagsBuilder attrs rangeStart ->
-             let hasGet = ref false
-             let hasSet = ref false
+       (fun visNoLongerUsed memFlagsBuilder attrs rangeStart -> 
+             let mutable hasGet = false
+             let mutable hasSet = false
              let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
 
              // Iterate over 1 or 2 'get'/'set' entries
@@ -1778,18 +1778,18 @@ memberCore:
                                    | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
                                go pv 
                          if getset = "get" then
-                             if !hasGet then 
+                             if hasGet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
-                                 hasGet := true
+                                 hasGet <- true
                                  Some SynMemberKind.PropertyGet
                          else if getset = "set" then
-                             if !hasSet then 
+                             if hasSet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
-                                 hasSet := true
+                                 hasSet <- true
                                  Some SynMemberKind.PropertySet
                          else
                              raiseParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
@@ -4133,15 +4133,15 @@ minusExpr:
 
   | PLUS_MINUS_OP minusExpr  
       { if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt $2.Range (FSComp.SR.parsInvalidPrefixOperator())
-        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~"^($1)) $2 } 
+        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~" + ($1)) $2 } 
 
   | ADJACENT_PREFIX_OP minusExpr 
       { if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt $2.Range (FSComp.SR.parsInvalidPrefixOperator())
-        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~"^($1)) $2 }
+        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~" + ($1)) $2 }
 
   | PERCENT_OP minusExpr
       { if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt $2.Range (FSComp.SR.parsInvalidPrefixOperator())
-        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~"^($1)) $2 }
+        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) ("~" + ($1)) $2 }
 
   | AMP  minusExpr    
       { SynExpr.AddressOf (true, $2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range) } 
@@ -4180,7 +4180,7 @@ argExpr:
       { let arg2, hpa2 = $2 
         if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt arg2.Range (FSComp.SR.parsInvalidPrefixOperator())
         if hpa2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
-        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) ("~"^($1)) arg2 }
+        mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) ("~" + ($1)) arg2 }
 
    | atomicExpr 
       { let arg, hpa = $1 

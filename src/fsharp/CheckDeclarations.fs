@@ -2171,14 +2171,14 @@ module MutRecBindingChecking =
     /// Update the contents accessible via the recursive namespace declaration, if any
     let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
         match mutRecNSInfo with 
-        | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc) -> 
-            mspecNS.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc
+        | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc: _ ref) -> 
+            mspecNS.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
         | _ -> ()  
 
     /// Updates the types of the modules to contain the contents so far
     let TcMutRecDefns_UpdateModuleContents mutRecNSInfo defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc)  
+              mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value)  
 
         TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
@@ -2221,7 +2221,7 @@ module MutRecBindingChecking =
                 let envForDecls =
                     (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange, openDeclsRef) ->
                         let env, openDecls = TcOpenDecl cenv m moduleRange env target
-                        openDeclsRef := openDecls
+                        openDeclsRef.Value <- openDecls
                         env)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
@@ -5135,7 +5135,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
-            let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+            let mtypNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
             let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
             let mspecNSOpt = List.tryHead mspecNSs
 
@@ -5166,7 +5166,8 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                         | None -> env, []
 
                     // Publish the combined module type
-                    env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
+                    env.eModuleOrNamespaceTypeAccumulator.Value <- 
+                        CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; mtypRoot]
                     env
 
             return env
@@ -5260,7 +5261,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
     let! envAtEnd = TcSignatureElements cenv parent endm envForModule xml None defs
     
     // mtypeAcc has now accumulated the module type 
-    return !mtypeAcc, envAtEnd
+    return mtypeAcc.Value, envAtEnd
   }
     
 //-------------------------------------------------------------------------
@@ -5404,7 +5405,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None [] mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
-              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+              mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
               let modDefn = TMDefRec(false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], m)
               PublishModuleDefn cenv env mspec 
               let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -5446,7 +5447,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let envNS = LocateEnv cenv.topCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
-          let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+          let mtypNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
           let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
           let mspecNSOpt = List.tryHead mspecNSs
 
@@ -5477,7 +5478,8 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                       | None -> env, []
 
                   // Publish the combined module type
-                  env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
+                  env.eModuleOrNamespaceTypeAccumulator.Value <-
+                      CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; mtypRoot]
                   env, openDecls
           
           let modExprRoot = BuildRootModuleExpr enclosingNamespacePath envNS.eCompPath modExpr
@@ -5607,7 +5609,7 @@ and TcMutRecDefsFinish cenv defs m =
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _), mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
-                mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+                mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
                 [ ModuleOrNamespaceBinding.Module(mspec, mexpr) ])
 
     TMDefRec(true, opens, tycons, binds, m)
@@ -5856,7 +5858,7 @@ let TypeCheckOneImplFile
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
     let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
 
-    let implFileTypePriorToSig = !mtypeAcc 
+    let implFileTypePriorToSig = mtypeAcc.Value
 
     let topAttrs = 
         let mainMethodAttrs, others = topAttrs |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Method <> enum 0) 
@@ -5963,7 +5965,7 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
     let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
     
-    let sigFileType = !mtypeAcc 
+    let sigFileType = mtypeAcc.Value
     
     if not (checkForErrors()) then  
         try sigFileType |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv))
