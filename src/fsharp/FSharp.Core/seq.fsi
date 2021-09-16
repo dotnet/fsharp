@@ -660,6 +660,22 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        ///
+        /// <example id="find-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.find (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>2</c>
+        /// </example>
+        ///
+        /// <example id="find-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.find (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Throws <c>KeyNotFoundException</c>
+        /// </example>
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> source:seq<'T> -> 'T
 
@@ -675,6 +691,22 @@ namespace Microsoft.FSharp.Collections
         /// evaluated by the predicate</exception>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
+        ///
+        /// <example id="find-back-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.find (fun elm -> elm % 2 = 0)
+        /// </code>
+        /// Evaluates to <c>4</c>
+        /// </example>
+        ///
+        /// <example id="find-back-2">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.find (fun elm -> elm % 6 = 0)
+        /// </code>
+        /// Throws <c>KeyNotFoundException</c>
+        /// </example>
         [<CompiledName("FindBack")>]
         val findBack: predicate:('T -> bool) -> source:seq<'T> -> 'T
 
