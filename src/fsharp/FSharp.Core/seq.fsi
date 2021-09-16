@@ -848,6 +848,21 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         ///
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
+        ///
+        /// <example id="fold-back-1">
+        /// <code lang="fsharp">
+        /// ([-1; 0; 1; 2; 3], { Positive = 0; Negative = 0 })
+        /// ||> Seq.foldBack
+        ///   (fun num acc  ->
+        ///     if (num >= 0)
+        ///     then { acc with Positive = acc.Positive + 1 }
+        ///     else { acc with Negative = acc.Negative + 1 }
+        ///   )
+        ///   [-1; 0; 1; 2; 3]
+        ///   { Positive = 0; Negative = 0 }
+        /// </code>
+        /// Evaluates to <c>{ Positive = 4; Negative = 1 }</c>
+        /// </example>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
 
