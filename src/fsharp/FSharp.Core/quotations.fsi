@@ -409,9 +409,9 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
-    /// 
+    ///
     /// <example-tbd></example-tbd>
+    [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
     static member Quote: inner:Expr -> Expr 
 
     /// <summary>Builds an expression that represents a nested raw quotation literal</summary>
