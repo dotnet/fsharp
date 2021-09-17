@@ -856,7 +856,7 @@ namespace Microsoft.FSharp.Collections
         ///     Negative: int
         ///     History: int list }
         ///
-        /// ( [-1; -2; -3],
+        /// ( [1; 0; -1; -2; 3],
         ///   {Positive = 0; Negative = 0; History = []})
         /// ||> Seq.foldBack
         ///       (fun a acc  ->
@@ -874,9 +874,9 @@ namespace Microsoft.FSharp.Collections
         /// </code>
         /// Evaluates to
         /// <code>
-        /// { Positive = 0
+        /// { Positive = 2
         ///   Negative = 3
-        ///   History = [-3; -2; -1] }
+        ///   History = [-3; -2; -1; 0; 1] }
         /// </code>
         /// </example>
         [<CompiledName("FoldBack")>]
