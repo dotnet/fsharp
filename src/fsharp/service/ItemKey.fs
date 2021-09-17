@@ -364,7 +364,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.Types(_, [ty]) ->
             writeType true ty
 
-        | Item.UnqualifiedType [tcref] ->
+        | Item.UnqualifiedType tcref
+        | Item.UnqualifiedTypes [tcref] ->
             writeEntityRef tcref
 
         | Item.MethodGroup(_, [info], _)
@@ -405,7 +406,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.ImplicitOp _ -> ()
         | Item.ArgName _ -> ()
         | Item.SetterArg _ -> ()
-        | Item.UnqualifiedType _ -> ()
+        | Item.UnqualifiedTypes _ -> ()
 
         let postCount = b.Count
 

@@ -318,7 +318,8 @@ module internal SymbolHelpers =
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
-        | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
+        | Item.UnqualifiedType tcref -> rangeOfEntityRef preferFlag tcref |> Some
+        | Item.UnqualifiedTypes tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor ty 
         | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTyOption |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
@@ -364,8 +365,9 @@ module internal SymbolHelpers =
 
         | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) -> computeCcuOfTyconRef eref
 
+        | Item.UnqualifiedType tcref -> computeCcuOfTyconRef tcref 
         | Item.ModuleOrNamespaces erefs 
-        | Item.UnqualifiedType erefs -> erefs |> List.tryPick computeCcuOfTyconRef 
+        | Item.UnqualifiedTypes erefs -> erefs |> List.tryPick computeCcuOfTyconRef 
 
         | Item.SetterArg (_, item) -> ccuOfItem g item
         | Item.AnonRecdField (info, _, _, _) -> Some info.Assembly
@@ -502,6 +504,7 @@ module internal SymbolHelpers =
               | Item.Property _ -> true
               | Item.CtorGroup _ -> true
               | Item.UnqualifiedType _ -> true
+              | Item.UnqualifiedTypes _ -> true
               | _ -> false
               
           member x.Equals(item1, item2) = 
@@ -557,11 +560,21 @@ module internal SymbolHelpers =
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   (meths1, meths2)
                   ||> List.forall2 (fun minfo1 minfo2 -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
+
+              | Item.UnqualifiedType tcRef1, Item.UnqualifiedTypes [tcRef2]
+              | Item.UnqualifiedTypes [tcRef1], Item.UnqualifiedType tcRef2 ->
+                  tyconRefEq g tcRef1 tcRef2
+
+              | Item.UnqualifiedTypes tcRefs1, Item.UnqualifiedTypes tcRefs2 ->
                   (tcRefs1, tcRefs2)
                   ||> List.forall2 (fun tcRef1 tcRef2 -> tyconRefEq g tcRef1 tcRef2)
-              | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
-              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
+
+              | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType tcRef2
+              | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedTypes([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
+
+              | Item.UnqualifiedType tcRef1, Item.Types(_, [TType.TType_app(tcRef2, _)])
+              | Item.UnqualifiedTypes([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
+
               | _ -> false)
               
           member x.GetHashCode item =
@@ -590,7 +603,8 @@ module internal SymbolHelpers =
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames.[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
-              | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
+              | Item.UnqualifiedType tcref
+              | Item.UnqualifiedTypes(tcref :: _) -> hash tcref.LogicalName
               | _ -> failwith "unreachable") }
 
     let ItemWithTypeDisplayPartialEquality g = 
@@ -657,7 +671,8 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
         | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_, minfo :: _, _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
-        | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
+        | Item.UnqualifiedType tcref
+        | Item.UnqualifiedTypes (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
@@ -673,7 +688,7 @@ module internal SymbolHelpers =
         | Item.ImplicitOp(id, _) -> id.idText
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
         // unreachable 
-        | Item.UnqualifiedType([]) 
+        | Item.UnqualifiedTypes [] 
         | Item.Types(_, []) 
         | Item.CtorGroup(_, []) 
         | Item.MethodGroup(_, [], _) 
@@ -768,7 +783,8 @@ module internal SymbolHelpers =
             let amap = infoReader.amap
             match item with
             | Item.Types(_, TType_app(tcref, _) :: _)
-            | Item.UnqualifiedType(tcref :: _) ->
+            | Item.UnqualifiedType tcref
+            | Item.UnqualifiedTypes(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
                 ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
@@ -888,7 +904,8 @@ module internal SymbolHelpers =
         | Item.Types(_, AppTy g (tcref, _) :: _) 
         | Item.DelegateCtor(AppTy g (tcref, _))
         | Item.FakeInterfaceCtor(AppTy g (tcref, _))
-        | Item.UnqualifiedType (tcref :: _)
+        | Item.UnqualifiedType tcref
+        | Item.UnqualifiedTypes (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
             match generalizedTyconRef tcref with 
@@ -899,7 +916,7 @@ module internal SymbolHelpers =
         | Item.Types _ 
         | Item.DelegateCtor _
         | Item.FakeInterfaceCtor _
-        | Item.UnqualifiedType [] -> 
+        | Item.UnqualifiedTypes [] -> 
             None
 
         | Item.ModuleOrNamespaces modrefs -> 

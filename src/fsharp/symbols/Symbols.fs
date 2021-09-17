@@ -291,7 +291,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 
             FSharpEntity(cenv, tcref) :>_ 
 
-        | Item.UnqualifiedType(tcref :: _)  
+        | Item.UnqualifiedType tcref  
+        | Item.UnqualifiedTypes(tcref :: _)  
         | Item.Types(_, AbbrevOrAppTy tcref :: _) -> 
             FSharpEntity(cenv, tcref) :>_  
 
@@ -328,7 +329,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.NewDef _ -> dflt()
         // These cases cover unreachable cases
         | Item.CustomOperation (_, _, None) 
-        | Item.UnqualifiedType []
+        | Item.UnqualifiedTypes []
         | Item.ModuleOrNamespaces []
         | Item.Property (_, [])
         | Item.MethodGroup (_, [], _)
@@ -354,7 +355,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                          (fun () -> 
                               checkEntityIsResolved entity
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
-                              else Item.UnqualifiedType [entity]), 
+                              else Item.UnqualifiedType entity), 
                          (fun _this thisCcu2 ad -> 
                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
                              // && AccessibilityLogic.IsEntityAccessible cenv.amap range0 ad entity)

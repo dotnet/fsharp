@@ -338,7 +338,8 @@ module TcResolutionsExtensions =
                     | Item.SetterArg _, _, _, _, _, m ->
                         add m SemanticClassificationType.Property
 
-                    | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, _, _, _, m ->
+                    | Item.UnqualifiedType tcref, LegitTypeOccurence, _, _, _, m
+                    | Item.UnqualifiedTypes (tcref :: _), LegitTypeOccurence, _, _, _, m ->
                         if tcref.IsEnumTycon || tcref.IsILEnumTycon then
                             add m SemanticClassificationType.Enumeration
                         elif tcref.IsExceptionDecl then

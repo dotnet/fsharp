@@ -1031,6 +1031,7 @@ type internal TypeCheckInfo
                          | Item.ModuleOrNamespaces _
                          | Item.Types _
                          | Item.UnqualifiedType _
+                         | Item.UnqualifiedTypes _
                          | Item.ExnCase _ -> true
                          | _ -> false), denv, m)
 
@@ -1154,7 +1155,8 @@ type internal TypeCheckInfo
                             match d.Item with
                             | Item.Types (_,TType_app(tcref,_) :: _)
                             | Item.ExnCase tcref -> tcref.LogicalName
-                            | Item.UnqualifiedType(tcref :: _)
+                            | Item.UnqualifiedType tcref
+                            | Item.UnqualifiedTypes(tcref :: _)
                             | Item.FakeInterfaceCtor (TType_app(tcref,_))
                             | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
                             | Item.CtorGroup (_, cinfo :: _) ->

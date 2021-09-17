@@ -233,7 +233,8 @@ type Item =
     | SetterArg of Ident * Item
 
     /// Represents the potential resolution of an unqualified name to a type.
-    | UnqualifiedType of TyconRef list
+    | UnqualifiedType of TyconRef
+    | UnqualifiedTypes of TyconRef list
 
     static member MakeMethGroup (nm, minfos: MethInfo list) =
         let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
@@ -264,7 +265,8 @@ type Item =
         | Item.FakeInterfaceCtor (AbbrevOrAppTy tcref)
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayNameCore
         | Item.Types(nm, _) -> nm |> DemangleGenericTypeName 
-        | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayNameCore
+        | Item.UnqualifiedType tcref
+        | Item.UnqualifiedTypes(tcref :: _) -> tcref.DisplayNameCore
         | Item.TypeVar (nm, _) -> nm 
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayNameCore
         | Item.ArgName (id, _, _)  -> id.idText 
@@ -284,7 +286,8 @@ type Item =
         | Item.Property(_, FSProp(_, _, _, Some v) :: _) -> v.DisplayName
         | Item.MethodGroup(_, FSMeth(_, _, v, _) :: _, _) -> v.DisplayName
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> tcref.DisplayName
-        | Item.UnqualifiedType(tcref :: _) -> tcref.DisplayName
+        | Item.UnqualifiedType tcref
+        | Item.UnqualifiedTypes(tcref :: _) -> tcref.DisplayName
         | Item.ModuleOrNamespaces(modref :: _) -> modref.DisplayName
         | Item.TypeVar (nm, _) -> nm
         | _ ->  d.DisplayNameCore |> ConvertNameToDisplayName
@@ -1272,8 +1275,9 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             if mayHaveConstruction then
                 tab.LinearTryModifyThenLaterFlatten (tcref.DisplayName, (fun prev ->
                     match prev with
-                    | Some (Item.UnqualifiedType tcrefs) -> Item.UnqualifiedType (tcref :: tcrefs)
-                    | _ -> Item.UnqualifiedType [tcref]))
+                    | Some (Item.UnqualifiedTypes tcrefs) -> Item.UnqualifiedTypes (tcref :: tcrefs)
+                    | Some (Item.UnqualifiedType tcref2) -> Item.UnqualifiedTypes [tcref; tcref2]
+                    | _ -> Item.UnqualifiedType tcref))
             else
                 tab
 
@@ -1678,7 +1682,8 @@ let (|FSharpMethodUse|_|) (item: Item) =
 
 let (|EntityUse|_|) (item: Item) =
     match item with
-    | Item.UnqualifiedType (tcref :: _) -> Some tcref
+    | Item.UnqualifiedType tcref
+    | Item.UnqualifiedTypes (tcref :: _) -> Some tcref
     | Item.ExnCase tcref -> Some tcref
     | Item.Types(_, [AbbrevOrAppTy tcref])
     | Item.DelegateCtor(AbbrevOrAppTy tcref)
@@ -2120,6 +2125,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.Event _
     | Item.ImplicitOp _
     | Item.UnqualifiedType _
+    | Item.UnqualifiedTypes _
     | Item.SetterArg _ -> true
 
 //-------------------------------------------------------------------------
@@ -2744,18 +2750,19 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
     | ResolveTypeNamesToTypeRefs ->
         success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]))))
 
+let ResolveUnqualifiedTyconRef nenv tcref =
+    let resInfo = ResolutionInfo.Empty
+
+    match nenv.eUnqualifiedEnclosingTypeInsts.TryFind tcref with
+    | None ->
+        (resInfo, tcref)
+    | Some tinst ->
+        (resInfo.WithEnclosingTypeInst tinst, tcref)
+
 /// Resolves the given tycons.
 /// For each tycon, return resolution info that could contain enclosing type instantations.
 let ResolveUnqualifiedTyconRefs nenv tcrefs =
-    let resInfo = ResolutionInfo.Empty
-
-    tcrefs 
-    |> List.map (fun tcref -> 
-        match nenv.eUnqualifiedEnclosingTypeInsts.TryFind tcref with
-        | None ->
-            (resInfo, tcref)
-        | Some tinst ->
-            (resInfo.WithEnclosingTypeInst tinst, tcref))
+    tcrefs |> List.map (ResolveUnqualifiedTyconRef nenv)
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
@@ -2781,30 +2788,32 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
     else
         if isNil rest && fullyQualified <> FullyQualified then
             let mutable typeError = None
+
+            let resolveUnqualifiedTcrefs tcrefs =
+                // Do not use type names from the environment if an explicit type instantiation is
+                // given and the number of type parameters do not match
+                let tcrefs =
+                    tcrefs 
+                    |> ResolveUnqualifiedTyconRefs nenv
+                    |> List.filter (fun (resInfo, tcref) ->
+                        typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
+                        typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
+
+                let search = ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
+                match AtMostOneResult m search with
+                | Result (resInfo, item) ->
+                    ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                    Some(resInfo.EnclosingTypeInst, item, rest)
+                | Exception e -> 
+                    typeError <- Some e
+                    None
+
             // Single identifier.  Lookup the unqualified names in the environment
             let envSearch =
                 match nenv.eUnqualifiedItems.TryGetValue id.idText with
-
                 // The name is a type name and it has not been clobbered by some other name
-                | true, Item.UnqualifiedType tcrefs ->
-
-                    // Do not use type names from the environment if an explicit type instantiation is
-                    // given and the number of type parameters do not match
-                    let tcrefs =
-                        tcrefs 
-                        |> ResolveUnqualifiedTyconRefs nenv
-                        |> List.filter (fun (resInfo, tcref) ->
-                            typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
-                            typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
-
-                    let search = ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
-                    match AtMostOneResult m search with
-                    | Result (resInfo, item) ->
-                        ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                        Some(resInfo.EnclosingTypeInst, item, rest)
-                    | Exception e -> 
-                        typeError <- Some e
-                        None
+                | true, Item.UnqualifiedType tcref -> resolveUnqualifiedTcrefs [tcref]
+                | true, Item.UnqualifiedTypes tcrefs -> resolveUnqualifiedTcrefs tcrefs
 
                 | true, res ->
                     let fresh = ResolveUnqualifiedItem ncenv nenv m res
@@ -2924,6 +2933,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | OpenQualified ->
                         match nenv.eUnqualifiedItems.TryGetValue id.idText with
                         | true, Item.UnqualifiedType _
+                        | true, Item.UnqualifiedTypes _
                         | false, _ -> NoResultsOrUsefulErrors
                         | true, res -> OneSuccess (ResolutionInfo.Empty, ResolveUnqualifiedItem ncenv nenv m res, rest)
 
@@ -4311,7 +4321,8 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            | OpenQualified ->
                nenv.eUnqualifiedItems.Values
                |> Seq.filter (function
-                   | Item.UnqualifiedType _ -> false
+                   | Item.UnqualifiedType _
+                   | Item.UnqualifiedTypes _ -> false
                    | Item.Value v -> not v.IsMember
                    | _ -> true)
                |> Seq.filter (ItemIsUnseen ad g ncenv.amap m >> not)
@@ -4910,7 +4921,8 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
            /// Include all the entries in the eUnqualifiedItems table.
            for uitem in nenv.eUnqualifiedItems.Values do
                match uitem with
-               | Item.UnqualifiedType _ -> ()
+               | Item.UnqualifiedType _
+               | Item.UnqualifiedTypes _ -> ()
                | _ when not (ItemIsUnseen ad g ncenv.amap m uitem) ->
                    yield uitem
                | _ -> ()
@@ -4948,7 +4960,8 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
            | Item.DelegateCtor _
            | Item.FakeInterfaceCtor _
            | Item.CtorGroup _
-           | Item.UnqualifiedType _ ->
+           | Item.UnqualifiedType _
+           | Item.UnqualifiedTypes _ ->
                for tcref in nenv.TyconsByDemangledNameAndArity(OpenQualified).Values do
                    if not (IsTyconUnseen ad g ncenv.amap m tcref)
                    then yield! InfosForTyconConstructors ncenv m ad tcref

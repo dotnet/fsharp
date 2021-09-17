@@ -126,7 +126,8 @@ type Item =
     | SetterArg of Ident * Item 
 
     /// Represents the potential resolution of an unqualified name to a type.
-    | UnqualifiedType of TyconRef list
+    | UnqualifiedType of TyconRef
+    | UnqualifiedTypes of TyconRef list
 
     /// The text for the item to use in the declaration list.
     /// This does not include backticks, parens etc.

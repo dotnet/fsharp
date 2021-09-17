@@ -364,7 +364,8 @@ module DeclarationListHelpers =
 
         // Types.
         | Item.Types(_, TType_app(tcref, _) :: _)
-        | Item.UnqualifiedType (tcref :: _) -> 
+        | Item.UnqualifiedType tcref 
+        | Item.UnqualifiedTypes (tcref :: _) -> 
             let denv = { denv with
                             // tooltips are space-constrained, so use shorter names
                             shortTypeNames = true
@@ -848,7 +849,8 @@ module internal DescriptionListsImpl =
             | Item.MethodGroup _ -> FSharpGlyph.Method
             | Item.TypeVar _ 
             | Item.Types _  -> FSharpGlyph.Class
-            | Item.UnqualifiedType (tcref :: _) -> 
+            | Item.UnqualifiedType tcref 
+            | Item.UnqualifiedTypes (tcref :: _) -> 
                 if tcref.IsEnumTycon || tcref.IsILEnumTycon then FSharpGlyph.Enum
                 elif tcref.IsExceptionDecl then FSharpGlyph.Exception
                 elif tcref.IsFSharpDelegateTycon then FSharpGlyph.Delegate
