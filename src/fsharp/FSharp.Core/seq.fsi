@@ -879,6 +879,10 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         ///
+        /// <remarks>
+        /// TODO: Shouldn't this have a remark about consuming the whole sequence(s) just like foldBack?
+        /// </remarks>
+        ///
         /// <example id="fold-back2-1">
         /// <code lang="fsharp">
         /// type Count = { Positive: int; Negative: int }
@@ -910,6 +914,18 @@ namespace Microsoft.FSharp.Collections
         /// <returns>True if every element of the sequence satisfies the predicate; false otherwise.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="for-all-1">
+        /// <code lang="fsharp">
+        /// let isEven a = a % 2 = 0
+        ///
+        /// [2; 4; 6; 8; 42]
+        /// |> Seq.forall isEven // evaluates to true
+        ///
+        /// [1; 2; 3; 4; 5]
+        /// |> Seq.forall isEven // evaluates to false
+        /// </code>
+        /// </example>
         [<CompiledName("ForAll")>]
         val forall: predicate:('T -> bool) -> source:seq<'T> -> bool
 
@@ -924,6 +940,16 @@ namespace Microsoft.FSharp.Collections
         /// <returns>True if all pairs satisfy the predicate; false otherwise.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        ///
+        /// <example id="for-all2-1">
+        /// <code lang="fsharp">
+        /// ([1; 2; 3; 4; 5], [1; 2; 3; 4; 5])
+        /// ||> Seq.forall2 (=) // evaluates to true
+        ///
+        /// ([0; 1; 2; 3; 4], [1; 2; 3; 4; 5])
+        /// ||> Seq.forall2 (=) // evaluates to false
+        /// </code>
+        /// </example>
         [<CompiledName("ForAll2")>]
         val forall2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
 
@@ -940,6 +966,13 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
+        ///
+        /// <example id="group-by-1">
+        /// <code lang="fsharp">
+        /// [1; 2; 3; 4; 5] |> Seq.groupBy (fun n -> n % 2)
+        /// </code>
+        /// Evaluates to <c>seq [(1, seq [1; 3; 5]); (0, seq [2; 4])]</c>
+        /// </example>
         [<CompiledName("GroupBy")>]
         val groupBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * seq<'T>> when 'Key : equality
 
