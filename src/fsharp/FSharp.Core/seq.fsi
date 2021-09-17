@@ -851,6 +851,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example id="fold-back-1">
         /// <code lang="fsharp">
+        /// type Count = { Positive: int; Negative: int }
         /// ([-1; 0; 1; 2; 3], { Positive = 0; Negative = 0 })
         /// ||> Seq.foldBack
         ///   (fun num acc  ->
@@ -858,8 +859,6 @@ namespace Microsoft.FSharp.Collections
         ///     then { acc with Positive = acc.Positive + 1 }
         ///     else { acc with Negative = acc.Negative + 1 }
         ///   )
-        ///   [-1; 0; 1; 2; 3]
-        ///   { Positive = 0; Negative = 0 }
         /// </code>
         /// Evaluates to <c>{ Positive = 4; Negative = 1 }</c>
         /// </example>
@@ -879,6 +878,23 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The final state value.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+        ///
+        /// <example id="fold-back2-1">
+        /// <code lang="fsharp">
+        /// type Count = { Positive: int; Negative: int }
+        ///
+        /// ( [-1; 1; 3],
+        ///   [0; 3; -4; 8],
+        ///   { Positive = 0; Negative = 0 })
+        /// |||> Seq.foldBack2
+        ///       (fun a b acc  ->
+        ///         if a + b >= 0
+        ///         then {acc with Positive = acc.Positive + 1}
+        ///         else {acc with Negative = acc.Negative + 1}
+        ///       )
+        /// </code>
+        /// Evaluates to <c>{Positive = 1 Negative = 2}</c>
+        /// </example>
         [<CompiledName("FoldBack2")>]
         val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
 
