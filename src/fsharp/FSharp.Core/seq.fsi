@@ -885,19 +885,35 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <example id="fold-back2-1">
         /// <code lang="fsharp">
-        /// type Count = { Positive: int; Negative: int }
+        /// type Count =
+        ///   { Positive: int
+        ///     Negative: int
+        ///     History: int list }
         ///
-        /// ( [-1; 1; 3],
-        ///   [0; 3; -4; 8],
-        ///   { Positive = 0; Negative = 0 })
+        /// ( [-1; -2; -3],
+        ///   [3; 2; 1; 0],
+        ///   {Positive = 0; Negative = 0; History = []})
         /// |||> Seq.foldBack2
         ///       (fun a b acc  ->
-        ///         if a + b >= 0
-        ///         then {acc with Positive = acc.Positive + 1}
-        ///         else {acc with Negative = acc.Negative + 1}
+        ///         let sum = a + b
+        ///         let history = acc.History @ [sum]
+        ///         if sum >= 0
+        ///         then
+        ///           { acc with
+        ///               Positive = acc.Positive + 1
+        ///               History = history }
+        ///         else
+        ///           { acc with
+        ///               Negative = acc.Negative + 1
+        ///               History = history }
         ///       )
         /// </code>
-        /// Evaluates to <c>{Positive = 1 Negative = 2}</c>
+        /// Evaluates to
+        /// <code>
+        /// { Positive = 2
+        ///   Negative = 1
+        ///   History = [-2; 0; 2] }
+        /// </code>
         /// </example>
         [<CompiledName("FoldBack2")>]
         val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
