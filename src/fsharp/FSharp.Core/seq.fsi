@@ -946,7 +946,7 @@ namespace Microsoft.FSharp.Collections
         /// ([1; 2; 3; 4; 5], [1; 2; 3; 4; 5])
         /// ||> Seq.forall2 (=) // evaluates to true
         ///
-        /// ([0; 1; 2; 3; 4], [1; 2; 3; 4; 5])
+        /// ([2017; 1; 1], [2019; 19; 8])
         /// ||> Seq.forall2 (=) // evaluates to false
         /// </code>
         /// </example>
@@ -984,6 +984,20 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        ///
+        /// <example id="head-1">
+        /// <code lang="fsharp">
+        /// ["banana"; "pear"] |> Seq.head
+        /// </code>
+        /// Evaluates to <c>banana</c>
+        /// </example>
+        ///
+        /// <example id="head-2">
+        /// <code lang="fsharp">
+        /// [] |> Seq.head
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
         [<CompiledName("Head")>]
         val head: source:seq<'T> -> 'T
 
@@ -994,6 +1008,20 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The first element of the sequence or None.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="try-head-1">
+        /// <code lang="fsharp">
+        /// ["banana"; "pear"] |> Seq.tryHead
+        /// </code>
+        /// Evaluates to <c>Some "banana"</c>
+        /// </example>
+        ///
+        /// <example id="try-head-2">
+        /// <code lang="fsharp">
+        /// [] |> Seq.tryHead
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
         [<CompiledName("TryHead")>]
         val tryHead: source:seq<'T> -> 'T option
 
