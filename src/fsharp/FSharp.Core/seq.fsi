@@ -1116,6 +1116,27 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        ///
+        /// <example id="exacly-one-1">
+        /// <code lang="fsharp">
+        /// ["banana"] |> Seq.exactlyOne
+        /// </code>
+        /// Evaluates to <c>banana</c>
+        /// </example>
+        ///
+        /// <example id="exacly-one-2">
+        /// <code lang="fsharp">
+        /// ["pear"; "banana"] |> Seq.exactlyOne
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
+        ///
+        /// <example id="exacly-one-3">
+        /// <code lang="fsharp">
+        /// [] |> Seq.exactlyOne
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: source:seq<'T> -> 'T
 
@@ -1126,6 +1147,27 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The only element of the sequence or None.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="try-exacly-one-1">
+        /// <code lang="fsharp">
+        /// ["banana"] |> Seq.tryExactlyOne
+        /// </code>
+        /// Evaluates to <c>Some banana</c>
+        /// </example>
+        ///
+        /// <example id="try-exacly-one-2">
+        /// <code lang="fsharp">
+        /// ["pear"; "banana"] |> Seq.tryExactlyOne
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
+        ///
+        /// <example id="try-exacly-one-3">
+        /// <code lang="fsharp">
+        /// [] |> Seq.tryExactlyOne
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
         [<CompiledName("TryExactlyOne")>]
         val tryExactlyOne: source:seq<'T> -> 'T option
 
@@ -1136,6 +1178,20 @@ namespace Microsoft.FSharp.Collections
         /// <returns>True if the sequence is empty; false otherwise.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="empty-1">
+        /// <code lang="fsharp">
+        /// [] |> Seq.isEmpty
+        /// </code>
+        /// Evaluates to <c>true</c>
+        /// </example>
+        ///
+        /// <example id="empty-2">
+        /// <code lang="fsharp">
+        /// ["pear"; "banana"] |> Seq.isEmpty
+        /// </code>
+        /// Evaluates to <c>false</c>
+        /// </example>
         [<CompiledName("IsEmpty")>]
         val isEmpty: source:seq<'T> -> bool
 
