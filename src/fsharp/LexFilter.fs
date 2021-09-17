@@ -638,8 +638,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         setLexbufState state
         let lastTokenEnd = state.EndPos
         let token = lexer lexbuf
-        // Now we've got the token, remember the lexbuf state, associating it with the token 
-        // and remembering it as the last observed lexbuf state for the wrapped lexer function. 
+
+        LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
+
+        // Now we've got the token, remember the lexbuf state, associating it with the token
+        // and remembering it as the last observed lexbuf state for the wrapped lexer function.
         let tokenLexbufState = getLexbufState()
         savedLexbufState <- tokenLexbufState
         haveLexbufState <- true

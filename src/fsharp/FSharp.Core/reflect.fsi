@@ -59,9 +59,9 @@ type UnionCaseInfo =
     /// <example-tbd></example-tbd>
     member Tag: int
 
-[<AbstractClass; Sealed>]
 /// <summary>Contains operations associated with constructing and analyzing values associated with F# types
 /// such as records, unions and tuples.</summary>
+[<AbstractClass; Sealed>]
 type FSharpValue = 
 
     /// <summary>Reads a field from a record value.</summary>
@@ -374,8 +374,8 @@ type FSharpValue =
     /// <example-tbd></example-tbd>
     static member MakeFunction: functionType:Type * implementation:(obj -> obj) -> obj
 
-[<AbstractClass; Sealed>]
 /// <summary>Contains operations associated with constructing and analyzing F# types such as records, unions and tuples</summary>
+[<AbstractClass; Sealed>]
 type FSharpType =
 
     /// <summary>Reads all the fields from a record value, in declaration order</summary>
@@ -532,8 +532,8 @@ type FSharpType =
     /// <example-tbd></example-tbd>
     static member GetFunctionElements : functionType:Type -> Type * Type
 
-[<AutoOpen>]
 /// <summary>Defines further accessing additional information about F# types and F# values at runtime.</summary>
+[<AutoOpen>]
 module FSharpReflectionExtensions =
     type FSharpValue with
         /// <summary>Creates an instance of a record type.</summary>

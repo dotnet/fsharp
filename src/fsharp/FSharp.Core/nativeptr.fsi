@@ -5,8 +5,6 @@ namespace Microsoft.FSharp.NativeInterop
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains operations on native pointers. Use of these operators may
 /// result in the generation of unverifiable code.</summary>
 ///
@@ -15,6 +13,8 @@ open Microsoft.FSharp.Collections
 ///   also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/external-functions">F# External Functions</a> in 
 ///   the F# Language Guide.
 /// </summary></namespacedoc>
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NativePtr =
 
     /// <summary>Returns a typed native pointer for a given machine address.</summary>
@@ -225,3 +225,4 @@ module NativePtr =
     [<Unverifiable>]
     [<CompiledName("CopyBlockInlined")>]
     val inline copyBlock : destination: nativeptr<'T> -> source: nativeptr<'T> -> count: int -> unit
+

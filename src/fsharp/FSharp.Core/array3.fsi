@@ -7,13 +7,13 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
 /// <summary>Contains operations for working with rank 3 arrays.</summary>
 ///
 /// <remarks>
 ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
 /// </remarks>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Array3D =
 
     /// <summary>Creates an array whose elements are all initially the given value.</summary>
@@ -159,9 +159,9 @@ module Array3D =
 
 
 
+/// <summary>Contains operations for working with rank 4 arrays. </summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
-/// <summary>Contains operations for working with rank 4 arrays. </summary>
 module Array4D =
 
     /// <summary>Creates an array whose elements are all initially the given value</summary>
@@ -272,4 +272,3 @@ module Array4D =
     /// <example-tbd></example-tbd>
     [<CompiledName("Set")>]
     val set: array:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> value:'T -> unit
-

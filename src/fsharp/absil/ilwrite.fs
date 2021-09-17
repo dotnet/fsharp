@@ -4330,7 +4330,7 @@ and writePdb (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfi
     end
     reportTime showTimes "Finalize PDB"
 
-    /// Sign the binary. No further changes to binary allowed past this point!
+    // Sign the binary. No further changes to binary allowed past this point!
     match signer with
     | None -> ()
     | Some s ->

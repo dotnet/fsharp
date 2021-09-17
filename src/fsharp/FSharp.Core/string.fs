@@ -13,9 +13,9 @@ namespace Microsoft.FSharp.Core
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String =
-        [<Literal>]
         /// LOH threshold is calculated from Internal.Utilities.Library.LOH_SIZE_THRESHOLD_BYTES,
         /// and is equal to 80_000 / sizeof<char>
+        [<Literal>]
         let LOH_CHAR_THRESHOLD = 40_000
 
         [<CompiledName("Length")>]

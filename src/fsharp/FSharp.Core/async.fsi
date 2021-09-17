@@ -681,9 +681,9 @@ namespace Microsoft.FSharp.Control
     type AsyncReturn
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
-    [<Struct; NoEquality; NoComparison>]
     ///
     /// <category index="5">Async Internals</category>
+    [<Struct; NoEquality; NoComparison>]
     type AsyncActivation<'T> =
 
         /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
@@ -732,10 +732,10 @@ namespace Microsoft.FSharp.Control
         | Error of ExceptionDispatchInfo
         | Canceled of OperationCanceledException
 
-    [<Sealed>]
     /// <summary>Entry points for generated code</summary>
     ///
     /// <category index="5">Async Internals</category>
+    [<Sealed>]
     module AsyncPrimitives =
 
         /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
@@ -805,11 +805,11 @@ namespace Microsoft.FSharp.Control
         // Internals used by MailboxProcessor
         val internal CreateAsyncResultAsync : AsyncResult<'T> -> Async<'T>
 
-    [<CompiledName("FSharpAsyncBuilder")>]
-    [<Sealed>]
     /// <summary>The type of the <c>async</c> operator, used to build workflows for asynchronous computations.</summary>
     ///
     /// <category index="1">Async Programming</category>
+    [<CompiledName("FSharpAsyncBuilder")>]
+    [<Sealed>]
     type AsyncBuilder =
         /// <summary>Creates an asynchronous computation that enumerates the sequence <c>seq</c>
         /// on demand and runs <c>body</c> for each element.</summary>
@@ -989,10 +989,10 @@ namespace Microsoft.FSharp.Control
         /// A cancellation check is performed when the computation is executed.
         internal new : unit -> AsyncBuilder
 
-    [<AutoOpen>]
     /// <summary>A module of extension members providing asynchronous operations for some basic CLI types related to concurrency and I/O.</summary>
     ///
     /// <category index="1">Async Programming</category>
+    [<AutoOpen>]
     module CommonExtensions =
         
         type System.IO.Stream with 

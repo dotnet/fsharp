@@ -10,15 +10,15 @@ namespace Microsoft.FSharp.Linq
     open System.Collections
     open System.Collections.Generic
 
-    [<NoComparison; NoEquality; Sealed>]
     /// <summary>
     /// A partial input or result in an F# query. This type is used to support the F# query syntax.
     /// </summary>
     ///
     /// <namespacedoc><summary>
-    ///   Library functionality for F# query syntax and interoperability with .NET LINQ Expressions. See 
+    ///   Library functionality for F# query syntax and interoperability with .NET LINQ Expressions. See
     ///   also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
     /// </summary></namespacedoc>
+    [<NoComparison; NoEquality; Sealed>]
     type QuerySource<'T, 'Q> =
         /// <summary>
         /// A method used to support the F# query syntax.  
@@ -30,9 +30,9 @@ namespace Microsoft.FSharp.Linq
         /// </summary>
         member Source: seq<'T>
 
-    [<Class>]
-    /// The type used to support the F# query syntax. Use 'query { ... }' to use the query syntax. See 
+    /// The type used to support the F# query syntax. Use 'query { ... }' to use the query syntax. See
     /// also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
+    [<Class>]
     type QueryBuilder =
         /// <summary>Create an instance of this builder. Use 'query { ... }' to use the query syntax.</summary>
         new: unit -> QueryBuilder

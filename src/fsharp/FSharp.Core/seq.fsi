@@ -1162,9 +1162,6 @@ module Seq =
     [<Obsolete("please use Seq.item")>]
     val nth: index:int -> source:seq<'T> -> 'T
 
-    /// 
-    /// <example-tbd></example-tbd>
-    [<CompiledName("OfArray")>]
     /// <summary>Views the given array as a sequence.</summary>
     ///
     /// <param name="source">The input array.</param>
@@ -1172,16 +1169,19 @@ module Seq =
     /// <returns>The result sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example-tbd></example-tbd>
+    [<CompiledName("OfArray")>]
     val ofArray: source:'T[] -> seq<'T>
 
-    /// 
-    /// <example-tbd></example-tbd>
-    [<CompiledName("OfList")>]
     /// <summary>Views the given list as a sequence.</summary>
     ///
     /// <param name="source">The input list.</param>
     ///
     /// <returns>The result sequence.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    [<CompiledName("OfList")>]
     val ofList: source:'T list -> seq<'T>
 
     /// <summary>Returns a sequence of each element in the input sequence and its predecessor, with the

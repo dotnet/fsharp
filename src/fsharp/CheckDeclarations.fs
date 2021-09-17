@@ -483,9 +483,9 @@ module TcRecdUnionAndEnumDeclarations =
                     | Some fieldId, Parent tcref ->
                         let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
                         CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                    | _ -> ()
-
-                    TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                        TcNamedFieldDecl cenv env parent false tpenv fld
+                    | _ ->
+                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -878,12 +878,21 @@ module IncrClassChecking =
                 not arity.HasNoArgs && not v.IsMutable
 
 
+        /// <summary>
         /// Choose how a binding is represented
-        member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg, 
-                                              ctorInfo: IncrClassCtorLhs, 
-                                              /// The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings
-                                              staticForcedFieldVars: FreeLocals, 
-                                              /// The vars forced to be fields due to instance member bindings
+        /// </summary>
+        /// <param name='cenv'></param>
+        /// <param name='env'></param>
+        /// <param name='isStatic'></param>
+        /// <param name='isCtorArg'></param>
+        /// <param name='ctorInfo'></param>
+        /// <param name='staticForcedFieldVars'>The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings</param>
+        /// <param name='instanceForcedFieldVars'>The vars forced to be fields due to instance member bindings</param>
+        /// <param name='takenFieldNames'></param>
+        /// <param name='bind'></param>
+        member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg,
+                                              ctorInfo: IncrClassCtorLhs,
+                                              staticForcedFieldVars: FreeLocals,
                                               instanceForcedFieldVars: FreeLocals, 
                                               takenFieldNames: Set<string>, 
                                               bind: Binding) = 
@@ -1091,9 +1100,9 @@ module IncrClassChecking =
         /// Given localRep saying how locals have been represented, e.g. as fields.
         /// Given an expr under a given thisVal context.
         //
-        /// Fix up the references to the locals, e.g. 
-        ///     v -> this.fieldv
-        ///     f x -> this.method x
+        // Fix up the references to the locals, e.g.
+        //     v -> this.fieldv
+        //     f x -> this.method x
         member localRep.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo (thisTyInst: TypeInst) expr = 
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
@@ -1143,21 +1152,27 @@ module IncrClassChecking =
       | Phase2CCtorJustAfterSuperInit     
       | Phase2CCtorJustAfterLastLet    
 
-    /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class, 
-    /// generate their initialization expression(s).  
-    let MakeCtorForIncrClassConstructionPhase2C 
+    /// <summary>
+    /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class,
+    /// generate their initialization expression(s).
+    /// </summary>
+    /// <param name='cenv'></param>
+    /// <param name='env'></param>
+    /// <param name='ctorInfo'>The lhs information about the implicit constructor</param>
+    /// <param name='inheritsExpr'>The call to the super class constructor</param>
+    /// <param name='inheritsIsVisible'>Should we place a sequence point at the 'inheritedTys call?</param>
+    /// <param name='decs'>The declarations</param>
+    /// <param name='memberBinds'></param>
+    /// <param name='generalizedTyparsForRecursiveBlock'>Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings</param>
+    /// <param name='safeStaticInitInfo'></param>
+    let MakeCtorForIncrClassConstructionPhase2C
                (cenv: cenv, 
-                env: TcEnv, 
-                /// The lhs information about the implicit constructor
-                ctorInfo: IncrClassCtorLhs, 
-                /// The call to the super class constructor
-                inheritsExpr, 
-                /// Should we place a sequence point at the 'inheritedTys call?
-                inheritsIsVisible, 
-                /// The declarations
+                env: TcEnv,
+                ctorInfo: IncrClassCtorLhs,
+                inheritsExpr,
+                inheritsIsVisible,
                 decs: IncrClassConstructionBindingsPhase2C list, 
-                memberBinds: Binding list, 
-                /// Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings 
+                memberBinds: Binding list,
                 generalizedTyparsForRecursiveBlock, 
                 safeStaticInitInfo: SafeInitData) = 
 
@@ -1459,7 +1474,7 @@ module IncrClassChecking =
             ctorBody
 
         let cctorBodyOpt =
-            /// Omit the .cctor if it's empty 
+            // Omit the .cctor if it's empty
             match cctorInitActions with
             | [] -> None 
             | _ -> 
@@ -3586,7 +3601,7 @@ module EstablishTypeDefinitionCores =
     /// Note that for 
     ///              type PairOfInts = int * int
     /// then after running this phase and checking for cycles, operations 
-    // such as 'isRefTupleTy' will return reliable results, e.g. isRefTupleTy on the 
+    /// such as 'isRefTupleTy' will return reliable results, e.g. isRefTupleTy on the
     /// TAST type for 'PairOfInts' will report 'true' 
     //
     let private TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations (cenv: cenv) envinner inSig tpenv pass (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
