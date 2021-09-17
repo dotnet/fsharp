@@ -1066,6 +1066,20 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        ///
+        /// <example id="last-1">
+        /// <code lang="fsharp">
+        /// ["pear"; "banana"] |> Seq.last
+        /// </code>
+        /// Evaluates to <c>banana</c>
+        /// </example>
+        ///
+        /// <example id="last-2">
+        /// <code lang="fsharp">
+        /// [] |> Seq.last
+        /// </code>
+        /// Throws <c>ArgumentException</c>
+        /// </example>
         [<CompiledName("Last")>]
         val last: source:seq<'T> -> 'T
 
@@ -1077,6 +1091,20 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The last element of the sequence or None.</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="try-last-1">
+        /// <code lang="fsharp">
+        /// ["pear"; "banana"] |> Seq.tryLast
+        /// </code>
+        /// Evaluates to <c>Some "banana"</c>
+        /// </example>
+        ///
+        /// <example id="try-last-2">
+        /// <code lang="fsharp">
+        /// [] |> Seq.tryLast
+        /// </code>
+        /// Evaluates to <c>None</c>
+        /// </example>
         [<CompiledName("TryLast")>]
         val tryLast: source:seq<'T> -> 'T option
 
