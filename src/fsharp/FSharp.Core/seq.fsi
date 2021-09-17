@@ -1202,6 +1202,13 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        ///
+        /// <example id="indexed-1">
+        /// <code lang="fsharp">
+        /// ["a"; "b"; "c"] |> Seq.indexed
+        /// </code>
+        /// Evaluates to <c>seq [(0, "a"); (1, "b"); (2, "c")]</c>
+        /// </example>
         [<CompiledName("Indexed")>]
         val indexed: source:seq<'T> -> seq<int * 'T>
 
@@ -1221,7 +1228,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("Initialize")>]
         val init: count:int -> initializer:(int -> 'T) -> seq<'T>
-        
+
         /// <summary>Generates a new sequence which, when iterated, will return successive
         /// elements by calling the given function.  The results of calling the function
         /// will not be saved, that is the function will be reapplied as necessary to
