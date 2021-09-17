@@ -276,71 +276,71 @@ module Seq =
     [<CompiledName("Collect")>]
     val collect: mapping:('T -> 'Collection) -> source:seq<'T> -> seq<'U>  when 'Collection :> seq<'U>
 
-        /// <summary>Compares two sequences using the given comparison function, element by element.</summary>
-        ///
-        /// <param name="comparer">A function that takes an element from each sequence and returns an int.
-        /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
-        /// <param name="source1">The first input sequence.</param>
-        /// <param name="source2">The second input sequence.</param>
-        ///
-        /// <returns>Returns the first non-zero result from the comparison function.  If the end of a sequence
-        /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
-        /// is shorter.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
-        /// is null.</exception>
-        ///
-        /// <example id="compare-with-1">
-        /// <code lang="fsharp">
-        /// let closerToNextDozen a b =
-        ///   (a % 12).CompareTo(b % 12)
-        /// ([1; 10], [1; 10])
-        /// ||> Seq.compareWith closerToNextDozen
-        /// </code>
-        /// Evaluates to <c>0</c>
-        /// </example>
-        ///
-        /// <example id="compare-with-2">
-        /// <code lang="fsharp">
-        /// let closerToNextDozen a b =
-        ///   (a % 12).CompareTo(b % 12)
-        /// ([1; 5], [1; 8])
-        /// ||> Seq.compareWith closerToNextDozen
-        /// </code>
-        /// Evaluates to <c>-1</c>
-        /// </example>
-        ///
-        /// <example id="compare-with-3">
-        /// let closerToNextDozen a b =
-        ///   (a % 12).CompareTo(b % 12)
-        /// <code lang="fsharp">
-        /// ([1; 11], [1; 13])
-        /// ||> Seq.compareWith closerToNextDozen
-        /// </code>
-        /// Evaluates to <c>1</c>
-        /// </example>
-        ///
-        /// <example id="compare-with-4">
-        /// let closerToNextDozen a b =
-        ///   (a % 12).CompareTo(b % 12)
-        /// <code lang="fsharp">R
-        /// ([1; 2], [1])
-        /// ||> Seq.compareWith closerToNextDozen
-        /// </code>
-        /// Evaluates to <c>1</c>
-        /// </example>
-        ///
-        /// <example id="compare-with-5">
-        /// let closerToNextDozen a b =
-        ///   (a % 12).CompareTo(b % 12)
-        /// <code lang="fsharp">
-        /// ([1], [1; 2])
-        /// ||> Seq.compareWith closerToNextDozen
-        /// </code>
-        /// Evaluates to <c>-1</c>
-        /// </example>
-        [<CompiledName("CompareWith")>]
-        val compareWith: comparer:('T -> 'T -> int) -> source1:seq<'T> -> source2:seq<'T> -> int
+    /// <summary>Compares two sequences using the given comparison function, element by element.</summary>
+    ///
+    /// <param name="comparer">A function that takes an element from each sequence and returns an int.
+    /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
+    /// <param name="source1">The first input sequence.</param>
+    /// <param name="source2">The second input sequence.</param>
+    ///
+    /// <returns>Returns the first non-zero result from the comparison function.  If the end of a sequence
+    /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
+    /// is shorter.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
+    /// is null.</exception>
+    ///
+    /// <example id="compare-with-1">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    /// ([1; 10], [1; 10])
+    /// ||> Seq.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>0</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-2">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    /// ([1; 5], [1; 8])
+    /// ||> Seq.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-3">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    /// <code lang="fsharp">
+    /// ([1; 11], [1; 13])
+    /// ||> Seq.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-4">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    /// <code lang="fsharp">R
+    /// ([1; 2], [1])
+    /// ||> Seq.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-5">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    /// <code lang="fsharp">
+    /// ([1], [1; 2])
+    /// ||> Seq.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
+    [<CompiledName("CompareWith")>]
+    val compareWith: comparer:('T -> 'T -> int) -> source1:seq<'T> -> source2:seq<'T> -> int
 
     /// <summary>Combines the given enumeration-of-enumerations as a single concatenated
     /// enumeration.</summary>
@@ -468,750 +468,756 @@ module Seq =
     [<CompiledName("DistinctBy")>]
     val distinctBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : equality
 
-        /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
-        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
-        /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
-        /// <param name="count">The maximum number of chunks.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The sequence split into chunks.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
-        ///
-        /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
-        ///
-        /// <example id="split-into-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5] |> Seq.splitInto 3
-        /// </code>
-        /// Evaluates to <c>seq [[|1; 2|]; [|3; 4|]; [|5|]]</c>
-        /// </example>
-        ///
-        /// <example id="split-into-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5] |> Seq.splitInto -1
-        /// </code>
-        /// Throws <c>ArgumentException</c>
-        /// </example>
-        [<CompiledName("SplitInto")>]
-        val splitInto: count:int -> source:seq<'T> -> seq<'T[]>
+    /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
+    ///
+    /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
+    /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
+    ///
+    /// <param name="count">The maximum number of chunks.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The sequence split into chunks.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
+    ///
+    /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
+    ///
+    /// <example id="split-into-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5] |> Seq.splitInto 3
+    /// </code>
+    /// Evaluates to <c>seq [[|1; 2|]; [|3; 4|]; [|5|]]</c>
+    /// </example>
+    ///
+    /// <example id="split-into-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5] |> Seq.splitInto -1
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
+    [<CompiledName("SplitInto")>]
+    val splitInto: count:int -> source:seq<'T> -> seq<'T[]>
 
-        /// <summary>Creates an empty sequence.</summary>
-        ///
-        /// <returns>An empty sequence.</returns>
-        ///
-        /// <example id="empty">
-        /// <code lang="fsharp">
-        /// Seq.empty // Evaluates to seq []
-        /// </code>
-        /// </example>
-        [<GeneralizableValue>]
-        [<CompiledName("Empty")>]
-        val empty<'T> : seq<'T>
+    /// <summary>Creates an empty sequence.</summary>
+    ///
+    /// <returns>An empty sequence.</returns>
+    ///
+    /// <example id="empty">
+    /// <code lang="fsharp">
+    /// Seq.empty // Evaluates to seq []
+    /// </code>
+    /// </example>
+    [<GeneralizableValue>]
+    [<CompiledName("Empty")>]
+    val empty<'T> : seq<'T>
 
-        /// <summary>Returns a new sequence with the distinct elements of the second sequence which do not appear in the first sequence,
-        /// using generic hash and equality comparisons to compare values.</summary>
-        ///
-        /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
-        /// the result sequence is iterated. As a result this function should not be used with
-        /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
-        /// sequence.</remarks>
-        ///
-        /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
-        /// removed from the returned sequence.</param>
-        /// <param name="source">A sequence whose elements that are not also in first will be returned.</param>
-        ///
-        /// <returns>A sequence that contains the set difference of the elements of two sequences.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
-        ///
-        /// <example id="except-1">
-        /// <code lang="fsharp">
-        /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
-        /// </code>
-        /// Evaluates to <c>seq [2; 4]</c>
-        /// </example>
-        [<CompiledName("Except")>]
-        val except: itemsToExclude:seq<'T> -> source:seq<'T> -> seq<'T> when 'T : equality
+    /// <summary>Returns a new sequence with the distinct elements of the second sequence which do not appear in the first sequence,
+    /// using generic hash and equality comparisons to compare values.</summary>
+    ///
+    /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
+    /// the result sequence is iterated. As a result this function should not be used with
+    /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
+    /// sequence.</remarks>
+    ///
+    /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
+    /// removed from the returned sequence.</param>
+    /// <param name="source">A sequence whose elements that are not also in first will be returned.</param>
+    ///
+    /// <returns>A sequence that contains the set difference of the elements of two sequences.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+    ///
+    /// <example id="except-1">
+    /// <code lang="fsharp">
+    /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
+    /// </code>
+    /// Evaluates to <c>seq [2; 4]</c>
+    /// </example>
+    [<CompiledName("Except")>]
+    val except: itemsToExclude:seq<'T> -> source:seq<'T> -> seq<'T> when 'T : equality
 
-        /// <summary>Tests if any element of the sequence satisfies the given predicate.</summary>
-        ///
-        /// <remarks>The predicate is applied to the elements of the input sequence. If any application 
-        /// returns true then the overall result is true and no further elements are tested. 
-        /// Otherwise, false is returned.</remarks>
-        ///
-        /// <param name="predicate">A function to test each item of the input sequence.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>True if any result from the predicate is true; false otherwise.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="exists-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.exists (fun elm -> elm % 4 = 0)
-        /// </code>
-        /// Evaluates to <c>true</c>
-        /// </example>
-        ///
-        /// <example id="exists-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.exists (fun elm -> elm % 6 = 0)
-        /// </code>
-        /// Evaluates to <c>false</c>
-        /// </example>
-        [<CompiledName("Exists")>]
-        val exists: predicate:('T -> bool) -> source:seq<'T> -> bool
+    /// <summary>Tests if any element of the sequence satisfies the given predicate.</summary>
+    ///
+    /// <remarks>The predicate is applied to the elements of the input sequence. If any application
+    /// returns true then the overall result is true and no further elements are tested.
+    /// Otherwise, false is returned.</remarks>
+    ///
+    /// <param name="predicate">A function to test each item of the input sequence.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>True if any result from the predicate is true; false otherwise.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="exists-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.exists (fun elm -> elm % 4 = 0)
+    /// </code>
+    /// Evaluates to <c>true</c>
+    /// </example>
+    ///
+    /// <example id="exists-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.exists (fun elm -> elm % 6 = 0)
+    /// </code>
+    /// Evaluates to <c>false</c>
+    /// </example>
+    [<CompiledName("Exists")>]
+    val exists: predicate:('T -> bool) -> source:seq<'T> -> bool
 
-        /// <summary>Tests if any pair of corresponding elements of the input sequences satisfies the given predicate.</summary>
-        ///
-        /// <remarks>The predicate is applied to matching elements in the two sequences up to the lesser of the 
-        /// two lengths of the collections. If any application returns true then the overall result is 
-        /// true and no further elements are tested. Otherwise, false is returned. If one sequence is shorter than 
-        /// the other then the remaining elements of the longer sequence are ignored.</remarks>
-        ///
-        /// <param name="predicate">A function to test each pair of items from the input sequences.</param>
-        /// <param name="source1">The first input sequence.</param>
-        /// <param name="source2">The second input sequence.</param>
-        ///
-        /// <returns>True if any result from the predicate is true; false otherwise.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
-        ///
-        /// <example id="exists2-1">
-        /// <code lang="fsharp">
-        /// ([1; 2; 2], [1; 2; 3])
-        /// ||> Seq.exists2 (fun a b -> a > b)
-        /// </code>
-        /// Evaluates to <c>false</c>
-        /// </example>
-        ///
-        /// <example id="exists2-2">
-        /// <code lang="fsharp">
-        /// ([1; 2; 4], [1; 2; 3])
-        /// ||> Seq.exists2 (fun a b -> a > b)
-        /// </code>
-        /// Evaluates to <c>true</c>
-        /// </example>
-        [<CompiledName("Exists2")>]
-        val exists2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
+    /// <summary>Tests if any pair of corresponding elements of the input sequences satisfies the given predicate.</summary>
+    ///
+    /// <remarks>The predicate is applied to matching elements in the two sequences up to the lesser of the
+    /// two lengths of the collections. If any application returns true then the overall result is
+    /// true and no further elements are tested. Otherwise, false is returned. If one sequence is shorter than
+    /// the other then the remaining elements of the longer sequence are ignored.</remarks>
+    ///
+    /// <param name="predicate">A function to test each pair of items from the input sequences.</param>
+    /// <param name="source1">The first input sequence.</param>
+    /// <param name="source2">The second input sequence.</param>
+    ///
+    /// <returns>True if any result from the predicate is true; false otherwise.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+    ///
+    /// <example id="exists2-1">
+    /// <code lang="fsharp">
+    /// ([1; 2; 2], [1; 2; 3])
+    /// ||> Seq.exists2 (fun a b -> a > b)
+    /// </code>
+    /// Evaluates to <c>false</c>
+    /// </example>
+    ///
+    /// <example id="exists2-2">
+    /// <code lang="fsharp">
+    /// ([1; 2; 4], [1; 2; 3])
+    /// ||> Seq.exists2 (fun a b -> a > b)
+    /// </code>
+    /// Evaluates to <c>true</c>
+    /// </example>
+    [<CompiledName("Exists2")>]
+    val exists2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
 
-        /// <summary>Returns a new collection containing only the elements of the collection
-        /// for which the given predicate returns "true". This is a synonym for Seq.where.</summary>
-        ///
-        /// <remarks>The returned sequence may be passed between threads safely. However, 
-        /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
-        ///
-        /// Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
-        ///
-        /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="filter-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.filter (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>seq [2; 4]</c>
-        /// </example>
-        [<CompiledName("Filter")>]
-        val filter: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
+    /// <summary>Returns a new collection containing only the elements of the collection
+    /// for which the given predicate returns "true". This is a synonym for Seq.where.</summary>
+    ///
+    /// <remarks>The returned sequence may be passed between threads safely. However,
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Remember sequence is lazy, effects are delayed until it is enumerated.</remarks>
+    ///
+    /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="filter-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.filter (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>seq [2; 4]</c>
+    /// </example>
+    [<CompiledName("Filter")>]
+    val filter: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
-        /// <summary>Returns a new collection containing only the elements of the collection
-        /// for which the given predicate returns "true".</summary>
-        ///
-        /// <remarks>The returned sequence may be passed between threads safely. However, 
-        /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
-        ///
-        /// Remember sequence is lazy, effects are delayed until it is enumerated.
-        /// 
-        /// A synonym for Seq.filter.</remarks>
-        ///
-        /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="where-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.where (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>seq [2; 4]</c>
-        /// </example>
-        [<CompiledName("Where")>]
-        val where: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
+    /// <summary>Returns a new collection containing only the elements of the collection
+    /// for which the given predicate returns "true".</summary>
+    ///
+    /// <remarks>The returned sequence may be passed between threads safely. However,
+    /// individual IEnumerator values generated from the returned sequence should not be accessed concurrently.
+    ///
+    /// Remember sequence is lazy, effects are delayed until it is enumerated.
+    ///
+    /// A synonym for Seq.filter.</remarks>
+    ///
+    /// <param name="predicate">A function to test whether each item in the input sequence should be included in the output.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="where-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.where (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>seq [2; 4]</c>
+    /// </example>
+    [<CompiledName("Where")>]
+    val where: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
-        /// <summary>Returns the first element for which the given function returns True.</summary>
-        ///
-        /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The first element for which the predicate returns True.</returns>
-        ///
-        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
-        /// evaluated by the predicate</exception>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
-        ///
-        /// <example id="find-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.find (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>2</c>
-        /// </example>
-        ///
-        /// <example id="find-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.find (fun elm -> elm % 6 = 0)
-        /// </code>
-        /// Throws <c>KeyNotFoundException</c>
-        /// </example>
-        [<CompiledName("Find")>]
-        val find: predicate:('T -> bool) -> source:seq<'T> -> 'T
+    /// <summary>Returns the first element for which the given function returns True.</summary>
+    ///
+    /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The first element for which the predicate returns True.</returns>
+    ///
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+    /// evaluated by the predicate</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <example id="find-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.find (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>2</c>
+    /// </example>
+    ///
+    /// <example id="find-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.find (fun elm -> elm % 6 = 0)
+    /// </code>
+    /// Throws <c>KeyNotFoundException</c>
+    /// </example>
+    [<CompiledName("Find")>]
+    val find: predicate:('T -> bool) -> source:seq<'T> -> 'T
 
-        /// <summary>Returns the last element for which the given function returns True.</summary>
-        ///
-        /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-        /// result this function should not be used with large or infinite sequences.</remarks>
-        /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The last element for which the predicate returns True.</returns>
-        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
-        /// evaluated by the predicate</exception>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
-        /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
-        ///
-        /// <example id="find-back-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findBack (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>4</c>
-        /// </example>
-        ///
-        /// <example id="find-back-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findBack (fun elm -> elm % 6 = 0)
-        /// </code>
-        /// Throws <c>KeyNotFoundException</c>
-        /// </example>
-        [<CompiledName("FindBack")>]
-        val findBack: predicate:('T -> bool) -> source:seq<'T> -> 'T
+    /// <summary>Returns the last element for which the given function returns True.</summary>
+    ///
+    /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
+    /// result this function should not be used with large or infinite sequences.</remarks>
+    ///
+    /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The last element for which the predicate returns True.</returns>
+    ///
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+    /// evaluated by the predicate</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <example id="find-back-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findBack (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>4</c>
+    /// </example>
+    ///
+    /// <example id="find-back-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findBack (fun elm -> elm % 6 = 0)
+    /// </code>
+    /// Throws <c>KeyNotFoundException</c>
+    /// </example>
+    [<CompiledName("FindBack")>]
+    val findBack: predicate:('T -> bool) -> source:seq<'T> -> 'T
 
-        /// <summary>Returns the index of the first element for which the given function returns True.</summary>
-        ///
-        /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The index of the first element for which the predicate returns True.</returns>
-        ///
-        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
-        /// evaluated by the predicate</exception>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
-        ///
-        /// <example id="find-index-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>1</c>
-        /// </example>
-        ///
-        /// <example id="find-index-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
-        /// </code>
-        /// Throws <c>KeyNotFoundException</c>
-        /// </example>
-        [<CompiledName("FindIndex")>]
-        val findIndex: predicate:('T -> bool) -> source:seq<'T> -> int
+    /// <summary>Returns the index of the first element for which the given function returns True.</summary>
+    ///
+    /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The index of the first element for which the predicate returns True.</returns>
+    ///
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+    /// evaluated by the predicate</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <example id="find-index-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="find-index-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
+    /// </code>
+    /// Throws <c>KeyNotFoundException</c>
+    /// </example>
+    [<CompiledName("FindIndex")>]
+    val findIndex: predicate:('T -> bool) -> source:seq<'T> -> int
 
-        /// <summary>Returns the index of the last element for which the given function returns True.</summary>
-        ///
-        /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
-        /// result this function should not be used with large or infinite sequences.</remarks>
-        ///
-        /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The index of the last element for which the predicate returns True.</returns>
-        ///
-        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
-        /// evaluated by the predicate</exception>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
-        ///
-        /// <example id="find-index-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
-        /// </code>
-        /// Evaluates to <c>3</c>
-        /// </example>
-        ///
-        /// <example id="find-index-back-2">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
-        /// </code>
-        /// Throws <c>KeyNotFoundException</c>
-        /// </example>
-        [<CompiledName("FindIndexBack")>]
-        val findIndexBack: predicate:('T -> bool) -> source:seq<'T> -> int
+    /// <summary>Returns the index of the last element for which the given function returns True.</summary>
+    ///
+    /// <remarks>This function digests the whole initial sequence as soon as it is called. As a
+    /// result this function should not be used with large or infinite sequences.</remarks>
+    ///
+    /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The index of the last element for which the predicate returns True.</returns>
+    ///
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+    /// evaluated by the predicate</exception>
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
+    ///
+    /// <example id="find-index-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>3</c>
+    /// </example>
+    ///
+    /// <example id="find-index-back-2">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
+    /// </code>
+    /// Throws <c>KeyNotFoundException</c>
+    /// </example>
+    [<CompiledName("FindIndexBack")>]
+    val findIndexBack: predicate:('T -> bool) -> source:seq<'T> -> int
 
-        /// <summary>Applies a function to each element of the collection, threading an accumulator argument
-        /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
-        /// then computes <c>f (... (f s i0)...) iN</c></summary>
-        ///
-        /// <param name="folder">A function that updates the state with each element from the sequence.</param>
-        /// <param name="state">The initial state.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="fold-1">
-        /// <code lang="fsharp">
-        /// type Charge =
-        ///   | In of int
-        ///   | Out of int
-        ///
-        /// [In 1; Out 2; In 3]
-        /// |> Seq.fold
-        ///       (fun acc charge ->
-        ///         match charge with
-        ///         | In i -> acc + i
-        ///         | Out o -> acc - o)
-        ///       0
-        /// </code>
-        /// Evaluates to <c>2</c>
-        /// </example>
-        [<CompiledName("Fold")>]
-        val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> 'State
+    /// <summary>Applies a function to each element of the collection, threading an accumulator argument
+    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
+    /// then computes <c>f (... (f s i0)...) iN</c></summary>
+    ///
+    /// <param name="folder">A function that updates the state with each element from the sequence.</param>
+    /// <param name="state">The initial state.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="fold-1">
+    /// <code lang="fsharp">
+    /// type Charge =
+    ///   | In of int
+    ///   | Out of int
+    ///
+    /// [In 1; Out 2; In 3]
+    /// |> Seq.fold
+    ///       (fun acc charge ->
+    ///         match charge with
+    ///         | In i -> acc + i
+    ///         | Out o -> acc - o)
+    ///       0
+    /// </code>
+    /// Evaluates to <c>2</c>
+    /// </example>
+    [<CompiledName("Fold")>]
+    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> 'State
 
-        /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
-        /// through the computation.</summary>
-        ///
-        /// <remarks> The two sequences need not have equal lengths:
-        /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
-        /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
-        /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</remarks>
-        ///
-        /// <param name="folder">The function to update the state given the input elements.</param>
-        /// <param name="state">The initial state.</param>
-        /// <param name="source1">The first input sequence.</param>
-        /// <param name="source2">The second input sequence.</param>
-        ///
-        /// <returns>The final state value.</returns>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
-        ///
-        /// <example id="fold2-1">
-        /// <code lang="fsharp">
-        /// type CoinToss = Head | Tails
-        ///
-        /// ([Tails; Head; Tails], [Tails; Head; Head])
-        /// ||> Seq.fold2
-        ///       (fun acc a b ->
-        ///         match (a, b) with
-        ///         | Head, Head -> acc + 1
-        ///         | Tails, Tails -> acc + 1
-        ///         | _ -> acc - 1)
-        ///       0
-        /// </code>
-        /// Evaluates to <c>1</c>
-        /// </example>
-        [<CompiledName("Fold2")>]
-        val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
+    /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
+    /// through the computation.</summary>
+    ///
+    /// <remarks> The two sequences need not have equal lengths:
+    /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
+    /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
+    /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</remarks>
+    ///
+    /// <param name="folder">The function to update the state given the input elements.</param>
+    /// <param name="state">The initial state.</param>
+    /// <param name="source1">The first input sequence.</param>
+    /// <param name="source2">The second input sequence.</param>
+    ///
+    /// <returns>The final state value.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+    ///
+    /// <example id="fold2-1">
+    /// <code lang="fsharp">
+    /// type CoinToss = Head | Tails
+    ///
+    /// ([Tails; Head; Tails], [Tails; Head; Head])
+    /// ||> Seq.fold2
+    ///       (fun acc a b ->
+    ///         match (a, b) with
+    ///         | Head, Head -> acc + 1
+    ///         | Tails, Tails -> acc + 1
+    ///         | _ -> acc - 1)
+    ///       0
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    [<CompiledName("Fold2")>]
+    val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
 
-        /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
-        /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
-        /// then computes <c>f i0 (... (f iN s)...)</c></summary>
-        ///
-        /// <param name="folder">The function to update the state given the input elements.</param>
-        /// <param name="source">The input sequence.</param>
-        /// <param name="state">The initial state.</param>
-        ///
-        /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
-        ///
-        /// <example id="fold-back-1">
-        /// <code lang="fsharp">
-        /// type Count =
-        ///   { Positive: int
-        ///     Negative: int
-        ///     History: int list }
-        ///
-        /// ( [1; 0; -1; -2; 3],
-        ///   {Positive = 0; Negative = 0; History = []})
-        /// ||> Seq.foldBack
-        ///       (fun a acc  ->
-        ///         let history = acc.History @ [a]
-        ///         if a >= 0
-        ///         then
-        ///           { acc with
-        ///               Positive = acc.Positive + 1
-        ///               History = history }
-        ///         else
-        ///           { acc with
-        ///               Negative = acc.Negative + 1
-        ///               History = history }
-        ///       )
-        /// </code>
-        /// Evaluates to
-        /// <code>
-        /// { Positive = 2
-        ///   Negative = 3
-        ///   History = [-3; -2; -1; 0; 1] }
-        /// </code>
-        /// </example>
-        [<CompiledName("FoldBack")>]
-        val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
+    /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
+    /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
+    /// then computes <c>f i0 (... (f iN s)...)</c></summary>
+    ///
+    /// <param name="folder">The function to update the state given the input elements.</param>
+    /// <param name="source">The input sequence.</param>
+    /// <param name="state">The initial state.</param>
+    ///
+    /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
+    ///
+    /// <example id="fold-back-1">
+    /// <code lang="fsharp">
+    /// type Count =
+    ///   { Positive: int
+    ///     Negative: int
+    ///     History: int list }
+    ///
+    /// ( [1; 0; -1; -2; 3],
+    ///   {Positive = 0; Negative = 0; History = []})
+    /// ||> Seq.foldBack
+    ///       (fun a acc  ->
+    ///         let history = acc.History @ [a]
+    ///         if a >= 0
+    ///         then
+    ///           { acc with
+    ///               Positive = acc.Positive + 1
+    ///               History = history }
+    ///         else
+    ///           { acc with
+    ///               Negative = acc.Negative + 1
+    ///               History = history }
+    ///       )
+    /// </code>
+    /// Evaluates to
+    /// <code>
+    /// { Positive = 2
+    ///   Negative = 3
+    ///   History = [-3; -2; -1; 0; 1] }
+    /// </code>
+    /// </example>
+    [<CompiledName("FoldBack")>]
+    val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
 
-        /// <summary>Applies a function to corresponding elements of two collections, starting from the end of the shorter collection,
-        /// threading an accumulator argument through the computation. The two sequences need not have equal lengths.
-        /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jM</c>, N &lt; M
-        /// then computes <c>f i0 j0 (... (f iN jN s)...)</c>.</summary>
-        ///
-        /// <param name="folder">The function to update the state given the input elements.</param>
-        /// <param name="source1">The first input sequence.</param>
-        /// <param name="source2">The second input sequence.</param>
-        /// <param name="state">The initial state.</param>
-        ///
-        /// <returns>The final state value.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
-        ///
-        /// <remarks>
-        /// TODO: Shouldn't this have a remark about consuming the whole sequence(s) just like foldBack?
-        /// </remarks>
-        ///
-        /// <example id="fold-back2-1">
-        /// <code lang="fsharp">
-        /// type Count =
-        ///   { Positive: int
-        ///     Negative: int
-        ///     History: int list }
-        ///
-        /// ( [-1; -2; -3],
-        ///   [3; 2; 1; 0],
-        ///   {Positive = 0; Negative = 0; History = []})
-        /// |||> Seq.foldBack2
-        ///       (fun a b acc  ->
-        ///         let sum = a + b
-        ///         let history = acc.History @ [sum]
-        ///         if sum >= 0
-        ///         then
-        ///           { acc with
-        ///               Positive = acc.Positive + 1
-        ///               History = history }
-        ///         else
-        ///           { acc with
-        ///               Negative = acc.Negative + 1
-        ///               History = history }
-        ///       )
-        /// </code>
-        /// Evaluates to
-        /// <code>
-        /// { Positive = 2
-        ///   Negative = 1
-        ///   History = [-2; 0; 2] }
-        /// </code>
-        /// </example>
-        [<CompiledName("FoldBack2")>]
-        val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
+    /// <summary>Applies a function to corresponding elements of two collections, starting from the end of the shorter collection,
+    /// threading an accumulator argument through the computation. The two sequences need not have equal lengths.
+    /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jM</c>, N &lt; M
+    /// then computes <c>f i0 j0 (... (f iN jN s)...)</c>.</summary>
+    ///
+    /// <param name="folder">The function to update the state given the input elements.</param>
+    /// <param name="source1">The first input sequence.</param>
+    /// <param name="source2">The second input sequence.</param>
+    /// <param name="state">The initial state.</param>
+    ///
+    /// <returns>The final state value.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+    ///
+    /// <remarks>
+    /// TODO: Shouldn't this have a remark about consuming the whole sequence(s) just like foldBack?
+    /// </remarks>
+    ///
+    /// <example id="fold-back2-1">
+    /// <code lang="fsharp">
+    /// type Count =
+    ///   { Positive: int
+    ///     Negative: int
+    ///     History: int list }
+    ///
+    /// ( [-1; -2; -3],
+    ///   [3; 2; 1; 0],
+    ///   {Positive = 0; Negative = 0; History = []})
+    /// |||> Seq.foldBack2
+    ///       (fun a b acc  ->
+    ///         let sum = a + b
+    ///         let history = acc.History @ [sum]
+    ///         if sum >= 0
+    ///         then
+    ///           { acc with
+    ///               Positive = acc.Positive + 1
+    ///               History = history }
+    ///         else
+    ///           { acc with
+    ///               Negative = acc.Negative + 1
+    ///               History = history }
+    ///       )
+    /// </code>
+    /// Evaluates to
+    /// <code>
+    /// { Positive = 2
+    ///   Negative = 1
+    ///   History = [-2; 0; 2] }
+    /// </code>
+    /// </example>
+    [<CompiledName("FoldBack2")>]
+    val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
 
-        /// <summary>Tests if all elements of the sequence satisfy the given predicate.</summary>
-        ///
-        /// <remarks>The predicate is applied to the elements of the input sequence. If any application 
-        /// returns false then the overall result is false and no further elements are tested. 
-        /// Otherwise, true is returned.</remarks>
-        ///
-        /// <param name="predicate">A function to test an element of the input sequence.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>True if every element of the sequence satisfies the predicate; false otherwise.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="for-all-1">
-        /// <code lang="fsharp">
-        /// let isEven a = a % 2 = 0
-        ///
-        /// [2; 4; 6; 8; 42]
-        /// |> Seq.forall isEven // evaluates to true
-        ///
-        /// [1; 2; 3; 4; 5]
-        /// |> Seq.forall isEven // evaluates to false
-        /// </code>
-        /// </example>
-        [<CompiledName("ForAll")>]
-        val forall: predicate:('T -> bool) -> source:seq<'T> -> bool
+    /// <summary>Tests if all elements of the sequence satisfy the given predicate.</summary>
+    ///
+    /// <remarks>The predicate is applied to the elements of the input sequence. If any application
+    /// returns false then the overall result is false and no further elements are tested.
+    /// Otherwise, true is returned.</remarks>
+    ///
+    /// <param name="predicate">A function to test an element of the input sequence.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>True if every element of the sequence satisfies the predicate; false otherwise.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="for-all-1">
+    /// <code lang="fsharp">
+    /// let isEven a = a % 2 = 0
+    ///
+    /// [2; 4; 6; 8; 42]
+    /// |> Seq.forall isEven // evaluates to true
+    ///
+    /// [1; 2; 3; 4; 5]
+    /// |> Seq.forall isEven // evaluates to false
+    /// </code>
+    /// </example>
+    [<CompiledName("ForAll")>]
+    val forall: predicate:('T -> bool) -> source:seq<'T> -> bool
 
-        /// <summary>Tests the all pairs of elements drawn from the two sequences satisfy the
-        /// given predicate. If one sequence is shorter than 
-        /// the other then the remaining elements of the longer sequence are ignored.</summary>
-        ///
-        /// <param name="predicate">A function to test pairs of elements from the input sequences.</param>
-        /// <param name="source1">The first input sequence.</param>
-        /// <param name="source2">The second input sequence.</param>
-        ///
-        /// <returns>True if all pairs satisfy the predicate; false otherwise.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
-        ///
-        /// <example id="for-all2-1">
-        /// <code lang="fsharp">
-        /// ([1; 2; 3; 4; 5], [1; 2; 3; 4; 5])
-        /// ||> Seq.forall2 (=) // evaluates to true
-        ///
-        /// ([2017; 1; 1], [2019; 19; 8])
-        /// ||> Seq.forall2 (=) // evaluates to false
-        /// </code>
-        /// </example>
-        [<CompiledName("ForAll2")>]
-        val forall2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
+    /// <summary>Tests the all pairs of elements drawn from the two sequences satisfy the
+    /// given predicate. If one sequence is shorter than
+    /// the other then the remaining elements of the longer sequence are ignored.</summary>
+    ///
+    /// <param name="predicate">A function to test pairs of elements from the input sequences.</param>
+    /// <param name="source1">The first input sequence.</param>
+    /// <param name="source2">The second input sequence.</param>
+    ///
+    /// <returns>True if all pairs satisfy the predicate; false otherwise.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+    ///
+    /// <example id="for-all2-1">
+    /// <code lang="fsharp">
+    /// ([1; 2; 3; 4; 5], [1; 2; 3; 4; 5])
+    /// ||> Seq.forall2 (=) // evaluates to true
+    ///
+    /// ([2017; 1; 1], [2019; 19; 8])
+    /// ||> Seq.forall2 (=) // evaluates to false
+    /// </code>
+    /// </example>
+    [<CompiledName("ForAll2")>]
+    val forall2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
 
-        /// <summary>Applies a key-generating function to each element of a sequence and yields a sequence of 
-        /// unique keys. Each unique key contains a sequence of all elements that match 
-        /// to this key.</summary>
-        /// 
-        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as 
-        /// that sequence is iterated. As a result this function should not be used with 
-        /// large or infinite sequences. The function makes no assumption on the ordering of the original 
-        /// sequence.</remarks>
-        ///
-        /// <param name="projection">A function that transforms an element of the sequence into a comparable key.</param>
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        ///
-        /// <example id="group-by-1">
-        /// <code lang="fsharp">
-        /// [1; 2; 3; 4; 5] |> Seq.groupBy (fun n -> n % 2)
-        /// </code>
-        /// Evaluates to <c>seq [(1, seq [1; 3; 5]); (0, seq [2; 4])]</c>
-        /// </example>
-        [<CompiledName("GroupBy")>]
-        val groupBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * seq<'T>> when 'Key : equality
+    /// <summary>Applies a key-generating function to each element of a sequence and yields a sequence of
+    /// unique keys. Each unique key contains a sequence of all elements that match
+    /// to this key.</summary>
+    ///
+    /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as
+    /// that sequence is iterated. As a result this function should not be used with
+    /// large or infinite sequences. The function makes no assumption on the ordering of the original
+    /// sequence.</remarks>
+    ///
+    /// <param name="projection">A function that transforms an element of the sequence into a comparable key.</param>
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <example id="group-by-1">
+    /// <code lang="fsharp">
+    /// [1; 2; 3; 4; 5] |> Seq.groupBy (fun n -> n % 2)
+    /// </code>
+    /// Evaluates to <c>seq [(1, seq [1; 3; 5]); (0, seq [2; 4])]</c>
+    /// </example>
+    [<CompiledName("GroupBy")>]
+    val groupBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * seq<'T>> when 'Key : equality
 
-        /// <summary>Returns the first element of the sequence.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The first element of the sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
-        ///
-        /// <example id="head-1">
-        /// <code lang="fsharp">
-        /// ["banana"; "pear"] |> Seq.head
-        /// </code>
-        /// Evaluates to <c>banana</c>
-        /// </example>
-        ///
-        /// <example id="head-2">
-        /// <code lang="fsharp">
-        /// [] |> Seq.head
-        /// </code>
-        /// Throws <c>ArgumentException</c>
-        /// </example>
-        [<CompiledName("Head")>]
-        val head: source:seq<'T> -> 'T
+    /// <summary>Returns the first element of the sequence.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The first element of the sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
+    ///
+    /// <example id="head-1">
+    /// <code lang="fsharp">
+    /// ["banana"; "pear"] |> Seq.head
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="head-2">
+    /// <code lang="fsharp">
+    /// [] |> Seq.head
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
+    [<CompiledName("Head")>]
+    val head: source:seq<'T> -> 'T
 
-        /// <summary>Returns the first element of the sequence, or None if the sequence is empty.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The first element of the sequence or None.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="try-head-1">
-        /// <code lang="fsharp">
-        /// ["banana"; "pear"] |> Seq.tryHead
-        /// </code>
-        /// Evaluates to <c>Some "banana"</c>
-        /// </example>
-        ///
-        /// <example id="try-head-2">
-        /// <code lang="fsharp">
-        /// [] |> Seq.tryHead
-        /// </code>
-        /// Evaluates to <c>None</c>
-        /// </example>
-        [<CompiledName("TryHead")>]
-        val tryHead: source:seq<'T> -> 'T option
+    /// <summary>Returns the first element of the sequence, or None if the sequence is empty.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The first element of the sequence or None.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="try-head-1">
+    /// <code lang="fsharp">
+    /// ["banana"; "pear"] |> Seq.tryHead
+    /// </code>
+    /// Evaluates to <c>Some "banana"</c>
+    /// </example>
+    ///
+    /// <example id="try-head-2">
+    /// <code lang="fsharp">
+    /// [] |> Seq.tryHead
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
+    [<CompiledName("TryHead")>]
+    val tryHead: source:seq<'T> -> 'T option
 
-        /// <summary>Returns the last element of the sequence.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The last element of the sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
-        ///
-        /// <example id="last-1">
-        /// <code lang="fsharp">
-        /// ["pear"; "banana"] |> Seq.last
-        /// </code>
-        /// Evaluates to <c>banana</c>
-        /// </example>
-        ///
-        /// <example id="last-2">
-        /// <code lang="fsharp">
-        /// [] |> Seq.last
-        /// </code>
-        /// Throws <c>ArgumentException</c>
-        /// </example>
-        [<CompiledName("Last")>]
-        val last: source:seq<'T> -> 'T
+    /// <summary>Returns the last element of the sequence.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The last element of the sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
+    ///
+    /// <example id="last-1">
+    /// <code lang="fsharp">
+    /// ["pear"; "banana"] |> Seq.last
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="last-2">
+    /// <code lang="fsharp">
+    /// [] |> Seq.last
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
+    [<CompiledName("Last")>]
+    val last: source:seq<'T> -> 'T
 
-        /// <summary>Returns the last element of the sequence.
-        /// Return <c>None</c> if no such element exists.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The last element of the sequence or None.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="try-last-1">
-        /// <code lang="fsharp">
-        /// ["pear"; "banana"] |> Seq.tryLast
-        /// </code>
-        /// Evaluates to <c>Some "banana"</c>
-        /// </example>
-        ///
-        /// <example id="try-last-2">
-        /// <code lang="fsharp">
-        /// [] |> Seq.tryLast
-        /// </code>
-        /// Evaluates to <c>None</c>
-        /// </example>
-        [<CompiledName("TryLast")>]
-        val tryLast: source:seq<'T> -> 'T option
+    /// <summary>Returns the last element of the sequence.
+    /// Return <c>None</c> if no such element exists.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The last element of the sequence or None.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="try-last-1">
+    /// <code lang="fsharp">
+    /// ["pear"; "banana"] |> Seq.tryLast
+    /// </code>
+    /// Evaluates to <c>Some "banana"</c>
+    /// </example>
+    ///
+    /// <example id="try-last-2">
+    /// <code lang="fsharp">
+    /// [] |> Seq.tryLast
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
+    [<CompiledName("TryLast")>]
+    val tryLast: source:seq<'T> -> 'T option
 
-        /// <summary>Returns the only element of the sequence.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The only element of the sequence.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
-        ///
-        /// <example id="exacly-one-1">
-        /// <code lang="fsharp">
-        /// ["banana"] |> Seq.exactlyOne
-        /// </code>
-        /// Evaluates to <c>banana</c>
-        /// </example>
-        ///
-        /// <example id="exacly-one-2">
-        /// <code lang="fsharp">
-        /// ["pear"; "banana"] |> Seq.exactlyOne
-        /// </code>
-        /// Throws <c>ArgumentException</c>
-        /// </example>
-        ///
-        /// <example id="exacly-one-3">
-        /// <code lang="fsharp">
-        /// [] |> Seq.exactlyOne
-        /// </code>
-        /// Throws <c>ArgumentException</c>
-        /// </example>
-        [<CompiledName("ExactlyOne")>]
-        val exactlyOne: source:seq<'T> -> 'T
+    /// <summary>Returns the only element of the sequence.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The only element of the sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+    ///
+    /// <example id="exacly-one-1">
+    /// <code lang="fsharp">
+    /// ["banana"] |> Seq.exactlyOne
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="exacly-one-2">
+    /// <code lang="fsharp">
+    /// ["pear"; "banana"] |> Seq.exactlyOne
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
+    ///
+    /// <example id="exacly-one-3">
+    /// <code lang="fsharp">
+    /// [] |> Seq.exactlyOne
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
+    [<CompiledName("ExactlyOne")>]
+    val exactlyOne: source:seq<'T> -> 'T
 
-        /// <summary>Returns the only element of the sequence or <c>None</c> if sequence is empty or contains more than one element.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The only element of the sequence or None.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="try-exacly-one-1">
-        /// <code lang="fsharp">
-        /// ["banana"] |> Seq.tryExactlyOne
-        /// </code>
-        /// Evaluates to <c>Some banana</c>
-        /// </example>
-        ///
-        /// <example id="try-exacly-one-2">
-        /// <code lang="fsharp">
-        /// ["pear"; "banana"] |> Seq.tryExactlyOne
-        /// </code>
-        /// Evaluates to <c>None</c>
-        /// </example>
-        ///
-        /// <example id="try-exacly-one-3">
-        /// <code lang="fsharp">
-        /// [] |> Seq.tryExactlyOne
-        /// </code>
-        /// Evaluates to <c>None</c>
-        /// </example>
-        [<CompiledName("TryExactlyOne")>]
-        val tryExactlyOne: source:seq<'T> -> 'T option
+    /// <summary>Returns the only element of the sequence or <c>None</c> if sequence is empty or contains more than one element.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The only element of the sequence or None.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="try-exacly-one-1">
+    /// <code lang="fsharp">
+    /// ["banana"] |> Seq.tryExactlyOne
+    /// </code>
+    /// Evaluates to <c>Some banana</c>
+    /// </example>
+    ///
+    /// <example id="try-exacly-one-2">
+    /// <code lang="fsharp">
+    /// ["pear"; "banana"] |> Seq.tryExactlyOne
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
+    ///
+    /// <example id="try-exacly-one-3">
+    /// <code lang="fsharp">
+    /// [] |> Seq.tryExactlyOne
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
+    [<CompiledName("TryExactlyOne")>]
+    val tryExactlyOne: source:seq<'T> -> 'T option
 
-        /// <summary>Returns true if the sequence contains no elements, false otherwise.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>True if the sequence is empty; false otherwise.</returns>
-        ///
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="empty-1">
-        /// <code lang="fsharp">
-        /// [] |> Seq.isEmpty
-        /// </code>
-        /// Evaluates to <c>true</c>
-        /// </example>
-        ///
-        /// <example id="empty-2">
-        /// <code lang="fsharp">
-        /// ["pear"; "banana"] |> Seq.isEmpty
-        /// </code>
-        /// Evaluates to <c>false</c>
-        /// </example>
-        [<CompiledName("IsEmpty")>]
-        val isEmpty: source:seq<'T> -> bool
+    /// <summary>Returns true if the sequence contains no elements, false otherwise.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>True if the sequence is empty; false otherwise.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="empty-1">
+    /// <code lang="fsharp">
+    /// [] |> Seq.isEmpty
+    /// </code>
+    /// Evaluates to <c>true</c>
+    /// </example>
+    ///
+    /// <example id="empty-2">
+    /// <code lang="fsharp">
+    /// ["pear"; "banana"] |> Seq.isEmpty
+    /// </code>
+    /// Evaluates to <c>false</c>
+    /// </example>
+    [<CompiledName("IsEmpty")>]
+    val isEmpty: source:seq<'T> -> bool
 
-        /// <summary>Builds a new collection whose elements are the corresponding elements of the input collection
-        /// paired with the integer index (from 0) of each element.</summary>
-        ///
-        /// <param name="source">The input sequence.</param>
-        ///
-        /// <returns>The result sequence.</returns>
-        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        ///
-        /// <example id="indexed-1">
-        /// <code lang="fsharp">
-        /// ["a"; "b"; "c"] |> Seq.indexed
-        /// </code>
-        /// Evaluates to <c>seq [(0, "a"); (1, "b"); (2, "c")]</c>
-        /// </example>
-        [<CompiledName("Indexed")>]
-        val indexed: source:seq<'T> -> seq<int * 'T>
+    /// <summary>Builds a new collection whose elements are the corresponding elements of the input collection
+    /// paired with the integer index (from 0) of each element.</summary>
+    ///
+    /// <param name="source">The input sequence.</param>
+    ///
+    /// <returns>The result sequence.</returns>
+    ///
+    /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    ///
+    /// <example id="indexed-1">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.indexed
+    /// </code>
+    /// Evaluates to <c>seq [(0, "a"); (1, "b"); (2, "c")]</c>
+    /// </example>
+    [<CompiledName("Indexed")>]
+    val indexed: source:seq<'T> -> seq<int * 'T>
 
     /// <summary>Generates a new sequence which, when iterated, will return successive
     /// elements by calling the given function, up to the given count.  Each element is saved after its
@@ -1228,7 +1234,12 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="init-1">
+    /// <code lang="fsharp">
+    /// (+) 5 |> Seq.init 4
+    /// </code>
+    /// Evaluates to <c>seq [5; 6; 7; 8]</c>
+    /// </example>
     [<CompiledName("Initialize")>]
     val init: count:int -> initializer:(int -> 'T) -> seq<'T>
 
