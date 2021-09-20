@@ -1284,7 +1284,19 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.item 1
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="item-2">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.item 4
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Item")>]
     val item: index:int -> source:seq<'T> -> 'T
 
@@ -1295,7 +1307,18 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="iter-1">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.iter (printfn "%s")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a
+    /// b
+    /// c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate")>]
     val iter: action:('T -> unit) -> source:seq<'T> -> unit
 
@@ -1307,7 +1330,18 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="iteri-1">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.iteri (printfn "%i: %s")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// 0: a
+    /// 1: b
+    /// 2: c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed")>]
     val iteri: action:(int -> 'T -> unit) -> source:seq<'T> -> unit
 
