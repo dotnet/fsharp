@@ -6,9 +6,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
-    <NoWarn>$(NoWarn);45;55;62;75;1182;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

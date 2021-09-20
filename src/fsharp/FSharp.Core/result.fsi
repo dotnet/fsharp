@@ -4,13 +4,14 @@ namespace Microsoft.FSharp.Core
 
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Core.Result`2"/>.</summary>
     ///
     /// <category>Choices and Results</category>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Result =
 
         /// <summary><c>map f inp</c> evaluates to <c>match inp with Error e -> Error e | Ok x -> Ok (f x)</c>.</summary>
+        ///
         /// <param name="mapping">A function to apply to the OK result value.</param>
         /// <param name="result">The input result.</param>
         ///

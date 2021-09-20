@@ -682,7 +682,7 @@ module DispatchSlotChecking =
                           if not minfo.IsAbstract then 
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
 
-            /// Check that no interface type is implied twice
+            // Check that no interface type is implied twice
             for j, _, _, impliedTys2 in reqdTyInfos do
                 if i > j then
                     for ty, dispatchSlots in dispatchSlotSet do

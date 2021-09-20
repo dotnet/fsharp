@@ -67,7 +67,7 @@ module NegativeTestsActualRepro1 =
             override this.MaximumStrength =
                 9u    // Stub
 
-    type TestVariableLevelEnumeratorFactory (levels: seq<Object>) =    /// THis should give an error
+    type TestVariableLevelEnumeratorFactory (levels: seq<Object>) =    // THis should give an error
             inherit TestCaseEnumeratorFactoryCommonImplementation ()
             let node =
                TestVariableNode levels

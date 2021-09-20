@@ -125,7 +125,7 @@ type Simulator() =
         let ay = (dy / d) * g / obj.Mass
         ax,ay
 
-    /// Find all the gravitational objects in the system except the given object
+    // Find all the gravitational objects in the system except the given object
     let FindObjects(obj) = 
         [ for paintObject in paintObjects do 
               match paintObject with
