@@ -1241,6 +1241,13 @@ module Seq =
     /// </code>
     /// Evaluates to <c>seq [5; 6; 7; 8]</c>
     /// </example>
+    ///
+    /// <example id="init-2">
+    /// <code lang="fsharp">
+    /// (+) 5 |> Seq.init -5
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Initialize")>]
     val init: count:int -> initializer:(int -> 'T) -> seq<'T>
 
@@ -1258,7 +1265,12 @@ module Seq =
     ///
     /// <returns>The result sequence.</returns>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="init-infinite-1">
+    /// <code lang="fsharp">
+    /// (+) 5 |> Seq.initInfinite
+    /// </code>
+    /// Evaluates to <c>seq [5; 6; 7; 8; ...]</c>
+    /// </example>
     [<CompiledName("InitializeInfinite")>]
     val initInfinite: initializer:(int -> 'T) -> seq<'T>
 
