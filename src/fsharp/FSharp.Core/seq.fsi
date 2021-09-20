@@ -1354,7 +1354,19 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="iter2-1">
+    /// <code lang="fsharp">
+    /// (["a"; "b"; "c"], [1; 2; 3;])
+    /// ||> Seq.iter2 (printfn "%s: %i")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a: 1
+    /// b: 2
+    /// c: 3
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate2")>]
     val iter2: action:('T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
 
