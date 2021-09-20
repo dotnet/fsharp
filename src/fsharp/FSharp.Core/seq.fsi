@@ -903,7 +903,8 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
     ///
     /// <remarks>
-    /// TODO: Shouldn't this have a remark about consuming the whole sequence(s) just like foldBack?
+    /// This function consumes the whole of both inputs sequences before returning the result. As a
+    /// result this function should not be used with large or infinite sequences.
     /// </remarks>
     ///
     /// <example id="fold-back2-1">
