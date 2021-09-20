@@ -253,8 +253,8 @@ module internal PrintfImpl =
                         i <- i + 1
             buf.ToString()
 
-    [<NoComparison; NoEquality>]
     /// Represents one step in the execution of a format string
+    [<NoComparison; NoEquality>]
     type Step =
         | StepWithArg of prefix: string * conv: (obj -> string) 
         | StepWithTypedArg of prefix: string * conv: (obj -> Type -> string) 

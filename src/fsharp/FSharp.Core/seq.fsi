@@ -6,11 +6,11 @@ open System
 open System.Collections
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
-
+    
 /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.seq`1"/>.</summary>
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Seq =
+module Seq = 
 
     /// <summary>Returns a new sequence that contains all pairings of elements from the first and second sequences.</summary>
     ///
@@ -36,7 +36,7 @@ module Seq =
     /// <summary>Wraps the two given enumerations as a single concatenated
     /// enumeration.</summary>
     ///
-    /// <remarks>The returned sequence may be passed between threads safely. However,
+    /// <remarks>The returned sequence may be passed between threads safely. However, 
     /// individual IEnumerator values generated from the returned sequence should not be accessed
     /// concurrently.</remarks>
     ///
@@ -1602,9 +1602,6 @@ module Seq =
     [<Obsolete("please use Seq.item")>]
     val nth: index:int -> source:seq<'T> -> 'T
 
-    ///
-    /// <example-tbd></example-tbd>
-    [<CompiledName("OfArray")>]
     /// <summary>Views the given array as a sequence.</summary>
     ///
     /// <param name="source">The input array.</param>
@@ -1612,16 +1609,18 @@ module Seq =
     /// <returns>The result sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+    /// <example-tbd></example-tbd>
+    [<CompiledName("OfArray")>]
     val ofArray: source:'T[] -> seq<'T>
 
-    ///
-    /// <example-tbd></example-tbd>
-    [<CompiledName("OfList")>]
     /// <summary>Views the given list as a sequence.</summary>
     ///
     /// <param name="source">The input list.</param>
     ///
     /// <returns>The result sequence.</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    [<CompiledName("OfList")>]
     val ofList: source:'T list -> seq<'T>
 
     /// <summary>Returns a sequence of each element in the input sequence and its predecessor, with the

@@ -345,10 +345,10 @@ module Array =
 
     /// <summary>Returns an empty array of the given type.</summary>
     /// <returns>The empty array.</returns>
-    [<GeneralizableValue>]
     /// 
     /// <example-tbd></example-tbd>
-    /// 
+    ///
+    [<GeneralizableValue>]
     [<CompiledName("Empty")>]
     val empty<'T> : 'T[]
 

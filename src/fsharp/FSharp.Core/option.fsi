@@ -7,10 +7,10 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains operations for working with options.</summary>
 ///
 /// <category>Options</category>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Option =
     /// <summary>Returns true if the option is not None.</summary>
     /// <param name="option">The input option.</param>

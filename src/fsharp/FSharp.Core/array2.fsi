@@ -6,8 +6,6 @@ open System
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
 /// <summary>Contains operations for working with 2-dimensional arrays.</summary>
 ///
 /// <remarks>
@@ -23,6 +21,8 @@ open Microsoft.FSharp.Core
 /// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>, 
 /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</para>
 /// </remarks>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
 module Array2D = 
 
     /// <summary>Fetches the base-index for the first dimension of the array.</summary>
@@ -265,5 +265,3 @@ module Array2D =
     /// <example-tbd></example-tbd>
     [<CompiledName("Get")>]
     val get: array:'T[,] -> index1:int -> index2:int -> 'T
-
-

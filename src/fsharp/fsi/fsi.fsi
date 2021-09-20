@@ -9,8 +9,8 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
 
-[<Class>]
 /// Represents an evaluated F# value
+[<Class>]
 type FsiValue = 
 
     /// The value, as an object
@@ -22,8 +22,8 @@ type FsiValue =
     /// The type of the value, from the point of view of the F# type system
     member FSharpType: FSharpType
 
-[<Sealed>]
 /// Represents an evaluated F# value that is bound to an identifier
+[<Sealed>]
 type FsiBoundValue =
 
     /// The identifier of the value
@@ -307,8 +307,8 @@ module Settings =
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart: unit -> unit
 
-    [<Sealed>]
     /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
+    [<Sealed>]
     type InteractiveSettings =
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>
         member FloatingPointFormat: string with get,set

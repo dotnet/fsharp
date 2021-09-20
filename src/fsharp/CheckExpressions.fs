@@ -1031,8 +1031,8 @@ let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 /// shares the same code paths (e.g. TcLetBinding and TcLetrec) as processing expression bindings (such as "let x = 1 in ...")
 /// Member bindings also use this path.
 //
-/// However there are differences in how different bindings get processed,
-/// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
+// However there are differences in how different bindings get processed,
+// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
 type DeclKind =
     | ModuleOrMemberBinding
 
@@ -5971,7 +5971,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let e3', tpenv = TcExpr cenv overallTy env tpenv e3
         Expr.StaticOptimization (constraints', e2', e3', m), tpenv
 
-    /// e1.longId <- e2
+    // e1.longId <- e2
     | SynExpr.DotSet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
@@ -5981,11 +5981,11 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
             TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
-    /// e1 <- e2
+    // e1 <- e2
     | SynExpr.Set (e1, e2, mStmt) ->
         TcExprThen cenv overallTy env tpenv false e1 [MakeDelayedSet(e2, mStmt)]
 
-    /// e1.longId(e2) <- e3, very rarely used named property setters
+    // e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor

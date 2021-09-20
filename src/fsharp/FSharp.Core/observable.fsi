@@ -5,12 +5,12 @@ namespace Microsoft.FSharp.Control
 open System
 open Microsoft.FSharp.Core
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
 /// <summary>Contains operations for working with first class event and other observable objects.</summary>
 ///
 /// <category index="3">Events and Observables</category>
-module Observable = 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module Observable =
 
     /// <summary>Returns an observable for the merged observations from the sources. 
     /// The returned object propagates success and error values arising 

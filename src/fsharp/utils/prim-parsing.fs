@@ -34,8 +34,8 @@ type internal IParseState(ruleStartPoss:Position[], ruleEndPoss:Position[], lhsP
     member p.RaiseError()  = raise RecoverableParseError 
 
 
-[<Sealed>]
 /// This context is passed to the error reporter when a syntax error occurs
+[<Sealed>]
 type internal ParseErrorContext<'tok>
          (//lexbuf: LexBuffer<_>,
           stateStack:int list,

@@ -3,10 +3,10 @@
 /// <summary>Pervasives: Additional bindings available at the top level</summary>
 namespace Microsoft.FSharp.Core
 
-[<AutoOpen>]
 /// <summary>A set of extra operators and functions. This module is automatically opened in all F# code.</summary>
 ///
 /// <category>Basic Operators</category>
+[<AutoOpen>]
 module ExtraTopLevelOperators = 
 
     open System
@@ -294,8 +294,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <summary>Gets or sets the column for the location.</summary>
         member Column : int with get, set
 
-    [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
     /// <summary>Indicates that a code editor should hide all System.Object methods from the intellisense menus for instances of a provided type</summary>
+    [<AttributeUsageAttribute(AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate, AllowMultiple = false)>]
     type TypeProviderEditorHideMethodsAttribute = 
         inherit System.Attribute
 

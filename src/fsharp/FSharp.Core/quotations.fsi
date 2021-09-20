@@ -409,9 +409,9 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
-    /// 
+    ///
     /// <example-tbd></example-tbd>
+    [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
     static member Quote: inner:Expr -> Expr 
 
     /// <summary>Builds an expression that represents a nested raw quotation literal</summary>
@@ -685,8 +685,8 @@ and [<CompiledName("FSharpExpr`1")>]
         /// <example-tbd></example-tbd>
         member Raw : Expr
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of primitive F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Patterns =
     
     /// <summary>An active pattern to recognize expressions that represent getting the address of a value</summary>
@@ -1070,8 +1070,8 @@ module Patterns =
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
     
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of derived F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module DerivedPatterns =    
 
     /// <summary>An active pattern to recognize expressions that represent a (possibly curried or tupled) first class function value</summary>
