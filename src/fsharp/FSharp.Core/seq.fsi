@@ -1356,7 +1356,7 @@ module Seq =
     ///
     /// <example id="iter2-1">
     /// <code lang="fsharp">
-    /// (["a"; "b"; "c"], [1; 2; 3;])
+    /// (["a"; "b"; "c"], [1; 2; 3])
     /// ||> Seq.iter2 (printfn "%s: %i")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
@@ -1380,7 +1380,19 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="iter2-1">
+    /// <code lang="fsharp">
+    /// (["a"; "b"; "c"], ["banana"; "pear"; "apple"])
+    /// ||> Seq.iteri2 (printfn "Index %i: %s - %s")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// Index 0: a - banana
+    /// Index 1: b - pear
+    /// Index 2: c - apple
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed2")>]
     val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
 
