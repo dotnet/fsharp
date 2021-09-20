@@ -1380,7 +1380,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
-    /// <example id="iter2-1">
+    /// <example id="iteri2-1">
     /// <code lang="fsharp">
     /// (["a"; "b"; "c"], ["banana"; "pear"; "apple"])
     /// ||> Seq.iteri2 (printfn "Index %i: %s - %s")
@@ -1404,7 +1404,12 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// ["a"; "b"; "c"] |> Seq.length
+    /// </code>
+    /// Evaluates to <c>3</c>
+    /// </example>
     [<CompiledName("Length")>]
     val length: source:seq<'T> -> int
 
