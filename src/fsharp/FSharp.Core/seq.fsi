@@ -411,8 +411,9 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: string }
     ///
-    /// [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
-    /// |> Seq.countBy (fun foo -> foo.Bar)
+    /// let data = [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
+    ///
+    /// data |> Seq.countBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [("a", 2); ("b", 1)]</c>
     /// </example>
@@ -470,8 +471,9 @@ module Seq =
     ///
     /// <example id="distinct-by-1">
     /// <code lang="fsharp">
-    /// [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
-    /// |> Seq.distinctBy (fun foo -> foo.Bar)
+    /// let data = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
+    ///
+    /// data |> Seq.distinctBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [{ Bar = 1 }; { Bar = 2 }; { Bar = 3 }]</c>
     /// </example>
@@ -800,12 +802,12 @@ module Seq =
     ///   | In of int
     ///   | Out of int
     ///
-    /// (0, [In 1; Out 2; In 3])
-    /// ||> Seq.fold
-    ///       (fun acc charge ->
-    ///         match charge with
-    ///         | In i -> acc + i
-    ///         | Out o -> acc - o)
+    /// let data = [In 1; Out 2; In 3]
+    ///
+    /// (0, data) ||> Seq.fold (fun acc charge ->
+    ///     match charge with
+    ///     | In i -> acc + i
+    ///     | Out o -> acc - o)
     /// </code>
     /// Evaluates to <c>2</c>
     /// </example>
@@ -833,13 +835,14 @@ module Seq =
     /// <code lang="fsharp">
     /// type CoinToss = Head | Tails
     ///
-    /// (0, [Tails; Head; Tails], [Tails; Head; Head])
-    /// |||> Seq.fold2
-    ///       (fun acc a b ->
-    ///         match (a, b) with
-    ///         | Head, Head -> acc + 1
-    ///         | Tails, Tails -> acc + 1
-    ///         | _ -> acc - 1)
+    /// let data1 = [Tails; Head; Tails]
+    /// let data2 = [Tails; Head; Head]
+    ///
+    /// (0, data1, data2) |||> Seq.fold2 (fun acc a b ->
+    ///     match (a, b) with
+    ///     | Head, Head -> acc + 1
+    ///     | Tails, Tails -> acc + 1
+    ///     | _ -> acc - 1)
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -870,19 +873,17 @@ module Seq =
     /// let sequence = [1; 0; -1; -2; 3]
     /// let initialState = {Positive = 0; Negative = 0; History = []}
     ///
-    /// (sequence, initialState)
-    /// ||> Seq.foldBack
-    ///       (fun a acc  ->
-    ///         let history = acc.History @ [a]
-    ///         if a >= 0 then
-    ///           { acc with
-    ///               Positive = acc.Positive + 1
-    ///               History = history }
-    ///         else
-    ///           { acc with
-    ///               Negative = acc.Negative + 1
-    ///               History = history }
-    ///       )
+    /// (sequence, initialState) ||> Seq.foldBack (fun a acc  ->
+    ///     let history = acc.History @ [a]
+    ///     if a >= 0 then
+    ///       { acc with
+    ///           Positive = acc.Positive + 1
+    ///           History = history }
+    ///     else
+    ///       { acc with
+    ///           Negative = acc.Negative + 1
+    ///           History = history }
+    /// )
     /// </code>
     /// Evaluates to
     /// <code>
@@ -920,23 +921,22 @@ module Seq =
     ///     Negative: int
     ///     History: int list }
     ///
-    /// ( [-1; -2; -3],
-    ///   [3; 2; 1; 0],
-    ///   {Positive = 0; Negative = 0; History = []})
-    /// |||> Seq.foldBack2
-    ///       (fun a b acc  ->
-    ///         let sum = a + b
-    ///         let history = acc.History @ [sum]
-    ///         if sum >= 0
-    ///         then
-    ///           { acc with
-    ///               Positive = acc.Positive + 1
-    ///               History = history }
-    ///         else
-    ///           { acc with
-    ///               Negative = acc.Negative + 1
-    ///               History = history }
-    ///       )
+    /// let inputs1 = [-1; -2; -3]
+    /// let inputs2 = [3; 2; 1; 0]
+    /// let initialState = {Positive = 0; Negative = 0; History = []}
+    ///
+    /// (inputs1, inputs2, initialState) |||> Seq.foldBack2 (fun a b acc  ->
+    ///     let sum = a + b
+    ///     let history = acc.History @ [sum]
+    ///     if sum >= 0 then
+    ///         { acc with
+    ///             Positive = acc.Positive + 1
+    ///             History = history }
+    ///     else
+    ///         { acc with
+    ///             Negative = acc.Negative + 1
+    ///             History = history }
+    /// )
     /// </code>
     /// Evaluates to
     /// <code>
@@ -987,11 +987,15 @@ module Seq =
     ///
     /// <example id="for-all2-1">
     /// <code lang="fsharp">
-    /// ([1; 2; 3; 4; 5], [1; 2; 3; 4; 5])
-    /// ||> Seq.forall2 (=) // evaluates to true
+    /// let inputs1 = [1; 2; 3; 4; 5]
+    /// let inputs2 = [1; 2; 3; 4; 5]
     ///
-    /// ([2017; 1; 1], [2019; 19; 8])
-    /// ||> Seq.forall2 (=) // evaluates to false
+    /// (inputs1, inputs2)  ||> Seq.forall2 (=) // evaluates to true
+    ///
+    /// let items1 = [2017; 1; 1]
+    /// let items2 = [2019; 19; 8]
+    ///
+    /// (items1, items2) ||> Seq.forall2 (=) // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("ForAll2")>]
@@ -1360,8 +1364,10 @@ module Seq =
     ///
     /// <example id="iter2-1">
     /// <code lang="fsharp">
-    /// (["a"; "b"; "c"], [1; 2; 3])
-    /// ||> Seq.iter2 (printfn "%s: %i")
+    /// let inputs1 = ["a"; "b"; "c"]
+    /// let inputs2 = [1; 2; 3]
+    ///
+    /// (inputs1, inputs2) ||> Seq.iter2 (printfn "%s: %i")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -1386,8 +1392,10 @@ module Seq =
     ///
     /// <example id="iteri2-1">
     /// <code lang="fsharp">
-    /// (["a"; "b"; "c"], ["banana"; "pear"; "apple"])
-    /// ||> Seq.iteri2 (printfn "Index %i: %s - %s")
+    /// let inputs1 = ["a"; "b"; "c"]
+    /// let inputs2 = ["banana"; "pear"; "apple"]
+    ///
+    /// (inputs1, inputs2) ||> Seq.iteri2 (printfn "Index %i: %s - %s")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -1410,7 +1418,9 @@ module Seq =
     ///
     /// <example id="item-1">
     /// <code lang="fsharp">
-    /// ["a"; "b"; "c"] |> Seq.length
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Seq.length
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
