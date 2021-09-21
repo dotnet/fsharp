@@ -562,16 +562,18 @@ module Seq =
     ///
     /// <example id="exists-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.exists (fun elm -> elm % 4 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    ///
+    /// input |> Seq.exists (fun elm -> elm % 4 = 0)
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
     ///
     /// <example id="exists-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.exists (fun elm -> elm % 6 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    ///
+    /// input |> Seq.exists (fun elm -> elm % 6 = 0)
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
@@ -595,16 +597,14 @@ module Seq =
     ///
     /// <example id="exists2-1">
     /// <code lang="fsharp">
-    /// ([1; 2; 2], [1; 2; 3])
-    /// ||> Seq.exists2 (fun a b -> a > b)
+    /// ([1; 2], [1; 2]) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
     ///
     /// <example id="exists2-2">
     /// <code lang="fsharp">
-    /// ([1; 2; 4], [1; 2; 3])
-    /// ||> Seq.exists2 (fun a b -> a > b)
+    /// ([1; 4], [1; 3]) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
@@ -628,8 +628,7 @@ module Seq =
     ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.filter (fun elm -> elm % 2 = 0)
+    /// [1; 2; 3; 4] |> Seq.filter (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -655,8 +654,7 @@ module Seq =
     ///
     /// <example id="where-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.where (fun elm -> elm % 2 = 0)
+    /// [1; 2; 3; 4] |> Seq.where (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -676,16 +674,14 @@ module Seq =
     ///
     /// <example id="find-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.find (fun elm -> elm % 2 = 0)
+    /// [1; 2; 3] |> Seq.find (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>2</c>
     /// </example>
     ///
     /// <example id="find-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.find (fun elm -> elm % 6 = 0)
+    /// [1; 2; 3] |> Seq.find (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
