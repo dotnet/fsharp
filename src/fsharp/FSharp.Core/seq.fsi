@@ -294,8 +294,10 @@ module Seq =
     /// <code lang="fsharp">
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
-    /// ([1; 10], [1; 10])
-    /// ||> Seq.compareWith closerToNextDozen
+    ///
+    /// let input = ([1; 10], [1; 10])
+    ///
+    /// input ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>0</c>
     /// </example>
@@ -304,38 +306,46 @@ module Seq =
     /// <code lang="fsharp">
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
-    /// ([1; 5], [1; 8])
-    /// ||> Seq.compareWith closerToNextDozen
+    ///
+    /// let input = ([1; 5], [1; 8])
+    ///
+    /// input ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
     ///
     /// <example id="compare-with-3">
+    /// <code lang="fsharp">
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
-    /// <code lang="fsharp">
-    /// ([1; 11], [1; 13])
-    /// ||> Seq.compareWith closerToNextDozen
+    ///
+    /// let input = ([1; 11], [1; 13])
+    ///
+    /// input ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
     ///
     /// <example id="compare-with-4">
+    /// <code lang="fsharp">
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
-    /// <code lang="fsharp">R
-    /// ([1; 2], [1])
-    /// ||> Seq.compareWith closerToNextDozen
+    ///
+    /// let input = ([1; 2], [1])
+    ///
+    /// input ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
     ///
     /// <example id="compare-with-5">
+    /// <code lang="fsharp">
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
-    /// <code lang="fsharp">
-    /// ([1], [1; 2])
-    /// ||> Seq.compareWith closerToNextDozen
+    ///
+    /// let input = ([1], [1; 2])
+    ///
+    /// input ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
