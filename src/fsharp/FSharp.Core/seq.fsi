@@ -971,11 +971,9 @@ module Seq =
     /// <code lang="fsharp">
     /// let isEven a = a % 2 = 0
     ///
-    /// [2; 4; 6; 8; 42]
-    /// |> Seq.forall isEven // evaluates to true
+    /// [2; 42] |> Seq.forall isEven // evaluates to true
     ///
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.forall isEven // evaluates to false
+    /// [1; 2] |> Seq.forall isEven // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
