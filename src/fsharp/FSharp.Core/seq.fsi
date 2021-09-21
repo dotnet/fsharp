@@ -737,16 +737,17 @@ module Seq =
     ///
     /// <example id="find-index-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    ///
+    /// input |> Seq.findIndex (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
     ///
     /// <example id="find-index-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    /// input |> Seq.findIndex (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
@@ -769,16 +770,18 @@ module Seq =
     ///
     /// <example id="find-index-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findIndex (fun elm -> elm % 2 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    ///
+    /// input |> Seq.findIndex (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>3</c>
     /// </example>
     ///
     /// <example id="find-index-back-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findIndex (fun elm -> elm % 6 = 0)
+    /// let input = [1; 2; 3; 4; 5]
+    ///
+    /// input |> Seq.findIndex (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
