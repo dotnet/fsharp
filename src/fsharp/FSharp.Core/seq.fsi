@@ -880,8 +880,7 @@ module Seq =
     /// ||> Seq.foldBack
     ///       (fun a acc  ->
     ///         let history = acc.History @ [a]
-    ///         if a >= 0
-    ///         then
+    ///         if a >= 0 then
     ///           { acc with
     ///               Positive = acc.Positive + 1
     ///               History = history }
