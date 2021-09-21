@@ -806,13 +806,12 @@ module Seq =
     ///   | In of int
     ///   | Out of int
     ///
-    /// [In 1; Out 2; In 3]
-    /// |> Seq.fold
+    /// (0, [In 1; Out 2; In 3])
+    /// ||> Seq.fold
     ///       (fun acc charge ->
     ///         match charge with
     ///         | In i -> acc + i
     ///         | Out o -> acc - o)
-    ///       0
     /// </code>
     /// Evaluates to <c>2</c>
     /// </example>
@@ -840,14 +839,13 @@ module Seq =
     /// <code lang="fsharp">
     /// type CoinToss = Head | Tails
     ///
-    /// ([Tails; Head; Tails], [Tails; Head; Head])
-    /// ||> Seq.fold2
+    /// (0, [Tails; Head; Tails], [Tails; Head; Head])
+    /// |||> Seq.fold2
     ///       (fun acc a b ->
     ///         match (a, b) with
     ///         | Head, Head -> acc + 1
     ///         | Tails, Tails -> acc + 1
     ///         | _ -> acc - 1)
-    ///       0
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -875,8 +873,10 @@ module Seq =
     ///     Negative: int
     ///     History: int list }
     ///
-    /// ( [1; 0; -1; -2; 3],
-    ///   {Positive = 0; Negative = 0; History = []})
+    /// let sequence = [1; 0; -1; -2; 3]
+    /// let initialState = {Positive = 0; Negative = 0; History = []}
+    ///
+    /// (sequence, initialState)
     /// ||> Seq.foldBack
     ///       (fun a acc  ->
     ///         let history = acc.History @ [a]
