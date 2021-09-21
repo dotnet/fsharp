@@ -19,8 +19,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     Ok 1            |> map (fun x -> "perfect") = Ok "perfect"
-        ///     Error "message" |> map (fun x -> "perfect") = Error "message"
+        /// Ok 1 |> Result.map (fun x -> "perfect") // evaluates to Ok "perfect"
+        ///
+        /// Error "message" |> Result.map (fun x -> "perfect") // evaluates to Error "message"
         /// </code>
         /// </example>
         [<CompiledName("Map")>]
@@ -35,8 +36,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     Ok 1        |> mapError (fun x -> "bar") = Ok 1
-        ///     Error "foo" |> mapError (fun x -> "bar") = Error "bar"
+        /// Ok 1 |> Result.mapError (fun x -> "bar") // evaluates to Ok 1
+        ///
+        /// Error "foo" |> Result.mapError (fun x -> "bar") // evaluates to Error "bar"
         /// </code>
         /// </example>
         [<CompiledName("MapError")>]
@@ -52,14 +54,16 @@ namespace Microsoft.FSharp.Core
         ///
         /// <example>
         /// <code lang="fsharp">
-        ///     let tryParse (input: string) =
-        ///         match System.Int32.TryParse input with
-        ///         | true, v -> Ok v
-        ///         | false, _ -> Error "couldn't parse"
+        /// let tryParse (input: string) =
+        ///     match System.Int32.TryParse input with
+        ///     | true, v -> Ok v
+        ///     | false, _ -> Error "couldn't parse"
         ///     
-        ///     Error "message" |> bind tryParse = Error "message"
-        ///     Ok "42"         |> bind tryParse = Ok 42
-        ///     Ok "Forty-two"  |> bind tryParse = Error "couldn't parse"
+        /// Error "message" |> Result.bind tryParse // evaluates to Error "message"
+        ///
+        /// Ok "42" |> Result.bind tryParse // evaluates to Ok 42
+        ///
+        /// Ok "Forty-two" |> Result.bind tryParse // evaluates to Error "couldn't parse"
         /// </code>
         /// </example>
         [<CompiledName("Bind")>]
