@@ -704,16 +704,14 @@ module Seq =
     ///
     /// <example id="find-back-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findBack (fun elm -> elm % 2 = 0)
+    /// [2; 3; 4] |> Seq.findBack (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>4</c>
     /// </example>
     ///
     /// <example id="find-back-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5]
-    /// |> Seq.findBack (fun elm -> elm % 6 = 0)
+    /// [2; 3; 4] |> Seq.findBack (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
