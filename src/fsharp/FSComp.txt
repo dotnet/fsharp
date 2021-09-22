@@ -1607,6 +1607,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3391,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
 3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
 3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."
+3394,parsNewExprMemberAccess,"This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'"
 3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code."
 3402,tcInvalidResumableConstruct,"The construct '%s' may only be used in valid resumable code."
 3501,tcResumableCodeFunctionMustBeInline,"Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'"
