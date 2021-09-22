@@ -2632,6 +2632,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="n">The value to negate.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline ( ~- ) : n:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
         /// <summary>Overloaded addition operator</summary>
@@ -2640,6 +2643,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="addition-example-1">
+        /// <code lang="fsharp">
+        /// 2 + 2 //  Evaluates to 4
+        /// "Hello " + "Word" // Evaluates to "Hello World"
+        /// </code>
+        /// </example>
         val inline ( + ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded subtraction operator</summary>
@@ -2648,6 +2658,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="subtraction-example-1">
+        /// <code lang="fsharp">
+        /// 10 - 2 //  Evaluates to 8
+        /// </code>
+        /// </example>
         val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded multiplication operator</summary>
@@ -2656,6 +2672,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="multiplication-example-1">
+        /// <code lang="fsharp">
+        /// 8 * 6 //  Evaluates to 64
+        /// </code>
+        /// </example>
         val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded division operator</summary>
@@ -2664,6 +2686,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="division-example-1">
+        /// <code lang="fsharp">
+        /// 16 * 2 //  Evaluates to 8
+        /// </code>
+        /// </example>
         val inline ( / ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded modulo operator</summary>
@@ -2672,6 +2700,12 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="modulo-example-1">
+        /// <code lang="fsharp">
+        /// 29 % 5 //  Evaluates to 4
+        /// </code>
+        /// </example>
         val inline ( % ) : x:^T1 -> y:^T2 -> ^T3    when (^T1 or ^T2) : (static member ( % ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded bitwise-AND operator</summary>
@@ -2680,6 +2714,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="bitwise-and-example-1">
+        /// <code lang="fsharp">
+        /// let a = 13       // 00000000000000000000000000001101
+        /// let b = 11       // 00000000000000000000000000001011
+        /// let c = a &&& b  // 00000000000000000000000000001001
+        /// </code>
+        /// Evaluates to 9
+        /// </example>
         val inline (&&&): x:^T -> y:^T -> ^T     when ^T : (static member (&&&) : ^T * ^T    -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-OR operator</summary>
@@ -2688,6 +2731,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="bitwise-or-example-1">
+        /// <code lang="fsharp">
+        /// let a = 13       // 00000000000000000000000000001101
+        /// let b = 11       // 00000000000000000000000000001011
+        /// let c = a &&& b  // 00000000000000000000000000001111
+        /// </code>
+        /// Evaluates to 15
+        /// </example>
         val inline (|||) : x:^T -> y:^T -> ^T    when ^T : (static member (|||) : ^T * ^T    -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-XOR operator</summary>
@@ -2696,6 +2748,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="bitwise-xor-example-1">
+        /// <code lang="fsharp">
+        /// let a = 13       // 00000000000000000000000000001101
+        /// let b = 11       // 00000000000000000000000000001011
+        /// let c = a ^^^ b  // 00000000000000000000000000000110
+        /// </code>
+        /// Evaluates to 6
+        /// </example>
         val inline (^^^) : x:^T -> y:^T -> ^T    when ^T : (static member (^^^) : ^T * ^T    -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift left operator by a specified number of bits</summary>
@@ -2704,6 +2765,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="shift">The amount to shift.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="left-shift-example-1">
+        /// <code lang="fsharp">
+        /// let a = 13       // 00000000000000000000000000001101
+        /// let c = a << 4   // 00000000000000000000000011010000
+        /// </code>
+        /// Evaluates to 206
+        /// </example>
         val inline (<<<) : value:^T -> shift:int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift right operator by a specified number of bits</summary>
@@ -2712,6 +2781,16 @@ namespace Microsoft.FSharp.Core
         /// <param name="shift">The amount to shift.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="right-shift-example-1">
+        /// <code lang="fsharp">
+        /// let a = 206      // 00000000000000000000000011010000
+        /// let c1 = a >> 2  // 00000000000000000000000000110100
+        /// // Evaluates to 51
+        /// let c2 = a >> 6  // 00000000000000000000000000000011
+        /// Evaluates to 3
+        /// </code>
+        /// </example>
         val inline (>>>) : value:^T -> shift:int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-NOT operator</summary>
@@ -2719,6 +2798,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example id="bitwise-not-example-1">
+        /// <code lang="fsharp">
+        /// let byte1 = 60uy  //  00111100
+        /// let byte2 = ~~~b1 //  11000011
+        /// </code>
+        /// Evaluates to 195
+        /// </example>
+        /// 
         val inline (~~~)  : value:^T -> ^T         when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
         
         /// <summary>Overloaded prefix-plus operator</summary>
@@ -2726,6 +2814,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The result of the operation.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (~+) : value:^T -> ^T           when ^T : (static member (~+)  : ^T         -> ^T) and default ^T : int
         
         /// <summary>Structural less-than comparison</summary>
@@ -2734,6 +2825,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-less-than-example">
+        /// <code lang="fsharp">
+        ///  1 < 5               // Evaluates to true
+        ///  5 < 5               // Evaluates to false
+        ///  (1, "a") < (1, "z") // Evaluates to true
+        /// </code>
+        /// </example>
+        /// 
         val inline ( < ) : x:'T -> y:'T -> bool when 'T : comparison
         
         /// <summary>Structural greater-than</summary>
@@ -2742,6 +2842,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-greather-than-example">
+        /// <code lang="fsharp">
+        ///  5 > 1               // Evaluates to true
+        ///  5 > 5               // Evaluates to false
+        ///  (1, "a") > (1, "z") // Evaluates to false
+        /// </code>
+        /// </example>
+        /// 
         val inline ( > ) : x:'T -> y:'T -> bool when 'T : comparison
         
         /// <summary>Structural greater-than-or-equal</summary>
@@ -2750,6 +2859,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-greater-than-or-equal-example">
+        /// <code lang="fsharp">
+        ///  5 >= 1              // Evaluates to true
+        ///  5 >= 5              // Evaluates to true
+        ///  [1; 5] >= [1; 6]    // Evaluates to false
+        /// </code>
+        /// </example>
+        /// 
         val inline ( >= ) : x:'T -> y:'T -> bool when 'T : comparison
         
         /// <summary>Structural less-than-or-equal comparison</summary>
@@ -2758,6 +2876,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-less-than-or-equal-example">
+        /// <code lang="fsharp">
+        ///  5 <= 1              // Evaluates to false
+        ///  5 <= 5              // Evaluates to true
+        ///  [1; 5] <= [1; 6]    // Evaluates to true
+        /// </code>
+        /// </example>
+        /// 
         val inline ( <= ) : x:'T -> y:'T -> bool when 'T : comparison
         
         /// <summary>Structural equality</summary>
@@ -2766,6 +2893,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-equal-example">
+        /// <code lang="fsharp">
+        ///  5 = 5              // Evaluates to true
+        ///  5 = 6              // Evaluates to false
+        ///  [1; 2] = [1; 2]    // Evaluates to true
+        /// </code>
+        /// </example>
+        /// 
         val inline ( = ) : x:'T -> y:'T -> bool when 'T : equality
         
         /// <summary>Structural inequality</summary>
@@ -2774,6 +2910,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The second parameter.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example id="compare-not-equal-example">
+        /// <code lang="fsharp">
+        ///  5 <> 5              // Evaluates to false
+        ///  5 <> 6              // Evaluates to true
+        ///  [1; 2] <> [1; 2]    // Evaluates to false
+        /// </code>
+        /// </example>
+        /// 
         val inline ( <> ) : x:'T -> y:'T -> bool when 'T : equality
 
         /// <summary>Compose two functions, the function on the left being applied first</summary>
@@ -2782,6 +2927,16 @@ namespace Microsoft.FSharp.Core
         /// <param name="func2">The second function to apply.</param>
         ///
         /// <returns>The composition of the input functions.</returns>
+        /// 
+        /// <example id="compose-example">
+        /// <code lang="fsharp">
+        /// let addOne x = x + 1
+        /// let doubleIt x = x * 2
+        /// let addThenDouble = addOne >> doubleIt
+        /// addThenDouble 3  // Evaluates to 8
+        /// </code>
+        /// </example>
+        /// 
         val inline (>>): func1:('T1 -> 'T2) -> func2:('T2 -> 'T3) -> ('T1 -> 'T3) 
         
         /// <summary>Compose two functions, the function on the right being applied first</summary>
@@ -2790,6 +2945,16 @@ namespace Microsoft.FSharp.Core
         /// <param name="func1">The first function to apply.</param>
         ///
         /// <returns>The composition of the input functions.</returns>
+        /// 
+        /// <example id="right-compose-example">
+        /// <code lang="fsharp">
+        /// let addOne x = x + 1
+        /// let doubleIt x = x * 2
+        /// let doubleThenAdd = addOne << doubleIt
+        /// doubleThenAdd 3  
+        /// </code>
+        /// </example>
+        /// 
         val inline (<<): func2:('T2 -> 'T3) -> func1:('T1 -> 'T2) -> ('T1 -> 'T3) 
         
         /// <summary>Apply a function to a value, the value being on the left, the function on the right</summary>
@@ -2798,6 +2963,16 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The function.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example id="pipeline-example">
+        /// <code lang="fsharp">
+        /// let addOne x = x + 1
+        /// let doubleIt x = x * 2
+        /// let doubleThenAdd = addOne << doubleIt
+        /// doubleThenAdd 3  
+        /// </code>
+        /// </example>
+        /// 
         val inline (|>): arg:'T1 -> func:('T1 -> 'U) -> 'U
 
         /// <summary>Apply a function to two values, the values being a pair on the left, the function on the right</summary>
@@ -2807,6 +2982,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The function.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example id="pipeline-example">
+        /// <code lang="fsharp">
+        /// let sum x y = x + y
+        /// (3, 4) ||> sum   // Evaluates to 7
+        /// </code>
+        /// </example>
+        /// 
         val inline (||>): arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
 
         /// <summary>Apply a function to three values, the values being a triple on the left, the function on the right</summary>
@@ -2817,6 +3000,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The function.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example id="pipeline-example">
+        /// <code lang="fsharp">
+        /// let sum3 x y z = x + y + z
+        /// (3, 4, 5) |||> sum3   // Evaluates to 12
+        /// </code>
+        /// </example>
+        /// 
         val inline (|||>): arg1:'T1 * arg2:'T2 * arg3:'T3 -> func:('T1 -> 'T2 -> 'T3 -> 'U) -> 'U
         
         /// <summary>Apply a function to a value, the value being on the right, the function on the left</summary>
@@ -2825,6 +3016,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg1">The argument.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (<|): func:('T -> 'U) -> arg1:'T -> 'U
 
         /// <summary>Apply a function to two values, the values being a pair on the right, the function on the left</summary>
@@ -2834,6 +3028,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg2">The second argument.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (<||): func:('T1 -> 'T2 -> 'U) -> arg1:'T1 * arg2:'T2 -> 'U
 
         /// <summary>Apply a function to three values, the values being a triple on the right, the function on the left</summary>
@@ -2844,6 +3041,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third argument.</param>
         ///
         /// <returns>The function result.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (<|||): func:('T1 -> 'T2 -> 'T3 -> 'U) -> arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
@@ -2852,6 +3052,22 @@ namespace Microsoft.FSharp.Core
         /// <param name="defaultValue">The default value of the argument.</param>
         ///
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        /// 
+        /// <example id="defaultArg-example">
+        /// <code lang="fsharp">
+        /// type Vector(x: double, y: double, ?z: double) = 
+        ///     let z = defaultArg z 0.0
+        ///     member this.X = x
+        ///     member this.Y = y
+        ///     member this.Z = z
+        /// 
+        /// let v1 = Vector(1.0, 2.0)
+        /// v1.Z  // Evaluates to 0.
+        /// let v2 = Vector(1.0, 2.0, 3.0)
+        /// v2.Z  // Evaluates to 3.0
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("DefaultArg")>]
         val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
 
@@ -2861,6 +3077,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="defaultValue">The default value of the argument.</param>
         ///
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        /// 
+        /// <example id="defaultValueArg-example">
+        /// <code lang="fsharp">
+        /// let arg1 = ValueSome(5)
+        /// defaultValueArg arg1 6       //  Evaluates to 5
+        /// defaultValueArg ValueNone 6  //  Evaluates to 6
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("DefaultValueArg")>]
         val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
 
@@ -2873,6 +3098,21 @@ namespace Microsoft.FSharp.Core
         /// <param name="exn">The exception to raise.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example id="raise-example">
+        /// <code lang="fsharp">
+        /// open System.IO
+        /// exception AintGotNoFileException of string
+        /// 
+        /// let readFile (filename: string) = 
+        ///     if not (File.Exists(filename)) then
+        ///         raise(AintGotNoFileException(filename))
+        ///     File.ReadAllText(filename)
+        /// 
+        /// readFile "/this-file-doest-exist"  //  Throws an AintGotNoFileException
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("Raise")>]
         val inline raise : exn:System.Exception -> 'T
         
@@ -2884,6 +3124,22 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
+        /// 
+        /// <example id="reraise-example">
+        /// <code lang="fsharp">
+        /// let readFile (filename: string) = 
+        ///   try
+        ///     File.ReadAllText(filename)
+        ///   with ex ->
+        ///     eprintfn "Couldn't read %s" filename
+        ///     reraise()
+        ///   
+        /// readFile "/this-file-doest-exist"  
+        /// //  Prints the message to stderr
+        /// //  Throws a System.IO.FileNotFoundException
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("Reraise")>]
         val inline reraise : unit -> 'T
 
@@ -2892,6 +3148,17 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The message for the Exception.</param>
         ///
         /// <returns>A System.Exception.</returns>
+        /// 
+        /// <example id="failure-example">
+        /// <code lang="fsharp">
+        /// let throwException() = 
+        ///     raise(Failure("Oh no!!!")) 
+        ///     true  // Never gets here
+        ///   
+        ///   throwException() //  Throws a generic Exception class
+        /// </code>
+        /// </example>
+        /// 
         val Failure : message:string -> exn
         
         /// <summary>Matches <see cref="T:System.Exception"/> objects whose runtime type is precisely <see cref="T:System.Exception"/></summary>
@@ -2899,6 +3166,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="error">The input exception.</param>
         ///
         /// <returns>A string option.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("FailurePattern")>]
         val (|Failure|_|) : error:exn -> string option
         
@@ -2907,6 +3177,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="tuple">The input tuple.</param>
         ///
         /// <returns>The first value.</returns>
+        /// 
+        /// <example id="fst-example">
+        /// <code lang="fsharp">
+        /// fst ("first", 2)  //  Evaluates to "first"
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("Fst")>]
         val inline fst : tuple:('T1 * 'T2) -> 'T1
         
@@ -2915,6 +3192,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="tuple">The input tuple.</param>
         ///
         /// <returns>The second value.</returns>
+        /// 
+        /// <example id="snd-example">
+        /// <code lang="fsharp">
+        /// fst ("first", 2)  //  Evaluates to 2
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("Snd")>]
         val inline snd : tuple:('T1 * 'T2) -> 'T2
 
@@ -2924,6 +3208,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Compare")>]
         val inline compare: e1:'T -> e2:'T -> int when 'T : comparison
 
@@ -2933,6 +3220,18 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The maximum value.</returns>
+        /// 
+        /// <example id="compare-example">
+        /// <code lang="fsharp">
+        /// compare 1 2             //  Evaluates to -1
+        /// compare [1;2;3] [1;2;4] //  Evaluates to -1
+        /// compare 2 2             //  Evaluates to 0
+        /// compare [1;2;3] [1;2;3] //  Evaluates to 0
+        /// compare 2 1             //  Evaluates to 1
+        /// compare [1;2;4] [1;2;3] //  Evaluates to 1
+        /// </code>
+        /// </example>
+        /// 
         [<CompiledName("Max")>]
         val inline max : e1:'T -> e2:'T -> 'T  when 'T : comparison
 
@@ -2942,12 +3241,18 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The minimum value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Min")>]
         val inline min : e1:'T -> e2:'T -> 'T  when 'T : comparison
 
         /// <summary>Ignore the passed value. This is often used to throw away results of a computation.</summary>
         ///
         /// <param name="value">The value to ignore.</param>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Ignore")>]
         val inline ignore : value:'T -> unit
 
@@ -2956,6 +3261,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The boxed value.</param>
         ///
         /// <returns>The unboxed result.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Unbox")>]
         val inline unbox : value:obj -> 'T
 
@@ -2964,6 +3272,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to box.</param>
         ///
         /// <returns>The boxed object.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Box")>]
         val inline box : value:'T -> obj
 
@@ -2972,6 +3283,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The boxed value.</param>
         ///
         /// <returns>The unboxed result as an option.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("TryUnbox")>]
         val inline tryUnbox : value:obj -> 'T option
 
@@ -2980,6 +3294,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         ///
         /// <returns>True when value is null, false otherwise.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("IsNull")>]
         val inline isNull : value:'T -> bool when 'T : null
         
@@ -2988,6 +3305,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull : value:'T -> bool when 'T : null
 
@@ -2996,6 +3316,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The exception message.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("FailWith")>]
         val inline failwith : message:string -> 'T 
 
@@ -3006,6 +3329,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The exception message.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("InvalidArg")>]
         val inline invalidArg : argumentName:string -> message:string -> 'T 
 
@@ -3014,6 +3340,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("NullArg")>]
         val inline nullArg : argumentName:string -> 'T 
 
@@ -3022,6 +3351,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The exception message.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("InvalidOp")>]
         val inline invalidOp : message:string -> 'T 
 
@@ -3030,6 +3362,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="x">The input value.</param>
         ///
         /// <returns>The same value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Identity")>]
         val id : x:'T -> 'T 
 
@@ -3038,6 +3373,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to contain in the cell.</param>
         ///
         /// <returns>The created reference cell.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Ref")>]
         val ref : value:'T -> 'T ref
 
@@ -3045,6 +3383,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="cell">The cell to mutate.</param>
         /// <param name="value">The value to set inside the cell.</param>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val ( := ) : cell:'T ref -> value:'T -> unit
 
         /// <summary>Dereference a mutable reference cell</summary>
@@ -3052,17 +3393,26 @@ namespace Microsoft.FSharp.Core
         /// <param name="cell">The cell to dereference.</param>
         ///
         /// <returns>The value contained in the cell.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val ( ! ) : cell:'T ref -> 'T
 
         /// <summary>Decrement a mutable reference cell containing an integer</summary>
         ///
         /// <param name="cell">The reference cell.</param>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Decrement")>]
         val decr: cell:int ref -> unit
 
         /// <summary>Increment a mutable reference cell containing an integer</summary>
         ///
         /// <param name="cell">The reference cell.</param>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Increment")>]
         val incr: cell:int ref -> unit
 
@@ -3072,6 +3422,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="list2">The second list.</param>
         ///
         /// <returns>The concatenation of the lists.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val (@): list1:'T list -> list2:'T list -> 'T list
 
         /// <summary>Negate a logical value. Not True equals False and not False equals True</summary>
@@ -3079,6 +3432,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to negate.</param>
         ///
         /// <returns>The result of the negation.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Not")>]
         val inline not : value:bool -> bool
 
@@ -3087,6 +3443,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="sequence">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("CreateSequence")>]
         val seq : sequence:seq<'T> -> seq<'T>
 
@@ -3096,6 +3455,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="exitcode">The exit code to use.</param>
         ///
         /// <returns>The result value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Exit")>]
         val exit: exitcode:int -> 'T   when default 'T : obj
 
@@ -3133,6 +3495,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="finish">The end value of the range.</param>
         ///
         /// <returns>The sequence spanning the range.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (..)    : start:^T       -> finish:^T -> seq< ^T >    
                                 when ^T : (static member (+)   : ^T * ^T -> ^T) 
                                 and ^T : (static member One  : ^T)
@@ -3147,6 +3512,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="finish">The end value of the range.</param>
         ///
         /// <returns>The sequence spanning the range using the specified step size.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline (.. ..) : start:^T -> step:^Step -> finish:^T -> seq< ^T >    
                                 when (^T or ^Step) : (static member (+)   : ^T * ^Step -> ^T) 
                                 and ^Step : (static member Zero : ^Step)
@@ -3161,6 +3529,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="action">The action to perform during the lock.</param>
         ///
         /// <returns>The resulting value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Lock")>]
         val inline lock: lockObject:'Lock -> action:(unit -> 'T) -> 'T when 'Lock : not struct 
 
@@ -3172,21 +3543,33 @@ namespace Microsoft.FSharp.Core
         /// <param name="action">The action that accepts the resource.</param>
         ///
         /// <returns>The resulting value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Using")>]
         val using: resource:('T :> System.IDisposable) -> action:('T -> 'U) -> 'U
 
 
         /// <summary>Generate a System.Type runtime representation of a static type.</summary>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeOf")>]
         val inline typeof<'T> : System.Type
 
-        /// <summary>Returns the name of the given symbol.</summary>        
+        /// <summary>Returns the name of the given symbol.</summary>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         val inline nameof : 'T -> string
 
         /// <summary>An internal, library-only compiler intrinsic for compile-time 
         /// generation of a RuntimeMethodHandle.</summary>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("MethodHandleOf")>]
 #if DEBUG
         val methodhandleof : ('T -> 'TResult) -> System.RuntimeMethodHandle
@@ -3197,11 +3580,17 @@ namespace Microsoft.FSharp.Core
         /// <summary>Generate a System.Type representation for a type definition. If the
         /// input type is a generic type instantiation then return the 
         /// generic type definition associated with all such instantiations.</summary>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeDefOf")>]
         val inline typedefof<'T> : System.Type
 
         /// <summary>Returns the internal size of a type in bytes. For example, <c>sizeof&lt;int&gt;</c> returns 4.</summary>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("SizeOf")>]
         [<RequiresExplicitTypeArguments>] 
         val inline sizeof<'T> : int
@@ -3215,6 +3604,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The computed hash.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Hash")>]
         val inline hash: obj:'T -> int when 'T : equality
 
@@ -3228,6 +3620,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The computed hash.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline limitedHash: limit: int -> obj:'T -> int when 'T : equality
 
 
@@ -3236,6 +3631,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The absolute value of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Abs")>]
         val inline abs      : value:^T -> ^T       when ^T : (static member Abs      : ^T -> ^T)      and default ^T : int
         
@@ -3244,6 +3642,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The inverse cosine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Acos")>]
         val inline acos     : value:^T -> ^T       when ^T : (static member Acos     : ^T -> ^T)      and default ^T : float
         
@@ -3252,6 +3653,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The inverse sine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Asin")>]
         val inline asin     : value:^T -> ^T       when ^T : (static member Asin     : ^T -> ^T)      and default ^T : float
         
@@ -3260,6 +3664,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The inverse tangent of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Atan")>]
         val inline atan     : value:^T -> ^T       when ^T : (static member Atan     : ^T -> ^T)      and default ^T : float
         
@@ -3269,6 +3676,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="x">The x input value.</param>
         ///
         /// <returns>The inverse tangent of the input ratio.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Atan2")>]
         val inline atan2    : y:^T1 -> x:^T1 -> 'T2 when ^T1 : (static member Atan2    : ^T1 * ^T1 -> 'T2) and default ^T1 : float
         
@@ -3277,6 +3687,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The ceiling of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Ceiling")>]
         val inline ceil     : value:^T -> ^T       when ^T : (static member Ceiling  : ^T -> ^T)      and default ^T : float
         
@@ -3285,6 +3698,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The exponential of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Exp")>]
         val inline exp      : value:^T -> ^T       when ^T : (static member Exp      : ^T -> ^T)      and default ^T : float
 
@@ -3293,6 +3709,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The floor of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Floor")>]
         val inline floor    : value:^T -> ^T       when ^T : (static member Floor    : ^T -> ^T)      and default ^T : float
 
@@ -3301,6 +3720,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>-1, 0, or 1 depending on the sign of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Sign")>]
         val inline sign     : value:^T -> int      when ^T : (member Sign    : int)      and default ^T : float
 
@@ -3309,6 +3731,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The nearest integer to the input value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Round")>]
         val inline round    : value:^T -> ^T       when ^T : (static member Round    : ^T -> ^T)      and default ^T : float
 
@@ -3317,6 +3742,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The natural logarithm of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Log")>]
         val inline log      : value:^T -> ^T       when ^T : (static member Log      : ^T -> ^T)      and default ^T : float
 
@@ -3325,6 +3753,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The logarithm to base 10 of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Log10")>]
         val inline log10    : value:^T -> ^T       when ^T : (static member Log10    : ^T -> ^T)      and default ^T : float
 
@@ -3333,6 +3764,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The square root of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Sqrt")>]
         val inline sqrt     : value:^T -> ^U       when ^T : (static member Sqrt     : ^T -> ^U)      and default ^U : ^T and default ^T : ^U and default ^T : float 
 
@@ -3341,6 +3775,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The cosine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Cos")>]
         val inline cos      : value:^T -> ^T       when ^T : (static member Cos      : ^T -> ^T)      and default ^T : float
 
@@ -3349,6 +3786,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The hyperbolic cosine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Cosh")>]
         val inline cosh     : value:^T -> ^T       when ^T : (static member Cosh     : ^T -> ^T)      and default ^T : float
         
@@ -3357,6 +3797,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The sine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Sin")>]
         val inline sin      : value:^T -> ^T       when ^T : (static member Sin      : ^T -> ^T)      and default ^T : float
         
@@ -3365,6 +3808,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The hyperbolic sine of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Sinh")>]
         val inline sinh     : value:^T -> ^T       when ^T : (static member Sinh     : ^T -> ^T)      and default ^T : float
         
@@ -3373,6 +3819,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The tangent of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Tan")>]
         val inline tan      : value:^T -> ^T       when ^T : (static member Tan      : ^T -> ^T)      and default ^T : float
         
@@ -3381,6 +3830,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The hyperbolic tangent of the input.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Tanh")>]
         val inline tanh     : value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
 
@@ -3389,6 +3841,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The truncated value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("Truncate")>]
         val inline truncate : value:^T -> ^T       when ^T : (static member Truncate : ^T -> ^T)      and default ^T : float
 
@@ -3398,6 +3853,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The input exponent.</param>
         ///
         /// <returns>The base raised to the exponent.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         val inline ( **  )  : x:^T -> y:^U -> ^T when ^T : (static member Pow : ^T * ^U -> ^T) and default ^U : float  and default ^T : float
 
         /// <summary>Overloaded power operator. If <c>n > 0</c> then equivalent to <c>x*...*x</c> for <c>n</c> occurrences of <c>x</c>. </summary>
@@ -3406,6 +3864,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="n">The input exponent.</param>
         ///
         /// <returns>The base raised to the exponent.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("PowInteger")>]
         val inline pown  : x:^T -> n:int -> ^T when ^T : (static member One : ^T) 
                                                and  ^T : (static member ( * ) : ^T * ^T -> ^T) 
@@ -3420,6 +3881,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted byte</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToByte")>]
         val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
         
@@ -3431,6 +3895,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted sbyte</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToSByte")>]
         val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
         
@@ -3442,6 +3909,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted int16</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToInt16")>]
         val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
         
@@ -3453,6 +3923,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted uint16</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToUInt16")>]
         val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
         
@@ -3464,6 +3937,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted int</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToInt")>]
         val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
         
@@ -3475,6 +3951,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted int</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToUInt")>]
         val inline uint: value:^T -> uint when ^T: (static member op_Explicit: ^T -> uint) and default ^T: uint
 
@@ -3483,6 +3962,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted enum type.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToEnum")>]
         val inline enum       : value:int32 -> ^U        when ^U : enum<int32> 
 
@@ -3494,6 +3976,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted int32</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToInt32")>]
         val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
@@ -3505,6 +3990,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted uint32</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToUInt32")>]
         val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
@@ -3516,6 +4004,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted int64</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToInt64")>]
         val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
@@ -3527,6 +4018,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted uint64</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToUInt64")>]
         val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
@@ -3538,6 +4032,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted float32</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToSingle")>]
         val inline float32    : value:^T -> float32    when ^T : (static member op_Explicit : ^T -> float32)    and default ^T : int
 
@@ -3549,6 +4046,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted float</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToDouble")>]
         val inline float      : value:^T -> float      when ^T : (static member op_Explicit : ^T -> float)      and default ^T : int
 
@@ -3559,6 +4059,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted nativeint</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToIntPtr")>]
         val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
@@ -3569,6 +4072,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted unativeint</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToUIntPtr")>]
         val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
         
@@ -3579,6 +4085,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted string.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToString")>]
         val inline string  : value:'T -> string
 
@@ -3590,6 +4099,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted decimal.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToDecimal")>]
         val inline decimal : value:^T -> decimal when ^T : (static member op_Explicit : ^T -> decimal) and default ^T : int
 
@@ -3600,6 +4112,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted char.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("ToChar")>]
         val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
@@ -3608,6 +4123,9 @@ namespace Microsoft.FSharp.Core
         /// <param name="keyValuePair">The input key/value pair.</param>
         ///
         /// <returns>A tuple containing the key and value.</returns>
+        /// 
+        /// <example-tbd></example-tbd>
+        /// 
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
@@ -4524,12 +5042,18 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The boxed value.</param>
             ///
             /// <returns>The unboxed result.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Unbox")>]
             val inline unbox<'T> : value: obj -> 'T
 
             /// <summary>Generate a default value for any type. This is null for reference types, 
             /// For structs, this is struct value where all fields have the default value. 
             /// This function is unsafe in the sense that some F# values do not have proper <c>null</c> values.</summary>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<RequiresExplicitTypeArguments>] 
             [<CompiledName("DefaultOf")>]
             val inline defaultof<'T> : 'T
@@ -4537,18 +5061,27 @@ namespace Microsoft.FSharp.Core
             /// <summary>Perform generic comparison on two values where the type of the values is not
             /// statically required to have the 'comparison' constraint. </summary>
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Compare")>]
             val inline compare : 'T -> 'T -> int
 
             /// <summary>Perform generic equality on two values where the type of the values is not
             /// statically required to satisfy the 'equality' constraint. </summary>
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Equals")>]
             val inline equals : 'T -> 'T -> bool
 
             /// <summary>Perform generic hashing on a value where the type of the value is not
             /// statically required to satisfy the 'equality' constraint. </summary>
             /// <returns>The computed hash value.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Hash")>]
             val inline hash : 'T -> int
 
@@ -4562,6 +5095,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( < ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( < ) : ^T * ^U    -> bool) 
         
             /// <summary>Compares the two values for greater-than</summary>
@@ -4570,6 +5106,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( > ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( > ) : ^T * ^U    -> bool) 
         
             /// <summary>Compares the two values for greater-than-or-equal</summary>
@@ -4578,6 +5117,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( >= ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( >= ) : ^T * ^U    -> bool) 
         
             /// <summary>Compares the two values for less-than-or-equal</summary>
@@ -4586,6 +5128,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( <= ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( <= ) : ^T * ^U    -> bool) 
         
             /// <summary>Compares the two values for equality</summary>
@@ -4594,6 +5139,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( = ) : x:^T -> y:^T -> bool when ^T : (static member ( = ) : ^T * ^T    -> bool) 
         
             /// <summary>Compares the two values for inequality</summary>
@@ -4602,6 +5150,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second parameter.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( <> ) : x:^T -> y:^T -> bool when ^T : (static member ( <> ) : ^T * ^T    -> bool) 
 
             /// <summary>Compares the two values</summary>
@@ -4610,6 +5161,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="e2">The second value.</param>
             ///
             /// <returns>The result of the comparison.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Compare")>]
             val inline compare: e1:'T -> e2:^T -> int when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
 
@@ -4619,6 +5173,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="e2">The second value.</param>
             ///
             /// <returns>The maximum value.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Max")>]
             val inline max : e1:^T -> e2:^T -> ^T when ^T : (static member ( < ) : ^T * ^T    -> bool) 
 
@@ -4628,6 +5185,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="e2">The second value.</param>
             ///
             /// <returns>The minimum value.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Min")>]
             val inline min : e1:^T -> e2:^T -> ^T  when ^T : (static member ( < ) : ^T * ^T    -> bool) 
 
@@ -4636,6 +5196,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The value.</param>
             ///
             /// <returns>The hash code.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("Hash")>]
             val inline hash :value:'T -> int   when 'T : equality
 
@@ -4646,6 +5209,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The negated value.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( ~- ) : value:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
@@ -4654,6 +5220,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second value.</param>
             ///
             /// <returns>The first value minus the second value.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded addition operator (checks for overflow)</summary>
@@ -4662,6 +5231,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second value.</param>
             ///
             /// <returns>The sum of the two input values.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( + ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded multiplication operator (checks for overflow)</summary>
@@ -4670,6 +5242,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="y">The second value.</param>
             ///
             /// <returns>The product of the two input values.</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
@@ -4680,6 +5255,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted byte</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToByte")>]
             val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
 
@@ -4691,6 +5269,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted sbyte</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToSByte")>]
             val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
 
@@ -4702,6 +5283,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted int16</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToInt16")>]
             val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
 
@@ -4713,6 +5297,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted uint16</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToUInt16")>]
             val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
 
@@ -4724,6 +5311,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted int</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            ///  
             [<CompiledName("ToInt")>]
             val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
 
@@ -4735,6 +5325,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted int32</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToInt32")>]
             val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
@@ -4746,6 +5339,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted uint32</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToUInt32")>]
             val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
@@ -4757,6 +5353,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted int64</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToInt64")>]
             val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
@@ -4768,6 +5367,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted uint64</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            ///  
             [<CompiledName("ToUInt64")>]
             val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
@@ -4778,6 +5380,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted nativeint</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToIntPtr")>]
             val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
@@ -4788,6 +5393,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted unativeint</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToUIntPtr")>]
             val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
 
@@ -4799,6 +5407,9 @@ namespace Microsoft.FSharp.Core
             /// <param name="value">The input value.</param>
             ///
             /// <returns>The converted char</returns>
+            /// 
+            /// <example-tbd></example-tbd>
+            /// 
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
