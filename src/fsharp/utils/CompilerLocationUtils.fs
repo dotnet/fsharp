@@ -353,24 +353,35 @@ module internal FSharpEnvironment =
     let getFSharpCoreLibraryName = "FSharp.Core"
     let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
-    let getFSharpCompilerLocation() =
-        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-        match BinFolderOfDefaultFSharpCompiler (Some location) with
+    let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
+        let location =
+            try
+                Some (Path.GetDirectoryName(defaultLocation.Assembly.Location))
+            with | _ ->
+                None
+        match BinFolderOfDefaultFSharpCompiler (location) with
         | Some path -> path
         | None ->
+            let path = location |> Option.defaultValue "<null>"
     #if DEBUG
             Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
                 customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
-                location)
+                path)
     #endif
             // Use the location of this dll
-            location
+            path
 
-    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
+    // Fallback to ambient FSharp.CompilerService.dll
+    let getFSharpCompilerLocation() = getFSharpCompilerLocationWithDefaultFromType(typeof<TypeInThisAssembly>)
+
+    // Fallback to ambient FSharp.Core.dll
+    let getDefaultFSharpCoreLocation() = getFSharpCompilerLocationWithDefaultFromType(typeof<Unit>)
+
+    // Must be alongside the location of FSharp.CompilerService.dll
     let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
 
     // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
+    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation()), "Tools")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
