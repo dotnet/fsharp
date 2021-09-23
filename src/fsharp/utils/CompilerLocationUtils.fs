@@ -372,13 +372,13 @@ module internal FSharpEnvironment =
             path
 
     // Fallback to ambient FSharp.CompilerService.dll
-    let getFSharpCompilerLocation() = getFSharpCompilerLocationWithDefaultFromType(typeof<TypeInThisAssembly>)
+    let getFSharpCompilerLocation() = Path.Combine(getFSharpCompilerLocationWithDefaultFromType(typeof<TypeInThisAssembly>));
 
     // Fallback to ambient FSharp.Core.dll
-    let getDefaultFSharpCoreLocation() = getFSharpCompilerLocationWithDefaultFromType(typeof<Unit>)
+    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocationWithDefaultFromType(typeof<Unit>), getFSharpCoreLibraryName + ".dll")
 
     // Must be alongside the location of FSharp.CompilerService.dll
-    let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
+    let getDefaultFsiLibraryLocation() = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation()), fsiLibraryName + ".dll")
 
     // Path to the directory containing the fsharp compilers
     let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation()), "Tools")
