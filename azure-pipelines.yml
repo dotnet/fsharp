@@ -202,7 +202,7 @@ stages:
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
             name: NetCore1ESPool-Svc-Public
-            demands: ImageOverride -equals Build Build.Windows.10.Amd64.VS2019.Open # hardcoding this vaule on servicing branch
+            demands: ImageOverride -equals Build.Windows.10.Amd64.VS2019.Open # hardcoding this vaule on servicing branch
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4
