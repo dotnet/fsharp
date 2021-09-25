@@ -2441,10 +2441,9 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix nm, m))
 
-    // A check that IsByRefLikeAttribute is applied on a struct used to be here
-    // but was moved to isByrefLikeTyconRef. We call it to ensure it is performed.
-    // If it had been called in the past, the result is cached anyway.
-    isByrefLikeTyconRef g m tcref |> ignore
+
+    if TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then 
+        errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tycon.Range))
 
     if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then 
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))

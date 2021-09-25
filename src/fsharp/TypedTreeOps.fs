@@ -3240,12 +3240,7 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
-           (match isStructTyconRef tcref, TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref with
-            | true, hasAttr -> hasAttr
-            | false, hasAttr ->
-                if hasAttr then
-                    errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tcref.Deref.Range))
-                false)
+           (isStructTyconRef tcref && TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
