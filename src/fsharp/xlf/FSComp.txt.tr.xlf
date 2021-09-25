@@ -309,7 +309,7 @@
       </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
-        <target state="new">XML comment is not placed on a valid language element.</target>
+        <target state="translated">XML açıklaması geçerli bir dil öğesine yerleştirilmemiş.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -469,7 +469,7 @@
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
-        <target state="new">This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</target>
+        <target state="translated">Bu üye erişimi belirsiz. Lütfen nesne oluşturma etrafında parantez kullanın, örneğin '(yeni SomeType (args)).MemberName’</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
