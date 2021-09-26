@@ -454,9 +454,9 @@ module MainModuleBuilder =
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then ""
             // otherwise, include the default manifest
             else
-                let path = Path.Combine(AppContext.BaseDirectory, @"default.win32manifest")
+                let path = FileSystem.PathCombineShim(AppContext.BaseDirectory, @"default.win32manifest")
                 if FileSystem.FileExistsShim(path) then path
-                else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
+                else FileSystem.PathCombineShim(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 
         let nativeResources =
             [ for av in assemblyVersionResources assemblyVersion do

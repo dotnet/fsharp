@@ -202,7 +202,7 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
     let combineFilePath file =
         try
             if FileSystem.IsPathRootedShim file then file
-            else Path.Combine(tcConfigB.implicitIncludeDir, file)
+            else FileSystem.PathCombineShim(tcConfigB.implicitIncludeDir, file)
         with _ ->
             error (Error(FSComp.SR.pathIsInvalid file, rangeStartup))
 

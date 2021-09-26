@@ -83,8 +83,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     p.WaitForExit()
 #if DEBUG
             if workingDir.IsSome then
-                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardOutput.txt")).WriteAllLines(outputList)
-                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardError.txt")).WriteAllLines(errorsList)
+                FileSystem.OpenFileForWriteShim(FileSystem.PathCombineShim(workingDir.Value, "StandardOutput.txt")).WriteAllLines(outputList)
+                FileSystem.OpenFileForWriteShim(FileSystem.PathCombineShim(workingDir.Value, "StandardError.txt")).WriteAllLines(errorsList)
 #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         else
@@ -141,7 +141,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let sdksDir = 
                 match getDotnetHostDirectory() with
                 | Some dotnetDir ->
-                    let candidate = FileSystem.GetFullPathShim(Path.Combine(dotnetDir, "sdk"))
+                    let candidate = FileSystem.GetFullPathShim(FileSystem.PathCombineShim(dotnetDir, "sdk"))
                     if FileSystem.DirectoryExistsShim(candidate) then Some candidate else None
                 | None -> None
 
@@ -157,7 +157,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                     // to use, so we find the SDKs by looking for dotnet.runtimeconfig.json
                     |> Array.filter (fun di ->
                         match desiredSdkVer with
-                        | None -> FileSystem.FileExistsShim(Path.Combine(di.FullName,"dotnet.runtimeconfig.json"))
+                        | None -> FileSystem.FileExistsShim(FileSystem.PathCombineShim(di.FullName,"dotnet.runtimeconfig.json"))
                         | Some v -> di.Name = v)
                     |> Array.sortBy (fun di -> di.FullName)
                     |> Array.tryLast
@@ -186,14 +186,14 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             match sdkDir with
             | Some dir ->
                 try
-                    let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                    let dotnetConfigFile = FileSystem.PathCombineShim(dir, "dotnet.runtimeconfig.json")
                     use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
                     let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"version\": \""
                     let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
                     let endPos = dotnetConfig.IndexOf("\"", startPos)
                     let ver = dotnetConfig.[startPos..endPos-1]
-                    let path = FileSystem.GetFullPathShim(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                    let path = FileSystem.GetFullPathShim(FileSystem.PathCombineShim(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
                     if FileSystem.DirectoryExistsShim(path) then
                         path, warnings
                     else
@@ -213,16 +213,16 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
     // Use the FSharp.Core that is executing with the compiler as a backup reference
-    let getFSharpCoreImplementationReference() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
+    let getFSharpCoreImplementationReference() = FileSystem.PathCombineShim(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
 
     // Use the FSharp.Compiler.Interactive.Settings executing with the compiler as a backup reference
-    let getFsiLibraryImplementationReference() = Path.Combine(getFSharpCompilerLocation(), getFsiLibraryName + ".dll")
+    let getFsiLibraryImplementationReference() = FileSystem.PathCombineShim(getFSharpCompilerLocation(), getFsiLibraryName + ".dll")
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
     let getSystemValueTupleImplementationReference() =
         let implDir = getImplementationAssemblyDir() |> replayWarnings
-        let probeFile = Path.Combine(implDir, "System.ValueTuple.dll")
+        let probeFile = FileSystem.PathCombineShim(implDir, "System.ValueTuple.dll")
         if FileSystem.FileExistsShim(probeFile) then
             Some probeFile
         else
@@ -231,7 +231,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
                     Some asm.Location
                 else
-                    let valueTuplePath = Path.Combine(getFSharpCompilerLocation(), "System.ValueTuple.dll")
+                    let valueTuplePath = FileSystem.PathCombineShim(getFSharpCompilerLocation(), "System.ValueTuple.dll")
                     if FileSystem.FileExistsShim(valueTuplePath) then
                         Some valueTuplePath
                     else
@@ -447,14 +447,14 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         match tryGetNetCoreRefsPackDirectoryRoot() with
         | (Some version, Some root), warnings ->
             try
-                let ref = Path.Combine(root, version, "ref")
+                let ref = FileSystem.PathCombineShim(root, version, "ref")
                 let highestTfm =
                     DirectoryInfo(ref).GetDirectories()
                     |> Array.sortWith tfmCompare
                     |> Array.tryLast
 
                 match highestTfm with
-                | Some tfm -> Some (Path.Combine(ref, tfm.Name)), warnings
+                | Some tfm -> Some (FileSystem.PathCombineShim(ref, tfm.Name)), warnings
                 | None -> None, warnings
             with e ->
                 let warn = Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors)
@@ -471,7 +471,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
             let implDir = getImplementationAssemblyDir() |> replayWarnings
-            let root = Path.Combine(implDir, simpleName)
+            let root = FileSystem.PathCombineShim(implDir, simpleName)
             let pathOpt =
                 [| ""; ".dll"; ".exe" |]
                 |> Seq.tryPick(fun ext ->
@@ -802,7 +802,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 let sdkDir = tryGetSdkDir() |> replayWarnings
                 match sdkDir with
                 | Some dir ->
-                    let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                    let dotnetConfigFile = FileSystem.PathCombineShim(dir, "dotnet.runtimeconfig.json")
                     use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
                     let dotnetConfig = stream.ReadAllText()
                     let pattern = "\"tfm\": \""

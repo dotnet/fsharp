@@ -251,7 +251,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let findFirstSourceFile (pc:ProjectConfiguration)  =
             let sources = List.append pc.SourceItems pc.ExtraSourceItems
-            let found = sources |> List.tryFind(fun source -> FileSystem.FileExistsShim(Path.Combine(directory, source)))
+            let found = sources |> List.tryFind(fun source -> FileSystem.FileExistsShim(FileSystem.PathCombineShim(directory, source)))
             match found with
             | Some p -> Path.Combine(directory, p)
             | None -> failwith "Missing SourceFile in test case"

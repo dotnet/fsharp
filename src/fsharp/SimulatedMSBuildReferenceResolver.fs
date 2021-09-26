@@ -90,7 +90,7 @@ let private SimulatedMSBuildResolver =
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> FileSystem.DirectoryExistsShim(Path.Combine(root, fw) ))
+            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> FileSystem.DirectoryExistsShim(FileSystem.PathCombineShim(root, fw) ))
             match fwOpt with
             | Some fw -> fw
             | None -> "v4.5"
@@ -209,7 +209,7 @@ let private SimulatedMSBuildResolver =
                                         let assemblyDir = Path.Combine(gacDir, n.Name)
                                         if FileSystem.DirectoryExistsShim assemblyDir then
                                             for tdir in FileSystem.EnumerateDirectoriesShim assemblyDir do
-                                                let trialPath = Path.Combine(tdir, qual)
+                                                let trialPath = FileSystem.PathCombineShim(tdir, qual)
                                                 if FileSystem.FileExistsShim trialPath then
                                                     yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
@@ -227,7 +227,7 @@ let private SimulatedMSBuildResolver =
                                         //printfn "searching GAC directory: %s" assemblyDir
 
                                         let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                        let verDir = Path.Combine(assemblyDir, "v4.0_"+v.ToString()+"__"+tokText)
+                                        let verDir = FileSystem.PathCombineShim(assemblyDir, "v4.0_"+v.ToString()+"__"+tokText)
                                         //printfn "searching GAC directory: %s" verDir
 
                                         if FileSystem.DirectoryExistsShim verDir then

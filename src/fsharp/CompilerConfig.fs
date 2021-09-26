@@ -64,7 +64,7 @@ let TryResolveFileUsingPaths(paths, m, name) =
     then Some name
     else
         let res = paths |> List.tryPick (fun path ->
-                    let n = Path.Combine (path, name)
+                    let n = FileSystem.PathCombineShim (path, name)
                     if FileSystem.FileExistsShim n then Some n
                     else None)
         res
@@ -95,7 +95,7 @@ let ComputeMakePathAbsolute implicitIncludeDir (path: string) =
         // remove any quotation marks from the path first
         let path = path.Replace("\"", "")
         if not (FileSystem.IsPathRootedShim path)
-        then Path.Combine (implicitIncludeDir, path)
+        then FileSystem.PathCombineShim (implicitIncludeDir, path)
         else path
     with
         :? ArgumentException -> path
@@ -133,7 +133,7 @@ type VersionFlag =
          match x with
          | VersionString s -> s
          | VersionFile s ->
-             let s = if FileSystem.IsPathRootedShim s then s else Path.Combine(implicitIncludeDir, s)
+             let s = if FileSystem.IsPathRootedShim s then s else FileSystem.PathCombineShim(implicitIncludeDir, s)
              if not(FileSystem.FileExistsShim s) then
                  errorR(Error(FSComp.SR.buildInvalidVersionFile s, rangeStartup)); "0.0.0.0"
              else
@@ -1073,7 +1073,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             | Some x ->
                 let clrRoot = tcConfig.MakePathAbsolute x
                 yield clrRoot
-                let clrFacades = Path.Combine(clrRoot, "Facades")
+                let clrFacades = FileSystem.PathCombineShim(clrRoot, "Facades")
                 if FileSystem.DirectoryExistsShim(clrFacades) then yield clrFacades
 
             | None ->
@@ -1084,8 +1084,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 #endif
                 let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
+                let runtimeRootFacades = FileSystem.PathCombineShim(runtimeRootWithoutSlash, "Facades")
+                let runtimeRootWPF = FileSystem.PathCombineShim(runtimeRootWithoutSlash, "WPF")
 
                 match tcConfig.resolutionEnvironment with
                 | LegacyResolutionEnvironment.CompilationAndEvaluation ->
@@ -1117,7 +1117,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                             yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
                         // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
                         let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                        let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
+                        let runtimeRootApiFacades = FileSystem.PathCombineShim(runtimeRootApi, "Facades")
                         if FileSystem.DirectoryExistsShim runtimeRootApi then
                             yield runtimeRootApi
                         if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
@@ -1128,9 +1128,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
                         let frameworkRoot = tcConfig.legacyReferenceResolver.Impl.DotNetFrameworkReferenceAssembliesRootDirectory
-                        let frameworkRootVersion = Path.Combine(frameworkRoot, tcConfig.targetFrameworkVersion)
+                        let frameworkRootVersion = FileSystem.PathCombineShim(frameworkRoot, tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
-                        let facades = Path.Combine(frameworkRootVersion, "Facades")
+                        let facades = FileSystem.PathCombineShim(frameworkRootVersion, "Facades")
                         if FileSystem.DirectoryExistsShim facades then
                             yield facades
                         match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with

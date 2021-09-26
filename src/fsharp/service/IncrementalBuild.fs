@@ -1541,7 +1541,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 [ for UnresolvedAssemblyReference(referenceText, _)  in unresolvedReferences do
                     // Exclude things that are definitely not a file name
                     if not(FileSystem.IsInvalidPathShim referenceText) then
-                        let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
+                        let file =
+                            if FileSystem.IsPathRootedShim referenceText then
+                                referenceText
+                            else
+                                FileSystem.PathCombineShim(projectDirectory, referenceText)
                         yield file
 
                   for r in nonFrameworkResolutions do

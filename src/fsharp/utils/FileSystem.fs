@@ -416,12 +416,11 @@ type DefaultAssemblyLoader() =
 type IFileSystem =
     // note: do not add members if you can put generic implementation under StreamExtensions below.
     abstract AssemblyLoader: IAssemblyLoader
+    abstract PathCombineShim: [<ParamArray>] components: string[] -> string
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     abstract GetFullPathShim: fileName: string -> string
-    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     abstract IsPathRootedShim: path: string -> bool
-    abstract NormalizePathShim: path: string -> string
     abstract IsInvalidPathShim: path: string -> bool
     abstract GetTempPathShim: unit -> string
     abstract GetDirectoryNameShim: path: string -> string
@@ -437,6 +436,26 @@ type IFileSystem =
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
     // note: do not add members if you can put generic implementation under StreamExtensions below.
+
+[<AutoOpen>]
+module IFileSystemExtensions =
+    type IFileSystem with
+        member ifs.NormalizePathShim (path: string): string =
+            try
+                if ifs.IsPathRootedShim path then
+                    ifs.GetFullPathShim path
+                else
+                    path
+            with _ -> path
+
+        member this.GetFullFilePathInDirectoryShim (dir: string) (fileName: string) : string =
+            let p = if this.IsPathRootedShim(fileName) then fileName else this.PathCombineShim(dir, fileName)
+            try this.GetFullPathShim(p) with
+            | :? ArgumentException
+            | :? ArgumentNullException
+            | :? NotSupportedException
+            | :? PathTooLongException
+            | :? System.Security.SecurityException -> p
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
@@ -501,28 +520,8 @@ type DefaultFileSystem() as this =
     abstract GetFullPathShim: fileName: string -> string
     default _.GetFullPathShim (fileName: string) = Path.GetFullPath fileName
 
-    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
-    default this.GetFullFilePathInDirectoryShim (dir: string) (fileName: string) =
-        let p = if (this :> IFileSystem).IsPathRootedShim(fileName) then fileName else Path.Combine(dir, fileName)
-        try (this :> IFileSystem).GetFullPathShim(p) with
-        | :? ArgumentException
-        | :? ArgumentNullException
-        | :? NotSupportedException
-        | :? PathTooLongException
-        | :? System.Security.SecurityException -> p
-    
     abstract IsPathRootedShim: path: string -> bool
     default _.IsPathRootedShim (path: string) = Path.IsPathRooted path
-
-    abstract NormalizePathShim: path: string -> string
-    default _.NormalizePathShim (path: string) =
-        try
-            let ifs = this :> IFileSystem
-            if ifs.IsPathRootedShim path then
-                ifs.GetFullPathShim path
-            else
-                path
-        with _ -> path
 
     abstract IsInvalidPathShim: path: string -> bool
     default _.IsInvalidPathShim(path: string) =
@@ -596,6 +595,9 @@ type DefaultFileSystem() as this =
     interface IFileSystem with
         member _.AssemblyLoader = this.AssemblyLoader
 
+        member _.PathCombineShim components : string =
+            Path.Combine components
+
         member _.OpenFileForReadShim(filePath: string, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) : Stream =
             let shouldShadowCopy = defaultArg shouldShadowCopy false
             let useMemoryMappedFile = defaultArg useMemoryMappedFile false
@@ -608,9 +610,7 @@ type DefaultFileSystem() as this =
             this.OpenFileForWriteShim(filePath, fileMode, fileAccess, fileShare)
 
         member _.GetFullPathShim (fileName: string) = this.GetFullPathShim fileName
-        member _.GetFullFilePathInDirectoryShim (dir: string) (fileName: string) = this.GetFullFilePathInDirectoryShim dir fileName
         member _.IsPathRootedShim (path: string) = this.IsPathRootedShim path
-        member _.NormalizePathShim (path: string) = this.NormalizePathShim path
         member _.IsInvalidPathShim(path: string) = this.IsInvalidPathShim path
         member _.GetTempPathShim() = this.GetTempPathShim()
         member _.GetDirectoryNameShim(s:string) = this.GetDirectoryNameShim s

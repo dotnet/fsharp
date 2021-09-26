@@ -67,7 +67,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
         let probeForNativeLibrary root rid name =
             // Look for name in root
             probingFileNames name |> Array.tryPick(fun name ->
-                let path = Path.Combine(root, "runtimes", rid, "native", name)
+                let path = FileSystem.PathCombineShim(root, "runtimes", rid, "native", name)
                 if FileSystem.FileExistsShim(path) then
                     Some path
                 else
@@ -80,7 +80,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
                 nativeProbingRoots.Invoke()
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
-                        let path = Path.Combine(root, name)
+                        let path = FileSystem.PathCombineShim(root, name)
                         if FileSystem.FileExistsShim(path) then
                             Some path
                         else

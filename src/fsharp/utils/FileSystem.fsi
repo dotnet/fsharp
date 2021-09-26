@@ -143,7 +143,10 @@ type public IFileSystem =
 
     // Assembly loader.
     abstract AssemblyLoader : IAssemblyLoader
-    
+
+    /// A shim over Path.Combine
+    abstract PathCombineShim: [<ParamArray>] components: string[] -> string
+
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
@@ -155,16 +158,8 @@ type public IFileSystem =
     /// and '..' portions
     abstract GetFullPathShim: fileName:string -> string
 
-    /// Take in a directory, filename, and return canonicalized path to the filename in directory.
-    /// If filename path is rooted, ignores directory and returns filename path.
-    /// Otherwise, combines directory with filename and gets full path via GetFullPathShim(string).
-    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
-
     /// A shim over Path.IsPathRooted
     abstract IsPathRootedShim: path:string -> bool
-
-    /// Removes relative parts from any full paths
-    abstract NormalizePathShim: path: string -> string
 
     /// A shim over Path.IsInvalidPath
     abstract IsInvalidPathShim: path:string -> bool
@@ -209,6 +204,19 @@ type public IFileSystem =
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
     abstract IsStableFileHeuristic: fileName:string -> bool
 
+/// IFileSystem extensions
+[<AutoOpen>]
+module IFileSystemExtensions =
+
+    type IFileSystem with
+        /// Removes relative parts from any full paths
+        member NormalizePathShim: path: string -> string
+
+        /// Take in a directory, filename, and return canonicalized path to the filename in directory.
+        /// If filename path is rooted, ignores directory and returns filename path.
+        /// Otherwise, combines directory with filename and gets full path via GetFullPathShim(string).
+        member GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+
 
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
@@ -225,15 +233,9 @@ type DefaultFileSystem =
     
     abstract GetFullPathShim: fileName: string -> string
     override GetFullPathShim: fileName: string -> string
-    
-    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
-    override GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
-    
+
     abstract IsPathRootedShim: path: string -> bool
     override IsPathRootedShim: path: string -> bool
-    
-    abstract NormalizePathShim: path: string -> string
-    override NormalizePathShim: path: string -> string
     
     abstract IsInvalidPathShim: path: string -> bool
     override IsInvalidPathShim: path: string -> bool

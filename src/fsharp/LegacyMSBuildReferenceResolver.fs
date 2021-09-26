@@ -366,7 +366,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                             else
                                 // We have a 'relative path', e.g. "bin/Debug/foo.exe" or "..\Yadda\bar.dll"
                                 // turn it into an absolute path based at implicitIncludeDir
-                                (Path.Combine(implicitIncludeDir, file), baggage) |]
+                                (FileSystem.PathCombineShim(implicitIncludeDir, file), baggage) |]
 
                 let rooted, unrooted = references |> Array.partition (fst >> FileSystem.IsPathRootedShim)
 

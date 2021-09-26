@@ -379,11 +379,11 @@ module internal SymbolHelpers =
         if not (FileSystem.IsPathRootedShim file) then 
             match ccuOfItem g h with 
             | Some ccu -> 
-                Path.Combine(ccu.SourceCodeDirectory, file)
+                FileSystem.PathCombineShim(ccu.SourceCodeDirectory, file)
             | None -> 
                 match qualProjectDir with 
                 | None     -> file
-                | Some dir -> Path.Combine(dir, file)
+                | Some dir -> FileSystem.PathCombineShim(dir, file)
          else file
 
     /// Cut long filenames to make them visually appealing 

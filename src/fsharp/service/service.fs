@@ -1166,10 +1166,10 @@ type FSharpChecker(legacyReferenceResolver,
 
         let debugInfo = defaultArg debug false
         let noframework = defaultArg noframework false
-        let location = Path.Combine(FileSystem.GetTempPathShim(),"test"+string(hash assemblyName))
-        try Directory.CreateDirectory(location) |> ignore with _ -> ()
+        let location = FileSystem.PathCombineShim(FileSystem.GetTempPathShim(),"test"+string(hash assemblyName))
+        try FileSystem.DirectoryCreateShim(location) |> ignore with _ -> ()
 
-        let outFile = Path.Combine(location, assemblyName + ".dll")
+        let outFile = FileSystem.PathCombineShim(location, assemblyName + ".dll")
 
         // Function to generate and store the results of compilation 
         let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
