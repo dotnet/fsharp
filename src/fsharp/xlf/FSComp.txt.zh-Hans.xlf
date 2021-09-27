@@ -309,7 +309,7 @@
       </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
-        <target state="new">XML comment is not placed on a valid language element.</target>
+        <target state="translated">未将 XML 注释放在有效语言元素上。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -469,7 +469,7 @@
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
         <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
-        <target state="new">This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</target>
+        <target state="translated">此成员访问权限不明确。请在对象创建周围使用括号，例如 “(new SomeType(args)).MemberName”</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
