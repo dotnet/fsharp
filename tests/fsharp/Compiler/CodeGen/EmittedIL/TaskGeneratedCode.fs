@@ -1056,6 +1056,37 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
 } 
                 """
             ])
+
+    // This tests the exact optimized code generated for the MoveNext for a trivial task - we expect 'MoveNext' to be there
+    // because state machine compilation succeeds
+    //
+    // The code is not perfect - because the MoveNext is generated late - but the JIT does a good job on it.
+    //
+    // The try/catch for the task still exists even though there is no chance of an exception
+    //
+    // The crucial code for "return 1" is really just
+    //   IL_000e:  ldc.i4.1
+    //   IL_000f:  stfld      int32 Test/testTask@4::Result
+
+    [<Test>]
+    let ``check compile of SRTP task code ``() =
+        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview";"/optimize-";"/debug:portable";"/tailcalls-" |]
+            """
+module Test
+
+open System.Threading.Tasks
+
+let myFunction (f: string -> _, i: 'T) =
+    task {
+        do! f ""
+        return ()
+    }
+
+[<EntryPoint>]
+let main argv =
+    let myTuple : (string -> Task<unit>) * int = (fun (s: string) -> Task.FromResult()), 1
+    myFunction myTuple
+            """
 #endif
 
 

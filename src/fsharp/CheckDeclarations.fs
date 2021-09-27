@@ -5876,6 +5876,14 @@ let TypeCheckOneImplFile
 
     let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
     
+    // Run any additional checks registered to be run before applying defaults
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+       for check in cenv.css.GetPostInferenceChecksFinal() do
+          try  
+              check()
+          with e -> 
+              errorRecovery e m)
+
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)
 
@@ -5900,13 +5908,12 @@ let TypeCheckOneImplFile
         CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
 
     // Run any additional checks registered for post-type-inference
-    do 
-      conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-         for check in cenv.postInferenceChecks do
-            try  
-                check()
-            with e -> 
-                errorRecovery e m)
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+       for check in cenv.css.GetPostInferenceChecksFinal() do
+          try  
+              check()
+          with e -> 
+              errorRecovery e m)
 
     // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
     // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 

@@ -141,6 +141,15 @@ type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 type ConstraintSolverState =
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
+    /// Add a post-inference check to run at the end of inference
+    member AddPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
+
+    /// Get the post-inference checks to run at the end of inference
+    member GetPostInferenceChecksFinal: unit -> seq<unit -> unit>
+
+    /// Get the post-inference checks to run at the end of inference but before defaults are applied
+    member GetPostInferenceChecksPreDefaults: unit -> seq<unit -> unit>
+
 val BakedInTraitConstraintNames: Set<string>
 
 [<Sealed; NoEquality; NoComparison>]
@@ -152,7 +161,7 @@ type OptionalTrace =
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
-val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: OverallTy option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: OverallTy option -> CalledMeth<Expr> option * OperationResult<unit>
 
 val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> OverallTy -> OperationResult<bool> 
 
@@ -161,7 +170,8 @@ val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverStat
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
-val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+/// Unify the types.
+val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> canPostpone: bool -> range -> TType -> TType -> unit
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 

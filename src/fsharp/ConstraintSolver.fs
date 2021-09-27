@@ -266,6 +266,13 @@ type ConstraintSolverState =
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
       /// each time a solution to an index variable is found. 
       mutable ExtraCxs: HashMultiMap<Stamp, TraitConstraintInfo * range>
+
+      /// Checks to run after all inference is complete, but before defaults are applied and internal unknowns solved
+      PostInferenceChecksPreDefaults: ResizeArray<unit -> unit>
+
+      /// Checks to run after all inference is complete.
+      PostInferenceChecksFinal: ResizeArray<unit -> unit>
+
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -273,7 +280,21 @@ type ConstraintSolverState =
           amap = amap 
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = infoReader
-          TcVal = tcVal } 
+          TcVal = tcVal
+          PostInferenceChecksPreDefaults = ResizeArray()
+          PostInferenceChecksFinal = ResizeArray() } 
+
+    member this.AddPostInferenceCheck (preDefaults, check) =
+        if preDefaults then
+            this.PostInferenceChecksPreDefaults.Add check
+        else
+            this.PostInferenceChecksFinal.Add check
+
+    member this.GetPostInferenceChecksPreDefaults() =
+        this.PostInferenceChecksPreDefaults.ToArray() :> seq<_>
+
+    member this.GetPostInferenceChecksFinal() =
+        this.PostInferenceChecksFinal.ToArray() :> seq<_>
 
 type ConstraintSolverEnv = 
     { 
@@ -281,7 +302,12 @@ type ConstraintSolverEnv =
 
       eContextInfo: ContextInfo
 
+      /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly: bool
+
+      /// Indicates that local throws on unresolved SRTP constraint overloads may be generated. When
+      /// these are caught they result in postponed constraints.
+      ThrowOnFailedMemberConstraintResolution: bool
 
       m: range
 
@@ -302,8 +328,8 @@ let MakeConstraintSolverEnv contextInfo css m denv =
     { SolverState = css
       m = m
       eContextInfo = contextInfo
-      // Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly = false
+      ThrowOnFailedMemberConstraintResolution = true
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv }
 
@@ -528,12 +554,38 @@ exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TTyp
 //    However, it seems likely that the abort may result in other processing associated
 //    with an overall constraint being skipped (e.g. the processing related to subsequent elements
 //    of a tuple constraint).
-exception AbortForFailedOverloadResolution
+exception AbortForFailedMemberConstraintResolution
+
+/// This is used internally in method overload resolution
+let IgnoreFailedMemberConstraintResolution f1 f2 =
+    TryD 
+        f1
+        (function
+         | AbortForFailedMemberConstraintResolution -> CompleteD
+         | exn -> f2 exn)
 
 /// This is used at (nearly all) entry points into the constraint solver to make sure that the
-/// AbortForFailedOverloadResolution is caught and processing continues.
-let inline TryD_IgnoreAbortForFailedOverloadResolution f1 f2 =
-    TryD f1 (function AbortForFailedOverloadResolution -> CompleteD | exn -> f2 exn)
+/// AbortForFailedMemberConstraintResolution is caught, recorded as a post-inference check and processing continues.
+///
+/// Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, some constraint
+/// applications must be allowed to "succeed" with partial processing of the unification being
+/// left in place, and no error being raised. This happens in cases where SRTP overload
+/// resolution has failed. SRTP resolution is delayed and presumably resolved by later type information.
+///
+/// Quite a lot of code related to tasks has come to rely on this feature.
+///
+/// To ensure soundness, we double-check the constraint at the end of inference
+/// with 'ThrowOnFailedMemberConstraintResolution' set to false.
+let PostponeConstraintOnFailedMemberConstraintResolution (css: ConstraintSolverState) csenv f1 f2 =
+    TryD 
+        (fun () -> f1 csenv)
+        (function
+         | AbortForFailedMemberConstraintResolution -> 
+            css.AddPostInferenceCheck (preDefaults=true, check = fun () -> 
+                let csenv2 = { csenv with ThrowOnFailedMemberConstraintResolution = false }
+                f1 csenv2 |> RaiseOperationResult)
+            CompleteD
+         | exn -> f2 exn)
 
 /// used to provide detail about non matched argument in overload resolution error message
 exception ArgDoesNotMatchError of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
@@ -901,12 +953,12 @@ and SolveTyparEqualsTypePart2 (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
         do! RepeatWhileD ndeep (fun ndeep -> SolveRelevantMemberConstraintsForTypar csenv ndeep PermitWeakResolution.No trace r)
 
     // Re-solve the other constraints associated with this type variable 
-    return! solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
+    return! SolveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
 
   }
 
 /// Apply the constraints on 'typar' to the type 'ty'
-and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = trackErrors {
+and SolveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = trackErrors {
     let g = csenv.g
 
     // Propagate compat flex requirements from 'tp' to 'ty'
@@ -1235,7 +1287,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///    will deal with the problem. 
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
-and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
+and SolveMemberConstraint (csenv: ConstraintSolverEnv) suppressThrowOnFailedMemberConstraintResolution permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
     let (TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
@@ -1638,8 +1690,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                       do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
 
                   match errors with
-                  | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
-                      return! ErrorD AbortForFailedOverloadResolution
+                  | ErrorResult (_, UnresolvedOverloading _)
+                      when
+                          not suppressThrowOnFailedMemberConstraintResolution &&
+                          csenv.ThrowOnFailedMemberConstraintResolution &&
+                          (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
+                      return! ErrorD AbortForFailedMemberConstraintResolution
                   | _ -> 
                       return TTraitUnsolved
      }
@@ -2391,7 +2447,7 @@ and CanMemberSigsMatchUpToCheck
                 return Array.reduce TypeDirectedConversionUsed.Combine [| usesTDC1; usesTDC2; usesTDC3; usesTDC4; usesTDC5; usesTDC6; usesTDC7 |]
         }
 
-// Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
+// Wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
 // to allow us to report the outer types involved in the constraint 
 //
 // ty1: expected
@@ -2399,27 +2455,29 @@ and CanMemberSigsMatchUpToCheck
 //
 // "ty2 casts to ty1"
 // "a value of type ty2 can be used where a value of type ty1 is expected"
-and private SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-        (fun res ->
-            match csenv.eContextInfo with
-            | ContextInfo.RuntimeTypeTest isOperator ->
-                // test if we can cast other way around
-                match CollectThenUndo (fun newTrace -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
-                | OkResult _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m)))
-                | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m)))
-            | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m))))
+and AddWrappedContextualSubsumptionReport (csenv: ConstraintSolverEnv) ndeep m cxsln ty1 ty2 res wrapper =
+    match csenv.eContextInfo with
+    | ContextInfo.RuntimeTypeTest isOperator ->
+        // test if we can cast other way around
+        match CollectThenUndo (fun newTrace -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
+        | OkResult _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m)))
+        | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m)))
+    | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
 
-and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
-    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln ty1 ty2 id
-        
+// Assert a subtype constraint
+//
+// Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, 
+// when doing overload resolution, we ignore failed member constraints and continue.  The
+// constraint is not recorded for later solution.
+and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
+    IgnoreFailedMemberConstraintResolution
+        (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
+        (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
+       
 // ty1: actual
 // ty2: expected
 and private SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep  m trace cxsln actual expected = 
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln actual expected)
-        (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actual, expected, res, m)))
+    SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m trace cxsln actual expected
   
 and ArgsMustSubsumeOrConvert 
         (csenv: ConstraintSolverEnv)
@@ -2443,7 +2501,7 @@ and ArgsMustSubsumeOrConvert
     match usesTDC with 
     | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
     | TypeDirectedConversionUsed.No -> ()
-    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType
+    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType id
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
         return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
     else 
@@ -2474,7 +2532,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
     }
 
@@ -2486,7 +2544,7 @@ and TypesEquiv csenv ndeep trace cxsln ty1 ty2 =
 
 and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     trackErrors {
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy id
         return TypeDirectedConversionUsed.No
     }
 
@@ -2501,7 +2559,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy id
         return usesTDC
     }
 
@@ -3017,9 +3075,9 @@ and ResolveOverloading
     | None -> 
         None, errors        
 
-let ResolveOverloadingForCall denv css m  methodName ndeep cx callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt =
+let ResolveOverloadingForCall denv css m  methodName ndeep callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    ResolveOverloading csenv NoTrace methodName ndeep cx callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt
+    ResolveOverloading csenv NoTrace methodName ndeep None callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt
 
 /// This is used before analyzing the types of arguments in a single overload resolution
 let UnifyUniqueOverloading 
@@ -3083,9 +3141,13 @@ let EliminateConstraintsForGeneralizedTypars denv css m (trace: OptionalTrace) (
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
+let AddCxTypeEqualsType contextInfo denv css canPostpone m actual expected  = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected
+    let csenv = if canPostpone then csenv else { csenv with ThrowOnFailedMemberConstraintResolution = false }
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected)
+        (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actual, expected, res, m)))
+    //SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected
     |> RaiseOperationResult
 
 let UndoIfFailed f =
@@ -3145,13 +3207,15 @@ let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    SolveTypeSubsumesTypeWithReport csenv 0 m trace None ty1 ty2
+    TryD
+        (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m trace None ty1 ty2)
+        (fun res -> AddWrappedContextualSubsumptionReport csenv 0 m None ty1 ty2 res id)
     |> RaiseOperationResult
 
-let AddCxMethodConstraint denv css m trace traitInfo  =
+let rec AddCxMethodConstraint denv css m trace traitInfo  =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () ->
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv ->
             trackErrors {
                 do! 
                     SolveMemberConstraint csenv true PermitWeakResolution.No 0 m trace traitInfo
@@ -3160,73 +3224,73 @@ let AddCxMethodConstraint denv css m trace traitInfo  =
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeMustSupportNull denv css m trace ty =
+let rec AddCxTypeMustSupportNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeSupportsNull csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeMustSupportComparison denv css m trace ty =
+let rec AddCxTypeMustSupportComparison denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeSupportsComparison csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeSupportsComparison csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeMustSupportEquality denv css m trace ty =
+let rec AddCxTypeMustSupportEquality denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeSupportsEquality csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeSupportsEquality csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeMustSupportDefaultCtor denv css m trace ty =
+let rec AddCxTypeMustSupportDefaultCtor denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeRequiresDefaultConstructor csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeRequiresDefaultConstructor csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeIsReferenceType denv css m trace ty =
+let rec AddCxTypeIsReferenceType denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeIsReferenceType csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeIsReferenceType csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeIsValueType denv css m trace ty =
+let rec AddCxTypeIsValueType denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeIsNonNullableValueType csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeIsNonNullableValueType csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
     
-let AddCxTypeIsUnmanaged denv css m trace ty =
+let rec AddCxTypeIsUnmanaged denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeIsUnmanaged csenv 0 m trace ty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeIsUnmanaged csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeIsEnum denv css m trace ty underlying =
+let rec AddCxTypeIsEnum denv css m trace ty underlying =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeIsEnum csenv 0 m trace ty underlying)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeIsEnum csenv 0 m trace ty underlying)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTypeIsDelegate denv css m trace ty aty bty =
+let rec AddCxTypeIsDelegate denv css m trace ty aty bty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeIsDelegate csenv 0 m trace ty aty bty)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTypeIsDelegate csenv 0 m trace ty aty bty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
+let rec AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
     let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> AddConstraint csenv 0 m NoTrace tp (TyparConstraint.DefaultsTo(ridx, ty, m)))
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> AddConstraint csenv 0 m NoTrace tp (TyparConstraint.DefaultsTo(ridx, ty, m)))
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
@@ -3243,8 +3307,8 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
             let ty1 = mkTyparTy tp
             if not tp.IsSolved && not (typeEquiv css.g ty1 ty2) then
                 let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-                TryD_IgnoreAbortForFailedOverloadResolution
-                    (fun () ->
+                PostponeConstraintOnFailedMemberConstraintResolution css csenv
+                    (fun csenv ->
                         SolveTyparEqualsType csenv 0 m NoTrace ty1 ty2)
                     (fun res -> 
                         SolveTypeAsError denv css m ty1
@@ -3257,7 +3321,9 @@ let CreateCodegenState tcVal g amap =
       amap = amap
       TcVal = tcVal
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-      InfoReader = InfoReader(g, amap) }
+      InfoReader = InfoReader(g, amap)
+      PostInferenceChecksPreDefaults = ResizeArray() 
+      PostInferenceChecksFinal = ResizeArray() }
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
@@ -3293,15 +3359,15 @@ let ChooseTyparSolutionAndSolve css denv tp =
     let amap = css.amap
     let max, m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> 
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> 
             CollectThenUndo (fun trace -> 
                SolveTypeEqualsTypeEqns csenv 0 m (WithTrace trace) None 
                    (List.map mkTyparTy typars1) 
@@ -3313,8 +3379,8 @@ let CheckDeclaredTypars denv css m typars1 typars2 =
 let CanonicalizePartialInferenceProblem css denv m tps =
     // Canonicalize constraints prior to generalization 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
+    PostponeConstraintOnFailedMemberConstraintResolution css csenv
+        (fun csenv -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
 
@@ -3330,7 +3396,9 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               amap = amap
               TcVal = (fun _ -> failwith "should not be called")
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-              InfoReader = InfoReader(g, amap) }
+              InfoReader = InfoReader(g, amap)
+              PostInferenceChecksPreDefaults = ResizeArray() 
+              PostInferenceChecksFinal = ResizeArray() }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

@@ -359,9 +359,6 @@ type TcFileState =
       /// we infer type parameters
       mutable recUses: ValMultiMap<Expr ref * range * bool>
 
-      /// Checks to run after all inference is complete.
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -425,7 +422,6 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          postInferenceChecks = ResizeArray()
           createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
@@ -452,8 +448,14 @@ type cenv = TcFileState
 let CopyAndFixupTypars m rigid tpsorig =
     FreshenAndFixupTypars m rigid [] [] tpsorig
 
-let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
-    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
+let UnifyTypesAux cenv (env: TcEnv) canPostpone m actualTy expectedTy =
+    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css canPostpone m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
+
+let UnifyTypes cenv env m actualTy expectedTy =
+    UnifyTypesAux cenv env true m actualTy expectedTy
+
+let UnifyTypesNoPostpone cenv env m actualTy expectedTy =
+    UnifyTypesAux cenv env false m actualTy expectedTy
 
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
@@ -482,8 +484,8 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
                 let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
                 warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
             else
-                // report the error
-                UnifyTypes cenv env m reqdTy actualTy
+                // Report the error.
+                UnifyTypesNoPostpone cenv env m reqdTy actualTy
     | _ ->
         UnifyTypes cenv env m overallTy.Commit actualTy
 
@@ -616,7 +618,7 @@ let UnifyRefTupleType contextInfo cenv denv m ty ps =
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
+    AddCxTypeEqualsType contextInfo denv cenv.css true m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
 /// Allow the inference of structness from the known type, e.g.
@@ -639,7 +641,7 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo cenv denv m knownTy isExpl
         | _ -> contextInfo
 
     let ty2 = TType_tuple (tupInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
+    AddCxTypeEqualsType contextInfo denv cenv.css true m knownTy ty2
     tupInfo, ptys
 
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
@@ -662,7 +664,7 @@ let UnifyAnonRecdTypeAndInferCharacteristics contextInfo cenv denv m ty isExplic
             let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, mkTupInfo isExplicitStruct, unsortedNames)
             anonInfo, NewInferenceTypes (Array.toList anonInfo.SortedNames)
     let ty2 = TType_anon (anonInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
+    AddCxTypeEqualsType contextInfo denv cenv.css true m ty ty2
     anonInfo, ptys
 
 
@@ -2624,7 +2626,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
     match vrec with
     | ValInRecScope isComplete when isComplete && not (isNil tinst) ->
         //printfn "pushing post-inference check for '%s', vty = '%s'" v.DisplayName (DebugPrint.showType vty)
-        cenv.postInferenceChecks.Add (fun () ->
+        cenv.css.AddPostInferenceCheck (preDefaults=false, check=fun () ->
             //printfn "running post-inference check for '%s'" v.DisplayName
             //printfn "tau = '%s'" (DebugPrint.showType tau)
             //printfn "vty = '%s'" (DebugPrint.showType vty)
@@ -9184,7 +9186,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName 0 None callerArgs ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy)
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName 0 callerArgs ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy)
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
