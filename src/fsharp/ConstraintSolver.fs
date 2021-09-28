@@ -471,7 +471,7 @@ let BakedInTraitConstraintNames =
 
 type Trace = 
     { mutable actions: ((unit -> unit) * (unit -> unit)) list }
-
+    
     static member New () =  { actions = [] }
 
     member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
@@ -487,6 +487,12 @@ type OptionalTrace =
         match t with        
         | WithTrace trace -> trace.Push f undo; f()
         | NoTrace -> f()
+
+    member t.AddFromReplay source =
+        source.actions |> List.rev |>
+            match t with        
+            | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
+            | NoTrace         -> List.iter (fun (action, _   ) -> action())
 
     member t.CollectThenUndoOrCommit predicate f =
         let newTrace = Trace.New()
@@ -511,7 +517,7 @@ let FilterEachThenUndo f meths =
         trace.Undo()
         match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
-        | Some (warns, res) -> Some (calledMeth, warns, res))
+        | Some (warns, res) -> Some (calledMeth, warns, trace, res))
 
 let ShowAccessDomain ad =
     match ad with 
@@ -1005,7 +1011,7 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     do! DepthCheck ndeep m
     match ty1 with 
     | TType_var r | TType_measure (Measure.Var r) ->
-        do! SolveTyparEqualsTypePart1 csenv m2 trace  ty1 r ty 
+        do! SolveTyparEqualsTypePart1 csenv m2 trace     ty1 r ty 
         do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
     | _ -> failwith "SolveTyparEqualsType"
     }
@@ -1029,7 +1035,6 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         ) ++ (fun () -> 
 
     if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
-       
         let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
             let first = Set first
             let second = Set second
@@ -1044,7 +1049,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
                 Overlap(firstOnly, secondOnly)
             else
                 CompletelyDifferent(Seq.toList first)
-
+        
         let message =
             match anonInfo1.SortedNames, anonInfo2.SortedNames with
             | Subset missingFields ->
@@ -1103,12 +1108,11 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
-    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2) -> 
+    | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2)
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace None d1 d2 r1 r2
     | TType_measure ms1, TType_measure ms2   -> UnifyMeasures csenv trace ms1 ms2
-
     | TType_forall(tps1, rty1), TType_forall(tps2, rty2) -> 
         if tps1.Length <> tps2.Length then localAbortD else
         let aenv = aenv.BindEquivTypars tps1 tps2 
@@ -1119,11 +1123,9 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
     | _  -> localAbortD
 
-    | _  -> localAbortD
-
 and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace None ty1 ty2
 
-and SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2 = 
+and private SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2 = 
    // Back out of expansions of type abbreviations to give improved error messages. 
    // Note: any "normalization" of equations on type variables must respect the trace parameter
    TryD (fun () -> SolveTypeEqualsType csenv ndeep m2 trace cxsln ty1 ty2)
@@ -1188,11 +1190,9 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         SolveAnonInfoEqualsAnonInfo csenv m2 anonInfo1 anonInfo2 ++ (fun () -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2) (* nb. can unify since no variance *)
 
-    | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
+    | TType_fun (d1, r1), TType_fun (d2, r2)   -> SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 (* nb. can unify since no variance *)
 
-    | TType_measure ms1, TType_measure ms2 ->
-        UnifyMeasures csenv trace ms1 ms2
+    | TType_measure ms1, TType_measure ms2    -> UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
     | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
@@ -1205,7 +1205,7 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
         match l1, l2 with 
         | [ h1; tag1 ], [ h2; tag2 ] -> trackErrors {
-            do! SolveTypeEqualsType csenv ndeep m2 trace cxsln h1 h2
+            do! SolveTypeEqualsType csenv ndeep m2 trace None h1 h2
             match stripTyEqnsA csenv.g canShortcut tag1, stripTyEqnsA csenv.g canShortcut tag2 with 
             | TType_app(tagc1, []), TType_app(tagc2, []) 
                 when (tyconRefEq g tagc2 g.byrefkind_InOut_tcr && 
@@ -1654,8 +1654,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun newTrace -> 
-                          ResolveOverloading csenv (WithTrace newTrace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual rty)))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some (MustEqual rty)))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -1878,10 +1877,10 @@ and SolveRelevantMemberConstraintsForTypar (csenv: ConstraintSolverEnv) ndeep pe
         let csenv = { csenv with m = m2 }
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
-and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep tps =
-    SolveRelevantMemberConstraints csenv ndeep PermitWeakResolution.Yes tps
+and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps =
+    SolveRelevantMemberConstraints csenv ndeep PermitWeakResolution.Yes trace tps
   
-and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace traitInfo support (frees: Typar list) =
+and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) traitInfo support (frees: Typar list) =
     let g = csenv.g
     let aenv = csenv.EquivEnv
     let cxst = csenv.SolverState.ExtraCxs
@@ -2168,7 +2167,7 @@ and SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
                        // Check the (possibly inferred) structural dependencies
                        (tinst, tcref.TyparsNoRange) ||> Iterate2D (fun ty tp -> 
                            if tp.EqualityConditionalOn then 
-                               SolveTypeSupportsEquality (csenv: ConstraintSolverEnv) ndeep m2 trace ty
+                               SolveTypeSupportsEquality csenv ndeep m2 trace ty
                            else 
                                CompleteD) 
                | _ ->
@@ -2351,7 +2350,7 @@ and CanMemberSigsMatchUpToCheck
         trackErrors {
             let g    = csenv.g
             let amap = csenv.amap
-            let m = csenv.m
+            let m    = csenv.m
     
             let minfo = calledMeth.Method
             let minst = calledMeth.CalledTyArgs
@@ -2366,7 +2365,6 @@ and CanMemberSigsMatchUpToCheck
                 return! ErrorD(Error(FSComp.SR.csTypeInstantiationLengthMismatch(), m))
             else
                 let! usesTDC1 = MapCombineTDC2D unifyTypes minst uminst
-                printfn "break"
                 let! usesTDC2 =
                     trackErrors {
                         if not (permitOptArgs || isNil unnamedCalledOptArgs) then 
@@ -2385,7 +2383,6 @@ and CanMemberSigsMatchUpToCheck
                                 return! MapCombineTDC2D subsumeTypes calledObjArgTys callerObjArgTys
                     }
 
-                printfn "break"
                 let! usesTDC3 =
                     calledMeth.ArgSets |> MapCombineTDCD (fun argSet -> trackErrors {
                         if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then 
@@ -2394,7 +2391,6 @@ and CanMemberSigsMatchUpToCheck
                             return! MapCombineTDC2D subsumeOrConvertArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs
                     })
 
-                printfn "break"
                 let! usesTDC4 =
                     match calledMeth.ParamArrayCalledArgOpt with
                     | Some calledArg ->
@@ -2413,7 +2409,6 @@ and CanMemberSigsMatchUpToCheck
                             ResultD TypeDirectedConversionUsed.No
                     | _ -> ResultD TypeDirectedConversionUsed.No
 
-                printfn "break"
                 let! usesTDC5 =
                     calledMeth.ArgSets |> MapCombineTDCD (fun argSet -> 
                         argSet.AssignedNamedArgs |> MapCombineTDCD (fun arg -> 
@@ -2421,7 +2416,6 @@ and CanMemberSigsMatchUpToCheck
                         )
                     )
 
-                printfn "break"
                 let! usesTDC6 =
                   assignedItemSetters |> MapCombineTDCD (fun (AssignedItemSetter(_, item, caller)) ->
                     let name, calledArgTy = 
@@ -2441,10 +2435,10 @@ and CanMemberSigsMatchUpToCheck
             
                     subsumeOrConvertArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller
                   )
-                printfn "break"
-                // Always take the return type into account for resolving overloading of
-                //    -- op_Explicit, op_Implicit
-                //    -- methods using tupling of unfilled out args
+                // - Always take the return type into account for resolving overloading of
+                //      -- op_Explicit, op_Implicit
+                //      -- methods using tupling of unfilled out args
+                // - Never take into account return type information for constructors 
                 let! usesTDC7 =
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
@@ -2457,7 +2451,6 @@ and CanMemberSigsMatchUpToCheck
                         unifyTypes reqdRetTy.Commit methodRetTy
                     | _ ->
                         ResultD TypeDirectedConversionUsed.No
-                printfn "break"
                 return Array.reduce TypeDirectedConversionUsed.Combine [| usesTDC1; usesTDC2; usesTDC3; usesTDC4; usesTDC5; usesTDC6; usesTDC7 |]
         }
 
@@ -2560,7 +2553,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
+        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
     }
 
@@ -2572,7 +2565,7 @@ and TypesEquiv csenv ndeep trace cxsln ty1 ty2 =
 
 and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     trackErrors {
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
         return TypeDirectedConversionUsed.No
     }
 
@@ -2587,7 +2580,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy 
         return usesTDC
     }
 
@@ -2775,17 +2768,17 @@ and ResolveOverloading
     let isOpConversion = methodName = "op_Explicit" || methodName = "op_Implicit"
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad))
-    let calledMethOpt, errors = 
+    let calledMethOpt, errors, calledMethTrace = 
 
         match calledMethGroup, candidates with 
         | _, [calledMeth] when not isOpConversion -> 
-            Some calledMeth, CompleteD
+            Some calledMeth, CompleteD, NoTrace
 
         | [], _ when not isOpConversion -> 
-            None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m))
+            None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
 
         | _, [] when not isOpConversion -> 
-            None, ReportNoCandidatesErrorExpr csenv callerArgs.CallerArgCounts methodName ad calledMethGroup
+            None, ReportNoCandidatesErrorExpr csenv callerArgs.CallerArgCounts methodName ad calledMethGroup, NoTrace
             
         | _, _ -> 
 
@@ -2818,8 +2811,8 @@ and ResolveOverloading
                          calledMeth)
 
           match exactMatchCandidates with
-          | [(calledMeth, warns, _usesTDC)] ->
-               Some calledMeth, OkResult (warns, ())
+          | [(calledMeth, warns, _, _usesTDC)] ->
+               Some calledMeth, OkResult (warns, ()), NoTrace
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2861,30 +2854,29 @@ and ResolveOverloading
             | [] ->
                 // OK, we failed. Collect up the errors from overload resolution and the possible overloads
                 let errors = 
-                    candidates |> List.choose (fun calledMeth -> 
-                        let results =
-                            CollectThenUndo (fun newTrace -> 
-                                let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
-                                let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                                CanMemberSigsMatchUpToCheck 
-                                    csenv 
-                                    permitOptArgs
-                                    alwaysCheckReturn
-                                    (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
-                                    (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
-                                    (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
-                                    (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
-                                    reqdRetTyOpt 
-                                    calledMeth) 
-                        match results with
-                        | OkResult _ -> None
-                        | ErrorResult(_warnings, exn) ->
-                            Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
+                    candidates 
+                    |> List.choose (fun calledMeth -> 
+                            match CollectThenUndo (fun newTrace -> 
+                                         let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
+                                         let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
+                                         CanMemberSigsMatchUpToCheck 
+                                             csenv 
+                                             permitOptArgs
+                                             alwaysCheckReturn
+                                             (TypesEquiv csenv ndeep (WithTrace newTrace) cxsln) 
+                                             (TypesMustSubsume csenv ndeep (WithTrace newTrace) cxsln m)
+                                             (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
+                                             (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
+                                             reqdRetTyOpt 
+                                             calledMeth) with
+                            | OkResult _ -> None
+                            | ErrorResult(_warnings, exn) ->
+                                Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
 
-                None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx)))
+                None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
-            | [(calledMeth, warns, _usesTDC)] ->
-                Some calledMeth, OkResult (warns, ())
+            | [(calledMeth, warns, t, _usesTDC)] ->
+                Some calledMeth, OkResult (warns, ()), WithTrace t
 
             | applicableMeths -> 
                 
@@ -2933,7 +2925,7 @@ and ResolveOverloading
                     0
 
                 /// Check whether one overload is better than another
-                let better (candidate: CalledMeth<_>, candidateWarnings, usesTDC1) (other: CalledMeth<_>, otherWarnings, usesTDC2) =
+                let better (candidate: CalledMeth<_>, candidateWarnings, _, usesTDC1) (other: CalledMeth<_>, otherWarnings, _, usesTDC2) =
                     let candidateWarnCount = List.length candidateWarnings
                     let otherWarnCount = List.length otherWarnings
 
@@ -3054,7 +3046,7 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, warns, _usesTDC)] -> Some calledMeth, OkResult (warns, ())
+                | [(calledMeth, warns, t, _usesTDC)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
                         let getMethodSlotsAndErrors methodSlot errors =
@@ -3069,12 +3061,12 @@ and ResolveOverloading
                           | [] -> 
                               match applicableMeths with
                               | [] -> for methodSlot in candidates do yield getMethodSlotsAndErrors methodSlot []
-                              | m -> for methodSlot, errors, _ in m do yield getMethodSlotsAndErrors methodSlot errors
-                          | m -> for methodSlot, errors, _ in m do yield getMethodSlotsAndErrors methodSlot errors ]
+                              | m -> for methodSlot, errors, _, _ in m do yield getMethodSlotsAndErrors methodSlot errors
+                          | m -> for methodSlot, errors, _, _ in m do yield getMethodSlotsAndErrors methodSlot errors ]
 
                     let methods = List.concat methods
 
-                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods,cx)))
+                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods,cx))), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -3089,26 +3081,43 @@ and ResolveOverloading
 
         calledMethOpt, 
         trackErrors {
-            do! errors
-            let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
-            let! _usesTDC =
-                CanMemberSigsMatchUpToCheck 
-                    csenv 
-                    permitOptArgs
-                    true
-                    (TypesEquiv csenv ndeep trace cxsln) // instantiations equal
-                    (TypesMustSubsume csenv ndeep trace cxsln m) // obj can subsume
-                    (ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
-                    (ArgsMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
-                    reqdRetTyOpt 
-                    calledMeth
+                        do! errors
+                        let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
+                        match calledMethTrace with
+                        | NoTrace ->
+                           let! _usesTDC =
+                            CanMemberSigsMatchUpToCheck 
+                                 csenv 
+                                 permitOptArgs
+                                 true
+                                 (TypesEquiv csenv ndeep trace cxsln) // instantiations equal
+                                 (TypesMustSubsume csenv ndeep trace cxsln m) // obj can subsume
+                                 (ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome m) // return can subsume or convert
+                                 (ArgsMustSubsumeOrConvert csenv ad ndeep trace cxsln cx.IsSome true)  // args can subsume or convert
+                                 reqdRetTyOpt 
+                                 calledMeth
+                           return ()
+                        | WithTrace calledMethTrc ->
 
-            // Adhoc additional check on method calls
-            match reqdRetTyOpt with
-            | Some reqdRetTy  when isByrefTy g reqdRetTy.Commit ->
-                return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
-            | _ -> 
-                return ()
+                            // Re-play existing trace
+                            trace.AddFromReplay calledMethTrc
+
+                            // Unify return type
+                            match reqdRetTyOpt with 
+                            | None -> () 
+                            | Some reqdRetTy -> 
+                                let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
+                                if isByrefTy g reqdRetTy.Commit then 
+                                    return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
+                                else
+                                    match reqdRetTy with
+                                    | MustConvertTo(isMethodArg, reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                                        let! _usesTDC = ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln isMethodArg m isMethodArg reqdRetTy actualRetTy
+                                        return ()
+                                    | _ ->
+                                        let! _usesTDC = TypesEquiv csenv ndeep trace cxsln reqdRetTy.Commit actualRetTy
+                                        return ()
+
         }
 
     | None -> 
