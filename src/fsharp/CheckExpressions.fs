@@ -448,14 +448,8 @@ type cenv = TcFileState
 let CopyAndFixupTypars m rigid tpsorig =
     FreshenAndFixupTypars m rigid [] [] tpsorig
 
-let UnifyTypesAux cenv (env: TcEnv) canPostpone m actualTy expectedTy =
-    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css canPostpone m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
-
-let UnifyTypes cenv env m actualTy expectedTy =
-    UnifyTypesAux cenv env true m actualTy expectedTy
-
-let UnifyTypesNoPostpone cenv env m actualTy expectedTy =
-    UnifyTypesAux cenv env false m actualTy expectedTy
+let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
+    AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
 
 // If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
 // then allow subsumption or type directed conversion.
@@ -618,7 +612,7 @@ let UnifyRefTupleType contextInfo cenv denv m ty ps =
         | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
         | _ -> contextInfo
 
-    AddCxTypeEqualsType contextInfo denv cenv.css true m ty (TType_tuple (tupInfoRef, ptys))
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
 /// Allow the inference of structness from the known type, e.g.
@@ -641,7 +635,7 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo cenv denv m knownTy isExpl
         | _ -> contextInfo
 
     let ty2 = TType_tuple (tupInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css true m knownTy ty2
+    AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo, ptys
 
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
@@ -664,7 +658,7 @@ let UnifyAnonRecdTypeAndInferCharacteristics contextInfo cenv denv m ty isExplic
             let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, mkTupInfo isExplicitStruct, unsortedNames)
             anonInfo, NewInferenceTypes (Array.toList anonInfo.SortedNames)
     let ty2 = TType_anon (anonInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css true m ty ty2
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
     anonInfo, ptys
 
 

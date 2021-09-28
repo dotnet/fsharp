@@ -5877,12 +5877,12 @@ let TypeCheckOneImplFile
     let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
     
     // Run any additional checks registered to be run before applying defaults
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-       for check in cenv.css.GetPostInferenceChecksPreDefaults() do
-          try  
-              check()
-          with e -> 
-              errorRecovery e m)
+    do 
+      for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+        try  
+            check()
+        with e -> 
+            errorRecovery e m
 
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)

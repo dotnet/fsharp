@@ -166,7 +166,7 @@ val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverStat
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
 /// Unify the types.
-val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> canPostpone: bool -> range -> TType -> TType -> unit
+val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 

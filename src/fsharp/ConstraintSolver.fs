@@ -336,7 +336,7 @@ type ConstraintSolverEnv =
       Trace: OptionalTrace
 
       // Is this speculative, with a trace allowing undo, and trial method overload resolution 
-      IsSpeculative: bool
+      IsSpeculativeForMethodOverloading: bool
 
       /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly: bool
@@ -365,11 +365,11 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       m = m
       ContextInfo = contextInfo
       MatchingOnly = false
-      ThrowOnFailedMemberConstraintResolution = true
+      ThrowOnFailedMemberConstraintResolution = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
       Trace = NoTrace
-      IsSpeculative = true }
+      IsSpeculativeForMethodOverloading = false }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
@@ -579,14 +579,16 @@ let IgnoreFailedMemberConstraintResolution f1 f2 =
 /// with 'ThrowOnFailedMemberConstraintResolution' set to false.
 let PostponeConstraintOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) f1 f2 =
     TryD 
-        (fun () -> f1 csenv)
+        (fun () ->
+            let csenv = { csenv with ThrowOnFailedMemberConstraintResolution = true }
+            f1 csenv)
         (function
          | AbortForFailedMemberConstraintResolution -> 
             // Postponed checking of constraints for failed SRTP resolutions is supported from F# 6.0 onwards
             if csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
                 csenv.SolverState.AddPostInferenceCheck (preDefaults=true, check = fun () -> 
-                    let csenv2 = { csenv with ThrowOnFailedMemberConstraintResolution = false }
-                    f1 csenv2 |> RaiseOperationResult)
+                    let csenv = { csenv with ThrowOnFailedMemberConstraintResolution = false }
+                    f1 csenv |> RaiseOperationResult)
             CompleteD
          | exn -> f2 exn)
 
@@ -2493,7 +2495,7 @@ and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m cxsln t
     // Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, 
     // when doing nested, speculative overload resolution, we ignore failed member constraints and continue.  The
     // constraint is not recorded for later solution.
-    if csenv.IsSpeculative then
+    if csenv.IsSpeculativeForMethodOverloading then
         IgnoreFailedMemberConstraintResolution
             (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m cxsln ty1 ty2)
             (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
@@ -2776,7 +2778,7 @@ and ResolveOverloading
           // and exact matches of argument types. 
           let exactMatchCandidates =
               candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
-                  let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculative = true }
+                  let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculativeForMethodOverloading = true }
                   let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs))
                   CanMemberSigsMatchUpToCheck 
                       csenv 
@@ -2798,7 +2800,7 @@ and ResolveOverloading
             // Subsumption on arguments is allowed.
             let applicable =
                 candidates |> FilterEachThenUndo (fun newTrace candidate -> 
-                    let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculative = true }
+                    let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculativeForMethodOverloading = true }
                     let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m candidate.Method candidate.CalledTyArgs))
                     CanMemberSigsMatchUpToCheck 
                         csenv 
@@ -2836,7 +2838,7 @@ and ResolveOverloading
                     candidates |> List.choose (fun calledMeth -> 
                         let results =
                             CollectThenUndo (fun newTrace -> 
-                                let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculative = true }
+                                let csenv = { csenv with Trace = WithTrace newTrace; IsSpeculativeForMethodOverloading = true }
                                 let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs))
                                 CanMemberSigsMatchUpToCheck 
                                     csenv 
@@ -3147,9 +3149,8 @@ let EliminateConstraintsForGeneralizedTypars denv css m (generalizedTypars: Typa
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css canPostpone m actual expected  = 
+let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    let csenv = if canPostpone then csenv else { csenv with ThrowOnFailedMemberConstraintResolution = false }
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m None actual expected)
         (fun res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actual, expected, res, m)))
