@@ -479,7 +479,7 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
                 warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
             else
                 // Report the error.
-                UnifyTypesNoPostpone cenv env m reqdTy actualTy
+                UnifyTypes cenv env m reqdTy actualTy
     | _ ->
         UnifyTypes cenv env m overallTy.Commit actualTy
 
