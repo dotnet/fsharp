@@ -341,9 +341,9 @@ type ConstraintSolverEnv =
       /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly: bool
 
-      /// Indicates that local throws on unresolved SRTP constraint overloads may be generated. When
+      /// Indicates that special errors on unresolved SRTP constraint overloads may be generated. When
       /// these are caught they result in postponed constraints.
-      ThrowOnFailedMemberConstraintResolution: bool
+      ErrorOnFailedMemberConstraintResolution: bool
 
       m: range
 
@@ -365,7 +365,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       m = m
       ContextInfo = contextInfo
       MatchingOnly = false
-      ThrowOnFailedMemberConstraintResolution = false
+      ErrorOnFailedMemberConstraintResolution = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
       Trace = NoTrace
@@ -566,7 +566,8 @@ let IgnoreFailedMemberConstraintResolution f1 f2 =
          | exn -> f2 exn)
 
 /// This is used at (nearly all) entry points into the constraint solver to make sure that the
-/// AbortForFailedMemberConstraintResolution is caught, recorded as a post-inference check and processing continues.
+/// AbortForFailedMemberConstraintResolution error result is caught, the constraint recorded
+/// as a post-inference check and processing continues.
 ///
 /// Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, some constraint
 /// applications must be allowed to "succeed" with partial processing of the unification being
@@ -576,18 +577,18 @@ let IgnoreFailedMemberConstraintResolution f1 f2 =
 /// Quite a lot of code related to tasks has come to rely on this feature.
 ///
 /// To ensure soundness, we double-check the constraint at the end of inference
-/// with 'ThrowOnFailedMemberConstraintResolution' set to false.
+/// with 'ErrorOnFailedMemberConstraintResolution' set to false.
 let PostponeConstraintOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) f1 f2 =
     TryD 
         (fun () ->
-            let csenv = { csenv with ThrowOnFailedMemberConstraintResolution = true }
+            let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
             f1 csenv)
         (function
          | AbortForFailedMemberConstraintResolution -> 
             // Postponed checking of constraints for failed SRTP resolutions is supported from F# 6.0 onwards
             if csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
                 csenv.SolverState.AddPostInferenceCheck (preDefaults=true, check = fun () -> 
-                    let csenv = { csenv with ThrowOnFailedMemberConstraintResolution = false }
+                    let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
                     f1 csenv |> RaiseOperationResult)
             CompleteD
          | exn -> f2 exn)
@@ -1307,7 +1308,7 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 ty =
 ///    will deal with the problem. 
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
-and SolveMemberConstraint (csenv: ConstraintSolverEnv) suppressThrowOnFailedMemberConstraintResolution permitWeakResolution ndeep m2 traitInfo : OperationResult<bool> = trackErrors {
+and SolveMemberConstraint (csenv: ConstraintSolverEnv) suppressErrorOnFailedMemberConstraintResolution permitWeakResolution ndeep m2 traitInfo : OperationResult<bool> = trackErrors {
     let (TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln)) = traitInfo
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
@@ -1714,8 +1715,8 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) suppressThrowOnFailedMemb
                   match errors with
                   | ErrorResult (_, UnresolvedOverloading _)
                       when
-                          not suppressThrowOnFailedMemberConstraintResolution &&
-                          csenv.ThrowOnFailedMemberConstraintResolution &&
+                          not suppressErrorOnFailedMemberConstraintResolution &&
+                          csenv.ErrorOnFailedMemberConstraintResolution &&
                           (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
                       return! ErrorD AbortForFailedMemberConstraintResolution
                   | _ -> 
@@ -2364,7 +2365,7 @@ and CanMemberSigsMatchUpToCheck
         trackErrors {
             let g    = csenv.g
             let amap = csenv.amap
-            let m    = csenv.m
+            let m = csenv.m
     
             let minfo = calledMeth.Method
             let minst = calledMeth.CalledTyArgs
@@ -2613,7 +2614,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep cxsln isConstraint 
 and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nNamedCallerArgs) methodName ad (calledMethGroup: CalledMeth<_> list) isSequential =
 
     let amap = csenv.amap
-    let m    = csenv.m
+    let m = csenv.m
     let denv = csenv.DisplayEnv
     let infoReader = csenv.InfoReader
 
@@ -2732,6 +2733,180 @@ and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMet
     let isSequential e = match e with | SynExpr.Sequential _ -> true | _ -> false
     ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
+// Note: Relies on 'compare' respecting true > false
+and compareCond (p: 'T -> 'T -> bool) x1 x2 = 
+    compare (p x1 x2) (p x2 x1)
+
+/// Compare types under the feasibly-subsumes ordering
+and CompareArgTypesForOverloadingPreference (csenv: ConstraintSolverEnv) ndeep m ty1 ty2 = 
+    (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
+                    
+/// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
+and CompareArgsForOverloadingPreference (csenv: ConstraintSolverEnv) ndeep m (calledArg1: CalledArg) (calledArg2: CalledArg) =
+    let g = csenv.g
+    let c = CompareArgTypesForOverloadingPreference csenv ndeep m calledArg1.CalledArgumentType calledArg2.CalledArgumentType
+    if c <> 0 then c else
+
+    let c = 
+        (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
+
+            // Func<_> is always considered better than any other delegate type
+            match tryTcrefOfAppTy csenv.g ty1 with 
+            | ValueSome tcref1 when 
+                tcref1.DisplayName = "Func" &&  
+                (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
+                isDelegateTy g ty1 &&
+                isDelegateTy g ty2 -> true
+
+            // T is always better than inref<T>
+            | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
+                true
+
+            // T is always better than Nullable<T> from F# 5.0 onwards
+            | _ when g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) &&
+                        isNullableTy csenv.g ty2 &&
+                        typeEquiv csenv.g ty1 (destNullableTy csenv.g ty2) -> 
+                true
+
+            | _ -> false)
+                                 
+    if c <> 0 then c else
+    0
+
+/// Check whether one overload is better than another
+and CompareMethodsForOverloadingPreference
+         (csenv: ConstraintSolverEnv) 
+         ndeep           // Depth of inference
+         (candidate: CalledMeth<_>, candidateWarnings, usesTDC1)
+         (other: CalledMeth<_>, otherWarnings, usesTDC2) =
+    let g = csenv.g
+    let m = csenv.m
+    // Compare two things by the given predicate. 
+    // If the predicate returns true for x1 and false for x2, then x1 > x2
+    // If the predicate returns false for x1 and true for x2, then x1 < x2
+    // Otherwise x1 = x2
+                
+    let candidateWarnCount = List.length candidateWarnings
+    let otherWarnCount = List.length otherWarnings
+
+    // Prefer methods that don't use type-directed conversion
+    let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
+    if c <> 0 then c else
+
+    // Prefer methods that don't give "this code is less generic" warnings
+    // Note: Relies on 'compare' respecting true > false
+    let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
+    if c <> 0 then c else
+                    
+    // Prefer methods that don't use param array arg
+    // Note: Relies on 'compare' respecting true > false
+    let c =  compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion) 
+    if c <> 0 then c else
+
+    // Prefer methods with more precise param array arg type
+    let c = 
+        if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
+            CompareArgTypesForOverloadingPreference csenv ndeep m (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
+        else
+            0
+    if c <> 0 then c else
+                    
+    // Prefer methods that don't use out args
+    // Note: Relies on 'compare' respecting true > false
+    let c = compare (not candidate.HasOutArgs) (not other.HasOutArgs)
+    if c <> 0 then c else
+
+    // Prefer methods that don't use optional args
+    // Note: Relies on 'compare' respecting true > false
+    let c = compare (not candidate.HasOptArgs) (not other.HasOptArgs)
+    if c <> 0 then c else
+
+    // Check regular unnamed args. The argument counts will only be different if one is using param args
+    let c = 
+        if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
+            // For extension members, we also include the object argument type, if any in the comparison set
+            // This matches C#, where all extension members are treated and resolved as "static" methods calls
+            let cs = 
+                (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
+                    let objArgTys1 = candidate.CalledObjArgTys(m) 
+                    let objArgTys2 = other.CalledObjArgTys(m) 
+                    if objArgTys1.Length = objArgTys2.Length then 
+                        List.map2 (CompareArgTypesForOverloadingPreference csenv ndeep m) objArgTys1 objArgTys2
+                    else
+                        []
+                 else 
+                    []) @
+                ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 (CompareArgsForOverloadingPreference csenv ndeep m)) 
+            // "all args are at least as good, and one argument is actually better"
+            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
+                1
+            // "all args are at least as bad, and one argument is actually worse"
+            elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
+                -1
+            // "argument lists are incomparable"
+            else
+                0
+        else
+            0
+    if c <> 0 then c else
+
+    // Prefer non-extension methods 
+    let c = compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
+    if c <> 0 then c else
+
+    // Between extension methods, prefer most recently opened
+    let c = 
+        if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
+            compare candidate.Method.ExtensionMemberPriority other.Method.ExtensionMemberPriority 
+        else 
+            0
+    if c <> 0 then c else
+
+    // Prefer non-generic methods 
+    // Note: Relies on 'compare' respecting true > false
+    let c = compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
+    if c <> 0 then c else
+                    
+    // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
+    // into account when comparing overloads.  So adding a name to an argument might mean 
+    // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
+    // optional or not) as an additional comparison technique.
+    let c = 
+        if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
+            let cs = 
+                let args1 = candidate.AllCalledArgs |> List.concat
+                let args2 = other.AllCalledArgs |> List.concat
+                if args1.Length = args2.Length then 
+                    (args1, args2) ||> List.map2 (CompareArgsForOverloadingPreference csenv ndeep m)
+                else
+                    []
+            // "all args are at least as good, and one argument is actually better"
+            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
+                1
+            // "all args are at least as bad, and one argument is actually worse"
+            elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
+                -1
+            // "argument lists are incomparable"
+            else
+                0
+        else
+            0
+    if c <> 0 then c else
+
+    0
+
+/// Check whether one overload is better than another
+and ChooseBestMethodsForOverloading (csenv: ConstraintSolverEnv) ndeep applicableMeths = 
+    let indexedApplicableMeths = applicableMeths |> List.indexed
+    indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
+        if indexedApplicableMeths |> List.forall (fun (j, other) -> 
+                i = j ||
+                let res = CompareMethodsForOverloadingPreference csenv ndeep candidate other
+                res > 0) then 
+            Some candidate
+        else 
+            None) 
+
 // Resolve the overloading of a method 
 // This is used after analyzing the types of arguments 
 and ResolveOverloading 
@@ -2748,7 +2923,7 @@ and ResolveOverloading
      =
     let g = csenv.g
     let infoReader = csenv.InfoReader
-    let m    = csenv.m
+    let m = csenv.m
     let denv = csenv.DisplayEnv
     let isOpConversion = methodName = "op_Explicit" || methodName = "op_Implicit"
     // See what candidates we have based on name and arity 
@@ -2862,171 +3037,7 @@ and ResolveOverloading
 
             | applicableMeths -> 
                 
-                /// Compare two things by the given predicate. 
-                /// If the predicate returns true for x1 and false for x2, then x1 > x2
-                /// If the predicate returns false for x1 and true for x2, then x1 < x2
-                /// Otherwise x1 = x2
-                
-                // Note: Relies on 'compare' respecting true > false
-                let compareCond (p: 'T -> 'T -> bool) x1 x2 = 
-                    compare (p x1 x2) (p x2 x1)
-
-                /// Compare types under the feasibly-subsumes ordering
-                let compareTypes ty1 ty2 = 
-                    (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
-                    
-                /// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
-                let compareArg (calledArg1: CalledArg) (calledArg2: CalledArg) =
-                    let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
-                    if c <> 0 then c else
-
-                    let c = 
-                        (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
-
-                            // Func<_> is always considered better than any other delegate type
-                            match tryTcrefOfAppTy csenv.g ty1 with 
-                            | ValueSome tcref1 when 
-                                tcref1.DisplayName = "Func" &&  
-                                (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
-                                isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 -> true
-
-                            // T is always better than inref<T>
-                            | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
-                                true
-
-                            // T is always better than Nullable<T> from F# 5.0 onwards
-                            | _ when g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) &&
-                                     isNullableTy csenv.g ty2 &&
-                                     typeEquiv csenv.g ty1 (destNullableTy csenv.g ty2) -> 
-                                true
-
-                            | _ -> false)
-                                 
-                    if c <> 0 then c else
-                    0
-
-                /// Check whether one overload is better than another
-                let better (candidate: CalledMeth<_>, candidateWarnings, usesTDC1) (other: CalledMeth<_>, otherWarnings, usesTDC2) =
-                    let candidateWarnCount = List.length candidateWarnings
-                    let otherWarnCount = List.length otherWarnings
-
-                    // Prefer methods that don't use type-directed conversion
-                    let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
-                    if c <> 0 then c else
-
-                    // Prefer methods that don't give "this code is less generic" warnings
-                    // Note: Relies on 'compare' respecting true > false
-                    let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
-                    if c <> 0 then c else
-                    
-                    // Prefer methods that don't use param array arg
-                    // Note: Relies on 'compare' respecting true > false
-                    let c =  compare (not candidate.UsesParamArrayConversion) (not other.UsesParamArrayConversion) 
-                    if c <> 0 then c else
-
-                    // Prefer methods with more precise param array arg type
-                    let c = 
-                        if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
-                            compareTypes (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
-                        else
-                            0
-                    if c <> 0 then c else
-                    
-                    // Prefer methods that don't use out args
-                    // Note: Relies on 'compare' respecting true > false
-                    let c = compare (not candidate.HasOutArgs) (not other.HasOutArgs)
-                    if c <> 0 then c else
-
-                    // Prefer methods that don't use optional args
-                    // Note: Relies on 'compare' respecting true > false
-                    let c = compare (not candidate.HasOptArgs) (not other.HasOptArgs)
-                    if c <> 0 then c else
-
-                    // check regular unnamed args. The argument counts will only be different if one is using param args
-                    let c = 
-                        if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
-                           // For extension members, we also include the object argument type, if any in the comparison set
-                           // This matches C#, where all extension members are treated and resolved as "static" methods calls
-                           let cs = 
-                               (if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
-                                   let objArgTys1 = candidate.CalledObjArgTys(m) 
-                                   let objArgTys2 = other.CalledObjArgTys(m) 
-                                   if objArgTys1.Length = objArgTys2.Length then 
-                                       List.map2 compareTypes objArgTys1 objArgTys2
-                                   else
-                                       []
-                                else 
-                                    []) @
-                               ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
-                           // "all args are at least as good, and one argument is actually better"
-                           if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
-                               1
-                           // "all args are at least as bad, and one argument is actually worse"
-                           elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
-                               -1
-                           // "argument lists are incomparable"
-                           else
-                               0
-                        else
-                            0
-                    if c <> 0 then c else
-
-                    // prefer non-extension methods 
-                    let c = compare (not candidate.Method.IsExtensionMember) (not other.Method.IsExtensionMember)
-                    if c <> 0 then c else
-
-                    // between extension methods, prefer most recently opened
-                    let c = 
-                        if candidate.Method.IsExtensionMember && other.Method.IsExtensionMember then 
-                            compare candidate.Method.ExtensionMemberPriority other.Method.ExtensionMemberPriority 
-                        else 
-                            0
-                    if c <> 0 then c else
-
-                    // Prefer non-generic methods 
-                    // Note: Relies on 'compare' respecting true > false
-                    let c = compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
-                    if c <> 0 then c else
-                    
-                    // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
-                    // into account when comparing overloads.  So adding a name to an argument might mean 
-                    // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
-                    // optional or not) as an additional comparison technique.
-                    let c = 
-                        if g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop) then
-                            let cs = 
-                                let args1 = candidate.AllCalledArgs |> List.concat
-                                let args2 = other.AllCalledArgs |> List.concat
-                                if args1.Length = args2.Length then 
-                                    (args1, args2) ||> List.map2 compareArg
-                                else
-                                    []
-                            // "all args are at least as good, and one argument is actually better"
-                            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
-                                1
-                            // "all args are at least as bad, and one argument is actually worse"
-                            elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
-                                -1
-                            // "argument lists are incomparable"
-                            else
-                                0
-                        else
-                            0
-                    if c <> 0 then c else
-
-                    0
-
-                let bestMethods =
-                    let indexedApplicableMeths = applicableMeths |> List.indexed
-                    indexedApplicableMeths |> List.choose (fun (i, candidate) -> 
-                        if indexedApplicableMeths |> List.forall (fun (j, other) -> 
-                             i = j ||
-                             let res = better candidate other
-                             res > 0) then 
-                           Some candidate
-                        else 
-                           None) 
+                let bestMethods = ChooseBestMethodsForOverloading csenv ndeep applicableMeths
                 match bestMethods with 
                 | [(calledMeth, warns, _usesTDC)] -> Some calledMeth, OkResult (warns, ())
                 | bestMethods -> 
@@ -3035,7 +3046,6 @@ and ResolveOverloading
                             [ match errors with
                               | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; infoReader = infoReader }
                               | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; infoReader = infoReader } ]
-
 
                         // use the most precise set
                         // - if after filtering bestMethods still contains something - use it
@@ -3068,15 +3078,15 @@ and ResolveOverloading
             let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs))
             let! _usesTDC =
                 CanMemberSigsMatchUpToCheck 
-                        csenv 
-                        permitOptArgs
-                        true
-                        (TypesEquiv csenv ndeep cxsln) // instantiations equal
-                        (TypesMustSubsume csenv ndeep cxsln m) // obj can subsume
-                        (ReturnTypesMustSubsumeOrConvert csenv ad ndeep cxsln cx.IsSome m) // return can subsume or convert
-                        (ArgsMustSubsumeOrConvert csenv ad ndeep cxsln cx.IsSome true)  // args can subsume or convert
-                        reqdRetTyOpt 
-                        calledMeth
+                    csenv 
+                    permitOptArgs
+                    true
+                    (TypesEquiv csenv ndeep cxsln) // instantiations equal
+                    (TypesMustSubsume csenv ndeep cxsln m) // obj can subsume
+                    (ReturnTypesMustSubsumeOrConvert csenv ad ndeep cxsln cx.IsSome m) // return can subsume or convert
+                    (ArgsMustSubsumeOrConvert csenv ad ndeep cxsln cx.IsSome true)  // args can subsume or convert
+                    reqdRetTyOpt 
+                    calledMeth
             return ()
         }
 
@@ -3190,31 +3200,31 @@ let UndoIfFailedOrWarnings f =
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> 
      let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-     let csenv = { csenv with Trace = WithTrace trace }
+     let csenv = { csenv with Trace = WithTrace trace; ErrorOnFailedMemberConstraintResolution = true }
      SolveTypeEqualsTypeKeepAbbrevs csenv 0 m ty1 ty2)
 
 let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
     UndoIfFailedOrWarnings (fun trace -> 
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-        let csenv = { csenv with Trace = WithTrace trace }
+        let csenv = { csenv with Trace = WithTrace trace; ErrorOnFailedMemberConstraintResolution = true }
         SolveTypeEqualsTypeKeepAbbrevs csenv 0 m ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> 
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-        let csenv = { csenv with Trace = WithTrace trace; MatchingOnly = true }
+        let csenv = { csenv with Trace = WithTrace trace; MatchingOnly = true; ErrorOnFailedMemberConstraintResolution = true }
         SolveTypeEqualsTypeKeepAbbrevs csenv 0 m ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeUndoIfFailed denv css m ty1 ty2 = 
     UndoIfFailed (fun trace ->
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-        let csenv = { csenv with Trace = WithTrace trace }
+        let csenv = { csenv with Trace = WithTrace trace; ErrorOnFailedMemberConstraintResolution = true }
         SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m None ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 = 
     UndoIfFailed (fun trace ->
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-        let csenv = { csenv with Trace = WithTrace trace; MatchingOnly = true }
+        let csenv = { csenv with Trace = WithTrace trace; MatchingOnly = true; ErrorOnFailedMemberConstraintResolution = true }
         SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m None ty1 ty2)
 
 let AddCxTypeMustSubsumeType contextInfo denv css m ty1 ty2 = 
@@ -3222,7 +3232,7 @@ let AddCxTypeMustSubsumeType contextInfo denv css m ty1 ty2 =
     SolveTypeSubsumesTypeWithReport csenv 0 m None ty1 ty2 id
     |> RaiseOperationResult
 
-let rec AddCxMethodConstraint denv css m traitInfo  =
+let AddCxMethodConstraint denv css m traitInfo  =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv ->
@@ -3234,70 +3244,70 @@ let rec AddCxMethodConstraint denv css m traitInfo  =
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeMustSupportNull denv css m ty =
+let AddCxTypeMustSupportNull denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeSupportsNull csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeMustSupportComparison denv css m ty =
+let AddCxTypeMustSupportComparison denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeSupportsComparison csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeMustSupportEquality denv css m ty =
+let AddCxTypeMustSupportEquality denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeSupportsEquality csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeMustSupportDefaultCtor denv css m ty =
+let AddCxTypeMustSupportDefaultCtor denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeRequiresDefaultConstructor csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeIsReferenceType denv css m ty =
+let AddCxTypeIsReferenceType denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeIsReferenceType csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeIsValueType denv css m ty =
+let AddCxTypeIsValueType denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeIsNonNullableValueType csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
     
-let rec AddCxTypeIsUnmanaged denv css m ty =
+let AddCxTypeIsUnmanaged denv css m ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeIsUnmanaged csenv 0 m ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeIsEnum denv css m ty underlying =
+let AddCxTypeIsEnum denv css m ty underlying =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeIsEnum csenv 0 m ty underlying)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTypeIsDelegate denv css m ty aty bty =
+let AddCxTypeIsDelegate denv css m ty aty bty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> SolveTypeIsDelegate csenv 0 m ty aty bty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let rec AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
+let AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
     let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
     PostponeConstraintOnFailedMemberConstraintResolution csenv
         (fun csenv -> AddConstraint csenv 0 m tp (TyparConstraint.DefaultsTo(ridx, ty, m)))
