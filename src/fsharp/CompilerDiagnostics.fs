@@ -372,6 +372,7 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3186 -> false // pickleMissingDefinition - off by default
     | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default

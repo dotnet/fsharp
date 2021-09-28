@@ -149,6 +149,8 @@ type ConstraintSolverState =
     /// Get the post-inference checks to run at the end of inference
     member GetPostInferenceChecksFinal: unit -> seq<unit -> unit>
 
+val BakedInTraitConstraintNames: Set<string>
+
 [<Sealed; NoEquality; NoComparison>]
 type Trace 
 
@@ -156,14 +158,11 @@ type OptionalTrace =
     | NoTrace
     | WithTrace of Trace
 
-val BakedInTraitConstraintNames: Set<string>
-
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
 /// The entry point to resolve the overloading for an entire call
 val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTy: OverallTy -> CalledMeth<Expr> option * OperationResult<unit>
 
-/// The entry point to determine if there is a unique good overload that can be eagerly applied
 val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> OverallTy -> OperationResult<bool> 
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
@@ -171,7 +170,6 @@ val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverStat
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
-/// Unify the types.
 val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool

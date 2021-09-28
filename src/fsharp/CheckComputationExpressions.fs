@@ -1926,7 +1926,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     let genResultTy = NewInferenceType ()
                     UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
                     let exprTy = tyOfExpr cenv.g expr
-                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m NoTrace genResultTy exprTy
+                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m  NoTrace genResultTy exprTy
                     let resExpr = mkCallSeqSingleton cenv.g m genResultTy (mkCoerceExpr(expr, genResultTy, m, exprTy))
                     Choice1Of2 resExpr, tpenv
             else

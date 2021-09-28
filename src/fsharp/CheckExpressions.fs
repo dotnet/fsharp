@@ -478,7 +478,7 @@ let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
                 let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
                 warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
             else
-                // Report the error.
+                // report the error
                 UnifyTypes cenv env m reqdTy actualTy
     | _ ->
         UnifyTypes cenv env m overallTy.Commit actualTy

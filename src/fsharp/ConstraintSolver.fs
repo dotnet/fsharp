@@ -587,7 +587,10 @@ let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) f1 f
         (function
          | AbortForFailedMemberConstraintResolution -> 
             // Postponed checking of constraints for failed SRTP resolutions is supported from F# 6.0 onwards
-            if csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
+            // and is required for the "tasks" (aka ResumableStateMachines) feature.
+            //
+            // See https://github.com/dotnet/fsharp/issues/12188
+            if csenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
                 csenv.SolverState.AddPostInferenceCheck (preDefaults=true, check = fun () -> 
                     let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
                     f1 csenv |> RaiseOperationResult)
@@ -1011,7 +1014,7 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
     do! DepthCheck ndeep m
     match ty1 with 
     | TType_var r | TType_measure (Measure.Var r) ->
-        do! SolveTyparEqualsTypePart1 csenv m2 trace     ty1 r ty 
+        do! SolveTyparEqualsTypePart1 csenv m2 trace ty1 r ty 
         do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
     | _ -> failwith "SolveTyparEqualsType"
     }
@@ -1073,12 +1076,14 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let g = csenv.g
 
     // Pre F# 6.0 we asssert the trait solution here
-    if csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
-        match cxsln with
-        | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
-            // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
-            TransactMemberConstraintSolution traitInfo trace traitSln
-        | _ -> ()
+#if TRAIT_CONSTRAINT_CORRECTIONS
+    if not (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections) then
+#endif
+    match cxsln with
+    | Some (traitInfo, traitSln) when traitInfo.Solution.IsNone -> 
+        // If this is an overload resolution at this point it's safe to assume the candidate member being evaluated solves this member constraint.
+        TransactMemberConstraintSolution traitInfo trace traitSln
+    | _ -> ()
 
     if ty1 === ty2 then CompleteD else
 
@@ -2729,20 +2734,24 @@ and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMet
 /// by that method for the purposes of further type checking (just as we assume a type equation
 /// for the purposes of checking constraints arising from that type equation).
 ///
-/// In F# 5.0 we assert this late by passing the cxsln parameter around. However this
+/// In F# 5.0 and 6.0 we assert this late by passing the cxsln parameter around. However this
 /// relies on not checking return types for SRTP constraints eagerly
 ///
-/// In F# 6.0 we assert this early and add a proper check that return types match for SRTP constraint solving
+/// Post F# 6.0 (TraitConstraintCorrections) we will assert this early and add a proper check that return types match for SRTP constraint solving
 /// (see alwaysCheckReturn)
 and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInfo option) m trace (calledMeth: CalledMeth<_>) = 
     match cx with
     | Some traitInfo when traitInfo.Solution.IsNone -> 
         let traitSln = MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs
-        if csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
+#if TRAIT_CONSTRAINT_CORRECTIONS
+        if csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections then
             TransactMemberConstraintSolution traitInfo trace traitSln
             None
         else
-            Some (traitInfo, traitSln)
+#else
+        ignore trace
+#endif
+        Some (traitInfo, traitSln)
     | _ -> 
         None
 
@@ -2785,11 +2794,13 @@ and ResolveOverloading
           // Always take the return type into account for
           //    -- op_Explicit, op_Implicit
           //    -- candidate method sets that potentially use tupling of unfilled out args
-          ///   -- in F# 6.0, also check return types for SRTP constraints
+          ///   -- if TraitConstraintCorrections is enabled, also check return types for SRTP constraints
           let alwaysCheckReturn =
               isOpConversion ||
-              candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) ||
-              (csenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && cx.IsSome)
+              candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs) 
+#if TRAIT_CONSTRAINT_CORRECTIONS
+              || (csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections && cx.IsSome)
+#endif
 
           // Exact match rule.
           //
@@ -2868,7 +2879,7 @@ and ResolveOverloading
                                              (ReturnTypesMustSubsumeOrConvert csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome m)
                                              (ArgsMustSubsumeOrConvertWithContextualReport csenv ad ndeep (WithTrace newTrace) cxsln cx.IsSome calledMeth) 
                                              reqdRetTyOpt 
-                                             calledMeth) with
+                                             calledMeth) with 
                             | OkResult _ -> None
                             | ErrorResult(_warnings, exn) ->
                                 Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
@@ -3183,7 +3194,10 @@ let EliminateConstraintsForGeneralizedTypars denv css m (trace: OptionalTrace) (
 
 
 //-------------------------------------------------------------------------
-// Main entry points to constraint solver 
+// Main entry points to constraint solver (some backdoors are used for 
+// some constructs)
+//
+// No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
 let AddCxTypeEqualsType contextInfo denv css m actual expected  = 

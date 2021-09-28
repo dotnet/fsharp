@@ -5907,13 +5907,13 @@ let TypeCheckOneImplFile
       conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
 
-    // Run any additional checks registered for post-type-inference
-    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-       for check in cenv.css.GetPostInferenceChecksFinal() do
-          try  
-              check()
-          with e -> 
-              errorRecovery e m)
+    do 
+      conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+         for check in cenv.css.GetPostInferenceChecksFinal() do
+            try  
+                check()
+            with e -> 
+                errorRecovery e m)
 
     // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
     // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
