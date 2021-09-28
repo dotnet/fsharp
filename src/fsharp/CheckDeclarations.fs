@@ -5878,7 +5878,7 @@ let TypeCheckOneImplFile
     
     // Run any additional checks registered to be run before applying defaults
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-       for check in cenv.css.GetPostInferenceChecksFinal() do
+       for check in cenv.css.GetPostInferenceChecksPreDefaults() do
           try  
               check()
           with e -> 
