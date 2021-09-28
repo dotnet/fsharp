@@ -9,10 +9,7 @@ test.fsx(14,20,14,41): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-test.fsx(17,20,17,44): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'int'    
+test.fsx(17,20,17,44): typecheck error FS0193: The type 'obj' does not match the type 'int'
 
 test.fsx(20,21,20,24): typecheck error FS0001: This expression was expected to have type
     'obj'    
@@ -264,7 +261,7 @@ is not compatible with type
     'C'    
 
 
-test.fsx(172,18,172,21): typecheck error FS0001: The type 'Y' is not compatible with the type 'X'
+test.fsx(172,18,172,21): typecheck error FS0193: The type 'Y' is not compatible with the type 'X'
 
 test.fsx(172,17,172,22): typecheck error FS0193: Type constraint mismatch. The type 
     'Y'    
@@ -463,20 +460,11 @@ test.fsx(263,44,263,63): typecheck error FS0001: This expression was expected to
 but here has type
     'string'    
 
-test.fsx(266,44,266,68): typecheck error FS0001: This expression was expected to have type
-    'IComparable<string>'    
-but here has type
-    'string'    
+test.fsx(266,44,266,68): typecheck error FS0193: The type 'IComparable<string>' does not match the type 'string'
 
-test.fsx(268,21,268,45): typecheck error FS0001: This expression was expected to have type
-    'obj'    
-but here has type
-    'string'    
+test.fsx(268,21,268,45): typecheck error FS0193: The type 'obj' does not match the type 'string'
 
-test.fsx(270,36,270,60): typecheck error FS0001: This expression was expected to have type
-    'IComparable'    
-but here has type
-    'string'    
+test.fsx(270,36,270,60): typecheck error FS0193: The type 'IComparable' does not match the type 'string'
 
 test.fsx(275,35,275,36): typecheck error FS0001: This expression was expected to have type
     'obj'    

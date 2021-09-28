@@ -1666,7 +1666,7 @@ let mkSeqCollect (cenv: cenv) env m enumElemTy genTy lam enumExpr =
     mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 
 let mkSeqUsing (cenv: cenv) (env: TcEnv) m resourceTy genTy resourceExpr lam =
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_ty resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m cenv.g.system_IDisposable_ty resourceTy
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
@@ -1890,7 +1890,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
             if not isYield then errorR(Error(FSComp.SR.tcUseYieldBangForMultipleResults(), m)) 
 
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genOuterTy genExprTy
+            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m genOuterTy genExprTy
             Some(mkCoerceExpr(resultExpr, genOuterTy, m, genExprTy), tpenv)
 
         | SynExpr.YieldOrReturn ((isYield, _), yieldExpr, m) -> 
@@ -1926,7 +1926,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                     let genResultTy = NewInferenceType ()
                     UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
                     let exprTy = tyOfExpr cenv.g expr
-                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m  NoTrace genResultTy exprTy
+                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m genResultTy exprTy
                     let resExpr = mkCallSeqSingleton cenv.g m genResultTy (mkCoerceExpr(expr, genResultTy, m, exprTy))
                     Choice1Of2 resExpr, tpenv
             else
