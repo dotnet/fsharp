@@ -784,7 +784,7 @@ module Test =
         """
         |> withLangVersion50
         |> compile
-        |> withErrorCode 193
+        |> withErrorCode 1
         |> ignore
 
     [<Test>]
