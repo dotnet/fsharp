@@ -1056,7 +1056,10 @@ let testTask() = task { while x > 4 do System.Console.WriteLine("loop") }
 } 
                 """
             ])
+#endif
 
+
+module TaskTypeInference =
     // This tests the compilation of a case that hits corner cases in SRTP constraint processing.
     // See https://github.com/dotnet/fsharp/issues/12188
     [<Test>]
@@ -1107,6 +1110,8 @@ printfn "test passed"
 
             """
 
+
+#if !DEBUG 
 
     [<Test>]
     let ``check generic task exact code``() =

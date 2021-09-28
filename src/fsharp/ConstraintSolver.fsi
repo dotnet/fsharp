@@ -123,7 +123,6 @@ exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEn
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
-exception ConstraintSolverRelatedInformation            of string option * range * exn
 
 exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
 exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
@@ -150,6 +149,13 @@ type ConstraintSolverState =
     /// Get the post-inference checks to run at the end of inference
     member GetPostInferenceChecksFinal: unit -> seq<unit -> unit>
 
+[<Sealed; NoEquality; NoComparison>]
+type Trace 
+
+type OptionalTrace =
+    | NoTrace
+    | WithTrace of Trace
+
 val BakedInTraitConstraintNames: Set<string>
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
@@ -161,7 +167,7 @@ val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> m
 val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> OverallTy -> OperationResult<bool> 
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
-val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> unit 
+val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit 
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
@@ -174,31 +180,31 @@ val AddCxTypeEqualsTypeUndoIfFailedOrWarnings: DisplayEnv -> ConstraintSolverSta
 
 val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
-val AddCxTypeMustSubsumeType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+val AddCxTypeMustSubsumeType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
 
 val AddCxTypeMustSubsumeTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
 val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
-val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> TraitConstraintInfo -> unit
+val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 
-val AddCxTypeMustSupportNull: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeMustSupportNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportEquality: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeMustSupportEquality: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportDefaultCtor: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeMustSupportDefaultCtor: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsReferenceType: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeIsReferenceType: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsValueType: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeIsValueType: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsUnmanaged: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val AddCxTypeIsUnmanaged: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsEnum: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+val AddCxTypeIsEnum: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
 
-val AddCxTypeIsDelegate: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> TType -> unit
+val AddCxTypeIsDelegate: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
 
 val AddCxTyparDefaultsTo:  DisplayEnv -> ConstraintSolverState -> range -> ContextInfo -> Typar -> int -> TType -> unit
 
