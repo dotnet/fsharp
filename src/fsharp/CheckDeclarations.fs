@@ -5876,6 +5876,14 @@ let TypeCheckOneImplFile
 
     let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
     
+    // Run any additional checks registered to be run before applying defaults
+    do 
+      for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+        try  
+            check()
+        with e -> 
+            errorRecovery e m
+
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)
 
@@ -5899,10 +5907,9 @@ let TypeCheckOneImplFile
       conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
 
-    // Run any additional checks registered for post-type-inference
     do 
       conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-         for check in cenv.postInferenceChecks do
+         for check in cenv.css.GetPostInferenceChecksFinal() do
             try  
                 check()
             with e -> 
