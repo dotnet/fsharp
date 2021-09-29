@@ -146,6 +146,8 @@ module TaggedText =
     let rightBracket = tagPunctuation "]"
     let leftBrace= tagPunctuation "{"
     let rightBrace = tagPunctuation "}"
+    let leftBracketBar = tagPunctuation  "[|"
+    let rightBracketBar = tagPunctuation "|]"
     let space = tagSpace " "
     let equals = tagOperator "="
 
@@ -236,8 +238,6 @@ module TaggedText =
     let keywordAbstract = tagKeyword "abstract"
     let keywordOverride = tagKeyword "override"
     let keywordEnum = tagKeyword "enum"
-    let leftBracketBar = tagPunctuation  "[|"
-    let rightBracketBar = tagPunctuation "|]"
     let keywordTypeof = tagKeyword "typeof"
     let keywordTypedefof = tagKeyword "typedefof"
     let leftBracketAngle = tagPunctuation "[<"
@@ -808,11 +808,11 @@ module Display =
         ^^ (rightL rightBracket)
 
     let makeArrayL xs =
-        (leftL (tagPunctuation "[|")) 
+        (leftL leftBracketBar) 
         ^^ sepListL (rightL semicolon) xs 
-        ^^ (rightL (tagPunctuation "|]"))
+        ^^ (rightL rightBracketBar)
 
-    let makeArray2L xs = leftL leftBracket ^^ aboveListL xs ^^ rightL rightBracket  
+    let makeArray2L xs = leftL leftBracketBar ^^ aboveListL xs ^^ rightL rightBracketBar  
 
     let getProperty (ty: Type) (obj: obj) name =
         ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
@@ -1122,7 +1122,7 @@ module Display =
                 let project2 x y =
                     if x>=(b1+n1) || y>=(b2+n2) then None
                     else Some ((box (arr.GetValue(x,y)), ty),y+1)
-                let rowL x = boundedUnfoldL (nestedObjL depthLim Precedence.BracketIfTuple) (project2 x) stopShort b2 opts.PrintLength |> makeListL
+                let rowL x = boundedUnfoldL (nestedObjL depthLim Precedence.BracketIfTuple) (project2 x) stopShort b2 opts.PrintLength |> makeArrayL
                 let project1 x = if x>=(b1+n1) then None else Some (x,x+1)
                 let rowsL = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
                 makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1)) :: wordL(tagText("bound2=" + string_of_int b2)) :: rowsL)
