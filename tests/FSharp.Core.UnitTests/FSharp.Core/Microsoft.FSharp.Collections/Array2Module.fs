@@ -81,7 +81,7 @@ type Array2Module() =
         // Verify printing format of non-zero based arrays
         let v : int[,] = Array2D.createBased 10 1 3 4 2
         let actual = (sprintf "%A" v).Replace("\r","").Replace("\n","")
-        let expected = "[bound1=10 bound2=1 [2; 2; 2; 2] [2; 2; 2; 2] [2; 2; 2; 2]]"
+        let expected = "[|bound1=10 bound2=1 [|2; 2; 2; 2|] [|2; 2; 2; 2|] [|2; 2; 2; 2|]|]"
         Assert.AreEqual(expected, actual)
         ()
 
