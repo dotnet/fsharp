@@ -2620,7 +2620,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
     match vrec with
     | ValInRecScope isComplete when isComplete && not (isNil tinst) ->
         //printfn "pushing post-inference check for '%s', vty = '%s'" v.DisplayName (DebugPrint.showType vty)
-        cenv.css.AddPostInferenceCheck (preDefaults=false, check=fun () ->
+        cenv.css.PushPostInferenceCheck (preDefaults=false, check=fun () ->
             //printfn "running post-inference check for '%s'" v.DisplayName
             //printfn "tau = '%s'" (DebugPrint.showType tau)
             //printfn "vty = '%s'" (DebugPrint.showType vty)

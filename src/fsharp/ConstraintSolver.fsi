@@ -141,7 +141,7 @@ type ConstraintSolverState =
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
-    member AddPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
+    member PushPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
 
     /// Get the post-inference checks to run near the end of inference, but before defaults are applied
     member GetPostInferenceChecksPreDefaults: unit -> seq<unit -> unit>

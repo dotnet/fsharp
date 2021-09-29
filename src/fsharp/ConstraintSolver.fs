@@ -282,11 +282,17 @@ type ConstraintSolverState =
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray() } 
 
-    member this.AddPostInferenceCheck (preDefaults, check) =
+    member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
             this.PostInferenceChecksPreDefaults.Add check
         else
             this.PostInferenceChecksFinal.Add check
+
+    member this.PopPostInferenceCheck (preDefaults) =
+        if preDefaults then
+            this.PostInferenceChecksPreDefaults.RemoveAt(this.PostInferenceChecksPreDefaults.Count-1)
+        else
+            this.PostInferenceChecksFinal.RemoveAt(this.PostInferenceChecksPreDefaults.Count-1)
 
     member this.GetPostInferenceChecksPreDefaults() =
         this.PostInferenceChecksPreDefaults.ToArray() :> seq<_>
@@ -579,7 +585,7 @@ let IgnoreFailedMemberConstraintResolution f1 f2 =
 ///
 /// To ensure soundness, we double-check the constraint at the end of inference
 /// with 'ErrorOnFailedMemberConstraintResolution' set to false.
-let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) f1 f2 =
+let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) (trace: OptionalTrace) f1 f2 =
     TryD 
         (fun () ->
             let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
@@ -591,9 +597,14 @@ let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) f1 f
             //
             // See https://github.com/dotnet/fsharp/issues/12188
             if csenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
-                csenv.SolverState.AddPostInferenceCheck (preDefaults=true, check = fun () -> 
-                    let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
-                    f1 csenv |> RaiseOperationResult)
+                trace.Exec
+                    (fun () -> 
+                        csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () -> 
+                            let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
+                            f1 csenv |> RaiseOperationResult))
+                    (fun () -> 
+                        csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+                
             CompleteD
          | exn -> f2 exn)
 
@@ -2489,7 +2500,7 @@ and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv
             (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
             (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
     else
-        PostponeOnFailedMemberConstraintResolution csenv
+        PostponeOnFailedMemberConstraintResolution csenv trace
             (fun csenv -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
             (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
        
@@ -3202,7 +3213,7 @@ let EliminateConstraintsForGeneralizedTypars denv css m (trace: OptionalTrace) (
 
 let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected)
         ErrorD
     |> RaiseOperationResult
@@ -3275,7 +3286,7 @@ let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 =
 
 let AddCxMethodConstraint denv css m trace traitInfo  =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv ->
             trackErrors {
                 do! 
@@ -3287,70 +3298,70 @@ let AddCxMethodConstraint denv css m trace traitInfo  =
 
 let AddCxTypeMustSupportNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportComparison denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeSupportsComparison csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportEquality denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeSupportsEquality csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportDefaultCtor denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeRequiresDefaultConstructor csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsReferenceType denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeIsReferenceType csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsValueType denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeIsNonNullableValueType csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
     
 let AddCxTypeIsUnmanaged denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeIsUnmanaged csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsEnum denv css m trace ty underlying =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeIsEnum csenv 0 m trace ty underlying)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsDelegate denv css m trace ty aty bty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv trace
         (fun csenv -> SolveTypeIsDelegate csenv 0 m trace ty aty bty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
     let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> AddConstraint csenv 0 m NoTrace tp (TyparConstraint.DefaultsTo(ridx, ty, m)))
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
@@ -3368,7 +3379,7 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
             let ty1 = mkTyparTy tp
             if not tp.IsSolved && not (typeEquiv css.g ty1 ty2) then
                 let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-                PostponeOnFailedMemberConstraintResolution csenv
+                PostponeOnFailedMemberConstraintResolution csenv NoTrace
                     (fun csenv ->
                         SolveTyparEqualsType csenv 0 m NoTrace ty1 ty2)
                     (fun res -> 
@@ -3420,14 +3431,14 @@ let ChooseTyparSolutionAndSolve css denv tp =
     let amap = css.amap
     let max, m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution csenv
+    PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> 
             CollectThenUndo (fun newTrace -> 
                SolveTypeEqualsTypeEqns csenv 0 m (WithTrace newTrace) None
