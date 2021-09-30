@@ -194,14 +194,30 @@ type Issue12184() =
         task {
             // This should not do an early commit to "task like" nor
             // propogate SRTP constraints from the task-like overload for Bind.
+            //
+            // The overload resolution commits to 'Task' as the return type
             let! result = this.AsyncMethod(21)
             return result
         }
 
-    member _.AsyncMethod(value: int) =
+    member _.AsyncMethod(value: int) : Async<int> =
         async { // error FS0193: The type 'Async<'a>' does not support the operator 'GetAwaiter'
             return (value * 2)
         }
+
+type Issue12184b() =
+    member this.TaskMethod() =
+        task {
+            // This should not do an early commit to "task like" nor
+            // propogate SRTP constraints from the task-like overload for Bind.
+            //
+            // The overload resolution commits to 'Task' as the return type
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(_value: int) : System.Runtime.CompilerServices.YieldAwaitable =
+        Task.Yield()
 
 exception TestException of string
 
