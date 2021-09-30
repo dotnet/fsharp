@@ -1302,6 +1302,7 @@ module Issue12184c =
             return result
         }
 
+#if NETCOREAPP
 // check this compiles 
 module Issue12184d =
     let TaskMethod(t: ValueTask) =
@@ -1317,6 +1318,7 @@ module Issue12184e =
             let! result = t
             return result
         }
+#endif
 
 // check this compiles 
 module Issue12184f =
