@@ -309,12 +309,15 @@ type ConstraintSolverEnv =
       // Is this speculative, with a trace allowing undo, and trial method overload resolution 
       IsSpeculativeForMethodOverloading: bool
 
-      /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
+      /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved. Constraints
+      /// can't be added to type variables in ty2
       MatchingOnly: bool
 
       /// Indicates that special errors on unresolved SRTP constraint overloads may be generated. When
       /// these are caught they result in postponed constraints.
       ErrorOnFailedMemberConstraintResolution: bool
+
+      ExtraRigidInMatching: Zset<Typar>
 
       m: range
 
@@ -339,7 +342,9 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       ErrorOnFailedMemberConstraintResolution = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
-      IsSpeculativeForMethodOverloading = false }
+      IsSpeculativeForMethodOverloading = false
+      ExtraRigidInMatching = Zset.empty typarOrder
+    }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
@@ -1103,14 +1108,37 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
 
     match sty1, sty2 with 
+
     // type vars inside forall-types may be alpha-equivalent 
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) -> CompleteD
+    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) ->
+        CompleteD
 
-    | TType_var tp1, TType_var tp2 when (not csenv.MatchingOnly || tp1.Constraints.IsEmpty) && PreferUnifyTypar tp1 tp2 -> SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
-    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+    // 'v1 = 'v2
+    | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 ->
+        // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
+        // constraints from tp1 to tp2
+        let csenv =
+            if csenv.MatchingOnly then
+                { csenv with ExtraRigidInMatching = Zset.add tp2 csenv.ExtraRigidInMatching }
+            else csenv
+        SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
 
-    | TType_var r, _ when (r.Rigidity <> TyparRigidity.Rigid) && (not csenv.MatchingOnly || r.Constraints.IsEmpty) -> SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
-    | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+    // 'v1 = 'v2
+    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+
+    | TType_var r, _ when (r.Rigidity <> TyparRigidity.Rigid) ->
+        // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
+        // constraints from tp1 to tp2
+        let csenv =
+            if csenv.MatchingOnly then
+                let ftps2 = freeInTypeLeftToRight g true ty2 
+                { csenv with ExtraRigidInMatching = Zset.addList ftps2 csenv.ExtraRigidInMatching }
+            else csenv
+        SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
+
+    | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
     | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
@@ -2061,7 +2089,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | (TyparRigidity.Rigid | TyparRigidity.WillBeRigid), TyparConstraint.DefaultsTo _ -> true
               | _ -> false) then 
             ()
-        elif tp.Rigidity = TyparRigidity.Rigid then
+        elif tp.Rigidity = TyparRigidity.Rigid || csenv.ExtraRigidInMatching.Contains tp then
             return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 
