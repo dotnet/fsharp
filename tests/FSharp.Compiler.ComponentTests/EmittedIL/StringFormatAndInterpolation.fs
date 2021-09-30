@@ -5,6 +5,7 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 open Xunit
 open FSharp.Test.Compiler
 
+#if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
 module ``StringFormatAndInterpolation`` =
     [<Fact>]
     let ``Interpolated string with no holes is reduced to a string or simple format when used in printf``() =
@@ -30,3 +31,6 @@ IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintF
                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
 IL_0016:  pop
 IL_0017:  ret"""]
+
+#endif
+

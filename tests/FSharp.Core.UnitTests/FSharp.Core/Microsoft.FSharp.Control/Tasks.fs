@@ -189,6 +189,20 @@ type SmokeTestsForCompilation() =
             if t.Result <> 5 then failwith "failed"
 
 
+type Issue12184() =
+    member this.TaskMethod() =
+        task {
+            // This should not do an early commit to "task like" nor
+            // propogate SRTP constraints from the task-like overload for Bind.
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(value: int) =
+        async { // error FS0193: The type 'Async<'a>' does not support the operator 'GetAwaiter'
+            return (value * 2)
+        }
+
 exception TestException of string
 
 [<AutoOpen>]
