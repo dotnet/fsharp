@@ -343,7 +343,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
       IsSpeculativeForMethodOverloading = false
-      ExtraRigidInMatching = Zset.empty typarOrder
+      ExtraRigidInMatching = emptyFreeTypars
     }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
@@ -1116,9 +1116,12 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     // 'v1 = 'v2
     | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 ->
         // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
-        // constraints from tp1 to tp2
+        // constraints from tp1 to tp2.  
+        //
+        // The 'task' feature requires this fix to SRTP resolution. 
         let csenv =
-            if csenv.MatchingOnly then
+            if g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines && 
+               csenv.MatchingOnly then
                 { csenv with ExtraRigidInMatching = Zset.add tp2 csenv.ExtraRigidInMatching }
             else csenv
         SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
@@ -2089,7 +2092,10 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | (TyparRigidity.Rigid | TyparRigidity.WillBeRigid), TyparConstraint.DefaultsTo _ -> true
               | _ -> false) then 
             ()
-        elif tp.Rigidity = TyparRigidity.Rigid || csenv.ExtraRigidInMatching.Contains tp then
+        elif tp.Rigidity = TyparRigidity.Rigid || 
+             // The 'task' feature requires this fix to SRTP resolution.
+             (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines && 
+              csenv.ExtraRigidInMatching.Contains tp) then
             return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 

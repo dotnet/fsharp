@@ -2464,6 +2464,13 @@ module TypecheckTests =
         exec cfg ("." ++ "pos39.exe") ""
 
     [<Test>]
+    let ``sigs pos40`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --langversion:preview --target:exe -o:pos39.exe" cfg.fsc_flags ["pos40.fs"]
+        peverify cfg "pos40.exe"
+        exec cfg ("." ++ "pos40.exe") ""
+
+    [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
@@ -3015,6 +3022,9 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
+
+    [<Test>]
+    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

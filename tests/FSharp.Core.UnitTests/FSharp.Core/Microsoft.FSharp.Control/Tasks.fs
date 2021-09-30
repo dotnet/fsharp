@@ -188,37 +188,6 @@ type SmokeTestsForCompilation() =
             t.Wait()
             if t.Result <> 5 then failwith "failed"
 
-
-type Issue12184() =
-    member this.TaskMethod() =
-        task {
-            // This should not do an early commit to "task like" nor
-            // propogate SRTP constraints from the task-like overload for Bind.
-            //
-            // The overload resolution commits to 'Task' as the return type
-            let! result = this.AsyncMethod(21)
-            return result
-        }
-
-    member _.AsyncMethod(value: int) : Async<int> =
-        async { // error FS0193: The type 'Async<'a>' does not support the operator 'GetAwaiter'
-            return (value * 2)
-        }
-
-type Issue12184b() =
-    member this.TaskMethod() =
-        task {
-            // This should not do an early commit to "task like" nor
-            // propogate SRTP constraints from the task-like overload for Bind.
-            //
-            // The overload resolution commits to 'Task' as the return type
-            let! result = this.AsyncMethod(21)
-            return result
-        }
-
-    member _.AsyncMethod(_value: int) : System.Runtime.CompilerServices.YieldAwaitable =
-        Task.Yield()
-
 exception TestException of string
 
 [<AutoOpen>]
@@ -1295,6 +1264,67 @@ type BasicsNotInParallel() =
                     require ran "never ran")
             taskOuter.Wait()
                  
+type Issue12184() =
+    member this.TaskMethod() =
+        task {
+            // This should not do an early commit to "task like" nor
+            // propogate SRTP constraints from the task-like overload for Bind.
+            //
+            // The overload resolution commits to 'Task' as the return type
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(value: int) : Async<int> =
+        async { // error FS0193: The type 'Async<'a>' does not support the operator 'GetAwaiter'
+            return (value * 2)
+        }
+
+type Issue12184b() =
+    member this.TaskMethod() =
+        task {
+            // This should not do an early commit to "task like" nor
+            // propogate SRTP constraints from the task-like overload for Bind.
+            //
+            // The overload resolution commits to 'Task' as the return type
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(_value: int) : System.Runtime.CompilerServices.YieldAwaitable =
+        Task.Yield()
+
+// check this compiles 
+module Issue12184c =
+    let TaskMethod(t) =
+        task {
+            let! result = t
+            return result
+        }
+
+// check this compiles 
+module Issue12184d =
+    let TaskMethod(t: ValueTask) =
+        task {
+            let! result = t
+            return result
+        }
+
+// check this compiles 
+module Issue12184e =
+    let TaskMethod(t: ValueTask<int>) =
+        task {
+            let! result = t
+            return result
+        }
+
+// check this compiles 
+module Issue12184f =
+    let TaskMethod(t: Task) =
+        task {
+            let! result = t
+            return result
+        }
 
 #if STANDALONE 
 module M = 
