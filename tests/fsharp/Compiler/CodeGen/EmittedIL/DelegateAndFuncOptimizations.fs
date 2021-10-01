@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 open FSharp.Test
 open NUnit.Framework
 
+#if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
 [<TestFixture>]
 module DelegateAndFuncOptimizations =
 
@@ -528,3 +529,4 @@ let ApplyComputedDelegate(c: int) =
             """
             ])
 
+#endif
