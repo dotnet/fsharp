@@ -1267,26 +1267,20 @@ type BasicsNotInParallel() =
 type Issue12184() =
     member this.TaskMethod() =
         task {
-            // This should not do an early commit to "task like" nor
-            // propogate SRTP constraints from the task-like overload for Bind.
-            //
-            // The overload resolution commits to 'Task' as the return type
+            // The overload resolution for Bind commits to 'Async<int>' since the type annotation is present.
             let! result = this.AsyncMethod(21)
             return result
         }
 
     member _.AsyncMethod(value: int) : Async<int> =
-        async { // error FS0193: The type 'Async<'a>' does not support the operator 'GetAwaiter'
+        async {
             return (value * 2)
         }
 
 type Issue12184b() =
     member this.TaskMethod() =
         task {
-            // This should not do an early commit to "task like" nor
-            // propogate SRTP constraints from the task-like overload for Bind.
-            //
-            // The overload resolution commits to 'Task' as the return type
+            // The overload resolution for Bind commits to 'YieldAwaitable' since the type annotation is present.
             let! result = this.AsyncMethod(21)
             return result
         }
@@ -1298,6 +1292,9 @@ type Issue12184b() =
 module Issue12184c =
     let TaskMethod(t) =
         task {
+            // The overload resolution for Bind commits to 'Task<_>' via overload since no type annotation is available
+            //
+            // This should not do an early commit to "task like" nor propogate SRTP constraints from the task-like overload for Bind.
             let! result = t
             return result
         }
@@ -1307,6 +1304,7 @@ module Issue12184c =
 module Issue12184d =
     let TaskMethod(t: ValueTask) =
         task {
+            // The overload resolution for Bind commits to 'ValueTask' via SRTP pattern since the type annotation is available
             let! result = t
             return result
         }
@@ -1315,6 +1313,7 @@ module Issue12184d =
 module Issue12184e =
     let TaskMethod(t: ValueTask<int>) =
         task {
+            // The overload resolution for Bind commits to 'ValueTask<_>' via SRTP pattern since the type annotation is available
             let! result = t
             return result
         }
@@ -1324,6 +1323,7 @@ module Issue12184e =
 module Issue12184f =
     let TaskMethod(t: Task) =
         task {
+            // The overload resolution for Bind commits to 'Task' via SRTP pattern since the type annotation is available
             let! result = t
             return result
         }

@@ -210,11 +210,6 @@ module StateMachineHelpers =
 /// lambda constraint propagation, then member trait constraints from a method overload
 /// are eagerly applied to the caller argument type. This causes that overload to be preferred,
 /// regardless of other method overload resolution rules. Using this attribute suppresses this behaviour. 
-///
-/// The default method resolution behaviour is creates a
-/// way to get a preferred method resolution when no type information is available. However
-/// it can cause different overloaded members to interact poorly. In these cases, this attribute
-/// can be used to suppress the default behaviour.
 /// </remarks>
 ///
 /// <example>
@@ -228,9 +223,9 @@ module StateMachineHelpers =
 /// let inline f x = 
 ///     OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
 /// </code>
-/// Without the attribute, the overload resolution succeeds, because the constraint is
-/// eagerly applied, making the second member non-applicable.  With the attribute, the overload
-/// resolution fails, because both members are applicable.
+/// With the attribute, the overload resolution fails, because both members are applicable.
+/// Without the attribute, the overload resolution succeeds, because the member constraint is
+/// eagerly applied, making the second member non-applicable.  
 /// </example>
 /// <category>Attributes</category>
 [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
