@@ -2466,7 +2466,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --langversion:preview --target:exe -o:pos39.exe" cfg.fsc_flags ["pos40.fs"]
+        fsc cfg "%s --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
 

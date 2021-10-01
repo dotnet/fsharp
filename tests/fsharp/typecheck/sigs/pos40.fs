@@ -1,38 +1,61 @@
 module Pos40
 
-module TestOverloadsWithSrtpThatDoResolve2 =
+module TestOverloadsWithSrtpThatDoResolve1 =
 
     type OverloadsWithSrtp() =
-        static member inline SomeMethod< ^T when ^T : (member Length: int) > (x: ^T, f: ^T -> int) = 1
-        static member inline SomeMethod(x: string, f: string -> int) = 2
+        static member inline SomeMethod< ^T when ^T : (member Foo: int) > (x: ^T, f: ^T -> int) = 1
+        static member SomeMethod(x: string, f: string -> int) = 2
 
-    // Here, 'x' doesn't contain any type information so the overload doesn't resolve
+    // Here, 'x' doesn't contain any type information. However the presence of an SRTP-constrained
+    // method causes the Foo constraint to be applied to the caller argument type and the
+    // method is resolved.
+    //
     // The second overload is not generic so is preferred according to standard overloading rules.
     let inline f x = 
         OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
 
-    // Here, 'x' does contain enough type information so the overload does resolve
-    // The lambda argument 'a' gets type 'string'
+    // Here, 'x' contains enough type informationto resolve the overload.
+    // Lambda propagation applies and the lambda argument 'a' gets known type 'string'.
+    let f4 (x: string) = 
+        OverloadsWithSrtp.SomeMethod (x, (fun a -> a.Length)) 
+
+module TestOverloadsWithSrtpThatDoResolve2 =
+
+    type OverloadsWithSrtp() =
+        [<FSharp.Core.CompilerServices.NoEagerConstraintApplication>]
+        static member inline SomeMethod< ^T when ^T : (member Foo: int) > (x: ^T, f: ^T -> int) = 1
+        static member SomeMethod(x: string, f: string -> int) = 2
+
+    // Here, 'x' doesn't contain any type information. The presence of an SRTP-constrained
+    // method does not causes the Foo constraint to be applied to the caller argument type because NoEagerConstraintApplication is present.
+    //
+    // Overload resolution proceeds. The second overload is not generic so is preferred according to standard overloading rules.
+    let inline f x = 
+        OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
+
+    // Here, 'x' contains enough type informationto resolve the overload.
+    // Lambda propagation applies and the lambda argument 'a' gets known type 'string'.
     let f4 (x: string) = 
         OverloadsWithSrtp.SomeMethod (x, (fun a -> a.Length)) 
 
 module TestOverloadsWithSrtpThatDoResolve3 =
 
     type OverloadsWithSrtp() =
+        [<FSharp.Core.CompilerServices.NoEagerConstraintApplication>]
         static member inline SomeMethod< ^T when ^T : (member Length: int) > (x: ^T, f: ^T -> int) = 1
-        static member inline SomeMethod(x: string, f: string -> int) = 2
+        static member SomeMethod(x: string, f: string -> int) = 2
 
-    // Here, 'x' does contain enough type information so the overload does resolve.
+    // Here, 'x' contains enough type informationto resolve the overload.
     // The lambda argument 'a' gets constrained type
     let inline f2< ^T when ^T : (member Length: int)> (x: ^T) = 
         OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
 
-    // Here, 'x' does contain enough type information so the overload does resolve
+    // Here, 'x' contains enough type informationto resolve the overload
     // The lambda argument 'a' gets constrained type
     let inline f3< ^T when ^T : (member Length: int) and ^T : (member Length2: int)> (x: ^T) = 
         OverloadsWithSrtp.SomeMethod (x, (fun a -> 2)) 
 
-    // Here, 'x' does contain enough type information so the overload does resolve
+    // Here, 'x' contains enough type informationto resolve the overload
     // The lambda argument 'a' gets type 'int'
     let f4 (x: int list) = 
         OverloadsWithSrtp.SomeMethod (x, (fun a -> a.Length))
