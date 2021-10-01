@@ -9130,8 +9130,14 @@ and TcMethodApplication
                             let calledObjArgTys = meth.CalledObjArgTys mMethExpr
                             if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
                                 let noEagerConstraintApplication = MethInfoHasAttribute cenv.g mMethExpr cenv.g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+
+                                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                    errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
+
                                 let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerTy) else emptyFreeTypars
+
                                 AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
+
                                 yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
                         | None -> () |]
                 else
