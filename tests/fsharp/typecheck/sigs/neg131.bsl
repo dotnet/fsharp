@@ -1,5 +1,5 @@
 
-neg131.fs(14,9,14,55): typecheck error FS0041: A unique overload for method 'SomeMethod' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg131.fs(15,9,15,55): typecheck error FS0041: A unique overload for method 'SomeMethod' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a * ('b -> int)
 
