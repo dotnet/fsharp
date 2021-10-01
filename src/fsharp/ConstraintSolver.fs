@@ -309,12 +309,17 @@ type ConstraintSolverEnv =
       // Is this speculative, with a trace allowing undo, and trial method overload resolution 
       IsSpeculativeForMethodOverloading: bool
 
-      /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
+      /// Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved. Constraints
+      /// can't be added to type variables in ty2
       MatchingOnly: bool
 
       /// Indicates that special errors on unresolved SRTP constraint overloads may be generated. When
       /// these are caught they result in postponed constraints.
       ErrorOnFailedMemberConstraintResolution: bool
+
+      /// During MatchingOnly constraint solving, marks additional type variables as
+      /// rigid, preventing constraints flowing to those type variables.
+      ExtraRigidTypars: Zset<Typar>
 
       m: range
 
@@ -339,7 +344,9 @@ let MakeConstraintSolverEnv contextInfo css m denv =
       ErrorOnFailedMemberConstraintResolution = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv
-      IsSpeculativeForMethodOverloading = false }
+      IsSpeculativeForMethodOverloading = false
+      ExtraRigidTypars = emptyFreeTypars
+    }
 
 /// Check whether a type variable occurs in the r.h.s. of a type, e.g. to catch
 /// infinite equations such as 
@@ -756,6 +763,10 @@ let SubstMeasureWarnIfRigid (csenv: ConstraintSolverEnv) trace (v: Typar) ms = t
             ()
   }
 
+let IsRigid (csenv: ConstraintSolverEnv) (tp: Typar) =
+    tp.Rigidity = TyparRigidity.Rigid
+    || csenv.ExtraRigidTypars.Contains tp
+
 /// Imperatively unify the unit-of-measure expression ms against 1.
 /// There are three cases
 /// - ms is (equivalent to) 1
@@ -766,7 +777,7 @@ let UnifyMeasureWithOne (csenv: ConstraintSolverEnv) trace ms =
     // Gather the rigid and non-rigid unit variables in this measure expression together with their exponents
     let rigidVars, nonRigidVars = 
         ListMeasureVarOccsWithNonZeroExponents ms
-        |> List.partition (fun (v, _) -> v.Rigidity = TyparRigidity.Rigid) 
+        |> List.partition (fun (v, _) -> IsRigid csenv v) 
 
     // If there is at least one non-rigid variable v with exponent e, then we can unify 
     match FindPreferredTypar nonRigidVars with
@@ -918,7 +929,7 @@ let SimplifyMeasuresInTypeScheme g resultFirst (generalizable: Typar list) ty co
     // Only bother if we're generalizing over at least one unit-of-measure variable 
     let uvars, vars = 
         generalizable
-        |> List.partition (fun v -> v.Kind = TyparKind.Measure && v.Rigidity <> TyparRigidity.Rigid) 
+        |> List.partition (fun v -> v.Rigidity <> TyparRigidity.Rigid && v.Kind = TyparKind.Measure) 
  
     match uvars with
     | [] -> generalizable
@@ -1103,14 +1114,24 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     let sty2 = stripTyEqnsA csenv.g canShortcut ty2
 
     match sty1, sty2 with 
+
     // type vars inside forall-types may be alpha-equivalent 
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) -> CompleteD
+    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) ->
+        CompleteD
 
-    | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 -> SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
-    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+    // 'v1 = 'v2
+    | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
 
-    | TType_var r, _ when (r.Rigidity <> TyparRigidity.Rigid) -> SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
-    | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly -> SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+    // 'v1 = 'v2
+    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
+
+    | TType_var r, _ when not (IsRigid csenv r) ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty1 ty2
+
+    | _, TType_var r when not csenv.MatchingOnly && not (IsRigid csenv r) ->
+        SolveTyparEqualsType csenv ndeep m2 trace sty2 ty1
 
     // Catch float<_>=float<1>, float32<_>=float32<1> and decimal<_>=decimal<1> 
     | _, TType_app (tc2, [ms]) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
@@ -2061,7 +2082,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | (TyparRigidity.Rigid | TyparRigidity.WillBeRigid), TyparConstraint.DefaultsTo _ -> true
               | _ -> false) then 
             ()
-        elif tp.Rigidity = TyparRigidity.Rigid then
+        elif IsRigid csenv tp then
             return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 
@@ -3273,10 +3294,10 @@ let AddCxTypeMustSubsumeTypeUndoIfFailed denv css m ty1 ty2 =
         let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = true }
         SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m (WithTrace trace) None ty1 ty2)
 
-let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 = 
+let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m extraRigidTypars ty1 ty2 = 
     UndoIfFailed (fun trace ->
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-        let csenv = { csenv with MatchingOnly = true; ErrorOnFailedMemberConstraintResolution = true }
+        let csenv = { csenv with MatchingOnly = true; ErrorOnFailedMemberConstraintResolution = true; ExtraRigidTypars=extraRigidTypars }
         SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m (WithTrace trace) None ty1 ty2)
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 

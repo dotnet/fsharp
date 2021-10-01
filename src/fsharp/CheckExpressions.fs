@@ -9133,10 +9133,21 @@ and TcMethodApplication
             let lambdaPropagationInfo =
                 if preArgumentTypeCheckingCalledMethGroup.Length > 1 then
                     [| for meth in preArgumentTypeCheckingCalledMethGroup do
-                        match ExamineMethodForLambdaPropagation meth ad with
+                        match ExamineMethodForLambdaPropagation cenv.g mMethExpr meth ad with
                         | Some (unnamedInfo, namedInfo) ->
                             let calledObjArgTys = meth.CalledObjArgTys mMethExpr
-                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr calledTy callerTy) then
+                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
+                                let noEagerConstraintApplication = MethInfoHasAttribute cenv.g mMethExpr cenv.g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+
+                                // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+                                // Tasks and Resumable Code RFC
+                                if noEagerConstraintApplication && not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                    errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
+
+                                let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerTy) else emptyFreeTypars
+
+                                AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
+
                                 yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
                         | None -> () |]
                 else
@@ -9434,7 +9445,7 @@ and TcMethodNamedArg cenv env (lambdaPropagationInfo, tpenv) (CallerNamedArg(id,
     let arg', (lambdaPropagationInfo, tpenv) = TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, arg)
     CallerNamedArg(id, arg'), (lambdaPropagationInfo, tpenv)
 
-and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(argTy, mArg, isOpt, argExpr)) =
+and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(callerArgTy, mArg, isOpt, argExpr)) =
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
@@ -9469,9 +9480,9 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then
                                         loop callerLambdaRangeTy (lambdaVarNum + 1)
                                 | _ -> ()
-                    loop argTy 0
+                    loop callerArgTy 0
 
-    let e', tpenv = TcExprFlex2 cenv argTy env true tpenv argExpr
+    let e', tpenv = TcExprFlex2 cenv callerArgTy env true tpenv argExpr
 
     // After we have checked, propagate the info from argument into the overloads that receive it.
     //
@@ -9483,11 +9494,16 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
               | ArgDoesNotMatch _ -> ()
               | NoInfo | CallerLambdaHasArgTypes _ ->
                   yield info
-              | CalledArgMatchesType adjustedCalledTy ->
-                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg adjustedCalledTy argTy then
+              | CalledArgMatchesType (adjustedCalledArgTy, noEagerConstraintApplication) ->
+                  // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
+                  // constraints from tp1 to tp2.  
+                  //
+                  // The 'task' feature requires this fix to SRTP resolution. 
+                  let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerArgTy) else emptyFreeTypars
+                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg extraRigidTps adjustedCalledArgTy callerArgTy then
                      yield info |]
 
-    CallerArg(argTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
+    CallerArg(callerArgTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
 
 /// Typecheck "new Delegate(fun x y z -> ...)" constructs
 and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg delegateTy arg atomicFlag delayed =

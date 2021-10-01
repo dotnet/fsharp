@@ -42,8 +42,8 @@ namespace Microsoft.FSharp.Control
 
     type TaskBuilderBase() =
 
-        member inline _.Delay(f : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
-            TaskCode<'TOverall, 'T>(fun sm -> (f()).Invoke(&sm))
+        member inline _.Delay(generator : unit -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> =
+            TaskCode<'TOverall, 'T>(fun sm -> (generator()).Invoke(&sm))
 
         /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
         [<DefaultValue>]
@@ -258,6 +258,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
         // Low priority extensions
         type TaskBuilderBase with
 
+            [<NoEagerConstraintApplication>]
             static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter , 'TOverall
                                                 when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
@@ -280,6 +281,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                         sm.ResumptionDynamicInfo.ResumptionFunc <- cont
                         false
 
+            [<NoEagerConstraintApplication>]
             member inline _.Bind< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter , 'TOverall
                                                 when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                 and ^Awaiter :> ICriticalNotifyCompletion
@@ -311,6 +313,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                     //-- RESUMABLE CODE END
                 )
 
+            [<NoEagerConstraintApplication>]
             member inline this.ReturnFrom< ^TaskLike, ^Awaiter, 'T
                                                   when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                                   and ^Awaiter :> ICriticalNotifyCompletion
