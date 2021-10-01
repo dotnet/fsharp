@@ -837,8 +837,12 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConst
         
 let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
     let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
-    if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+
+    // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+    // Tasks and Resumable Code RFC
+    if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
         errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), m))
+
     let unnamedInfo = meth.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication)
     let namedInfo = meth.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 

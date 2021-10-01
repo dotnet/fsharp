@@ -9139,7 +9139,9 @@ and TcMethodApplication
                             if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
                                 let noEagerConstraintApplication = MethInfoHasAttribute cenv.g mMethExpr cenv.g.attrib_NoEagerConstraintApplicationAttribute meth.Method
 
-                                if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+                                // Tasks and Resumable Code RFC
+                                if noEagerConstraintApplication && not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
                                     errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
 
                                 let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerTy) else emptyFreeTypars
