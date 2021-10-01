@@ -23,13 +23,13 @@ namespace Microsoft.FSharp.Control
         /// Holds the final result of the state machine
         /// </summary>
         [<DefaultValue(false)>]
-        val mutable Result : 'T
+        val mutable Result: 'T
 
         /// <summary>
         /// Holds the MethodBuilder for the state machine
         /// </summary>
         [<DefaultValue(false)>]
-        val mutable MethodBuilder : AsyncTaskMethodBuilder<'T>
+        val mutable MethodBuilder: AsyncTaskMethodBuilder<'T>
 
     /// <summary>
     /// This is used by the compiler as a template for creating state machine structs
@@ -64,7 +64,7 @@ namespace Microsoft.FSharp.Control
         /// <summary>
         /// Specifies the delayed execution of a unit of task code.
         /// </summary>
-        member inline Delay: f: (unit -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
+        member inline Delay: generator: (unit -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
     
         /// <summary>
         /// Specifies the iterative execution of a unit of task code.
@@ -166,6 +166,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
     open System.Threading.Tasks
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
+    open Microsoft.FSharp.Core.CompilerServices
 
     /// <summary>
     /// Contains low-priority overloads for the `task` computation expression builder.
@@ -183,6 +184,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
             /// Specifies a unit of task code which draws a result from a task-like value
             /// satisfying the GetAwaiter pattern and calls a continuation.
             /// </summary>
+            [<NoEagerConstraintApplication>]
             member inline Bind< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall > :
                 task: ^TaskLike *
                 continuation: ( 'TResult1 -> TaskCode<'TOverall, 'TResult2>)
@@ -196,6 +198,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
             /// Specifies a unit of task code which draws its result from a task-like value
             /// satisfying the GetAwaiter pattern.
             /// </summary>
+            [<NoEagerConstraintApplication>]
             member inline ReturnFrom< ^TaskLike, ^Awaiter, 'T> : 
                 task: ^TaskLike
                     -> TaskCode< 'T, 'T > 
@@ -207,6 +210,7 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
             /// <summary>
             /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
             /// </summary>
+            [<NoEagerConstraintApplication>]
             static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall > :
                 sm: byref<TaskStateMachine<'TOverall>> *
                 task: ^TaskLike *
@@ -220,7 +224,10 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
             /// <summary>
             /// Specifies a unit of task code which binds to the resource implementing IDisposable and disposes it synchronously
             /// </summary>
-            member inline Using: resource: 'Resource * body: ('Resource -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
+            member inline Using:
+                resource: 'Resource *
+                body: ('Resource -> TaskCode<'TOverall, 'T>)
+                    -> TaskCode<'TOverall, 'T> when 'Resource :> IDisposable
 
     /// <summary>
     /// Contains medium-priority overloads for the `task` computation expression builder.
