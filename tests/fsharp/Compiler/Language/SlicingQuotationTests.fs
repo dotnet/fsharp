@@ -56,7 +56,7 @@ let test() =
         if a <> b then failwithf "Expected '%s', but got\n'%s'" a b
         ()
     
-    let expected = "Call (None, GetArraySlice2D, [ValueWithName ([|[|1; 2; 3|]|], xs), NewUnionCase (Some, Value (0)), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([[1;2;3]],xs), Value(0), Value(1)])), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([[1;2;3]], xs), Value(1), Value(1)])), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([[1;2;3]], xs), Value(1), Value(2)]))])"
+    let expected = "Call (None, GetArraySlice2D, [ValueWithName ([|[|1; 2; 3|]|], xs), NewUnionCase (Some, Value (0)), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([|[|1;2;3|]|],xs), Value(0), Value(1)])), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([|[|1;2;3|]|], xs), Value(1), Value(1)])), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex, [ValueWithName([|[|1;2;3|]|], xs), Value(1), Value(2)]))])"
     expectEqualWithoutWhitespace expected (q.ToString())
     
 test()
@@ -84,7 +84,7 @@ let test() =
         if a <> b then failwithf "Expected '%s', but got\n'%s'" a b
         ()
     
-    let expected = "Call (None, GetArraySlice2DFixed2, [ValueWithName ([|[|1; 2; 3|]|], xs), NewUnionCase (Some, Value (0)), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex,[ValueWithName([[1;2;3]], xs), Value(0), Value(1)])), Call(None, [,]`1.GetReverseIndex,[ValueWithName([[1;2;3]], xs), Value(1), Value(1)])])"
+    let expected = "Call (None, GetArraySlice2DFixed2, [ValueWithName ([|[|1; 2; 3|]|], xs), NewUnionCase (Some, Value (0)), NewUnionCase (Some, Call(None, [,]`1.GetReverseIndex,[ValueWithName([|[|1;2;3|]|], xs), Value(0), Value(1)])), Call(None, [,]`1.GetReverseIndex,[ValueWithName([|[|1;2;3|]|], xs), Value(1), Value(1)])])"
     expectEqualWithoutWhitespace expected (q.ToString())
     
 test()
@@ -112,7 +112,7 @@ let test() =
         if a <> b then failwithf "Expected '%s', but got\n'%s'" a b
         ()
     
-    let expected = "Call(None, GetArray2D, [ValueWithName([|[|1;2;3|]|], xs), Call(None, [,]`1.GetReverseIndex, [ValueWithName([[1;2;3]], xs), Value(0), Value(0)]), Value(1)])"
+    let expected = "Call(None, GetArray2D, [ValueWithName([|[|1;2;3|]|], xs), Call(None, [,]`1.GetReverseIndex, [ValueWithName([|[|1;2;3|]|], xs), Value(0), Value(0)]), Value(1)])"
     expectEqualWithoutWhitespace expected (q.ToString())
     
 test()
