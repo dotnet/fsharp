@@ -7,7 +7,6 @@ module internal FSharp.Compiler.CheckExpressions
 open System
 open System.Collections.Generic
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -10708,7 +10707,7 @@ and AnalyzeRecursiveInstanceMemberDecl
 
          CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange
 
-         // Determine if a uniquely-identified-override List.exists based on the information
+         // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig
          // it implements. Apply the inferred slotsig.
          let optInferredImplSlotTys, declaredTypars =
