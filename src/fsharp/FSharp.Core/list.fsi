@@ -1069,8 +1069,8 @@ module List =
     /// <param name="predicate">The function to test the input elements.</param>
     /// <param name="list">The input list.</param>
     ///
-    /// <returns>A list containing the elements for which the predicate evaluated to false and a list
-    /// containing the elements for which the predicate evaluated to true.</returns>
+    /// <returns>A list containing the elements for which the predicate evaluated to true and a list
+    /// containing the elements for which the predicate evaluated to false.</returns>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("Partition")>]
