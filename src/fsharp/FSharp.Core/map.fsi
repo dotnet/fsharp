@@ -260,10 +260,13 @@ module Map =
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U option
 
-    /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value</summary>
+    /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value.
+    /// Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
     ///
     /// <param name="chooser">The function to generate options from the key/value pairs.</param>
     /// <param name="table">The input map.</param>
+    /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns a <c>Some</c>
+    /// value when evaluated by the chooser function</exception>
     ///
     /// <returns>The first result.</returns>
     /// 

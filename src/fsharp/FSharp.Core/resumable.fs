@@ -20,6 +20,11 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 
+[<AttributeUsage (AttributeTargets.Method, AllowMultiple=false)>]  
+[<Sealed>]
+type NoEagerConstraintApplicationAttribute() = 
+    inherit System.Attribute()
+
 type IResumableStateMachine<'Data> =
     abstract ResumptionPoint: int
     abstract Data: 'Data with get, set

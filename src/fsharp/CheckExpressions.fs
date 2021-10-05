@@ -7,7 +7,6 @@ module internal FSharp.Compiler.CheckExpressions
 open System
 open System.Collections.Generic
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -359,9 +358,6 @@ type TcFileState =
       /// we infer type parameters
       mutable recUses: ValMultiMap<Expr ref * range * bool>
 
-      /// Checks to run after all inference is complete.
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -425,7 +421,6 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          postInferenceChecks = ResizeArray()
           createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
@@ -2624,7 +2619,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
     match vrec with
     | ValInRecScope isComplete when isComplete && not (isNil tinst) ->
         //printfn "pushing post-inference check for '%s', vty = '%s'" v.DisplayName (DebugPrint.showType vty)
-        cenv.postInferenceChecks.Add (fun () ->
+        cenv.css.PushPostInferenceCheck (preDefaults=false, check=fun () ->
             //printfn "running post-inference check for '%s'" v.DisplayName
             //printfn "tau = '%s'" (DebugPrint.showType tau)
             //printfn "vty = '%s'" (DebugPrint.showType vty)
@@ -9137,10 +9132,21 @@ and TcMethodApplication
             let lambdaPropagationInfo =
                 if preArgumentTypeCheckingCalledMethGroup.Length > 1 then
                     [| for meth in preArgumentTypeCheckingCalledMethGroup do
-                        match ExamineMethodForLambdaPropagation meth ad with
+                        match ExamineMethodForLambdaPropagation cenv.g mMethExpr meth ad with
                         | Some (unnamedInfo, namedInfo) ->
                             let calledObjArgTys = meth.CalledObjArgTys mMethExpr
-                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr calledTy callerTy) then
+                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
+                                let noEagerConstraintApplication = MethInfoHasAttribute cenv.g mMethExpr cenv.g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+
+                                // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+                                // Tasks and Resumable Code RFC
+                                if noEagerConstraintApplication && not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                    errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
+
+                                let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerTy) else emptyFreeTypars
+
+                                AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
+
                                 yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
                         | None -> () |]
                 else
@@ -9184,7 +9190,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName 0 None callerArgs ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy)
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
@@ -9438,7 +9444,7 @@ and TcMethodNamedArg cenv env (lambdaPropagationInfo, tpenv) (CallerNamedArg(id,
     let arg', (lambdaPropagationInfo, tpenv) = TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, arg)
     CallerNamedArg(id, arg'), (lambdaPropagationInfo, tpenv)
 
-and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(argTy, mArg, isOpt, argExpr)) =
+and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(callerArgTy, mArg, isOpt, argExpr)) =
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
@@ -9473,9 +9479,9 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then
                                         loop callerLambdaRangeTy (lambdaVarNum + 1)
                                 | _ -> ()
-                    loop argTy 0
+                    loop callerArgTy 0
 
-    let e', tpenv = TcExprFlex2 cenv argTy env true tpenv argExpr
+    let e', tpenv = TcExprFlex2 cenv callerArgTy env true tpenv argExpr
 
     // After we have checked, propagate the info from argument into the overloads that receive it.
     //
@@ -9487,11 +9493,16 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
               | ArgDoesNotMatch _ -> ()
               | NoInfo | CallerLambdaHasArgTypes _ ->
                   yield info
-              | CalledArgMatchesType adjustedCalledTy ->
-                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg adjustedCalledTy argTy then
+              | CalledArgMatchesType (adjustedCalledArgTy, noEagerConstraintApplication) ->
+                  // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
+                  // constraints from tp1 to tp2.  
+                  //
+                  // The 'task' feature requires this fix to SRTP resolution. 
+                  let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerArgTy) else emptyFreeTypars
+                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg extraRigidTps adjustedCalledArgTy callerArgTy then
                      yield info |]
 
-    CallerArg(argTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
+    CallerArg(callerArgTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
 
 /// Typecheck "new Delegate(fun x y z -> ...)" constructs
 and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg delegateTy arg atomicFlag delayed =
@@ -10696,7 +10707,7 @@ and AnalyzeRecursiveInstanceMemberDecl
 
          CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange
 
-         // Determine if a uniquely-identified-override List.exists based on the information
+         // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig
          // it implements. Apply the inferred slotsig.
          let optInferredImplSlotTys, declaredTypars =
