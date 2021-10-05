@@ -1874,29 +1874,26 @@ module internal MagicAssemblyResolution =
 
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
-           try
+           try 
                // Grab the name of the assembly
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
                let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
-
-               // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
-               if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName
+               if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
 
                // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
                // We can't resolve this, so don't try.
                // REVIEW: Suggest 4481, delete this special case.
-               if (simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase)) ||
+               if (runningOnMono && simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase)) ||
                   simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                   (runningOnMono && simpleAssemName = "UIAutomationWinforms") then null
-
+               else
                // Special case: Is this the global unique dynamic assembly for FSI code? In this case just
-               // return the dynamic assembly itself.
-               elif fsiDynamicCompiler.DynamicAssemblyName = simpleAssemName then fsiDynamicCompiler.DynamicAssembly
+               // return the dynamic assembly itself.       
+               if fsiDynamicCompiler.DynamicAssemblyName = simpleAssemName then fsiDynamicCompiler.DynamicAssembly else
 
                // Otherwise continue
-               else
-               let assemblyReferenceTextDll = (simpleAssemName + ".dll")
-               let assemblyReferenceTextExe = (simpleAssemName + ".exe")
+               let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
+               let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
                let overallSearchResult =
 
                    // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
@@ -1905,27 +1902,27 @@ module internal MagicAssemblyResolution =
 
                    match searchResult with
                    | Some r -> OkResult ([], Choice1Of2 r)
-                   | _ ->
+                   | _ -> 
 
                    // OK, try to resolve as a .dll
                    let searchResult = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, assemblyReferenceTextDll, None), ResolveAssemblyReferenceMode.Speculative)
 
                    match searchResult with
                    | OkResult (warns,[r]) -> OkResult (warns, Choice1Of2 r.resolvedPath)
-                   | _ ->
+                   | _ -> 
 
                    // OK, try to resolve as a .exe
                    let searchResult = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, assemblyReferenceTextExe, None), ResolveAssemblyReferenceMode.Speculative)
 
                    match searchResult with
                    | OkResult (warns, [r]) -> OkResult (warns, Choice1Of2 r.resolvedPath)
-                   | _ ->
+                   | _ -> 
 
                    if progress then fsiConsoleOutput.uprintfn "ATTEMPT LOAD, assemblyReferenceTextDll = %s" assemblyReferenceTextDll
                    /// Take a look through the files quoted, perhaps with explicit paths
-                   let searchResult =
-                       (tcConfig.referencedDLLs
-                            |> List.tryPick (fun assemblyReference ->
+                   let searchResult = 
+                       (tcConfig.referencedDLLs 
+                            |> List.tryPick (fun assemblyReference -> 
                              if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON FILE, referencedDLL = %s" assemblyReference.Text
                              if System.String.Compare(Filename.fileNameOfPath assemblyReference.Text, assemblyReferenceTextDll,StringComparison.OrdinalIgnoreCase) = 0 ||
                                 System.String.Compare(Filename.fileNameOfPath assemblyReference.Text, assemblyReferenceTextExe,StringComparison.OrdinalIgnoreCase) = 0 then
@@ -1934,12 +1931,12 @@ module internal MagicAssemblyResolution =
 
                    match searchResult with
                    | Some (OkResult (warns,[r])) -> OkResult (warns, Choice1Of2 r.resolvedPath)
-                   | _ ->
+                   | _ -> 
 
 #if !NO_EXTENSIONTYPING
                    match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
-                   | None ->
+                   | None -> 
 #endif
 
                    // As a last resort, try to find the reference without an extension
