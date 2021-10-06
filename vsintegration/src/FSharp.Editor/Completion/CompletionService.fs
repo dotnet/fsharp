@@ -20,7 +20,7 @@ type internal FSharpCompletionService
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
-    inherit CompletionServiceWithProviders(workspace)
+    inherit FSharpCompletionServiceWithProviders(workspace)
 
     let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
