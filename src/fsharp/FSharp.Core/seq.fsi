@@ -50,7 +50,7 @@ module Seq =
     ///
     /// <example id="append-1">
     /// <code lang="fsharp">
-    /// ([1; 2], [3; 4]) ||> Seq.append
+    /// Seq.append [1; 2] [3; 4]
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
@@ -106,7 +106,9 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: float }
     ///
-    /// [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar)
+    /// let input = [{Bar = 2.0}; {Bar = 4.0}]
+    ///
+    /// input |> Seq.averageBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>3.0</c>
     /// </example>
@@ -114,7 +116,10 @@ module Seq =
     /// <example id="average-by-2">
     /// <code lang="fsharp">
     /// type Foo = { Bar: float }
-    /// [] |> Seq.averageBy (fun foo -> foo.Bar)
+    ///
+    /// let input : Foo list = [ ]
+    ///
+    /// input |> Seq.averageBy (fun foo -> foo.Bar)
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -259,17 +264,22 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example id="collec-1">
+    /// <example id="collect-1">
     /// <code lang="fsharp">
     /// type Foo = { Bar: int seq }
-    /// [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar)
+    ///
+    /// let input = [[{Bar = [1; 2]}; {Bar = [3; 4]}]
+    ///
+    /// input |> Seq.collect (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
     ///
-    /// <example id="collec-2">
+    /// <example id="collect-2">
     /// <code lang="fsharp">
-    /// [[1; 2]; [3; 4]] |> Seq.collect id
+    /// let input = [[1; 2]; [3; 4]]
+    ///
+    /// input |> Seq.collect id
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
@@ -295,9 +305,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 10], [1; 10])
+    /// let input1 = [1; 10]
+    /// let input2 = [1; 10]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>0</c>
     /// </example>
@@ -307,9 +318,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 5], [1; 8])
+    /// let input1 = [1; 5]
+    /// let input2 = [1; 8]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
@@ -319,9 +331,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 11], [1; 13])
+    /// let input1 = [1; 11]
+    /// let input2 = [1; 13]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -331,9 +344,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 2], [1])
+    /// let input1 = [1; 2]
+    /// let input2 = [1]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -343,9 +357,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1], [1; 2])
+    /// let input1 = [1]
+    /// let input2 = [1; 2]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
@@ -366,7 +381,9 @@ module Seq =
     ///
     /// <example id="concat-1">
     /// <code lang="fsharp">
-    /// [[1; 2]; [3]; [4; 5]] |> Seq.concat
+    /// let inputs = [[1; 2]; [3]; [4; 5]]
+    ///
+    /// inputs |> Seq.concat
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4; 5]</c>
     /// </example>
@@ -411,9 +428,9 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: string }
     ///
-    /// let data = [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
+    /// let inputs = [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
     ///
-    /// data |> Seq.countBy (fun foo -> foo.Bar)
+    /// inputs |> Seq.countBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [("a", 2); ("b", 1)]</c>
     /// </example>
@@ -471,9 +488,9 @@ module Seq =
     ///
     /// <example id="distinct-by-1">
     /// <code lang="fsharp">
-    /// let data = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
+    /// let inputs = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
     ///
-    /// data |> Seq.distinctBy (fun foo -> foo.Bar)
+    /// inputs |> Seq.distinctBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [{ Bar = 1 }; { Bar = 2 }; { Bar = 3 }]</c>
     /// </example>
@@ -497,14 +514,18 @@ module Seq =
     ///
     /// <example id="split-into-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5] |> Seq.splitInto 3
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> Seq.splitInto 3
     /// </code>
     /// Evaluates to <c>seq [[|1; 2|]; [|3; 4|]; [|5|]]</c>
     /// </example>
     ///
     /// <example id="split-into-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5] |> Seq.splitInto -1
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> Seq.splitInto -1
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -542,7 +563,10 @@ module Seq =
     ///
     /// <example id="except-1">
     /// <code lang="fsharp">
-    /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
+    /// let original = [1; 2; 3; 4; 5]
+    /// let itemsToExclude = [1; 3; 5]
+    ///
+    /// original |> Seq.except itemsToExclude
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -599,14 +623,20 @@ module Seq =
     ///
     /// <example id="exists2-1">
     /// <code lang="fsharp">
-    /// ([1; 2], [1; 2]) ||> Seq.exists2 (fun a b -> a > b)
+    /// let inputs1 = [1; 2]
+    /// let inputs2 = [1; 2; 0]
+    ///
+    /// (inputs1, inputs2) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
     ///
     /// <example id="exists2-2">
     /// <code lang="fsharp">
-    /// ([1; 4], [1; 3]) ||> Seq.exists2 (fun a b -> a > b)
+    /// let inputs1 = [1; 4]
+    /// let inputs2 = [1; 3; 5]
+    ///
+    /// (inputs1, inputs2) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
@@ -630,7 +660,9 @@ module Seq =
     ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4] |> Seq.filter (fun elm -> elm % 2 = 0)
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// inputs |> Seq.filter (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -802,9 +834,9 @@ module Seq =
     ///   | In of int
     ///   | Out of int
     ///
-    /// let data = [In 1; Out 2; In 3]
+    /// let inputs = [In 1; Out 2; In 3]
     ///
-    /// (0, data) ||> Seq.fold (fun acc charge ->
+    /// (0, inputs) ||> Seq.fold (fun acc charge ->
     ///     match charge with
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
@@ -1134,14 +1166,18 @@ module Seq =
     ///
     /// <example id="exacly-one-1">
     /// <code lang="fsharp">
-    /// ["banana"] |> Seq.exactlyOne
+    /// let inputs = ["banana"]
+    ///
+    /// inputs |> Seq.exactlyOne
     /// </code>
     /// Evaluates to <c>banana</c>
     /// </example>
     ///
     /// <example id="exacly-one-2">
     /// <code lang="fsharp">
-    /// ["pear"; "banana"] |> Seq.exactlyOne
+    /// let inputs = ["pear"; "banana"]
+    ///
+    /// inputs |> Seq.exactlyOne
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -1165,14 +1201,18 @@ module Seq =
     ///
     /// <example id="try-exacly-one-1">
     /// <code lang="fsharp">
-    /// ["banana"] |> Seq.tryExactlyOne
+    /// let inputs = ["banana"]
+    ///
+    /// inputs |> Seq.tryExactlyOne
     /// </code>
     /// Evaluates to <c>Some banana</c>
     /// </example>
     ///
     /// <example id="try-exacly-one-2">
     /// <code lang="fsharp">
-    /// ["pear"; "banana"] |> Seq.tryExactlyOne
+    /// let inputs = ["pear"; "banana"]
+    ///
+    /// inputs |> Seq.tryExactlyOne
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
