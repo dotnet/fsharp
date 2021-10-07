@@ -727,7 +727,7 @@ module Array =
     /// let inputs1 = [| 1; 4 |]
     /// let inputs2 = [| 1; 3; 5 |]
     ///
-    /// (niputs1, inputs2) ||> Array.exists2 (fun a b -> a > b)
+    /// (inputs1, inputs2) ||> Array.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
