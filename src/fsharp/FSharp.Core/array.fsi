@@ -50,7 +50,7 @@ module Array =
     /// <code lang="fsharp">
     /// Array.append [| 1; 2 |] [| 3; 4 |]
     /// </code>
-    /// Evaluates to <c>[| 1; 2; 3; 4 |]</c>
+    /// Evaluates to <c>[| 1; 2; 3; 4 |]</c>.
     /// </example>
     [<CompiledName("Append")>]
     val append: array1:'T[] -> array2:'T[] -> 'T[]
@@ -573,7 +573,7 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
     ///
-    /// <example id="exacly-one-1">
+    /// <example id="exactly-one-1">
     /// <code lang="fsharp">
     /// let inputs = [| "banana" |]
     ///
@@ -582,7 +582,7 @@ module Array =
     /// Evaluates to <c>banana</c>
     /// </example>
     ///
-    /// <example id="exacly-one-2">
+    /// <example id="exactly-one-2">
     /// <code lang="fsharp">
     /// let inputs = [| "pear"; "banana" |]
     ///
@@ -591,7 +591,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     ///
-    /// <example id="exacly-one-3">
+    /// <example id="exactly-one-3">
     /// <code lang="fsharp">
     /// let inputs: int[] = [| |]
     ///
@@ -610,7 +610,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
-    /// <example id="try-exacly-one-1">
+    /// <example id="try-exactly-one-1">
     /// <code lang="fsharp">
     /// let inputs = [| "banana" |]
     ///
@@ -619,7 +619,7 @@ module Array =
     /// Evaluates to <c>Some banana</c>
     /// </example>
     ///
-    /// <example id="try-exacly-one-2">
+    /// <example id="try-exactly-one-2">
     /// <code lang="fsharp">
     /// let inputs = [| "pear"; "banana" |]
     ///
@@ -628,7 +628,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     ///
-    /// <example id="try-exacly-one-3">
+    /// <example id="try-exactly-one-3">
     /// <code lang="fsharp">
     /// let inputs: int[] = [| |]
     ///
@@ -799,7 +799,7 @@ module Array =
     ///
     /// <returns>The last element for which <c>predicate</c> returns true.</returns>
     ///
-    /// <example id="find-back-1">
+    /// <example id="findback-1">
     /// <code lang="fsharp">
     /// let inputs = [| 2; 3; 4 |]
     ///
@@ -808,7 +808,7 @@ module Array =
     /// Evaluates to <c>4</c>
     /// </example>
     ///
-    /// <example id="find-back-2">
+    /// <example id="findback-2">
     /// <code lang="fsharp">
     /// let inputs = [| 2; 3; 4 |]
     ///
@@ -832,7 +832,7 @@ module Array =
     ///
     /// <returns>The index of the first element in the array that satisfies the given predicate.</returns>
     ///
-    /// <example id="find-index-1">
+    /// <example id="findindex-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4; 5 |]
     ///
@@ -841,7 +841,7 @@ module Array =
     /// Evaluates to <c>1</c>
     /// </example>
     ///
-    /// <example id="find-index-2">
+    /// <example id="findindex-2">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4; 5 |]
     /// inputs |> Array.findIndex (fun elm -> elm % 6 = 0)
@@ -864,7 +864,7 @@ module Array =
     ///
     /// <returns>The index of the last element in the array that satisfies the given predicate.</returns>
     ///
-    /// <example id="find-index-1">
+    /// <example id="findindexback-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4; 5 |]
     ///
@@ -873,7 +873,7 @@ module Array =
     /// Evaluates to <c>3</c>
     /// </example>
     ///
-    /// <example id="find-index-back-2">
+    /// <example id="findindexback-2">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4; 5 |]
     ///
@@ -908,7 +908,6 @@ module Array =
     /// </example>
     [<CompiledName("ForAll")>]
     val forall: predicate:('T -> bool) -> array:'T[] -> bool
-
 
     /// <summary>Tests if all corresponding elements of the array satisfy the given predicate pairwise.</summary>
     ///
@@ -1116,13 +1115,30 @@ module Array =
     /// <param name="array">The input array.</param>
     /// <param name="index">The input index.</param>
     ///
+    /// <remarks>Normally the syntax <c>array[index]</c> is preferred.</remarks>
+    ///
     /// <returns>The value of the array at the given index.</returns>
     ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="get-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// Array.get inputs 1
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="get-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// Array.get inputs 4
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Get")>]
     val get: array:'T[] -> index:int -> 'T
 
@@ -1203,9 +1219,20 @@ module Array =
     /// <returns>The created array.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="init-1">
+    /// <code lang="fsharp">
+    /// Array.init 4 (fun v -> v + 5)
+    /// </code>
+    /// Evaluates to <c>[| 5; 6; 7; 8 |]</c>
+    /// </example>
+    ///
+    /// <example id="init-2">
+    /// <code lang="fsharp">
+    /// Array.init -5 (fun v -> v + 5)
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Initialize")>]
     val inline init: count:int -> initializer:(int -> 'T) -> 'T[]
 
@@ -1216,9 +1243,13 @@ module Array =
     /// <returns>The created array.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="zerocreate-1">
+    /// <code lang="fsharp">
+    /// let arr : int[] = Array.zeroCreate 4
+    /// </code>
+    /// Evaluates to <c>[| 0; 0; 0; 0 |]</c>
+    /// </example>
     [<CompiledName("ZeroCreate")>]
     val zeroCreate: count:int -> 'T[]
      
@@ -1229,9 +1260,20 @@ module Array =
     /// <returns>True if the array is empty.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="empty-1">
+    /// <code lang="fsharp">
+    /// [| |] |> Array.isEmpty
+    /// </code>
+    /// Evaluates to <c>true</c>
+    /// </example>
+    ///
+    /// <example id="empty-2">
+    /// <code lang="fsharp">
+    /// [| "pear"; "banana" |] |> Array.isEmpty
+    /// </code>
+    /// Evaluates to <c>false</c>
+    /// </example>
     [<CompiledName("IsEmpty")>]
     val isEmpty: array:'T[] -> bool
 
@@ -1241,9 +1283,21 @@ module Array =
     /// <param name="array">The input array.</param>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="iter-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "a"; "b"; "c" |]
+    ///
+    /// inputs |> Array.iter (printfn "%s")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a
+    /// b
+    /// c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate")>]
     val inline iter: action:('T -> unit) -> array:'T[] -> unit
 
@@ -1257,9 +1311,22 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="iter2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [| "a"; "b"; "c" |]
+    /// let inputs2 = [| 1; 2; 3 |]
+    ///
+    /// (inputs1, inputs2) ||> Array.iter2 (printfn "%s: %i")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a: 1
+    /// b: 2
+    /// c: 3
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate2")>]
     val iter2: action:('T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
 
@@ -1270,9 +1337,21 @@ module Array =
     /// <param name="array">The input array.</param>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="iteri-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Array.iteri (fun i v -> printfn "{i}: {v}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// 0: a
+    /// 1: b
+    /// 2: c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed")>]
     val iteri: action:(int -> 'T -> unit) -> array:'T[] -> unit
 
@@ -1286,9 +1365,22 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="iteri2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [| "a"; "b"; "c" |]
+    /// let inputs2 = [| "banana"; "pear"; "apple" |]
+    ///
+    /// (inputs1, inputs2) ||> Array.iteri2 (fun i s1 s2 -> printfn "Index {i}: {s1} - {s2}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// Index 0: a - banana
+    /// Index 1: b - pear
+    /// Index 2: c - apple
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed2")>]
     val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
 
@@ -1300,9 +1392,20 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="last-1">
+    /// <code lang="fsharp">
+    /// [| "pear"; "banana" |] |> Array.last
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="last-2">
+    /// <code lang="fsharp">
+    /// [| |] |> Array.last
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Last")>]
     val inline last: array:'T[] -> 'T
 
@@ -1313,11 +1416,28 @@ module Array =
     ///
     /// <returns>The value of the array at the given index.</returns>
     ///
+    /// <remarks>Normally the syntax <c>array[index]</c> is preferred.</remarks>
+    ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "a"; "b"; "c" |]
+    ///
+    /// inputs |> Array.item 1
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="item-2">
+    /// <code lang="fsharp">
+    /// let inputs = [| "a"; "b"; "c" |]
+    ///
+    /// inputs |> Array.item 4
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Item")>]
     val item: index:int -> array:'T[] -> 'T
 
@@ -1327,10 +1447,18 @@ module Array =
     ///
     /// <returns>The length of the array.</returns>
     ///
+    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    ///
     /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="length-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "a"; "b"; "c" |]
+    ///
+    /// inputs |> Array.length
+    /// </code>
+    /// Evaluates to <c>3</c>
+    /// </example>
     [<CompiledName("Length")>]
     val length: array:'T[] -> int
     
@@ -1342,9 +1470,20 @@ module Array =
     /// <returns>The last element of the array or None.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception> 
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="trylast-1">
+    /// <code lang="fsharp">
+    /// [| "pear"; "banana" |] |> Array.tryLast
+    /// </code>
+    /// Evaluates to <c>Some "banana"</c>
+    /// </example>
+    ///
+    /// <example id="trylast-2">
+    /// <code lang="fsharp">
+    /// [| |] |> Array.tryLast
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryLast")>]
     val tryLast: array:'T[] -> 'T option
 
@@ -1357,9 +1496,15 @@ module Array =
     /// <returns>The array of transformed elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="map-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "a"; "bbb"; "cc" |]
+    ///
+    /// inputs |> Array.map (fun x -> x.Length)
+    /// </code>
+    /// Evaluates to <c>[| 1; 3; 2 |]</c>
+    /// </example>
     [<CompiledName("Map")>]
     val inline map: mapping:('T -> 'U) -> array:'T[] -> 'U[]
 
@@ -1376,9 +1521,16 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
     ///
     /// <returns>The array of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="map2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [| "a"; "bad"; "good" |]
+    /// let inputs2 = [| 0; 2; 1 |]
+    ///
+    /// (inputs1, inputs2) ||> Array.map2 (fun x y -> x.[y])
+    /// </code>
+    /// Evaluates to <c>[| 'a'; 'd'; 'o' |]</c>
+    /// </example>
     [<CompiledName("Map2")>]
     val map2: mapping:('T1 -> 'T2 -> 'U) -> array1:'T1[] -> array2:'T2[] -> 'U[]
 
@@ -1428,8 +1580,17 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
     ///
     /// <returns>The array of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="map3-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [| "a"; "t"; "ti" |]
+    /// let inputs2 = [| "l"; "h"; "m" |]
+    /// let inputs3 = [| "l"; "e"; "e" |]
+    ///
+    /// (inputs1, inputs2, inputs3) |||> Array.map3 (fun x y z -> x + y + z)
+    /// </code>
+    /// Evaluates to <c>[| "all"; "the"; "time" |]</c>
+    /// </example>
     /// 
     [<CompiledName("Map3")>]
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> 'U[]
@@ -1455,7 +1616,7 @@ module Array =
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array. The integer index passed to the
-    /// function indicates the index of element being transformed.</summary>
+    /// function indicates the index of element being transformed, starting at zero.</summary>
     ///
     /// <param name="mapping">The function to transform elements and their indices.</param>
     /// <param name="array">The input array.</param>
@@ -1463,9 +1624,15 @@ module Array =
     /// <returns>The array of transformed elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="mapi-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 10; 10; 10 |]
+    ///
+    /// inputs |> Array.mapi (fun i x -> i + x)
+    /// </code>
+    /// Evaluates to <c>[| 10; 11; 12 |]</c>
+    /// </example>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
 
@@ -1479,11 +1646,26 @@ module Array =
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     ///
     /// <returns>The maximum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="max-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 10; 12; 11 |]
+    ///
+    /// inputs |> Array.max
+    /// </code>
+    /// Evaluates to <c>12</c>
+    /// </example>
+    ///
+    /// <example id="max-2">
+    /// <code lang="fsharp">
+    /// let inputs: int[]= [| |]
+    ///
+    /// inputs |> Array.max
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Max")>]
-    val inline max     : array:'T[] -> 'T  when 'T : comparison 
+    val inline max: array:'T[] -> 'T  when 'T : comparison 
 
     /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
     ///
@@ -1496,9 +1678,24 @@ module Array =
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     ///
     /// <returns>The maximum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="maxby-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "aaa"; "b"; "cccc" |]
+    ///
+    /// inputs |> Array.maxBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"cccc"</c>
+    /// </example>
+    ///
+    /// <example id="maxby-2">
+    /// <code lang="fsharp">
+    /// let inputs: string[]= [| |]
+    ///
+    /// inputs |> Array.maxBy (fun s -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MaxBy")>]
     val inline maxBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
 
@@ -1512,11 +1709,26 @@ module Array =
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     ///
     /// <returns>The minimum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="min-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 10; 12; 11 |]
+    ///
+    /// inputs |> Array.min
+    /// </code>
+    /// Evaluates to <c>10</c>
+    /// </example>
+    ///
+    /// <example id="min-2">
+    /// <code lang="fsharp">
+    /// let inputs: int[]= [| |]
+    ///
+    /// inputs |> Array.min
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Min")>]
-    val inline min     : array:'T[] -> 'T  when 'T : comparison 
+    val inline min: array:'T[] -> 'T  when 'T : comparison 
 
     /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
     ///
@@ -1529,9 +1741,24 @@ module Array =
     /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
     ///
     /// <returns>The minimum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="minby-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| "aaa"; "b"; "cccc" |]
+    ///
+    /// inputs |> Array.minBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="minby-2">
+    /// <code lang="fsharp">
+    /// let inputs: string[]= [| |]
+    ///
+    /// inputs |> Array.minBy (fun s -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MinBy")>]
     val inline minBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
 
@@ -1541,8 +1768,14 @@ module Array =
     ///
     /// <returns>The array of elements from the list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    /// <example id="oflist-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 1; 2; 5 ]
+    ///
+    /// inputs |> Array.ofList
+    /// </code>
+    /// Evaluates to <c>[| 1; 2; 5 |]</c>.
+    /// </example>
     [<CompiledName("OfList")>]
     val ofList: list:'T list -> 'T[]
 
@@ -1554,8 +1787,14 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    /// <example id="oflist-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 1; 2; 5 }
+    ///
+    /// inputs |> Array.ofSeq
+    /// </code>
+    /// Evaluates to <c>[| 1; 2; 5 |]</c>.
+    /// </example>
     [<CompiledName("OfSeq")>]
     val ofSeq: source:seq<'T> -> 'T[]
 
@@ -1651,8 +1890,12 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
     /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    /// <example id="replicate-1">
+    /// <code lang="fsharp">
+    /// Array.replicate 3 "a"
+    /// </code>
+    /// Evaluates to <c>[| "a"; "a"; "a" |]</c>.
+    /// </example>
     [<CompiledName("Replicate")>]
     val replicate: count:int -> initial:'T -> 'T[]
 
@@ -1664,8 +1907,12 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    /// <example id="rev-1">
+    /// <code lang="fsharp">
+    /// Array.rev [| 0; 1; 2 |]
+    /// </code>
+    /// Evaluates to <c>[| 2; 1; 0 |]</c>.
+    /// </example>
     [<CompiledName("Reverse")>]
     val rev: array:'T[] -> 'T[]
 
@@ -1705,8 +1952,12 @@ module Array =
     ///
     /// <returns>The result array of one item.</returns>
     /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    /// <example id="singleton-1">
+    /// <code lang="fsharp">
+    /// Array.singleton 7
+    /// </code>
+    /// Evaluates to <c>[| 7 |]</c>.
+    /// </example>
     [<CompiledName("Singleton")>]
     val inline singleton: value:'T -> 'T[]
 
@@ -2000,9 +2251,15 @@ module Array =
     /// <returns>The list of array elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="tolist-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 1; 2; 5 |]
+    ///
+    /// inputs |> Array.toList
+    /// </code>
+    /// Evaluates to <c>[ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("ToList")>]
     val toList: array:'T[] -> 'T list
 
@@ -2013,9 +2270,15 @@ module Array =
     /// <returns>The sequence of array elements.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="toseq-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 1; 2; 5 |]
+    ///
+    /// inputs |> Array.toSeq
+    /// </code>
+    /// Evaluates to <c>seq { 1; 2; 5 }</c>.
+    /// </example>
     [<CompiledName("ToSeq")>]
     val toSeq: array:'T[] -> seq<'T>
 
@@ -2101,9 +2364,24 @@ module Array =
     /// <returns>The nth element of the array or <c>None</c>.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
-    /// 
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Array.tryItem 1
+    /// </code>
+    /// Evaluates to <c>Some "b"</c>
+    /// </example>
+    ///
+    /// <example id="item-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Array.tryItem 4
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryItem")>]
     val tryItem: index:int -> array:'T[] -> 'T option
 
@@ -2226,7 +2504,6 @@ module Array =
     [<CompiledName("Zip3")>]
     val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
 
-
     /// <summary>Return a new array with the item at a given index removed.</summary>
     ///
     /// <param name="index">The index of the item to be removed.</param>
@@ -2238,8 +2515,11 @@ module Array =
     /// 
     /// <example id="removeAt-example-1">
     /// <code>
-    ///     [| 0; 1; 2 |] |> Array.removeAt 1 // evaluates to [| 0; 2 |]
+    /// let inputs = [| 0; 1; 2 |]
+    ///
+    /// inputs |> Array.removeAt 1
     /// </code>
+    /// Evaluates to <c>[| 0; 2 |]</c>.
     /// </example>
     [<CompiledName("RemoveAt")>]
     val removeAt : index: int -> source: 'T[] -> 'T[]
@@ -2256,8 +2536,11 @@ module Array =
     ///
     /// <example id="removeManyAt-example-1">
     /// <code>
-    ///     [| 0; 1; 2; 3 |] |> Array.removeManyAt 1 2 // evaluates to [| 0; 3 |]
+    /// let inputs = [| 0; 1; 2; 3 |]
+    ///
+    /// inputs |> Array.removeManyAt 1 2
     /// </code>
+    /// Evaluates to <c>[| 0; 3 |]</c>.
     /// </example>
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt : index: int -> count: int -> source: 'T[] -> 'T[]
@@ -2274,8 +2557,11 @@ module Array =
     ///
     /// <example id="updateAt-example-1">
     /// <code>
-    ///     [| 0; 1; 2 |] |> Array.updateAt 1 9 // evaluates to [| 0; 9; 2 |]
+    /// let inputs = [| 0; 1; 2 |]
+    ///
+    /// inputs |> Array.updateAt 1 9
     /// </code>
+    /// Evaluates to <c>[| 0; 9; 2 |]</c>.
     /// </example>
     [<CompiledName("UpdateAt")>]
     val updateAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
@@ -2292,8 +2578,11 @@ module Array =
     ///
     /// <example id="insertAt-example-1">
     /// <code>
-    ///     [| 0; 1; 2 |] |> Array.insertAt 1 9 // evaluates to [| 0; 9; 1; 2 |]
+    /// let inputs = [| 0; 1; 2 |]
+    ///
+    /// inputs |> Array.insertAt 1 9
     /// </code>
+    /// Evaluates to <c>[| 0; 9; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("InsertAt")>]
     val insertAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
@@ -2310,8 +2599,11 @@ module Array =
     ///
     /// <example id="insertManyAt-example-1">
     /// <code>
-    ///     [| 0; 1; 2 |] |> Array.insertManyAt 1 [8; 9] // evaluates to [| 0; 8; 9; 1; 2 |]
+    /// let inputs = [| 0; 1; 2 |]
+    ///
+    /// inputs |> Array.insertManyAt 1 [8; 9]
     /// </code>
+    /// Evaluates to <c>[| 0; 8; 9; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt : index: int -> values: seq<'T> -> source: 'T[] -> 'T[]
