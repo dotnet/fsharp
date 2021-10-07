@@ -50,7 +50,7 @@ module Seq =
     ///
     /// <example id="append-1">
     /// <code lang="fsharp">
-    /// ([1; 2], [3; 4]) ||> Seq.append
+    /// Seq.append [1; 2] [3; 4]
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
@@ -106,7 +106,9 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: float }
     ///
-    /// [{Bar = 2.0}; {Bar = 4.0}] |> Seq.averageBy (fun foo -> foo.Bar)
+    /// let input = [{Bar = 2.0}; {Bar = 4.0}]
+    ///
+    /// input |> Seq.averageBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>3.0</c>
     /// </example>
@@ -114,7 +116,10 @@ module Seq =
     /// <example id="average-by-2">
     /// <code lang="fsharp">
     /// type Foo = { Bar: float }
-    /// [] |> Seq.averageBy (fun foo -> foo.Bar)
+    ///
+    /// let input : Foo list = [ ]
+    ///
+    /// input |> Seq.averageBy (fun foo -> foo.Bar)
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -259,17 +264,22 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example id="collec-1">
+    /// <example id="collect-1">
     /// <code lang="fsharp">
     /// type Foo = { Bar: int seq }
-    /// [[{Bar = [1; 2]}; {Bar = [3; 4]}] |> Seq.collect (fun foo -> foo.Bar)
+    ///
+    /// let input = [[{Bar = [1; 2]}; {Bar = [3; 4]}]
+    ///
+    /// input |> Seq.collect (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
     ///
-    /// <example id="collec-2">
+    /// <example id="collect-2">
     /// <code lang="fsharp">
-    /// [[1; 2]; [3; 4]] |> Seq.collect id
+    /// let input = [[1; 2]; [3; 4]]
+    ///
+    /// input |> Seq.collect id
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4]</c>
     /// </example>
@@ -295,9 +305,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 10], [1; 10])
+    /// let input1 = [1; 10]
+    /// let input2 = [1; 10]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>0</c>
     /// </example>
@@ -307,9 +318,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 5], [1; 8])
+    /// let input1 = [1; 5]
+    /// let input2 = [1; 8]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
@@ -319,9 +331,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 11], [1; 13])
+    /// let input1 = [1; 11]
+    /// let input2 = [1; 13]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -331,9 +344,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1; 2], [1])
+    /// let input1 = [1; 2]
+    /// let input2 = [1]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
@@ -343,9 +357,10 @@ module Seq =
     /// let closerToNextDozen a b =
     ///   (a % 12).CompareTo(b % 12)
     ///
-    /// let input = ([1], [1; 2])
+    /// let input1 = [1]
+    /// let input2 = [1; 2]
     ///
-    /// input ||> Seq.compareWith closerToNextDozen
+    /// (input1, input2) ||> Seq.compareWith closerToNextDozen
     /// </code>
     /// Evaluates to <c>-1</c>
     /// </example>
@@ -366,7 +381,9 @@ module Seq =
     ///
     /// <example id="concat-1">
     /// <code lang="fsharp">
-    /// [[1; 2]; [3]; [4; 5]] |> Seq.concat
+    /// let inputs = [[1; 2]; [3]; [4; 5]]
+    ///
+    /// inputs |> Seq.concat
     /// </code>
     /// Evaluates to <c>seq [1; 2; 3; 4; 5]</c>
     /// </example>
@@ -411,9 +428,9 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: string }
     ///
-    /// let data = [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
+    /// let inputs = [{Bar = "a"}; {Bar = "b"}; {Bar = "a"}]
     ///
-    /// data |> Seq.countBy (fun foo -> foo.Bar)
+    /// inputs |> Seq.countBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [("a", 2); ("b", 1)]</c>
     /// </example>
@@ -471,9 +488,9 @@ module Seq =
     ///
     /// <example id="distinct-by-1">
     /// <code lang="fsharp">
-    /// let data = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
+    /// let inputs = [{Bar = 1 };{Bar = 1}; {Bar = 2}; {Bar = 3}]
     ///
-    /// data |> Seq.distinctBy (fun foo -> foo.Bar)
+    /// inputs |> Seq.distinctBy (fun foo -> foo.Bar)
     /// </code>
     /// Evaluates to <c>seq [{ Bar = 1 }; { Bar = 2 }; { Bar = 3 }]</c>
     /// </example>
@@ -497,14 +514,18 @@ module Seq =
     ///
     /// <example id="split-into-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5] |> Seq.splitInto 3
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> Seq.splitInto 3
     /// </code>
     /// Evaluates to <c>seq [[|1; 2|]; [|3; 4|]; [|5|]]</c>
     /// </example>
     ///
     /// <example id="split-into-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5] |> Seq.splitInto -1
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> Seq.splitInto -1
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -542,7 +563,10 @@ module Seq =
     ///
     /// <example id="except-1">
     /// <code lang="fsharp">
-    /// ([1; 3; 5], [1; 2; 3; 4; 5]) ||> Seq.except
+    /// let original = [1; 2; 3; 4; 5]
+    /// let itemsToExclude = [1; 3; 5]
+    ///
+    /// original |> Seq.except itemsToExclude
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -599,14 +623,20 @@ module Seq =
     ///
     /// <example id="exists2-1">
     /// <code lang="fsharp">
-    /// ([1; 2], [1; 2]) ||> Seq.exists2 (fun a b -> a > b)
+    /// let inputs1 = [1; 2]
+    /// let inputs2 = [1; 2; 0]
+    ///
+    /// (inputs1, inputs2) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>false</c>
     /// </example>
     ///
     /// <example id="exists2-2">
     /// <code lang="fsharp">
-    /// ([1; 4], [1; 3]) ||> Seq.exists2 (fun a b -> a > b)
+    /// let inputs1 = [1; 4]
+    /// let inputs2 = [1; 3; 5]
+    ///
+    /// (inputs1, inputs2) ||> Seq.exists2 (fun a b -> a > b)
     /// </code>
     /// Evaluates to <c>true</c>
     /// </example>
@@ -630,7 +660,9 @@ module Seq =
     ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4] |> Seq.filter (fun elm -> elm % 2 = 0)
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// inputs |> Seq.filter (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>seq [2; 4]</c>
     /// </example>
@@ -676,14 +708,18 @@ module Seq =
     ///
     /// <example id="find-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3] |> Seq.find (fun elm -> elm % 2 = 0)
+    /// let inputs = [1; 2; 3]
+    ///
+    /// inputs |> Seq.find (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>2</c>
     /// </example>
     ///
     /// <example id="find-2">
     /// <code lang="fsharp">
-    /// [1; 2; 3] |> Seq.find (fun elm -> elm % 6 = 0)
+    /// let inputs = [1; 2; 3]
+    ///
+    /// inputs |> Seq.find (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
@@ -706,14 +742,18 @@ module Seq =
     ///
     /// <example id="find-back-1">
     /// <code lang="fsharp">
-    /// [2; 3; 4] |> Seq.findBack (fun elm -> elm % 2 = 0)
+    /// let inputs = [2; 3; 4]
+    ///
+    /// inputs |> Seq.findBack (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>4</c>
     /// </example>
     ///
     /// <example id="find-back-2">
     /// <code lang="fsharp">
-    /// [2; 3; 4] |> Seq.findBack (fun elm -> elm % 6 = 0)
+    /// let inputs = [2; 3; 4]
+    ///
+    /// inputs |> Seq.findBack (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
@@ -733,17 +773,17 @@ module Seq =
     ///
     /// <example id="find-index-1">
     /// <code lang="fsharp">
-    /// let input = [1; 2; 3; 4; 5]
+    /// let inputs = [1; 2; 3; 4; 5]
     ///
-    /// input |> Seq.findIndex (fun elm -> elm % 2 = 0)
+    /// inputs |> Seq.findIndex (fun elm -> elm % 2 = 0)
     /// </code>
     /// Evaluates to <c>1</c>
     /// </example>
     ///
     /// <example id="find-index-2">
     /// <code lang="fsharp">
-    /// let input = [1; 2; 3; 4; 5]
-    /// input |> Seq.findIndex (fun elm -> elm % 6 = 0)
+    /// let inputs = [1; 2; 3; 4; 5]
+    /// inputs |> Seq.findIndex (fun elm -> elm % 6 = 0)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
@@ -799,12 +839,12 @@ module Seq =
     /// <example id="fold-1">
     /// <code lang="fsharp">
     /// type Charge =
-    ///   | In of int
-    ///   | Out of int
+    ///     | In of int
+    ///     | Out of int
     ///
-    /// let data = [In 1; Out 2; In 3]
+    /// let inputs = [In 1; Out 2; In 3]
     ///
-    /// (0, data) ||> Seq.fold (fun acc charge ->
+    /// (0, inputs) ||> Seq.fold (fun acc charge ->
     ///     match charge with
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
@@ -863,33 +903,32 @@ module Seq =
     ///
     /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
     ///
-    /// <example id="fold-back-1">
+    /// <example id="foldback-1">
     /// <code lang="fsharp">
     /// type Count =
     ///   { Positive: int
     ///     Negative: int
-    ///     History: int list }
+    ///     Text: string }
     ///
     /// let sequence = [1; 0; -1; -2; 3]
-    /// let initialState = {Positive = 0; Negative = 0; History = []}
+    /// let initialState = {Positive = 0; Negative = 0; Text = ""}
     ///
     /// (sequence, initialState) ||> Seq.foldBack (fun a acc  ->
-    ///     let history = acc.History @ [a]
+    ///     let text = acc.Text + " " + string a
     ///     if a >= 0 then
-    ///       { acc with
-    ///           Positive = acc.Positive + 1
-    ///           History = history }
+    ///         { acc with
+    ///             Positive = acc.Positive + 1
+    ///             Text = text }
     ///     else
-    ///       { acc with
-    ///           Negative = acc.Negative + 1
-    ///           History = history }
-    /// )
+    ///         { acc with
+    ///             Negative = acc.Negative + 1
+    ///             Text = text })
     /// </code>
     /// Evaluates to
     /// <code>
     /// { Positive = 2
     ///   Negative = 3
-    ///   History = [-3; -2; -1; 0; 1] }
+    ///   Text = " 3 -2 -1 0 1" }
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
@@ -914,35 +953,34 @@ module Seq =
     /// result this function should not be used with large or infinite sequences.
     /// </remarks>
     ///
-    /// <example id="fold-back2-1">
+    /// <example id="foldback2-1">
     /// <code lang="fsharp">
     /// type Count =
     ///   { Positive: int
     ///     Negative: int
-    ///     History: int list }
+    ///     Text: string }
     ///
     /// let inputs1 = [-1; -2; -3]
     /// let inputs2 = [3; 2; 1; 0]
-    /// let initialState = {Positive = 0; Negative = 0; History = []}
+    /// let initialState = {Positive = 0; Negative = 0; Text = ""}
     ///
     /// (inputs1, inputs2, initialState) |||> Seq.foldBack2 (fun a b acc  ->
-    ///     let sum = a + b
-    ///     let history = acc.History @ [sum]
-    ///     if sum >= 0 then
+    ///     let text = acc.Text + "(" + string a + "," + string b + ") "
+    ///     if a + b >= 0 then
     ///         { acc with
     ///             Positive = acc.Positive + 1
-    ///             History = history }
+    ///             Text = text }
     ///     else
     ///         { acc with
     ///             Negative = acc.Negative + 1
-    ///             History = history }
+    ///             Text = text }
     /// )
     /// </code>
     /// Evaluates to
     /// <code>
     /// { Positive = 2
     ///   Negative = 1
-    ///   History = [-2; 0; 2] }
+    ///   Text = " (-3,1) (-2,2) (-1,3)" }
     /// </code>
     /// </example>
     [<CompiledName("FoldBack2")>]
@@ -961,7 +999,7 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example id="for-all-1">
+    /// <example id="forall-1">
     /// <code lang="fsharp">
     /// let isEven a = a % 2 = 0
     ///
@@ -985,9 +1023,9 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
-    /// <example id="for-all2-1">
+    /// <example id="forall2-1">
     /// <code lang="fsharp">
-    /// let inputs1 = [1; 2; 3; 4; 5]
+    /// let inputs1 = [1; 2; 3; 4; 5; 6]
     /// let inputs2 = [1; 2; 3; 4; 5]
     ///
     /// (inputs1, inputs2)  ||> Seq.forall2 (=) // evaluates to true
@@ -1017,12 +1055,14 @@ module Seq =
     ///
     /// <example id="group-by-1">
     /// <code lang="fsharp">
-    /// [1; 2; 3; 4; 5] |> Seq.groupBy (fun n -> n % 2)
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> Seq.groupBy (fun n -> n % 2)
     /// </code>
     /// Evaluates to <c>seq [(1, seq [1; 3; 5]); (0, seq [2; 4])]</c>
     /// </example>
     [<CompiledName("GroupBy")>]
-    val groupBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * seq<'T>> when 'Key : equality
+    val groupBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * seq<'T>> when 'Key : equality
 
     /// <summary>Returns the first element of the sequence.</summary>
     ///
@@ -1035,7 +1075,9 @@ module Seq =
     ///
     /// <example id="head-1">
     /// <code lang="fsharp">
-    /// ["banana"; "pear"] |> Seq.head
+    /// let inputs = ["banana"; "pear"]
+    ///
+    /// inputs |> Seq.head
     /// </code>
     /// Evaluates to <c>banana</c>
     /// </example>
@@ -1134,14 +1176,18 @@ module Seq =
     ///
     /// <example id="exacly-one-1">
     /// <code lang="fsharp">
-    /// ["banana"] |> Seq.exactlyOne
+    /// let inputs = ["banana"]
+    ///
+    /// inputs |> Seq.exactlyOne
     /// </code>
     /// Evaluates to <c>banana</c>
     /// </example>
     ///
     /// <example id="exacly-one-2">
     /// <code lang="fsharp">
-    /// ["pear"; "banana"] |> Seq.exactlyOne
+    /// let inputs = ["pear"; "banana"]
+    ///
+    /// inputs |> Seq.exactlyOne
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -1165,14 +1211,18 @@ module Seq =
     ///
     /// <example id="try-exacly-one-1">
     /// <code lang="fsharp">
-    /// ["banana"] |> Seq.tryExactlyOne
+    /// let inputs = ["banana"]
+    ///
+    /// inputs |> Seq.tryExactlyOne
     /// </code>
     /// Evaluates to <c>Some banana</c>
     /// </example>
     ///
     /// <example id="try-exacly-one-2">
     /// <code lang="fsharp">
-    /// ["pear"; "banana"] |> Seq.tryExactlyOne
+    /// let inputs = ["pear"; "banana"]
+    ///
+    /// inputs |> Seq.tryExactlyOne
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
@@ -1245,14 +1295,14 @@ module Seq =
     ///
     /// <example id="init-1">
     /// <code lang="fsharp">
-    /// (+) 5 |> Seq.init 4
+    /// Seq.init 4 (fun v -> v + 5)
     /// </code>
     /// Evaluates to <c>seq [5; 6; 7; 8]</c>
     /// </example>
     ///
     /// <example id="init-2">
     /// <code lang="fsharp">
-    /// (+) 5 |> Seq.init -5
+    /// Seq.init -5 (fun v -> v + 5)
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -1294,14 +1344,18 @@ module Seq =
     ///
     /// <example id="item-1">
     /// <code lang="fsharp">
-    /// ["a"; "b"; "c"] |> Seq.item 1
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Seq.item 1
     /// </code>
     /// Evaluates to <c>"b"</c>
     /// </example>
     ///
     /// <example id="item-2">
     /// <code lang="fsharp">
-    /// ["a"; "b"; "c"] |> Seq.item 4
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Seq.item 4
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -1340,7 +1394,10 @@ module Seq =
     ///
     /// <example id="iteri-1">
     /// <code lang="fsharp">
-    /// ["a"; "b"; "c"] |> Seq.iteri (printfn "%i: %s")
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> Seq.iteri (fun i v -> printfn "{i}: {v}")
+    ///
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -1395,7 +1452,7 @@ module Seq =
     /// let inputs1 = ["a"; "b"; "c"]
     /// let inputs2 = ["banana"; "pear"; "apple"]
     ///
-    /// (inputs1, inputs2) ||> Seq.iteri2 (printfn "Index %i: %s - %s")
+    /// (inputs1, inputs2) ||> Seq.iteri2 (fun i s1 s2 -> printfn "Index {i}: {s1} - {s2}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -1442,9 +1499,16 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "bbb"; "cc"]
+    ///
+    /// inputs |> Seq.map (fun x -> x.Length)
+    /// </code>
+    /// Evaluates to <c>seq [1; 3; 2]</c>
+    /// </example>
     [<CompiledName("Map")>]
-    val map  : mapping:('T -> 'U) -> source:seq<'T> -> seq<'U>
+    val map: mapping:('T -> 'U) -> source:seq<'T> -> seq<'U>
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to the corresponding pairs of elements from the two sequences. If one input sequence is shorter than
@@ -1458,7 +1522,15 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = ["a"; "bad"; "good"]
+    /// let inputs2 = [0; 2; 1]
+    ///
+    /// (inputs1, inputs2) ||> Seq.map2 (fun x y -> x.[y])
+    /// </code>
+    /// Evaluates to <c>['a'; 'd'; 'o']</c>
+    /// </example>
     [<CompiledName("Map2")>]
     val map2: mapping:('T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
 
@@ -1511,7 +1583,17 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [ "a"; "t"; "ti" ]
+    /// let inputs2 = [ "l"; "h"; "m" ]
+    /// let inputs3 = [ "l"; "e"; "e" ]
+    ///
+    /// (inputs1, inputs2, inputs3) |||> Seq.map3 (fun x y z -> x + y + z)
+    /// </code>
+    /// Evaluates to <c>seq [ "all"; "the"; "time" ]</c>
+    /// </example>
+    /// 
     [<CompiledName("Map3")>]
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'U>
 
@@ -1526,7 +1608,14 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 10; 10; 10 ]
+    ///
+    /// inputs |> Seq.mapi (fun i x -> i + x)
+    /// </code>
+    /// Evaluates to <c>seq [ 10; 11; 12 ]</c>
+    /// </example>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping:(int -> 'T -> 'U) -> source:seq<'T> -> seq<'U>
 
@@ -1556,9 +1645,25 @@ module Seq =
     ///
     /// <returns>The largest element of the sequence.</returns>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="max-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 10; 12; 11 ]
+    ///
+    /// inputs |> Seq.max
+    /// </code>
+    /// Evaluates to <c>12</c>
+    /// </example>
+    ///
+    /// <example id="max-2">
+    /// <code lang="fsharp">
+    /// let inputs = [ ]
+    ///
+    /// inputs |> Seq.max
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Max")>]
-    val inline max     : source:seq<'T> -> 'T when 'T : comparison
+    val inline max: source:seq<'T> -> 'T when 'T : comparison
 
     /// <summary>Returns the greatest of all elements of the sequence, compared via Operators.max on the function result.</summary>
     ///
@@ -1570,7 +1675,23 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="maxby-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["aaa"; "b"; "cccc"]
+    ///
+    /// inputs |> Seq.maxBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"cccc"</c>
+    /// </example>
+    ///
+    /// <example id="maxby-2">
+    /// <code lang="fsharp">
+    /// let inputs = [ ]
+    ///
+    /// inputs |> Seq.maxBy (fun s -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MaxBy")>]
     val inline maxBy  : projection:('T -> 'U) -> source:seq<'T> -> 'T when 'U : comparison
 
@@ -1583,9 +1704,25 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="min-1">
+    /// <code lang="fsharp">
+    /// let inputs = [10; 12; 11]
+    ///
+    /// inputs |> Seq.min
+    /// </code>
+    /// Evaluates to <c>10</c>
+    /// </example>
+    ///
+    /// <example id="min-2">
+    /// <code lang="fsharp">
+    /// let inputs = []
+    ///
+    /// inputs |> Seq.min
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Min")>]
-    val inline min     : source:seq<'T> -> 'T when 'T : comparison
+    val inline min: source:seq<'T> -> 'T when 'T : comparison
 
     /// <summary>Returns the lowest of all elements of the sequence, compared via Operators.min on the function result.</summary>
     ///
@@ -1597,9 +1734,25 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="minby-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "aaa"; "b"; "cccc" ]
+    ///
+    /// inputs |> Seq.minBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="minby-2">
+    /// <code lang="fsharp">
+    /// let inputs = []
+    ///
+    /// inputs |> Seq.minBy (fun (s: string) -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MinBy")>]
-    val inline minBy  : projection:('T -> 'U) -> source:seq<'T> -> 'T when 'U : comparison
+    val inline minBy: projection:('T -> 'U) -> source:seq<'T> -> 'T when 'U : comparison
 
     /// <summary>Computes the nth element in the collection.</summary>
     ///
@@ -1623,7 +1776,15 @@ module Seq =
     /// <returns>The result sequence.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="ofarray-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 1; 2; 5 |]
+    ///
+    /// inputs |> Seq.ofArray
+    /// </code>
+    /// Evaluates to <c>seq [ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("OfArray")>]
     val ofArray: source:'T[] -> seq<'T>
 
@@ -1633,7 +1794,14 @@ module Seq =
     ///
     /// <returns>The result sequence.</returns>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="oflist-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 1; 2; 5 ]
+    ///
+    /// inputs |> Seq.ofList
+    /// </code>
+    /// Evaluates to <c>seq [ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("OfList")>]
     val ofList: source:'T list -> seq<'T>
 
@@ -1722,8 +1890,13 @@ module Seq =
     /// <param name="initial">The value to replicate</param>
     ///
     /// <returns>The generated sequence.</returns>
-    ///
-    /// <example-tbd></example-tbd>
+    /// 
+    /// <example id="replicate-1">
+    /// <code lang="fsharp">
+    /// Seq.replicate 3 "a"
+    /// </code>
+    /// Evaluates to <c>seq { "a"; "a"; "a" }</c>.
+    /// </example>
     [<CompiledName("Replicate")>]
     val replicate: count:int -> initial:'T -> seq<'T>
 
@@ -1755,8 +1928,15 @@ module Seq =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
     /// <remarks>This function consumes the whole input sequence before yielding the first element of the reversed sequence.</remarks>
+    /// 
+    /// <example id="rev-1">
+    /// <code lang="fsharp">
+    /// let input = seq { 0; 1; 2 }
     ///
-    /// <example-tbd></example-tbd>
+    /// input |> Seq.rev
+    /// </code>
+    /// Evaluates to <c>seq { 2; 1; 0 }</c>.
+    /// </example>
     [<CompiledName("Reverse")>]
     val rev: source:seq<'T> -> seq<'T>
 
@@ -1797,8 +1977,13 @@ module Seq =
     /// <param name="value">The input item.</param>
     ///
     /// <returns>The result sequence of one item.</returns>
-    ///
-    /// <example-tbd></example-tbd>
+    /// 
+    /// <example id="singleton-1">
+    /// <code lang="fsharp">
+    /// Seq.singleton 7
+    /// </code>
+    /// Evaluates to <c>seq { 7 }</c>.
+    /// </example>
     [<CompiledName("Singleton")>]
     val singleton: value:'T -> seq<'T>
 
@@ -2015,7 +2200,14 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="toarray-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 1; 2; 5 }
+    ///
+    /// inputs |> Seq.toArray
+    /// </code>
+    /// Evaluates to <c>[| 1; 2; 5 |]</c>.
+    /// </example>
     [<CompiledName("ToArray")>]
     val toArray: source:seq<'T> -> 'T[]
 
@@ -2027,7 +2219,14 @@ module Seq =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="tolist-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 1; 2; 5 }
+    ///
+    /// inputs |> Seq.toList
+    /// </code>
+    /// Evaluates to <c>[ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("ToList")>]
     val toList: source:seq<'T> -> 'T list
 

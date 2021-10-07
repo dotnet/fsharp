@@ -155,7 +155,12 @@ module Set =
 
     /// <summary>The empty set for the type 'T.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="empty-1">
+    /// <code lang="fsharp">
+    /// Set.empty&lt;int&gt;
+    /// </code>
+    /// Evaluates to <c>set [ ]</c>.
+    /// </example>
     [<GeneralizableValue>]
     [<CompiledName("Empty")>]
     val empty<'T> : Set<'T> when 'T : comparison
@@ -166,7 +171,12 @@ module Set =
     ///
     /// <returns>The set containing <c>value</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="singleton-1">
+    /// <code lang="fsharp">
+    /// Set.singleton 7
+    /// </code>
+    /// Evaluates to <c>set [ 7 ]</c>.
+    /// </example>
     [<CompiledName("Singleton")>]
     val singleton: value:'T -> Set<'T>
 

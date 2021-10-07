@@ -250,14 +250,34 @@ module List =
     /// 
     /// <example id="contains-example-1">
     /// <code lang="fsharp">
-    /// [1..9] |> List.contains 0  // evaluates false
-    /// 
-    /// [1..9] |> List.contains 3  // evaluates true
-    /// 
-    /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
-    /// input |> List.contains (2, "Patrick")   // evaluates true
-    /// input |> List.contains (22, "Patrick")  // evaluates false
+    /// [1..9] |> List.contains 0
     /// </code>
+    /// Evaluates to <c>false</c>.
+    /// </example>
+    /// 
+    /// <example id="contains-example-2">
+    /// <code lang="fsharp">
+    /// [1..9] |> List.contains 3
+    /// </code>
+    /// Evaluates to <c>true</c>.
+    /// </example>
+    /// 
+    /// <example id="contains-example-3">
+    /// <code lang="fsharp">
+    /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
+    ///
+    /// input |> List.contains (2, "Patrick")
+    /// </code>
+    /// Evaluates to <c>true</c>.
+    /// </example>
+    /// 
+    /// <example id="contains-example-4">
+    /// <code lang="fsharp">
+    /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
+    ///
+    /// input |> List.contains (22, "Patrick")
+    /// </code>
+    /// Evaluates to <c>false</c>.
     /// </example>
     [<CompiledName("Contains")>]
     val inline contains: value:'T -> source:'T list -> bool when 'T : equality
@@ -273,8 +293,9 @@ module List =
     /// <example id="distinct-example-1">
     /// <code lang="fsharp">
     /// let input = [6;1;2;3;1;4;5;5]
-    /// input |> List.distinct  // evaluates [6; 1; 2; 3; 4; 5]
+    /// input |> List.distinct
     /// </code>
+    /// Evaluates to <c>[6; 1; 2; 3; 4; 5]</c>.
     /// </example>
     [<CompiledName("Distinct")>]
     val distinct: list:'T list -> 'T list when 'T : equality
@@ -309,10 +330,11 @@ module List =
     /// 
     /// <example id="countBy-example-1"> Counting the number of occurrences of chars
     /// <code lang="fsharp">
-    /// let input = ['H'; 'a'; 'p'; 'p'; 'i'; 'n'; 'e'; 's'; 's']
+    /// let input = ['H'; 'a'; 'p'; 'p'; 'y']
+    ///
     /// input |> List.countBy id
     /// </code>
-    /// Evalutes <c>[('H', 1); ('a', 1); ('p', 2); ('i', 1); ('n', 1); ('e', 1); ('s', 2)]</c>
+    /// Evaluates <c>[('H', 1); ('a', 1); ('p', 2); ('y', 1)]</c>
     /// </example>
     [<CompiledName("CountBy")>]
     val countBy : projection:('T -> 'Key) -> list:'T list -> ('Key * int) list when 'Key : equality
@@ -328,9 +350,16 @@ module List =
     /// 
     /// <example id="splitInto-example-1">
     /// <code lang="fsharp">
-    /// [1..10] |> List.splitInto 2  // evaluates [[1; 2; 3; 4; 5]; [6; 7; 8; 9; 10]]
-    /// [1..10] |> List.splitInto 4  // evaluates [[1; 2; 3]; [4; 5; 6]; [7; 8]; [9; 10]]
+    /// [1..10] |> List.splitInto 2
     /// </code>
+    /// Evaluates to <c>[[1; 2; 3; 4; 5]; [6; 7; 8; 9; 10]]</c>.
+    /// </example>
+    /// 
+    /// <example id="splitInto-example-2">
+    /// <code lang="fsharp">
+    /// [1..10] |> List.splitInto 4
+    /// </code>
+    /// Evaluates to <c>[[1; 2; 3]; [4; 5; 6]; [7; 8]; [9; 10]]</c>.
     /// </example>
     [<CompiledName("SplitInto")>]
     val splitInto: count:int -> list:'T list -> 'T list list
@@ -354,13 +383,20 @@ module List =
     /// <example id="except-example-1">
     /// <code lang="fsharp">
     /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
-    /// input |> List.except [3, "Kenobi"]  // evaluates [(1, "Kirk"); (2, "Spock")]
+    ///
+    /// input |> List.except [3, "Kenobi"]
     /// </code>
+    /// Evaluates to <c>[(1, "Kirk"); (2, "Spock")]</c>.
     /// </example>
     /// 
     /// <example id="except-example-2">
     /// <code lang="fsharp">
     /// [0..10] |> List.except [1..5]  // evaluates [0; 6; 7; 8; 9; 10]
+    /// </code>
+    /// </example>
+    /// 
+    /// <example id="except-example-3">
+    /// <code lang="fsharp">
     /// [1..5] |> List.except [0..10]  // evaluates []
     /// </code>
     /// </example>
@@ -895,8 +931,16 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>The list of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = ["a"; "bad"; "good"]
+    /// let inputs2 = [0; 2; 1]
+    ///
+    /// (inputs1, inputs2) ||> List.map2 (fun x y -> x.[y])
+    /// </code>
+    /// Evaluates to <c>seq ['a'; 'd'; 'o']</c>
+    /// </example>
     [<CompiledName("Map2")>]
     val map2: mapping:('T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
@@ -909,8 +953,18 @@ module List =
     /// <param name="list3">The third input list.</param>
     ///
     /// <returns>The list of transformed elements.</returns>
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [ "a"; "t"; "ti" ]
+    /// let inputs2 = [ "l"; "h"; "m" ]
+    /// let inputs3 = [ "l"; "e"; "e" ]
+    ///
+    /// (inputs1, inputs2, inputs3) |||> List.map3 (fun x y z -> x + y + z)
+    /// </code>
+    /// Evaluates to <c>[ "all"; "the"; "time" ]</c>
+    /// </example>
     /// 
-    /// <example-tbd></example-tbd>
     [<CompiledName("Map3")>]
     val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> 'U list
 
@@ -948,8 +1002,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The list of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 10; 10; 10 ]
+    ///
+    /// inputs |> List.mapi (fun i x -> i + x)
+    /// </code>
+    /// Evaluates to <c>[ 10; 11; 12 ]</c>
+    /// </example>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping:(int -> 'T -> 'U) -> list:'T list -> 'U list
 
@@ -973,10 +1034,26 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The maximum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="max-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 10; 12; 11 ]
+    ///
+    /// inputs |> List.max
+    /// </code>
+    /// Evaluates to <c>12</c>
+    /// </example>
+    ///
+    /// <example id="max-2">
+    /// <code lang="fsharp">
+    /// let inputs = [ ]
+    ///
+    /// inputs |> List.max
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Max")>]
-    val inline max     : list:'T list -> 'T when 'T : comparison 
+    val inline max: list:'T list -> 'T when 'T : comparison 
 
     /// <summary>Returns the greatest of all elements of the list, compared via Operators.max on the function result.</summary>
     ///
@@ -987,10 +1064,26 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The maximum element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="maxby-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["aaa"; "b"; "cccc"]
+    ///
+    /// inputs |> List.maxBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"cccc"</c>
+    /// </example>
+    ///
+    /// <example id="maxby-2">
+    /// <code lang="fsharp">
+    /// let inputs = []
+    ///
+    /// inputs |> List.maxBy (fun (s: string) -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MaxBy")>]
-    val inline maxBy   : projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
+    val inline maxBy: projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min.</summary>
     ///
@@ -1000,10 +1093,26 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The minimum value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="min-1">
+    /// <code lang="fsharp">
+    /// let inputs = [10; 12; 11]
+    ///
+    /// inputs |> List.min
+    /// </code>
+    /// Evaluates to <c>10</c>
+    /// </example>
+    ///
+    /// <example id="min-2">
+    /// <code lang="fsharp">
+    /// let inputs = []
+    ///
+    /// inputs |> List.min
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("Min")>]
-    val inline min     : list:'T list -> 'T when 'T : comparison 
+    val inline min: list:'T list -> 'T when 'T : comparison 
 
     /// <summary>Returns the lowest of all elements of the list, compared via Operators.min on the function result</summary>
     ///
@@ -1014,8 +1123,24 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The minimum value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="minby-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["aaa"; "b"; "cccc"]
+    ///
+    /// inputs |> List.minBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="minby-2">
+    /// <code lang="fsharp">
+    /// let inputs = []
+    ///
+    /// inputs |> List.minBy (fun (s: string) -> s.Length)
+    /// </code>
+    /// Throws <c>System.ArgumentException</c>.
+    /// </example>
     [<CompiledName("MinBy")>]
     val inline minBy   : projection:('T -> 'U) -> list:'T list -> 'T when 'U : comparison 
 
@@ -1037,7 +1162,14 @@ module List =
     ///
     /// <returns>The list of elements from the array.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="oflist-1">
+    /// <code lang="fsharp">
+    /// let inputs = [| 1; 2; 5 |]
+    ///
+    /// inputs |> List.ofArray
+    /// </code>
+    /// Evaluates to <c>[ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("OfArray")>]
     val ofArray : array:'T[] -> 'T list
 
@@ -1047,7 +1179,14 @@ module List =
     ///
     /// <returns>The list of elements from the sequence.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="oflist-1">
+    /// <code lang="fsharp">
+    /// let inputs = seq { 1; 2; 5 }
+    ///
+    /// inputs |> List.ofSeq    
+    /// </code>
+    /// Evaluates to <c>[ 1; 2; 5 ]</c>.
+    /// </example>
     [<CompiledName("OfSeq")>]
     val ofSeq: source:seq<'T> -> 'T list
 
@@ -1147,7 +1286,12 @@ module List =
     ///
     /// <returns>The generated list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="replicate-1">
+    /// <code lang="fsharp">
+    /// List.replicate 3 "a"
+    /// </code>
+    /// Evaluates to <c>[ "a"; "a"; "a" ]</c>.
+    /// </example>
     [<CompiledName("Replicate")>]
     val replicate: count:int -> initial:'T -> 'T list
 
@@ -1157,7 +1301,14 @@ module List =
     ///
     /// <returns>The reversed list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="rev-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 0; 1; 2 ]
+    ///
+    /// inputs |> List.rev
+    /// </code>
+    /// Evaluates to <c>[ 2; 1; 0 ]</c>.
+    /// </example>
     [<CompiledName("Reverse")>]
     val rev: list:'T list -> 'T list
 
@@ -1194,7 +1345,12 @@ module List =
     ///
     /// <returns>The result list of one item.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="singleton-1">
+    /// <code lang="fsharp">
+    /// List.singleton 7
+    /// </code>
+    /// Evaluates to <c>[ 7 ]</c>.
+    /// </example>
     [<CompiledName("Singleton")>]
     val inline singleton: value:'T -> 'T list
 
@@ -1368,8 +1524,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The array containing the elements of the list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="toarray-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 1; 2; 5 ]
+    ///
+    /// inputs |> List.toArray
+    /// </code>
+    /// Evaluates to <c>[| 1; 2; 5 |]</c>.
+    /// </example>
     [<CompiledName("ToArray")>]
     val toArray: list:'T list -> 'T[]
 
@@ -1378,8 +1541,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The sequence of elements in the list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="toseq-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ 1; 2; 5 ]
+    ///
+    /// inputs |> List.toSeq
+    /// </code>
+    /// Evaluates to <c>seq { 1; 2; 5 }</c>.
+    /// </example>
     [<CompiledName("ToSeq")>]
     val toSeq: list:'T list -> seq<'T>
 
@@ -1389,8 +1559,24 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The first element of the list or None.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="try-head-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "banana"; "pear" ]
+    ///
+    /// inputs |> List.tryHead
+    /// </code>
+    /// Evaluates to <c>Some "banana"</c>
+    /// </example>
+    ///
+    /// <example id="try-head-2">
+    /// <code lang="fsharp">
+    /// let inputs : int list = []
+    ///
+    /// inputs |> List.tryHead
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryHead")>]
     val tryHead: list:'T list -> 'T option
 
@@ -1590,8 +1776,11 @@ module List =
     ///
     /// <example id="removeAt-example-1">
     /// <code>
-    ///     [ 0; 1; 2 ] |> List.removeAt 1 // evaluates to [ 0; 2 ]
+    /// let inputs = [ 0; 1; 2 ]
+    ///
+    /// inputs |> List.removeAt 1
     /// </code>
+    /// let inputs = [ 0; 2 ]
     /// </example>
     [<CompiledName("RemoveAt")>]
     val removeAt: index: int -> source: 'T list -> 'T list
@@ -1608,8 +1797,11 @@ module List =
     ///
     /// <example id="removeManyAt-example-1">
     /// <code>
-    ///     [ 0; 1; 2; 3 ] |> List.removeManyAt 1 2 // evaluates to [ 0; 3 ]
+    /// let inputs = [ 0; 1; 2; 3 ]
+    ///
+    /// inputs |> List.removeManyAt 1 2
     /// </code>
+    /// Evaluates to <c>[ 0; 3 ]</c>.
     /// </example>
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt: index: int -> count: int -> source: 'T list -> 'T list
@@ -1626,8 +1818,11 @@ module List =
     ///
     /// <example id="updateAt-example-1">
     /// <code>
-    ///     [ 0; 1; 2 ] |> List.updateAt 1 9 // evaluates to [ 0; 9; 2 ]
+    /// let inputs = [ 0; 1; 2 ]
+    ///
+    /// inputs |> List.updateAt 1 9
     /// </code>
+    /// Evaluates to <c>[ 0; 9; 2 ]</c>.
     /// </example>
     [<CompiledName("UpdateAt")>]
     val updateAt: index: int -> value: 'T -> source: 'T list -> 'T list
@@ -1644,8 +1839,11 @@ module List =
     ///
     /// <example id="insertAt-example-1">
     /// <code>
-    ///     [ 0; 1; 2 ] |> List.insertAt 1 9 // evaluates to [ 0; 9; 1; 2 ]
+    /// let inputs = [ 0; 1; 2 ]
+    ///
+    /// inputs |> List.insertAt 1 9
     /// </code>
+    /// Evaluates to <c>[ 0; 9; 1; 2 ]</c>.
     /// </example>
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T list -> 'T list
@@ -1662,7 +1860,10 @@ module List =
     ///
     /// <example id="insertManyAt-example-1">
     /// <code>
-    ///     [ 0; 1; 2 ] |> List.insertManyAt 1 [ 8; 9 ] // evaluates to [ 0; 8; 9; 1; 2 ]
+    /// let inputs = [ 0; 1; 2 ]
+    ///
+    /// inputs |> List.insertManyAt 1 [ 8; 9 ]
+    /// Evaluates to <c>[ 0; 8; 9; 1; 2 ]</c>.
     /// </code>
     /// </example>
     [<CompiledName("InsertManyAt")>]
