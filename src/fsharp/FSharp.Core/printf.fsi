@@ -225,8 +225,8 @@ module Printf =
     ///
     /// let file = File.CreateText("out.txt")
     ///
-    /// fprintf file "Write five = %d" (3+2)
-    /// fprintf file "Write six = %d" (3+3)
+    /// fprintfn file "Write five = %d" (3+2)
+    /// fprintfn file "Write six = %d" (3+3)
     /// file.Close()
     /// </code>
     /// After evaluation the file contains two lines.
@@ -264,16 +264,16 @@ module Printf =
     /// 
     /// <example id="eprintfn-1">Using interpolated strings:
     /// <code lang="fsharp">
-    /// eprintf $"Write three = {1+2}" 
-    /// eprintf $"Write four = {2+2}" 
+    /// eprintfn $"Write three = {1+2}" 
+    /// eprintfn $"Write four = {2+2}" 
     /// </code>
     /// After evaluation two lines are written to <c>stderr</c>.
     /// </example>
     /// 
     /// <example id="eprintf-2">Using <c>%</c> format patterns:
     /// <code lang="fsharp">
-    /// eprintf "Write five = %d" (3+2)
-    /// eprintf "Write six = %d" (3+3)
+    /// eprintfn "Write five = %d" (3+2)
+    /// eprintfn "Write six = %d" (3+3)
     /// </code>
     /// After evaluation two lines are written to <c>stderr</c>.
     /// </example>
