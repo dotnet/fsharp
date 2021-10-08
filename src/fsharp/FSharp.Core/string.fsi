@@ -25,7 +25,7 @@ module String =
     ///
     /// <returns>The concatenated string.</returns>
     /// 
-    /// <example id="collect-example-1"> The following samples shows how to interspace spaces in a text
+    /// <example id="collect-1"> The following samples shows how to interspace spaces in a text
     /// <code lang="fsharp">
     /// let input = "Stefan says: Hi!"
     /// 
@@ -34,7 +34,7 @@ module String =
     /// The sample evaluates to <c>"S t e f a n   s a y s :   H i ! "</c>
     /// </example>
     /// 
-    /// <example id="collect-example-2"> How to show the ASCII representation of a very secret text
+    /// <example id="collect-2"> How to show the ASCII representation of a very secret text
     /// <code lang="fsharp">
     /// "Secret" |> String.collect (fun chr -> int chr |> sprintf "%d ")
     /// </code>
@@ -53,7 +53,7 @@ module String =
     /// the separation string.</returns>
     /// <exception cref="T:System.ArgumentNullException">Thrown when <c>strings</c> is null.</exception>
     /// 
-    /// <example id="concat-example-1">
+    /// <example id="concat-1">
     /// <code lang="fsharp">
     /// let input1 = ["Stefan"; "says:"; "Hello"; "there!"]
     /// 
@@ -79,7 +79,7 @@ module String =
     ///
     /// <returns>True if any character returns true for the predicate and false otherwise.</returns>
     /// 
-    /// <example id="exists-example-1"> Looking for uppercase characters
+    /// <example id="exists-1"> Looking for uppercase characters
     /// <code lang="fsharp">
     /// open System
     /// 
@@ -101,7 +101,7 @@ module String =
     ///
     /// <returns>The resulting string.</returns>
     /// 
-    /// <example id="filter-example-1"> Filtering out just alphanumeric characters
+    /// <example id="filter-1"> Filtering out just alphanumeric characters
     /// <code lang="fsharp">
     /// open System
     /// 
@@ -110,7 +110,7 @@ module String =
     /// input |> String.filter Uri.IsHexDigit  // evaluates "123456789aA"
     /// </code>
     /// </example>
-    /// <example id="filter-example-2"> Filtering out just digits
+    /// <example id="filter-2"> Filtering out just digits
     /// <code lang="fsharp">
     /// open System
     /// 
@@ -127,7 +127,7 @@ module String =
     ///
     /// <returns>True if all characters return true for the predicate and false otherwise.</returns>
     ///         
-    /// <example id="forall-example-1"> Looking for lowercase characters
+    /// <example id="forall-1"> Looking for lowercase characters
     /// <code lang="fsharp">
     /// open System
     /// 
@@ -151,7 +151,7 @@ module String =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
     /// 
-    /// <example id="init-example-1"> Enumerate digits ASCII codes
+    /// <example id="init-1"> Enumerate digits ASCII codes
     /// <code lang="fsharp">
     /// String.init 10 (fun i -> int '0' + i |> sprintf "%d ")
     /// </code>
@@ -165,7 +165,7 @@ module String =
     /// <param name="action">The function to be applied to each character of the string.</param>
     /// <param name="str">The input string.</param>
     /// 
-    /// <example id="iter-example-1"> Printing the ASCII code for each characater in the string
+    /// <example id="iter-1"> Printing the ASCII code for each characater in the string
     /// <code lang="fsharp">
     /// let input = "Hello"
     /// input |> String.iter (fun c -> printfn "%c %d" c (int c))
@@ -188,7 +188,7 @@ module String =
     /// <param name="action">The function to apply to each character and index of the string.</param>
     /// <param name="str">The input string.</param>
     /// 
-    /// <example id="iteri-example-1"> Numbering the characters and printing the associated ASCII code 
+    /// <example id="iteri-1"> Numbering the characters and printing the associated ASCII code 
     /// for each characater in the input string
     /// <code lang="fsharp">
     /// let input = "Hello"
@@ -212,7 +212,7 @@ module String =
     ///
     /// <returns>The number of characters in the string.</returns>
     /// 
-    /// <example id="length-example-1"> Getting the length of different strings
+    /// <example id="length-1"> Getting the length of different strings
     /// <code lang="fsharp">
     /// String.length null   // evaluates 0
     /// String.length ""     // evaluates 0
@@ -230,7 +230,7 @@ module String =
     ///
     /// <returns>The resulting string.</returns>
     /// 
-    /// <example id="map-example-1"> Changing case to upper for all characters in the input string
+    /// <example id="map-1"> Changing case to upper for all characters in the input string
     /// <code lang="fsharp">
     /// open System
     /// 
@@ -250,7 +250,7 @@ module String =
     ///
     /// <returns>The resulting string.</returns>
     /// 
-    /// <example id="mapi-example-1">
+    /// <example id="mapi-1">
     /// <code lang="fsharp">
     /// input |> String.mapi (fun i c -> (i, c))
     /// </code>
@@ -267,7 +267,7 @@ module String =
     /// <returns>The concatenated string.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
     /// 
-    /// <example id="replicate-example-1">
+    /// <example id="replicate-1">
     /// <code lang="fsharp">
     /// "Do it!" |> String.replicate 3
     /// </code>

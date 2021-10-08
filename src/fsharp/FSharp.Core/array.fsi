@@ -387,7 +387,7 @@ module Array =
     ///
     /// <returns>The first element of the array or None.</returns>
     ///
-    /// <example id="try-head-1">
+    /// <example id="tryhead-1">
     /// <code lang="fsharp">
     /// let inputs = [| "banana"; "pear" |]
     ///
@@ -396,7 +396,7 @@ module Array =
     /// Evaluates to <c>Some "banana"</c>
     /// </example>
     ///
-    /// <example id="try-head-2">
+    /// <example id="tryhead-2">
     /// <code lang="fsharp">
     /// let inputs : int[] = [| |]
     ///
@@ -1007,17 +1007,19 @@ module Array =
     /// let inputs1 = [| 1; 2; 3 |]
     /// let inputs2 = [| 1; 2; 3 |]
     ///
-    /// (inputs1, inputs2)  ||> Array.forall2 (=) // evaluates to true
+    /// (inputs1, inputs2) ||> Array.forall2 (=)
     /// </code>
+    /// Evaluates to <c>true</c>.
     /// </example>
     ///
     /// <example id="forall2-2">
     /// <code lang="fsharp">
-    /// let items1 = [2017; 1; 1]
-    /// let items2 = [2019; 19; 8]
+    /// let items1 = [| 2017; 1; 1 |]
+    /// let items2 = [| 2019; 19; 8 |]
     ///
-    /// (items1, items2) ||> Array.forall2 (=) // evaluates to false
+    /// (items1, items2) ||> Array.forall2 (=)
     /// </code>
+    /// Evaluates to <c>false</c>.
     /// </example>
     ///
     /// <example id="forall2-3">
@@ -1025,8 +1027,9 @@ module Array =
     /// let items1 = [| 1; 2; 3 |]
     /// let items2 = [| 1; 2 |]
     ///
-    /// (items1, items2) ||> Array.forall2 (=) // evaluates to false
+    /// (items1, items2) ||> Array.forall2 (=)
     /// </code>
+    /// Throws <c>ArgumentException</c>.
     /// </example>
     [<CompiledName("ForAll2")>]
     val forall2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1[] -> array2:'T2[] -> bool
@@ -1124,8 +1127,8 @@ module Array =
     /// <code lang="fsharp">
     /// type CoinToss = Head | Tails
     ///
-    /// let data1 = [Tails; Head; Tails]
-    /// let data2 = [Tails; Head; Head]
+    /// let data1 = [| Tails; Head; Tails |]
+    /// let data2 = [| Tails; Head; Head |]
     ///
     /// (0, data1, data2) |||> Array.fold2 (fun acc a b ->
     ///     match (a, b) with
@@ -1154,14 +1157,14 @@ module Array =
     /// <returns>The final state.</returns>
     ///
     /// <example id="foldback2-1">
-    /// <code lang="fsharp">
+    /// <code lang="fsharp">Count the positives, negatives and accumulate some text from back to front:
     /// type Count =
     ///   { Positive: int
     ///     Negative: int
     ///     Text: string }
     ///
     /// let inputs1 = [| -1; -2; -3 |]
-    /// let inputs2 = [| 3; 2; 1; 0 |]
+    /// let inputs2 = [| 3; 2; 1 |]
     /// let initialState = {Positive = 0; Negative = 0; Text = ""}
     ///
     /// (inputs1, inputs2, initialState) |||> Array.foldBack2 (fun a b acc  ->
@@ -1180,7 +1183,7 @@ module Array =
     /// <code>
     /// { Positive = 2
     ///   Negative = 1
-    ///   Text = " (-3,1) (-2,2) (-1,3)" }
+    ///   Text = "(-3,1) (-2,2) (-1,3) " }
     /// </code>
     /// </example>
     [<CompiledName("FoldBack2")>]
@@ -1229,7 +1232,7 @@ module Array =
     ///
     /// <example id="head-1">
     /// <code lang="fsharp">
-    /// let inputs = ["banana"; "pear"]
+    /// let inputs = [| "banana"; "pear" |]
     ///
     /// inputs |> Array.head
     /// </code>
@@ -1238,7 +1241,7 @@ module Array =
     ///
     /// <example id="head-2">
     /// <code lang="fsharp">
-    /// [] |> Array.head
+    /// [| |] |> Array.head
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
@@ -1416,7 +1419,7 @@ module Array =
     ///
     /// <example id="iteri-1">
     /// <code lang="fsharp">
-    /// let inputs = ["a"; "b"; "c"]
+    /// let inputs = [| "a"; "b"; "c" |]
     ///
     /// inputs |> Array.iteri (fun i v -> printfn "{i}: {v}")
     /// </code>
@@ -1622,19 +1625,20 @@ module Array =
     /// <returns>The array of transformed elements, and the final accumulated value.</returns>
     ///
     /// <example id="mapfold-1">
-    /// <code lang="fsharp">
+    /// <code lang="fsharp">Accumulate the charges, and double them as well
     /// type Charge =
     ///     | In of int
     ///     | Out of int
     ///
     /// let inputs = [| In 1; Out 2; In 3 |]
     ///
-    /// (0, inputs) ||> Array.mapFold (fun acc charge ->
-    ///     match charge with
-    ///     | In i -> In (i+acc), acc + i
-    ///     | Out o -> Out (o+acc), acc - o)
+    /// let newCharges, balance =
+    ///     (0, inputs) ||> Array.mapFold (fun acc charge ->
+    ///         match charge with
+    ///         | In i -> In (i*2), acc + i
+    ///         | Out o -> Out (o*2), acc - o)
     /// </code>
-    /// Evaluates to <c>([|In 1; Out 3; In 2|], 2)</c>
+    /// Evaluates <c>newCharges</c> to <c>[|In 2; Out 4; In 6|]</c> and <c>balance</c> to <c>2</c>.
     /// </example>
     [<CompiledName("MapFold")>]
     val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> array:'T[] -> 'Result[] * 'State
@@ -1650,7 +1654,7 @@ module Array =
     ///
     /// <returns>The array of transformed elements, and the final accumulated value.</returns>
     ///
-    /// <example id="mapfold-1">
+    /// <example id="mapfold-1">Accumulate the charges from back to front, and double them as well
     /// <code lang="fsharp">
     /// type Charge =
     ///     | In of int
@@ -1658,12 +1662,13 @@ module Array =
     ///
     /// let inputs = [| In 1; Out 2; In 3 |]
     ///
-    /// (inputs, 0) ||> Array.mapFoldBack (fun charge acc ->
-    ///     match charge with
-    ///     | In i -> In (i*2), acc + i
-    ///     | Out o -> Out (o*2), acc - o)
+    /// let newCharges, balance =
+    ///     (inputs, 0) ||> Array.mapFoldBack (fun charge acc ->
+    ///         match charge with
+    ///         | In i -> In (i*2), acc + i
+    ///         | Out o -> Out (o*2), acc - o)
     /// </code>
-    /// Evaluates to <c>([|In 2; Out 4; In 6|], 2)</c>
+    /// Evaluates <c>newCharges</c> to <c>[|In 2; Out 4; In 6|]</c> and <c>balance</c> to <c>2</c>.
     /// </example>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> array:'T[] -> state:'State -> 'Result[] * 'State
@@ -1711,7 +1716,7 @@ module Array =
     ///
     /// <returns>The array of transformed elements.</returns>
     ///
-    /// <example id="map2-1">
+    /// <example id="mapi2-1">
     /// <code lang="fsharp">
     /// let inputs1 = [| "a"; "bad"; "good" |]
     /// let inputs2 = [| 0; 2; 1 |]
@@ -1916,7 +1921,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// 
-    /// <example id="ofseq-1">
+    /// <example id="pairwise-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4 |]
     ///
@@ -2009,7 +2014,7 @@ module Array =
     ///
     /// <returns>The final result of the reductions.</returns>
     /// 
-    /// <example id="reduce-1">
+    /// <example id="reduceback-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 3; 4; 2 |]
     ///
@@ -2065,7 +2070,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// 
-    /// <example id="scan-1">
+    /// <example id="scan-1">Apply a list charges and collect the running balances as each is applied:
     /// <code lang="fsharp">
     /// type Charge =
     ///     | In of int
@@ -2094,7 +2099,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// 
-    /// <example id="scan-1">
+    /// <example id="scan-1">Apply a list charges from back to front, and collect the running balances as each is applied:
     /// <code lang="fsharp">
     /// type Charge =
     ///     | In of int
@@ -2174,7 +2179,7 @@ module Array =
     ///
     /// inputs |> Array.skip 2
     /// </code>
-    /// Evalutes to <c>[| "c"; "d" |]</c>
+    /// Evaluates to <c>[| "c"; "d" |]</c>
     /// </example>
     ///
     /// <example id="skip-2">
@@ -2192,7 +2197,7 @@ module Array =
     ///
     /// inputs |> Array.skip -1
     /// </code>
-    /// Evalutes to <c>[| "a"; "b"; "c"; "d" |]</c>.
+    /// Evaluates to <c>[| "a"; "b"; "c"; "d" |]</c>.
     /// </example>
     [<CompiledName("Skip")>]
     val skip: count:int -> array:'T[] -> 'T[]
@@ -2213,7 +2218,7 @@ module Array =
     ///
     /// inputs |> Array.skipWhile (fun x -> x.Length &lt; 3)
     /// </code>
-    /// Evalutes to <c>[|"bbb"; "cc"; "d"|]</c>
+    /// Evaluates to <c>[|"bbb"; "cc"; "d"|]</c>
     /// </example>
     ///
     [<CompiledName("SkipWhile")>]
@@ -2310,7 +2315,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// 
-    /// <example id="sortwith-1"> The following sorts entries using a comparison function that compares string lengths then index numbers:
+    /// <example id="sortwith-1">Sort an array of pairs using a comparison function that compares string lengths then index numbers:
     /// <code lang="fsharp">
     /// let compareEntries (n1: int, s1: string) (n2: int, s2: string) =
     ///     let c = compare s1.Length s2.Length
@@ -2518,7 +2523,7 @@ module Array =
     ///
     /// inputs |> Array.take 2
     /// </code>
-    /// Evalutes to <c>[| "a"; "b" |]</c>
+    /// Evaluates to <c>[| "a"; "b" |]</c>
     /// </example>
     ///
     /// <example id="take-2">
@@ -2536,7 +2541,7 @@ module Array =
     ///
     /// inputs |> Array.take 0
     /// </code>
-    /// Evalutes to <c>[| |]</c>.
+    /// Evaluates to <c>[| |]</c>.
     /// </example>
     [<CompiledName("Take")>]
     val take: count:int -> array:'T[] -> 'T[]
@@ -2551,13 +2556,13 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
-    /// <example id="skipwhile-1">
+    /// <example id="takewhile-1">
     /// <code lang="fsharp">
     /// let inputs = [| "a"; "bb"; "ccc"; "d" |]
     ///
     /// inputs |> Array.takeWhile (fun x -> x.Length &lt; 3)
     /// </code>
-    /// Evalutes to <c>[| "a"; "bb" |]</c>
+    /// Evaluates to <c>[| "a"; "bb" |]</c>
     /// </example>
     ///
     [<CompiledName("TakeWhile")>]
@@ -2578,7 +2583,7 @@ module Array =
     ///
     /// inputs |> Array.tail
     /// </code>
-    /// Evalutes to <c>[| "bb"; "ccc" |]</c>
+    /// Evaluates to <c>[| "bb"; "ccc" |]</c>
     /// </example>
     ///
     [<CompiledName("Tail")>]
@@ -2659,7 +2664,7 @@ module Array =
     ///
     /// inputs |> Array.truncate 2
     /// </code>
-    /// Evalutes to <c>[| "a"; "b" |]</c>
+    /// Evaluates to <c>[| "a"; "b" |]</c>
     /// </example>
     ///
     /// <example id="truncate-2">
@@ -2668,7 +2673,7 @@ module Array =
     ///
     /// inputs |> Array.truncate 6
     /// </code>
-    /// Evalutes to <c>[| "a"; "b"; "c"; "d" |]</c>
+    /// Evaluates to <c>[| "a"; "b"; "c"; "d" |]</c>
     /// </example>
     ///
     /// <example id="truncate-3">
@@ -2677,7 +2682,7 @@ module Array =
     ///
     /// inputs |> Array.truncate 0
     /// </code>
-    /// Evalutes to <c>[| |]</c>.
+    /// Evaluates to <c>[| |]</c>.
     /// </example>
     [<CompiledName("Truncate")>]
     val truncate: count:int -> array:'T[] -> 'T[]
@@ -2833,6 +2838,7 @@ module Array =
     val tryFindIndexBack : predicate:('T -> bool) -> array:'T[] -> int option
 
     /// <summary>Returns an array that contains the elements generated by the given computation.
+    /// The generator is repeatedly called to build the list until it returns `None`.
     /// The given initial <c>state</c> argument is passed to the element generator.</summary>
     ///
     /// <param name="generator">A function that takes in the current state and returns an option tuple of the next
@@ -2843,11 +2849,9 @@ module Array =
     ///
     /// <example id="unfold-1">
     /// <code lang="fsharp">
-    /// let inputs = [| 1; 3; 5; 7 |]
-    ///
     /// 1 |> Array.unfold (fun state -> if state > 100 then None else Some (state, state * 2))
     /// </code>
-    /// Evaluates to <c>[|1; 2; 4; 8; 16; 32; 64|]</c>
+    /// Evaluates to <c>[| 1; 2; 4; 8; 16; 32; 64 |]</c>
     /// </example>
     [<CompiledName("Unfold")>]
     val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T[]
@@ -2924,7 +2928,7 @@ module Array =
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when windowSize is not positive.</exception>
     /// 
-    /// <example id="windowed-1">Select only the even numbers:
+    /// <example id="windowed-1">
     /// <code lang="fsharp">
     /// let inputs = [| 1; 2; 3; 4; 5 |]
     ///
@@ -2972,9 +2976,9 @@ module Array =
     ///
     /// <example id="zip3-1">
     /// <code lang="fsharp">
-    /// let numbers = [|1; 2|]
-    /// let names = [|"one"; "two"|]
-    /// let roman = [|"I"; "II"|]
+    /// let numbers = [| 1; 2 |]
+    /// let names = [| "one"; "two" |]
+    /// let roman = [| "I"; "II" |]
     ///
     /// Array.zip3 numbers names roman
     /// </code>
@@ -2992,7 +2996,7 @@ module Array =
     /// 
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
     /// 
-    /// <example id="removeAt-example-1">
+    /// <example id="removeAt-1">
     /// <code>
     /// let inputs = [| 0; 1; 2 |]
     ///
@@ -3013,7 +3017,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
     ///
-    /// <example id="removeManyAt-example-1">
+    /// <example id="removeManyAt-1">
     /// <code>
     /// let inputs = [| 0; 1; 2; 3 |]
     ///
@@ -3034,7 +3038,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
     ///
-    /// <example id="updateAt-example-1">
+    /// <example id="updateAt-1">
     /// <code>
     /// let inputs = [| 0; 1; 2 |]
     ///
@@ -3055,7 +3059,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
-    /// <example id="insertAt-example-1">
+    /// <example id="insertAt-1">
     /// <code>
     /// let inputs = [| 0; 1; 2 |]
     ///
@@ -3076,7 +3080,7 @@ module Array =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
-    /// <example id="insertManyAt-example-1">
+    /// <example id="insertManyAt-1">
     /// <code>
     /// let inputs = [| 0; 1; 2 |]
     ///
@@ -3149,7 +3153,7 @@ module Array =
         ///
         /// <example id="collect-2">
         /// <code lang="fsharp">
-        /// let input = [[1; 2]; [3; 4]]
+        /// let input = [| [| 1; 2 |]; [| 3; 4 |] |]
         ///
         /// input |> Array.Parallel.collect id
         /// </code>
@@ -3246,7 +3250,7 @@ module Array =
         ///
         /// <example id="iteri-1">
         /// <code lang="fsharp">
-        /// let inputs = ["a"; "b"; "c"]
+        /// let inputs = [| "a"; "b"; "c" |]
         ///
         /// inputs |> Array.Parallel.iteri (fun i v -> printfn "{i}: {v}")
         /// </code>
