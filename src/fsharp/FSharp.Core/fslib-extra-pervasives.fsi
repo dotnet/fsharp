@@ -9,11 +9,11 @@ namespace Microsoft.FSharp.Core
 [<AutoOpen>]
 module ExtraTopLevelOperators = 
 
-    open System
+    open System.IO
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Text
+    open Microsoft.FSharp.Quotations
 
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
     ///
@@ -21,9 +21,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.printf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormat``1'/>) for examples.</example>
     [<CompiledName("PrintFormat")>]
-    val printf: format:Printf.TextWriterFormat<'T> -> 'T
+    val printf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stdout</c> using the given format, and add a newline.</summary>
     ///
@@ -31,9 +31,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.printfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLine``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLine")>]
-    val printfn: format:Printf.TextWriterFormat<'T> -> 'T
+    val printfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format.</summary>
     ///
@@ -41,9 +41,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.eprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToError")>]
-    val eprintf: format:Printf.TextWriterFormat<'T> -> 'T
+    val eprintf: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to <c>stderr</c> using the given format, and add a newline.</summary>
     ///
@@ -51,9 +51,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.eprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToError``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToError")>]
-    val eprintfn: format:Printf.TextWriterFormat<'T> -> 'T
+    val eprintfn: format: Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a string using the given format.</summary>
     ///
@@ -61,9 +61,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.sprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThen``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToString")>]
-    val sprintf: format:Printf.StringFormat<'T> -> 'T
+    val sprintf: format: Printf.StringFormat<'T> -> 'T
 
     /// <summary>Print to a string buffer and raise an exception with the given
     /// result. Helper printers must return strings.</summary>
@@ -72,9 +72,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.failwithf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToStringThenFail``2'/>) for examples.</example>
     [<CompiledName("PrintFormatToStringThenFail")>]
-    val failwithf: format:Printf.StringFormat<'T,'Result> -> 'T
+    val failwithf: format: Printf.StringFormat<'T,'Result> -> 'T
 
     /// <summary>Print to a file using the given format.</summary>
     ///
@@ -83,9 +83,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.fprintf</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatToTextWriter")>]
-    val fprintf : textWriter:System.IO.TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
+    val fprintf: textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a file using the given format, and add a newline.</summary>
     ///
@@ -94,9 +94,9 @@ module ExtraTopLevelOperators =
     ///
     /// <returns>The formatted result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>See <c>Printf.fprintfn</c> (link: <see cref='M:Microsoft.FSharp.Core.PrintfModule.PrintFormatLineToTextWriter``1'/>) for examples.</example>
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    val fprintfn : textWriter:System.IO.TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
+    val fprintfn : textWriter: TextWriter -> format:Printf.TextWriterFormat<'T> -> 'T
 
     /// <summary>Builds a set from a sequence of objects. The objects are indexed using generic comparison.</summary>
     ///
@@ -106,13 +106,13 @@ module ExtraTopLevelOperators =
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("CreateSet")>]
-    val set : elements:seq<'T> -> Set<'T>
+    val set: elements: seq<'T> -> Set<'T>
 
     /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("DefaultAsyncBuilder")>]
-    val async : Microsoft.FSharp.Control.AsyncBuilder  
+    val async: Microsoft.FSharp.Control.AsyncBuilder  
 
     /// <summary>Converts the argument to 32-bit float.</summary>
     ///
@@ -121,7 +121,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("ToSingle")>]
-    val inline single     : value:^T -> single     when ^T : (static member op_Explicit : ^T -> single)     and default ^T : int
+    val inline single: value: ^T -> single when ^T : (static member op_Explicit : ^T -> single) and default ^T : int
 
     /// <summary>Converts the argument to 64-bit float.</summary>
     ///
@@ -130,7 +130,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("ToDouble")>]
-    val inline double     : value:^T -> double      when ^T : (static member op_Explicit : ^T -> double)     and default ^T : int
+    val inline double: value: ^T -> double when ^T : (static member op_Explicit : ^T -> double) and default ^T : int
 
     /// <summary>Converts the argument to byte.</summary>
     /// <remarks>This is a direct conversion for all 
@@ -138,7 +138,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("ToByte")>]
-    val inline uint8       : value:^T -> uint8       when ^T : (static member op_Explicit : ^T -> uint8)       and default ^T : int        
+    val inline uint8: value: ^T -> uint8 when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
     
     /// <summary>Converts the argument to signed byte.</summary>
     /// <remarks>This is a direct conversion for all 
@@ -147,7 +147,7 @@ module ExtraTopLevelOperators =
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("ToSByte")>]
-    val inline int8      : value:^T -> int8      when ^T : (static member op_Explicit : ^T -> int8)      and default ^T : int
+    val inline int8: value: ^T -> int8 when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
 
     module Checked = 
 
@@ -157,7 +157,7 @@ module ExtraTopLevelOperators =
         /// 
         /// <example-tbd></example-tbd>
         [<CompiledName("ToByte")>]
-        val inline uint8       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> uint8)       and default ^T : int        
+        val inline uint8: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> uint8) and default ^T : int        
     
         /// <summary>Converts the argument to signed byte.</summary>
         /// <remarks>This is a direct, checked conversion for all 
@@ -166,56 +166,53 @@ module ExtraTopLevelOperators =
         /// 
         /// <example-tbd></example-tbd>
         [<CompiledName("ToSByte")>]
-        val inline int8      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> int8)      and default ^T : int
-    
+        val inline int8: value: ^T -> sbyte when ^T : (static member op_Explicit : ^T -> int8) and default ^T : int
 
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("CreateDictionary")>]
-    val dict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IDictionary<'Key,'Value> when 'Key : equality
+    val dict: keyValuePairs: seq<'Key * 'Value> -> System.Collections.Generic.IDictionary<'Key,'Value> when 'Key : equality
 
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("CreateReadOnlyDictionary")>]
-    val readOnlyDict : keyValuePairs:seq<'Key * 'Value> -> System.Collections.Generic.IReadOnlyDictionary<'Key,'Value> when 'Key : equality
+    val readOnlyDict: keyValuePairs: seq<'Key * 'Value> -> System.Collections.Generic.IReadOnlyDictionary<'Key,'Value> when 'Key : equality
 
     /// <summary>Builds a 2D array from a sequence of sequences of elements.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("CreateArray2D")>]
-    val array2D : rows:seq<#seq<'T>> -> 'T[,]
+    val array2D: rows: seq<#seq<'T>> -> 'T[,]
 
     /// <summary>Special prefix operator for splicing typed expressions into quotation holes.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("SpliceExpression")>]
-    val (~%) : expression:Microsoft.FSharp.Quotations.Expr<'T> -> 'T
+    val (~%): expression: Expr<'T> -> 'T
 
     /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("SpliceUntypedExpression")>]
-    val (~%%) : expression:Microsoft.FSharp.Quotations.Expr -> 'T
+    val (~%%): expression: Expr -> 'T
 
     /// <summary>An active pattern to force the execution of values of type <c>Lazy&lt;_&gt;</c>.</summary>
     /// 
     /// <example-tbd></example-tbd>
     [<CompiledName("LazyPattern")>]
-    val (|Lazy|) : input:Lazy<'T> -> 'T
+    val (|Lazy|): input: Lazy<'T> -> 'T
 
     /// <summary>Builds a query using query syntax and operators.</summary>
     /// 
     /// <example-tbd></example-tbd>
-    val query : Microsoft.FSharp.Linq.QueryBuilder
+    val query: Microsoft.FSharp.Linq.QueryBuilder
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
     open System
     open System.Reflection
-    open System.Linq.Expressions
-    open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Quotations
