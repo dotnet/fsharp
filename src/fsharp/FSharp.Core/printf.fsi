@@ -315,7 +315,6 @@ module Printf =
     /// </code>
     /// After evaluation the text <c>"Write five = 5"</c> is written to <c>stdout</c>.
     /// </example>
-    [<CompiledName("PrintFormatToError")>]
     [<CompiledName("PrintFormat")>]
     val printf: format:TextWriterFormat<'T> -> 'T
 
