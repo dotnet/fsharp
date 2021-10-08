@@ -268,7 +268,7 @@ module Seq =
     /// <code lang="fsharp">
     /// type Foo = { Bar: int seq }
     ///
-    /// let input = [[{Bar = [1; 2]}; {Bar = [3; 4]}]
+    /// let input = [{Bar = [1; 2]}; {Bar = [3; 4]}]
     ///
     /// input |> Seq.collect (fun foo -> foo.Bar)
     /// </code>

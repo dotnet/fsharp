@@ -220,7 +220,70 @@ module List =
     /// lists, 1 is returned if the first list is longer, 0 is returned if they are equal in 
     /// length, and -1 is returned when the second list is longer.</returns>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="compare-with-1">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 10]
+    /// let input2 = [1; 10]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>0</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-2">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 5]
+    /// let input2 = [1; 8]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-3">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 11]
+    /// let input2 = [1; 13]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-4">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 2]
+    /// let input2 = [1]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-5">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1]
+    /// let input2 = [1; 2]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
