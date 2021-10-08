@@ -429,4 +429,3 @@ namespace Microsoft.FSharp.Core.CompilerServices
         ///
         /// <returns>The provided method definition corresponding to the given static parameter values</returns>
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
-
