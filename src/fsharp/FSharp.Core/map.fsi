@@ -23,7 +23,13 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-add-example-1">
+    /// <code lang="fsharp">
+    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    ///     existing.Add (3, "c") // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
+    ///     existing.Add (2, "aa") // evaluates to map [(1, "a"); (2, "aa")]
+    /// </code>
+    /// </example>
     member Add: key:'Key * value:'Value -> Map<'Key,'Value>
 
     /// <summary>Returns a new map with the value stored under key changed according to f.</summary>
@@ -33,12 +39,28 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-change-example-1">
+    /// <code lang="fsharp">
+    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    ///     let f = function
+    ///         | Some s -> Some (s + s)
+    ///         | None -> None
+    ///     existing.Change (1, f) // evaluates to map [(1, "aa"); (2, "b")]
+    /// </code>
+    /// </example>
     member Change: key:'Key * f:('Value option -> 'Value option) -> Map<'Key,'Value>
 
     /// <summary>Returns true if there are no bindings in the map.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-isempty-example-1">
+    /// <code lang="fsharp">
+    ///     let emptyMap : Map<int, string> = Map.empty
+    ///     emptyMap.IsEmpty // evaluates to true
+    /// 
+    ///     let notEmptyMap = Map [ (1, "a"); (2, "b") ]
+    ///     notEmptyMap.IsEmpty // evaluates to false
+    /// </code>
+    /// </example>
     member IsEmpty: bool
 
     /// <summary>Builds a map that contains the bindings of the given IEnumerable.</summary>
@@ -47,7 +69,11 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="new-example-1">
+    /// <code lang="fsharp">
+    ///     Map [ (1, "a"); (2, "b") ] // evaluates to map [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     new : elements:seq<'Key * 'Value> -> Map<'Key,'Value>
 
     /// <summary>Tests if an element is in the domain of the map.</summary>
@@ -56,12 +82,23 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>True if the map contains the given key.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-containskey-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    ///     sample.ContainsKey 1 // evaluates to true
+    ///     sample.ContainsKey 3 // evaluates to false
+    /// </code>
+    /// </example>
     member ContainsKey: key:'Key -> bool
 
     /// <summary>The number of bindings in the map.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-containskey-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    ///     sample.Count // evaluates to 2
+    /// </code>
+    /// </example>
     member Count: int
 
     /// <summary>Lookup an element in the map. Raise <c>KeyNotFoundException</c> if no binding
@@ -72,7 +109,13 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The value mapped to the key.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-item-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    ///     sample.[1] // evaluates to "a"
+    ///     sample.[3] // throws KeyNotFoundException
+    /// </code>
+    /// </example>
     member Item : key:'Key -> 'Value with get
 
     /// <summary>Removes an element from the domain of the map. No exception is raised if the element is not present.</summary>
@@ -81,7 +124,13 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-remove-example-1">
+    /// <code lang="fsharp">
+    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    ///     existing.Remove 1 // evaluates to map [(2, "b")]
+    ///     existing.Remove 3 // evaluates to map [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     member Remove: key:'Key -> Map<'Key,'Value>
 
     /// <summary>Lookup an element in the map, returning a <c>Some</c> value if the element is in the domain 
@@ -91,7 +140,13 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The mapped value, or None if the key is not in the map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-tryfind-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    ///     sample.TryFind 1 // evaluates to Some "a"
+    ///     sample.TryFind 3 // evaluates to None
+    /// </code>
+    /// </example>
     member TryFind: key:'Key -> 'Value option
 
     /// <summary>Lookup an element in the map, assigning to <c>value</c> if the element is in the domain 
@@ -102,7 +157,20 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="member-trygetvalue-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     sample.TryGetValue 1 // evaluates to (true, "a")
+    ///     sample.TryGetValue 3 // evaluates to (false, null)
+    /// 
+    ///     let mutable x = ""
+    ///     sample.TryGetValue (1, &x) // evaluates to true, x set to "a"
+    /// 
+    ///     let mutable y = ""
+    ///     sample.TryGetValue (3, &y) // evaluates to false, y unchanged
+    /// </code>
+    /// </example>
     member TryGetValue: key: 'Key * [<System.Runtime.InteropServices.Out>] value: byref<'Value> -> bool
     
     /// <summary>The keys in the map.
