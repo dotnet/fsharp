@@ -23,7 +23,7 @@ module List =
     ///
     /// <returns>The resulting list of pairs.</returns>
     /// 
-    /// <example id="allPairs-example-1">
+    /// <example id="allPairs-1">
     /// <code lang="fsharp">
     /// let people = ["Kirk"; "Spock"; "McCoy"]
     /// let numbers = [1;2]
@@ -45,7 +45,7 @@ module List =
     ///
     /// <returns>The resulting list.</returns>
     /// 
-    /// <example id="append-example-1">
+    /// <example id="append-1">
     /// <code lang="fsharp">
     /// List.append [1..3] [4..7]     //  evaluates [1; 2; 3; 4; 5; 6; 7]
     /// 
@@ -64,13 +64,13 @@ module List =
     ///
     /// <returns>The resulting average.</returns>
     /// 
-    /// <example id="average-example-1">
+    /// <example id="average-1">
     /// <code lang="fsharp">
     /// [1.0 .. 9.0] |> List.average  // evaluates 5.0
     /// </code>
     /// </example>
     /// 
-    /// <example id="average-example-2">
+    /// <example id="average-2">
     /// <code lang="fsharp">
     /// [1 .. 9] |> List.average
     /// </code>
@@ -93,7 +93,7 @@ module List =
     ///
     /// <returns>The resulting average.</returns>
     /// 
-    /// <example id="averageBy-example-1"> Average the age of persons by extracting the age from records
+    /// <example id="averageBy-1"> Average the age of persons by extracting the age from records
     /// <code lang="fsharp">
     /// type People = {
     ///    name: string
@@ -107,7 +107,7 @@ module List =
     /// </code>
     /// </example>
     /// 
-    /// <example id="averageBy-example-2"> Average a list of integer numbers by converting to float
+    /// <example id="averageBy-2"> Average a list of integer numbers by converting to float
     /// <code lang="fsharp">
     /// [1 .. 9] |> List.averageBy float  // evaluates 5.0
     /// </code>
@@ -127,7 +127,7 @@ module List =
     ///
     /// <returns>The list comprising the values selected from the chooser function.</returns>
     /// 
-    /// <example id="choose-example-1">
+    /// <example id="choose-1">
     /// <code lang="fsharp">
     /// type Happiness = AlwaysHappy | MostOfTheTimeGrumpy
     /// type People = {
@@ -146,7 +146,7 @@ module List =
     /// The sample evaluates to <c>[ "SpongeBob"; "Patrick" ]</c>
     /// </example>
     /// 
-    /// <example id="choose-example-2">
+    /// <example id="choose-2">
     /// <code lang="fsharp">
     /// // Using the identity function "id" (is defined like fun x -> x)
     /// let input1 = [ Some 1; None; Some 3; None ]
@@ -171,7 +171,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
     /// 
-    /// <example id="chunkBySize-example-1">
+    /// <example id="chunkBySize-1">
     /// <code lang="fsharp">
     /// [1 .. 10 ] |> List.chunkBySize 3  // evaluates     
     /// </code>
@@ -198,7 +198,7 @@ module List =
     ///
     /// <returns>The concatenation of the transformed sublists.</returns>
     /// 
-    /// <example id="collect-example-1"> For each positive number in the array we are generating all the previous positive numbers
+    /// <example id="collect-1"> For each positive number in the array we are generating all the previous positive numbers
     /// <code lang="fsharp">
     /// [1..4] |> List.collect (fun x -> [1..x])
     /// </code>
@@ -220,7 +220,70 @@ module List =
     /// lists, 1 is returned if the first list is longer, 0 is returned if they are equal in 
     /// length, and -1 is returned when the second list is longer.</returns>
     ///
-    /// <example-tbd></example-tbd>
+    /// <example id="compare-with-1">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 10]
+    /// let input2 = [1; 10]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>0</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-2">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 5]
+    /// let input2 = [1; 8]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-3">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 11]
+    /// let input2 = [1; 13]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-4">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1; 2]
+    /// let input2 = [1]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
+    ///
+    /// <example id="compare-with-5">
+    /// <code lang="fsharp">
+    /// let closerToNextDozen a b =
+    ///   (a % 12).CompareTo(b % 12)
+    ///
+    /// let input1 = [1]
+    /// let input2 = [1; 2]
+    ///
+    /// (input1, input2) ||> List.compareWith closerToNextDozen
+    /// </code>
+    /// Evaluates to <c>-1</c>
+    /// </example>
     [<CompiledName("CompareWith")>]
     val inline compareWith: comparer:('T -> 'T -> int) -> list1:'T list -> list2:'T list -> int
 
@@ -230,7 +293,7 @@ module List =
     ///
     /// <returns>The resulting concatenated list.</returns>
     /// 
-    /// <example id="concat-example-1">
+    /// <example id="concat-1">
     /// <code lang="fsharp">
     /// let input = [ [1;2]
     ///               [3;4;5]
@@ -248,21 +311,21 @@ module List =
     ///
     /// <returns>True if the input list contains the specified element; false otherwise.</returns>
     /// 
-    /// <example id="contains-example-1">
+    /// <example id="contains-1">
     /// <code lang="fsharp">
     /// [1..9] |> List.contains 0
     /// </code>
     /// Evaluates to <c>false</c>.
     /// </example>
     /// 
-    /// <example id="contains-example-2">
+    /// <example id="contains-2">
     /// <code lang="fsharp">
     /// [1..9] |> List.contains 3
     /// </code>
     /// Evaluates to <c>true</c>.
     /// </example>
     /// 
-    /// <example id="contains-example-3">
+    /// <example id="contains-3">
     /// <code lang="fsharp">
     /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
     ///
@@ -271,7 +334,7 @@ module List =
     /// Evaluates to <c>true</c>.
     /// </example>
     /// 
-    /// <example id="contains-example-4">
+    /// <example id="contains-4">
     /// <code lang="fsharp">
     /// let input = [1, "SpongeBob"; 2, "Patrick"; 3, "Squidward"; 4, "Mr. Krabs"]
     ///
@@ -290,7 +353,7 @@ module List =
     ///
     /// <returns>The result list.</returns>
     /// 
-    /// <example id="distinct-example-1">
+    /// <example id="distinct-1">
     /// <code lang="fsharp">
     /// let input = [6;1;2;3;1;4;5;5]
     /// input |> List.distinct
@@ -309,7 +372,7 @@ module List =
     ///
     /// <returns>The result list.</returns>
     /// 
-    /// <example id="distinctBy-example-1">
+    /// <example id="distinctBy-1">
     /// <code lang="fsharp">
     /// let isEven x = 0 = x % 2
     /// let input = [6;1;2;3;1;4;5;5]
@@ -328,7 +391,7 @@ module List =
     ///
     /// <returns>The result list.</returns>
     /// 
-    /// <example id="countBy-example-1"> Counting the number of occurrences of chars
+    /// <example id="countBy-1"> Counting the number of occurrences of chars
     /// <code lang="fsharp">
     /// let input = ['H'; 'a'; 'p'; 'p'; 'y']
     ///
@@ -348,14 +411,14 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
     /// 
-    /// <example id="splitInto-example-1">
+    /// <example id="splitInto-1">
     /// <code lang="fsharp">
     /// [1..10] |> List.splitInto 2
     /// </code>
     /// Evaluates to <c>[[1; 2; 3; 4; 5]; [6; 7; 8; 9; 10]]</c>.
     /// </example>
     /// 
-    /// <example id="splitInto-example-2">
+    /// <example id="splitInto-2">
     /// <code lang="fsharp">
     /// [1..10] |> List.splitInto 4
     /// </code>
@@ -380,7 +443,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when itemsToExclude is null.</exception>
     /// 
-    /// <example id="except-example-1">
+    /// <example id="except-1">
     /// <code lang="fsharp">
     /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
     ///
@@ -389,13 +452,13 @@ module List =
     /// Evaluates to <c>[(1, "Kirk"); (2, "Spock")]</c>.
     /// </example>
     /// 
-    /// <example id="except-example-2">
+    /// <example id="except-2">
     /// <code lang="fsharp">
     /// [0..10] |> List.except [1..5]  // evaluates [0; 6; 7; 8; 9; 10]
     /// </code>
     /// </example>
     /// 
-    /// <example id="except-example-3">
+    /// <example id="except-3">
     /// <code lang="fsharp">
     /// [1..5] |> List.except [0..10]  // evaluates []
     /// </code>
@@ -411,13 +474,13 @@ module List =
     ///        
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
     /// 
-    /// <example id="exactlyOne-example-1">
+    /// <example id="exactlyOne-1">
     /// <code lang="fsharp">
     /// ["the chosen one"] |> List.exactlyOne // evaluates "the chosen one"
     /// </code>
     /// </example>
     /// 
-    /// <example id="exactlyOne-example-2">
+    /// <example id="exactlyOne-2">
     /// <code lang="fsharp">
     /// let input : string list = []
     /// input |> List.exactlyOne
@@ -425,7 +488,7 @@ module List =
     /// Will throw the exception: <c>System.ArgumentException: The input sequence was empty</c>
     /// </example>
     /// 
-    /// <example id="exactlyOne-example-3">
+    /// <example id="exactlyOne-3">
     /// <code lang="fsharp">
     /// [1..5] |> List.exactlyOne
     /// </code>
@@ -440,7 +503,7 @@ module List =
     ///
     /// <returns>The only element of the list or None.</returns>
     /// 
-    /// <example id="tryExactlyOne-example-1">
+    /// <example id="tryExactlyOne-1">
     /// <code lang="fsharp">
     /// [1] |> List.tryExactlyOne               // evaluates Some 1
     /// [1;2] |> List.tryExactlyOne             // evaluates None
@@ -460,7 +523,7 @@ module List =
     ///
     /// <returns>True if any element satisfies the predicate.</returns>
     /// 
-    /// <example id="exists-example-1">
+    /// <example id="exists-1">
     /// <code lang="fsharp">
     /// let input = [1, "Kirk"; 2, "Spock"; 3, "Kenobi"] 
     /// 
@@ -488,7 +551,7 @@ module List =
     ///
     /// <returns>True if any pair of elements satisfy the predicate.</returns>
     /// 
-    /// <example id="exists2-example-1"> Check if the sum of pairs (from 2 different lists) have at least one even number
+    /// <example id="exists2-1"> Check if the sum of pairs (from 2 different lists) have at least one even number
     /// <code lang="fsharp">
     /// let anEvenSum a b  = 0 = (a + b) % 2
     /// 
@@ -513,7 +576,7 @@ module List =
     ///
     /// <returns>The first element that satisfies the predicate.</returns>
     /// 
-    /// <example id="find-example-1">
+    /// <example id="find-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
     /// let isGreaterThan x y = y > x
@@ -537,7 +600,7 @@ module List =
     ///
     /// <returns>The last element that satisfies the predicate.</returns>
     /// 
-    /// <example id="findBack-example-1">
+    /// <example id="findBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
     /// let isGreaterThan x y = y > x
@@ -562,7 +625,7 @@ module List =
     ///
     /// <returns>The index of the first element that satisfies the predicate.</returns>
     /// 
-    /// <example id="findIndex-example-1">
+    /// <example id="findIndex-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
     /// let isGreaterThan x y = y > x
@@ -587,7 +650,7 @@ module List =
     ///
     /// <returns>The index of the last element that satisfies the predicate.</returns>
     /// 
-    /// <example id="findIndexBack-example-1">
+    /// <example id="findIndexBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
     /// let isGreaterThan x y = y > x
@@ -608,7 +671,7 @@ module List =
     ///
     /// <returns>A list containing only the elements that satisfy the predicate.</returns>
     /// 
-    /// <example id="filter-example-1">
+    /// <example id="filter-1">
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
     /// let isComingFromStarTrek (x,_) = isEven x
@@ -633,13 +696,13 @@ module List =
     ///
     /// <returns>The final state value.</returns>
     /// 
-    /// <example id="fold-example-1"> Making the sum of squares for the first 5 natural numbers
+    /// <example id="fold-1"> Making the sum of squares for the first 5 natural numbers
     /// <code lang="fsharp">
     /// (0, [1..5]) ||> List.fold (fun s v -> s + v * v)  // evaluates 55
     /// </code>
     /// </example>
     /// 
-    /// <example id="fold-example-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
+    /// <example id="fold-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
     /// type BagItem = { fruit: Fruit; quantity: int }
@@ -674,8 +737,22 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>The final state value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="fold2-1">
+    /// <code lang="fsharp">Count the numer of times the coins match:
+    /// type CoinToss = Head | Tails
+    ///
+    /// let data1 = [Tails; Head; Tails]
+    /// let data2 = [Tails; Head; Head]
+    ///
+    /// (0, data1, data2) |||> List.fold2 (fun acc a b ->
+    ///     match (a, b) with
+    ///     | Head, Head -> acc + 1
+    ///     | Tails, Tails -> acc + 1
+    ///     | _ -> acc - 1)
+    /// </code>
+    /// Evaluates to <c>1</c>
+    /// </example>
     [<CompiledName("Fold2")>]
     val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
 
@@ -689,13 +766,13 @@ module List =
     ///
     /// <returns>The state object after the folding function is applied to each element of the list.</returns>
     /// 
-    /// <example id="foldBack-example-1"> Making the sum of squares for the first 5 natural numbers
+    /// <example id="foldBack-1"> Making the sum of squares for the first 5 natural numbers
     /// <code lang="fsharp">
     /// ([1..5], 0) ||> List.foldBack (fun v s -> s + v * v)  // evaluates 55
     /// </code>
     /// </example>
     /// 
-    /// <example id="foldBack-example-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
+    /// <example id="foldBack-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
     /// type BagItem = { fruit: Fruit; quantity: int }
@@ -730,8 +807,37 @@ module List =
     /// <param name="state">The initial state.</param>
     ///
     /// <returns>The final state value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="foldback2-1">
+    /// <code lang="fsharp">Count the positives, negatives and accumulate some text from back to front:
+    /// type Count =
+    ///   { Positive: int
+    ///     Negative: int
+    ///     Text: string }
+    ///
+    /// let inputs1 = [ -1; -2; -3 ]
+    /// let inputs2 = [ 3; 2; 1 ]
+    /// let initialState = {Positive = 0; Negative = 0; Text = ""}
+    ///
+    /// (inputs1, inputs2, initialState) |||> List.foldBack2 (fun a b acc  ->
+    ///     let text = acc.Text + "(" + string a + "," + string b + ") "
+    ///     if a + b >= 0 then
+    ///         { acc with
+    ///             Positive = acc.Positive + 1
+    ///             Text = text }
+    ///     else
+    ///         { acc with
+    ///             Negative = acc.Negative + 1
+    ///             Text = text }
+    /// )
+    /// </code>
+    /// Evaluates to
+    /// <code>
+    /// { Positive = 2
+    ///   Negative = 1
+    ///   Text = "(-3,1) (-2,2) (-1,3) " }
+    /// </code>
+    /// </example>
     [<CompiledName("FoldBack2")>]
     val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> list1:'T1 list -> list2:'T2 list -> state:'State -> 'State
 
@@ -744,8 +850,16 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>True if all of the elements satisfy the predicate.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="forall-1">
+    /// <code lang="fsharp">
+    /// let isEven a = a % 2 = 0
+    ///
+    /// [2; 42] |> List.forall isEven // evaluates to true
+    ///
+    /// [1; 2] |> List.forall isEven // evaluates to false
+    /// </code>
+    /// </example>
     [<CompiledName("ForAll")>]
     val forall: predicate:('T -> bool) -> list:'T list -> bool
 
@@ -763,8 +877,36 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the input lists differ in length.</exception>
     ///
     /// <returns>True if all of the pairs of elements satisfy the predicate.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="forall2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [1; 2; 3]
+    /// let inputs2 = [1; 2; 3]
+    ///
+    /// (inputs1, inputs2) ||> List.forall2 (=)
+    /// </code>
+    /// Evaluates to <c>true</c>.
+    /// </example>
+    ///
+    /// <example id="forall2-2">
+    /// <code lang="fsharp">
+    /// let items1 = [2017; 1; 1]
+    /// let items2 = [2019; 19; 8]
+    ///
+    /// (items1, items2) ||> List.forall2 (=)
+    /// </code>
+    /// Evaluates to <c>false</c>.
+    /// </example>
+    ///
+    /// <example id="forall2-3">
+    /// <code lang="fsharp">
+    /// let items1 = [1; 2; 3]
+    /// let items2 = [1; 2]
+    ///
+    /// (items1, items2) ||> List.forall2 (=)
+    /// </code>
+    /// Throws <c>ArgumentException</c>.
+    /// </example>
     [<CompiledName("ForAll2")>]
     val forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
@@ -776,10 +918,17 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="group-by-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.groupBy (fun n -> n % 2)
+    /// </code>
+    /// Evaluates to <c>[(1, [1; 3; 5]); (0, [2; 4])]</c>
+    /// </example>
     [<CompiledName("GroupBy")>]
-    val groupBy : projection:('T -> 'Key) -> list:'T list -> ('Key * 'T list) list when 'Key : equality
+    val groupBy: projection:('T -> 'Key) -> list:'T list -> ('Key * 'T list) list when 'Key : equality
 
     /// <summary>Returns the first element of the list.</summary>
     ///
@@ -788,6 +937,22 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The first element of the list.</returns>
+    ///
+    /// <example id="head-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["banana"; "pear"]
+    ///
+    /// inputs |> List.head
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="head-2">
+    /// <code lang="fsharp">
+    /// [] |> List.head
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Head")>]
     val head: list:'T list -> 'T
 
@@ -797,8 +962,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The list of indexed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="indexed-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> List.indexed
+    /// </code>
+    /// Evaluates to <c>[(0, "a"); (1, "b"); (2, "c")]</c>
+    /// </example>
     [<CompiledName("Indexed")>]
     val indexed: list:'T list -> (int * 'T) list
 
@@ -807,9 +979,23 @@ module List =
     /// <param name="length">The length of the list to generate.</param>
     /// <param name="initializer">The function to generate an element from an index.</param>
     ///
+    /// <exception cref="T:System.ArgumentException">Thrown when the input length is negative.</exception>
+    ///
     /// <returns>The list of generated elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="init-1">
+    /// <code lang="fsharp">
+    /// List.init 4 (fun v -> v + 5)
+    /// </code>
+    /// Evaluates to <c>[5; 6; 7; 8]</c>
+    /// </example>
+    ///
+    /// <example id="init-2">
+    /// <code lang="fsharp">
+    /// List.init -5 (fun v -> v + 5)
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Initialize")>]
     val init: length:int -> initializer:(int -> 'T) -> 'T list
 
@@ -818,8 +1004,20 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>True if the list is empty.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="empty-1">
+    /// <code lang="fsharp">
+    /// [ ] |> List.isEmpty
+    /// </code>
+    /// Evaluates to <c>true</c>
+    /// </example>
+    ///
+    /// <example id="empty-2">
+    /// <code lang="fsharp">
+    /// [ "pear"; "banana" ] |> List.isEmpty
+    /// </code>
+    /// Evaluates to <c>false</c>
+    /// </example>
     [<CompiledName("IsEmpty")>]
     val isEmpty: list:'T list -> bool
 
@@ -831,8 +1029,24 @@ module List =
     /// <returns>The value at the given index.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the index is negative or the input list does not contain enough elements.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="item-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "b"; "c" ]
+    ///
+    /// inputs |> List.item 1
+    /// </code>
+    /// Evaluates to <c>"b"</c>
+    /// </example>
+    ///
+    /// <example id="item-2">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "b"; "c" ]
+    ///
+    /// inputs |> List.item 4
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Item")>]
     val item: index:int -> list:'T list -> 'T
 
@@ -840,8 +1054,21 @@ module List =
     ///
     /// <param name="action">The function to apply to elements from the input list.</param>
     /// <param name="list">The input list.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iter-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "b"; "c" ]
+    ///
+    /// inputs |> List.iter (printfn "%s")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a
+    /// b
+    /// c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate")>]
     val inline iter: action:('T -> unit) -> list:'T list -> unit
 
@@ -851,8 +1078,22 @@ module List =
     /// <param name="action">The function to apply to pairs of elements from the input lists.</param>
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iter2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [ "a"; "b"; "c" ]
+    /// let inputs2 = [ 1; 2; 3 ]
+    ///
+    /// (inputs1, inputs2) ||> List.iter2 (printfn "%s: %i")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// a: 1
+    /// b: 2
+    /// c: 3
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate2")>]
     val iter2: action:('T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
@@ -861,8 +1102,21 @@ module List =
     ///
     /// <param name="action">The function to apply to the elements of the list along with their index.</param>
     /// <param name="list">The input list.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iteri-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "b"; "c" ]
+    ///
+    /// inputs |> List.iteri (fun i v -> printfn "{i}: {v}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// 0: a
+    /// 1: b
+    /// 2: c
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed")>]
     val inline iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
 
@@ -873,8 +1127,22 @@ module List =
     /// <param name="action">The function to apply to a pair of elements from the input lists along with their index.</param>
     /// <param name="list1">The first input list.</param>
     /// <param name="list2">The second input list.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iteri2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = [ "a"; "b"; "c" ]
+    /// let inputs2 = [ "banana"; "pear"; "apple" ]
+    ///
+    /// (inputs1, inputs2) ||> List.iteri2 (fun i s1 s2 -> printfn "Index {i}: {s1} - {s2}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// Index 0: a - banana
+    /// Index 1: b - pear
+    /// Index 2: c - apple
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed2")>]
     val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
@@ -885,8 +1153,20 @@ module List =
     /// <returns>The last element of the list.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="last-1">
+    /// <code lang="fsharp">
+    /// [ "pear"; "banana" ] |> List.last
+    /// </code>
+    /// Evaluates to <c>banana</c>
+    /// </example>
+    ///
+    /// <example id="last-2">
+    /// <code lang="fsharp">
+    /// [ ] |> List.last
+    /// </code>
+    /// Throws <c>ArgumentException</c>
+    /// </example>
     [<CompiledName("Last")>]
     val last: list:'T list -> 'T
 
@@ -895,8 +1175,17 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The length of the list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <remarks>The notation <c>array.Length</c> is preferred.</remarks>
+    ///
+    /// <example id="length-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "b"; "c" ]
+    ///
+    /// inputs |> List.length
+    /// </code>
+    /// Evaluates to <c>3</c>
+    /// </example>
     [<CompiledName("Length")>]
     val length: list:'T list -> int
 
@@ -906,8 +1195,20 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The last element of the list or None.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="trylast-1">
+    /// <code lang="fsharp">
+    /// [ "pear"; "banana" ] |> List.tryLast
+    /// </code>
+    /// Evaluates to <c>Some "banana"</c>
+    /// </example>
+    ///
+    /// <example id="trylast-2">
+    /// <code lang="fsharp">
+    /// [ ] |> List.tryLast
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryLast")>]
     val tryLast: list:'T list -> 'T option
 
@@ -918,8 +1219,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The list of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="map-1">
+    /// <code lang="fsharp">
+    /// let inputs = [ "a"; "bbb"; "cc" ]
+    ///
+    /// inputs |> List.map (fun x -> x.Length)
+    /// </code>
+    /// Evaluates to <c>[ 1; 3; 2 ]</c>
+    /// </example>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> list:'T list -> 'U list
 
@@ -976,8 +1284,23 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The list of transformed elements, and the final accumulated value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="mapfold-1">
+    /// <code lang="fsharp">Accumulate the charges, and double them as well
+    /// type Charge =
+    ///     | In of int
+    ///     | Out of int
+    ///
+    /// let inputs = [ In 1; Out 2; In 3 ]
+    ///
+    /// let newCharges, balance =
+    ///     (0, inputs) ||> List.mapFold (fun acc charge ->
+    ///         match charge with
+    ///         | In i -> In (i*2), acc + i
+    ///         | Out o -> Out (o*2), acc - o)
+    /// </code>
+    /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
+    /// </example>
     [<CompiledName("MapFold")>]
     val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> list:'T list -> 'Result list * 'State
 
@@ -989,8 +1312,23 @@ module List =
     /// <param name="state">The initial state.</param>
     ///
     /// <returns>The list of transformed elements, and the final accumulated value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="mapfold-1">Accumulate the charges from back to front, and double them as well
+    /// <code lang="fsharp">
+    /// type Charge =
+    ///     | In of int
+    ///     | Out of int
+    ///
+    /// let inputs = [ In 1; Out 2; In 3 ]
+    ///
+    /// let newCharges, balance =
+    ///     (inputs, 0) ||> List.mapFoldBack (fun charge acc ->
+    ///         match charge with
+    ///         | In i -> In (i*2), acc + i
+    ///         | Out o -> Out (o*2), acc - o)
+    /// </code>
+    /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
+    /// </example>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> list:'T list -> state:'State -> 'Result list * 'State
 
@@ -1021,8 +1359,16 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>The list of transformed elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="mapi2-1">
+    /// <code lang="fsharp">
+    /// let inputs1 = ["a"; "bad"; "good"]
+    /// let inputs2 = [0; 2; 1]
+    ///
+    /// (inputs1, inputs2) ||> List.mapi2 (fun i x y -> i, x[y])
+    /// </code>
+    /// Evaluates to <c>[(0, 'a'); (1, 'd'); (2, 'o')]</c>
+    /// </example>
     [<CompiledName("MapIndexed2")>]
     val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> list1:'T1 list -> list2:'T2 list -> 'U list
 
@@ -1197,7 +1543,14 @@ module List =
     ///
     /// <returns>The result list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="pairwise-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// inputs |> List.pairwise
+    /// </code>
+    /// Evaluates to <c>[(1, 2); (2, 3); (3, 4)]</c>.
+    /// </example>
     [<CompiledName("Pairwise")>]
     val pairwise: list:'T list -> ('T * 'T) list
 
@@ -1211,7 +1564,14 @@ module List =
     /// <returns>A list containing the elements for which the predicate evaluated to true and a list
     /// containing the elements for which the predicate evaluated to false.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="partition-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// let evens, odds = inputs |> List.partition (fun x -> x % 2 = 0)
+    /// </code>
+    /// Evaluates <c>evens</c> to <c>[2; 4]</c> and <c>odds</c> to <c>[1; 3]</c>.
+    /// </example>
     [<CompiledName("Partition")>]
     val partition: predicate:('T -> bool) -> list:'T list -> ('T list * 'T list)
 
@@ -1225,8 +1585,25 @@ module List =
     /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The first resulting value.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="pick-1">
+    /// <code lang="fsharp">
+    /// let input = [1; 2; 3]
+    ///
+    /// input |> List.pick (fun n -> if n % 2 = 0 then Some (string n) else None)
+    /// </code>
+    /// Evaluates to <c>"2"</c>.
+    /// </example>
+    ///
+    /// <example id="pick-2">
+    /// <code lang="fsharp">
+    /// let input = [1; 2; 3]
+    ///
+    /// input |> List.pick (fun n -> if n > 3 = 0 then Some (string n) else None)
+    /// </code>
+    /// Throws <c>KeyNotFoundException</c>.
+    /// </example>
+    ///
     [<CompiledName("Pick")>]
     val pick: chooser:('T -> 'U option) -> list:'T list -> 'U
 
@@ -1240,9 +1617,16 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="permute-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// inputs |> List.permute (fun x -> (x + 1) % 4)
+    /// </code>
+    /// Evaluates to <c>[4; 1; 2; 3]</c>.
+    /// </example>
     [<CompiledName("Permute")>]
-    val permute : indexMap:(int -> int) -> list:'T list -> 'T list
+    val permute: indexMap:(int -> int) -> list:'T list -> 'T list
 
     /// <summary>Apply a function to each element of the collection, threading an accumulator argument
     /// through the computation. Apply the function to the first two elements of the list.
@@ -1259,7 +1643,14 @@ module List =
     ///
     /// <returns>The final reduced value.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="reduce-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 3; 4; 2]
+    ///
+    /// inputs |> List.reduce (fun a b -> a * 10 + b)
+    /// </code>
+    /// Evaluates to <c>1342</c>, by computing <c>((1 * 10 + 3) * 10 + 4) * 10 + 2</c>
+    /// </example>
     [<CompiledName("Reduce")>]
     val reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
@@ -1275,7 +1666,14 @@ module List =
     ///
     /// <returns>The final result of the reductions.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="reduceback-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 3; 4; 2]
+    ///
+    /// inputs |> List.reduceBack (fun a b -> a + b * 10)
+    /// </code>
+    /// Evaluates to <c>2431</c>, by computing <c>1 + (3 + (4 + 2 * 10) * 10) * 10</c>
+    /// </example>
     [<CompiledName("ReduceBack")>]
     val reduceBack: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
@@ -1323,7 +1721,22 @@ module List =
     ///
     /// <returns>The list of states.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="scan-1">Apply a list charges and collect the running balances as each is applied:
+    /// <code lang="fsharp">
+    /// type Charge =
+    ///     | In of int
+    ///     | Out of int
+    ///
+    /// let inputs = [In 1; Out 2; In 3]
+    ///
+    /// (0, inputs) ||> List.scan (fun acc charge ->
+    ///     match charge with
+    ///     | In i -> acc + i
+    ///     | Out o -> acc - o)
+    /// </code>
+    /// Evaluates to <c>[0; 1; -1; 2]</c>. Note <c>0</c> is the intial
+    /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
+    /// </example>
     [<CompiledName("Scan")>]
     val scan<'T,'State>  : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State list
 
@@ -1335,7 +1748,23 @@ module List =
     ///
     /// <returns>The list of states.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="scanback-1">Apply a list charges from back to front, and collect the running balances as each is applied:
+    /// <code lang="fsharp">
+    /// type Charge =
+    ///     | In of int
+    ///     | Out of int
+    ///
+    /// let inputs = [ In 1; Out 2; In 3 ]
+    ///
+    /// (inputs, 0) ||> List.scanBack (fun charge acc ->
+    ///     match charge with
+    ///     | In i -> acc + i
+    ///     | Out o -> acc - o)
+    /// </code>
+    /// Evaluates to <c> [2; 1; 3; 0]</c> by processing each input from back to front. Note <c>0</c> is the intial
+    /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state, and the states
+    /// are produced from back to front.
+    /// </example>
     [<CompiledName("ScanBack")>]
     val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State list
 
@@ -1363,8 +1792,33 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when count exceeds the number of 
     /// elements in the list.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="skip-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.skip 2
+    /// </code>
+    /// Evaluates to <c>["c"; "d"]</c>
+    /// </example>
+    ///
+    /// <example id="skip-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.skip 5
+    /// </code>
+    /// Throws <c>ArgumentException</c>.
+    /// </example>
+    ///
+    /// <example id="skip-3">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.skip -1
+    /// </code>
+    /// Evaluates to <c>["a"; "b"; "c"; "d"]</c>.
+    /// </example>
     [<CompiledName("Skip")>]
     val skip: count:int -> list: 'T list -> 'T list
 
@@ -1375,8 +1829,16 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="skipwhile-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "bbb"; "cc"; "d"]
+    ///
+    /// inputs |> List.skipWhile (fun x -> x.Length &lt; 3)
+    /// </code>
+    /// Evaluates to <c>["bbb"; "cc"; "d"]</c>
+    /// </example>
+    ///
     [<CompiledName("SkipWhile")>]
     val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -1388,7 +1850,19 @@ module List =
     ///
     /// <returns>The sorted list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sortwith-1">Sort a list of pairs using a comparison function that compares string lengths then index numbers:
+    /// <code lang="fsharp">
+    /// let compareEntries (n1: int, s1: string) (n2: int, s2: string) =
+    ///     let c = compare s1.Length s2.Length
+    ///     if c &lt;> 0 then c else
+    ///     compare n1 n2
+    ///
+    /// let input = [ (0,"aa"); (1,"bbb"); (2,"cc"); (3,"dd") ]
+    ///
+    /// input |> List.sortWith compareEntries
+    /// </code>
+    /// Evaluates to <c>[(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")]</c>.
+    /// </example>
     [<CompiledName("SortWith")>]
     val sortWith: comparer:('T -> 'T -> int) -> list:'T list -> 'T list 
 
@@ -1400,7 +1874,14 @@ module List =
     ///
     /// <returns>The sorted list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sortby-1">
+    /// <code lang="fsharp">
+    /// let input = [ "a"; "bbb"; "cccc"; "dd" ]
+    ///
+    /// input |> List.sortBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>["a"; "dd"; "bbb"; "cccc"]</c>.
+    /// </example>
     [<CompiledName("SortBy")>]
     val sortBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
@@ -1411,7 +1892,14 @@ module List =
     ///
     /// <returns>The sorted list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sort-1">
+    /// <code lang="fsharp">
+    /// let input = [8; 4; 3; 1; 6; 1]
+    ///
+    /// List.sort input
+    /// </code>
+    /// Evaluates to <c>[1; 1 3; 4; 6; 8]</c>.
+    /// </example>
     [<CompiledName("Sort")>]
     val sort: list:'T list -> 'T list when 'T : comparison
 
@@ -1425,7 +1913,14 @@ module List =
     /// <exception cref="T:System.InvalidOperationException">Thrown when split index exceeds the number of elements
     /// in the list.</exception>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="splitat-1">
+    /// <code lang="fsharp">
+    /// let input = [8; 4; 3; 1; 6; 1]
+    ///
+    /// let front, back = input |> List.splitAt 3
+    /// </code>
+    /// Evaluates <c>front</c> to <c>[8; 4; 3]</c> and <c>back</c> to <c>[1; 6; 1]</c>.
+    /// </example>
     [<CompiledName("SplitAt")>]
     val splitAt: index:int -> list:'T list -> ('T list * 'T list)
 
@@ -1437,7 +1932,14 @@ module List =
     ///
     /// <returns>The sorted list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sortbydescending-1">
+    /// <code lang="fsharp">
+    /// let input = ["a"; "bbb"; "cccc"; "dd"]
+    ///
+    /// input |> List.sortByDescending (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>["cccc"; "bbb"; "dd"; "a"]</c>.
+    /// </example>
     [<CompiledName("SortByDescending")>]
     val inline sortByDescending: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
@@ -1448,7 +1950,14 @@ module List =
     ///
     /// <returns>The sorted list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sortdescending-1">
+    /// <code lang="fsharp">
+    /// let input = [8; 4; 3; 1; 6; 1]
+    ///
+    /// input |> List.sortDescending
+    /// </code>
+    /// Evaluates to <c>[8; 6; 4; 3; 1; 1]</c>.
+    /// </example>
     [<CompiledName("SortDescending")>]
     val inline sortDescending: list:'T list -> 'T list when 'T : comparison
 
@@ -1458,11 +1967,18 @@ module List =
     ///
     /// <returns>The resulting sum.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sum-1">
+    /// <code lang="fsharp">
+    /// let input = [ 1; 5; 3; 2 ]
+    ///
+    /// input |> List.sum
+    /// </code>
+    /// Evaluates to <c>11</c>.
+    /// </example>
     [<CompiledName("Sum")>]
-    val inline sum   : list:^T list -> ^T 
-                               when ^T : (static member (+) : ^T * ^T -> ^T) 
-                               and  ^T : (static member Zero : ^T)
+    val inline sum: list:^T list -> ^T 
+                        when ^T : (static member (+) : ^T * ^T -> ^T) 
+                        and  ^T : (static member Zero : ^T)
 
     /// <summary>Returns the sum of the results generated by applying the function to each element of the list.</summary>
     ///
@@ -1471,11 +1987,18 @@ module List =
     ///
     /// <returns>The resulting sum.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="sumby-1">
+    /// <code lang="fsharp">
+    /// let input = [ "aa"; "bbb"; "cc" ]
+    ///
+    /// input |> List.sumBy (fun s -> s.Length)
+    /// </code>
+    /// Evaluates to <c>7</c>.
+    /// </example>
     [<CompiledName("SumBy")>]
-    val inline sumBy : projection:('T -> ^U) -> list:'T list -> ^U 
-                               when ^U : (static member (+) : ^U * ^U -> ^U) 
-                               and  ^U : (static member Zero : ^U)
+    val inline sumBy: projection:('T -> ^U) -> list:'T list -> ^U 
+                          when ^U : (static member (+) : ^U * ^U -> ^U) 
+                          and  ^U : (static member Zero : ^U)
 
     /// <summary>Returns the list after removing the first element.</summary>
     ///
@@ -1484,8 +2007,16 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the list is empty.</exception>
     ///
     /// <returns>The list after removing the first element.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tail-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "bb"; "ccc"]
+    ///
+    /// inputs |> List.tail
+    /// </code>
+    /// Evaluates to <c>["bb"; "ccc"]</c>
+    /// </example>
+    ///
     [<CompiledName("Tail")>]
     val tail: list:'T list -> 'T list
 
@@ -1502,8 +2033,33 @@ module List =
     /// <exception cref="T:System.ArgumentException">Thrown when the input list is empty.</exception>
     /// <exception cref="T:System.InvalidOperationException">Thrown when count exceeds the number of elements
     /// in the list.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="take-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.take 2
+    /// </code>
+    /// Evaluates to <c>["a"; "b"]</c>
+    /// </example>
+    ///
+    /// <example id="take-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.take 6
+    /// </code>
+    /// Throws <c>InvalidOperationException</c>.
+    /// </example>
+    ///
+    /// <example id="take-3">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.take 0
+    /// </code>
+    /// Evaluates to the empty list.
+    /// </example>
     [<CompiledName("Take")>]
     val take: count:int -> list:'T list -> 'T list
 
@@ -1514,8 +2070,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="takewhile-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "bb"; "ccc"; "d"]
+    ///
+    /// inputs |> List.takeWhile (fun x -> x.Length &lt; 3)
+    /// </code>
+    /// Evaluates to <c>["a"; "bb"]</c>
+    /// </example>
     [<CompiledName("TakeWhile")>]
     val takeWhile: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -1588,8 +2151,17 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
     /// <exception cref="T:System.ArgumentException">Thrown when the input lists differ in length.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="transpose-1">
+    /// <code lang="fsharp">
+    /// let inputs =
+    ///     [ [ 10; 20; 30 ]
+    ///       [ 11; 21; 31 ] ]
+    ///
+    /// inputs |> List.transpose
+    /// </code>
+    /// Evaluates to <c>[ [10; 11]; [20; 21]; [30; 31] ]</c>.
+    /// </example>
     [<CompiledName("Transpose")>]
     val transpose: lists:seq<'T list> -> 'T list list
 
@@ -1599,8 +2171,33 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="truncate-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.truncate 2
+    /// </code>
+    /// Evaluates to <c>["a"; "b"]</c>
+    /// </example>
+    ///
+    /// <example id="truncate-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.truncate 6
+    /// </code>
+    /// Evaluates to <c>["a"; "b"; "c"; "d"]</c>
+    /// </example>
+    ///
+    /// <example id="truncate-3">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"; "d"]
+    ///
+    /// inputs |> List.truncate 0
+    /// </code>
+    /// Evaluates to the empty list.
+    /// </example>
     [<CompiledName("Truncate")>]
     val truncate: count:int -> list:'T list -> 'T list
 
@@ -1612,8 +2209,25 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The first resulting value or None.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="trypick-1">
+    /// <code lang="fsharp">
+    /// let input = [1; 2; 3]
+    ///
+    /// input |> List.tryPick (fun n -> if n % 2 = 0 then Some (string n) else None)
+    /// </code>
+    /// Evaluates to <c>Some "2"</c>.
+    /// </example>
+    ///
+    /// <example id="trypick-2">
+    /// <code lang="fsharp">
+    /// let input = [1; 2; 3]
+    ///
+    /// input |> List.tryPick (fun n -> if n > 3 = 0 then Some (string n) else None)
+    /// </code>
+    /// Evaluates to <c>None</c>.
+    /// </example>
+    ///
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('T -> 'U option) -> list:'T list -> 'U option
 
@@ -1625,8 +2239,24 @@ module List =
     ///
     /// <returns>The first element for which the predicate returns true, or None if
     /// every element evaluates to false.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tryfind-1">Try to find the first even number:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3]
+    ///
+    /// inputs |> List.tryFind (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>Some 2</c>
+    /// </example>
+    ///
+    /// <example id="tryfind-2">Try to find the first even number:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 5; 3]
+    ///
+    /// inputs |> List.tryFind (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryFind")>]
     val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
@@ -1638,8 +2268,24 @@ module List =
     ///
     /// <returns>The last element for which the predicate returns true, or None if
     /// every element evaluates to false.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tryfindback-1">Try to find the first even number from the back:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.tryFindBack (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>Some 4</c>
+    /// </example>
+    ///
+    /// <example id="tryfindback-2">Try to find the first even number from the back:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 5; 3]
+    ///
+    /// inputs |> List.tryFindBack (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryFindBack")>]
     val tryFindBack: predicate:('T -> bool) -> list:'T list -> 'T option
 
@@ -1652,8 +2298,24 @@ module List =
     ///
     /// <returns>The index of the first element for which the predicate returns true, or None if
     /// every element evaluates to false.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tryfindindex-1">Try to find the index of the first even number:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.tryFindIndex (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>Some 1</c>
+    /// </example>
+    ///
+    /// <example id="tryfindindex-2">Try to find the index of the first even number:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 3; 5; 7]
+    ///
+    /// inputs |> List.tryFindIndex (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryFindIndex")>]
     val tryFindIndex: predicate:('T -> bool) -> list:'T list -> int option
 
@@ -1664,8 +2326,24 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>The value at the given index or <c>None</c>.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tryitem-1">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> List.tryItem 1
+    /// </code>
+    /// Evaluates to <c>Some "b"</c>.
+    /// </example>
+    ///
+    /// <example id="tryitem-2">
+    /// <code lang="fsharp">
+    /// let inputs = ["a"; "b"; "c"]
+    ///
+    /// inputs |> List.tryItem 4
+    /// </code>
+    /// Evaluates to <c>None</c>.
+    /// </example>
     [<CompiledName("TryItem")>]
     val tryItem: index:int -> list:'T list -> 'T option
 
@@ -1678,21 +2356,43 @@ module List =
     ///
     /// <returns>The index of the last element for which the predicate returns true, or None if
     /// every element evaluates to false.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="tryfindindexback-1">Try to find the index of the first even number from the back:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.tryFindIndexBack (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>Some 3</c>
+    /// </example>
+    ///
+    /// <example id="tryfindindexback-2">Try to find the index of the first even number from the back:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 3; 5; 7]
+    ///
+    /// inputs |> List.tryFindIndexBack (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>None</c>
+    /// </example>
     [<CompiledName("TryFindIndexBack")>]
     val tryFindIndexBack: predicate:('T -> bool) -> list:'T list -> int option
 
     /// <summary>Returns a list that contains the elements generated by the given computation.
-    /// The given initial <c>state</c> argument is passed to the element generator.</summary>
+    /// The generator is repeatedly called to build the list until it returns `None`.
+    /// The given initial <c>state</c> argument is passed to the element generator. </summary>
     ///
     /// <param name="generator">A function that takes in the current state and returns an option tuple of the next
     /// element of the list and the next state value.</param>
     /// <param name="state">The initial state value.</param>
     ///
     /// <returns>The result list.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="unfold-1">
+    /// <code lang="fsharp">
+    /// 1 |> List.unfold (fun state -> if state > 100 then None else Some (state, state * 2))
+    /// </code>
+    /// Evaluates to <c>[1; 2; 4; 8; 16; 32; 64]</c>
+    /// </example>
     [<CompiledName("Unfold")>]
     val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T list
 
@@ -1701,8 +2401,15 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>Two lists of split elements.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="unzip-1">
+    /// <code lang="fsharp">
+    /// let inputs = [(1, "one"); (2, "two")]
+    ///
+    /// let numbers, names = inputs |> List.unzip
+    /// </code>
+    /// Evaluates <c>numbers</c> to <c>[1; 2]</c> and <c>names</c> to <c>["one"; "two"]</c>.
+    /// </example>
     [<CompiledName("Unzip")>]
     val unzip: list:('T1 * 'T2) list -> ('T1 list * 'T2 list)
 
@@ -1712,7 +2419,14 @@ module List =
     ///
     /// <returns>Three lists of split elements.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="unzip3-1">
+    /// <code lang="fsharp">
+    /// let inputs = [(1, "one", "I"); (2, "two", "II")]
+    ///
+    /// let numbers, names, roman = inputs |> List.unzip3
+    /// </code>
+    /// Evaluates <c>numbers</c> to <c>[1; 2]</c>, <c>names</c> to <c>["one"; "two"]</c> and <c>roman</c> to <c>["I"; "II"]</c>.
+    /// </example>
     [<CompiledName("Unzip3")>]
     val unzip3: list:('T1 * 'T2 * 'T3) list -> ('T1 list * 'T2 list * 'T3 list)
     
@@ -1723,8 +2437,17 @@ module List =
     /// <param name="list">The input list.</param>
     ///
     /// <returns>A list containing only the elements that satisfy the predicate.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <remarks>This is identical to <c>List.filter</c>.</remarks>
+    ///
+    /// <example id="where-1">Select only the even numbers:
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4]
+    ///
+    /// inputs |> List.where (fun elm -> elm % 2 = 0)
+    /// </code>
+    /// Evaluates to <c>[2; 4]</c>
+    /// </example>
     [<CompiledName("Where")>]
     val where: predicate:('T -> bool) -> list:'T list -> 'T list
 
@@ -1738,9 +2461,16 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when windowSize is not positive.</exception>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="windowed-1">
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.windowed 3
+    /// </code>
+    /// Evaluates to <c>[[1; 2; 3]; [2; 3; 4]; [3; 4; 5]]</c>
+    /// </example>
     [<CompiledName("Windowed")>]
-    val windowed : windowSize:int -> list:'T list -> 'T list list
+    val windowed: windowSize:int -> list:'T list -> 'T list list
 
     /// <summary>Combines the two lists into a list of pairs. The two lists must have equal lengths.</summary>
     ///
@@ -1748,8 +2478,16 @@ module List =
     /// <param name="list2">The second input list.</param>
     ///
     /// <returns>A single list containing pairs of matching elements from the input lists.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="zip-1">
+    /// <code lang="fsharp">
+    /// let numbers = [1; 2]
+    /// let names = ["one"; "two"]
+    ///
+    /// List.zip numbers names
+    /// </code>
+    /// Evaluates to <c>[(1, "one"); (2, "two")]</c>.
+    /// </example>
     [<CompiledName("Zip")>]
     val zip: list1:'T1 list -> list2:'T2 list -> ('T1 * 'T2) list
 
@@ -1760,8 +2498,17 @@ module List =
     /// <param name="list3">The third input list.</param>
     ///
     /// <returns>A single list containing triples of matching elements from the input lists.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="zip3-1">
+    /// <code lang="fsharp">
+    /// let numbers = [1; 2]
+    /// let names = ["one"; "two"]
+    /// let roman = ["I"; "II"]
+    ///
+    /// Array.zip3 numbers names roman
+    /// </code>
+    /// Evaluates to <c>[(1, "one", "I"); (2, "two", "II")]</c>.
+    /// </example>
     [<CompiledName("Zip3")>]
     val zip3: list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> ('T1 * 'T2 * 'T3) list
     
@@ -1774,7 +2521,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
     ///
-    /// <example id="removeAt-example-1">
+    /// <example id="removeAt-1">
     /// <code>
     /// let inputs = [ 0; 1; 2 ]
     ///
@@ -1795,7 +2542,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - count</exception>
     ///
-    /// <example id="removeManyAt-example-1">
+    /// <example id="removeManyAt-1">
     /// <code>
     /// let inputs = [ 0; 1; 2; 3 ]
     ///
@@ -1816,7 +2563,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is outside 0..source.Length - 1</exception>
     ///
-    /// <example id="updateAt-example-1">
+    /// <example id="updateAt-1">
     /// <code>
     /// let inputs = [ 0; 1; 2 ]
     ///
@@ -1837,7 +2584,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
-    /// <example id="insertAt-example-1">
+    /// <example id="insertAt-1">
     /// <code>
     /// let inputs = [ 0; 1; 2 ]
     ///
@@ -1858,7 +2605,7 @@ module List =
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
-    /// <example id="insertManyAt-example-1">
+    /// <example id="insertManyAt-1">
     /// <code>
     /// let inputs = [ 0; 1; 2 ]
     ///
