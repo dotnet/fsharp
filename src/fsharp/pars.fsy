@@ -3478,15 +3478,15 @@ declExpr:
   | anonLambdaExpr  %prec expr_fun 
       { $1 }
 
-  | MATCH typedSequentialExpr     withClauses              %prec expr_match 
-      { let mMatch = (rhs parseState 1)
-        let mWith, (clauses, mLast) = $3 
-        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith) 
+  | MATCH typedSequentialExpr withClauses %prec expr_match
+      { let mMatch = rhs parseState 1
+        let mWith, (clauses, mLast) = $3
+        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
         SynExpr.Match (spBind, $2, clauses, unionRanges mMatch mLast) }
 
-  | MATCH typedSequentialExpr     recover               %prec expr_match 
+  | MATCH typedSequentialExpr recover %prec expr_match
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
-        // Produce approximate expression during error recovery 
+        // Produce approximate expression during error recovery
         exprFromParseError $2 }
 
   | MATCH_BANG typedSequentialExpr     withClauses              %prec expr_match 
@@ -3998,52 +3998,49 @@ withPatternClauses:
 
 patternAndGuard: 
   | parenPattern patternGuard 
-      { $1, $2, rhs parseState 1 }
-      
-patternClauses: 
+      { $1, $2 }
+
+patternClauses:
   | patternAndGuard patternResult %prec prec_pat_pat_action
-     { let pat, guard, patm = $1
+     { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = resultExpr.Range
-       let m = unionRanges resultExpr.Range patm
-       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast  }
+       let m = unionRanges resultExpr.Range pat.Range
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast }
 
-  | patternAndGuard patternResult BAR patternClauses 
-     { let pat, guard, patm = $1 
+  | patternAndGuard patternResult BAR patternClauses
+     { let pat, guard = $1
        let mArrow, resultExpr = $2
        let clauses, mLast = $4
-       let m = unionRanges resultExpr.Range patm
+       let m = unionRanges resultExpr.Range pat.Range
        (SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes) :: clauses), mLast }
 
-  | patternAndGuard error BAR patternClauses 
-     { let pat, guard, patm = $1 
+  | patternAndGuard error BAR patternClauses
+     { let pat, guard = $1
        let clauses, mLast = $4
+       let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
        (SynMatchClause(pat, guard, None, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
-     { let pat, guard, patm = $1 
+     { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = rhs parseState 3 
-       let m = unionRanges resultExpr.Range patm
-       // silent recovery
+       let m = unionRanges resultExpr.Range pat.Range
        [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast  }
 
-  | patternAndGuard patternResult error 
-     { let pat, guard, patm = $1 
+  | patternAndGuard patternResult error
+     { let pat, guard = $1
        let mArrow, resultExpr = $2
-       let mLast = resultExpr.Range
-       let m = unionRanges resultExpr.Range patm
-       // silent recovery 
-       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], mLast }
+       let m = unionRanges resultExpr.Range pat.Range
+       [SynMatchClause(pat, guard, (Some mArrow), resultExpr, m, DebugPointAtTarget.Yes)], m }
 
-  | patternAndGuard error 
-     { let pat, guard, patm = $1 
-       let mLast = rhs parseState 2
+  | patternAndGuard error
+     { let pat, guard = $1
+       let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
-       // silent recovery 
-       [SynMatchClause(pat, guard, None, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes)], mLast }
- 
+       [SynMatchClause(pat, guard, None, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes)], m }
+
 patternGuard: 
   | WHEN declExpr 
      { Some $2 }
