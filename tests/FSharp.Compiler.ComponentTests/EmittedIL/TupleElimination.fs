@@ -710,6 +710,7 @@ public static int z()
 
 
 
+#if !DEBUG // sensitive to debug-level code coming across from debug FSharp.Core
 
     [<Fact>]
     let ``Branching let binding of tuple with capture doesn't promote``() =
@@ -760,7 +761,7 @@ let testFunction(a,b) =
 
 """ ]
 
-
+#endif
 
 
     [<Fact>]

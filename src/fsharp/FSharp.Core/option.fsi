@@ -17,7 +17,7 @@ module Option =
     ///
     /// <returns>True if the option is not None.</returns>
     ///
-    /// <example id="isSome-example-1">
+    /// <example id="isSome-1">
     /// <code lang="fsharp">
     ///     None |> Option.isSome // evaluates to false
     ///     Some 42 |> Option.isSome // evaluates to true
@@ -32,7 +32,7 @@ module Option =
     ///
     /// <returns>True if the option is None.</returns>
     ///
-    /// <example id="isNone-example-1">
+    /// <example id="isNone-1">
     /// <code lang="fsharp">
     ///     None |> Option.isNone // evaluates to true
     ///     Some 42 |> Option.isNone // evaluates to false
@@ -50,7 +50,7 @@ module Option =
     ///
     /// <remarks>Identical to the built-in <see cref="defaultArg"/> operator, except with the arguments swapped.</remarks>
     ///
-    /// <example id="defaultValue-example-1">
+    /// <example id="defaultValue-1">
     /// <code lang="fsharp">
     ///     (99, None) ||> Option.defaultValue // evaluates to 99
     ///     (99, Some 42) ||> Option.defaultValue // evaluates to 42
@@ -67,7 +67,7 @@ module Option =
     /// <returns>The option if the option is Some, else the result of evaluating <paramref name="defThunk"/>.</returns>
     /// <remarks><paramref name="defThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
     ///
-    /// <example id="defaultWith-example-1">
+    /// <example id="defaultWith-1">
     /// <code lang="fsharp">
     ///     None |> Option.defaultWith (fun () -> 99) // evaluates to 99
     ///     Some 42 |> Option.defaultWith (fun () -> 99) // evaluates to 42
@@ -83,7 +83,7 @@ module Option =
     ///
     /// <returns>The option if the option is Some, else the alternate option.</returns>
     ///
-    /// <example id="orElse-example-1">
+    /// <example id="orElse-1">
     /// <code lang="fsharp">
     ///     (None, None) ||> Option.orElse // evaluates to None
     ///     (Some 99, None) ||> Option.orElse // evaluates to Some 99
@@ -102,7 +102,7 @@ module Option =
     /// <returns>The option if the option is Some, else the result of evaluating <paramref name="ifNoneThunk"/>.</returns>
     /// <remarks><paramref name="ifNoneThunk"/> is not evaluated unless <paramref name="option"/> is <c>None</c>.</remarks>
     ///
-    /// <example id="orElseWith-example-1">
+    /// <example id="orElseWith-1">
     /// <code lang="fsharp">
     ///     None |> Option.orElseWith (fun () -> None) // evaluates to None
     ///     None |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 99
@@ -121,7 +121,7 @@ module Option =
     ///
     /// <exception href="System.ArgumentException">Thrown when the option is None.</exception>
     ///
-    /// <example id="get-example-1">
+    /// <example id="get-1">
     /// <code lang="fsharp">
     ///     Some 42 |> Option.get // evaluates to 42
     ///     None |> Option.get // throws exception!
@@ -136,7 +136,7 @@ module Option =
     ///
     /// <returns>A zero if the option is None, a one otherwise.</returns>
     ///
-    /// <example id="count-example-1">
+    /// <example id="count-1">
     /// <code lang="fsharp">
     ///     None |> Option.count // evaluates to 0
     ///     Some 99 |> Option.count // evaluates to 1
@@ -154,7 +154,7 @@ module Option =
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
     ///
-    /// <example id="fold-example-1">
+    /// <example id="fold-1">
     /// <code lang="fsharp">
     ///     (0, None) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 0
     ///     (0, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 2
@@ -173,7 +173,7 @@ module Option =
     /// <returns>The original state if the option is None, otherwise it returns the updated state with the folder
     /// and the option value.</returns>
     ///
-    /// <example id="foldBack-example-1">
+    /// <example id="foldBack-1">
     /// <code lang="fsharp">
     ///     (None, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 0
     ///     (Some 1, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 2
@@ -191,7 +191,7 @@ module Option =
     /// <returns>False if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
     ///
-    /// <example id="exists-example-1">
+    /// <example id="exists-1">
     /// <code lang="fsharp">
     ///     None |> Option.exists (fun x -> x >= 5) // evaluates to false
     ///     Some 42 |> Option.exists (fun x -> x >= 5) // evaluates to true
@@ -209,7 +209,7 @@ module Option =
     /// <returns>True if the option is None, otherwise it returns the result of applying the predicate
     /// to the option value.</returns>
     ///
-    /// <example id="forall-example-1">
+    /// <example id="forall-1">
     /// <code lang="fsharp">
     ///     None |> Option.forall (fun x -> x >= 5) // evaluates to true
     ///     Some 42 |> Option.forall (fun x -> x >= 5) // evaluates to true
@@ -226,7 +226,7 @@ module Option =
     ///
     /// <returns>True if the option is <c>Some</c> and contains a value equal to <paramref name="value"/>, otherwise false.</returns>
     ///
-    /// <example id="contains-example-1">
+    /// <example id="contains-1">
     /// <code lang="fsharp">
     ///     (99, None) ||> Option.contains // evaluates to false
     ///     (99, Some 99) ||> Option.contains // evaluates to true
@@ -243,7 +243,7 @@ module Option =
     ///
     /// <returns>Unit if the option is None, otherwise it returns the result of applying the predicate
     ///
-    /// <example id="iter-example-1">
+    /// <example id="iter-1">
     /// <code lang="fsharp">
     ///     None |> Option.iter (printfn "%s") // does nothing
     ///     Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
@@ -260,7 +260,7 @@ module Option =
     ///
     /// <returns>An option of the input value after applying the mapping function, or None if the input is None.</returns>
     ///
-    /// <example id="map-example-1">
+    /// <example id="map-1">
     /// <code lang="fsharp">
     ///     None |> Option.map (fun x -> x * 2) // evaluates to None
     ///     Some 42 |> Option.map (fun x -> x * 2) // evaluates to Some 84
@@ -277,7 +277,7 @@ module Option =
     ///
     /// <returns>An option of the input values after applying the mapping function, or None if either input is None.</returns>
     ///
-    /// <example id="map2-example-1">
+    /// <example id="map2-1">
     /// <code lang="fsharp">
     ///     (None, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
     ///     (Some 5, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
@@ -297,7 +297,7 @@ module Option =
     ///
     /// <returns>An option of the input values after applying the mapping function, or None if any input is None.</returns>
     ///
-    /// <example id="map3-example-1">
+    /// <example id="map3-1">
     /// <code lang="fsharp">
     ///     (None, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
     ///     (Some 100, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
@@ -317,7 +317,7 @@ module Option =
     ///
     /// <returns>An option of the output type of the binder.</returns>
     ///
-    /// <example id="bind-example-1">
+    /// <example id="bind-1">
     /// <code lang="fsharp">
     ///     let tryParse input =
     ///         match System.Int32.TryParse input with
@@ -339,7 +339,7 @@ module Option =
     /// 
     /// <remarks><c>flatten</c> is equivalent to <c>bind id</c>.</remarks>
     ///
-    /// <example id="flatten-example-1">
+    /// <example id="flatten-1">
     /// <code lang="fsharp">
     ///     None |> Option.flatten // evaluates to None
     ///     (Some (None)) |> Option.flatten // evaluates to None
@@ -356,7 +356,7 @@ module Option =
     ///
     /// <returns>The input if the predicate evaluates to true; otherwise, None.</returns>
     ///
-    /// <example id="filter-example-1">
+    /// <example id="filter-1">
     /// <code lang="fsharp">
     ///     None |> Option.filter (fun x -> x >= 5) // evaluates to None
     ///     Some 42 |> Option.filter (fun x -> x >= 5) // evaluates to Some 42
@@ -372,7 +372,7 @@ module Option =
     ///
     /// <returns>The result array.</returns>
     ///
-    /// <example id="toArray-example-1">
+    /// <example id="toArray-1">
     /// <code lang="fsharp">
     ///     None |> Option.toArray // evaluates to [||]
     ///     Some 42 |> Option.toArray // evaluates to [|42|]
@@ -387,7 +387,7 @@ module Option =
     ///
     /// <returns>The result list.</returns>
     ///
-    /// <example id="toList-example-1">
+    /// <example id="toList-1">
     /// <code lang="fsharp">
     ///     None |> Option.toList // evaluates to []
     ///     Some 42 |> Option.toList // evaluates to [42]
@@ -402,7 +402,7 @@ module Option =
     ///
     /// <returns>The result value.</returns>
     ///
-    /// <example id="toNullable-example-1">
+    /// <example id="toNullable-1">
     /// <code lang="fsharp">
     ///     None |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
     ///     Some 42 |> Option.toNullable // evaluates to new System.Nullable(42)
@@ -417,7 +417,7 @@ module Option =
     ///
     /// <returns>The result option.</returns>
     ///
-    /// <example id="ofNullable-example-1">
+    /// <example id="ofNullable-1">
     /// <code lang="fsharp">
     ///     System.Nullable&lt;int&gt;() |> Option.ofNullable // evaluates to None
     ///     System.Nullable(42) |> Option.ofNullable // evaluates to Some 42
@@ -432,7 +432,7 @@ module Option =
     ///
     /// <returns>The result option.</returns>
     ///
-    /// <example id="ofObj-example-1">
+    /// <example id="ofObj-1">
     /// <code lang="fsharp">
     ///     (null: string) |> Option.ofObj // evaluates to None
     ///     "not a null string" |> Option.ofObj // evaluates to (Some "not a null string")
@@ -447,7 +447,7 @@ module Option =
     ///
     /// <returns>The result value, which is null if the input was None.</returns>
     ///
-    /// <example id="toObj-example-1">
+    /// <example id="toObj-1">
     /// <code lang="fsharp">
     ///     None |> Option.toObj // evaluates to null
     ///     Some "not a null string" |> Option.toObj // evaluates to "not a null string"

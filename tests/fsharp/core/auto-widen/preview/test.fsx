@@ -590,6 +590,47 @@ module TestRecursiveInferenceForPropagatingCases =
         // Check the return type of 'f' is known by the time we process "f().CompareTo(y)"
         let rec f() = { new System.IComparable with member x.CompareTo(y) = f().CompareTo(y) }
 
+module MoreTests1 =
+    open System
+
+    /// string -> unit
+    let print (s: string) = printfn "%s" s
+
+    /// int -> string
+    let stringify (i: int) = string i
+
+    /// int -> unit
+    let stringifyThenPrint = stringify >> print
+
+    /// int -> unit
+    let doit (i: int) = stringifyThenPrint i
+
+    // Action<int> -> int -> unit
+    let actioner (a: Action<int>) i = a.Invoke i
+    let bleh = actioner stringifyThenPrint
+
+module MoreTests2 =
+    type Test() =
+        //member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+    let test x = x + 1
+    Test().Test (test)
+
+module MoreTests3 =
+
+    type Test() =
+        //member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+    let test x = x + 1
+    Test().Test (fun x -> test x)
+
+module MoreTests4 =
+    type Test() =
+        member this.Test(x) = x + 1 |> ignore
+        member this.Test(action : System.Func<int, int>) = action.Invoke(1)
+
+    let test x = x + 1
+    Test().Test (test)
 
 printfn "test done"
 

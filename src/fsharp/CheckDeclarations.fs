@@ -1635,6 +1635,7 @@ module MutRecBindingChecking =
 
                             // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
                             let incrClassCtorLhs = TcImplicitCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, doc)
+
                             // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
                             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                             let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -1676,6 +1677,7 @@ module MutRecBindingChecking =
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
                             let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
                             let (SynValData(memberFlagsOpt, _, _)) = valSynData 
+
                             match tcref.TypeOrMeasureKind with
                             | TyparKind.Type -> ()
                             | TyparKind.Measure ->
@@ -1686,9 +1688,15 @@ module MutRecBindingChecking =
                                     match memberFlags.MemberKind with 
                                     | SynMemberKind.Constructor -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
                                     | _ -> ()
+
+                            let envForMember = 
+                                match incrClassCtorLhsOpt with
+                                | None -> AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars envForTycon
+                                | Some _ -> envForTycon
+
                             let rbind = NormalizedRecBindingDefn(containerInfo, newslotsOK, declKind, bind)
                             let overridesOK = DeclKind.CanOverrideOrImplement declKind
-                            let (binds, _values), (tpenv, recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForTycon (tpenv, recBindIdx) rbind
+                            let (binds, _values), (tpenv, recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForMember (tpenv, recBindIdx) rbind
                             let cbinds = [ for rbind in binds -> Phase2AMember rbind ]
 
                             let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
@@ -5876,6 +5884,14 @@ let TypeCheckOneImplFile
 
     let extraAttribs = topAttrs.mainMethodAttrs@topAttrs.netModuleAttrs@topAttrs.assemblyAttrs
     
+    // Run any additional checks registered to be run before applying defaults
+    do 
+      for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+        try  
+            check()
+        with e -> 
+            errorRecovery e m
+
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs)
 
@@ -5899,10 +5915,9 @@ let TypeCheckOneImplFile
       conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
         CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr)
 
-    // Run any additional checks registered for post-type-inference
     do 
       conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-         for check in cenv.postInferenceChecks do
+         for check in cenv.css.GetPostInferenceChecksFinal() do
             try  
                 check()
             with e -> 

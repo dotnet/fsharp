@@ -201,4 +201,40 @@ module StateMachineHelpers =
         afterCode: AfterCode<'Data, 'Result> 
             -> 'Result
 
+/// <summary>Adding this attribute to the method adjusts the processing of some generic methods
+/// during overload resolution.</summary>
+///
+/// <remarks>During overload resolution, caller arguments are matched with called arguments
+/// to extract type information. By default, when the caller argument type is unconstrained (for example
+/// a simple value <c>x</c> without known type information), and a method qualifies for
+/// lambda constraint propagation, then member trait constraints from a method overload
+/// are eagerly applied to the caller argument type. This causes that overload to be preferred,
+/// regardless of other method overload resolution rules. Using this attribute suppresses this behaviour. 
+/// </remarks>
+///
+/// <example>
+/// Consider the following overloads:
+/// <code>
+/// type OverloadsWithSrtp() =
+///     [&lt;NoEagerConstraintApplicationAttribute&gt;]
+///     static member inline SomeMethod&lt; ^T when ^T : (member Number: int) &gt; (x: ^T, f: ^T -> int) = 1
+///     static member SomeMethod(x: 'T list, f: 'T list -> int) = 2
+/// 
+/// let inline f x = 
+///     OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
+/// </code>
+/// With the attribute, the overload resolution fails, because both members are applicable.
+/// Without the attribute, the overload resolution succeeds, because the member constraint is
+/// eagerly applied, making the second member non-applicable.  
+/// </example>
+/// <category>Attributes</category>
+[<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+[<Sealed>]
+type NoEagerConstraintApplicationAttribute =
+    inherit Attribute
+
+    /// <summary>Creates an instance of the attribute</summary>
+    /// <returns>NoEagerConstraintApplicationAttribute</returns>
+    new : unit -> NoEagerConstraintApplicationAttribute
+
 #endif
