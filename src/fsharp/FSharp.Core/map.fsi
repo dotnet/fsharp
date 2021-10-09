@@ -23,7 +23,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="member-add-example-1">
+    /// <example id="member-add-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -40,7 +40,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="member-change-example-1">
+    /// <example id="member-change-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -55,7 +55,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
 
     /// <summary>Returns true if there are no bindings in the map.</summary>
     /// 
-    /// <example id="member-isempty-example-1">
+    /// <example id="member-isempty-1">
     /// <code lang="fsharp">
     ///     let emptyMap : Map<int, string> = Map.empty
     ///     emptyMap.IsEmpty // evaluates to true
@@ -72,7 +72,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="new-example-1">
+    /// <example id="new-1">
     /// <code lang="fsharp">
     ///     Map [ (1, "a"); (2, "b") ] // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
@@ -85,7 +85,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>True if the map contains the given key.</returns>
     /// 
-    /// <example id="member-containskey-example-1">
+    /// <example id="member-containskey-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -97,7 +97,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
 
     /// <summary>The number of bindings in the map.</summary>
     /// 
-    /// <example id="member-count-example-1">
+    /// <example id="member-count-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -114,7 +114,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The value mapped to the key.</returns>
     /// 
-    /// <example id="member-item-example-1">
+    /// <example id="member-item-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -130,7 +130,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="member-remove-example-1">
+    /// <example id="member-remove-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -147,7 +147,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns>The mapped value, or None if the key is not in the map.</returns>
     /// 
-    /// <example id="member-tryfind-example-1">
+    /// <example id="member-tryfind-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -165,7 +165,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     ///
     /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
     /// 
-    /// <example id="member-trygetvalue-example-1">
+    /// <example id="member-trygetvalue-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -184,7 +184,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
     /// 
-    /// <example id="member-keys-example-1">
+    /// <example id="member-keys-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -196,7 +196,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <summary>All the values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
     /// 
-    /// <example id="member-values-example-1">
+    /// <example id="member-values-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -228,7 +228,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="add-example-1">
+    /// <example id="add-1">
     /// <code lang="fsharp">
     ///     let existing = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -247,7 +247,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="change-example-1">
+    /// <example id="change-1">
     /// <code lang="fsharp">
     ///     let existing = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -267,7 +267,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="oflist-example-1">
+    /// <example id="oflist-1">
     /// <code lang="fsharp">
     ///     [ (1, "a"); (2, "b") ] |> Map.ofList // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
@@ -281,7 +281,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="ofarray-example-1">
+    /// <example id="ofarray-1">
     /// <code lang="fsharp">
     ///     [| (1, "a"); (2, "b") |] |> Map.ofArray // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
@@ -295,7 +295,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="ofseq-example-1">
+    /// <example id="ofseq-1">
     /// <code lang="fsharp">
     ///     seq { (1, "a"); (2, "b") } |> Map.ofSeq // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
@@ -310,7 +310,7 @@ module Map =
     ///
     /// <returns>The sequence of key/value pairs.</returns>
     /// 
-    /// <example id="toseq-example-1">
+    /// <example id="toseq-1">
     /// <code lang="fsharp">
     ///     Map [ (1, "a"); (2, "b") ] |> Map.toSeq // evaluates to seq [(1, "a"); (2, "b")]
     /// </code>
@@ -325,7 +325,7 @@ module Map =
     ///
     /// <returns>The list of key/value pairs.</returns>
     /// 
-    /// <example id="tolist-example-1">
+    /// <example id="tolist-1">
     /// <code lang="fsharp">
     ///     Map [ (1, "a"); (2, "b") ] |> Map.toList // evaluates to [(1, "a"); (2, "b")]
     /// </code>
@@ -340,7 +340,7 @@ module Map =
     ///
     /// <returns>The array of key/value pairs.</returns>
     /// 
-    /// <example id="toarray-example-1">
+    /// <example id="toarray-1">
     /// <code lang="fsharp">
     ///     Map [ (1, "a"); (2, "b") ] |> Map.toArray // evaluates to [|(1, "a"); (2, "b")|]
     /// </code>
@@ -354,7 +354,7 @@ module Map =
     ///
     /// <returns>True if the map is empty.</returns>
     /// 
-    /// <example id="isempty-example-1">
+    /// <example id="isempty-1">
     /// <code lang="fsharp">
     ///     let emptyMap : Map<int, string> = Map.empty
     ///     Map.isEmpty emptyMap // evaluates to true
@@ -368,7 +368,7 @@ module Map =
 
     /// <summary>The empty map.</summary>
     /// 
-    /// <example id="empty-example-1">
+    /// <example id="empty-1">
     /// <code lang="fsharp">
     ///     let emptyMap : Map<int, string> = Map.empty
     /// </code>
@@ -386,7 +386,7 @@ module Map =
     ///
     /// <returns>The value mapped to the given key.</returns>
     /// 
-    /// <example id="find-example-1">
+    /// <example id="find-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -404,7 +404,7 @@ module Map =
     ///
     /// <returns>The first result.</returns>
     /// 
-    /// <example id="trypick-example-1">
+    /// <example id="trypick-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
@@ -428,7 +428,7 @@ module Map =
     ///
     /// <returns>The first result.</returns>
     /// 
-    /// <example id="pick-example-1">
+    /// <example id="pick-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
@@ -450,7 +450,7 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     /// 
-    /// <example id="foldback-example-1">
+    /// <example id="foldback-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -470,7 +470,7 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     /// 
-    /// <example id="fold-example-1">
+    /// <example id="fold-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -487,7 +487,7 @@ module Map =
     /// <param name="action">The function to apply to each key/value pair.</param>
     /// <param name="table">The input map.</param>
     /// 
-    /// <example id="iter-example-1">
+    /// <example id="iter-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -507,7 +507,7 @@ module Map =
     ///
     /// <returns>True if the predicate returns true for one of the key/value pairs.</returns>
     /// 
-    /// <example id="exists-example-1">
+    /// <example id="exists-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -525,7 +525,7 @@ module Map =
     ///
     /// <returns>The filtered map.</returns>
     /// 
-    /// <example id="filter-example-1">
+    /// <example id="filter-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -543,7 +543,7 @@ module Map =
     ///
     /// <returns>True if the predicate evaluates to true for all of the bindings in the map.</returns>
     /// 
-    /// <example id="forall-example-1">
+    /// <example id="forall-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -563,7 +563,7 @@ module Map =
     ///
     /// <returns>The resulting map of keys and transformed values.</returns>
     /// 
-    /// <example id="map-example-1">
+    /// <example id="map-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -580,7 +580,7 @@ module Map =
     ///
     /// <returns>True if the map contains the key.</returns>
     /// 
-    /// <example id="containskey-example-1">
+    /// <example id="containskey-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -600,7 +600,7 @@ module Map =
     /// <returns>A pair of maps in which the first contains the elements for which the predicate returned true
     /// and the second containing the elements for which the predicated returned false.</returns>
     /// 
-    /// <example id="partition-example-1">
+    /// <example id="partition-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -617,7 +617,7 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example id="remove-example-1">
+    /// <example id="remove-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -636,7 +636,7 @@ module Map =
     ///
     /// <returns>The found <c>Some</c> value or <c>None</c>.</returns>
     /// 
-    /// <example id="tryfind-example-1">
+    /// <example id="tryfind-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -656,7 +656,7 @@ module Map =
     ///
     /// <returns>The first key for which the predicate evaluates true.</returns>
     /// 
-    /// <example id="findkey-example-1">
+    /// <example id="findkey-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -675,7 +675,7 @@ module Map =
     ///
     /// <returns>The first key for which the predicate returns true or None if the predicate evaluates to false for each key/value pair.</returns>
     /// 
-    /// <example id="tryfindkey-example-1">
+    /// <example id="tryfindkey-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -688,7 +688,7 @@ module Map =
 
     /// <summary>The number of bindings in the map.</summary>
     /// 
-    /// <example id="count-example-1">
+    /// <example id="count-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -701,7 +701,7 @@ module Map =
     /// <summary>The keys in the map.
     /// The sequence will be ordered by the keys of the map.</summary>
     /// 
-    /// <example id="keys-example-1">
+    /// <example id="keys-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
@@ -714,7 +714,7 @@ module Map =
     /// <summary>The values in the map, including the duplicates.
     /// The sequence will be ordered by the keys of the map.</summary>
     /// 
-    /// <example id="values-example-1">
+    /// <example id="values-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
     /// 
