@@ -31,7 +31,7 @@ type internal FSharpCompletionService
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
-    override _.GetRules() =
+    override _.GetRulesImpl() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
             | NeverNewline -> EnterKeyRule.Never
