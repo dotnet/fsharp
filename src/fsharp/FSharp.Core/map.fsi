@@ -26,6 +26,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-add-example-1">
     /// <code lang="fsharp">
     ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     existing.Add (3, "c") // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
     ///     existing.Add (2, "aa") // evaluates to map [(1, "a"); (2, "aa")]
     /// </code>
@@ -42,10 +43,12 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-change-example-1">
     /// <code lang="fsharp">
     ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     let f = function
-    ///         | Some s -> Some (s + s)
+    ///         | Some s -> Some (s + "z")
     ///         | None -> None
-    ///     existing.Change (1, f) // evaluates to map [(1, "aa"); (2, "b")]
+    /// 
+    ///     existing.Change (1, f) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     member Change: key:'Key * f:('Value option -> 'Value option) -> Map<'Key,'Value>
@@ -85,6 +88,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-containskey-example-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     sample.ContainsKey 1 // evaluates to true
     ///     sample.ContainsKey 3 // evaluates to false
     /// </code>
@@ -96,6 +100,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-containskey-example-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     sample.Count // evaluates to 2
     /// </code>
     /// </example>
@@ -112,6 +117,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-item-example-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     sample.[1] // evaluates to "a"
     ///     sample.[3] // throws KeyNotFoundException
     /// </code>
@@ -127,6 +133,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-remove-example-1">
     /// <code lang="fsharp">
     ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     existing.Remove 1 // evaluates to map [(2, "b")]
     ///     existing.Remove 3 // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
@@ -143,6 +150,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// <example id="member-tryfind-example-1">
     /// <code lang="fsharp">
     ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
     ///     sample.TryFind 1 // evaluates to Some "a"
     ///     sample.TryFind 3 // evaluates to None
     /// </code>
@@ -208,7 +216,14 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="add-example-1">
+    /// <code lang="fsharp">
+    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     Map.add 3 "c" existing // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
+    ///     Map.add 2 "aa" existing // evaluates to map [(1, "a"); (2, "aa")]
+    /// </code>
+    /// </example>
     [<CompiledName("Add")>]
     val add: key:'Key -> value:'T -> table:Map<'Key,'T> -> Map<'Key,'T>
 
@@ -220,7 +235,17 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="change-example-1">
+    /// <code lang="fsharp">
+    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     let f = function
+    ///         | Some s -> Some (s + "z")
+    ///         | None -> None
+    /// 
+    ///     Map.change 1 f existing // evaluates to map [(1, "az"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("Change")>]
     val change: key:'Key -> f:('T option -> 'T option) -> table:Map<'Key,'T> -> Map<'Key,'T>
 
@@ -230,7 +255,11 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="oflist-example-1">
+    /// <code lang="fsharp">
+    ///     [ (1, "a"); (2, "b") ] |> Map.ofList // evaluates to map [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("OfList")>]
     val ofList: elements:('Key * 'T) list -> Map<'Key,'T>
 
@@ -240,7 +269,11 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="ofarray-example-1">
+    /// <code lang="fsharp">
+    ///     [| (1, "a"); (2, "b") |] |> Map.ofArray // evaluates to map [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("OfArray")>]
     val ofArray: elements:('Key * 'T)[] -> Map<'Key,'T>
 
@@ -250,7 +283,11 @@ module Map =
     ///
     /// <returns>The resulting map.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="ofseq-example-1">
+    /// <code lang="fsharp">
+    ///     seq { (1, "a"); (2, "b") } |> Map.ofSeq // evaluates to map [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("OfSeq")>]
     val ofSeq: elements:seq<'Key * 'T> -> Map<'Key,'T>
 
@@ -261,7 +298,11 @@ module Map =
     ///
     /// <returns>The sequence of key/value pairs.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="toseq-example-1">
+    /// <code lang="fsharp">
+    ///     Map [ (1, "a"); (2, "b") ] |> Map.toSeq // evaluates to seq [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("ToSeq")>]
     val toSeq: table:Map<'Key,'T> -> seq<'Key * 'T> 
 
@@ -272,7 +313,11 @@ module Map =
     ///
     /// <returns>The list of key/value pairs.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="tolist-example-1">
+    /// <code lang="fsharp">
+    ///     Map [ (1, "a"); (2, "b") ] |> Map.toList // evaluates to [(1, "a"); (2, "b")]
+    /// </code>
+    /// </example>
     [<CompiledName("ToList")>]
     val toList: table:Map<'Key,'T> -> ('Key * 'T) list 
 
@@ -283,7 +328,11 @@ module Map =
     ///
     /// <returns>The array of key/value pairs.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="toarray-example-1">
+    /// <code lang="fsharp">
+    ///     Map [ (1, "a"); (2, "b") ] |> Map.toArray // evaluates to [|(1, "a"); (2, "b")|]
+    /// </code>
+    /// </example>
     [<CompiledName("ToArray")>]
     val toArray: table:Map<'Key,'T> -> ('Key * 'T)[]
 
@@ -293,13 +342,25 @@ module Map =
     ///
     /// <returns>True if the map is empty.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="isempty-example-1">
+    /// <code lang="fsharp">
+    ///     let emptyMap : Map<int, string> = Map.empty
+    ///     Map.isEmpty emptyMap // evaluates to true
+    /// 
+    ///     let notEmptyMap = Map [ (1, "a"); (2, "b") ]
+    ///     Map.isEmpty notEmptyMap // evaluates to false
+    /// </code>
+    /// </example>
     [<CompiledName("IsEmpty")>]
     val isEmpty: table:Map<'Key,'T> -> bool
 
     /// <summary>The empty map.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="empty-example-1">
+    /// <code lang="fsharp">
+    ///     let emptyMap : Map<int, string> = Map.empty
+    /// </code>
+    /// </example>
     [<GeneralizableValueAttribute>]
     [<CompiledName("Empty")>]
     val empty<'Key,'T> : Map<'Key,'T> when 'Key : comparison
@@ -313,7 +374,14 @@ module Map =
     ///
     /// <returns>The value mapped to the given key.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="find-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     Map.find 1 sample // evaluates to "a"
+    ///     Map.find 3 sample // throws KeyNotFoundException
+    /// </code>
+    /// </example>
     [<CompiledName("Find")>]
     val find: key:'Key -> table:Map<'Key,'T> -> 'T
 
@@ -324,7 +392,17 @@ module Map =
     ///
     /// <returns>The first result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="trypick-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// 
+    ///     let f n s = if n > 5 && String.length s > 2 then Some s else None
+    ///     Map.tryPick f sample // evaluates to Some "ccc"
+    /// 
+    ///     let g n s = if n > 5 && String.length s > 4 then Some s else None
+    ///     Map.tryPick g sample // evaluates to None
+    /// </code>
+    /// </example>
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U option
 
@@ -338,7 +416,17 @@ module Map =
     ///
     /// <returns>The first result.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="pick-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// 
+    ///     let f n s = if n > 5 && String.length s > 2 then Some s else None
+    ///     Map.pick f sample // evaluates to "ccc"
+    /// 
+    ///     let g n s = if n > 5 && String.length s > 4 then Some s else None
+    ///     Map.pick g sample // throws KeyNotFoundException
+    /// </code>
+    /// </example>
     [<CompiledName("Pick")>]
     val pick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U 
 
@@ -350,7 +438,15 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="foldback-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     let accumulate n s state = sprintf "%i %s %s" n s state
+    /// 
+    ///     Map.foldBack accumulate sample "initial" // evaluates to "1 a 2 b initial"
+    /// </code>
+    /// </example>
     [<CompiledName("FoldBack")>]
     val foldBack<'Key,'T,'State> : folder:('Key -> 'T -> 'State -> 'State) -> table:Map<'Key,'T> -> state:'State -> 'State when 'Key : comparison
 
@@ -362,7 +458,15 @@ module Map =
     ///
     /// <returns>The final state value.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="fold-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     let accumulate state n s = sprintf "%s %i %s" state n s
+    /// 
+    ///     Map.fold accumulate "initial" sample // evaluates to "initial 1 a 2 b"
+    /// </code>
+    /// </example>
     [<CompiledName("Fold")>]
     val fold<'Key,'T,'State> : folder:('State -> 'Key -> 'T -> 'State) -> state:'State -> table:Map<'Key,'T> -> 'State when 'Key : comparison
 
@@ -371,7 +475,15 @@ module Map =
     /// <param name="action">The function to apply to each key/value pair.</param>
     /// <param name="table">The input map.</param>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="fold-example-1">
+    /// <code lang="fsharp">
+    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// 
+    ///     let printer n s = printf "%i %s " n s
+    /// 
+    ///     Map.iter printer sample // prints "1 a 2 b "
+    /// </code>
+    /// </example>
     [<CompiledName("Iterate")>]
     val iter: action:('Key -> 'T -> unit) -> table:Map<'Key,'T> -> unit
 
