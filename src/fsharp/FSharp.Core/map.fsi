@@ -57,7 +57,7 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-isempty-1">
     /// <code lang="fsharp">
-    ///     let emptyMap : Map<int, string> = Map.empty
+    ///     let emptyMap: Map&lt;int, string> = Map.empty
     ///     emptyMap.IsEmpty // evaluates to true
     /// 
     ///     let notEmptyMap = Map [ (1, "a"); (2, "b") ]
