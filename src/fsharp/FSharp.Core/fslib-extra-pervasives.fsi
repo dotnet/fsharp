@@ -308,6 +308,7 @@ module ExtraTopLevelOperators =
     /// </code>
     /// Evaluates to a quotation equivalent to <c>&lt;@ (5 + 5) + (5 + 5) @> </c>
     /// </example>
+    [<CompiledName("SpliceExpression")>]
     val (~%): expression: Expr<'T> -> 'T
 
     /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
