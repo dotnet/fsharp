@@ -18,7 +18,7 @@ module ComparisonIdentity =
     ///
     /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</returns>
     /// 
-    /// <example id="fromfunctions-1">Create and use a comparer using structural comparison:
+    /// <example id="structural-1">Create and use a comparer using structural comparison:
     /// <code>
     /// let compareTuples = ComparisonIdentity.Structural&lt;int * int>
     ///
@@ -32,7 +32,7 @@ module ComparisonIdentity =
     ///
     /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.Compare"/>.</returns>
     /// 
-    /// <example id="fromfunctions-1">Create and use a comparer using structural comparison:
+    /// <example id="nonstructural-1">Create and use a comparer using structural comparison:
     /// <code>
     /// let comparer = ComparisonIdentity.NonStructural&lt;System.DateTime>
     ///
@@ -78,7 +78,7 @@ module HashIdentity =
     /// dict.[arr1] &lt;- 6
     /// dict.[arr2] &gt;- 7
     /// </code>
-    /// In this example, only one entry is added to the dictionary, as the arrays have idenitical structural idenitity.
+    /// In this example, only one entry is added to the dictionary, as the arrays identical by structural equality.
     /// </example>
     val inline Structural<'T> : IEqualityComparer<'T>  when 'T : equality
     
@@ -140,7 +140,7 @@ module HashIdentity =
     /// dict.Add(arr1, 6)
     /// dict.Add(arr2, 7)
     /// </code>
-    /// In this example, two entries are added to the dictionary, as the arrays have different object reference idenitity.
+    /// In this example, two entries are added to the dictionary, as the arrays have different object reference identity.
     /// </example>
     val Reference<'T>   : IEqualityComparer<'T>  when 'T : not struct 
     
