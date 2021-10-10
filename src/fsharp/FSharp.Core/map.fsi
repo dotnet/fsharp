@@ -25,10 +25,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-add-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.Add (3, "c") // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
-    ///     sample.Add (2, "aa") // evaluates to map [(1, "a"); (2, "aa")]
+    /// sample.Add (3, "c") // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
+    /// sample.Add (2, "aa") // evaluates to map [(1, "a"); (2, "aa")]
     /// </code>
     /// </example>
     member Add: key:'Key * value:'Value -> Map<'Key,'Value>
@@ -42,13 +42,14 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-change-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     let f = function
-    ///         | Some s -> Some (s + "z")
-    ///         | None -> None
+    /// let f x =
+    ///     match x with 
+    ///     | Some s -> Some (s + "z")
+    ///     | None -> None
     /// 
-    ///     sample.Change (1, f) // evaluates to map [(1, "az"); (2, "b")]
+    /// sample.Change (1, f) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     member Change: key:'Key * f:('Value option -> 'Value option) -> Map<'Key,'Value>
@@ -57,11 +58,11 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-isempty-1">
     /// <code lang="fsharp">
-    ///     let emptyMap: Map&lt;int, string> = Map.empty
-    ///     emptyMap.IsEmpty // evaluates to true
+    /// let emptyMap: Map&lt;int, string> = Map.empty
+    /// emptyMap.IsEmpty // evaluates to true
     /// 
-    ///     let notEmptyMap = Map [ (1, "a"); (2, "b") ]
-    ///     notEmptyMap.IsEmpty // evaluates to false
+    /// let notEmptyMap = Map [ (1, "a"); (2, "b") ]
+    /// notEmptyMap.IsEmpty // evaluates to false
     /// </code>
     /// </example>
     member IsEmpty: bool
@@ -74,10 +75,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="new-1">
     /// <code lang="fsharp">
-    ///     Map [ (1, "a"); (2, "b") ] // evaluates to map [(1, "a"); (2, "b")]
+    /// Map [ (1, "a"); (2, "b") ] // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
-    new : elements:seq<'Key * 'Value> -> Map<'Key,'Value>
+    new: elements:seq<'Key * 'Value> -> Map<'Key,'Value>
 
     /// <summary>Tests if an element is in the domain of the map.</summary>
     ///
@@ -87,10 +88,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-containskey-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.ContainsKey 1 // evaluates to true
-    ///     sample.ContainsKey 3 // evaluates to false
+    /// sample.ContainsKey 1 // evaluates to true
+    /// sample.ContainsKey 3 // evaluates to false
     /// </code>
     /// </example>
     member ContainsKey: key:'Key -> bool
@@ -99,9 +100,9 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-count-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.Count // evaluates to 2
+    /// sample.Count // evaluates to 2
     /// </code>
     /// </example>
     member Count: int
@@ -116,10 +117,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-item-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.[1] // evaluates to "a"
-    ///     sample.[3] // throws KeyNotFoundException
+    /// sample.[1] // evaluates to "a"
+    /// sample.[3] // throws KeyNotFoundException
     /// </code>
     /// </example>
     member Item : key:'Key -> 'Value with get
@@ -132,10 +133,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-remove-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.Remove 1 // evaluates to map [(2, "b")]
-    ///     sample.Remove 3 // equal to sample
+    /// sample.Remove 1 // evaluates to map [(2, "b")]
+    /// sample.Remove 3 // equal to sample
     /// </code>
     /// </example>
     member Remove: key:'Key -> Map<'Key,'Value>
@@ -149,10 +150,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-tryfind-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.TryFind 1 // evaluates to Some "a"
-    ///     sample.TryFind 3 // evaluates to None
+    /// sample.TryFind 1 // evaluates to Some "a"
+    /// sample.TryFind 3 // evaluates to None
     /// </code>
     /// </example>
     member TryFind: key:'Key -> 'Value option
@@ -167,16 +168,16 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-trygetvalue-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.TryGetValue 1 // evaluates to (true, "a")
-    ///     sample.TryGetValue 3 // evaluates to (false, null)
+    /// sample.TryGetValue 1 // evaluates to (true, "a")
+    /// sample.TryGetValue 3 // evaluates to (false, null)
     /// 
-    ///     let mutable x = ""
-    ///     sample.TryGetValue (1, &x) // evaluates to true, x set to "a"
+    /// let mutable x = ""
+    /// sample.TryGetValue (1, &x) // evaluates to true, x set to "a"
     /// 
-    ///     let mutable y = ""
-    ///     sample.TryGetValue (3, &y) // evaluates to false, y unchanged
+    /// let mutable y = ""
+    /// sample.TryGetValue (3, &y) // evaluates to false, y unchanged
     /// </code>
     /// </example>
     member TryGetValue: key: 'Key * [<System.Runtime.InteropServices.Out>] value: byref<'Value> -> bool
@@ -186,9 +187,9 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-keys-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.Keys // evaluates to seq [1; 2]
+    /// sample.Keys // evaluates to seq [1; 2]
     /// </code>
     /// </example>
     member Keys : ICollection<'Key>
@@ -198,9 +199,9 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// 
     /// <example id="member-values-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     sample.Values // evaluates to seq ["a"; "b"]
+    /// sample.Values // evaluates to seq ["a"; "b"]
     /// </code>
     /// </example>
     member Values : ICollection<'Value>
@@ -230,10 +231,10 @@ module Map =
     /// 
     /// <example id="add-1">
     /// <code lang="fsharp">
-    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// let existing = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.add 3 "c" existing // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
-    ///     Map.add 2 "aa" existing // evaluates to map [(1, "a"); (2, "aa")]
+    /// input |> Map.add 3 "c" // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
+    /// input |> Map.add 2 "aa" // evaluates to map [(1, "a"); (2, "aa")]
     /// </code>
     /// </example>
     [<CompiledName("Add")>]
@@ -249,13 +250,14 @@ module Map =
     /// 
     /// <example id="change-1">
     /// <code lang="fsharp">
-    ///     let existing = Map [ (1, "a"); (2, "b") ]
+    /// let input = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     let f = function
-    ///         | Some s -> Some (s + "z")
-    ///         | None -> None
-    /// 
-    ///     Map.change 1 f existing // evaluates to map [(1, "az"); (2, "b")]
+    /// input |> Map.change 1 (fun x ->
+    ///     match x with
+    ///     | Some s -> Some (s + "z")
+    ///     | None -> None
+    /// )
+    /// evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("Change")>]
@@ -269,7 +271,9 @@ module Map =
     /// 
     /// <example id="oflist-1">
     /// <code lang="fsharp">
-    ///     [ (1, "a"); (2, "b") ] |> Map.ofList // evaluates to map [(1, "a"); (2, "b")]
+    /// let input = [ (1, "a"); (2, "b") ]
+    ///
+    /// input |> Map.ofList // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("OfList")>]
@@ -283,7 +287,9 @@ module Map =
     /// 
     /// <example id="ofarray-1">
     /// <code lang="fsharp">
-    ///     [| (1, "a"); (2, "b") |] |> Map.ofArray // evaluates to map [(1, "a"); (2, "b")]
+    /// let input = [| (1, "a"); (2, "b") |]
+    ///
+    /// input |> Map.ofArray // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("OfArray")>]
@@ -297,7 +303,9 @@ module Map =
     /// 
     /// <example id="ofseq-1">
     /// <code lang="fsharp">
-    ///     seq { (1, "a"); (2, "b") } |> Map.ofSeq // evaluates to map [(1, "a"); (2, "b")]
+    /// let input = seq { (1, "a"); (2, "b") }
+    ///
+    /// input |> Map.ofSeq // evaluates to map [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("OfSeq")>]
@@ -312,7 +320,9 @@ module Map =
     /// 
     /// <example id="toseq-1">
     /// <code lang="fsharp">
-    ///     Map [ (1, "a"); (2, "b") ] |> Map.toSeq // evaluates to seq [(1, "a"); (2, "b")]
+    /// let input = Map [ (1, "a"); (2, "b") ]
+    ///
+    /// input |> Map.toSeq // evaluates to seq [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("ToSeq")>]
@@ -327,7 +337,9 @@ module Map =
     /// 
     /// <example id="tolist-1">
     /// <code lang="fsharp">
-    ///     Map [ (1, "a"); (2, "b") ] |> Map.toList // evaluates to [(1, "a"); (2, "b")]
+    /// let input = Map [ (1, "a"); (2, "b") ]
+    ///
+    /// input |> Map.toList // evaluates to [(1, "a"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
@@ -342,7 +354,9 @@ module Map =
     /// 
     /// <example id="toarray-1">
     /// <code lang="fsharp">
-    ///     Map [ (1, "a"); (2, "b") ] |> Map.toArray // evaluates to [|(1, "a"); (2, "b")|]
+    /// let input = Map [ (1, "a"); (2, "b") ]
+    ///
+    /// input |> Map.toArray // evaluates to [|(1, "a"); (2, "b")|]
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
@@ -356,11 +370,11 @@ module Map =
     /// 
     /// <example id="isempty-1">
     /// <code lang="fsharp">
-    ///     let emptyMap : Map<int, string> = Map.empty
-    ///     Map.isEmpty emptyMap // evaluates to true
+    /// let emptyMap = Map.empty<int, string>
+    /// emptyMap |> Map.isEmpty  // evaluates to true
     /// 
-    ///     let notEmptyMap = Map [ (1, "a"); (2, "b") ]
-    ///     Map.isEmpty notEmptyMap // evaluates to false
+    /// let notEmptyMap = Map [ (1, "a"); (2, "b") ]
+    /// emptyMap |> Map.isEmpty // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("IsEmpty")>]
@@ -370,7 +384,7 @@ module Map =
     /// 
     /// <example id="empty-1">
     /// <code lang="fsharp">
-    ///     let emptyMap : Map<int, string> = Map.empty
+    /// let emptyMap = Map.empty<int, string>
     /// </code>
     /// </example>
     [<GeneralizableValueAttribute>]
@@ -388,10 +402,10 @@ module Map =
     /// 
     /// <example id="find-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.find 1 sample // evaluates to "a"
-    ///     Map.find 3 sample // throws KeyNotFoundException
+    /// sample |> Map.find 1 // evaluates to "a"
+    /// sample |> Map.find 3 // throws KeyNotFoundException
     /// </code>
     /// </example>
     [<CompiledName("Find")>]
@@ -406,14 +420,19 @@ module Map =
     /// 
     /// <example id="trypick-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    ///     let f n s = if n > 5 && String.length s > 2 then Some s else None
-    ///     Map.tryPick f sample // evaluates to Some "ccc"
-    /// 
-    ///     let g n s = if n > 5 && String.length s > 4 then Some s else None
-    ///     Map.tryPick g sample // evaluates to None
+    /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 2 then Some s else None)
     /// </code>
+    /// Evaluates to <c>Some "ccc"</c>
+    /// </example>
+    /// <example id="trypick-2">
+    /// <code lang="fsharp">
+    /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// 
+    /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 4 then Some s else None)
+    /// </code>
+    /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U option
@@ -430,14 +449,19 @@ module Map =
     /// 
     /// <example id="pick-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    ///     let f n s = if n > 5 && String.length s > 2 then Some s else None
-    ///     Map.pick f sample // evaluates to "ccc"
-    /// 
-    ///     let g n s = if n > 5 && String.length s > 4 then Some s else None
-    ///     Map.pick g sample // throws KeyNotFoundException
+    /// sample |> Map.pick (fun n s -> if n > 5 && s.Length > 2 then Some s else None)
     /// </code>
+    /// Evaluates to <c>"ccc"</c>
+    /// </example>
+    /// <example id="pick-2">
+    /// <code lang="fsharp">
+    /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
+    /// 
+    /// sample |> Map.pick (fun n s -> if n > 5 && s.Length > 4 then Some s else None)
+    /// </code>
+    /// Raises <c>KeyNotFoundException</c>
     /// </example>
     [<CompiledName("Pick")>]
     val pick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U 
@@ -452,12 +476,11 @@ module Map =
     /// 
     /// <example id="foldback-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     let accumulate n s state = sprintf "%i %s %s" n s state
-    /// 
-    ///     Map.foldBack accumulate sample "initial" // evaluates to "1 a 2 b initial"
+    /// (sample, "initial") ||> Map.foldBack (fun n s state -> sprintf "%i %s %s" n s state)
     /// </code>
+    /// Evaluates to <c>"1 a 2 b initial"</c>
     /// </example>
     [<CompiledName("FoldBack")>]
     val foldBack<'Key,'T,'State> : folder:('Key -> 'T -> 'State -> 'State) -> table:Map<'Key,'T> -> state:'State -> 'State when 'Key : comparison
@@ -472,12 +495,11 @@ module Map =
     /// 
     /// <example id="fold-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     let accumulate state n s = sprintf "%s %i %s" state n s
-    /// 
-    ///     Map.fold accumulate "initial" sample // evaluates to "initial 1 a 2 b"
+    /// ("initial", sample) ||> Map.fold (fun state n s -> sprintf "%s %i %s" state n s)
     /// </code>
+    /// Evaluates to <c>"initial 1 a 2 b"</c>.
     /// </example>
     [<CompiledName("Fold")>]
     val fold<'Key,'T,'State> : folder:('State -> 'Key -> 'T -> 'State) -> state:'State -> table:Map<'Key,'T> -> 'State when 'Key : comparison
@@ -489,12 +511,11 @@ module Map =
     /// 
     /// <example id="iter-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     let printer n s = printf "%i %s " n s
-    /// 
-    ///     Map.iter printer sample // prints "1 a 2 b "
+    /// sample |> Map.iter (fun n s -> printf "%i %s " n s)
     /// </code>
+    /// Prints <c>"1 a 2 b "</c>.
     /// </example>
     [<CompiledName("Iterate")>]
     val iter: action:('Key -> 'T -> unit) -> table:Map<'Key,'T> -> unit
@@ -509,10 +530,10 @@ module Map =
     /// 
     /// <example id="exists-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.exists (fun n s -> n = String.length s) sample // evaluates to true
-    ///     Map.exists (fun n s -> n < String.length s) sample // evaluates to false
+    /// sample |> Map.exists (fun n s -> n = s.Length) // evaluates to true
+    /// sample |> Map.exists (fun n s -> n < s.Length) // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
@@ -527,9 +548,9 @@ module Map =
     /// 
     /// <example id="filter-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.filter (fun n s -> n = String.length s) sample // evaluates to map [(1, "a")]
+    /// sample |> Map.filter (fun n s -> n = s.Length) // evaluates to map [(1, "a")]
     /// </code>
     /// </example>
     [<CompiledName("Filter")>]
@@ -545,10 +566,10 @@ module Map =
     /// 
     /// <example id="forall-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.forall (fun n s -> n >= String.length s) sample // evaluates to true
-    ///     Map.forall (fun n s -> n = String.length s) sample // evaluates to false
+    /// sample |> Map.forall (fun n s -> n >= s.Length) // evaluates to true
+    /// sample |> Map.forall (fun n s -> n = s.Length)  // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
@@ -565,9 +586,9 @@ module Map =
     /// 
     /// <example id="map-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.map (fun n s -> sprintf "%i %s" n s) sample // evaluates to map [(1, "1 a"); (2, "2 b")]
+    /// sample |> Map.map (fun n s -> sprintf "%i %s" n s) // evaluates to map [(1, "1 a"); (2, "2 b")]
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
@@ -582,10 +603,10 @@ module Map =
     /// 
     /// <example id="containskey-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.containsKey 1 sample // evaluates to true
-    ///     Map.containsKey 3 sample // evaluates to false
+    /// sample |> Map.containsKey 1 // evaluates to true
+    /// sample |> Map.containsKey 3 // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("ContainsKey")>]
@@ -602,9 +623,9 @@ module Map =
     /// 
     /// <example id="partition-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.partition (fun n s -> n = String.length s) sample // evaluates to (map [(1, "a")], map [(2, "b")])
+    /// sample |> Map.partition (fun n s -> n = s.Length) // evaluates to (map [(1, "a")], map [(2, "b")])
     /// </code>
     /// </example>
     [<CompiledName("Partition")>]
@@ -619,10 +640,10 @@ module Map =
     /// 
     /// <example id="remove-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.remove 1 sample // evaluates to map [(2, "b")]
-    ///     Map.remove 3 sample // equal to sample
+    /// sample |> Map.remove 1 // evaluates to map [(2, "b")]
+    /// sample |> Map.remove 3 // equal to sample
     /// </code>
     /// </example>
     [<CompiledName("Remove")>]
@@ -638,10 +659,10 @@ module Map =
     /// 
     /// <example id="tryfind-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.tryFind 1 sample // evaluates to Some "a"
-    ///     Map.tryFind 3 sample // evaluates to None
+    /// sample |> Map.tryFind 1 // evaluates to Some "a"
+    /// sample |> Map.tryFind 3 // evaluates to None
     /// </code>
     /// </example>
     [<CompiledName("TryFind")>]
@@ -658,10 +679,10 @@ module Map =
     /// 
     /// <example id="findkey-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.findKey (fun n s -> n = String.length s) sample // evaluates to 1
-    ///     Map.findKey (fun n s -> n < String.length s) sample // throws KeyNotFoundException
+    /// sample |> Map.findKey (fun n s -> n = s.Length) // evaluates to 1
+    /// sample |> Map.findKey (fun n s -> n < s.Length) // throws KeyNotFoundException
     /// </code>
     /// </example>
     [<CompiledName("FindKey")>]
@@ -677,10 +698,10 @@ module Map =
     /// 
     /// <example id="tryfindkey-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.tryFindKey (fun n s -> n = String.length s) sample // evaluates to Some 1
-    ///     Map.tryFindKey (fun n s -> n < String.length s) sample // evaluates to None
+    /// sample |> Map.tryFindKey (fun n s -> n = s.Length) // evaluates to Some 1
+    /// sample |> Map.tryFindKey (fun n s -> n < s.Length) // evaluates to None
     /// </code>
     /// </example>
     [<CompiledName("TryFindKey")>]
@@ -690,9 +711,9 @@ module Map =
     /// 
     /// <example id="count-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.count sample // evaluates to 2
+    /// sample |> Map.count // evaluates to 2
     /// </code>
     /// </example>
     [<CompiledName("Count")>]
@@ -703,9 +724,9 @@ module Map =
     /// 
     /// <example id="keys-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.keys sample // evaluates to seq [1; 2]
+    /// sample |> Map.keys // evaluates to seq [1; 2]
     /// </code>
     /// </example>
     [<CompiledName("Keys")>]
@@ -716,9 +737,9 @@ module Map =
     /// 
     /// <example id="values-1">
     /// <code lang="fsharp">
-    ///     let sample = Map [ (1, "a"); (2, "b") ]
+    /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
-    ///     Map.values sample // evaluates to seq ["a"; "b"]
+    /// sample |> Map.values // evaluates to seq ["a"; "b"]
     /// </code>
     /// </example>
     [<CompiledName("Values")>]
