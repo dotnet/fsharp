@@ -174,10 +174,10 @@ type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditi
     /// sample.TryGetValue 3 // evaluates to (false, null)
     /// 
     /// let mutable x = ""
-    /// sample.TryGetValue (1, &x) // evaluates to true, x set to "a"
+    /// sample.TryGetValue (1, &amp;x) // evaluates to true, x set to "a"
     /// 
     /// let mutable y = ""
-    /// sample.TryGetValue (3, &y) // evaluates to false, y unchanged
+    /// sample.TryGetValue (3, &amp;y) // evaluates to false, y unchanged
     /// </code>
     /// </example>
     member TryGetValue: key: 'Key * [<System.Runtime.InteropServices.Out>] value: byref<'Value> -> bool
@@ -370,7 +370,7 @@ module Map =
     /// 
     /// <example id="isempty-1">
     /// <code lang="fsharp">
-    /// let emptyMap = Map.empty<int, string>
+    /// let emptyMap = Map.empty&lt;int, string>
     /// emptyMap |> Map.isEmpty  // evaluates to true
     /// 
     /// let notEmptyMap = Map [ (1, "a"); (2, "b") ]
@@ -384,7 +384,7 @@ module Map =
     /// 
     /// <example id="empty-1">
     /// <code lang="fsharp">
-    /// let emptyMap = Map.empty<int, string>
+    /// let emptyMap = Map.empty&lt;int, string>
     /// </code>
     /// </example>
     [<GeneralizableValueAttribute>]
@@ -424,15 +424,16 @@ module Map =
     /// 
     /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 2 then Some s else None)
     /// </code>
-    /// Evaluates to <c>Some "ccc"</c>
+    /// Evaluates to <c>Some "ccc"</c>.
     /// </example>
+    ///
     /// <example id="trypick-2">
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
     /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 4 then Some s else None)
     /// </code>
-    /// Evaluates to <c>None</c>
+    /// Evaluates to <c>None</c>.
     /// </example>
     [<CompiledName("TryPick")>]
     val tryPick: chooser:('Key -> 'T -> 'U option) -> table:Map<'Key,'T> -> 'U option
