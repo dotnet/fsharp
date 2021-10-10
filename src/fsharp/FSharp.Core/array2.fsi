@@ -389,7 +389,7 @@ module Array2D =
     /// <param name="index1">The index along the first dimension.</param>
     /// <param name="index2">The index along the second dimension.</param>
     /// <param name="value">The value to set in the array.</param>
-    //
+    ///
     /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception> 
     ///
     /// <remarks>
