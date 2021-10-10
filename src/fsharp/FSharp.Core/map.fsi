@@ -422,7 +422,7 @@ module Map =
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 2 then Some s else None)
+    /// sample |> Map.tryPick (fun n s -> if n > 5 &amp;&amp; s.Length > 2 then Some s else None)
     /// </code>
     /// Evaluates to <c>Some "ccc"</c>.
     /// </example>
@@ -431,7 +431,7 @@ module Map =
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    /// sample |> Map.tryPick (fun n s -> if n > 5 && s.Length > 4 then Some s else None)
+    /// sample |> Map.tryPick (fun n s -> if n > 5 &amp;&amp; s.Length > 4 then Some s else None)
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>
@@ -452,7 +452,7 @@ module Map =
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    /// sample |> Map.pick (fun n s -> if n > 5 && s.Length > 2 then Some s else None)
+    /// sample |> Map.pick (fun n s -> if n > 5 &amp;&amp; s.Length > 2 then Some s else None)
     /// </code>
     /// Evaluates to <c>"ccc"</c>
     /// </example>
@@ -460,7 +460,7 @@ module Map =
     /// <code lang="fsharp">
     /// let sample = Map [ (1, "a"); (2, "b"); (10, "ccc"); (20, "ddd") ]
     /// 
-    /// sample |> Map.pick (fun n s -> if n > 5 && s.Length > 4 then Some s else None)
+    /// sample |> Map.pick (fun n s -> if n > 5 &amp;&amp; s.Length > 4 then Some s else None)
     /// </code>
     /// Raises <c>KeyNotFoundException</c>
     /// </example>
@@ -534,7 +534,7 @@ module Map =
     /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
     /// sample |> Map.exists (fun n s -> n = s.Length) // evaluates to true
-    /// sample |> Map.exists (fun n s -> n < s.Length) // evaluates to false
+    /// sample |> Map.exists (fun n s -> n &lt; s.Length) // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
@@ -683,7 +683,7 @@ module Map =
     /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
     /// sample |> Map.findKey (fun n s -> n = s.Length) // evaluates to 1
-    /// sample |> Map.findKey (fun n s -> n < s.Length) // throws KeyNotFoundException
+    /// sample |> Map.findKey (fun n s -> n &lt; s.Length) // throws KeyNotFoundException
     /// </code>
     /// </example>
     [<CompiledName("FindKey")>]
@@ -702,7 +702,7 @@ module Map =
     /// let sample = Map [ (1, "a"); (2, "b") ]
     /// 
     /// sample |> Map.tryFindKey (fun n s -> n = s.Length) // evaluates to Some 1
-    /// sample |> Map.tryFindKey (fun n s -> n < s.Length) // evaluates to None
+    /// sample |> Map.tryFindKey (fun n s -> n &lt; s.Length) // evaluates to None
     /// </code>
     /// </example>
     [<CompiledName("TryFindKey")>]
