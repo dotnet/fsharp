@@ -61,8 +61,9 @@ type Context =
     | CtxtParen of token * Position 
     // Position is position of following token 
     | CtxtSeqBlock of FirstInSequence * Position * AddBlockEnd   
-    // first bool indicates "was this 'with' followed immediately by a '|'"? 
-    | CtxtMatchClauses of bool * Position   
+    // Indicates we're processing the second part of a match, after the 'with'
+    // First bool indicates "was this 'with' followed immediately by a '|'"?
+    | CtxtMatchClauses of bool * Position
 
     member c.StartPos = 
         match c with 
@@ -955,12 +956,17 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         if debug then dprintf "--> pushing, stack = %A\n" newOffsideStack
         offsideStack <- newOffsideStack
 
-    let popCtxt() = 
-        match offsideStack with 
+    let rec popCtxt() =
+        match offsideStack with
         | [] -> ()
-        | h :: rest -> 
-             if debug then dprintf "<-- popping Context(%A), stack = %A\n" h rest
-             offsideStack <- rest
+        | h :: rest ->
+            if debug then dprintf "<-- popping Context(%A), stack = %A\n" h rest
+            offsideStack <- rest
+            // For CtxtMatchClauses, also pop the CtxtMatch, if present (we expect it always will be).
+            if relaxWhitespace2 then
+                match h, rest with
+                | CtxtMatchClauses _ , CtxtMatch _ :: _ -> popCtxt()
+                | _ -> ()
 
     let replaceCtxt p ctxt = popCtxt(); pushCtxt p ctxt
 
