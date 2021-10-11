@@ -2848,8 +2848,9 @@ module Seq =
     ///
     /// <example id="removeAt-1">
     /// <code>
-    ///     seq { 0; 1; 2 } |> Seq.removeAt 1 // evaluates to seq { 0; 2 }
+    /// seq { 0; 1; 2 } |> Seq.removeAt 1
     /// </code>
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 2 }</c>.
     /// </example>
     [<CompiledName("RemoveAt")>]
     val removeAt: index: int -> source: seq<'T> -> seq<'T>
@@ -2866,8 +2867,9 @@ module Seq =
     ///
     /// <example id="removeManyAt-1">
     /// <code>
-    ///     seq { 0; 1; 2; 3 } |> Seq.removeManyAt 1 2 // evaluates to seq { 0; 3 }
+    /// seq { 0; 1; 2; 3 } |> Seq.removeManyAt 1 2
     /// </code>
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 3 }</c>.
     /// </example>
     [<CompiledName("RemoveManyAt")>]
     val removeManyAt: index: int -> count: int -> source: seq<'T> -> seq<'T>
@@ -2884,8 +2886,9 @@ module Seq =
     ///
     /// <example id="updateAt-1">
     /// <code>
-    ///     seq { 0; 1; 2 } |> Seq.updateAt 1 9 // evaluates to seq { 0; 9; 2 }
+    /// seq { 0; 1; 2 } |> Seq.updateAt 1 9
     /// </code>
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 9; 2 }</c>.
     /// </example>
     [<CompiledName("UpdateAt")>]
     val updateAt: index: int -> value: 'T -> source: seq<'T> -> seq<'T>
@@ -2902,8 +2905,9 @@ module Seq =
     ///
     /// <example id="insertAt-1">
     /// <code>
-    ///     seq { 0; 1; 2 } |> Seq.insertAt 1 9 // evaluates to seq { 0; 9; 1; 2 }
+    /// seq { 0; 1; 2 } |> Seq.insertAt 1 9
     /// </code>
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 9; 1; 2 }</c>.
     /// </example>
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: seq<'T> -> seq<'T>
@@ -2920,8 +2924,9 @@ module Seq =
     ///
     /// <example id="insertManyAt-1">
     /// <code>
-    ///     seq { 0; 1; 2 } |> Seq.insertManyAt 1 [8; 9] // evaluates to seq { 0; 8; 9; 1; 2 }
+    ///     seq { 0; 1; 2 } |> Seq.insertManyAt 1 [8; 9]
     /// </code>
+    /// Evaluates to a sequence yielding the same results as <c>seq { 0; 8; 9; 1; 2 }</c>.
     /// </example>
     [<CompiledName("InsertManyAt")>]
     val insertManyAt: index: int -> values: seq<'T> -> source: seq<'T> -> seq<'T>

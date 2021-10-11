@@ -31,7 +31,16 @@ module Array2D =
     ///
     /// <returns>The base-index of the first dimension of the array.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="base1-1">Create a 10x10 1-based array:
+    /// <code>
+    /// open System
+    ///
+    /// let array = Array.CreateInstance(typeof&lt;int&gt;, [| 10; 10 |], [| 1; 1 |]) :?> int[,]
+    ///
+    /// array |> Array2D.base1
+    /// </code>
+    /// Evaluates to <c>1</c>.
+    /// </example>
     [<CompiledName("Base1")>]
     val base1: array:'T[,] -> int
 
@@ -41,7 +50,16 @@ module Array2D =
     ///
     /// <returns>The base-index of the second dimension of the array.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="base2-1">Create a 10x10 1-based array:
+    /// <code>
+    /// open System
+    ///
+    /// let array = Array.CreateInstance(typeof&lt;int&gt;, [| 10; 10 |], [| 1; 1 |]) :?> int[,]
+    ///
+    /// array |> Array2D.base2
+    /// </code>
+    /// Evaluates to <c>1</c>.
+    /// </example>
     [<CompiledName("Base2")>]
     val base2: array:'T[,] -> int
 
@@ -54,7 +72,16 @@ module Array2D =
     ///
     /// <returns>A copy of the input array.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="copy-1">
+    /// <code>
+    /// open System
+    ///
+    /// let array = Array2D.zeroCreate&lt;int&gt; 10 10
+    ///
+    /// array |> Array2D.copy
+    /// </code>
+    /// Evaluates to a new copy of the 10x10 array.
+    /// </example>
     [<CompiledName("Copy")>]
     val copy: array:'T[,] -> 'T[,]
 
@@ -71,7 +98,24 @@ module Array2D =
     /// <exception cref="T:System.ArgumentException">Thrown when any of the indices are negative or if either of
     /// the counts are larger than the dimensions of the array allow.</exception>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <remarks>
+    /// Slicing syntax is generally preferred, e.g.
+    /// <code lang="fsharp">
+    /// let source = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    /// let target = array2D [ [ 2; 2; 2 ]; [ 12; 12; 12 ] ]
+    /// target[0..1,1..2] &lt;- source
+    /// </code>
+    /// </remarks>
+    ///
+    /// <example id="blit-1">
+    /// <code lang="fsharp">
+    /// let source = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    /// let target = array2D [ [ 2; 2; 2 ]; [ 12; 12; 12 ] ]
+    ///
+    /// Array2D.blit source 0 0 target 0 1 2 2
+    /// </code>
+    /// After evaluation <c>target</c> contains <c>[ [ 2; 3; 4 ]; [ 12; 13; 14 ] ]</c>.
+    /// </example>
     [<CompiledName("CopyTo")>]
     val blit: source:'T[,] -> sourceIndex1:int -> sourceIndex2:int -> target:'T[,] -> targetIndex1:int -> targetIndex2:int -> length1:int -> length2:int -> unit
 
@@ -83,8 +127,14 @@ module Array2D =
     ///
     /// <returns>The generated array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when either of the lengths is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="init-1">
+    /// <code lang="fsharp">
+    /// Array2D.init 2 3 (fun i j -> i + j)
+    /// </code>
+    /// Evaluates to a 2x3 array with contents <c>[[0; 1; 2]; [1; 2; 3]]</c>
+    /// </example>
+    ///
     [<CompiledName("Initialize")>]
     val init: length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
 
@@ -96,8 +146,14 @@ module Array2D =
     ///
     /// <returns>The created array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="create-1">
+    /// <code lang="fsharp">
+    /// Array2D.create 2 3 1
+    /// </code>
+    /// Evaluates to a 2x3 array with contents <c>[[1; 1; 1]; [1; 1; 1]]</c>
+    /// </example>
+    ///
     [<CompiledName("Create")>]
     val create: length1:int -> length2:int -> value:'T -> 'T[,]
 
@@ -108,8 +164,14 @@ module Array2D =
     ///
     /// <returns>The created array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="zeroCreate-1">
+    /// <code lang="fsharp">
+    /// Array2D.zeroCreate 2 3
+    /// </code>
+    /// Evaluates to a 2x3 array with contents <c>[[0; 0; 0]; [0; 0; 0]]</c>
+    /// </example>
+    ///
     [<CompiledName("ZeroCreate")>]
     val zeroCreate : length1:int -> length2:int -> 'T[,]
 
@@ -123,8 +185,14 @@ module Array2D =
     ///
     /// <returns>The created array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="initbased-1">
+    /// <code lang="fsharp">
+    /// Array2D.initBased 1 1 2 3 (fun i j -> i + j)
+    /// </code>
+    /// Evaluates to a 2x3 1-based array with contents <c>[[2; 3; 4]; [3; 4; 5]]</c>
+    /// </example>
+    ///
     [<CompiledName("InitializeBased")>]
     val initBased: base1:int -> base2:int -> length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
 
@@ -138,8 +206,14 @@ module Array2D =
     ///
     /// <returns>The created array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="createbased-1">
+    /// <code lang="fsharp">
+    /// Array2D.createBased 1 1 2 3 1
+    /// </code>
+    /// Evaluates to a 2x3 1-based array with contents <c>[[1; 1; 1]; [1; 1; 1]]</c>
+    /// </example>
+    ///
     [<CompiledName("CreateBased")>]
     val createBased: base1:int -> base2:int -> length1:int -> length2:int -> initial: 'T -> 'T[,]
 
@@ -152,8 +226,14 @@ module Array2D =
     ///
     /// <returns>The created array.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="zerocreatebased-1">
+    /// <code lang="fsharp">
+    /// Array2D.zeroCreateBased 1 1 2 3
+    /// </code>
+    /// Evaluates to a 2x3 1-based array with contents <c>[[0; 0; 0]; [0; 0; 0]]</c>
+    /// </example>
+    ///
     [<CompiledName("ZeroCreateBased")>]
     val zeroCreateBased : base1:int -> base2:int -> length1:int -> length2:int -> 'T[,]
 
@@ -161,8 +241,22 @@ module Array2D =
     ///
     /// <param name="action">A function to apply to each element of the array.</param>
     /// <param name="array">The input array.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iter-1">
+    /// <code lang="fsharp">
+    /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    ///
+    /// inputs |> Array2D.iter (fun v -> printfn $"value = {v}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// value = 3
+    /// value = 4
+    /// value = 13
+    /// value = 14
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("Iterate")>]
     val iter: action:('T -> unit) -> array:'T[,] -> unit
 
@@ -171,8 +265,22 @@ module Array2D =
     ///
     /// <param name="action">A function to apply to each element of the array with the indices available as an argument.</param>
     /// <param name="array">The input array.</param>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="iteri-1">
+    /// <code lang="fsharp">
+    /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    ///
+    /// inputs |> Array2D.iteri (fun i j v -> printfn $"value at ({i},{j}) = {v}")
+    /// </code>
+    /// Evaluates to <c>unit</c> and prints
+    /// <code>
+    /// value at (0,0) = 3
+    /// value at (0,1) = 4
+    /// value at (1,0) = 13
+    /// value at (1,1) = 14
+    /// </code>
+    /// in the console.
+    /// </example>
     [<CompiledName("IterateIndexed")>]
     val iteri: action:(int -> int -> 'T -> unit) -> array:'T[,] -> unit
 
@@ -182,7 +290,14 @@ module Array2D =
     ///
     /// <returns>The length of the array in the first dimension.</returns>  
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="length1-1">
+    /// <code>
+    /// let array = array2D [ [ 3; 4; 5 ]; [ 13; 14; 15 ] ]
+    ///
+    /// array |> Array2D.length1
+    /// </code>
+    /// Evaluates to <c>2</c>.
+    /// </example>
     [<CompiledName("Length1")>]
     val length1: array:'T[,] -> int
 
@@ -192,7 +307,14 @@ module Array2D =
     ///
     /// <returns>The length of the array in the second dimension.</returns>  
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="length2-1">
+    /// <code>
+    /// let array = array2D [ [ 3; 4; 5 ]; [ 13; 14; 15 ] ]
+    ///
+    /// array |> Array2D.length2
+    /// </code>
+    /// Evaluates to <c>3</c>.
+    /// </example>
     [<CompiledName("Length2")>]
     val length2: array:'T[,] -> int
 
@@ -206,8 +328,15 @@ module Array2D =
     /// <param name="array">The input array.</param>
     ///
     /// <returns>An array whose elements have been transformed by the given mapping.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="map-1">
+    /// <code lang="fsharp">
+    /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    ///
+    /// inputs |> Array2D.map (fun v -> 2 * v)
+    /// </code>
+    /// Evaluates to a 2x2 array with contents <c>[[6; 8;]; [26; 28]]</c>
+    /// </example>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> array:'T[,] -> 'U[,]
 
@@ -223,11 +352,17 @@ module Array2D =
     /// <param name="array">The input array.</param>
     ///
     /// <returns>An array whose elements have been transformed by the given mapping.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="mapi-1">
+    /// <code lang="fsharp">
+    /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
+    ///
+    /// inputs |> Array2D.mapi (fun i j v -> i + j + v)
+    /// </code>
+    /// Evaluates to a 2x2 array with contents <c>[[3; 5;]; [14; 16]]</c>
+    /// </example>
     [<CompiledName("MapIndexed")>]
     val mapi: mapping:(int -> int -> 'T -> 'U) -> array:'T[,] -> 'U[,]
-
 
     /// <summary>Builds a new array whose elements are the same as the input array but
     /// where a non-zero-based input array generates a corresponding zero-based 
@@ -236,8 +371,15 @@ module Array2D =
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The zero-based output array.</returns>
-    /// 
-    /// <example-tbd></example-tbd>
+    ///
+    /// <example id="rebase-1">
+    /// <code lang="fsharp">
+    /// let inputs = Array2D.createBased 1 1 2 3 1
+    ///
+    /// inputs |> Array2D.rebase
+    /// </code>
+    /// Evaluates to a 2x2 zero-based array with contents <c>[[1; 1]; [1; 1]]</c>
+    /// </example>
     [<CompiledName("Rebase")>]
     val rebase: array:'T[,] -> 'T[,]
 
@@ -247,9 +389,26 @@ module Array2D =
     /// <param name="index1">The index along the first dimension.</param>
     /// <param name="index2">The index along the second dimension.</param>
     /// <param name="value">The value to set in the array.</param>
+    ///
     /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception> 
+    ///
+    /// <remarks>
+    /// Indexer syntax is generally preferred, e.g.
+    /// <code lang="fsharp">
+    /// let array = Array2D.zeroCreate 2 2
     /// 
-    /// <example-tbd></example-tbd>
+    /// array[0,1] &lt;- 4.0
+    /// </code>
+    /// </remarks>
+    ///
+    /// <example id="set-1">
+    /// <code lang="fsharp">
+    /// let array = Array2D.zeroCreate 2 2
+    ///
+    /// Array2D.set array 0 1 4.0
+    /// </code>
+    /// After evaluation <c>array</c> is a 2x2 array with contents <c>[[0.0; 4.0]; [0.0; 0.0]]</c>
+    /// </example>
     [<CompiledName("Set")>]
     val set: array:'T[,] -> index1:int -> index2:int -> value:'T -> unit
 
@@ -261,7 +420,24 @@ module Array2D =
     ///
     /// <returns>The value of the array at the given index.</returns>
     /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception>
+    ///
+    /// <remarks>
+    /// Indexer syntax is generally preferred, e.g.
+    /// <code lang="fsharp">
+    /// let array = array2D [ [ 1.0; 2.0 ]; [ 3.0; 4.0 ] ]
     /// 
-    /// <example-tbd></example-tbd>
+    /// array[0,1]
+    /// </code>
+    /// Evaluates to <c>2.0</c>.
+    /// </remarks>
+    ///
+    /// <example id="set-1">
+    /// <code lang="fsharp">
+    /// let array = array2D [ [ 1.0; 2.0 ]; [ 3.0; 4.0 ] ]
+    ///
+    /// Array2D.get array 0 1
+    /// </code>
+    /// Evaluates to <c>2.0</c>.
+    /// </example>
     [<CompiledName("Get")>]
     val get: array:'T[,] -> index1:int -> index2:int -> 'T
