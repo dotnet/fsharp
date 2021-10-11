@@ -142,9 +142,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                                              miscFilesWorkspace: Workspace, 
                                              projectContextFactory: IFSharpWorkspaceProjectContextFactory) =
 
-    // We have a lock because the `ScriptUpdated` event may happen concurrently when a document opens or closes.
-    let gate = obj()
-    let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
+    let files = ConcurrentDictionary<string, Lazy<IFSharpWorkspaceProjectContext>>(StringComparer.OrdinalIgnoreCase)
     let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
     static let mustUpdateProjectReferences (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
@@ -170,7 +168,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
 
             match files.TryRemove(document.FilePath) with
             | true, projectContext ->
-                (projectContext :> IDisposable).Dispose()
+                (projectContext.Value :> IDisposable).Dispose()
             | _ ->
                 ()
 
@@ -191,27 +189,31 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                     |> Array.ofSeq
 
                 match files.TryGetValue(filePath) with
-                | true, (projectContext: IFSharpWorkspaceProjectContext) ->
+                | true, (projectContext: Lazy<IFSharpWorkspaceProjectContext>) ->
+                    let projectContext = projectContext.Value
                     if mustUpdateProjectReferences refSourceFiles projectContext then
-                        lock gate (fun () ->
-                            let newProjRefs =
-                                refSourceFiles
-                                |> Array.map (fun filePath ->
-                                    match files.TryGetValue(filePath) with
-                                    | true, refProjectContext -> refProjectContext
-                                    | _ ->
-                                        let refProjectContext = projectContextFactory.CreateProjectContext(filePath)
-                                        files.[filePath] <- refProjectContext
-                                        refProjectContext
-                                )
+                        let newProjRefs =
+                            refSourceFiles
+                            |> Array.map (fun filePath ->
+                                let createProjectContext = lazy projectContextFactory.CreateProjectContext(filePath)
+                                if files.TryAdd(filePath, createProjectContext) then
+                                    createProjectContext.Value
+                                else
+                                    files.[filePath].Value
+                            )
 
+                        // We throw away the error in-case projectContext is disposed.
+                        try
                             projectContext.SetProjectReferences(newProjRefs)
-                        )
+                        with
+                        | _ -> ()
 
                     if mustUpdateMetadataReferences referencePaths projectContext then
-                        lock gate (fun () ->
+                        // We throw away the error in-case projectContext is disposed.
+                        try
                             projectContext.SetMetadataReferences(referencePaths)
-                        )
+                        with
+                        | _ -> ()
                 | _ ->
                     ()
         )
@@ -223,27 +225,26 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
             // a F# miscellaneous project, which could be a script or not.
             if document.Project.IsFSharp && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 let filePath = document.FilePath
-                lock gate (fun () ->
-                    if files.ContainsKey(filePath) |> not then
-                        files.[filePath] <- projectContextFactory.CreateProjectContext(filePath)
-                )
+                let createProjectContext = lazy projectContextFactory.CreateProjectContext(filePath)
+                if files.TryAdd(filePath, createProjectContext) then
+                    createProjectContext.Force() |> ignore
         )
 
         workspace.DocumentOpened.Add(fun args ->
             let document = args.Document
             if not document.Project.IsFSharpMiscellaneousOrMetadata then
-                if files.ContainsKey(document.FilePath) then
-                    lock gate (fun () ->
-                        tryRemove document
-                    )
+                match files.TryRemove(document.FilePath) with
+                | true, projectContext ->
+                    (projectContext.Value :> IDisposable).Dispose()
+                    tryRemove document
+                | _ ->
+                    ()
         )
 
         workspace.DocumentClosed.Add(fun args ->
             let document = args.Document
             if document.Project.IsFSharpMiscellaneousOrMetadata then
-                lock gate (fun () ->
-                    tryRemove document
-                )
+                tryRemove document
         )
 
         workspace.WorkspaceChanged.Add(fun args ->
@@ -256,20 +257,18 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                         |> Array.ofSeq
 
                     if projRefs.Length > 0 then
-                        lock gate (fun () ->
-                            projRefs
-                            |> Array.iter (fun proj ->
-                                let proj = args.NewSolution.GetProject(proj.Id)
-                                match proj with
-                                | null -> ()
-                                | _ ->
-                                    if proj.IsFSharpMiscellaneousOrMetadata then
-                                        match proj.Documents |> Seq.tryExactlyOne with
-                                        | Some doc when not (workspace.IsDocumentOpen(doc.Id)) ->
-                                            tryRemove doc
-                                        | _ ->
-                                            ()
-                            )
+                        projRefs
+                        |> Array.iter (fun proj ->
+                            let proj = args.NewSolution.GetProject(proj.Id)
+                            match proj with
+                            | null -> ()
+                            | _ ->
+                                if proj.IsFSharpMiscellaneousOrMetadata then
+                                    match proj.Documents |> Seq.tryExactlyOne with
+                                    | Some doc when not (workspace.IsDocumentOpen(doc.Id)) ->
+                                        tryRemove doc
+                                    | _ ->
+                                        ()
                         )
             | _ ->
                 ()
@@ -284,7 +283,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
     member _.RenameFile(filePath, newFilePath) =
         match files.TryRemove(filePath) with
         | true, projectContext ->
-            let project = workspace.CurrentSolution.GetProject(projectContext.Id)
+            let project = workspace.CurrentSolution.GetProject(projectContext.Value.Id)
             if project <> null then
                 let documentOpt =
                     project.Documents 
@@ -293,10 +292,12 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                 | None -> ()
                 | Some(document) ->                           
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
-                    projectContext.Dispose()
-                    files.[newFilePath] <- projectContextFactory.CreateProjectContext(newFilePath)
+                    projectContext.Value.Dispose()
+                    let newProjectContext = lazy projectContextFactory.CreateProjectContext(newFilePath)
+                    if files.TryAdd(newFilePath, newProjectContext) then
+                        newProjectContext.Force() |> ignore
             else
-                projectContext.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
+                projectContext.Value.Dispose() // fallback, shouldn't happen, but in case it does let's dispose of the project context so we don't leak
         | _ -> ()
 
 [<Sealed>]
