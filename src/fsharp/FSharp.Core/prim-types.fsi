@@ -2635,7 +2635,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
-        val inline ( ~- ) : n:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
+        val inline (~-) : n: ^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
         /// <summary>Overloaded addition operator</summary>
         ///
@@ -2651,7 +2651,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( + ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (+) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded subtraction operator</summary>
         ///
@@ -2665,7 +2665,7 @@ namespace Microsoft.FSharp.Core
         /// 10 - 2 //  Evaluates to 8
         /// </code>
         /// </example>
-        val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (-) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded multiplication operator</summary>
         ///
@@ -2679,7 +2679,7 @@ namespace Microsoft.FSharp.Core
         /// 8 * 6 //  Evaluates to 48
         /// </code>
         /// </example>
-        val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline ( * ) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded division operator</summary>
         ///
@@ -2693,7 +2693,7 @@ namespace Microsoft.FSharp.Core
         /// 16 / 2 //  Evaluates to 8
         /// </code>
         /// </example>
-        val inline ( / ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline ( / ) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded modulo operator</summary>
         ///
@@ -2707,7 +2707,7 @@ namespace Microsoft.FSharp.Core
         /// 29 % 5 //  Evaluates to 4
         /// </code>
         /// </example>
-        val inline ( % ) : x:^T1 -> y:^T2 -> ^T3    when (^T1 or ^T2) : (static member ( % ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline ( % ) : x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( % ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded bitwise-AND operator</summary>
         ///
@@ -2724,7 +2724,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 9
         /// </example>
-        val inline (&&&): x:^T -> y:^T -> ^T     when ^T : (static member (&&&) : ^T * ^T    -> ^T) and default ^T : int
+        val inline (&&&): x: ^T -> y: ^T -> ^T when ^T : (static member (&&&) : ^T * ^T -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-OR operator</summary>
         ///
@@ -2741,7 +2741,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 15
         /// </example>
-        val inline (|||) : x:^T -> y:^T -> ^T    when ^T : (static member (|||) : ^T * ^T    -> ^T) and default ^T : int
+        val inline (|||) : x: ^T -> y: ^T -> ^T when ^T : (static member (|||) : ^T * ^T -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-XOR operator</summary>
         ///
@@ -2758,7 +2758,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 6
         /// </example>
-        val inline (^^^) : x:^T -> y:^T -> ^T    when ^T : (static member (^^^) : ^T * ^T    -> ^T) and default ^T : int
+        val inline (^^^) : x: ^T -> y: ^T -> ^T    when ^T : (static member (^^^) : ^T * ^T -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift left operator by a specified number of bits</summary>
         ///
@@ -2774,7 +2774,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 206
         /// </example>
-        val inline (<<<) : value:^T -> shift:int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
+        val inline (<<<) : value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift right operator by a specified number of bits</summary>
         ///
@@ -2792,7 +2792,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 3
         /// </code>
         /// </example>
-        val inline (>>>) : value:^T -> shift:int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
+        val inline (>>>) : value: ^T -> shift: int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-NOT operator</summary>
         ///
@@ -2808,7 +2808,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 195
         /// </example>
         /// 
-        val inline (~~~)  : value:^T -> ^T         when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
+        val inline (~~~) : value: ^T -> ^T when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
         
         /// <summary>Overloaded prefix-plus operator</summary>
         ///
@@ -2818,7 +2818,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
-        val inline (~+) : value:^T -> ^T           when ^T : (static member (~+)  : ^T         -> ^T) and default ^T : int
+        val inline (~+) : value: ^T -> ^T when ^T : (static member (~+)  : ^T         -> ^T) and default ^T : int
         
         /// <summary>Structural less-than comparison</summary>
         ///
@@ -2835,7 +2835,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( < ) : x:'T -> y:'T -> bool when 'T : comparison
+        val inline (<): x: 'T -> y: 'T -> bool when 'T : comparison
         
         /// <summary>Structural greater-than</summary>
         ///
@@ -2852,7 +2852,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( > ) : x:'T -> y:'T -> bool when 'T : comparison
+        val inline (>): x: 'T -> y: 'T -> bool when 'T : comparison
         
         /// <summary>Structural greater-than-or-equal</summary>
         ///
@@ -2869,7 +2869,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( >= ) : x:'T -> y:'T -> bool when 'T : comparison
+        val inline (>=): x: 'T -> y: 'T -> bool when 'T : comparison
         
         /// <summary>Structural less-than-or-equal comparison</summary>
         ///
@@ -2886,7 +2886,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( <= ) : x:'T -> y:'T -> bool when 'T : comparison
+        val inline (<=): x: 'T -> y: 'T -> bool when 'T : comparison
         
         /// <summary>Structural equality</summary>
         ///
@@ -2900,10 +2900,11 @@ namespace Microsoft.FSharp.Core
         ///  5 = 5              // Evaluates to true
         ///  5 = 6              // Evaluates to false
         ///  [1; 2] = [1; 2]    // Evaluates to true
+        ///  (1, 5) = (1, 6)    // Evaluates to false
         /// </code>
         /// </example>
         /// 
-        val inline ( = ) : x:'T -> y:'T -> bool when 'T : equality
+        val inline (=): x: 'T -> y: 'T -> bool when 'T : equality
         
         /// <summary>Structural inequality</summary>
         ///
@@ -2920,7 +2921,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline ( <> ) : x:'T -> y:'T -> bool when 'T : equality
+        val inline (<>) : x:'T -> y:'T -> bool when 'T : equality
 
         /// <summary>Compose two functions, the function on the left being applied first</summary>
         ///
@@ -2938,7 +2939,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (>>): func1:('T1 -> 'T2) -> func2:('T2 -> 'T3) -> ('T1 -> 'T3) 
+        val inline (>>): func1: ('T1 -> 'T2) -> func2: ('T2 -> 'T3) -> ('T1 -> 'T3) 
         
         /// <summary>Compose two functions, the function on the right being applied first</summary>
         ///
@@ -2956,7 +2957,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (<<): func2:('T2 -> 'T3) -> func1:('T1 -> 'T2) -> ('T1 -> 'T3) 
+        val inline (<<): func2: ('T2 -> 'T3) -> func1: ('T1 -> 'T2) -> ('T1 -> 'T3) 
         
         /// <summary>Apply a function to a value, the value being on the left, the function on the right</summary>
         ///
@@ -2972,7 +2973,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (|>): arg:'T1 -> func:('T1 -> 'U) -> 'U
+        val inline (|>): arg: 'T1 -> func: ('T1 -> 'U) -> 'U
 
         /// <summary>Apply a function to two values, the values being a pair on the left, the function on the right</summary>
         ///
@@ -2989,7 +2990,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (||>): arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
+        val inline (||>): arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
 
         /// <summary>Apply a function to three values, the values being a triple on the left, the function on the right</summary>
         ///
@@ -3007,7 +3008,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (|||>): arg1:'T1 * arg2:'T2 * arg3:'T3 -> func:('T1 -> 'T2 -> 'T3 -> 'U) -> 'U
+        val inline (|||>): arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> func: ('T1 -> 'T2 -> 'T3 -> 'U) -> 'U
         
         /// <summary>Apply a function to a value, the value being on the right, the function on the left</summary>
         ///
@@ -3023,7 +3024,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (<|): func:('T -> 'U) -> arg1:'T -> 'U
+        val inline (<|): func: ('T -> 'U) -> arg1: 'T -> 'U
 
         /// <summary>Apply a function to two values, the values being a pair on the right, the function on the left</summary>
         ///
@@ -3040,7 +3041,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (<||): func:('T1 -> 'T2 -> 'U) -> arg1:'T1 * arg2:'T2 -> 'U
+        val inline (<||): func: ('T1 -> 'T2 -> 'U) -> arg1: 'T1 * arg2: 'T2 -> 'U
 
         /// <summary>Apply a function to three values, the values being a triple on the right, the function on the left</summary>
         ///
@@ -3058,7 +3059,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (<|||): func:('T1 -> 'T2 -> 'T3 -> 'U) -> arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+        val inline (<|||): func: ('T1 -> 'T2 -> 'T3 -> 'U) -> arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> 'U
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
@@ -3083,7 +3084,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("DefaultArg")>]
-        val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
+        val defaultArg: arg: 'T option -> defaultValue: 'T -> 'T 
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         ///
@@ -3101,7 +3102,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("DefaultValueArg")>]
-        val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
+        val defaultValueArg: arg: 'T voption -> defaultValue: 'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
@@ -3116,25 +3117,26 @@ namespace Microsoft.FSharp.Core
         /// <example id="raise-example">
         /// <code lang="fsharp">
         /// open System.IO
-        /// exception AintGotNoFileException of string
+        /// exception FileNotFoundException of string
         /// 
         /// let readFile (filename: string) = 
         ///     if not (File.Exists(filename)) then
-        ///         raise(AintGotNoFileException(filename))
+        ///         raise(FileNotFoundException(filename))
         ///     File.ReadAllText(filename)
         /// 
-        /// readFile "/this-file-doest-exist"  //  Throws an AintGotNoFileException
+        /// readFile "/this-file-doest-exist"
         /// </code>
+        /// When executed, raises a <c>FileNotFoundException</c>.
         /// </example>
         /// 
         [<CompiledName("Raise")>]
-        val inline raise : exn:System.Exception -> 'T
+        val inline raise: exn: System.Exception -> 'T
         
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
         [<CompiledName("Rethrow")>]
         [<System.Obsolete("This function has been renamed to 'reraise'. Please adjust your code to reflect this", true)>]
-        val inline rethrow : unit -> 'T
+        val inline rethrow: unit -> 'T
 
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
@@ -3155,7 +3157,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Reraise")>]
-        val inline reraise : unit -> 'T
+        val inline reraise: unit -> 'T
 
         /// <summary>Builds a <see cref="T:System.Exception"/> object.</summary>
         ///
@@ -3173,7 +3175,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val Failure : message:string -> exn
+        val Failure: message: string -> exn
         
         /// <summary>Matches <see cref="T:System.Exception"/> objects whose runtime type is precisely <see cref="T:System.Exception"/></summary>
         ///
@@ -3184,7 +3186,7 @@ namespace Microsoft.FSharp.Core
         /// <example-tbd></example-tbd>
         /// 
         [<CompiledName("FailurePattern")>]
-        val (|Failure|_|) : error:exn -> string option
+        val (|Failure|_|): error: exn -> string option
         
         /// <summary>Return the first element of a tuple, <c>fst (a,b) = a</c>.</summary>
         ///
@@ -3199,7 +3201,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Fst")>]
-        val inline fst : tuple:('T1 * 'T2) -> 'T1
+        val inline fst: tuple: ('T1 * 'T2) -> 'T1
         
         /// <summary>Return the second element of a tuple, <c>snd (a,b) = b</c>.</summary>
         ///
@@ -3214,7 +3216,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Snd")>]
-        val inline snd : tuple:('T1 * 'T2) -> 'T2
+        val inline snd: tuple: ('T1 * 'T2) -> 'T2
 
         /// <summary>Generic comparison.</summary>
         ///
@@ -3235,7 +3237,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Compare")>]
-        val inline compare: e1:'T -> e2:'T -> int when 'T : comparison
+        val inline compare: e1: 'T -> e2: 'T -> int when 'T : comparison
 
         /// <summary>Maximum based on generic comparison</summary>
         ///
@@ -3253,7 +3255,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Max")>]
-        val inline max : e1:'T -> e2:'T -> 'T  when 'T : comparison
+        val inline max: e1: 'T -> e2: 'T -> 'T  when 'T : comparison
 
         /// <summary>Minimum based on generic comparison</summary>
         ///
@@ -3271,7 +3273,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Min")>]
-        val inline min : e1:'T -> e2:'T -> 'T  when 'T : comparison
+        val inline min: e1: 'T -> e2: 'T -> 'T when 'T : comparison
 
         /// <summary>Ignore the passed value. This is often used to throw away results of a computation.</summary>
         ///
@@ -3284,7 +3286,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Ignore")>]
-        val inline ignore : value:'T -> unit
+        val inline ignore: value: 'T -> unit
 
         /// <summary>Unbox a strongly typed value.</summary>
         ///
@@ -3302,7 +3304,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Unbox")>]
-        val inline unbox : value:obj -> 'T
+        val inline unbox: value: obj -> 'T
 
         /// <summary>Boxes a strongly typed value.</summary>
         ///
@@ -3320,7 +3322,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Box")>]
-        val inline box : value:'T -> obj
+        val inline box: value: 'T -> obj
 
         /// <summary>Try to unbox a strongly typed value.</summary>
         ///
@@ -3338,7 +3340,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("TryUnbox")>]
-        val inline tryUnbox : value:obj -> 'T option
+        val inline tryUnbox: value: obj -> 'T option
 
         /// <summary>Determines whether the given value is null.</summary>
         ///
@@ -3354,23 +3356,15 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("IsNull")>]
-        val inline isNull : value:'T -> bool when 'T : null
+        val inline isNull: value: 'T -> bool when 'T : null
         
         /// <summary>Determines whether the given value is not null.</summary>
         ///
         /// <param name="value">The value to check.</param>
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
-        ///
-        /// <example id="isnotnull-example">
-        /// <code lang="fsharp">
-        /// IsNotNull null        //  Evaluates to false
-        /// IsNotNull "Not null"  //  Evaluates to true
-        /// </code>
-        /// </example>
-        /// 
         [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull : value:'T -> bool when 'T : null
+        val inline internal isNotNull: value: 'T -> bool when 'T : null
 
         /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
@@ -3384,12 +3378,12 @@ namespace Microsoft.FSharp.Core
         ///     failwith "Oh no" // Throws an exception
         ///     true  // Never reaches this
         ///   
-        ///   failingFunction()  // Throws a System.Exception
+        /// failingFunction()  // Throws a System.Exception
         /// </code>
         /// </example>
         /// 
         [<CompiledName("FailWith")>]
-        val inline failwith : message:string -> 'T 
+        val inline failwith: message: string -> 'T 
 
         /// <summary>Throw a <see cref="T:System.ArgumentException"/> exception with
         /// the given argument name and message.</summary>
@@ -3403,17 +3397,18 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// let fullName firstName lastName = 
         ///     if String.IsNullOrWhiteSpace(firstName) then
-        ///       invalidArg (nameof(firstName)) "First name can't be null or blank"
-        ///       if String.IsNullOrWhiteSpace(lastName) then
-        ///         invalidArg (nameof(lastName)) "Last name can't be null or blank"
+        ///         invalidArg (nameof(firstName)) "First name can't be null or blank"
+        ///         if String.IsNullOrWhiteSpace(lastName) then
+        ///             invalidArg (nameof(lastName)) "Last name can't be null or blank"
         ///     firstName + " " + lastName
         ///   
-        ///   fullName null "Jones"  // Throws System.ArgumentException: First name can't be null or blank (Parameter 'firstName')
+        /// fullName null "Jones"
         /// </code>
+        /// Throws <c>System.ArgumentException: First name can't be null or blank (Parameter 'firstName')</c>
         /// </example>
         /// 
         [<CompiledName("InvalidArg")>]
-        val inline invalidArg : argumentName:string -> message:string -> 'T 
+        val inline invalidArg: argumentName:string -> message:string -> 'T 
 
         /// <summary>Throw a <see cref="T:System.ArgumentNullException"/> exception</summary>
         ///
@@ -3433,7 +3428,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("NullArg")>]
-        val inline nullArg : argumentName:string -> 'T 
+        val inline nullArg: argumentName: string -> 'T 
 
         /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
         ///
@@ -3457,7 +3452,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("InvalidOp")>]
-        val inline invalidOp : message:string -> 'T 
+        val inline invalidOp: message: string -> 'T 
 
         /// <summary>The identity function</summary>
         ///
@@ -3473,7 +3468,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Identity")>]
-        val id : x:'T -> 'T 
+        val id: x: 'T -> 'T 
 
         /// <summary>Create a mutable reference cell</summary>
         ///
@@ -3491,7 +3486,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Ref")>]
-        val ref : value:'T -> 'T ref
+        val ref: value: 'T -> 'T ref
 
         /// <summary>Assign to a mutable reference cell</summary>
         ///
@@ -3507,7 +3502,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val ( := ) : cell:'T ref -> value:'T -> unit
+        val (:=): cell: 'T ref -> value: 'T -> unit
 
         /// <summary>Dereference a mutable reference cell</summary>
         ///
@@ -3523,7 +3518,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val ( ! ) : cell:'T ref -> 'T
+        val (!): cell: 'T ref -> 'T
 
         /// <summary>Decrement a mutable reference cell containing an integer</summary>
         ///
@@ -3538,7 +3533,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Decrement")>]
-        val decr: cell:int ref -> unit
+        val decr: cell: int ref -> unit
 
         /// <summary>Increment a mutable reference cell containing an integer</summary>
         ///
@@ -3553,7 +3548,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Increment")>]
-        val incr: cell:int ref -> unit
+        val incr: cell: int ref -> unit
 
         /// <summary>Concatenate two lists.</summary>
         ///
@@ -3570,7 +3565,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val (@): list1:'T list -> list2:'T list -> 'T list
+        val (@): list1: 'T list -> list2: 'T list -> 'T list
 
         /// <summary>Negate a logical value. Not True equals False and not False equals True</summary>
         ///
@@ -3588,7 +3583,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Not")>]
-        val inline not : value:bool -> bool
+        val inline not: value: bool -> bool
 
         /// <summary>Builds a sequence using sequence expression syntax</summary>
         ///
@@ -3598,13 +3593,12 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="seq-cast-example">
         /// <code lang="fsharp">
-        /// let list1 = [1;2;3;4]
-        /// let seq1 = seq list1   //  Casts the list&lt;int&gt; to a seq&lt;int&gt; 
+        /// seq { for i in 0..10 do yield (i, i*i) }
         /// </code>
         /// </example>
         /// 
         [<CompiledName("CreateSequence")>]
-        val seq : sequence:seq<'T> -> seq<'T>
+        val seq: sequence: seq<'T> -> seq<'T>
 
         /// <summary>Exit the current hardware isolated process, if security settings permit,
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
@@ -3626,7 +3620,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Exit")>]
-        val exit: exitcode:int -> 'T   when default 'T : obj
+        val exit: exitcode: int -> 'T   when default 'T : obj
 
         /// <summary>Equivalent to <see cref="P:System.Double.PositiveInfinity"/></summary>
         [<CompiledName("Infinity")>]
@@ -3674,7 +3668,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (..)    : start:^T       -> finish:^T -> seq< ^T >    
+        val inline (..): start: ^T -> finish: ^T -> seq< ^T >    
                                 when ^T : (static member (+)   : ^T * ^T -> ^T) 
                                 and ^T : (static member One  : ^T)
                                 and ^T : equality
@@ -3693,11 +3687,11 @@ namespace Microsoft.FSharp.Core
         /// <code lang="fsharp">
         /// [1..2..6]           //  Evaluates to [1; 3; 5]
         /// [1.1..0.2..1.5]     //  Evaluates to [1.1; 1.3; 1.5]
-        /// ['a'..char(2)..'g'] //  Evaluates to ['a'; 'c'; 'e'; 'g']        
+        /// ['a'..'e'] //  Evaluates to ['a'; 'b'; 'c'; 'd'; 'e']        
         /// </code>
         /// </example>
         /// 
-        val inline (.. ..) : start:^T -> step:^Step -> finish:^T -> seq< ^T >    
+        val inline (.. ..): start: ^T -> step: ^Step -> finish: ^T -> seq< ^T >    
                                 when (^T or ^Step) : (static member (+)   : ^T * ^Step -> ^T) 
                                 and ^Step : (static member Zero : ^Step)
                                 and ^T : equality
@@ -3714,32 +3708,45 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="lock-example">
         /// <code lang="fsharp">
+        /// open System.Linq
+        ///
+        /// /// A counter object, supporting unlocked and locked increment
         /// type TestCounter () =
         ///     let mutable count = 0
-        ///     member this.PlainOldIncrement() = count &lt;- count + 1
-        ///     member this.ThreadSafeIncrement() = 
+        ///     
+        ///     /// Increment the counter, unlocked
+        ///     member this.IncrementWithoutLock() =
+        ///         count &lt;- count + 1
+        ///
+        ///     /// Increment the counter, locked
+        ///     member this.IncrementWithLock() = 
         ///         lock this (fun () -> count &lt;- count + 1)
+        ///
+        ///     /// Get the count
         ///     member this.Count = count
         ///         
-        /// open System.Linq
         /// let counter = TestCounter()
+        ///
+        /// // Create a parallel sequence to that uses all our CPUs
+        /// (seq {1..100000}).AsParallel()
+        ///     .ForAll(fun _ -> counter.IncrementWithoutLock())
+        /// 
+        /// // Evaluates to a number between 1-100000, non-deterministically because there is no locking
+        /// counter.Count
+        /// 
+        /// let counter2 = TestCounter()
+        ///
         /// //  Create a parallel sequence to that uses all our CPUs
         /// (seq {1..100000}).AsParallel()
-        ///     .ForAll(fun _ -> counter.PlainOldIncrement())
+        ///     .ForAll(fun _ -> counter2.IncrementWithLock())
         /// 
-        /// counter.Count  //  Evaluates to a random number between 1-100000
-        /// 
-        /// let counter = TestCounter()
-        /// //  Create a parallel sequence to that uses all our CPUs
-        /// (seq {1..100000}).AsParallel()
-        ///     .ForAll(fun _ -> counter.ThreadSafeIncrement())
-        /// 
-        /// counter.Count   //  Evaluates to 100000
+        /// //  Evaluates to 100000 deterministically because the increment to the counter object is locked
+        /// counter.Count
         /// </code>
         /// </example>
         /// 
         [<CompiledName("Lock")>]
-        val inline lock: lockObject:'Lock -> action:(unit -> 'T) -> 'T when 'Lock : not struct 
+        val inline lock: lockObject: 'Lock -> action:(unit -> 'T) -> 'T when 'Lock : not struct 
 
         /// <summary>Clean up resources associated with the input object after the completion of the given function.
         /// Cleanup occurs even when an exception is raised by the protected
@@ -3751,21 +3758,19 @@ namespace Microsoft.FSharp.Core
         /// <returns>The resulting value.</returns>
         /// 
         /// <example id="using-example">
+        /// The following code appends 10 lines to test.txt, then closes the StreamWriter when finished.
         /// <code lang="fsharp">
         /// open System.IO
         /// 
-        /// let writeHellos (writer: StreamWriter) =
+        /// using (File.AppendText "test.txt") (fun writer ->
         ///     for i in 1 .. 10 do
-        ///         writer.WriteLine("Hello World {0}", i)
+        ///         writer.WriteLine("Hello World {0}", i))
         /// 
-        /// using (File.AppendText "test.txt") writeHellos
-        /// //  Appends 10 hellos to test.txt, then closes the StreamWriter when finished
         /// </code>
         /// </example>
         /// 
         [<CompiledName("Using")>]
-        val using: resource:('T :> System.IDisposable) -> action:('T -> 'U) -> 'U
-
+        val using: resource: ('T :> System.IDisposable) -> action: ('T -> 'U) -> 'U
 
         /// <summary>Generate a System.Type runtime representation of a static type.</summary>
         /// 
@@ -3790,15 +3795,15 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
-        val inline nameof : 'T -> string
+        val inline nameof: 'T -> string
 
         /// <summary>An internal, library-only compiler intrinsic for compile-time 
         /// generation of a RuntimeMethodHandle.</summary>
         [<CompiledName("MethodHandleOf")>]
 #if DEBUG
-        val methodhandleof : ('T -> 'TResult) -> System.RuntimeMethodHandle
+        val methodhandleof: ('T -> 'TResult) -> System.RuntimeMethodHandle
 #else
-        val internal methodhandleof : ('T -> 'TResult) -> System.RuntimeMethodHandle
+        val internal methodhandleof: ('T -> 'TResult) -> System.RuntimeMethodHandle
 #endif
 
         /// <summary>Generate a System.Type representation for a type definition. If the
@@ -3807,8 +3812,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="typedefof-example">
         /// <code lang="fsharp">
-        /// typeof&lt;list&lt;int&gt;&gt;     // Evaluates to Microsoft.FSharp.Collections.FSharpList`1[System.Int32]
-        /// typedefof&lt;list&lt;int&gt;&gt;  // Evaluates to Microsoft.FSharp.Collections.FSharpList`1[T]        /// 
+        /// typeof&lt;int list;&gt;     // Evaluates to Microsoft.FSharp.Collections.FSharpList`1[System.Int32]
+        /// typedefof&lt;int list;&gt;  // Evaluates to Microsoft.FSharp.Collections.FSharpList`1[T]        /// 
         /// </code>
         /// </example>
         ///  
@@ -3825,8 +3830,7 @@ namespace Microsoft.FSharp.Core
         /// sizeof&lt;int&gt;                    //  Evaluates to 4
         /// sizeof&lt;double&gt;                 //  Evaluates to 8
         /// sizeof&lt;struct(byte * byte)&gt;    //  Evaluates to 2
-        /// sizeof&lt;nativeint&gt;              //  Evaluates to 4 or 8 (32-bit or 64-bit)
-        ///                                      //  Depending on your platform
+        /// sizeof&lt;nativeint&gt;              //  Evaluates to 4 or 8 (32-bit or 64-bit) depending on your platform
         /// </code>
         /// </example>
         ///  
@@ -3851,7 +3855,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Hash")>]
-        val inline hash: obj:'T -> int when 'T : equality
+        val inline hash: obj: 'T -> int when 'T : equality
 
         /// <summary>A generic hash function. This function has the same behaviour as 'hash', 
         /// however the default structural hashing for F# union, record and tuple 
@@ -3866,8 +3870,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
-        val inline limitedHash: limit: int -> obj:'T -> int when 'T : equality
-
+        val inline limitedHash: limit: int -> obj: 'T -> int when 'T : equality
 
         /// <summary>Absolute value of the given number.</summary>
         ///
@@ -3883,7 +3886,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Abs")>]
-        val inline abs      : value:^T -> ^T       when ^T : (static member Abs      : ^T -> ^T)      and default ^T : int
+        val inline abs: value: ^T -> ^T when ^T : (static member Abs      : ^T -> ^T)      and default ^T : int
         
         /// <summary>Inverse cosine of the given number</summary>
         ///
@@ -3899,7 +3902,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Acos")>]
-        val inline acos     : value:^T -> ^T       when ^T : (static member Acos     : ^T -> ^T)      and default ^T : float
+        val inline acos: value: ^T -> ^T when ^T : (static member Acos     : ^T -> ^T)      and default ^T : float
         
         /// <summary>Inverse sine of the given number</summary>
         ///
@@ -3916,7 +3919,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Asin")>]
-        val inline asin     : value:^T -> ^T       when ^T : (static member Asin     : ^T -> ^T)      and default ^T : float
+        val inline asin: value: ^T -> ^T when ^T : (static member Asin     : ^T -> ^T)      and default ^T : float
         
         /// <summary>Inverse tangent of the given number</summary>
         ///
@@ -3932,7 +3935,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Atan")>]
-        val inline atan     : value:^T -> ^T       when ^T : (static member Atan     : ^T -> ^T)      and default ^T : float
+        val inline atan: value: ^T -> ^T when ^T : (static member Atan     : ^T -> ^T)      and default ^T : float
         
         /// <summary>Inverse tangent of <c>x/y</c> where <c>x</c> and <c>y</c> are specified separately</summary>
         ///
@@ -3951,7 +3954,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Atan2")>]
-        val inline atan2    : y:^T1 -> x:^T1 -> 'T2 when ^T1 : (static member Atan2    : ^T1 * ^T1 -> 'T2) and default ^T1 : float
+        val inline atan2: y: ^T1 -> x: ^T1 -> 'T2 when ^T1 : (static member Atan2    : ^T1 * ^T1 -> 'T2) and default ^T1 : float
         
         /// <summary>Ceiling of the given number</summary>
         ///
@@ -3967,7 +3970,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Ceiling")>]
-        val inline ceil     : value:^T -> ^T       when ^T : (static member Ceiling  : ^T -> ^T)      and default ^T : float
+        val inline ceil: value: ^T -> ^T when ^T : (static member Ceiling  : ^T -> ^T)      and default ^T : float
         
         /// <summary>Exponential of the given number</summary>
         ///
@@ -3985,7 +3988,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Exp")>]
-        val inline exp      : value:^T -> ^T       when ^T : (static member Exp      : ^T -> ^T)      and default ^T : float
+        val inline exp: value: ^T -> ^T when ^T : (static member Exp      : ^T -> ^T)      and default ^T : float
 
         /// <summary>Floor of the given number</summary>
         ///
@@ -4001,7 +4004,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Floor")>]
-        val inline floor    : value:^T -> ^T       when ^T : (static member Floor    : ^T -> ^T)      and default ^T : float
+        val inline floor: value: ^T -> ^T when ^T : (static member Floor    : ^T -> ^T)      and default ^T : float
 
         /// <summary>Sign of the given number</summary>
         ///
@@ -4017,7 +4020,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Sign")>]
-        val inline sign     : value:^T -> int      when ^T : (member Sign    : int)      and default ^T : float
+        val inline sign: value: ^T -> int when ^T : (member Sign    : int)      and default ^T : float
 
         /// <summary>Round the given number</summary>
         ///
@@ -4035,7 +4038,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Round")>]
-        val inline round    : value:^T -> ^T       when ^T : (static member Round    : ^T -> ^T)      and default ^T : float
+        val inline round: value: ^T -> ^T when ^T : (static member Round    : ^T -> ^T)      and default ^T : float
 
         /// <summary>Natural logarithm of the given number</summary>
         ///
@@ -4052,7 +4055,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Log")>]
-        val inline log      : value:^T -> ^T       when ^T : (static member Log      : ^T -> ^T)      and default ^T : float
+        val inline log: value: ^T -> ^T when ^T : (static member Log      : ^T -> ^T)      and default ^T : float
 
         /// <summary>Logarithm to base 10 of the given number</summary>
         ///
@@ -4070,7 +4073,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Log10")>]
-        val inline log10    : value:^T -> ^T       when ^T : (static member Log10    : ^T -> ^T)      and default ^T : float
+        val inline log10: value: ^T -> ^T when ^T : (static member Log10    : ^T -> ^T)      and default ^T : float
 
         /// <summary>Square root of the given number</summary>
         ///
@@ -4086,7 +4089,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Sqrt")>]
-        val inline sqrt     : value:^T -> ^U       when ^T : (static member Sqrt     : ^T -> ^U)      and default ^U : ^T and default ^T : ^U and default ^T : float 
+        val inline sqrt: value: ^T -> ^U when ^T : (static member Sqrt     : ^T -> ^U)      and default ^U : ^T and default ^T : ^U and default ^T : float 
 
         /// <summary>Cosine of the given number</summary>
         ///
@@ -4096,12 +4099,12 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="cos-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("Cos")>]
-        val inline cos      : value:^T -> ^T       when ^T : (static member Cos      : ^T -> ^T)      and default ^T : float
+        val inline cos: value: ^T -> ^T when ^T : (static member Cos      : ^T -> ^T)      and default ^T : float
 
         /// <summary>Hyperbolic cosine  of the given number</summary>
         ///
@@ -4111,12 +4114,12 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="cosh-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("Cosh")>]
-        val inline cosh     : value:^T -> ^T       when ^T : (static member Cosh     : ^T -> ^T)      and default ^T : float
+        val inline cosh: value: ^T -> ^T when ^T : (static member Cosh     : ^T -> ^T)      and default ^T : float
         
         /// <summary>Sine of the given number</summary>
         ///
@@ -4131,7 +4134,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Sin")>]
-        val inline sin      : value:^T -> ^T       when ^T : (static member Sin      : ^T -> ^T)      and default ^T : float
+        val inline sin: value: ^T -> ^T when ^T : (static member Sin      : ^T -> ^T)      and default ^T : float
         
         /// <summary>Hyperbolic sine of the given number</summary>
         ///
@@ -4146,7 +4149,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Sinh")>]
-        val inline sinh     : value:^T -> ^T       when ^T : (static member Sinh     : ^T -> ^T)      and default ^T : float
+        val inline sinh: value: ^T -> ^T when ^T : (static member Sinh     : ^T -> ^T)      and default ^T : float
         
         /// <summary>Tangent of the given number</summary>
         ///
@@ -4161,7 +4164,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Tan")>]
-        val inline tan: value:^T -> ^T       when ^T : (static member Tan      : ^T -> ^T)      and default ^T : float
+        val inline tan: value: ^T -> ^T when ^T : (static member Tan      : ^T -> ^T)      and default ^T : float
         
         /// <summary>Hyperbolic tangent of the given number</summary>
         ///
@@ -4176,7 +4179,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Tanh")>]
-        val inline tanh: value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
+        val inline tanh: value: ^T -> ^T when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
 
         /// <summary>Overloaded truncate operator.</summary>
         ///
@@ -4191,7 +4194,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("Truncate")>]
-        val inline truncate : value:^T -> ^T       when ^T : (static member Truncate : ^T -> ^T)      and default ^T : float
+        val inline truncate: value:^T -> ^T when ^T : (static member Truncate : ^T -> ^T)      and default ^T : float
 
         /// <summary>Overloaded power operator.</summary>
         ///
@@ -4206,7 +4209,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         ///  
-        val inline ( **  )  : x:^T -> y:^U -> ^T when ^T : (static member Pow : ^T * ^U -> ^T) and default ^U : float  and default ^T : float
+        val inline ( ** ): x: ^T -> y: ^U -> ^T when ^T : (static member Pow : ^T * ^U -> ^T) and default ^U : float  and default ^T : float
 
         /// <summary>Overloaded power operator. If <c>n > 0</c> then equivalent to <c>x*...*x</c> for <c>n</c> occurrences of <c>x</c>. </summary>
         ///
@@ -4222,10 +4225,11 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("PowInteger")>]
-        val inline pown  : x:^T -> n:int -> ^T when ^T : (static member One : ^T) 
-                                               and  ^T : (static member ( * ) : ^T * ^T -> ^T) 
-                                               and  ^T : (static member ( / ) : ^T * ^T -> ^T) 
-                                               and default ^T : int
+        val inline pown: x:^T -> n:int -> ^T
+                             when ^T : (static member One : ^T) 
+                             and  ^T : (static member ( * ) : ^T * ^T -> ^T) 
+                             and  ^T : (static member ( / ) : ^T * ^T -> ^T) 
+                             and default ^T : int
 
         /// <summary>Converts the argument to byte. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> 
@@ -4243,7 +4247,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToByte")>]
-        val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
+        val inline byte: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
         
         /// <summary>Converts the argument to signed byte. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  
@@ -4261,7 +4265,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToSByte")>]
-        val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
+        val inline sbyte: value:^T -> sbyte when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
         
         /// <summary>Converts the argument to signed 16-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Int16.Parse()</c>  
@@ -4279,7 +4283,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt16")>]
-        val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
+        val inline int16: value: ^T -> int16 when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
         
         /// <summary>Converts the argument to unsigned 16-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt16.Parse()</c>  
@@ -4297,7 +4301,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt16")>]
-        val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
+        val inline uint16: value: ^T -> uint16 when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
         
         /// <summary>Converts the argument to signed 32-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Int32.Parse()</c>  
@@ -4315,7 +4319,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt")>]
-        val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
+        val inline int: value: ^T -> int when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
         
         /// <summary>Converts the argument to an unsigned 32-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt32.Parse()</c>  
@@ -4333,7 +4337,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt")>]
-        val inline uint: value:^T -> uint when ^T: (static member op_Explicit: ^T -> uint) and default ^T: uint
+        val inline uint: value: ^T -> uint when ^T: (static member op_Explicit: ^T -> uint) and default ^T: uint
 
         /// <summary>Converts the argument to a particular enum type.</summary>
         ///
@@ -4348,7 +4352,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToEnum")>]
-        val inline enum       : value:int32 -> ^U        when ^U : enum<int32> 
+        val inline enum: value: int32 -> ^U when ^U : enum<int32> 
 
         /// <summary>Converts the argument to signed 32-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Int32.Parse()</c>  
@@ -4366,7 +4370,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt32")>]
-        val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
+        val inline int32: value: ^T -> int32 when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
         /// <summary>Converts the argument to unsigned 32-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt32.Parse()</c>  
@@ -4384,7 +4388,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt32")>]
-        val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
+        val inline uint32: value: ^T -> uint32 when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
         /// <summary>Converts the argument to signed 64-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Int64.Parse()</c> 
@@ -4402,7 +4406,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToInt64")>]
-        val inline int64: value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
+        val inline int64: value: ^T -> int64 when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
         /// <summary>Converts the argument to unsigned 64-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  
@@ -4420,7 +4424,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUInt64")>]
-        val inline uint64: value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
+        val inline uint64: value: ^T -> uint64 when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
         /// <summary>Converts the argument to 32-bit float. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Single.Parse()</c>  
@@ -4438,7 +4442,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToSingle")>]
-        val inline float32: value:^T -> float32    when ^T : (static member op_Explicit : ^T -> float32)    and default ^T : int
+        val inline float32: value: ^T -> float32 when ^T : (static member op_Explicit : ^T -> float32)    and default ^T : int
 
         /// <summary>Converts the argument to 64-bit float. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  
@@ -4456,7 +4460,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToDouble")>]
-        val inline float: value:^T -> float      when ^T : (static member op_Explicit : ^T -> float)      and default ^T : int
+        val inline float: value: ^T -> float when ^T : (static member op_Explicit : ^T -> float)      and default ^T : int
 
         /// <summary>Converts the argument to signed native integer. This is a direct conversion for all 
         /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -4473,7 +4477,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToIntPtr")>]
-        val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
+        val inline nativeint: value: ^T -> nativeint when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
         /// <summary>Converts the argument to unsigned native integer using a direct conversion for all 
         /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -4490,7 +4494,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToUIntPtr")>]
-        val inline unativeint: value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
+        val inline unativeint: value: ^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
@@ -4507,7 +4511,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToString")>]
-        val inline string: value:'T -> string
+        val inline string: value: 'T -> string
 
         /// <summary>Converts the argument to System.Decimal using a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  
@@ -4525,7 +4529,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToDecimal")>]
-        val inline decimal: value:^T -> decimal when ^T : (static member op_Explicit : ^T -> decimal) and default ^T : int
+        val inline decimal: value: ^T -> decimal when ^T : (static member op_Explicit : ^T -> decimal) and default ^T : int
 
         /// <summary>Converts the argument to character. Numeric inputs are converted according to the UTF-16 
         /// encoding for characters. String inputs must be exactly one character long. For other
@@ -4542,7 +4546,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("ToChar")>]
-        val inline char: value: ^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+        val inline char: value: ^T -> char when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
         /// <summary>An active pattern to match values of type <see cref="T:System.Collections.Generic.KeyValuePair"/></summary>
         ///
@@ -4557,7 +4561,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         ///  
         [<CompiledName("KeyValuePattern")>]
-        val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
+        val (|KeyValue|): keyValuePair: KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
         /// <summary>Contains extension methods to allow the use of F# indexer notation with arrays.
         /// This module is automatically opened in all F# code.</summary>
@@ -4625,7 +4629,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish">The end index.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice : source:'T[] -> start:int option -> finish:int option -> 'T[] 
+            val inline GetArraySlice: source:'T[] -> start:int option -> finish:int option -> 'T[] 
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4633,7 +4637,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start">The start index.</param>
             /// <param name="finish">The end index.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice : target:'T[] -> start:int option -> finish:int option -> source:'T[] -> unit
+            val inline SetArraySlice: target:'T[] -> start:int option -> finish:int option -> source:'T[] -> unit
 
             /// <summary>Gets a region slice of an array</summary>
             ///
@@ -4644,7 +4648,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the input indices.</returns>
-            val inline GetArraySlice2D : source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
+            val inline GetArraySlice2D: source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
 
             /// <summary>Gets a vector slice of a 2D array. The index of the first dimension is fixed.</summary>
             ///
@@ -4654,7 +4658,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed1 : source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T[]
+            val inline GetArraySlice2DFixed1: source:'T[,] -> index1:int -> start2:int option -> finish2:int option -> 'T[]
 
             /// <summary>Gets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4664,7 +4668,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index2">The fixed index of the second dimension.</param>
             ///
             /// <returns>The sub array from the input indices.</returns>
-            val inline GetArraySlice2DFixed2 : source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T[]
+            val inline GetArraySlice2DFixed2: source:'T[,] -> start1:int option -> finish1:int option -> index2: int -> 'T[]
 
             /// <summary>Sets a region slice of an array</summary>
             ///
@@ -4674,7 +4678,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2D : target:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> source:'T[,] -> unit
+            val inline SetArraySlice2D: target:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> source:'T[,] -> unit
 
             /// <summary>Sets a vector slice of a 2D array. The index of the first dimension is fixed.</summary>
             ///
@@ -4683,7 +4687,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed1 : target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed1: target:'T[,] -> index1:int -> start2:int option -> finish2:int option -> source:'T[] -> unit
 
             /// <summary>Sets a vector slice of a 2D array. The index of the second dimension is fixed.</summary>
             ///
@@ -4692,7 +4696,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish1">The end index of the first dimension.</param>
             /// <param name="index2">The index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice2DFixed2 : target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T[] -> unit
+            val inline SetArraySlice2DFixed2: target:'T[,] -> start1:int option -> finish1:int option -> index2:int -> source:'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -4705,7 +4709,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3D : source:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,,]
+            val inline GetArraySlice3D: source:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
             ///
@@ -4718,7 +4722,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedSingle1 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
+            val inline GetArraySlice3DFixedSingle1: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
             ///
@@ -4731,7 +4735,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedSingle2 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
+            val inline GetArraySlice3DFixedSingle2: source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
             ///
@@ -4744,7 +4748,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedSingle3 : source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
+            val inline GetArraySlice3DFixedSingle3: source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4756,7 +4760,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedDouble1 : source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
+            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4768,7 +4772,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedDouble2 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4780,7 +4784,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline GetArraySlice3DFixedDouble3 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4792,7 +4796,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice3D : target:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> source:'T[,,] -> unit
+            val inline SetArraySlice3D: target:'T[,,] -> start1: int option -> finish1: int option -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
             ///
@@ -4806,7 +4810,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedSingle1 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle1: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
             ///
@@ -4820,7 +4824,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedSingle2 : target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle2: target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
             ///
@@ -4834,7 +4838,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedSingle3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle3: target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4847,7 +4851,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedDouble1 : target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4860,7 +4864,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedDouble2 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4873,7 +4877,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
             [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-            val inline SetArraySlice3DFixedDouble3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
@@ -4888,7 +4892,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The four dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4D : source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,,]
+            val inline GetArraySlice4D: source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,,]
 
             /// <summary>Gets a 3D slice of a 4D array</summary>
             ///
@@ -4902,7 +4906,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedSingle1 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
+            val inline GetArraySlice4DFixedSingle1: source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
 
             /// <summary>Gets a 3D slice of a 4D array</summary>
             ///
@@ -4916,7 +4920,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedSingle2 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
+            val inline GetArraySlice4DFixedSingle2: source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
 
             /// <summary>Gets a 3D slice of a 4D array</summary>
             ///
@@ -4930,7 +4934,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedSingle3 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> 'T[,,]
+            val inline GetArraySlice4DFixedSingle3: source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> 'T[,,]
 
             /// <summary>Gets a 3D slice of a 4D array</summary>
             ///
@@ -4944,7 +4948,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedSingle4 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,,]
+            val inline GetArraySlice4DFixedSingle4: source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -4957,7 +4961,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble1 : source:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,]
+            val inline GetArraySlice4DFixedDouble1: source:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -4970,7 +4974,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble2 : source:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
+            val inline GetArraySlice4DFixedDouble2: source:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -4983,7 +4987,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble3 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
+            val inline GetArraySlice4DFixedDouble3: source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -4996,7 +5000,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble4 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
+            val inline GetArraySlice4DFixedDouble4: source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -5009,7 +5013,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble5 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
+            val inline GetArraySlice4DFixedDouble5: source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 4D array</summary>
             ///
@@ -5022,7 +5026,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedDouble6 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[,]
+            val inline GetArraySlice4DFixedDouble6: source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[,]
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5034,7 +5038,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish4">The end index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple4 : source:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[]
+            val inline GetArraySlice4DFixedTriple4: source:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[]
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5046,7 +5050,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple3 : source:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[]
+            val inline GetArraySlice4DFixedTriple3: source:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[]
             
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5058,7 +5062,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple2 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[]
+            val inline GetArraySlice4DFixedTriple2: source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[]
 
             /// <summary>Gets a 1D slice of a 4D array</summary>
             ///
@@ -5070,7 +5074,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice4DFixedTriple1 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> 'T[]
+            val inline GetArraySlice4DFixedTriple1: source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> 'T[]
             
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5083,7 +5087,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedSingle1 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+            val inline SetArraySlice4DFixedSingle1: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
 
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5096,7 +5100,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedSingle2 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+            val inline SetArraySlice4DFixedSingle2: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
 
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5109,7 +5113,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedSingle3 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+            val inline SetArraySlice4DFixedSingle3: target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
 
             /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
@@ -5122,7 +5126,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedSingle4 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,,] -> unit
+            val inline SetArraySlice4DFixedSingle4: target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5134,7 +5138,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble1 : target:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble1: target:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5146,7 +5150,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble2 : target:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble2: target:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5158,7 +5162,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble3 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble3: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5170,7 +5174,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble4 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble4: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5182,7 +5186,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble5 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble5: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 4D array</summary>
             ///
@@ -5194,7 +5198,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedDouble6 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[,] -> unit
+            val inline SetArraySlice4DFixedDouble6: target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5205,7 +5209,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple4 : target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple4: target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5216,7 +5220,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple3 : target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple3: target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[] -> unit
             
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5227,7 +5231,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple2 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple2: target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 4D array</summary>
             ///
@@ -5238,7 +5242,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="index4">The fixed index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4DFixedTriple1 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T[] -> unit
+            val inline SetArraySlice4DFixedTriple1: target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T[] -> unit
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -5252,7 +5256,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val inline SetArraySlice4D : target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source:'T[,,,] -> unit
+            val inline SetArraySlice4D: target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source:'T[,,,] -> unit
 
             /// <summary>Gets a slice from a string</summary>
             ///
@@ -5261,207 +5265,207 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish">The index of the last character of the slice.</param>
             ///
             /// <returns>The substring from the given indices.</returns>
-            val inline GetStringSlice : source:string -> start:int option -> finish:int option -> string
+            val inline GetStringSlice: source:string -> start:int option -> finish:int option -> string
 
             /// <summary>Generate a range of integers</summary>  
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeInt32        : start:int        -> step:int        -> stop:int        -> seq<int>  
+            val RangeInt32: start: int -> step: int -> stop: int -> seq<int>  
 
             /// <summary>Generate a range of float values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeDouble      : start:float      -> step:float      -> stop:float      -> seq<float>
+            val RangeDouble: start: float -> step: float -> stop: float -> seq<float>
 
             /// <summary>Generate a range of float32 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeSingle    : start:float32    -> step:float32    -> stop:float32    -> seq<float32> 
+            val RangeSingle: start: float32 -> step: float32 -> stop: float32 -> seq<float32> 
 
             /// <summary>Generate a range of int64 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeInt64      : start:int64      -> step:int64      -> stop:int64      -> seq<int64> 
+            val RangeInt64: start: int64 -> step: int64 -> stop: int64 -> seq<int64> 
 
             /// <summary>Generate a range of uint64 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeUInt64     : start:uint64     -> step:uint64     -> stop:uint64     -> seq<uint64> 
+            val RangeUInt64: start: uint64 -> step: uint64 -> stop: uint64 -> seq<uint64> 
 
             /// <summary>Generate a range of uint32 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeUInt32     : start:uint32     -> step:uint32     -> stop:uint32     -> seq<uint32> 
+            val RangeUInt32: start: uint32 -> step: uint32 -> stop: uint32 -> seq<uint32> 
 
             /// <summary>Generate a range of nativeint values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeIntPtr  : start:nativeint  -> step:nativeint  -> stop:nativeint  -> seq<nativeint> 
+            val RangeIntPtr: start: nativeint  step: nativeint -> stop: nativeint -> seq<nativeint> 
 
             /// <summary>Generate a range of unativeint values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeUIntPtr : start:unativeint -> step:unativeint -> stop:unativeint -> seq<unativeint> 
+            val RangeUIntPtr: start: unativeint -> step: unativeint -> stop: unativeint -> seq<unativeint> 
 
             /// <summary>Generate a range of int16 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeInt16      : start:int16      -> step:int16      -> stop:int16      -> seq<int16> 
+            val RangeInt16: start: int16 -> step: int16 -> stop: int16 -> seq<int16> 
 
             /// <summary>Generate a range of uint16 values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeUInt16     : start:uint16     -> step:uint16     -> stop:uint16     -> seq<uint16> 
+            val RangeUInt16: start: uint16 -> step: uint16 -> stop: uint16 -> seq<uint16> 
 
             /// <summary>Generate a range of sbyte values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeSByte      : start:sbyte      -> step:sbyte      -> stop:sbyte      -> seq<sbyte> 
+            val RangeSByte : start: sbyte -> step: sbyte -> stop: sbyte -> seq<sbyte> 
 
             /// <summary>Generate a range of byte values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeByte       : start:byte       -> step:byte       -> stop:byte       -> seq<byte> 
+            val RangeByte: start: byte -> step: byte -> stop: byte -> seq<byte> 
 
             /// <summary>Generate a range of char values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeChar       : start:char                          -> stop:char       -> seq<char> 
+            val RangeChar: start: char -> stop: char -> seq<char> 
 
             /// <summary>Generate a range of values using the given zero, add, start, step and stop values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeGeneric   : one:'T -> add:('T -> 'T -> 'T) -> start:'T   -> stop:'T       -> seq<'T> 
+            val RangeGeneric: one: 'T -> add: ('T -> 'T -> 'T) -> start: 'T -> stop: 'T -> seq<'T> 
 
             /// <summary>Generate a range of values using the given zero, add, start, step and stop values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeStepGeneric   : zero:'Step -> add:('T -> 'Step -> 'T) -> start:'T   -> step:'Step -> stop:'T       -> seq<'T> 
+            val RangeStepGeneric: zero: 'Step -> add: ('T -> 'Step -> 'T) -> start: 'T -> step: 'Step -> stop: 'T -> seq<'T> 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AbsDynamic : x:'T -> 'T 
+            val AbsDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AcosDynamic : x:'T -> 'T 
+            val AcosDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AsinDynamic : x:'T -> 'T 
+            val AsinDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AtanDynamic : x:'T -> 'T 
+            val AtanDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val Atan2Dynamic : y:'T1 -> x:'T1 -> 'T2
+            val Atan2Dynamic: y: 'T1 -> x: 'T1 -> 'T2
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val CeilingDynamic : x:'T -> 'T 
+            val CeilingDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val ExpDynamic : x:'T -> 'T 
+            val ExpDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val FloorDynamic : x:'T -> 'T 
+            val FloorDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TruncateDynamic : x:'T -> 'T 
+            val TruncateDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RoundDynamic : x:'T -> 'T 
+            val RoundDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val SignDynamic : 'T -> int
+            val SignDynamic: 'T -> int
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val LogDynamic : x:'T -> 'T 
+            val LogDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val Log10Dynamic : x:'T -> 'T 
+            val Log10Dynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val SqrtDynamic : 'T1 -> 'T2
+            val SqrtDynamic: 'T1 -> 'T2
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val CosDynamic : x:'T -> 'T 
+            val CosDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val CoshDynamic : x:'T -> 'T 
+            val CoshDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val SinDynamic : x:'T -> 'T 
+            val SinDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val SinhDynamic : x:'T -> 'T 
+            val SinhDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TanDynamic : x:'T -> 'T 
+            val TanDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TanhDynamic : x:'T -> 'T 
+            val TanhDynamic: x: 'T -> 'T 
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by evaluating quotations.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowDynamic : x:'T -> y:'U -> 'T 
+            val PowDynamic: x: 'T -> y: 'U -> 'T 
             
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'byte'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowByte : x:byte -> n:int -> byte
+            val PowByte: x: byte -> n: int -> byte
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'sbyte'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowSByte : x:sbyte -> n:int -> sbyte
+            val PowSByte: x: sbyte -> n: int -> sbyte
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'int16'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowInt16 : x:int16 -> n:int -> int16
+            val PowInt16: x: int16 -> n: int -> int16
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'uint16'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowUInt16 : x:uint16 -> n:int -> uint16
+            val PowUInt16: x: uint16 -> n: int -> uint16
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'int32'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowInt32 : x:int32 -> n:int -> int32
+            val PowInt32: x: int32 -> n: int -> int32
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'uint32'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowUInt32 : x:uint32 -> n:int -> uint32
+            val PowUInt32: x: uint32 -> n: int -> uint32
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'int64'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowInt64 : x:int64 -> n:int -> int64
+            val PowInt64: x: int64 -> n: int -> int64
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'uint64'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowUInt64 : x:uint64 -> n:int -> uint64
+            val PowUInt64: x: uint64 -> n: int -> uint64
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'nativeint'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowIntPtr : x:nativeint -> n:int -> nativeint
+            val PowIntPtr: x: nativeint -> n: int -> nativeint
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'unativeint'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowUIntPtr : x:unativeint -> n:int -> unativeint
+            val PowUIntPtr: x: unativeint -> n: int -> unativeint
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'float32'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowSingle : x:float32 -> n:int -> float32
+            val PowSingle: x: float32 -> n: int -> float32
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'float'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowDouble : x:float -> n:int -> float
+            val PowDouble: x: float -> n: int -> float
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator on values of type 'decimal'</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowDecimal : x:decimal -> n:int -> decimal
+            val PowDecimal: x: decimal -> n: int -> decimal
 
             /// <summary>This is a library intrinsic. Calls to this function may be generated by uses of the generic 'pown' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PowGeneric : one:'T * mul: ('T -> 'T -> 'T) * value:'T * exponent:int -> 'T
+            val PowGeneric: one: 'T * mul: ('T -> 'T -> 'T) * value: 'T * exponent: int -> 'T
 
         /// <summary>This module contains basic operations which do not apply runtime and/or static checks</summary>
         module Unchecked =
@@ -5494,7 +5498,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Compare")>]
-            val inline compare : 'T -> 'T -> int
+            val inline compare: 'T -> 'T -> int
 
             /// <summary>Perform generic equality on two values where the type of the values is not
             /// statically required to satisfy the 'equality' constraint. </summary>
@@ -5503,7 +5507,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Equals")>]
-            val inline equals : 'T -> 'T -> bool
+            val inline equals: 'T -> 'T -> bool
 
             /// <summary>Perform generic hashing on a value where the type of the value is not
             /// statically required to satisfy the 'equality' constraint. </summary>
@@ -5512,7 +5516,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Hash")>]
-            val inline hash : 'T -> int
+            val inline hash: 'T -> int
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this
         /// module may make code that relies on structural or generic comparison no longer compile.</summary>
@@ -5527,7 +5531,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( < ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( < ) : ^T * ^U    -> bool) 
+            val inline (<): x: ^T -> y: ^U -> bool when (^T or ^U) : (static member ( < ) : ^T * ^U -> bool) 
         
             /// <summary>Compares the two values for greater-than</summary>
             ///
@@ -5538,7 +5542,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( > ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( > ) : ^T * ^U    -> bool) 
+            val inline (>): x: ^T -> y: ^U -> bool when (^T or ^U) : (static member ( > ) : ^T * ^U    -> bool) 
         
             /// <summary>Compares the two values for greater-than-or-equal</summary>
             ///
@@ -5549,7 +5553,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( >= ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( >= ) : ^T * ^U    -> bool) 
+            val inline (>=): x: ^T -> y: ^U -> bool when (^T or ^U) : (static member ( >= ) : ^T * ^U -> bool) 
         
             /// <summary>Compares the two values for less-than-or-equal</summary>
             ///
@@ -5560,7 +5564,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( <= ) : x:^T -> y:^U -> bool when (^T or ^U) : (static member ( <= ) : ^T * ^U    -> bool) 
+            val inline (<=): x: ^T -> y: ^U -> bool when (^T or ^U) : (static member ( <= ) : ^T * ^U -> bool) 
         
             /// <summary>Compares the two values for equality</summary>
             ///
@@ -5582,7 +5586,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( <> ) : x:^T -> y:^T -> bool when ^T : (static member ( <> ) : ^T * ^T    -> bool) 
+            val inline ( <> ) : x:^T -> y:^T -> bool when ^T : (static member ( <> ) : ^T * ^T -> bool) 
 
             /// <summary>Compares the two values</summary>
             ///
@@ -5594,7 +5598,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Compare")>]
-            val inline compare: e1:'T -> e2:^T -> int when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
+            val inline compare: e1: ^T -> e2: ^T -> int when ^T : (static member ( < ) : ^T * ^T -> bool) and ^T : (static member ( > ) : ^T * ^T -> bool) 
 
             /// <summary>Maximum of the two values</summary>
             ///
@@ -5606,7 +5610,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Max")>]
-            val inline max : e1:^T -> e2:^T -> ^T when ^T : (static member ( < ) : ^T * ^T    -> bool) 
+            val inline max: e1: ^T -> e2: ^T -> ^T when ^T : (static member ( < ) : ^T * ^T -> bool) 
 
             /// <summary>Minimum of the two values</summary>
             ///
@@ -5618,7 +5622,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Min")>]
-            val inline min : e1:^T -> e2:^T -> ^T  when ^T : (static member ( < ) : ^T * ^T    -> bool) 
+            val inline min: e1: ^T -> e2: ^T -> ^T  when ^T : (static member ( < ) : ^T * ^T -> bool) 
 
             /// <summary>Calls GetHashCode() on the value</summary>
             ///
@@ -5629,7 +5633,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("Hash")>]
-            val inline hash :value:'T -> int   when 'T : equality
+            val inline hash: value: 'T -> int when 'T : equality
 
         /// <summary>This module contains the basic arithmetic operations with overflow checks.</summary>
         module Checked =
@@ -5641,7 +5645,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( ~- ) : value:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
+            val inline (~-): value: ^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
             ///
@@ -5652,7 +5656,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+            val inline (-): x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2 -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded addition operator (checks for overflow)</summary>
             ///
@@ -5663,7 +5667,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( + ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+            val inline (+): x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2 -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded multiplication operator (checks for overflow)</summary>
             ///
@@ -5674,7 +5678,7 @@ namespace Microsoft.FSharp.Core
             /// 
             /// <example-tbd></example-tbd>
             /// 
-            val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+            val inline (*): x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Byte.Parse"/> 
@@ -5688,7 +5692,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToByte")>]
-            val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
+            val inline byte: value: ^T -> byte when ^T : (static member op_Explicit : ^T -> byte) and default ^T : int
 
             /// <summary>Converts the argument to <c>sbyte</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.SByte.Parse"/> 
@@ -5702,7 +5706,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToSByte")>]
-            val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
+            val inline sbyte: value: ^T -> sbyte when ^T : (static member op_Explicit : ^T -> sbyte) and default ^T : int
 
             /// <summary>Converts the argument to <c>int16</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int16.Parse"/> 
@@ -5716,7 +5720,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt16")>]
-            val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
+            val inline int16: value: ^T -> int16 when ^T : (static member op_Explicit : ^T -> int16) and default ^T : int
 
             /// <summary>Converts the argument to <c>uint16</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt16.Parse"/> 
@@ -5730,7 +5734,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUInt16")>]
-            val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
+            val inline uint16: value: ^T -> uint16 when ^T : (static member op_Explicit : ^T -> uint16) and default ^T : int
 
             /// <summary>Converts the argument to <c>int</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int32.Parse"/> 
@@ -5744,7 +5748,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             ///  
             [<CompiledName("ToInt")>]
-            val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
+            val inline int: value: ^T -> int when ^T : (static member op_Explicit : ^T -> int) and default ^T : int
 
             /// <summary>Converts the argument to <c>int32</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int32.Parse"/> 
@@ -5758,7 +5762,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt32")>]
-            val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
+            val inline int32: value: ^T -> int32 when ^T : (static member op_Explicit : ^T -> int32) and default ^T : int
 
             /// <summary>Converts the argument to <c>uint32</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt32.Parse"/> 
@@ -5772,7 +5776,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUInt32")>]
-            val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
+            val inline uint32: value: ^T -> uint32 when ^T : (static member op_Explicit : ^T -> uint32) and default ^T : int
 
             /// <summary>Converts the argument to <c>int64</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int64.Parse"/> 
@@ -5786,7 +5790,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToInt64")>]
-            val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
+            val inline int64: value: ^T -> int64 when ^T : (static member op_Explicit : ^T -> int64) and default ^T : int
 
             /// <summary>Converts the argument to <c>uint64</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt64.Parse"/> 
@@ -5800,7 +5804,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             ///  
             [<CompiledName("ToUInt64")>]
-            val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
+            val inline uint64: value: ^T -> uint64 when ^T : (static member op_Explicit : ^T -> uint64) and default ^T : int
 
             /// <summary>Converts the argument to <see cref="T:Microsoft.FSharp.Core.nativeint" />. This is a direct, checked conversion for all 
             /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -5813,7 +5817,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToIntPtr")>]
-            val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
+            val inline nativeint: value: ^T -> nativeint when ^T : (static member op_Explicit : ^T -> nativeint) and default ^T : int
 
             /// <summary>Converts the argument to <c>unativeint</c>. This is a direct, checked conversion for all 
             /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -5826,7 +5830,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToUIntPtr")>]
-            val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
+            val inline unativeint: value: ^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
 
             /// <summary>Converts the argument to <c>char</c>. Numeric inputs are converted using a checked 
             /// conversion according to the UTF-16 encoding for characters. String inputs must 
@@ -5840,7 +5844,7 @@ namespace Microsoft.FSharp.Core
             /// <example-tbd></example-tbd>
             /// 
             [<CompiledName("ToChar")>]
-            val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+            val inline char: value: ^T -> char when ^T : (static member op_Explicit : ^T -> char) and default ^T : int
 
 
 namespace Microsoft.FSharp.Control
@@ -5861,7 +5865,7 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>The created Lazy object.</returns>
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member Create : creator:(unit -> 'T) -> System.Lazy<'T>
+            static member Create: creator: (unit -> 'T) -> System.Lazy<'T>
             
             /// <summary>Creates a lazy computation that evaluates to the given value when forced.</summary>
             ///
@@ -5869,13 +5873,13 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>The created Lazy object.</returns>
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member CreateFromValue : value:'T -> System.Lazy<'T>
+            static member CreateFromValue: value: 'T -> System.Lazy<'T>
             
             /// <summary>Forces the execution of this value and return its result. Same as Value. Mutual exclusion is used to 
             /// prevent other threads also computing the value.</summary>
             /// <returns>The value of the Lazy object.</returns>
             [<CompiledName("Force")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            member Force : unit -> 'T
+            member Force: unit -> 'T
             
     /// <summary>The type of delayed computations.</summary>
     /// 
@@ -5908,12 +5912,16 @@ namespace Microsoft.FSharp.Control
         /// be invoked when the event is fired.</summary>
         ///
         /// <param name="handler">A delegate to be invoked when the event is fired.</param>
-        abstract AddHandler: handler:'Delegate -> unit
+        ///
+        /// <example-tbd></example-tbd>
+        abstract AddHandler: handler: 'Delegate -> unit
 
         /// <summary>Remove a listener delegate from an event listener store.</summary>
         ///
         /// <param name="handler">The delegate to be removed from the event listener store.</param>
-        abstract RemoveHandler: handler:'Delegate -> unit 
+        ///
+        /// <example-tbd></example-tbd>
+        abstract RemoveHandler: handler: 'Delegate -> unit 
 
     /// <summary>First class event values for CLI events conforming to CLI Framework standards.</summary>
     ///
