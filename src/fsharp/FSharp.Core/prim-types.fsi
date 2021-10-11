@@ -3246,9 +3246,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="max-example">
         /// <code lang="fsharp">
-        //  max 1 2             //  Evaluates to 2
-        //  max [1;2;3] [1;2;4] //  Evaluates to [1;2;4]
-        //  max "zoo" "alpha"   //  Evaluates to "zoo"
+        ///  max 1 2             //  Evaluates to 2
+        ///  max [1;2;3] [1;2;4] //  Evaluates to [1;2;4]
+        ///  max "zoo" "alpha"   //  Evaluates to "zoo"
         /// </code>
         /// </example>
         /// 
@@ -3264,9 +3264,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="min-example">
         /// <code lang="fsharp">
-        //  min 1 2             //  Evaluates to 1
-        //  min [1;2;3] [1;2;4] //  Evaluates to [1;2;3]
-        //  min "zoo" "alpha"   //  Evaluates to "alpha"
+        ///  min 1 2             //  Evaluates to 1
+        ///  min [1;2;3] [1;2;4] //  Evaluates to [1;2;3]
+        ///  min "zoo" "alpha"   //  Evaluates to "alpha"
         /// </code>
         /// </example>
         /// 
@@ -3279,7 +3279,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="min-example">
         /// <code lang="fsharp">
-        //  ignore 55555   //  Evaluates to ()
+        ///  ignore 55555   //  Evaluates to ()
         /// </code>
         /// </example>
         /// 
@@ -4094,7 +4094,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The cosine of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="cos-example">
         /// <code lang="fsharp">
 
         /// </code>
@@ -4109,7 +4109,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The hyperbolic cosine of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="cosh-example">
         /// <code lang="fsharp">
 
         /// </code>
@@ -4124,9 +4124,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The sine of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="sin-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4139,7 +4139,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The hyperbolic sine of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="sinh-example">
         /// <code lang="fsharp">
 
         /// </code>
@@ -4154,14 +4154,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The tangent of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="tan-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("Tan")>]
-        val inline tan      : value:^T -> ^T       when ^T : (static member Tan      : ^T -> ^T)      and default ^T : float
+        val inline tan: value:^T -> ^T       when ^T : (static member Tan      : ^T -> ^T)      and default ^T : float
         
         /// <summary>Hyperbolic tangent of the given number</summary>
         ///
@@ -4169,14 +4169,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The hyperbolic tangent of the input.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="tanh-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("Tanh")>]
-        val inline tanh     : value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
+        val inline tanh: value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
 
         /// <summary>Overloaded truncate operator.</summary>
         ///
@@ -4184,9 +4184,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The truncated value.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="truncate-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4200,9 +4200,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The base raised to the exponent.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="powop-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4215,9 +4215,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The base raised to the exponent.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="pown-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4236,9 +4236,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted byte</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="byte-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4254,9 +4254,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted sbyte</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="sbyte-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4272,9 +4272,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted int16</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="int16-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4290,9 +4290,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted uint16</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="uint16-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4308,9 +4308,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted int</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="int-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4326,9 +4326,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted int</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="uint-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4341,9 +4341,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted enum type.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="enum-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4359,9 +4359,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted int32</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="int32-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4377,9 +4377,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted uint32</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="uint32-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4395,14 +4395,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted int64</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="int64-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToInt64")>]
-        val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
+        val inline int64: value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
         /// <summary>Converts the argument to unsigned 64-bit integer. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  
@@ -4413,14 +4413,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted uint64</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="uint64-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToUInt64")>]
-        val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
+        val inline uint64: value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
         /// <summary>Converts the argument to 32-bit float. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Single.Parse()</c>  
@@ -4431,14 +4431,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted float32</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="float32-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToSingle")>]
-        val inline float32    : value:^T -> float32    when ^T : (static member op_Explicit : ^T -> float32)    and default ^T : int
+        val inline float32: value:^T -> float32    when ^T : (static member op_Explicit : ^T -> float32)    and default ^T : int
 
         /// <summary>Converts the argument to 64-bit float. This is a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  
@@ -4449,14 +4449,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted float</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="float-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToDouble")>]
-        val inline float      : value:^T -> float      when ^T : (static member op_Explicit : ^T -> float)      and default ^T : int
+        val inline float: value:^T -> float      when ^T : (static member op_Explicit : ^T -> float)      and default ^T : int
 
         /// <summary>Converts the argument to signed native integer. This is a direct conversion for all 
         /// primitive numeric types. Otherwise the operation requires an appropriate
@@ -4466,9 +4466,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted nativeint</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="nativeint-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4483,14 +4483,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted unativeint</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="unativeint-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToUIntPtr")>]
-        val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
+        val inline unativeint: value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
@@ -4500,14 +4500,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted string.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="string-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToString")>]
-        val inline string  : value:'T -> string
+        val inline string: value:'T -> string
 
         /// <summary>Converts the argument to System.Decimal using a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  
@@ -4518,14 +4518,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted decimal.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="decimal-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToDecimal")>]
-        val inline decimal : value:^T -> decimal when ^T : (static member op_Explicit : ^T -> decimal) and default ^T : int
+        val inline decimal: value:^T -> decimal when ^T : (static member op_Explicit : ^T -> decimal) and default ^T : int
 
         /// <summary>Converts the argument to character. Numeric inputs are converted according to the UTF-16 
         /// encoding for characters. String inputs must be exactly one character long. For other
@@ -4535,14 +4535,14 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The converted char.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="char-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
         [<CompiledName("ToChar")>]
-        val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+        val inline char: value: ^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
         /// <summary>An active pattern to match values of type <see cref="T:System.Collections.Generic.KeyValuePair"/></summary>
         ///
@@ -4550,9 +4550,9 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>A tuple containing the key and value.</returns>
         /// 
-        /// <example id="ZZZZZ-example">
+        /// <example id="keyvalue-example">
         /// <code lang="fsharp">
-
+        ///
         /// </code>
         /// </example>
         ///  
@@ -4613,7 +4613,6 @@ namespace Microsoft.FSharp.Core
                 /// <returns>The corresponding index from the start.</returns>
                 [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
-
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
