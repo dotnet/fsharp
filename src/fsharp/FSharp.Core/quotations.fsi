@@ -123,16 +123,16 @@ type Expr =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// let sampleQuotation =  <@ fun v -> v * v @>
+    /// let sampleQuotation =  &lt;@ fun v -> v * v @&gt;
     ///
     /// let v, body =
     ///     match sampleQuotation with
     ///     | Lambda(v, body) -> (v, body)
     ///     | _ -> failwith "unreachable"
     ///
-    /// body.Substitute(function v2 when v = v2 -> Some <@@ 1 + 1 @@> | _ -> None)
+    /// body.Substitute(function v2 when v = v2 -> Some &lt;@@ 1 + 1 @@&gt; | _ -> None)
     /// </code>
-    /// Evaluates to <c><@ (1 + 1) * (1 + 1)@></c>.
+    /// Evaluates to <c>&lt;@ (1 + 1) * (1 + 1)@&gt;</c>.
     /// </example>
     member Substitute: substitution: (Var -> Expr option) -> Expr 
 
@@ -144,7 +144,7 @@ type Expr =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// let sampleQuotation =  <@ fun v -> v * v @>
+    /// let sampleQuotation =  &lt;@ fun v -> v * v @&gt;
     ///
     /// let v, body =
     ///     match sampleQuotation with
@@ -164,7 +164,7 @@ type Expr =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// let sampleQuotation =  <@ 1 + 1 @>
+    /// let sampleQuotation =  &lt;@ 1 + 1 @&gt;
     ///
     /// sampleQuotation.Type
     /// </code>
@@ -179,7 +179,7 @@ type Expr =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// let sampleQuotation =  <@ 1 + 1 @>
+    /// let sampleQuotation =  &lt;@ 1 + 1 @&gt;
     ///
     /// sampleQuotation.CustomAttributes
     /// </code>
@@ -202,7 +202,7 @@ type Expr =
     ///
     /// let array = [| 1; 2; 3 |]
     /// 
-    /// Expr.AddressOf(<@@ array.[1] @@>)
+    /// Expr.AddressOf(&lt;@@ array.[1] @@&gt;)
     /// </code>
     /// Evaluates to <c>AddressOf (Call (None, GetArray, [PropertyGet (None, array, []), Value (1)]))</c>.
     /// </example>
@@ -221,9 +221,9 @@ type Expr =
     ///
     /// let array = [| 1; 2; 3 |]
     /// 
-    /// let addrExpr = Expr.AddressOf(<@@ array.[1] @@>)
+    /// let addrExpr = Expr.AddressOf(&lt;@@ array.[1] @@&gt;)
     /// 
-    /// Expr.AddressSet(addrExpr, <@@ 4 @@>)
+    /// Expr.AddressSet(addrExpr, &lt;@@ 4 @@&gt;)
     /// </code>
     /// Evaluates to <c>AddressSet (AddressOf (Call (None, GetArray, [PropertyGet (None, array, []), Value (1)])), Value (4))</c>.
     /// </example>
@@ -240,12 +240,12 @@ type Expr =
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     ///
-    /// let funcExpr = <@ (fun x -> x + 1) @>
-    /// let argExpr = <@ 3 @>
+    /// let funcExpr = &lt;@ (fun x -> x + 1) @&gt;
+    /// let argExpr = &lt;@ 3 @&gt;
     ///
     /// Expr.Application(funcExpr, argExpr)
     /// </code>
-    /// Evaluates to the same quotation as <c><@ (fun x -> x + 1) 3 @></c>.
+    /// Evaluates to the same quotation as <c>&lt;@ (fun x -> x + 1) 3 @&gt;</c>.
     /// </example>
     static member Application: functionExpr: Expr * argument: Expr -> Expr
     
@@ -260,12 +260,12 @@ type Expr =
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     ///
-    /// let funcExpr = <@ (fun (x, y) z -> x + y + z) @>
-    /// let curriedArgExprs = [[ <@ 1 @>; <@ 2 @> ]; [ <@ 3 @> ]]
+    /// let funcExpr = &lt;@ (fun (x, y) z -> x + y + z) @&gt;
+    /// let curriedArgExprs = [[ &lt;@ 1 @&gt;; &lt;@ 2 @&gt; ]; [ &lt;@ 3 @&gt; ]]
     ///
     /// Expr.Applications(funcExpr, curriedArgExprs)
     /// </code>
-    /// Evaluates to the same quotation as <c><@ (fun (x, y) z -> x + y + z) (1,2) 3 @></c>.
+    /// Evaluates to the same quotation as <c>&lt;@ (fun (x, y) z -> x + y + z) (1,2) 3 @&gt;</c>.
     /// </example>
     static member Applications: functionExpr: Expr * arguments: list<list<Expr>> -> Expr
     
@@ -282,15 +282,15 @@ type Expr =
     /// open FSharp.Quotations
     ///
     /// let methInfo =
-    ///     match <@ Console.WriteLine("1") @> with
+    ///     match &lt;@ Console.WriteLine("1") @&gt; with
     ///     | Call(_, mi, _) -> mi
     ///     | _ -> failwith "call expected"
     ///
-    /// let argExpr = <@ "Hello World" @>
+    /// let argExpr = &lt;@ "Hello World" @&gt;
     ///
     /// Expr.Call(methInfo, [argExpr])
     /// </code>
-    /// Evaluates to the same quotation as <c><@ Console.WriteLine("Hello World") @></c>.
+    /// Evaluates to the same quotation as <c>&lt;@ Console.WriteLine("Hello World") @&gt;</c>.
     /// </example>
     static member Call: methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
@@ -308,15 +308,15 @@ type Expr =
     /// open FSharp.Quotations
     ///
     /// let objExpr, methInfo =
-    ///     match <@ Console.Out.WriteLine("1") @> with
+    ///     match &lt;@ Console.Out.WriteLine("1") @&gt; with
     ///     | Call(Some obj, mi, _) -> obj, mi
     ///     | _ -> failwith "call expected"
     ///
-    /// let argExpr = <@ "Hello World" @>
+    /// let argExpr = &lt;@ "Hello World" @&gt;
     ///
     /// Expr.Call(objExpr, methInfo, [argExpr])
     /// </code>
-    /// Evaluates to the same quotation as <c><@ Console.Out.WriteLine("Hello World") @></c>.
+    /// Evaluates to the same quotation as <c>&lt;@ Console.Out.WriteLine("Hello World") @&gt;</c>.
     /// </example>
     static member Call: obj: Expr * methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
