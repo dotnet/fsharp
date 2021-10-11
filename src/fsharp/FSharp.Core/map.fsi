@@ -231,7 +231,7 @@ module Map =
     /// 
     /// <example id="add-1">
     /// <code lang="fsharp">
-    /// let existing = Map [ (1, "a"); (2, "b") ]
+    /// let input = Map [ (1, "a"); (2, "b") ]
     /// 
     /// input |> Map.add 3 "c" // evaluates to map [(1, "a"); (2, "b"); (3, "c")]
     /// input |> Map.add 2 "aa" // evaluates to map [(1, "a"); (2, "aa")]
