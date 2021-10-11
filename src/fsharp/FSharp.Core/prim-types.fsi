@@ -99,14 +99,14 @@ namespace Microsoft.FSharp.Core
         inherit Attribute
         /// <summary>Creates an instance of the attribute.</summary>
         /// <returns>The created attribute.</returns>
-        new : unit -> SealedAttribute
+        new: unit -> SealedAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="value">Indicates whether the class is sealed.</param>
         ///
         /// <returns>SealedAttribute</returns>
-        new : value:bool -> SealedAttribute
+        new: value:bool -> SealedAttribute
         
         /// <summary>The value of the attribute, indicating whether the type is sealed or not.</summary>
         member Value: bool
@@ -122,7 +122,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>AbstractClassAttribute</returns>
-        new : unit -> AbstractClassAttribute
+        new: unit -> AbstractClassAttribute
 
     /// <summary>Adding this attribute to the let-binding for the definition of a top-level 
     /// value makes the quotation expression that implements the value available
@@ -136,14 +136,14 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ReflectedDefinitionAttribute</returns>
-        new : unit -> ReflectedDefinitionAttribute
+        new: unit -> ReflectedDefinitionAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="includeValue">Indicates whether to include the evaluated value of the definition as the outer node of the quotation</param>
         ///
         /// <returns>ReflectedDefinitionAttribute</returns>
-        new : includeValue:bool -> ReflectedDefinitionAttribute
+        new: includeValue:bool -> ReflectedDefinitionAttribute
 
         /// <summary>The value of the attribute, indicating whether to include the evaluated value of the definition as the outer node of the quotation</summary>
         member IncludeValue: bool
@@ -171,7 +171,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>EqualityConditionalOnAttribute</returns>
-        new : unit -> EqualityConditionalOnAttribute
+        new: unit -> EqualityConditionalOnAttribute
 
     /// <summary>This attribute is used to indicate a generic container type satisfies the F# 'comparison' 
     /// constraint only if a generic argument also satisfies this constraint.</summary>
@@ -194,7 +194,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ComparisonConditionalOnAttribute</returns>
-        new : unit -> ComparisonConditionalOnAttribute
+        new: unit -> ComparisonConditionalOnAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
     ///
@@ -206,7 +206,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructAttribute</returns>
-        new : unit -> StructAttribute
+        new: unit -> StructAttribute
 
     /// <summary>Adding this attribute to a type causes it to be interpreted as a unit of measure.
     /// This may only be used under very limited conditions.</summary>
@@ -219,7 +219,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>MeasureAttribute</returns>
-        new : unit -> MeasureAttribute
+        new: unit -> MeasureAttribute
 
     /// <summary>Adding this attribute to a type causes it to be interpreted as a refined type, currently limited to measure-parameterized types.
     /// This may only be used under very limited conditions.</summary>
@@ -232,7 +232,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>MeasureAnnotatedAbbreviationAttribute</returns>
-        new : unit -> MeasureAnnotatedAbbreviationAttribute
+        new: unit -> MeasureAnnotatedAbbreviationAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI interface.</summary>
     ///
@@ -244,7 +244,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>InterfaceAttribute</returns>
-        new : unit -> InterfaceAttribute
+        new: unit -> InterfaceAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI class.</summary>
     ///
@@ -256,7 +256,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ClassAttribute</returns>
-        new : unit -> ClassAttribute
+        new: unit -> ClassAttribute
 
     /// <summary>Adding this attribute to a type lets the 'null' literal be used for the type 
     /// within F# code. This attribute may only be added to F#-defined class or 
@@ -270,11 +270,11 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>AllowNullLiteralAttribute</returns>
-        new : unit -> AllowNullLiteralAttribute
+        new: unit -> AllowNullLiteralAttribute
 
         /// <summary>Creates an instance of the attribute with the specified value</summary>
         /// <returns>AllowNullLiteralAttribute</returns>
-        new : value: bool -> AllowNullLiteralAttribute
+        new: value: bool -> AllowNullLiteralAttribute
 
         /// <summary>The value of the attribute, indicating whether the type allows the null literal or not</summary>
         member Value: bool
@@ -289,7 +289,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>LiteralAttribute</returns>
-        new : unit -> LiteralAttribute
+        new: unit -> LiteralAttribute
 
     /// <summary>Adding this attribute to a property with event type causes it to be compiled with as a CLI
     /// metadata event, through a syntactic translation to a pair of 'add_EventName' and 
@@ -303,7 +303,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CLIEventAttribute</returns>
-        new : unit -> CLIEventAttribute
+        new: unit -> CLIEventAttribute
 
     /// <summary>Adding this attribute to a record type causes it to be compiled to a CLI representation
     /// with a default constructor with property getters and setters.</summary>
@@ -316,7 +316,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CLIMutableAttribute</returns>
-        new : unit -> CLIMutableAttribute
+        new: unit -> CLIMutableAttribute
 
     /// <summary>Adding this attribute to a discriminated union with value false
     /// turns off the generation of standard helper member tester, constructor 
@@ -337,7 +337,7 @@ namespace Microsoft.FSharp.Core
         /// union.</param>
         ///
         /// <returns>DefaultAugmentationAttribute</returns>
-        new : value:bool -> DefaultAugmentationAttribute
+        new: value:bool -> DefaultAugmentationAttribute
 
     /// <summary>Adding this attribute to an F# mutable binding causes the "volatile"
     /// prefix to be used for all accesses to the field.</summary>
@@ -350,7 +350,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>VolatileFieldAttribute</returns>
-        new : unit -> VolatileFieldAttribute
+        new: unit -> VolatileFieldAttribute
 
     /// <summary>Adding this attribute to a function indicates it is the entrypoint for an application.
     /// If this attribute is not specified for an EXE then the initialization implicit in the
@@ -364,7 +364,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>EntryPointAttribute</returns>
-        new : unit -> EntryPointAttribute
+        new: unit -> EntryPointAttribute
 
     /// <summary>Adding this attribute to a record or union type disables the automatic generation
     /// of overrides for 'System.Object.Equals(obj)', 'System.Object.GetHashCode()' 
@@ -378,7 +378,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ReferenceEqualityAttribute</returns>
-        new : unit -> ReferenceEqualityAttribute
+        new: unit -> ReferenceEqualityAttribute
 
     /// <summary>Adding this attribute to a record, union or struct type confirms the automatic 
     /// generation of overrides for 'System.Object.Equals(obj)' and 
@@ -392,7 +392,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructuralEqualityAttribute</returns>
-        new : unit -> StructuralEqualityAttribute
+        new: unit -> StructuralEqualityAttribute
 
     /// <summary>Adding this attribute to a record, union, exception, or struct type confirms the 
     /// automatic generation of implementations for 'System.IComparable' for the type.</summary>
@@ -405,7 +405,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>StructuralComparisonAttribute</returns>
-        new : unit -> StructuralComparisonAttribute
+        new: unit -> StructuralComparisonAttribute
 
     /// <summary>Indicates that a member on a computation builder type is a custom query operator,
     /// and indicates the name of that operator.</summary>
@@ -418,31 +418,31 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomOperationAttribute</returns>
-        new : name:string -> CustomOperationAttribute
+        new: name:string -> CustomOperationAttribute
 
         /// <summary>Get the name of the custom operation when used in a query or other computation expression</summary>
-        member Name : string
+        member Name: string
 
         /// <summary>Indicates if the custom operation supports the use of 'into' immediately after the use of the operation in a query or other computation expression to consume the results of the operation</summary>
-        member AllowIntoPattern : bool with get,set
+        member AllowIntoPattern: bool with get,set
 
         /// <summary>Indicates if the custom operation is an operation similar to a zip in a sequence computation, supporting two inputs</summary>
-        member IsLikeZip : bool with get,set
+        member IsLikeZip: bool with get,set
 
         /// <summary>Indicates if the custom operation is an operation similar to a join in a sequence computation, supporting two inputs and a correlation constraint</summary>
-        member IsLikeJoin : bool with get,set
+        member IsLikeJoin: bool with get,set
 
         /// <summary>Indicates if the custom operation is an operation similar to a group join in a sequence computation, supporting two inputs and a correlation constraint, and generating a group</summary>
-        member IsLikeGroupJoin : bool with get,set
+        member IsLikeGroupJoin: bool with get,set
 
         /// <summary>Indicates the name used for the 'on' part of the custom query operator for join-like operators</summary>
-        member JoinConditionWord : string with get,set
+        member JoinConditionWord: string with get,set
 
         /// <summary>Indicates if the custom operation maintains the variable space of the query of computation expression</summary>
-        member MaintainsVariableSpace : bool with get,set
+        member MaintainsVariableSpace: bool with get,set
 
         /// <summary>Indicates if the custom operation maintains the variable space of the query of computation expression through the use of a bind operation</summary>
-        member MaintainsVariableSpaceUsingBind : bool with get,set
+        member MaintainsVariableSpaceUsingBind: bool with get,set
 
     /// <summary>Indicates that, when a custom operator is used in a computation expression,
     /// a parameter is automatically parameterized by the variable space of the computation expression</summary>
@@ -454,7 +454,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ProjectionParameterAttribute</returns>
-        new : unit -> ProjectionParameterAttribute
+        new: unit -> ProjectionParameterAttribute
         inherit Attribute
 
     /// <summary>Adding this attribute to a type indicates it is a type where equality is an abnormal operation.
@@ -471,7 +471,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoEqualityAttribute</returns>
-        new : unit -> NoEqualityAttribute
+        new: unit -> NoEqualityAttribute
 
     /// <summary>Adding this attribute to a type indicates it is a type with a user-defined implementation of equality.</summary>
     ///
@@ -483,7 +483,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomEqualityAttribute</returns>
-        new : unit -> CustomEqualityAttribute
+        new: unit -> CustomEqualityAttribute
 
     /// <summary>Adding this attribute to a type indicates it is a type with a user-defined implementation of comparison.</summary>
     ///
@@ -495,7 +495,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>CustomComparisonAttribute</returns>
-        new : unit -> CustomComparisonAttribute
+        new: unit -> CustomComparisonAttribute
 
     /// <summary>Adding this attribute to a type indicates it is a type where comparison is an abnormal operation.
     /// This means that the type does not satisfy the F# 'comparison' constraint. Within the bounds of the 
@@ -512,7 +512,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoComparisonAttribute</returns>
-        new : unit -> NoComparisonAttribute
+        new: unit -> NoComparisonAttribute
 
     /// <summary>Adding this attribute to a field declaration means that the field is 
     /// not initialized. During type checking a constraint is asserted that the field type supports 'null'. 
@@ -530,14 +530,14 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>DefaultValueAttribute</returns>
-        new : unit -> DefaultValueAttribute
+        new: unit -> DefaultValueAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="check">Indicates whether to assert that the field type supports <c>null</c>.</param>
         ///
         /// <returns>DefaultValueAttribute</returns>
-        new : check: bool -> DefaultValueAttribute
+        new: check: bool -> DefaultValueAttribute
 
     /// <summary>This attribute is added automatically for all optional arguments.</summary>
     ///
@@ -549,7 +549,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>OptionalArgumentAttribute</returns>
-        new : unit -> OptionalArgumentAttribute
+        new: unit -> OptionalArgumentAttribute
 
     /// <summary>Adding this attribute to a type, value or member requires that 
     /// uses of the construct must explicitly instantiate any generic type parameters.</summary>
@@ -562,7 +562,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>RequiresExplicitTypeArgumentsAttribute</returns>
-        new : unit -> RequiresExplicitTypeArgumentsAttribute
+        new: unit -> RequiresExplicitTypeArgumentsAttribute
 
     /// <summary>Adding this attribute to a non-function value with generic parameters indicates that 
     /// uses of the construct can give rise to generic code through type inference. </summary>
@@ -591,7 +591,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="compiledName">The name to use in compiled code.</param>
         ///
         /// <returns>CompiledNameAttribute</returns>
-        new : compiledName:string -> CompiledNameAttribute
+        new: compiledName:string -> CompiledNameAttribute
 
         /// <summary>The name of the value as it appears in compiled code</summary>
         member CompiledName: string
@@ -610,7 +610,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">Indicates whether the type should be serializable by default.</param>
         ///
         /// <returns>AutoSerializableAttribute</returns>
-        new : value:bool -> AutoSerializableAttribute
+        new: value:bool -> AutoSerializableAttribute
 
         /// <summary>The value of the attribute, indicating whether the type is automatically marked serializable or not</summary>
         member Value: bool
@@ -632,7 +632,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="release">The release number.</param>
         ///
         /// <returns>FSharpInterfaceDataVersionAttribute</returns>
-        new : major:int * minor:int * release:int -> FSharpInterfaceDataVersionAttribute
+        new: major:int * minor:int * release:int -> FSharpInterfaceDataVersionAttribute
 
         /// <summary>The major version number of the F# version associated with the attribute</summary>
         member Major: int
@@ -662,7 +662,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new : sourceConstructFlags:SourceConstructFlags -> CompilationMappingAttribute
+        new: sourceConstructFlags:SourceConstructFlags -> CompilationMappingAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
@@ -670,7 +670,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="sequenceNumber">Indicates the index in the sequence of constructs.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new : sourceConstructFlags:SourceConstructFlags * sequenceNumber: int -> CompilationMappingAttribute
+        new: sourceConstructFlags:SourceConstructFlags * sequenceNumber: int -> CompilationMappingAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
@@ -679,7 +679,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="sequenceNumber">Indicates the index in the sequence of constructs.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new : sourceConstructFlags:SourceConstructFlags * variantNumber : int * sequenceNumber : int -> CompilationMappingAttribute
+        new: sourceConstructFlags:SourceConstructFlags * variantNumber: int * sequenceNumber: int -> CompilationMappingAttribute
 
         /// <summary>Creates an instance of the attribute</summary>
         ///
@@ -687,21 +687,22 @@ namespace Microsoft.FSharp.Core
         /// <param name="resourceName">The name of the resource needed to resolve the source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
-        new : resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
+        new: resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
 
         /// <summary>Indicates the relationship between the compiled entity and F# source code</summary>
-        member SourceConstructFlags : SourceConstructFlags
+        member SourceConstructFlags: SourceConstructFlags
 
         /// <summary>Indicates the sequence number of the entity, if any, in a linear sequence of elements with F# source code</summary>
-        member SequenceNumber : int
+        member SequenceNumber: int
 
         /// <summary>Indicates the variant number of the entity, if any, in a linear sequence of elements with F# source code</summary>
-        member VariantNumber : int
+        member VariantNumber: int
+
         /// <summary>Indicates the resource the source construct relates to</summary>
-        member ResourceName : string
+        member ResourceName: string
 
         /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
-        member TypeDefinitions : System.Type[]
+        member TypeDefinitions: System.Type[]
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
     /// methods which are given the 'CompiledName' attribute.</summary>
@@ -722,10 +723,10 @@ namespace Microsoft.FSharp.Core
         /// <param name="sourceName">The name of the method in source.</param>
         ///
         /// <returns>CompilationSourceNameAttribute</returns>
-        new : sourceName:string -> CompilationSourceNameAttribute
+        new: sourceName:string -> CompilationSourceNameAttribute
 
         /// <summary>Indicates the name of the entity in F# source code</summary>
-        member SourceName : string
+        member SourceName: string
 
     /// <summary>This attribute is used to adjust the runtime representation for a type. 
     /// For example, it may be used to note that the <c>null</c> representation
@@ -743,16 +744,17 @@ namespace Microsoft.FSharp.Core
         /// <param name="flags">Indicates adjustments to the compiled representation of the type or member.</param>
         ///
         /// <returns>CompilationRepresentationAttribute</returns>
-        new : flags:CompilationRepresentationFlags -> CompilationRepresentationAttribute
+        new: flags: CompilationRepresentationFlags -> CompilationRepresentationAttribute
 
         /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
-        member Flags : CompilationRepresentationFlags
+        member Flags: CompilationRepresentationFlags
 
     module internal ExperimentalAttributeMessages =
         [<Literal>]
-        val RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+        val RequiresPreview: string = "Experimental library feature, requires '--langversion:preview'"
+
         [<Literal>]
-        val NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+        val NotSupportedYet: string = "This construct is not supported by your version of the F# compiler"
         
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
@@ -768,7 +770,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The warning message to be emitted when code uses this construct.</param>
         ///
         /// <returns>ExperimentalAttribute</returns>
-        new : message:string-> ExperimentalAttribute
+        new: message:string-> ExperimentalAttribute
 
         /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
         member Message: string
@@ -787,7 +789,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>InlineIfLambdaAttribute</returns>
-        new : unit -> InlineIfLambdaAttribute
+        new: unit -> InlineIfLambdaAttribute
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
     /// that accept a partial application of some of their arguments and return a residual function.
@@ -804,7 +806,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="counts">Indicates the number of arguments in each argument group.</param>
         ///
         /// <returns>CompilationArgumentCountsAttribute</returns>
-        new : counts:int[] -> CompilationArgumentCountsAttribute
+        new: counts:int[] -> CompilationArgumentCountsAttribute
 
         /// <summary>Indicates the number of arguments in each argument group </summary>
         member Counts: System.Collections.Generic.IEnumerable<int>
@@ -825,7 +827,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">Indicates the text to display when using the '%A' printf formatting.</param>
         ///
         /// <returns>StructuredFormatDisplayAttribute</returns>
-        new : value:string-> StructuredFormatDisplayAttribute
+        new: value:string-> StructuredFormatDisplayAttribute
 
         /// <summary>Indicates the text to display by default when objects of this type are displayed 
         /// using '%A' printf formatting patterns and other two-dimensional text-based display 
@@ -841,7 +843,7 @@ namespace Microsoft.FSharp.Core
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute.</summary>
-        new : message:string * messageNumber: int -> CompilerMessageAttribute
+        new: message:string * messageNumber: int -> CompilerMessageAttribute
 
         /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
         member Message: string
@@ -869,7 +871,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>UnverifiableAttribute</returns>
-        new : unit -> UnverifiableAttribute
+        new: unit -> UnverifiableAttribute
 
     /// <summary>This attribute is used to tag values that may not be dynamically invoked at runtime. This is
     /// typically added to inlined functions whose implementations include unverifiable code. It
@@ -885,9 +887,9 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoDynamicInvocationAttribute</returns>
-        new : unit -> NoDynamicInvocationAttribute
+        new: unit -> NoDynamicInvocationAttribute
 
-        internal new : isLegacy: bool -> NoDynamicInvocationAttribute
+        internal new: isLegacy: bool -> NoDynamicInvocationAttribute
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
@@ -900,7 +902,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>RequireQualifiedAccessAttribute</returns>
-        new : unit -> RequireQualifiedAccessAttribute
+        new: unit -> RequireQualifiedAccessAttribute
 
     /// <summary>Indicates a construct is automatically opened when brought into scope through
     /// an assembly reference or then opening of the containing namespace or module.</summary>
@@ -922,7 +924,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates an attribute used to mark a module as 'automatically opened' when the enclosing namespace is opened</summary>
         /// <returns>AutoOpenAttribute</returns>
-        new : unit -> AutoOpenAttribute
+        new: unit -> AutoOpenAttribute
 
         /// <summary>Creates an attribute used to mark a namespace or module path to be 'automatically opened' when an assembly is referenced</summary>
         ///
@@ -930,7 +932,7 @@ namespace Microsoft.FSharp.Core
         /// or an enclosing module opened.</param>
         ///
         /// <returns>AutoOpenAttribute</returns>
-        new : path:string-> AutoOpenAttribute
+        new: path:string-> AutoOpenAttribute
 
         /// <summary>Indicates the namespace or module to be automatically opened when an assembly is referenced
         /// or an enclosing module opened.</summary>
@@ -1179,7 +1181,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericEquality : e1:'T -> e2:'T -> bool when 'T : equality
+        val inline GenericEquality: e1: 'T -> e2: 'T -> bool when 'T: equality
         
         /// <summary>Compare two values for equality using equivalence relation semantics ([nan] = [nan])</summary>
         ///
@@ -1187,7 +1189,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericEqualityER : e1:'T -> e2:'T -> bool when 'T : equality
+        val inline GenericEqualityER: e1: 'T -> e2: 'T -> bool when 'T: equality
         
         /// <summary>Compare two values for equality</summary>
         ///
@@ -1196,7 +1198,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericEqualityWithComparer : comp:System.Collections.IEqualityComparer -> e1:'T -> e2:'T -> bool when 'T : equality
+        val inline GenericEqualityWithComparer: comp: System.Collections.IEqualityComparer -> e1: 'T -> e2: 'T -> bool when 'T: equality
 
         /// <summary>Compare two values </summary>
         ///
@@ -1204,7 +1206,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericComparison : e1:'T -> e2:'T -> int when 'T : comparison 
+        val inline GenericComparison: e1: 'T -> e2: 'T -> int when 'T: comparison 
 
         /// <summary>Compare two values. May be called as a recursive case from an implementation of System.IComparable to
         /// ensure consistent NaN comparison semantics.</summary>
@@ -1214,7 +1216,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericComparisonWithComparer : comp:System.Collections.IComparer -> e1:'T -> e2:'T -> int when 'T : comparison 
+        val inline GenericComparisonWithComparer: comp: System.Collections.IComparer -> e1: 'T -> e2: 'T -> int when 'T: comparison 
 
         /// <summary>Compare two values   </summary>
         ///
@@ -1222,7 +1224,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericLessThan : e1:'T -> e2:'T -> bool when 'T : comparison 
+        val inline GenericLessThan: e1: 'T -> e2: 'T -> bool when 'T: comparison 
 
         /// <summary>Compare two values   </summary>
         ///
@@ -1230,7 +1232,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericGreaterThan : e1:'T -> e2:'T -> bool when 'T : comparison 
+        val inline GenericGreaterThan: e1: 'T -> e2: 'T -> bool when 'T: comparison 
 
         /// <summary>Compare two values   </summary>
         ///
@@ -1238,7 +1240,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericLessOrEqual : e1:'T -> e2:'T -> bool when 'T : comparison 
+        val inline GenericLessOrEqual: e1: 'T -> e2: 'T -> bool when 'T: comparison 
 
         /// <summary>Compare two values   </summary>
         ///
@@ -1246,7 +1248,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline GenericGreaterOrEqual : e1:'T -> e2:'T -> bool when 'T : comparison 
+        val inline GenericGreaterOrEqual: e1: 'T -> e2: 'T -> bool when 'T: comparison 
 
         /// <summary>Take the minimum of two values structurally according to the order given by GenericComparison</summary>
         ///
@@ -1254,7 +1256,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The minimum value.</returns>
-        val inline GenericMinimum : e1:'T -> e2:'T -> 'T when 'T : comparison 
+        val inline GenericMinimum: e1: 'T -> e2: 'T -> 'T when 'T: comparison 
 
         /// <summary>Take the maximum of two values structurally according to the order given by GenericComparison</summary>
         ///
@@ -1262,7 +1264,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The maximum value.</returns>
-        val inline GenericMaximum : e1:'T -> e2:'T -> 'T when 'T : comparison 
+        val inline GenericMaximum: e1: 'T -> e2: 'T -> 'T when 'T: comparison 
 
         /// <summary>Reference/physical equality. 
         /// True if the inputs are reference-equal, false otherwise.</summary>
@@ -1271,7 +1273,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="e2">The second value.</param>
         ///
         /// <returns>The result of the comparison.</returns>
-        val inline PhysicalEquality : e1:'T -> e2:'T -> bool when 'T : not struct
+        val inline PhysicalEquality: e1: 'T -> e2: 'T -> bool when 'T: not struct
 
         /// <summary>The physical hash. Hashes on the object identity, except for value types,
         /// where we hash on the contents.</summary>
@@ -1279,30 +1281,30 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The hashed value.</returns>
-        val inline PhysicalHash : obj:'T -> int when 'T : not struct
+        val inline PhysicalHash: obj: 'T -> int when 'T: not struct
         
         /// <summary>Return an F# comparer object suitable for hashing and equality. This hashing behaviour
         /// of the returned comparer is not limited by an overall node count when hashing F#
         /// records, lists and union types.</summary>
-        val GenericEqualityComparer : System.Collections.IEqualityComparer
+        val GenericEqualityComparer: System.Collections.IEqualityComparer
         
         /// <summary>Return an F# comparer object suitable for hashing and equality. This hashing behaviour
         /// of the returned comparer is not limited by an overall node count when hashing F#
         /// records, lists and union types. This equality comparer has equivalence 
         /// relation semantics ([nan] = [nan]).</summary>
-        val GenericEqualityERComparer : System.Collections.IEqualityComparer
+        val GenericEqualityERComparer: System.Collections.IEqualityComparer
 
         /// <summary>A static F# comparer object</summary>
-        val GenericComparer : System.Collections.IComparer
+        val GenericComparer: System.Collections.IComparer
 
         /// <summary>Make an F# comparer object for the given type</summary>
-        val inline FastGenericComparer<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+        val inline FastGenericComparer<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+        val internal FastGenericComparerCanBeNull<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
-        val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
+        val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
 
         /// <summary>Make an F# hash/equality object for the given type using node-limited hashing when hashing F#
         /// records, lists and union types.</summary>
@@ -1310,15 +1312,15 @@ namespace Microsoft.FSharp.Core
         /// <param name="limit">The input limit on the number of nodes.</param>
         ///
         /// <returns>System.Collections.Generic.IEqualityComparer&lt;'T&gt;</returns>
-        val inline FastLimitedGenericEqualityComparer<'T> : limit: int -> System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
+        val inline FastLimitedGenericEqualityComparer<'T> : limit: int -> System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
-        val FastGenericEqualityComparerFromTable<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
+        val FastGenericEqualityComparerFromTable<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T: equality
 
         /// <summary>Make an F# comparer object for the given type</summary>
         [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
-        val FastGenericComparerFromTable<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+        val FastGenericComparerFromTable<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Hash a value according to its structure. This hash is not limited by an overall node count when hashing F#
         /// records, lists and union types.</summary>
@@ -1326,7 +1328,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The hashed value.</returns>
-        val inline GenericHash : obj:'T -> int
+        val inline GenericHash: obj: 'T -> int
         
         /// <summary>Hash a value according to its structure. Use the given limit to restrict the hash when hashing F#
         /// records, lists and union types.</summary>
@@ -1335,7 +1337,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The hashed value.</returns>
-        val inline GenericLimitedHash : limit: int -> obj:'T -> int
+        val inline GenericLimitedHash: limit: int -> obj: 'T -> int
         
         /// <summary>Recursively hash a part of a value according to its structure. </summary>
         ///
@@ -1343,70 +1345,70 @@ namespace Microsoft.FSharp.Core
         /// <param name="obj">The input object.</param>
         ///
         /// <returns>The hashed value.</returns>
-        val inline GenericHashWithComparer : comparer : System.Collections.IEqualityComparer -> obj:'T -> int
+        val inline GenericHashWithComparer: comparer: System.Collections.IEqualityComparer -> obj:'T -> int
 
         /// <summary>Build an enum value from an underlying value</summary>
         ///
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The value as an enumeration.</returns>
-        val inline EnumOfValue : value:'T -> 'Enum when 'Enum : enum<'T>
+        val inline EnumOfValue: value: 'T -> 'Enum when 'Enum: enum<'T>
 
         /// <summary>Get the underlying value for an enum value</summary>
         ///
         /// <param name="enum">The input enum.</param>
         ///
         /// <returns>The enumeration as a value.</returns>
-        val inline EnumToValue : enum:'Enum -> 'T when 'Enum : enum<'T>
+        val inline EnumToValue: enum: 'Enum -> 'T when 'Enum: enum<'T>
 
         /// <summary>Creates a float value with units-of-measure</summary>
         ///
         /// <param name="input">The input float.</param>
         ///
         /// <returns>The float with units-of-measure.</returns>
-        val inline FloatWithMeasure : input: float -> float<'Measure>
+        val inline FloatWithMeasure: input: float -> float<'Measure>
 
         /// <summary>Creates a float32 value with units-of-measure</summary>
         ///
         /// <param name="input">The input float.</param>
         ///
         /// <returns>The float with units-of-measure.</returns>
-        val inline Float32WithMeasure : input: float32 -> float32<'Measure>
+        val inline Float32WithMeasure: input: float32 -> float32<'Measure>
 
         /// <summary>Creates a decimal value with units-of-measure</summary>
         ///
         /// <param name="input">The input decimal.</param>
         ///
         /// <returns>The decimal with units of measure.</returns>
-        val inline DecimalWithMeasure : input: decimal -> decimal<'Measure>
+        val inline DecimalWithMeasure: input: decimal -> decimal<'Measure>
 
         /// <summary>Creates an int32 value with units-of-measure</summary>
         ///
         /// <param name="input">The input int.</param>
         ///
         /// <returns>The int with units of measure.</returns>
-        val inline Int32WithMeasure : input: int -> int<'Measure>
+        val inline Int32WithMeasure: input: int -> int<'Measure>
 
         /// <summary>Creates an int64 value with units-of-measure</summary>
         ///
         /// <param name="input">The input int64.</param>
         ///
         /// <returns>The int64 with units of measure.</returns>
-        val inline Int64WithMeasure : input: int64 -> int64<'Measure>
+        val inline Int64WithMeasure: input: int64 -> int64<'Measure>
 
         /// <summary>Creates an int16 value with units-of-measure</summary>
         ///
         /// <param name="input">The input int16.</param>
         ///
         /// <returns>The int16 with units-of-measure.</returns>
-        val inline Int16WithMeasure : input: int16 -> int16<'Measure>
+        val inline Int16WithMeasure: input: int16 -> int16<'Measure>
 
         /// <summary>Creates an sbyte value with units-of-measure</summary>
         ///
         /// <param name="input">The input sbyte.</param>
         ///
         /// <returns>The sbyte with units-of-measure.</returns>
-        val inline SByteWithMeasure : input: sbyte -> sbyte<'Measure>
+        val inline SByteWithMeasure: input: sbyte -> sbyte<'Measure>
 
         /// <summary>Creates a nativeint value with units-of-measure</summary>
         ///
@@ -1414,7 +1416,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The nativeint with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline IntPtrWithMeasure : input: nativeint -> nativeint<'Measure>
+        val inline IntPtrWithMeasure: input: nativeint -> nativeint<'Measure>
 
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
@@ -1422,7 +1424,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The uint with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline UInt32WithMeasure : input: uint -> uint<'Measure>
+        val inline UInt32WithMeasure: input: uint -> uint<'Measure>
         
         /// <summary>Creates a uint64 value with units-of-measure</summary>
         ///
@@ -1430,7 +1432,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The uint64 with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline UInt64WithMeasure : input: uint64 -> uint64<'Measure>
+        val inline UInt64WithMeasure: input: uint64 -> uint64<'Measure>
         
         /// <summary>Creates a uint16 value with units-of-measure</summary>
         ///
@@ -1438,7 +1440,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The uint16 with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline UInt16WithMeasure : input: uint16 -> uint16<'Measure>
+        val inline UInt16WithMeasure: input: uint16 -> uint16<'Measure>
         
         /// <summary>Creates a byte value with units-of-measure</summary>
         ///
@@ -1446,7 +1448,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The byte with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline ByteWithMeasure : input: byte -> byte<'Measure>
+        val inline ByteWithMeasure: input: byte -> byte<'Measure>
         
         /// <summary>Creates a unativeint value with units-of-measure</summary>
         ///
@@ -1454,147 +1456,147 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The unativeint with units-of-measure.</returns>
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val inline UIntPtrWithMeasure : input: unativeint -> unativeint<'Measure>
+        val inline UIntPtrWithMeasure: input: unativeint -> unativeint<'Measure>
 
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
         ///
         /// <param name="s">The input string.</param>
         ///
         /// <returns>The parsed value.</returns>
-        val ParseInt32 : s: string -> int32
+        val ParseInt32: s: string -> int32
 
         /// <summary>Parse an uint32 according to the rules used by the overloaded 'uint32' conversion operator when applied to strings</summary>
         ///
         /// <param name="s">The input string.</param>
         ///
         /// <returns>The parsed value.</returns>
-        val ParseUInt32 : s:string -> uint32
+        val ParseUInt32: s: string -> uint32
 
         /// <summary>Parse an int64 according to the rules used by the overloaded 'int64' conversion operator when applied to strings</summary>
         ///
         /// <param name="s">The input string.</param>
         ///
         /// <returns>The parsed value.</returns>
-        val ParseInt64 : s:string -> int64
+        val ParseInt64: s: string -> int64
 
         /// <summary>Parse an uint64 according to the rules used by the overloaded 'uint64' conversion operator when applied to strings</summary>
         ///
         /// <param name="s">The input string.</param>
         ///
         /// <returns>The parsed value.</returns>
-        val ParseUInt64 : s:string -> uint64
+        val ParseUInt64: s: string -> uint64
 
         /// <summary>Resolves to the zero value for any primitive numeric type or any type with a static member called 'Zero'.</summary>
         [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-        val GenericZeroDynamic : unit -> 'T 
+        val GenericZeroDynamic: unit -> 'T 
 
         /// <summary>Resolves to the value 'one' for any primitive numeric type or any type with a static member called 'One'.</summary>
         [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-        val GenericOneDynamic : unit -> 'T 
+        val GenericOneDynamic: unit -> 'T 
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '+' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val AdditionDynamic : x:'T1 -> y:'T2 -> 'U
+        val AdditionDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '+' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedAdditionDynamic : x:'T1 -> y:'T2 -> 'U
+        val CheckedAdditionDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '*' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val MultiplyDynamic : x:'T1 -> y:'T2 -> 'U
+        val MultiplyDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '*' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedMultiplyDynamic : x:'T1 -> y:'T2 -> 'U
+        val CheckedMultiplyDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
+        val SubtractionDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val DivisionDynamic : x:'T1 -> y:'T2 -> 'U
+        val DivisionDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val UnaryNegationDynamic : value:'T -> 'U
+        val UnaryNegationDynamic: value: 'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
+        val ModulusDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
+        val CheckedSubtractionDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedUnaryNegationDynamic : value:'T -> 'U
+        val CheckedUnaryNegationDynamic: value: 'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val LeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+        val LeftShiftDynamic: value: 'T1 -> shift: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+        val RightShiftDynamic: value: 'T1 -> shift: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&amp;&amp;&amp;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
+        val BitwiseAndDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val BitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
+        val BitwiseOrDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val ExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
+        val ExclusiveOrDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val LogicalNotDynamic : value:'T -> 'U
+        val LogicalNotDynamic: value: 'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val ExplicitDynamic : value:'T -> 'U
+        val ExplicitDynamic: value: 'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val LessThanDynamic : x:'T1 -> y:'T2 -> 'U
+        val LessThanDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val GreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
+        val GreaterThanDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val LessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+        val LessThanOrEqualDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val GreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+        val GreaterThanOrEqualDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val EqualityDynamic : x:'T1 -> y:'T2 -> 'U
+        val EqualityDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val InequalityDynamic : x:'T1 -> y:'T2 -> 'U
+        val InequalityDynamic: x: 'T1 -> y: 'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val DivideByIntDynamic : x:'T -> y:int -> 'T
+        val DivideByIntDynamic: x: 'T -> y: int -> 'T
 
         /// <summary>Resolves to the zero value for any primitive numeric type or any type with a static member called 'Zero'</summary>
-        val inline GenericZero< ^T > : ^T when ^T : (static member Zero : ^T) 
+        val inline GenericZero< ^T > : ^T when ^T: (static member Zero: ^T) 
 
         /// <summary>Resolves to the value 'one' for any primitive numeric type or any type with a static member called 'One'</summary>
-        val inline GenericOne< ^T > : ^T when ^T : (static member One : ^T) 
+        val inline GenericOne< ^T > : ^T when ^T: (static member One: ^T) 
         
-        val internal anyToStringShowingNull : 'T -> string
+        val internal anyToStringShowingNull: 'T -> string
 
         /// <summary>Divides a value by an integer.</summary>
         ///
@@ -1602,26 +1604,25 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The input int.</param>
         ///
         /// <returns>The division result.</returns>
-        val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
+        val inline DivideByInt< ^T > : x: ^T -> y: int -> ^T when ^T: (static member DivideByInt: ^T * int -> ^T) 
 
         /// <summary>For compiler use only</summary>
         module (* internal *) ErrorStrings = 
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputSequenceEmptyString : string
+            val InputSequenceEmptyString: string
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputArrayEmptyString : string
+            val InputArrayEmptyString: string
         
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AddressOpNotFirstClassString : string
+            val AddressOpNotFirstClassString: string
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val NoNegateMinValueString : string
+            val NoNegateMinValueString: string
                 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputMustBeNonNegativeString : string
-                
+            val InputMustBeNonNegativeString: string
 
         //-------------------------------------------------------------------------
 
@@ -1630,7 +1631,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
             [<CompilerMessage("In F# code, use 'e1 && e2' instead of 'e1 & e2'", 1203, IsHidden=true)>]
-            val ( & ) : e1:bool -> e2:bool -> bool
+            val (&): e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'and'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -1638,12 +1639,12 @@ namespace Microsoft.FSharp.Core
             /// <param name="e2">The second value.</param>
             ///
             /// <returns>The result of the operation.</returns>
-            val ( && ) : e1:bool -> e2:bool -> bool
+            val (&&): e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand.</summary>
             [<CompiledName("Or")>]
             [<CompilerMessage("In F# code, use 'e1 || e2' instead of 'e1 or e2'", 1203, IsHidden=true)>]
-            val ( or ) : e1:bool -> e2:bool -> bool
+            val (or): e1: bool -> e2: bool -> bool
 
             /// <summary>Binary 'or'. When used as a binary operator the right hand value is evaluated only on demand</summary>
             ///
@@ -1651,21 +1652,21 @@ namespace Microsoft.FSharp.Core
             /// <param name="e2">The second value.</param>
             ///
             /// <returns>The result of the operation.</returns>
-            val ( || ) : e1:bool -> e2:bool -> bool
+            val (||): e1: bool -> e2: bool -> bool
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             ///
             /// <param name="obj">The input object.</param>
             ///
             /// <returns>The managed pointer.</returns>
-            val inline ( ~& ) : obj:'T -> byref<'T>
+            val inline (~&): obj: 'T -> byref<'T>
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             ///
             /// <param name="obj">The input object.</param>
             ///
             /// <returns>The unmanaged pointer.</returns>
-            val inline ( ~&& ) : obj:'T -> nativeptr<'T>
+            val inline (~&&): obj: 'T -> nativeptr<'T>
 
         //-------------------------------------------------------------------------
 
@@ -1674,190 +1675,186 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val UnboxGeneric<'T> : source:obj -> 'T
+            val UnboxGeneric<'T> : source: obj -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?>' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline UnboxFast<'T> : source:obj -> 'T
+            val inline UnboxFast<'T> : source: obj -> 'T
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val TypeTestGeneric<'T> : source:obj -> bool
+            val TypeTestGeneric<'T> : source: obj -> bool
 
             /// <summary>A compiler intrinsic that implements the ':?' operator</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline TypeTestFast<'T> : source:obj -> bool 
+            val inline TypeTestFast<'T> : source: obj -> bool 
 
             /// <summary>Primitive used by pattern match compilation</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetString : source:string -> index:int -> char
+            val inline GetString : source: string -> index: int -> char
 
             /// <summary>This function implements calls to default constructors
             /// accessed by 'new' constraints.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline CreateInstance : unit -> 'T when 'T : (new : unit -> 'T)
+            val inline CreateInstance: unit -> 'T when 'T: (new: unit -> 'T)
 
             /// <summary>This function implements parsing of decimal constants</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline MakeDecimal : low:int -> medium:int -> high:int -> isNegative:bool -> scale:byte -> decimal
+            val inline MakeDecimal: low: int -> medium: int -> high: int -> isNegative: bool -> scale: byte -> decimal
 
             /// <summary>A compiler intrinsic for the efficient compilation of sequence expressions</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val Dispose<'T when 'T :> System.IDisposable > : resource:'T -> unit
+            val Dispose<'T when 'T :> System.IDisposable> : resource: 'T -> unit
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val FailInit : unit -> unit
+            val FailInit: unit -> unit
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive static bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val FailStaticInit : unit -> unit
+            val FailStaticInit: unit -> unit
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val CheckThis : 'T -> 'T when 'T : not struct
+            val CheckThis: 'T -> 'T when 'T: not struct
 
             /// <summary>The standard overloaded associative (indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray     : source:'T[] -> index:int -> 'T                           
+            val inline GetArray: source: 'T[] -> index: int -> 'T                           
             
             /// <summary>The standard overloaded associative (2-indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray2D    : source:'T[,] -> index1:int -> index2:int -> 'T    
+            val inline GetArray2D: source: 'T[,] -> index1: int -> index2: int -> 'T    
             
             /// <summary>The standard overloaded associative (3-indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray3D   : source:'T[,,] ->index1:int -> index2:int -> index3:int -> 'T  
+            val inline GetArray3D: source: 'T[,,] -> index1: int -> index2: int -> index3: int -> 'T  
             
             /// <summary>The standard overloaded associative (4-indexed) lookup operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline GetArray4D   : source:'T[,,,] ->index1:int -> index2:int -> index3:int -> index4:int -> 'T
+            val inline GetArray4D: source: 'T[,,,] -> index1: int -> index2: int -> index3: int -> index4: int -> 'T
             
             /// <summary>The standard overloaded associative (indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray   : target:'T[] -> index:int -> value:'T -> unit      
+            val inline SetArray: target: 'T[] -> index: int -> value: 'T -> unit      
             
             /// <summary>The standard overloaded associative (2-indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray2D  : target:'T[,] -> index1:int -> index2:int -> value:'T -> unit    
+            val inline SetArray2D: target: 'T[,] -> index1: int -> index2: int -> value: 'T -> unit    
             
             /// <summary>The standard overloaded associative (3-indexed) mutation operator</summary>
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray3D : target:'T[,,] -> index1:int -> index2:int -> index3:int -> value:'T -> unit  
+            val inline SetArray3D: target: 'T[,,] -> index1: int -> index2: int -> index3: int -> value: 'T -> unit  
 
             /// The standard overloaded associative (4-indexed) mutation operator
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline SetArray4D : target:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> value:'T -> unit  
+            val inline SetArray4D: target: 'T[,,,] -> index1: int -> index2: int -> index3: int -> index4: int -> value: 'T -> unit  
 
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>
         module HashCompare =
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PhysicalHashIntrinsic : input:'T -> int when 'T : not struct
+            val PhysicalHashIntrinsic: input: 'T -> int when 'T: not struct
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary>
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val PhysicalEqualityIntrinsic : x:'T -> y:'T -> bool when 'T : not struct
+            val PhysicalEqualityIntrinsic: x: 'T -> y: 'T -> bool when 'T: not struct
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericHashIntrinsic : input:'T -> int
+            val GenericHashIntrinsic: input:'T -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val LimitedGenericHashIntrinsic : limit: int -> input:'T -> int
+            val LimitedGenericHashIntrinsic: limit: int -> input: 'T -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericHashWithComparerIntrinsic : comp:System.Collections.IEqualityComparer -> input:'T -> int           
+            val GenericHashWithComparerIntrinsic: comp: System.Collections.IEqualityComparer -> input: 'T -> int           
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericComparisonWithComparerIntrinsic : comp:System.Collections.IComparer -> x:'T -> y:'T -> int
+            val GenericComparisonWithComparerIntrinsic: comp: System.Collections.IComparer -> x: 'T -> y: 'T -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericComparisonIntrinsic : x:'T -> y:'T -> int
+            val GenericComparisonIntrinsic: x: 'T -> y: 'T -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericEqualityIntrinsic : x:'T -> y:'T -> bool
+            val GenericEqualityIntrinsic: x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericEqualityERIntrinsic : x:'T -> y:'T -> bool
+            val GenericEqualityERIntrinsic: x: 'T -> y: 'T -> bool
             
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericEqualityWithComparerIntrinsic : comp:System.Collections.IEqualityComparer -> x:'T -> y:'T -> bool
+            val GenericEqualityWithComparerIntrinsic: comp: System.Collections.IEqualityComparer -> x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary>
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericLessThanIntrinsic : x:'T -> y:'T -> bool
+            val GenericLessThanIntrinsic: x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericGreaterThanIntrinsic : x:'T -> y:'T -> bool
+            val GenericGreaterThanIntrinsic: x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericGreaterOrEqualIntrinsic : x:'T -> y:'T -> bool
+            val GenericGreaterOrEqualIntrinsic: x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val GenericLessOrEqualIntrinsic : x:'T -> y:'T -> bool
+            val GenericLessOrEqualIntrinsic: x: 'T -> y: 'T -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastHashTuple2 : comparer:System.Collections.IEqualityComparer -> tuple:('T1 * 'T2) -> int
+            val inline FastHashTuple2: comparer: System.Collections.IEqualityComparer -> tuple: ('T1 * 'T2) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastHashTuple3 : comparer:System.Collections.IEqualityComparer -> tuple:('T1 * 'T2 * 'T3) -> int
+            val inline FastHashTuple3: comparer: System.Collections.IEqualityComparer -> tuple: ('T1 * 'T2 * 'T3) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastHashTuple4 : comparer:System.Collections.IEqualityComparer -> tuple:('T1 * 'T2 * 'T3 * 'T4) -> int
+            val inline FastHashTuple4: comparer:System.Collections.IEqualityComparer -> tuple: ('T1 * 'T2 * 'T3 * 'T4) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastHashTuple5 : comparer:System.Collections.IEqualityComparer -> tuple:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
+            val inline FastHashTuple5: comparer: System.Collections.IEqualityComparer -> tuple: ('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastEqualsTuple2 : comparer:System.Collections.IEqualityComparer -> tuple1:('T1 * 'T2) -> tuple2:('T1 * 'T2) -> bool
+            val inline FastEqualsTuple2: comparer: System.Collections.IEqualityComparer -> tuple1: ('T1 * 'T2) -> tuple2: ('T1 * 'T2) -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastEqualsTuple3 : comparer:System.Collections.IEqualityComparer -> tuple1:('T1 * 'T2 * 'T3) -> tuple2:('T1 * 'T2 * 'T3) -> bool
+            val inline FastEqualsTuple3: comparer: System.Collections.IEqualityComparer -> tuple1: ('T1 * 'T2 * 'T3) -> tuple2: ('T1 * 'T2 * 'T3) -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastEqualsTuple4 : comparer:System.Collections.IEqualityComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4) -> tuple2:('T1 * 'T2 * 'T3 * 'T4) -> bool
+            val inline FastEqualsTuple4: comparer: System.Collections.IEqualityComparer -> tuple1: ('T1 * 'T2 * 'T3 * 'T4) -> tuple2: ('T1 * 'T2 * 'T3 * 'T4) -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastEqualsTuple5 : comparer:System.Collections.IEqualityComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> bool
+            val inline FastEqualsTuple5: comparer: System.Collections.IEqualityComparer -> tuple1: ('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2: ('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> bool
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastCompareTuple2 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2) -> tuple2:('T1 * 'T2) -> int
+            val inline FastCompareTuple2: comparer: System.Collections.IComparer -> tuple1: ('T1 * 'T2) -> tuple2: ('T1 * 'T2) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastCompareTuple3 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3) -> tuple2:('T1 * 'T2 * 'T3) -> int
+            val inline FastCompareTuple3: comparer: System.Collections.IComparer -> tuple1: ('T1 * 'T2 * 'T3) -> tuple2: ('T1 * 'T2 * 'T3) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastCompareTuple4 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4) -> tuple2:('T1 * 'T2 * 'T3 * 'T4) -> int
+            val inline FastCompareTuple4: comparer: System.Collections.IComparer -> tuple1: ('T1 * 'T2 * 'T3 * 'T4) -> tuple2: ('T1 * 'T2 * 'T3 * 'T4) -> int
 
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
-            val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
-
-    //-------------------------------------------------------------------------
-    // F# Choice Types
-
+            val inline FastCompareTuple5: comparer: System.Collections.IComparer -> tuple1: ('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2: ('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
     /// <summary>Helper types for active patterns with 2 choices.</summary>
     /// <category index="5">Choices and Results</category>
@@ -1993,7 +1990,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Construct an instance of an F# first class type function value </summary>
         /// <returns>FSharpTypeFunc</returns>
-        new : unit -> FSharpTypeFunc
+        new: unit -> FSharpTypeFunc
 
     /// <summary>The CLI type used to represent F# function values. This type is not
     /// typically used directly, though may be used from other CLI languages.</summary>
@@ -2003,42 +2000,42 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Construct an instance of an F# first class function value </summary> 
         /// <returns>The created F# function.</returns> 
-        new : unit ->  FSharpFunc<'T,'U>
+        new: unit ->  FSharpFunc<'T,'U>
  
         /// <summary>Invoke an F# first class function value with one argument</summary>
         ///
         /// <param name="func"></param>
         ///
         /// <returns>'U</returns>
-        abstract Invoke : func:'T -> 'U
+        abstract Invoke: func: 'T -> 'U
 
         /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
         /// <param name="func">The input function.</param>
         ///
         /// <returns>A System.Converter of the function type.</returns>
-        static member op_Implicit : func:('T -> 'U) -> System.Converter<'T,'U>
+        static member op_Implicit: func: ('T -> 'U) -> System.Converter<'T,'U>
 
         /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
         /// <returns>An F# function of the same type.</returns>
-        static member op_Implicit : converter:System.Converter<'T,'U> -> ('T -> 'U)
+        static member op_Implicit: converter: System.Converter<'T,'U> -> ('T -> 'U)
 
         /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
         /// <param name="func">The input function.</param>
         ///
         /// <returns>System.Converter&lt;'T,'U&gt;</returns>
-        static member ToConverter : func:('T -> 'U) -> System.Converter<'T,'U>
+        static member ToConverter: func: ('T -> 'U) -> System.Converter<'T,'U>
 
         /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
         /// <returns>An F# function of the same type.</returns>
-        static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
+        static member FromConverter: converter: System.Converter<'T,'U> -> ('T -> 'U)
 
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2051,7 +2048,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg5">The fifth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W * arg5:'X -> 'Y
+        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W * arg5: 'X -> 'Y
 
         /// <summary>Invoke an F# first class function value with four curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2063,7 +2060,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg4">The fourth arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W -> 'X
+        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1: 'T * arg2: 'U * arg3: 'V * arg4: 'W -> 'X
 
         /// <summary>Invoke an F# first class function value with three curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2074,7 +2071,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1:'T * arg2:'U * arg3:'V -> 'W
+        static member InvokeFas : func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1: 'T * arg2: 'U * arg3: 'V -> 'W
 
         /// <summary>Invoke an F# first class function value with two curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -2084,7 +2081,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg2">The second arg.</param>
         ///
         /// <returns>The function result.</returns>
-        static member InvokeFast : func: FSharpFunc<'T,('U -> 'V)> * arg1:'T * arg2:'U -> 'V
+        static member InvokeFast: func: FSharpFunc<'T,('U -> 'V)> * arg1: 'T * arg2: 'U -> 'V
 
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
@@ -2098,126 +2095,126 @@ namespace Microsoft.FSharp.Core
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+        static member inline ToFSharpFunc: action: Action<'T> -> ('T -> unit)
 
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
         ///
         /// <param name="converter">The input Converter delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
+        static member inline ToFSharpFunc: converter: Converter<'T,'U> -> ('T -> 'U)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromAction       : action:Action          -> (unit -> unit)
+        static member inline FromAction: action: Action -> (unit -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromAction       : action:Action<'T>          -> ('T -> unit)
+        static member inline FromAction: action: Action<'T> -> ('T -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F#funcfunction.</returns>
-        static member  inline FromAction       : action:Action<'T1,'T2>          -> ('T1 -> 'T2 -> unit)
+        static member inline FromAction: action: Action<'T1,'T2> -> ('T1 -> 'T2 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromAction       : action:Action<'T1,'T2,'T3>          -> ('T1 -> 'T2 -> 'T3 -> unit)
+        static member inline FromAction: action: Action<'T1,'T2,'T3> -> ('T1 -> 'T2 -> 'T3 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> unit)
+        static member inline FromAction : action: Action<'T1,'T2,'T3,'T4> -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
         /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4,'T5>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> unit)
+        static member inline FromAction: action: Action<'T1,'T2,'T3,'T4,'T5> -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> unit)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromFunc       : func:Func<'T>          -> (unit -> 'T)
+        static member inline FromFunc: func: Func<'T> -> (unit -> 'T)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromFunc       : func:Func<'T,'U>          -> ('T -> 'U)
+        static member inline FromFunc: func: Func<'T,'U> -> ('T -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F#funcfunction.</returns>
-        static member  inline FromFunc       : func:Func<'T1,'T2,'U>          -> ('T1 -> 'T2 -> 'U)
+        static member inline FromFunc: func: Func<'T1,'T2,'U> -> ('T1 -> 'T2 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'U)
+        static member inline FromFunc: func: Func<'T1,'T2,'T3,'U> -> ('T1 -> 'T2 -> 'T3 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'T4,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
+        static member inline FromFunc: func: Func<'T1,'T2,'T3,'T4,'U> -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
         ///
         /// <param name="func">The input Func delegate.</param>
         ///
         /// <returns>The F# function.</returns>
-        static member  inline FromFunc       : func:Func<'T1,'T2,'T3,'T4,'T5,'U>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
+        static member inline FromFunc: func: Func<'T1,'T2,'T3,'T4,'T5,'U> -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
 
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         ///
         /// <param name="func">The input tupled function.</param>
         ///
         /// <returns>The output curried function.</returns>
-        static member inline FuncFromTupled : func:('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
+        static member inline FuncFromTupled: func: ('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         ///
         /// <param name="func">The input tupled function.</param>
         ///
         /// <returns>The output curried function.</returns>
-        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
+        static member inline FuncFromTupled: func: ('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         ///
         /// <param name="func">The input tupled function.</param>
         ///
         /// <returns>The output curried function.</returns>
-        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
+        static member inline FuncFromTupled: func: ('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         ///
         /// <param name="func">The input tupled function.</param>
         ///
         /// <returns>The output curried function.</returns>
-        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
+        static member inline FuncFromTupled: func: ('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
 
     /// <summary>An implementation module used to hold some private implementations of function
     /// value invocation.</summary>
@@ -2237,7 +2234,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg2">The second arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract Invoke : arg1:'T1 * arg2:'T2 -> 'U
+            abstract Invoke: arg1: 'T1 * arg2: 'T2 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept two curried arguments without intervening execution. </summary>
@@ -2245,12 +2242,12 @@ namespace Microsoft.FSharp.Core
             /// <param name="func">The input function.</param>
             ///
             /// <returns>The adapted function.</returns>
-            static member Adapt : func:('T1 -> 'T2 -> 'U) -> FSharpFunc<'T1,'T2,'U>
+            static member Adapt: func:('T1 -> 'T2 -> 'U) -> FSharpFunc<'T1,'T2,'U>
 
             /// <summary>Construct an optimized function value that can accept two curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
-            new : unit ->  FSharpFunc<'T1,'T2,'U>
+            new: unit ->  FSharpFunc<'T1,'T2,'U>
 
         /// <summary>The CLI type used to represent F# function values that accept
         /// three iterated (curried) arguments without intervening execution. This type should not
@@ -2268,7 +2265,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg3">The third arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+            abstract Invoke: arg1: 'T1 * arg2: 'T2 * arg3: 'T3 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept three curried arguments without intervening execution. </summary>
@@ -2276,12 +2273,12 @@ namespace Microsoft.FSharp.Core
             /// <param name="func">The input function.</param>
             ///
             /// <returns>The adapted function.</returns>
-            static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'U>
+            static member Adapt: func: ('T1 -> 'T2 -> 'T3 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'U>
 
             /// <summary>Construct an optimized function value that can accept three curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
-            new : unit ->  FSharpFunc<'T1,'T2,'T3,'U>
+            new: unit ->  FSharpFunc<'T1,'T2,'T3,'U>
 
         /// <summary>The CLI type used to represent F# function values that accept four curried arguments 
         /// without intervening execution. This type should not typically used directly from 
@@ -2299,7 +2296,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg4">The fourth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
+            abstract Invoke: arg1: 'T1 * arg2: 'T2 * arg3: 'T3 * arg4: 'T4 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept four curried arguments without intervening execution. </summary>
@@ -2307,12 +2304,12 @@ namespace Microsoft.FSharp.Core
             /// <param name="func">The input function.</param>
             ///
             /// <returns>The optimized function.</returns>
-            static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'U>
+            static member Adapt: func: ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'U>
 
             /// <summary>Construct an optimized function value that can accept four curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
-            new : unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'U>
+            new: unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'U>
 
         /// <summary>The CLI type used to represent F# function values that accept five curried arguments 
         /// without intervening execution. This type should not typically used directly from 
@@ -2331,7 +2328,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg5">The fifth arg.</param>
             ///
             /// <returns>The function result.</returns>
-            abstract Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
+            abstract Invoke: arg1: 'T1 * arg2: 'T2 * arg3: 'T3 * arg4: 'T4 * arg5: 'T5 -> 'U
 
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept five curried arguments without intervening execution. </summary>
@@ -2339,12 +2336,12 @@ namespace Microsoft.FSharp.Core
             /// <param name="func">The input function.</param>
             ///
             /// <returns>The optimized function.</returns>
-            static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
+            static member Adapt: func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
 
             /// <summary>Construct an optimized function value that can accept five curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
-            new : unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
+            new: unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
 
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
@@ -2358,7 +2355,7 @@ namespace Microsoft.FSharp.Core
            mutable contents: 'T }
 
         /// <summary>The current value of the reference cell</summary>
-        member Value : 'T with get,set
+        member Value: 'T with get,set
             
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
@@ -2385,18 +2382,18 @@ namespace Microsoft.FSharp.Core
     type Option<'T> =
 
         /// <summary>The representation of "No value"</summary>
-        | None :       'T option
+        | None:       'T option
 
         /// <summary>The representation of "Value of type 'T"</summary>
         ///
         /// <param name="Value">The input value.</param>
         ///
         /// <returns>An option representing the value.</returns>
-        | Some : Value:'T -> 'T option 
+        | Some: Value:'T -> 'T option 
 
         /// <summary>Create an option value that is a 'None' value.</summary>
         /// <exclude />
-        static member None : 'T option
+        static member None: 'T option
 
         /// <summary>Create an option value that is a 'Some' value.</summary>
         ///
@@ -2404,7 +2401,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>An option representing the value.</returns>
         /// <exclude />
-        static member Some : value:'T -> 'T option
+        static member Some: value: 'T -> 'T option
 
         /// <summary>Implicitly converts a value into an optional that is a 'Some' value.</summary>
         ///
@@ -2414,17 +2411,17 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>An option representing the value.</returns>
         /// <exclude />
-        static member op_Implicit : value:'T -> 'T option
+        static member op_Implicit: value: 'T -> 'T option
 
         /// <summary>Get the value of a 'Some' option. A NullReferenceException is raised if the option is 'None'.</summary>
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
-        member Value : 'T
+        member Value: 'T
 
         /// <summary>Return 'true' if the option is a 'Some' value.</summary>
-        member IsSome : bool
+        member IsSome: bool
 
         /// <summary>Return 'true' if the option is a 'None' value.</summary>
-        member IsNone : bool
+        member IsNone: bool
   
     /// <summary>The type of optional values. When used from other CLI languages the
     /// empty option is the <c>null</c> value. </summary>
@@ -2463,11 +2460,11 @@ namespace Microsoft.FSharp.Core
         | ValueSome: 'T -> 'T voption
 
         /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
-        member Value : 'T
+        member Value: 'T
 
         /// <summary>Create a value option value that is a 'ValueNone' value.</summary>
         /// <exclude />
-        static member None : 'T voption
+        static member None: 'T voption
 
         /// <summary>Create a value option value that is a 'Some' value.</summary>
         ///
@@ -2475,13 +2472,13 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>A value option representing the value.</returns>
         /// <exclude />
-        static member Some : value:'T -> 'T voption
+        static member Some: value: 'T -> 'T voption
         
         /// <summary>Return 'true' if the value option is a 'ValueSome' value.</summary>
-        member IsSome : bool
+        member IsSome: bool
 
         /// <summary>Return 'true' if the value option is a 'ValueNone' value.</summary>
-        member IsNone : bool
+        member IsNone: bool
         
         /// <summary>Implicitly converts a value into an optional that is a 'ValueSome' value.</summary>
         ///
@@ -2535,30 +2532,30 @@ namespace Microsoft.FSharp.Collections
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
     type List<'T> =
-        | ([])  : 'T list
-        | (::)  : Head: 'T * Tail: 'T list -> 'T list
+        | ([]): 'T list
+        | (::): Head: 'T * Tail: 'T list -> 'T list
 
         /// <summary>Returns an empty list of a particular type</summary>
-        static member Empty : 'T list
+        static member Empty: 'T list
         
         /// <summary>Gets the number of items contained in the list</summary>
-        member Length : int
+        member Length: int
 
         /// <summary>Gets a value indicating if the list contains no entries</summary>
-        member IsEmpty : bool
+        member IsEmpty: bool
 
         /// <summary>Gets the first element of the list</summary>
-        member Head : 'T
+        member Head: 'T
 
         /// <summary>Gets the tail of the list, which is a list containing all the elements of the list, excluding the first element </summary>
-        member Tail : 'T list
+        member Tail: 'T list
 
         /// <summary>Gets the element of the list at the given position.</summary>
         /// <remarks>Lists are represented as linked lists so this is an O(n) operation.</remarks>
         /// <param name="index">The index.</param>
         ///
         /// <returns>The value at the given index.</returns>
-        member Item : index:int -> 'T with get 
+        member Item: index: int -> 'T with get 
         
         /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.</summary>
         ///
@@ -2566,7 +2563,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="endIndex">The end index.</param>
         ///
         /// <returns>The sub list specified by the input indices.</returns>
-        member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
+        member GetSlice: startIndex: int option * endIndex: int option -> 'T list  
 
         /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
         ///
@@ -2583,7 +2580,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="tail">The existing list.</param>
         ///
         /// <returns>The list with head appended to the front of tail.</returns>
-        static member Cons : head:'T * tail:'T list -> 'T list
+        static member Cons: head: 'T * tail: 'T list -> 'T list
         
         interface IEnumerable<'T>
         interface IEnumerable
@@ -2635,7 +2632,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
-        val inline (~-) : n: ^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
+        val inline (~-): n: ^T -> ^T when ^T: (static member ( ~- ): ^T -> ^T) and default ^T: int
 
         /// <summary>Overloaded addition operator</summary>
         ///
@@ -2651,7 +2648,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (+) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( + ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (+): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2): (static member (+): ^T1 * ^T2    -> ^T3) and default ^T2: ^T3 and default ^T3: ^T1 and default ^T3: ^T2 and default ^T1: ^T3 and default ^T1: ^T2 and default ^T1: int
         
         /// <summary>Overloaded subtraction operator</summary>
         ///
@@ -2665,7 +2662,7 @@ namespace Microsoft.FSharp.Core
         /// 10 - 2 //  Evaluates to 8
         /// </code>
         /// </example>
-        val inline (-) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (-): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded multiplication operator</summary>
         ///
@@ -2679,7 +2676,7 @@ namespace Microsoft.FSharp.Core
         /// 8 * 6 //  Evaluates to 48
         /// </code>
         /// </example>
-        val inline ( * ) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (*): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded division operator</summary>
         ///
@@ -2693,7 +2690,7 @@ namespace Microsoft.FSharp.Core
         /// 16 / 2 //  Evaluates to 8
         /// </code>
         /// </example>
-        val inline ( / ) : x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (/): x: ^T1 -> y: ^T2 -> ^T3  when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded modulo operator</summary>
         ///
@@ -2707,7 +2704,7 @@ namespace Microsoft.FSharp.Core
         /// 29 % 5 //  Evaluates to 4
         /// </code>
         /// </example>
-        val inline ( % ) : x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( % ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
+        val inline (%): x: ^T1 -> y: ^T2 -> ^T3 when (^T1 or ^T2) : (static member ( % ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
         
         /// <summary>Overloaded bitwise-AND operator</summary>
         ///
@@ -2741,7 +2738,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 15
         /// </example>
-        val inline (|||) : x: ^T -> y: ^T -> ^T when ^T : (static member (|||) : ^T * ^T -> ^T) and default ^T : int
+        val inline (|||): x: ^T -> y: ^T -> ^T when ^T : (static member (|||) : ^T * ^T -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-XOR operator</summary>
         ///
@@ -2774,7 +2771,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// Evaluates to 206
         /// </example>
-        val inline (<<<) : value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
+        val inline (<<<): value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded byte-shift right operator by a specified number of bits</summary>
         ///
@@ -2792,7 +2789,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 3
         /// </code>
         /// </example>
-        val inline (>>>) : value: ^T -> shift: int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
+        val inline (>>>): value: ^T -> shift: int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
         
         /// <summary>Overloaded bitwise-NOT operator</summary>
         ///
@@ -2808,7 +2805,7 @@ namespace Microsoft.FSharp.Core
         /// Evaluates to 195
         /// </example>
         /// 
-        val inline (~~~) : value: ^T -> ^T when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
+        val inline (~~~): value: ^T -> ^T when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
         
         /// <summary>Overloaded prefix-plus operator</summary>
         ///
@@ -2818,7 +2815,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example-tbd></example-tbd>
         /// 
-        val inline (~+) : value: ^T -> ^T when ^T : (static member (~+)  : ^T         -> ^T) and default ^T : int
+        val inline (~+): value: ^T -> ^T when ^T : (static member (~+)  : ^T         -> ^T) and default ^T : int
         
         /// <summary>Structural less-than comparison</summary>
         ///
@@ -2921,7 +2918,7 @@ namespace Microsoft.FSharp.Core
         /// </code>
         /// </example>
         /// 
-        val inline (<>) : x:'T -> y:'T -> bool when 'T : equality
+        val inline (<>): x:'T -> y:'T -> bool when 'T : equality
 
         /// <summary>Compose two functions, the function on the left being applied first</summary>
         ///
@@ -3237,7 +3234,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Compare")>]
-        val inline compare: e1: 'T -> e2: 'T -> int when 'T : comparison
+        val inline compare: e1: 'T -> e2: 'T -> int when 'T: comparison
 
         /// <summary>Maximum based on generic comparison</summary>
         ///
@@ -3255,7 +3252,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Max")>]
-        val inline max: e1: 'T -> e2: 'T -> 'T  when 'T : comparison
+        val inline max: e1: 'T -> e2: 'T -> 'T  when 'T: comparison
 
         /// <summary>Minimum based on generic comparison</summary>
         ///
@@ -3273,7 +3270,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("Min")>]
-        val inline min: e1: 'T -> e2: 'T -> 'T when 'T : comparison
+        val inline min: e1: 'T -> e2: 'T -> 'T when 'T: comparison
 
         /// <summary>Ignore the passed value. This is often used to throw away results of a computation.</summary>
         ///
@@ -3356,7 +3353,7 @@ namespace Microsoft.FSharp.Core
         /// </example>
         /// 
         [<CompiledName("IsNull")>]
-        val inline isNull: value: 'T -> bool when 'T : null
+        val inline isNull: value: 'T -> bool when 'T: null
         
         /// <summary>Determines whether the given value is not null.</summary>
         ///
@@ -3364,7 +3361,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>True when value is not null, false otherwise.</returns>
         [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull: value: 'T -> bool when 'T : null
+        val inline internal isNotNull: value: 'T -> bool when 'T: null
 
         /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
@@ -5293,7 +5290,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Generate a range of nativeint values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val RangeIntPtr: start: nativeint  step: nativeint -> stop: nativeint -> seq<nativeint> 
+            val RangeIntPtr: start: nativeint -> step: nativeint -> stop: nativeint -> seq<nativeint> 
 
             /// <summary>Generate a range of unativeint values</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
