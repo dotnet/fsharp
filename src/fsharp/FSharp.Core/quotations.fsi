@@ -25,7 +25,7 @@ type Var =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// match &lt;@ fun v -> v &gt; with
+    /// match &lt;@ fun v -> v @&gt; with
     /// | Lambda(v, body) -> v.Type
     /// | _ -> failwith "unreachable"
     /// </code>
@@ -40,7 +40,7 @@ type Var =
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// match &lt;@ fun v -> v &gt; with
+    /// match &lt;@ fun v -> v @&gt; with
     /// | Lambda(v, body) -> v.Name
     /// | _ -> failwith "unreachable"
     /// </code>
@@ -50,12 +50,12 @@ type Var =
 
     /// <summary>Indicates if the variable represents a mutable storage location</summary>
     /// 
-    /// <example id="XXXXismutable-1">
+    /// <example id="ismutable-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
-    /// match &lt;@ fun v -> v &gt; with
+    /// match &lt;@ fun v -> v @&gt; with
     /// | Lambda(v, body) -> v.IsMutable
     /// | _ -> failwith "unreachable"
     /// </code>
@@ -130,9 +130,9 @@ type Expr =
     ///     | Lambda(v, body) -> (v, body)
     ///     | _ -> failwith "unreachable"
     ///
-    /// body.Substitute(function v2 when v = v2 -> Some &lt;@@ 1 + 1 @@&gt; | _ -> None)
+    /// body.Substitute(function v2 when v = v2 -> Some &lt;@ 1 + 1 @&gt; | _ -> None)
     /// </code>
-    /// Evaluates to <c>&lt;@ (1 + 1) * (1 + 1)@&gt;</c>.
+    /// Evaluates to <c>&lt;@ (1 + 1) * (1 + 1)&gt;</c>.
     /// </example>
     member Substitute: substitution: (Var -> Expr option) -> Expr 
 
@@ -198,11 +198,10 @@ type Expr =
     /// <example id="addressof-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
     /// let array = [| 1; 2; 3 |]
     /// 
-    /// Expr.AddressOf(&lt;@@ array.[1] @@&gt;)
+    /// Expr.AddressOf(&lt;@ array.[1] @&gt;)
     /// </code>
     /// Evaluates to <c>AddressOf (Call (None, GetArray, [PropertyGet (None, array, []), Value (1)]))</c>.
     /// </example>
@@ -221,9 +220,9 @@ type Expr =
     ///
     /// let array = [| 1; 2; 3 |]
     /// 
-    /// let addrExpr = Expr.AddressOf(&lt;@@ array.[1] @@&gt;)
+    /// let addrExpr = Expr.AddressOf(&lt;@ array.[1] @&gt;)
     /// 
-    /// Expr.AddressSet(addrExpr, &lt;@@ 4 @@&gt;)
+    /// Expr.AddressSet(addrExpr, &lt;@ 4 @&gt;)
     /// </code>
     /// Evaluates to <c>AddressSet (AddressOf (Call (None, GetArray, [PropertyGet (None, array, []), Value (1)])), Value (4))</c>.
     /// </example>
@@ -245,7 +244,7 @@ type Expr =
     ///
     /// Expr.Application(funcExpr, argExpr)
     /// </code>
-    /// Evaluates to the same quotation as <c>&lt;@ (fun x -> x + 1) 3 @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ (fun x -> x + 1) 3 @&gt;</c>.
     /// </example>
     static member Application: functionExpr: Expr * argument: Expr -> Expr
     
@@ -265,7 +264,7 @@ type Expr =
     ///
     /// Expr.Applications(funcExpr, curriedArgExprs)
     /// </code>
-    /// Evaluates to the same quotation as <c>&lt;@ (fun (x, y) z -> x + y + z) (1,2) 3 @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ (fun (x, y) z -> x + y + z) (1,2) 3 @&gt;</c>.
     /// </example>
     static member Applications: functionExpr: Expr * arguments: list<list<Expr>> -> Expr
     
@@ -280,6 +279,7 @@ type Expr =
     /// <code lang="fsharp">
     /// open System
     /// open FSharp.Quotations
+    /// open FSharp.Quotations.Patterns
     ///
     /// let methInfo =
     ///     match &lt;@ Console.WriteLine("1") @&gt; with
@@ -290,7 +290,7 @@ type Expr =
     ///
     /// Expr.Call(methInfo, [argExpr])
     /// </code>
-    /// Evaluates to the same quotation as <c>&lt;@ Console.WriteLine("Hello World") @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.WriteLine("Hello World") @&gt;</c>.
     /// </example>
     static member Call: methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
@@ -306,6 +306,7 @@ type Expr =
     /// <code lang="fsharp">
     /// open System
     /// open FSharp.Quotations
+    /// open FSharp.Quotations.Patterns
     ///
     /// let objExpr, methInfo =
     ///     match &lt;@ Console.Out.WriteLine("1") @&gt; with
@@ -316,11 +317,11 @@ type Expr =
     ///
     /// Expr.Call(objExpr, methInfo, [argExpr])
     /// </code>
-    /// Evaluates to the same quotation as <c>&lt;@ Console.Out.WriteLine("Hello World") @&gt;</c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.Out.WriteLine("Hello World") @&gt;</c>.
     /// </example>
     static member Call: obj: Expr * methodInfo: MethodInfo * arguments: list<Expr> -> Expr
 
-    /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
+    /// <summary>Builds an expression that represents a call to an static method or module-bound function, potentially passing additional witness arguments</summary>
     ///
     /// <param name="methodInfo">The MethodInfo describing the method to call.</param>
     /// <param name="methodInfoWithWitnesses">The additional MethodInfo describing the method to call, accepting witnesses.</param>
@@ -329,17 +330,40 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="callwithwitnesses-1">In this example, we show how to use a witness to cosntruct an `op_Addition` call for a type that doesn't support addition directly:
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// // Get the entrypoint for inline addition that takes an explicit witness
+    /// let addMethInfoG, addMethInfoGW =
+    ///     match &lt;@ 1+1 @&gt; with
+    ///     | CallWithWitnesses(None, mi, miW, _, _) ->
+    ///         mi.GetGenericMethodDefinition(), miW.GetGenericMethodDefinition()
+    ///     | _ ->
+    ///         failwith "call expected"
+    /// 
+    /// // Make a non-standard witness for addition for a type C
+    ///
+    /// type C(value: int) =
+    ///     member x.Value = value
+    ///
+    /// let witnessExpr = &lt;@ (fun (x: C) (y: C) -> C(x.Value + y.Value)) @&gt;
+    /// let argExpr1 = &lt;@ C(4) @&gt;
+    /// let argExpr2 = &lt;@ C(5) @&gt;
+    ///
+    /// // Instantiate the generic method at the right type
+    ///
+    /// let addMethInfo = addMethInfoG.MakeGenericMethod(typeof&lt;C&gt;, typeof&lt;C&gt;, typeof&lt;C&gt;)
+    /// let addMethInfoW = addMethInfoGW.MakeGenericMethod(typeof&lt;C&gt;, typeof&lt;C&gt;, typeof&lt;C&gt;)
+    ///
+    /// Expr.CallWithWitnesses(addMethInfo, addMethInfoW, [witnessExpr], [argExpr1; argExpr2])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Call (None, op_Addition, [NewObject (C, Value (4)), NewObject (C, Value (5))]) @&gt;</c>.
     /// </example>
     static member CallWithWitnesses: methodInfo: MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments: Expr list -> Expr
 
-    /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
+    /// <summary>Builds an expression that represents a call to an instance method associated with an object, potentially passing additional witness arguments</summary>
     ///
     /// <param name="obj">The input object.</param>
     /// <param name="methodInfo">The description of the method to call.</param>
@@ -349,14 +373,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example id="callwithwitnesses-2">See examples for Call and CallWithWitnesses</example>
     static member CallWithWitnesses: obj: Expr * methodInfo: MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments: Expr list -> Expr
 
     /// <summary>Builds an expression that represents the coercion of an expression to a type</summary>
@@ -366,13 +383,15 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="coerce-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let expr = &lt;@ box "3" @&gt;
+    ///
+    /// Expr.Coerce(expr, typeof&lt;string&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ (fun x -> x + 1) 3 @&gt;</c>.
     /// </example>
     static member Coerce: source: Expr * target: Type -> Expr 
 
@@ -384,13 +403,17 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="coerce-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let guardExpr = &lt;@ 1 > 3 @&gt;
+    /// let thenExpr = &lt;@ 6 @&gt;
+    /// let elseExpr = &lt;@ 7 @&gt;
+    ///
+    /// Expr.IfThenElse(guardExpr, thenExpr, elseExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ if 1 > 3 then 6 else 7 @&gt;</c>.
     /// </example>
     static member IfThenElse: guard: Expr * thenExpr: Expr * elseExpr: Expr -> Expr 
 
@@ -403,13 +426,18 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="coerce-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let loopVariable = Var("x", typeof&lt;int&gt;)
+    /// let startExpr = &lt;@ 6 @&gt;
+    /// let endExpr = &lt;@ 7 @&gt;
+    /// let body = &lt;@ System.Console.WriteLine("hello") @&gt;
+    ///
+    /// Expr.ForIntegerRangeLoop(loopVariable, startExpr, endExpr, body)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ if 1 > 3 then 6 else 7 @&gt;</c>.
     /// </example>
     static member ForIntegerRangeLoop: loopVariable: Var * start: Expr * endExpr: Expr * body: Expr -> Expr 
 
@@ -418,14 +446,17 @@ type Expr =
     /// <param name="fieldInfo">The description of the field to access.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="fieldget-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let fieldInfo = typeof&lt;System.DayOfWeek&gt;.GetField("Monday")
+    ///
+    /// Expr.FieldGet(fieldInfo)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>FieldGet (None, Monday)</c>. Note that for technical reasons the quotation <c>&lt;@ System.DayOfWeek.Monday @&gt;</c> evaluates to a different quotation containing a constant enum value <c>Value (Monday)</c>.
     /// </example>
     static member FieldGet: fieldInfo: FieldInfo -> Expr 
 
@@ -436,13 +467,20 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="fieldget-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let fieldInfo = typeof&lt;int ref&gt;.GetField("contents@")
+    /// let refValue = ref 3
+    /// let refExpr = &lt;@ refValue @&gt;
+    ///
+    /// Expr.FieldGet(refExpr, fieldInfo)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>FieldGet (Some (PropertyGet (None, refValue, [])), contents@)</c>.
+    /// Note that for technical reasons the quotation <c>&lt;@ refValue.contents @&gt;</c> evaluates to a different quotation
+    /// accessing the contents field via a property.
     /// </example>
     static member FieldGet: obj: Expr * fieldInfo: FieldInfo -> Expr 
 
@@ -453,14 +491,7 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <remarks>Settable public static fields are rare in F# and .NET libraries, so examples of using this method are uncommon.</remarks>
     static member FieldSet: fieldInfo: FieldInfo * value: Expr -> Expr 
 
     /// <summary>Builds an expression that represents writing to a field of an object</summary>
@@ -471,13 +502,21 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="fieldset-1">Create an expression setting a reference cell via the public backing field:
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let fieldInfo = typeof&lt;int ref&gt;.GetField("contents@")
+    /// let refValue = ref 3
+    /// let refExpr = &lt;@ refValue @&gt;
+    /// let valueExpr = &lt;@ 6 @&gt;
+    ///
+    /// Expr.FieldSet(refExpr, fieldInfo, valueExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>FieldSet (Some (PropertyGet (None, refValue, [])), contents@, Value (6))</c>.
+    /// Note that for technical reasons the quotation <c>&lt;@ refValue.contents &lt;- 6 @&gt;</c> evaluates to a slightly different quotation
+    /// accessing the contents field via a property.
     /// </example>
     static member FieldSet: obj: Expr * fieldInfo: FieldInfo * value: Expr -> Expr 
 
@@ -488,13 +527,17 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="lambda-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let vVar = Var("v", typeof&lt;int&gt;)
+    /// let vExpr = Expr.Var(vVar)
+    ///
+    /// Expr.Lambda(vVar, vExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>Lambda (v, v)</c>.
     /// </example>
     static member Lambda: parameter: Var * body: Expr -> Expr
 
@@ -506,13 +549,17 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="let-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let vVar = Var("v", typeof&lt;int&gt;)
+    /// let rhsExpr = &lt;@ 6 @&gt;
+    /// let vExpr = Expr.Var(vVar)
+    ///
+    /// Expr.Let(vVar, rhsExpr, vExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ let v = 6 in v @&gt;</c>.
     /// </example>
     static member Let: letVariable: Var * letExpr: Expr * body: Expr -> Expr 
 
@@ -523,13 +570,23 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// 
+    /// <example id="letrecursive-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let fVar = Var("f", typeof&lt;int -&gt; int&gt;)
+    /// let gVar = Var("v", typeof&lt;int -&gt; int&gt;)
+    /// let fExpr = Expr.Var(fVar)
+    /// let gExpr = Expr.Var(gVar)
+    /// let fImplExpr = &lt;@ fun x -> (%%gExpr : int -> int) (x - 1) + 1 @&gt;
+    /// let gImplExpr = &lt;@ fun x -> if x > 0 then (%%fExpr : int -> int) (x - 1) else 0 @&gt;
+    /// let bodyExpr = &lt;@ (%%gExpr : int -> int) 10 @&gt;
+    ///
+    /// Expr.LetRecursive([(fVar, fImplExpr); (gVar, gImplExpr)], bodyExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ let rec f x = g (x-1) + 1 and g x = if x > 0 then f (x - 1) else 0 in g 10 @&gt;</c>.
     /// </example>
     static member LetRecursive: bindings: (Var * Expr) list * body: Expr -> Expr 
 
@@ -540,13 +597,22 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="newobject-1">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let ctorInfo =
+    ///     match &lt;@ new System.DateTime(100L) @&gt; with
+    ///     | NewObject(ci, _) -> ci
+    ///     | _ -> failwith "call expected"
+    ///
+    /// let argExpr = &lt;@ 100000L @&gt;
+    ///
+    /// Expr.NewObject(ctorInfo, [argExpr])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ NewObject (DateTime, Value (100000L)) @&gt;</c>.
     /// </example>
     static member NewObject: constructorInfo: ConstructorInfo * arguments: Expr list -> Expr 
 
@@ -556,13 +622,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="defaultvalue-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.DefaultValue(typeof&lt;int&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to the quotation <c>DefaultValue (Int32)</c>.
     /// </example>
     static member DefaultValue: expressionType: Type -> Expr 
 
@@ -571,14 +637,14 @@ type Expr =
     /// <param name="elements">The list of elements of the tuple.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="defaultvalue-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.NewTuple([ &lt;@ 1 @&gt;; &lt;@ "a" @&gt; ])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ (1, "a") @&gt;</c>.
     /// </example>
     static member NewTuple: elements: Expr list -> Expr 
 
@@ -588,14 +654,14 @@ type Expr =
     /// <param name="elements">The list of elements of the tuple.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="newstructtuple-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.NewStructTuple(typeof&lt;struct (int * int)&gt;.Assembly, [ &lt;@ 1 @&gt;; &lt;@ "a" @&gt; ])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ struct (1, "a") @&gt;</c>.
     /// </example>
     static member NewStructTuple: asm: Assembly * elements: Expr list -> Expr 
 
@@ -605,14 +671,16 @@ type Expr =
     /// <param name="elements">The list of elements of the record.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="newrecord-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// type R = { Y: int; X: string }
+    ///
+    /// Expr.NewRecord(typeof&lt;R&gt;, [ &lt;@ 1 @&gt;; &lt;@ "a" @&gt; ])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ { Y = 1; X = "a" } @&gt;</c>.
     /// </example>
     static member NewRecord: recordType: Type * elements: Expr list -> Expr 
 
@@ -622,14 +690,14 @@ type Expr =
     /// <param name="elements">The list of elements of the array.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="newarray-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.NewArray(typeof&lt;int&gt;, [ &lt;@ 1 @&gt;; &lt;@ 2 @&gt; ])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ [| 1; 2 |] @&gt;</c>.
     /// </example>
     static member NewArray: elementType: Type * elements: Expr list -> Expr 
 
@@ -640,14 +708,18 @@ type Expr =
     /// <param name="body">The body of the function.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// <example id="newdelegate-1">
+    /// <code lang="fsharp">
+    /// open System
+    /// open FSharp.Quotations
+    ///
+    /// let vVar = Var("v", typeof&lt;int&gt;)
+    /// let vExpr = Expr.Var(vVar)
+    ///
+    /// Expr.NewDelegate(typeof&lt;Func&lt;int,int&gt;&gt;, [vVar], vExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ new System.Func&lt;int, int&gt;(fun v -> v) @&gt;</c>.
     /// </example>
     static member NewDelegate: delegateType: Type * parameters: Var list * body: Expr -> Expr 
 
@@ -657,14 +729,18 @@ type Expr =
     /// <param name="arguments">The list of arguments for the case.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// <example id="newunioncase-1">
+    /// <code lang="fsharp">
+    /// open System
+    /// open FSharp.Quotations
+    /// open FSharp.Reflection
+    ///
+    /// let ucCons = FSharpType.GetUnionCases(typeof&lt;int list&gt;)[1]
+    ///
+    /// Expr.NewUnionCase(ucCons, [ &lt;@ 10 @&gt;; &lt;@ [11] @&gt; ])
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ 10 :: [11] @&gt;</c>.
     /// </example>
     static member NewUnionCase: unionCase: UnionCaseInfo * arguments: Expr list -> Expr 
 
@@ -675,14 +751,23 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="propertyget-1">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let propInfo =
+    ///     match &lt;@ "a".Length @&gt; with
+    ///     | PropertyGet(Some _, pi, _) -> pi
+    ///     | _ -> failwith "property get expected"
+    ///
+    /// let objExpr = &lt;@ "bb" @&gt;
+    ///
+    /// Expr.PropertyGet(objExpr, propInfo)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ "bb".Length @&gt;</c>.
     /// </example>
     static member PropertyGet: obj: Expr * property: PropertyInfo  * ?indexerArgs: Expr list -> Expr 
 
@@ -692,14 +777,21 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="propertyget-2">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let propInfo =
+    ///     match &lt;@ Console.Out @&gt; with
+    ///     | PropertyGet(None, pi, _) -> pi
+    ///     | _ -> failwith "property get expected"
+    ///
+    /// Expr.PropertyGet(propInfo)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.Out @&gt;</c>.
     /// </example>
     static member PropertyGet: property: PropertyInfo * ?indexerArgs: Expr list -> Expr 
 
@@ -711,14 +803,24 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="propertyset-1">
     /// <code lang="fsharp">
+    /// open System
+    /// open System.Collections.Generic
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let propInfo =
+    ///     match &lt;@ (new List&lt;int&gt;()).Capacity @&gt; with
+    ///     | PropertyGet(Some _, pi, _) -> pi
+    ///     | _ -> failwith "property get expected"
+    ///
+    /// let objExpr = &lt;@ (new List&lt;int&gt;()) @&gt;
+    ///
+    /// Expr.PropertySet(objExpr, propInfo, &lt;@ 6 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ (new List&lt;int&gt;()).Capacity &lt;- 6 @&gt;</c>.
     /// </example>
     static member PropertySet: obj: Expr * property: PropertyInfo * value: Expr * ?indexerArgs: Expr list -> Expr 
 
@@ -729,14 +831,22 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="propertyset-2">
     /// <code lang="fsharp">
+    /// open System
+    /// open System.Collections.Generic
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// let propInfo =
+    ///     match &lt;@ Console.BackgroundColor &lt;- ConsoleColor.Red  @&gt; with
+    ///     | PropertySet(None, pi, _, _) -> pi
+    ///     | _ -> failwith "property get expected"
+    ///
+    /// Expr.PropertySet(propInfo, &lt;@ ConsoleColor.Blue @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.BackgroundColor &lt;- ConsoleColor.Blue @&gt;</c>.
     /// </example>
     static member PropertySet: property: PropertyInfo * value: Expr * ?indexerArgs: Expr list -> Expr 
 
@@ -745,15 +855,6 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    ///
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
     [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
     static member Quote: inner: Expr -> Expr 
 
@@ -763,13 +864,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="quoteraw-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.QuoteRaw(&lt;@ 1 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ &lt;@ 1 @&gt; @&gt;</c>.
     /// </example>
     static member QuoteRaw: inner: Expr -> Expr 
 
@@ -779,13 +880,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="quotetyped-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.QuoteTyped(&lt;@ 1 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ &lt;@ 1 @&gt; @&gt;</c>.
     /// </example>
     static member QuoteTyped: inner: Expr -> Expr 
 
@@ -796,13 +897,14 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="sequential-1">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.Sequential(&lt;@ Console.WriteLine("a") @&gt;, &lt;@ Console.WriteLine("b") @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ Console.WriteLine("a"); Console.WriteLine("b") @&gt;</c>.
     /// </example>
     static member Sequential: first: Expr * second: Expr -> Expr 
 
@@ -816,13 +918,16 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="trywith-1">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let exnVar = Var("exn", typeof&lt;exn&gt;)
+    ///
+    /// Expr.TryWith(&lt;@ 1+1 @&gt;, exnVar, &lt;@ 1 @&gt;, exnVar, &lt;@ 2+2 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ try 1+1 with exn -> 2+2 @&gt;</c>.
     /// </example>
     static member TryWith: body: Expr * filterVar: Var * filterBody: Expr * catchVar: Var * catchBody: Expr -> Expr 
 
@@ -833,13 +938,14 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="tryfinally-1">
     /// <code lang="fsharp">
+    /// open System
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.TryFinally(&lt;@ 1+1 @&gt;, &lt;@ Console.WriteLine("finally") @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ try 1+1 finally Console.WriteLine("finally") @&gt;</c>.
     /// </example>
     static member TryFinally: body: Expr * compensation: Expr -> Expr 
 
@@ -850,13 +956,15 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="tupleget-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let tupExpr = &lt;@ (1, 2, 3) @&gt;
+    ///
+    /// Expr.TupleGet(tupExpr, 1)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to quotation that displays as <c>TupleGet (NewTuple (Value (1), Value (2), Value (3)), 1)</c>.
     /// </example>
     static member TupleGet: tuple: Expr * index: int -> Expr 
 
@@ -867,13 +975,15 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="typetest-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let obj = box 1
+    ///
+    /// Expr.TypeTest( &lt;@ obj @&gt;, typeof&lt;int&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to quotation that displays as <c>TypeTest (Int32, PropertyGet (None, obj, []))</c>.
     /// </example>
     static member TypeTest: source: Expr * target: Type -> Expr 
 
@@ -883,14 +993,18 @@ type Expr =
     /// <param name="unionCase">The description of the union case.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// <example id="unioncasetest-1">
+    /// <code lang="fsharp">
+    /// open System
+    /// open FSharp.Quotations
+    /// open FSharp.Reflection
+    ///
+    /// let ucCons = FSharpType.GetUnionCases(typeof&lt;int list&gt;)[1]
+    ///
+    /// Expr.UnionCaseTest(&lt;@ [11] @&gt;, ucCons)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation that displays as <c>UnionCaseTest (NewUnionCase (Cons, Value (11), NewUnionCase (Empty)), Cons)</c>.
     /// </example>
     static member UnionCaseTest: source: Expr * unionCase: UnionCaseInfo -> Expr 
 
@@ -900,14 +1014,14 @@ type Expr =
     /// <param name="expressionType">The type of the object.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    ///
+    /// <example id="value-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.Value(box 1, typeof&lt;int&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c>.
     /// </example>
     static member Value: value: obj * expressionType: Type -> Expr
     
@@ -915,15 +1029,13 @@ type Expr =
     ///
     /// <param name="value">The typed value.</param>
     ///
-    /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
+    /// <example id="value-2">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.Value(1)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c>.
     /// </example>
     static member Value: value: 'T -> Expr
 
@@ -934,13 +1046,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="valuewithname-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.ValueWithName(1, "name")
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c> and associated information that the name of the value is <c>"name"</c>.
     /// </example>
     static member ValueWithName: value: 'T * name: string -> Expr
 
@@ -952,13 +1064,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="valuewithname-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.ValueWithName(box 1, typeof&lt;int&gt;, "name")
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ 1 @&gt;</c> and associated information that the name of the value is <c>"name"</c>.
     /// </example>
     static member ValueWithName: value: obj * expressionType: Type * name: string -> Expr
     
@@ -969,13 +1081,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="withvalue-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.WithValue(1, &lt;@ 2 - 1 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation that displays as <c>WithValue (1, Call (None, op_Subtraction, [Value (2), Value (1)]))</c>.
     /// </example>
     static member WithValue: value: 'T * definition: Expr<'T> -> Expr<'T>
 
@@ -987,13 +1099,13 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="withvalue-2">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// Expr.WithValue(box 1, typeof&lt;int&gt;, &lt;@ 2 - 1 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation that displays as <c>WithValue (1, Call (None, op_Subtraction, [Value (2), Value (1)]))</c>.
     /// </example>
     static member WithValue: value: obj * expressionType: Type * definition: Expr -> Expr
 
@@ -1003,13 +1115,15 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="var-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let vVar = Var("v", typeof&lt;int&gt;)
+    ///
+    /// Expr.Var(vVar)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation displayed as <c>v</c>.
     /// </example>
     static member Var: variable: Var -> Expr
     
@@ -1020,13 +1134,15 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="varset-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let vVar = Var("v", typeof&lt;int&gt;, isMutable=true)
+    ///
+    /// Expr.VarSet(vVar, &lt;@ 5 @&gt;)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation displayed as <c>VarSet (v, Value (5))</c>.
     /// </example>
     static member VarSet: variable: Var * value: Expr -> Expr
     
@@ -1037,13 +1153,16 @@ type Expr =
     ///
     /// <returns>The resulting expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="varset-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let guardExpr = &lt;@ true @&gt;
+    /// let bodyExpr = &lt;@ () @&gt;
+    ///
+    /// Expr.WhileLoop(guardExpr, bodyExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ while true do () @&gt;</c>.
     /// </example>
     static member WhileLoop: guard: Expr * body: Expr -> Expr
 
@@ -1055,13 +1174,15 @@ type Expr =
     ///
     /// <returns>The resulting typed expression.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="cast-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let rawExpr = &lt;@ 1 @&gt;
+    ///
+    /// Expr.Cast&lt;int&gt;(rawExpr)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates with type <c>Expr&lt;int&gt;</c>.
     /// </example>
     static member Cast: source: Expr -> Expr<'T> 
 
@@ -1072,13 +1193,45 @@ type Expr =
     ///
     /// <returns>The reflection definition or None if a match could not be found.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="trygetreflecteddefinition-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     ///
+    /// [&lt;ReflectedDefinition&gt;]
+    /// let f x = x + 1
+    ///
+    /// let methInfo =
+    ///     match &lt;@ f 1 @&gt; with
+    ///     | Call(_, mi, _) -> mi
+    ///     | _ -> failwith "call expected"
+    ///
+    /// Expr.TryGetReflectedDefinition(methInfo)
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ fun x -> x + 1 @&gt;</c>, which is the implementation of the
+    /// method <c>f</c>.
+    /// </example>
+    /// 
+    /// <example id="trygetreflecteddefinition-2">
+    /// <code lang="fsharp">
+    /// open FSharp.Quotations
+    /// open FSharp.Quotations.Patterns
+    ///
+    /// [&lt;ReflectedDefinition&gt;]
+    /// module Methods =
+    ///    let f x = (x, x)
+    ///
+    /// let methInfoGeneric =
+    ///     match &lt;@ Methods.f (1, 2) @&gt; with
+    ///     | Call(_, mi, _) -> mi.GetGenericMethodDefinition()
+    ///     | _ -> failwith "call expected"
+    ///
+    /// let methInfoAtString = methInfoGeneric.MakeGenericMethod(typeof&lt;string&gt;)
+    ///
+    /// Expr.TryGetReflectedDefinition(methInfoAtString)
+    /// </code>
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ fun (x: string) -> (x, x) @&gt;</c>, which is the implementation of the
+    /// generic method <c>f</c> instanatiated at type <c>string</c>.
     /// </example>
     static member TryGetReflectedDefinition: methodBase: MethodBase -> Expr option
     
@@ -1091,15 +1244,6 @@ type Expr =
     /// <param name="bytes">The serialized form of the quoted expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
     static member Deserialize: qualifyingType: System.Type * spliceTypes: list<System.Type> * spliceExprs: list<Expr> * bytes: byte[] -> Expr
     
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
@@ -1112,15 +1256,6 @@ type Expr =
     /// <param name="bytes">The serialized form of the quoted expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
-    /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
     static member Deserialize40: qualifyingType: Type * referencedTypes: Type[] * spliceTypes: Type[] * spliceExprs: Expr[] * bytes: byte[] -> Expr
     
     /// <summary>Permits interactive environments such as F# Interactive
@@ -1131,14 +1266,6 @@ type Expr =
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
     static member RegisterReflectedDefinitions: assembly: Assembly * resource: string * serializedValue: byte[] -> unit
 
     /// <summary>Permits interactive environments such as F# Interactive
@@ -1150,14 +1277,6 @@ type Expr =
     /// <param name="referencedTypes">The type definitions referenced.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
     static member RegisterReflectedDefinitions: assembly: Assembly * resource: string * serializedValue: byte[] * referencedTypes: Type[] -> unit
 
     /// <summary>Fetches or creates a new variable with the given name and type from a global pool of shared variables
@@ -1167,13 +1286,14 @@ type Expr =
     ///
     /// <returns>The created of fetched typed global variable.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="globalvar-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     ///
+    /// let expr1 = Expr.GlobalVar&lt;int&gt;("x")
+    /// let expr2 = Expr.GlobalVar&lt;int&gt;("x")
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates <c>expr1</c> and <c>expr2</c> to identical quotations.
     /// </example>
     static member GlobalVar<'T> : name: string -> Expr<'T>
 
@@ -1182,6 +1302,17 @@ type Expr =
     /// <param name="full">Indicates if method, property, constructor and type objects should be printed in detail. If false, these are abbreviated to their name.</param>
     ///
     /// <returns>The formatted string.</returns>
+    /// 
+    /// <example id="globalvar-1">
+    /// <code lang="fsharp">
+    /// open FSharp.Quotations
+    ///
+    /// let expr1 = &lt;@ 1 + 1 @&gt;
+    ///
+    /// expr1.ToString(true)
+    /// </code>
+    /// Evaluates <c>"Call (None, Int32 op_Addition[Int32,Int32,Int32](Int32, Int32),[Value (1), Value (1)])"</c>.
+    /// </example>
     member ToString: full: bool -> string
 
 /// <summary>Type-carrying quoted expressions. Expressions are generated either
@@ -1192,13 +1323,15 @@ and [<CompiledName("FSharpExpr`1")>]
         inherit Expr
         /// <summary>Gets the raw expression associated with this type-carrying expression</summary>
         /// 
-        /// <example id="XXXX-1">
+        /// <example id="raw-1">
         /// <code lang="fsharp">
         /// open FSharp.Quotations
-        /// open FSharp.Quotations.Patterns
         ///
+        /// let expr1 = &lt;@ 1 + 1 @&gt;
+        ///
+        /// expr1.Raw
         /// </code>
-        /// Evaluates to <c></c>.
+        /// Evaluates to the same quotation as <c>&lt;@ expr1 @&gt;</c> except with the weaker type <c>Expr</c> instead of <c>Expr&lt;int&gt;</c>.
         /// </example>
         member Raw: Expr
 
@@ -1212,14 +1345,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the sub-expression of the input AddressOf expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("AddressOfPattern")>]
     val (|AddressOf|_|): input: Expr -> Expr option
 
@@ -1229,14 +1355,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the target and value expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("AddressSetPattern")>]
     val (|AddressSet|_|): input: Expr -> (Expr * Expr) option
 
@@ -1246,14 +1365,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the function and argument of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("ApplicationPattern")>]
     val (|Application|_|): input: Expr -> (Expr * Expr) option
 
@@ -1263,14 +1375,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object, method and argument sub-expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("CallPattern")>]
     val (|Call|_|): input: Expr -> (Expr option * MethodInfo * Expr list) option
 
@@ -1280,14 +1385,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object, method, witness-argument and argument sub-expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("CallWithWitnessesPattern")>]
     val (|CallWithWitnesses|_|): input: Expr -> (Expr option * MethodInfo * MethodInfo * Expr list * Expr list) option
 
@@ -1297,14 +1395,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the source expression and target type of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("CoercePattern")>]
     val (|Coerce|_|): input: Expr -> (Expr * Type) option
 
@@ -1314,14 +1405,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object and field of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("FieldGetPattern")>]
     val (|FieldGet|_|): input: Expr -> (Expr option * FieldInfo) option
 
@@ -1331,14 +1415,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object, field and value of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("FieldSetPattern")>]
     val (|FieldSet|_|): input: Expr -> (Expr option * FieldInfo * Expr) option
 
@@ -1348,14 +1425,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the value, start, finish and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("ForIntegerRangeLoopPattern")>]
     val (|ForIntegerRangeLoop|_|): input: Expr -> (Var * Expr * Expr * Expr) option
 
@@ -1365,14 +1435,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the guard and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("WhileLoopPattern")>]
     val (|WhileLoop|_|): input: Expr -> (Expr * Expr) option
 
@@ -1382,14 +1445,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the condition, then-branch and else-branch of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("IfThenElsePattern")>]
     val (|IfThenElse|_|): input: Expr -> (Expr * Expr * Expr) option
 
@@ -1399,14 +1455,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the variable and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("LambdaPattern")>]
     val (|Lambda|_|): input: Expr -> (Var * Expr) option
 
@@ -1416,14 +1465,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the variable, binding expression and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("LetPattern")>]
     val (|Let|_|) : input: Expr -> (Var * Expr * Expr) option
 
@@ -1433,14 +1475,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the bindings and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("LetRecursivePattern")>]
     val (|LetRecursive|_|): input: Expr -> ((Var * Expr) list * Expr) option
 
@@ -1450,14 +1485,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the element type and values of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewArrayPattern")>]
     val (|NewArray|_|): input: Expr -> (Type * Expr list) option
 
@@ -1467,14 +1495,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the relevant type of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("DefaultValuePattern")>]
     val (|DefaultValue|_|): input: Expr -> Type option
 
@@ -1484,14 +1505,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the delegate type, argument parameters and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewDelegatePattern")>]
     val (|NewDelegate|_|): input: Expr -> (Type * Var list * Expr) option
 
@@ -1501,14 +1515,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the constructor and arguments of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewObjectPattern")>]
     val (|NewObject|_|): input: Expr -> (ConstructorInfo * Expr list) option
 
@@ -1518,14 +1525,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the record type and field values of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewRecordPattern")>]
     val (|NewRecord|_|): input: Expr -> (Type * Expr list) option
 
@@ -1535,14 +1535,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the union case and field values of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewUnionCasePattern")>]
     val (|NewUnionCase|_|): input: Expr -> (UnionCaseInfo * Expr list) option
 
@@ -1552,14 +1545,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewTuplePattern")>]
     val (|NewTuple|_|): input: Expr -> (Expr list) option
 
@@ -1569,14 +1555,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewStructTuplePattern")>]
     val (|NewStructTuple|_|): input: Expr -> (Expr list) option
 
@@ -1586,14 +1565,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object, property and indexer arguments of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertyGetPattern")>]
     val (|PropertyGet|_|): input: Expr -> (Expr option * PropertyInfo * Expr list) option
 
@@ -1603,14 +1575,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the object, property, indexer arguments and setter value of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertySetPattern")>]
     val (|PropertySet|_|): input: Expr -> (Expr option * PropertyInfo * Expr list * Expr) option
 
@@ -1620,14 +1585,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuotePattern")>]
     [<Obsolete("Please use QuoteTyped or QuoteRaw to distinguish between typed and raw quotation literals")>]
     val (|Quote|_|): input: Expr -> Expr option 
@@ -1638,14 +1596,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuoteRawPattern")>]
     val (|QuoteRaw|_|): input: Expr -> Expr option 
 
@@ -1655,14 +1606,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuoteTypedPattern")>]
     val (|QuoteTyped|_|): input: Expr -> Expr option 
 
@@ -1672,14 +1616,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the two sub-expressions of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("SequentialPattern")>]
     val (|Sequential|_|): input: Expr -> (Expr * Expr) option 
 
@@ -1689,14 +1626,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the body, exception variable, filter expression and catch expression of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("TryWithPattern")>]
     val (|TryWith|_|): input: Expr -> (Expr * Var * Expr * Var * Expr) option 
 
@@ -1706,14 +1636,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the body and handler parts of the try/finally expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("TryFinallyPattern")>]
     val (|TryFinally|_|): input: Expr -> (Expr * Expr) option 
 
@@ -1723,14 +1646,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the expression and tuple field being accessed</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("TupleGetPattern")>]
     val (|TupleGet|_|): input: Expr -> (Expr * int) option 
 
@@ -1740,14 +1656,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the expression and type being tested</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("TypeTestPattern")>]
     val (|TypeTest|_|): input: Expr -> (Expr * Type) option 
 
@@ -1757,14 +1666,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the expression and union case being tested</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("UnionCaseTestPattern")>]
     val (|UnionCaseTest|_|): input: Expr -> (Expr * UnionCaseInfo) option 
 
@@ -1774,14 +1676,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the boxed value and its static type</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("ValuePattern")>]
     val (|Value|_|): input: Expr -> (obj * Type) option
 
@@ -1791,14 +1686,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the boxed value, its static type and its name</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("ValueWithNamePattern")>]
     val (|ValueWithName|_|): input: Expr -> (obj * Type * string) option
 
@@ -1808,14 +1696,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the boxed value, its static type and its definition</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("WithValuePattern")>]
     val (|WithValue|_|): input: Expr -> (obj * Type * Expr) option
 
@@ -1825,14 +1706,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the variable of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("VarPattern")>]
     val (|Var|_|)  : input: Expr -> Var option
 
@@ -1842,14 +1716,7 @@ module Patterns =
     ///
     /// <returns>When successful, the pattern binds the variable and value expression of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|): input: Expr -> (Var * Expr) option
     
@@ -1863,14 +1730,17 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the curried variables and body of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="lambdas-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ (fun (a1, a2) b -> ()) @&gt; with
+    /// | Lambdas(curriedVars, _) ->
+    ///     curriedVars |> List.map (List.map (fun arg -> arg.Name))
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>[["a1"; "a2"]; ["b"]]</c>.
     /// </example>
     [<CompiledName("LambdasPattern")>]
     val (|Lambdas|_|): input: Expr -> (Var list list * Expr) option
@@ -1881,14 +1751,17 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the function and curried arguments of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="applications-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ (fun f -> f (1, 2) 3) @&gt; with
+    /// | Lambda(_, Applications (f, curriedArgs)) ->
+    ///     curriedArgs |> List.map (fun args -> args.Length)
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>[2; 1]</c>.
     /// </example>
     [<CompiledName("ApplicationsPattern")>]
     val (|Applications|_|): input: Expr -> (Expr * Expr list list) option
@@ -1899,14 +1772,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="andalso-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ true &amp;&amp; false @&gt; with
+    /// | AndAlso (a, b) -> (a, b)
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>&lt;@ true @&gt;, &lt;@ false @&gt;</c>.
     /// </example>
     [<CompiledName("AndAlsoPattern")>]
     val (|AndAlso|_|): input: Expr -> (Expr * Expr) option
@@ -1917,14 +1791,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="orelse-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ true || false @&gt; with
+    /// | OrElse (a, b) -> (a, b)
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>&lt;@ true @&gt;, &lt;@ false @&gt;</c>.
     /// </example>
     [<CompiledName("OrElsePattern")>]
     val (|OrElse|_|): input: Expr -> (Expr * Expr) option
@@ -1935,14 +1810,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern does not bind any results</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="unit-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ () @&gt; with
+    /// | Unit v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>true</c>.
     /// </example>
     [<CompiledName("UnitPattern")>]
     val (|Unit|_|): input: Expr -> unit option 
@@ -1953,14 +1829,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="bool-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ true @&gt; with
+    /// | Bool v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>true</c>.
     /// </example>
     [<CompiledName("BoolPattern")>]
     val (|Bool|_|): input: Expr -> bool option 
@@ -1971,14 +1848,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="string-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ "a" @&gt; with
+    /// | String v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>"a"</c>.
     /// </example>
     [<CompiledName("StringPattern")>]
     val (|String|_|): input: Expr -> string option 
@@ -1989,14 +1867,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="single-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 1.0f @&gt; with
+    /// | Single v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>1.0f</c>.
     /// </example>
     [<CompiledName("SinglePattern")>]
     val (|Single|_|): input: Expr -> float32 option 
@@ -2007,14 +1886,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="double-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 1.0 @&gt; with
+    /// | Double v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>1.0</c>.
     /// </example>
     [<CompiledName("DoublePattern")>]
     val (|Double|_|): input: Expr -> float option 
@@ -2025,14 +1905,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="char-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 'a' @&gt; with
+    /// | Char v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>'a'</c>.
     /// </example>
     [<CompiledName("CharPattern")>]
     val (|Char|_|): input: Expr -> char  option 
@@ -2043,14 +1924,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="sbyte-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8y @&gt; with
+    /// | SByte v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8y</c>.
     /// </example>
     [<CompiledName("SBytePattern")>]
     val (|SByte|_|): input: Expr -> sbyte option 
@@ -2061,14 +1943,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="byte-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8uy @&gt; with
+    /// | Byte v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8uy</c>.
     /// </example>
     [<CompiledName("BytePattern")>]
     val (|Byte|_|): input: Expr -> byte option 
@@ -2079,14 +1962,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="int16-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8s @&gt; with
+    /// | Int16 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8s</c>.
     /// </example>
     [<CompiledName("Int16Pattern")>]
     val (|Int16|_|): input: Expr -> int16 option 
@@ -2097,14 +1981,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="uint16-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8us @&gt; with
+    /// | UInt16 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8us</c>.
     /// </example>
     [<CompiledName("UInt16Pattern")>]
     val (|UInt16|_|): input: Expr -> uint16 option 
@@ -2115,14 +2000,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="int32-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8 @&gt; with
+    /// | Int32 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8</c>.
     /// </example>
     [<CompiledName("Int32Pattern")>]
     val (|Int32|_|): input: Expr -> int32 option 
@@ -2133,14 +2019,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="uint32-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8u @&gt; with
+    /// | UInt32 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8u</c>.
     /// </example>
     [<CompiledName("UInt32Pattern")>]
     val (|UInt32|_|): input: Expr -> uint32 option 
@@ -2151,14 +2038,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="int64-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8L @&gt; with
+    /// | Int64 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8L</c>.
     /// </example>
     [<CompiledName("Int64Pattern")>]
     val (|Int64|_|): input: Expr -> int64 option 
@@ -2169,14 +2057,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="uint64-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8UL @&gt; with
+    /// | UInt64 v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8UL</c>.
     /// </example>
     [<CompiledName("UInt64Pattern")>]
     val (|UInt64|_|): input: Expr -> uint64 option 
@@ -2187,14 +2076,15 @@ module DerivedPatterns =
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="decimal-1">
     /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// match &lt;@ 8.0M @&gt; with
+    /// | Decimal v -> v
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to <c>8.0M</c>.
     /// </example>
     [<CompiledName("DecimalPattern")>]
     val (|Decimal|_|): input: Expr -> decimal option 
@@ -2210,17 +2100,39 @@ module DerivedPatterns =
     /// instance method), the generic type instantiation (non-empty if the target is a generic
     /// instantiation), and the arguments to the function or method.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="specificcall-1">Match a specific call to Console.WriteLine taking one string argument:
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// let inpExpr = &lt;@ Console.WriteLine("hello") @&gt;
+    ///
+    /// match inpExpr with
+    /// | SpecificCall &lt;@ Console.WriteLine("1") @&gt; (None, [], [ argExpr ]) -> argExpr
+    /// | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ "hello" @&gt;</c>.
+    /// </example>
+    /// 
+    /// <example id="specificcall-2">Calls to this active pattern can be partially applied to pre-evaluate some aspects of the matching. For example:
+    /// <code lang="fsharp">
+    /// open FSharp.Quotations
+    /// open FSharp.Quotations.Patterns
+    /// open FSharp.Quotations.DerivedPatterns
+    ///
+    /// let (|ConsoleWriteLineOneArg|_|) = (|SpecificCall|_|) &lt;@ Console.WriteLine("1") @&gt;
+    ///
+    /// let inpExpr = &lt;@ Console.WriteLine("hello") @&gt;
+    ///
+    /// match inpExpr with
+    /// | ConsoleWriteLineOneArg (None, [], [ argExpr ]) -> argExpr
+    /// | _ -> failwith "unexpected"
+    /// </code>
+    /// Evaluates to a quotation with the same structure as <c>&lt;@ "hello" @&gt;</c>.
     /// </example>
     [<CompiledName("SpecificCallPattern")>]
-    val (|SpecificCall|_|): templateParameter: Expr -> (Expr -> (Expr option * list<Type> * list<Expr>) option)
+    val (|SpecificCall|_|): templateParameter: Expr -> (Expr -> (Expr option * Type list * Expr list) option)
 
     /// <summary>An active pattern to recognize methods that have an associated ReflectedDefinition</summary>
     ///
@@ -2228,15 +2140,27 @@ module DerivedPatterns =
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="methodwithreflecteddefinition-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// [&lt;ReflectedDefinition&gt;]
+    /// let f x = (x, x)
+    ///
+    /// let inpExpr = &lt;@ f 4 @&gt;
+    ///
+    /// let implExpr =
+    ///     match inpExpr with
+    ///     | Call(None, MethodWithReflectedDefinition implExpr, [ _argExpr ]) -> implExpr
+    ///     | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: int) -> (x, x) @&gt;</c>, which is the implementation of the
+    /// method <c>f</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
+    /// the the type at the callsite.
     /// </example>
+    /// 
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
     val (|MethodWithReflectedDefinition|_|): methodBase: MethodBase -> Expr option
     
@@ -2246,15 +2170,28 @@ module DerivedPatterns =
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="propertywithreflecteddefinition-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// [&lt;ReflectedDefinition&gt;]
+    /// type C&lt;'T&gt;() =
+    ///    member x.Identity = x
+    ///
+    /// let inpExpr = &lt;@ C&lt;int&gt;().Identity @&gt;
+    ///
+    /// let implExpr =
+    ///     match inpExpr with
+    ///     | PropertyGet(Some _, PropertyGetterWithReflectedDefinition implExpr, [ ]) -> implExpr
+    ///     | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) () -> x @&gt;</c>, which is the implementation of the
+    /// property <c>Identity</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
+    /// the the type at the callsite.
     /// </example>
+    /// 
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
     val (|PropertyGetterWithReflectedDefinition|_|): propertyInfo: PropertyInfo -> Expr option
 
@@ -2264,15 +2201,28 @@ module DerivedPatterns =
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
     /// 
-    /// <example id="XXXX-1">
+    /// <example id="propertysetterwithreflecteddefinition-1">
     /// <code lang="fsharp">
     /// open FSharp.Quotations
     /// open FSharp.Quotations.Patterns
     /// open FSharp.Quotations.DerivedPatterns
     ///
+    /// [&lt;ReflectedDefinition&gt;]
+    /// type C&lt;'T&gt;() =
+    ///    member x.Count with set (v: int) = ()
+    ///
+    /// let inpExpr = &lt;@ C&lt;int&gt;().Count &lt;- 3 @&gt;
+    ///
+    /// let implExpr =
+    ///     match inpExpr with
+    ///     | PropertySet(Some _, PropertySetterWithReflectedDefinition implExpr, [], _valueExpr) -> implExpr
+    ///     | _ -> failwith "unexpected"
     /// </code>
-    /// Evaluates to <c></c>.
+    /// Evaluates <c>implExpr</c> to a quotation with the same structure as <c>&lt;@ fun (x: C&lt;int&gt;) (v: int) -> () @&gt;</c>, which is the implementation of the
+    /// setter for the property <c>Count</c>. Note that the correct generic instantaition has been applied to the implementation to reflect
+    /// the the type at the callsite.
     /// </example>
+    /// 
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]
     val (|PropertySetterWithReflectedDefinition|_|): propertyInfo: PropertyInfo -> Expr option
 
@@ -2286,15 +2236,7 @@ module ExprShape =
     ///
     /// <returns>The decomposed Var, Lambda, or ConstApp.</returns>
     /// 
-    /// <example id="XXXX-1">
-    /// <code lang="fsharp">
-    /// open FSharp.Quotations
-    /// open FSharp.Quotations.Patterns
-    /// open FSharp.Quotations.DerivedPatterns
-    ///
-    /// </code>
-    /// Evaluates to <c></c>.
-    /// </example>
+    /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
     val (|ShapeVar|ShapeLambda|ShapeCombination|): 
         input: Expr
@@ -2309,4 +2251,6 @@ module ExprShape =
     /// <param name="arguments">The list of arguments.</param>
     ///
     /// <returns>The rebuilt expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     val RebuildShapeCombination: shape: obj * arguments: list<Expr> -> Expr
