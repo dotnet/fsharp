@@ -27,6 +27,7 @@ module List =
     /// <code lang="fsharp">
     /// let people = ["Kirk"; "Spock"; "McCoy"]
     /// let numbers = [1;2]
+    ///
     /// people |> List.allPairs numbers 
     /// </code>
     /// The sample evaluates to 
@@ -98,11 +99,14 @@ module List =
     /// type People = {
     ///    name: string
     ///    age: int }
+    ///
     /// let getAgeAsFloat person = float person.age
+    ///
     /// let people = 
     ///     [ { name = "Kirk"; age = 26 }
     ///       { name = "Spock"; age = 90 }
     ///       { name = "McCoy"; age = 37 } ]
+    ///
     /// people |> List.averageBy getAgeAsFloat  // evaluates 51.0
     /// </code>
     /// </example>
@@ -129,34 +133,52 @@ module List =
     /// 
     /// <example id="choose-1">
     /// <code lang="fsharp">
-    /// type Happiness = AlwaysHappy | MostOfTheTimeGrumpy
-    /// type People = {
-    ///     name: string
-    ///     happiness: Happiness }
+    /// type Happiness =
+    ///     | AlwaysHappy
+    ///     | MostOfTheTimeGrumpy
+    ///
+    /// type People =
+    ///     {
+    ///       Name: string
+    ///       Happiness: Happiness
+    ///     }
+    ///
     /// let takeJustHappyPersons person =
-    ///     match person.happiness with
-    ///     | AlwaysHappy -> Some person.name
+    ///     match person.Happiness with
+    ///     | AlwaysHappy -> Some person.Name
     ///     | MostOfTheTimeGrumpy -> None
+    ///
     /// let candidatesForTheTrip = 
-    ///     [ { name = "SpongeBob"; happiness = AlwaysHappy }
-    ///       { name = "Patrick"; happiness = AlwaysHappy }
-    ///       { name = "Squidward"; happiness = MostOfTheTimeGrumpy } ]
+    ///     [ { Name = "SpongeBob"; Happiness = AlwaysHappy }
+    ///       { Name = "Patrick"; Happiness = AlwaysHappy }
+    ///       { Name = "Squidward"; Happiness = MostOfTheTimeGrumpy } ]
+    ///
     /// candidatesForTheTrip |> List.choose takeJustHappyPersons
     /// </code>
     /// The sample evaluates to <c>[ "SpongeBob"; "Patrick" ]</c>
     /// </example>
     /// 
     /// <example id="choose-2">
+    /// Using the identity function <c>id</c> (is defined like <c>fun x -> x</c>):
     /// <code lang="fsharp">
-    /// // Using the identity function "id" (is defined like fun x -> x)
+    /// 
     /// let input1 = [ Some 1; None; Some 3; None ]
+    ///
     /// input1 |> List.choose id  // evaluates [1; 3]
-    /// 
+    /// </code>
+    /// </example>
+    /// <example id="choose-3">
+    /// <code lang="fsharp">
     /// let input2: int option list = [] 
-    /// input2 |> List.choose id  // evaluates []  (notice that has the type "int list")
-    /// 
-    /// let input3: string option list =[ None; None ]
-    /// input3 |> List.choose id  // evaluates []  (notice that has the type "string list")
+    ///
+    /// input2 |> List.choose id  // evaluates to the empty list
+    /// </code>
+    /// </example>
+    /// <example id="choose-4">
+    /// <code lang="fsharp">
+    /// let input3: string option list = [None; None]
+    ///
+    /// input3 |> List.choose id  // evaluates to the empty list
     /// </code>
     /// </example>
     [<CompiledName("Choose")>]
@@ -178,15 +200,16 @@ module List =
     /// Evaluates to <c>[[1; 2; 3]; [4; 5; 6]; [7; 8; 9]; [10]]</c> . Please notice the last chunk.
     /// 
     /// <code lang="fsharp">
-    /// let output2 = [1 .. 5 ] |> List.chunkBySize 10
+    /// [1 .. 5 ] |> List.chunkBySize 10
     /// </code>
     /// Evaluates to <c>[[1; 2; 3; 4; 5]]</c>
     /// 
     /// <code lang="fsharp">
     /// let input : string list = []
-    /// let output3 = input |> List.chunkBySize 10
+    ///
+    /// input |> List.chunkBySize 10
     /// </code>
-    /// Evaluates to <c>[]</c>. Please notice that has the type <c>string list list</c>.
+    /// Evaluates to <c>[]</c>. The result has type <c>string list list</c>.
     /// </example>
     [<CompiledName("ChunkBySize")>]
     val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
@@ -356,6 +379,7 @@ module List =
     /// <example id="distinct-1">
     /// <code lang="fsharp">
     /// let input = [6;1;2;3;1;4;5;5]
+    ///
     /// input |> List.distinct
     /// </code>
     /// Evaluates to <c>[6; 1; 2; 3; 4; 5]</c>.
@@ -375,7 +399,9 @@ module List =
     /// <example id="distinctBy-1">
     /// <code lang="fsharp">
     /// let isEven x = 0 = x % 2
+    ///
     /// let input = [6;1;2;3;1;4;5;5]
+    ///
     /// input |> List.distinctBy isEven  // evaluates [6; 1]
     /// </code>
     /// </example>
@@ -483,6 +509,7 @@ module List =
     /// <example id="exactlyOne-2">
     /// <code lang="fsharp">
     /// let input : string list = []
+    ///
     /// input |> List.exactlyOne
     /// </code>
     /// Will throw the exception: <c>System.ArgumentException: The input sequence was empty</c>
@@ -579,7 +606,9 @@ module List =
     /// <example id="find-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
+    ///
     /// let isGreaterThan x y = y > x
+    ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
     /// 
     /// input |> List.find (fun (x,_) -> isEven x)              // evaluates (2, "Kirk")
@@ -603,7 +632,9 @@ module List =
     /// <example id="findBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
+    ///
     /// let isGreaterThan x y = y > x
+    ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
     /// 
     /// input |> List.findBack (fun (x,_) -> isEven x)              // evaluates (4, "Kenobi")
@@ -628,7 +659,9 @@ module List =
     /// <example id="findIndex-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
+    ///
     /// let isGreaterThan x y = y > x
+    ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
     /// 
     /// input |> List.findIndex (fun (x,_) -> isEven x)              // evaluates 1
@@ -653,7 +686,9 @@ module List =
     /// <example id="findIndexBack-1">
     /// <code lang="fsharp">
     /// let isEven x  = 0 = x % 2
+    ///
     /// let isGreaterThan x y = y > x
+    ///
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Spock"; 4, "Kenobi"]
     /// 
     /// input |> List.findIndexBack (fun (x,_) -> isEven x)              // evaluates 3
@@ -674,6 +709,7 @@ module List =
     /// <example id="filter-1">
     /// <code lang="fsharp">
     /// let input = [1, "Luke"; 2, "Kirk"; 3, "Kenobi"; 4, "Spock"]
+    ///
     /// let isComingFromStarTrek (x,_) = isEven x
     /// 
     /// input |> List.filter isComingFromStarTrek
@@ -705,16 +741,19 @@ module List =
     /// <example id="fold-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
+    ///
     /// type BagItem = { fruit: Fruit; quantity: int }
+    ///
     /// let takeMore (previous: BagItem list) fruit = 
     ///     let toTakeThisTime = 
     ///         match previous with 
     ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
     ///         | [] -> 1 
     ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
-    /// let input = [ Apple; Pear; Orange ]
+    ///
+    /// let inputs = [ Apple; Pear; Orange ]
     /// 
-    /// ([], input) ||> List.fold takeMore
+    /// ([], inputs) ||> List.fold takeMore
     /// </code>
     /// Evaluates to
     /// <code>
@@ -742,16 +781,16 @@ module List =
     /// <code lang="fsharp">Count the numer of times the coins match:
     /// type CoinToss = Head | Tails
     ///
-    /// let data1 = [Tails; Head; Tails]
-    /// let data2 = [Tails; Head; Head]
+    /// let inputs1 = [Tails; Head; Tails]
+    /// let inputs2 = [Tails; Head; Head]
     ///
-    /// (0, data1, data2) |||> List.fold2 (fun acc a b ->
-    ///     match (a, b) with
+    /// (0, inputs1, inputs2) |||> List.fold2 (fun acc input1 input2 ->
+    ///     match (input1, input2) with
     ///     | Head, Head -> acc + 1
     ///     | Tails, Tails -> acc + 1
     ///     | _ -> acc - 1)
     /// </code>
-    /// Evaluates to <c>1</c>
+    /// Evaluates to <c>1</c>. Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("Fold2")>]
     val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
@@ -768,20 +807,24 @@ module List =
     /// 
     /// <example id="foldBack-1"> Making the sum of squares for the first 5 natural numbers
     /// <code lang="fsharp">
-    /// ([1..5], 0) ||> List.foldBack (fun v s -> s + v * v)  // evaluates 55
+    /// ([1..5], 0) ||> List.foldBack (fun v acc -> acc + v * v)  // evaluates 55
     /// </code>
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     /// 
     /// <example id="foldBack-2"> Shopping for fruits hungry, you tend to take more of each as the hunger grows
     /// <code lang="fsharp">
     /// type Fruit = Apple | Pear | Orange
+    ///
     /// type BagItem = { fruit: Fruit; quantity: int }
+    ///
     /// let takeMore fruit (previous: BagItem list) =
     ///     let toTakeThisTime = 
     ///         match previous with 
     ///         | bagItem :: otherBagItems -> bagItem.quantity + 1 
     ///         | [] -> 1 
     ///     { fruit = fruit; quantity = toTakeThisTime } :: previous
+    ///
     /// let input = [ Apple; Pear; Orange ]
     /// 
     /// (input, []) ||> List.foldBack takeMore
@@ -837,6 +880,7 @@ module List =
     ///   Negative = 1
     ///   Text = "(-3,1) (-2,2) (-1,3) " }
     /// </code>
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("FoldBack2")>]
     val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> list1:'T1 list -> list2:'T2 list -> state:'State -> 'State
@@ -1300,6 +1344,7 @@ module List =
     ///         | Out o -> Out (o*2), acc - o)
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("MapFold")>]
     val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> list:'T list -> 'Result list * 'State
@@ -1319,15 +1364,16 @@ module List =
     ///     | In of int
     ///     | Out of int
     ///
-    /// let inputs = [ In 1; Out 2; In 3 ]
+    /// let charges = [ In 1; Out 2; In 3 ]
     ///
     /// let newCharges, balance =
-    ///     (inputs, 0) ||> List.mapFoldBack (fun charge acc ->
+    ///     (charges, 0) ||> List.mapFoldBack (fun charge acc ->
     ///         match charge with
     ///         | In i -> In (i*2), acc + i
     ///         | Out o -> Out (o*2), acc - o)
     /// </code>
     /// Evaluates <c>newCharges</c> to <c>[In 2; Out 4; In 6]</c> and <c>balance</c> to <c>2</c>.
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("MapFoldBack")>]
     val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> list:'T list -> state:'State -> 'Result list * 'State
@@ -1736,6 +1782,7 @@ module List =
     /// </code>
     /// Evaluates to <c>[0; 1; -1; 2]</c>. Note <c>0</c> is the intial
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("Scan")>]
     val scan<'T,'State>  : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State list
@@ -1764,6 +1811,7 @@ module List =
     /// Evaluates to <c> [2; 1; 3; 0]</c> by processing each input from back to front. Note <c>0</c> is the intial
     /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state, and the states
     /// are produced from back to front.
+    /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
     [<CompiledName("ScanBack")>]
     val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State list
