@@ -128,7 +128,7 @@
     <EnvDTEVersion>$(VisualStudioContractPackagesVersion)</EnvDTEVersion>
     <EnvDTE80Version>$(VisualStudioContractPackagesVersion)</EnvDTE80Version>
     <!-- Roslyn packages -->
-    <RoslynVersion>4.0.0-1.21181.18</RoslynVersion>
+    <RoslynVersion>4.1.0-1.21511.14</RoslynVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
