@@ -95,8 +95,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCoreInternal-Pool
-            queue: buildpool.windows.10.amd64.vs2019
+            name: NetCore1ESPool-Svc-Internal
+            demands: ImageOverride -equals build.windows.10.amd64.vs2019
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -199,11 +199,11 @@ stages:
         - job: Windows
           pool:
             # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=BuildPool.Windows.10.Amd64.VS2019.Open
+            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCorePublic-Pool
-            queue: $(WindowsMachineQueueName)
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4
