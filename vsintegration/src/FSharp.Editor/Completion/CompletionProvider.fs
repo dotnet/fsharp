@@ -10,7 +10,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
@@ -31,7 +30,7 @@ type internal FSharpCompletionProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
 
-    inherit CompletionProvider()
+    inherit FSharpCompletionProviderBase()
 
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
@@ -196,7 +195,7 @@ type internal FSharpCompletionProvider
             return results
         }
 
-    override _.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+    override _.ShouldTriggerCompletionImpl(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger) =
         use _logBlock = Logger.LogBlock LogEditorFunctionId.Completion_ShouldTrigger
 
         let getInfo() = 
