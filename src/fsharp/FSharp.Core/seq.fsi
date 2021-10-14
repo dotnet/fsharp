@@ -193,7 +193,7 @@ module Seq =
     val cast: source:IEnumerable -> seq<'T>
 
     /// <summary>Applies the given function to each element of the sequence. Returns
-    /// the sequence comprised of the results "x" for each element where
+    /// a sequence comprised of the results "x" for each element where
     /// the function returns Some(x).</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
