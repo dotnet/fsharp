@@ -11,7 +11,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --langversion:preview</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
@@ -28,9 +28,16 @@
     <Compile Include="Compiler\Service\MultiProjectTests.fs" />
     <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputationExpressionOptimizations.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DelegateAndFuncOptimizations.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\BooleanLogic.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DebugScopes.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ByrefTailcalls.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
@@ -40,6 +47,7 @@
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\InitOnlyPropertyConsumptionTests.fs" />
     <Compile Include="Compiler\Language\WitnessTests.fs" />
     <Compile Include="Compiler\Language\CompilerDirectiveTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
@@ -59,6 +67,7 @@
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
+    <Compile Include="Compiler\Language\StructActivePatternTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\NullableOptionalRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />

@@ -3,7 +3,6 @@
 namespace rec FSharp.Compiler.Symbols
 
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
@@ -13,7 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
@@ -76,13 +74,14 @@ type FSharpDisplayContext =
 /// or FSharpActivePatternCase.
 [<Class>]
 type FSharpSymbol = 
-    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: NameResolution.Item -> FSharpSymbol
-    static member internal Create: cenv: SymbolEnv * item: NameResolution.Item -> FSharpSymbol
+    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item -> FSharpSymbol
+    static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
-    member internal Item: NameResolution.Item
+    member internal SymbolEnv: SymbolEnv
+    member internal Item: Item
         
     /// Get the assembly declaring this symbol
     member Assembly: FSharpAssembly 
@@ -94,7 +93,10 @@ type FSharpSymbol =
     /// Get the declaration location for the symbol
     member DeclarationLocation: range option
 
-    /// Gets the short display name for the symbol
+    /// Gets the display name for the symbol where double backticks are not added for non-identifiers
+    member DisplayNameCore: string
+
+    /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -606,7 +608,7 @@ type FSharpStaticParameter =
     /// Indicates if the static parameter is optional
     member IsOptional: bool
 
-    [<System.ObsoleteAttribute("This member is no longer used, use IsOptional instead")>]
+    [<System.Obsolete("This member is no longer used, use IsOptional instead")>]
     member HasDefaultValue: bool
 #endif
 
@@ -716,10 +718,7 @@ type FSharpGenericParameterConstraint =
 [<RequireQualifiedAccess>] 
 type FSharpInlineAnnotation = 
 
-   /// Indicates the value is inlined and compiled code for the function does not exist
-   | PseudoValue
-
-   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is always inlined in statically compiled code
    | AlwaysInline 
 
    /// Indicates the value is optionally inlined 

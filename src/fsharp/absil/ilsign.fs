@@ -10,10 +10,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     open System.Reflection.PortableExecutable
     open System.Security.Cryptography
     open System.Reflection
-    open System.Runtime.CompilerServices
     open System.Runtime.InteropServices
 
-    open Internal.Utilities
     open Internal.Utilities.Library
     open FSharp.Compiler.IO
 
@@ -42,9 +40,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     let RSA_PRIV_MAGIC = int 0x32415352
 
     let getResourceString (_, str) = str
-    let check _action (hresult) =
+    let check _action hresult =
       if uint32 hresult >= 0x80000000ul then
-        System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+        Marshal.ThrowExceptionForHR hresult
 
     [<Struct; StructLayout(LayoutKind.Explicit)>]
     type ByteArrayUnion =
@@ -73,7 +71,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             | PEMagic.PE32Plus ->   peHeaderOffset + 0x90,0xF0              // offsetof(IMAGE_OPTIONAL_HEADER64, DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]), sizeof(IMAGE_OPTIONAL_HEADER64)
             | _ -> raise (BadImageFormatException(getResourceString(FSComp.SR.ilSignInvalidMagicValue())))
 
-        let allHeadersSize = peHeaderOffset + peHeaderSize + int (peHeaders.CoffHeader.NumberOfSections) * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
+        let allHeadersSize = peHeaderOffset + peHeaderSize + int peHeaders.CoffHeader.NumberOfSections * 0x28;      // sizeof(IMAGE_SECTION_HEADER)
         let allHeaders =
             let array:byte[] = Array.zeroCreate<byte> allHeadersSize
             peReader.GetEntireImage().GetContent().CopyTo(0, array, 0, allHeadersSize)
@@ -121,11 +119,11 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         member x.ReadInt32:int =
             let offset = x._offset
             x._offset <- offset + 4
-            int (x._blob.[offset]) ||| (int (x._blob.[offset + 1]) <<< 8) ||| (int (x._blob.[offset + 2]) <<< 16) ||| (int (x._blob.[offset + 3]) <<< 24)
+            int x._blob.[offset] ||| (int x._blob.[offset + 1] <<< 8) ||| (int x._blob.[offset + 2] <<< 16) ||| (int x._blob.[offset + 3] <<< 24)
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
-            Array.Copy(x._blob, x._offset, arr, 0, length) |> ignore
+            Array.Copy(x._blob, x._offset, arr, 0, length)
             x._offset <- x._offset  + length
             arr |> Array.rev
 
@@ -197,7 +195,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
             let expAsDword =
                 let mutable buffer = int 0
                 for i in 0 .. rsaParameters.Exponent.Length - 1 do
-                   buffer <- (buffer <<< 8) ||| int (rsaParameters.Exponent.[i])
+                   buffer <- (buffer <<< 8) ||| int rsaParameters.Exponent.[i]
                 buffer
 
             bw.Write expAsDword                                                        // RSAPubKey.pubExp
@@ -245,7 +243,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         patchSignature stream peReader signature
 
     let signFile filename keyBlob =
-        use fs = File.Open(filename, FileMode.Open, FileAccess.ReadWrite)
+        use fs = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite)
         signStream fs keyBlob
 
     let signatureSize (pk:byte[]) =
@@ -272,9 +270,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     type pubkey = byte[]
     type pubkeyOptions = byte[] * bool
 
-    let signerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim filePath
+    let signerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
-    let signerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim filePath
+    let signerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
     let signerGetPublicKeyForKeyPair (kp: keyPair) : pubkey = getPublicKeyForKeyPair kp
 
@@ -292,6 +290,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
 
 #if !FX_NO_CORHOST_SIGNER
+    open System.Runtime.CompilerServices
+
     // New mscoree functionality
     // This type represents methods that we don't currently need, so I'm leaving unimplemented
     type UnusedCOMMethod = unit -> unit
@@ -400,9 +400,9 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                         ([<MarshalAs(UnmanagedType.Interface)>] _metaHost :
                             ICLRMetaHost byref)) : unit = failwith "CreateInterface"
 
-    let legacySignerOpenPublicKeyFile filePath = FileSystem.ReadAllBytesShim filePath
+    let legacySignerOpenPublicKeyFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
-    let legacySignerOpenKeyPairFile filePath = FileSystem.ReadAllBytesShim filePath
+    let legacySignerOpenKeyPairFile filePath = FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
 
     let mutable iclrsn: ICLRStrongName option = None
     let getICLRStrongName () =
@@ -497,7 +497,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     //---------------------------------------------------------------------
     // Strong name signing
     //---------------------------------------------------------------------
-    type ILStrongNameSigner =  
+    type ILStrongNameSigner =
         | PublicKeySigner of pubkey
         | PublicKeyOptionsSigner of pubkeyOptions
         | KeyPair of keyPair
@@ -521,7 +521,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
         member s.IsFullySigned =
-            match s with 
+            match s with
             | PublicKeySigner _ -> false
             | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
                                             usePublicSign
@@ -533,8 +533,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
-        member s.PublicKey = 
-            match s with 
+        member s.PublicKey =
+            match s with
             | PublicKeySigner pk -> pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko
                                             pk
@@ -554,7 +554,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 with e ->
                   failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
                   0x80
-            match s with 
+            match s with
             | PublicKeySigner pk -> pkSignatureSize pk
             | PublicKeyOptionsSigner pko -> let pk, _ = pko
                                             pkSignatureSize pk
@@ -567,8 +567,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
                 failWithContainerSigningUnsupportedOnThisPlatform()
 #endif
 
-        member s.SignFile file = 
-            match s with 
+        member s.SignFile file =
+            match s with
             | PublicKeySigner _ -> ()
             | PublicKeyOptionsSigner _ -> ()
             | KeyPair kp -> signerSignFileWithKeyPair file kp

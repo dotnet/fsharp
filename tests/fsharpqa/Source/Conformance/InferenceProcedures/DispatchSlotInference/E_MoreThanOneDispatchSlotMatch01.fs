@@ -1,6 +1,6 @@
 // #Regression #Conformance #TypeInference 
 // FSB 1625, fsc generates assemblies that don't load/peverify
-//<Expects span="(19,18-19,19)" status="error" id="FS0361">The override 'M : int -> int' implements more than one abstract slot, e\.g\. 'abstract member IB\.M : int -> int' and 'abstract member IA\.M : int -> int'</Expects>
+//<Expects span="(19,18-19,19)" status="error" id="FS0361">The override 'M: int -> int' implements more than one abstract slot, e\.g\. 'abstract IB\.M: int -> int' and 'abstract IA\.M: int -> int'</Expects>
 
 type IA = 
     abstract M : int -> int 

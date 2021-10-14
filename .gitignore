@@ -1,5 +1,6 @@
 # output location
 artifacts/
+BenchmarkDotNet.Artifacts/
 
 /tests/scripts/current
 .dotnet/
@@ -21,6 +22,8 @@ scripts/*.patch
 /src/fsharp/FSharp.Compiler.Service/*.resources
 /src/fsharp/FSharp.Compiler.Service/*.sln
 /src/fsharp/FSharp.Compiler.Service/*.userprefs
+/src/fsharp/FSharp.Compiler.Service/StandardOutput.txt
+/src/fsharp/FSharp.Compiler.Service/StandardError.txt
 /src/*.log
 /src/fsharp/FSharp.LanguageService.Compiler/illex.*
 /src/fsharp/FSharp.LanguageService.Compiler/ilpars.*
@@ -119,3 +122,5 @@ nCrunchTemp_*
 /tests/fsharp/core/members/set-only-property/vb.dll
 /tests/fsharp/core/members/set-only-property/fs.dll
 /tests/fsharp/core/members/set-only-property/cs.dll
+
+.fake

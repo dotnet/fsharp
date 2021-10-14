@@ -6,6 +6,7 @@
     <Version>1.0.0.0</Version>
     <UnitTestType>none</UnitTestType>
     <NoWarn>$(NoWarn);0067;1591</NoWarn>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
 </Project>

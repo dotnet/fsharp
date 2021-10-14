@@ -258,16 +258,25 @@ module ExtraTopLevelOperators =
         let inline int8 value = Checked.sbyte value
 
     [<CompiledName("SpliceExpression")>]
-    let (~%) (_:Microsoft.FSharp.Quotations.Expr<'a>) : 'a = raise <| InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)) 
+    let (~%) (expression:Microsoft.FSharp.Quotations.Expr<'T>) : 'T =
+        ignore expression
+        raise (InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)))
 
     [<CompiledName("SpliceUntypedExpression")>]
-    let (~%%) (_: Microsoft.FSharp.Quotations.Expr) : 'a = raise <| InvalidOperationException (SR.GetString(SR.firstClassUsesOfSplice)) 
+    let (~%%) (expression: Microsoft.FSharp.Quotations.Expr) : 'T =
+        ignore expression
+        raise (InvalidOperationException (SR.GetString(SR.firstClassUsesOfSplice)))
 
     [<assembly: AutoOpen("Microsoft.FSharp")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Core")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control")>]
+    #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority")>]
+    #endif
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority")>]
     do()

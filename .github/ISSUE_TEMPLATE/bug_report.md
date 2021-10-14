@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve F#
 title: ''
-labels: ''
+labels: Bug
 assignees: ''
 
 ---

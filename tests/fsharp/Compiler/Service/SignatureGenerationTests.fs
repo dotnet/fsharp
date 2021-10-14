@@ -4,10 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 
 [<TestFixture>]
 module SignatureGenerationTests =
@@ -24,8 +23,18 @@ module SignatureGenerationTests =
             |> typecheckResults
             |> sigText
 
-        let actual = text.ToString()
-        let expected2 = expected.Replace("\r\n", "\n")
+        let actual =
+            text.ToString()
+            |> fun s -> s.Split('\n')
+            |> Array.map (fun s -> s.TrimEnd(' '))
+
+        printfn $"actual is\n-------\n{text.ToString()}\n---------"
+
+        let expected2 =
+            expected.Replace("\r\n", "\n")
+            |> fun s -> s.Split('\n')
+            |> Array.map (fun s -> s.TrimEnd(' '))
+
         Assert.shouldBeEquivalentTo expected2 actual
     
     [<Test>]
@@ -72,38 +81,50 @@ module Inner =
         member x.Thing = match x with | FirstCase thing -> thing
         """
         |> sigShouldBe """namespace Sample
+  
   /// exception comments
   exception MyEx of reason: string
+  
   /// module-level docs
-  module Inner = begin
+  module Inner =
+    
     /// type-level docs
     type Facts =
+      
       /// constructor-level docs
-      new : unit -> Facts
+      new: unit -> Facts
+      
       /// primary ctor docs
-      new : name:string -> Facts
+      new: name: string -> Facts
+      
       /// member-level docs
-      member blah : unit -> int list
+      member blah: unit -> int list
+            
       /// auto-property-level docs
-      member Name : string
+      member Name: string
+    
     /// module-level binding docs
-    val module_member : unit
+    val module_member: unit
+
     /// record docs
     type TestRecord =
-      { /// record field docs
-        RecordField: int }
-      with
-        /// record member docs
-        member Data : int
-        /// static record member docs
-        static member Foo : bool
-      end
+      {
+        /// record field docs
+        RecordField: int
+      }
+
+      /// record member docs
+      member Data: int
+
+      /// static record member docs
+      static member Foo: bool
+
     /// union docs
     type TestUnion =
+
       /// docs for first case
       | FirstCase of thing: int
-      with
-        /// union member
-        member Thing : int
-      end
-  end"""
+
+      /// union member
+      member Thing: int
+  """

@@ -5,7 +5,6 @@ namespace FSharp.Compiler.DependencyManager
 open System
 open System.IO
 open System.Reflection
-open System.Runtime.Loader
 open Internal.Utilities.FSharpEnvironment
 
 /// Signature for ResolutionProbe callback
@@ -79,7 +78,7 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
 
         with | _ -> Unchecked.defaultof<Assembly>
 
-    let handler = new ResolveEventHandler(fun _ (args: ResolveEventArgs) -> resolveAssemblyNET (new AssemblyName(args.Name)))
+    let handler = ResolveEventHandler(fun _ (args: ResolveEventArgs) -> resolveAssemblyNET (AssemblyName(args.Name)))
     do AppDomain.CurrentDomain.add_AssemblyResolve(handler)
 
     interface IDisposable with
