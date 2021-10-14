@@ -112,7 +112,7 @@ function InitializeDotNetCli([bool]$install, [bool]$createSdkLocationFile) {
   }
 
   # Don't resolve runtime, shared framework, or SDK from other locations to ensure build determinism
-  #$env:DOTNET_MULTILEVEL_LOOKUP=0
+  $env:DOTNET_MULTILEVEL_LOOKUP=0
 
   # Disable first run since we do not need all ASP.NET packages restored.
   $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
