@@ -3,10 +3,10 @@
 // pretty printing signatures with optional arguments
 
 //<Expects status="success">type AsyncTimer =</Expects>
-//<Expects status="success">  new : f:\(unit -> unit\) \* \?delay:int -> AsyncTimer</Expects>
-//<Expects status="success">  member Start : unit -> unit</Expects>
-//<Expects status="success">  member Stop : unit -> unit</Expects>
-//<Expects status="success">  member Delay : int option</Expects>
+//<Expects status="success">  new: f: \(unit -> unit\) \* \?delay: int -> AsyncTimer</Expects>
+//<Expects status="success">  member Start: unit -> unit</Expects>
+//<Expects status="success">  member Stop: unit -> unit</Expects>
+//<Expects status="success">  member Delay: int option</Expects>
 
 open Microsoft.FSharp.Control
  

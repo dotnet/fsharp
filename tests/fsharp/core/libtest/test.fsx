@@ -5263,8 +5263,8 @@ module Check1043 = begin
  (* LBRACKET STAR RBRACKET becomes a valid operator identifier *)
  let (*) = 12            
  let x   = (*)           
- let f (*) = 12 + (*) 
- let x24 = f 12
+ let test() = let f (*) = 12 + (*) in f 12
+ let x24 = test()
 end
 
 

@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]
@@ -720,7 +720,7 @@ type ContentBuilder() =
     member this.Run(c: Content) =
         let crlf = "\r\n"B
         [|for part in List.rev c do
-            yield! part.Array.[part.Offset..(part.Count+part.Offset-1)]
+            yield! part.Array[part.Offset..(part.Count+part.Offset-1)]
             yield! crlf |]
 
     member this.Yield(_) = []

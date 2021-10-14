@@ -8,11 +8,8 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -60,7 +57,6 @@ match "foo" with
         getCaseUsages completePatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|True|False|"
         getCaseUsages partialPatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|String|_|"
 
-
 module ExternDeclarations =
     [<Test>]
     let ``Access modifier`` () =
@@ -91,6 +87,21 @@ extern int private c()
                 |> should equal expected
             | _ -> Assert.Fail (sprintf "Couldn't get mfv: %s" name))
 
+    [<Test>]
+    let ``Range of attribute should be included in SynDecl.Let and SynBinding`` () =
+        let parseResults =
+            getParseResults
+                """
+[<DllImport("oleacc.dll")>]
+extern int AccessibleChildren()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(false, [ SynBinding(range = mb) ] , ml)
+        ]) ])) ->
+            assertRange (2, 0) (3, 31) ml
+            assertRange (2, 0) (3, 31) mb
+        | _ -> Assert.Fail "Could not get valid AST"
 
 module XmlDocSig =
 
@@ -134,7 +145,6 @@ module Mod2 =
          mod2.XmlDocSig |> shouldEqual "T:Mod1.Mod2"
          mod1val1.XmlDocSig |> shouldEqual "P:Mod1.val1"
          mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
-
 
 module Attributes =
     [<Test>]
@@ -253,7 +263,7 @@ let tester2: int Group = []
                 let symbolUse = findSymbolUseByName entityName checkResults
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as v ->
-                        v.FullType.Format (symbolUse.DisplayContext)
+                        v.FullType.Format symbolUse.DisplayContext
                         |> should equal expectedTypeFormat
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
@@ -372,7 +382,7 @@ module Strings =
                     | SynModuleDecl.Let (bindings = bindings) ->
                         bindings |> List.tryPick (fun binding ->
                             match binding with
-                            | SynBinding.SynBinding (_,_,_,_,_,_,_,SynPat.Named _,_,e,_,_) -> Some e
+                            | SynBinding.SynBinding (_,_,_,_,_,_,_,(SynPat.Named _|SynPat.As(_,SynPat.Named _,_)),_,e,_,_) -> Some e
                             | _ -> None)
                     | _ -> None))
         | _ -> None
@@ -638,7 +648,7 @@ type Meh =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(range = r)]) ])) ->
-            assertRange (3, 5) (5,11) r
+            assertRange (3, 0) (5,11) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -653,7 +663,7 @@ type MyRecord =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (4, 30) r
+            assertRange (2, 0) (4, 30) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -669,7 +679,7 @@ type MyRecord =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (5, 30) r
+            assertRange (2, 0) (5, 30) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -683,7 +693,7 @@ type MyFunction =
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (3, 29) r
+            assertRange (2, 0) (3, 29) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -698,7 +708,7 @@ type SomeCollection with
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [
             SynModuleOrNamespaceSig(decls = [SynModuleSigDecl.Types(types = [SynTypeDefnSig.SynTypeDefnSig(range = r)])]) ])) ->
-            assertRange (2, 5) (4, 37) r
+            assertRange (2, 0) (4, 37) r
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -745,9 +755,9 @@ and [<CustomEquality>] Bang =
                 SynTypeDefnSig.SynTypeDefnSig(range = r1)
                 SynTypeDefnSig.SynTypeDefnSig(range = r2)
             ]) as t]) ])) ->
-            assertRange (4, 5) (5, 9) r1
+            assertRange (4, 0) (5, 9) r1
             assertRange (7, 4) (12, 42) r2
-            assertRange (4, 5) (12, 42) t.Range
+            assertRange (4, 0) (12, 42) t.Range
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -879,6 +889,36 @@ with
         ]) ])) ->
             assertRange (6, 2) (6, 21) range
             assertRange (6, 2) (6, 21) clause.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of arrow in SynMatchClause`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+        ]) ])) ->
+            assertRange (3, 10) (3, 12) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of arrow in SynMatchClause with when clause`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar when (someCheck bar) -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+        ]) ])) ->
+            assertRange (3, 31) (3, 33) mArrow
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SourceIdentifiers =
@@ -1153,4 +1193,393 @@ type Bird =
             assertRange (3, 4) (6, 50) getter.Range
             assertRange (3, 4) (6, 23) mb2
             assertRange (3, 4) (6, 50) setter.Range
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module ParsedHashDirective =
+    [<Test>]
+    let ``SourceIdentifier as ParsedHashDirectiveArgument`` () =
+        let parseResults = 
+            getParseResults
+                "#I __SOURCE_DIRECTORY__"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.SourceIdentifier(c,_,m) ] , _), _)
+        ]) ])) ->
+            Assert.AreEqual("__SOURCE_DIRECTORY__", c)
+            assertRange (1, 3) (1, 23) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Regular String as ParsedHashDirectiveArgument`` () =
+        let parseResults = 
+            getParseResults
+                "#I \"/tmp\""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.String(v, SynStringKind.Regular, m) ] , _), _)
+        ]) ])) ->
+            Assert.AreEqual("/tmp", v)
+            assertRange (1, 3) (1, 9) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Verbatim String as ParsedHashDirectiveArgument`` () =
+        let parseResults = 
+            getParseResults
+                "#I @\"C:\\Temp\""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.String(v, SynStringKind.Verbatim, m) ] , _), _)
+        ]) ])) ->
+            Assert.AreEqual("C:\\Temp", v)
+            assertRange (1, 3) (1, 13) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Triple quote String as ParsedHashDirectiveArgument`` () =
+        let parseResults = 
+            getParseResults
+                "#nowarn \"\"\"40\"\"\""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.HashDirective(ParsedHashDirective("nowarn", [ ParsedHashDirectiveArgument.String(v, SynStringKind.TripleQuote, m) ] , _), _)
+        ]) ])) ->
+            Assert.AreEqual("40", v)
+            assertRange (1, 8) (1, 16) m
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module Lambdas =
+    [<Test>]
+    let ``Lambda with two parameters gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a b -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with wild card parameter gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a _ b -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Wild _; SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with tuple parameter with wild card gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a (b, _) c -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Paren(SynPat.Tuple _,_); SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with wild card that returns a lambda gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun _ -> fun _ -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Ident(ident)))))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Simple lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun x -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 6) (1, 8) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Multiline lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun x y z
+                            ->
+                                x * y * z"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (2, 28) (2, 30) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Destructed lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun { X = x } -> x * 2"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 14) (1, 16) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Tuple in lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun (x, _) -> x * 3"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (1, 11) (1, 13) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Complex arguments lambda has arrow range`` () =
+        let parseResults = 
+            getParseResults
+                "fun (x, _) 
+    ({ Y = h::_ }) 
+    (SomePattern(z)) 
+    -> 
+    x * y + z"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(arrow = Some mArrow)
+            )
+        ]) ])) ->
+            assertRange (4, 4) (4, 6) mArrow
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module IfThenElse =
+    [<Test>]
+    let ``If keyword in IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                "if a then b"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = None)
+            )
+        ]) ])) ->
+            assertRange (1, 0) (1, 2) mIfKw
+            assertRange (1, 5) (1, 9) mThenKw
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Else keyword in simple IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                "if a then b else c"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = Some mElse)
+            )
+        ]) ])) ->
+            assertRange (1, 0) (1, 2) mIfKw
+            assertRange (1, 5) (1, 9) mThenKw
+            assertRange (1, 12) (1, 16) mElse
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``If, Then and Else keyword on separate lines`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a
+then b
+else c"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = Some mElse)
+            )
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIfKw
+            assertRange (3, 0) (3, 4) mThenKw
+            assertRange (4, 0) (4, 4) mElse
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Nested elif in IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+elif c then d"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
+                                          isElif = false
+                                          thenKeyword = mThenKw
+                                          elseKeyword = None
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElif; isElif = true)))
+            )
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIfKw
+            assertRange (2, 5) (2, 9) mThenKw
+            assertRange (4, 0) (4, 4) mElif
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Nested else if in IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+else
+    if c then d"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
+                                          isElif = false
+                                          thenKeyword = mThenKw
+                                          elseKeyword = Some mElse
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElseIf; isElif = false)))
+            )
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIfKw
+            assertRange (2, 5) (2, 9) mThenKw
+            assertRange (4, 0) (4, 4) mElse
+            assertRange (5, 4) (5, 6) mElseIf
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Nested else if on the same line in IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+else if c then
+    d"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
+                                          isElif = false
+                                          thenKeyword = mThenKw
+                                          elseKeyword = Some mElse
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElseIf; isElif = false)))
+            )
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIfKw
+            assertRange (2, 5) (2, 9) mThenKw
+            assertRange (4, 0) (4, 4) mElse
+            assertRange (4, 5) (4, 7) mElseIf
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``Deeply nested IfThenElse`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+elif c then
+    d
+else
+        if e then
+            f
+        else
+            g"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIf1
+                                          isElif = false
+                                          elseKeyword = None
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElif
+                                                                              isElif = true
+                                                                              elseKeyword = Some mElse1
+                                                                              elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mIf2
+                                                                                                                  isElif = false
+                                                                                                                  elseKeyword = Some mElse2))))))
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIf1
+            assertRange (4, 0) (4, 4) mElif
+            assertRange (6, 0) (6, 4) mElse1
+            assertRange (7, 8) (7, 10) mIf2
+            assertRange (9, 8) (9, 12) mElse2
+
+        | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``Comment between else and if`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+else (* some long comment here *) if c then
+    d"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = mIf1
+                                          isElif = false
+                                          elseKeyword = Some mElse
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mIf2; isElif = false))))
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIf1
+            assertRange (4, 0) (4, 4) mElse
+            assertRange (4, 34) (4, 36) mIf2
+
         | _ -> Assert.Fail "Could not get valid AST"

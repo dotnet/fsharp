@@ -220,7 +220,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s (isFeatureSupported: LanguageFeature -> bool) m : IL.ILInstr[] = 
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] = 
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -229,28 +229,26 @@ let ParseAssemblyCodeInstructions s (isFeatureSupported: LanguageFeature -> bool
     [| |]
 #else
     try
-        FSharp.Compiler.AbstractIL.AsciiParser.ilInstrs
-           FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
+        AsciiParser.ilInstrs
+           AsciiLexer.token
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeType s (isFeatureSupported: Features.LanguageFeature -> bool) m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     ignore s
-    ignore isFeatureSupported
 
 #if NO_INLINE_IL_PARSER
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
-    IL.EcmaMscorlibILGlobals.typ_Object
+    IL.PrimaryAssemblyILGlobals.typ_Object
 #else
-    let isFeatureSupported (_featureId:LanguageFeature) = true
     try
-        FSharp.Compiler.AbstractIL.AsciiParser.ilType
-           FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
+        AsciiParser.ilType
+           AsciiLexer.token
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
-      IL.EcmaMscorlibILGlobals.typ_Object
+      IL.PrimaryAssemblyILGlobals.typ_Object
 #endif
 

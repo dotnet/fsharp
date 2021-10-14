@@ -63,8 +63,8 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     r
 
 module SessionsProperties = 
-    let mutable useAnyCpuVersion = true // 64-bit by default
-    let mutable fsiUseNetCore = false
+    let mutable useAnyCpuVersion = true     // 64-bit by default
+    let mutable fsiUseNetCore = true        // NetCore by default
     let mutable fsiArgs = "--optimize"
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false

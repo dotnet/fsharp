@@ -1,8 +1,9 @@
 
-neg1.fsx(3,18,3,70): typecheck error FS0001: This expression was expected to have type
-    'string'    
-but here has type
+neg1.fsx(3,18,3,70): typecheck error FS0193: Type constraint mismatch. The type 
     'int'    
+is not compatible with type
+    'string'    
+
 
 neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 

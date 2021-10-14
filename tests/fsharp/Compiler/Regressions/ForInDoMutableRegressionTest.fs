@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<TestFixture()>]
 module ForInDoMutableRegressionTest =
@@ -70,5 +70,5 @@ not_a_bug ()
 test_rec [1;2;3;4]
 test_for_loop ()
             """
-        
-        CompilerAssert.RunScript script []
+        CompilerAssert.RunScriptWithOptions [| "--langversion:5.0" |] script []
+

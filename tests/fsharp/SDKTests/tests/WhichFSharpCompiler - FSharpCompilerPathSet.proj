@@ -1,0 +1,30 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Initialize Variables -->
+  <PropertyGroup>
+    <FSharpCompilerPath>/ExplicitCompilerPath/</FSharpCompilerPath>
+    <FscToolExe>_FscToolExe_</FscToolExe>
+    <FscToolPath>_FscToolPath_</FscToolPath>
+    <DotnetFscCompilerPath>_DotnetFscCompilerPath_</DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <!-- Expected Values -->
+  <PropertyGroup>
+    <ExpectedFSharpShimPresent></ExpectedFSharpShimPresent>
+    <ExpectedFSharpCompilerPath>/ExplicitCompilerPath/</ExpectedFSharpCompilerPath>
+    <ExpectedFscToolExe>_FscToolExe_</ExpectedFscToolExe>
+    <ExpectedFscToolPath>_FscToolPath_</ExpectedFscToolPath>
+    <ExpectedDotnetFscCompilerPath>_DotnetFscCompilerPath_</ExpectedDotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <Import Project="ToolsTest.props" />
+
+  <PropertyGroup>
+    <FSharpCompilerPath>/ExplicitCompilerPath/</FSharpCompilerPath>
+    <FSharpPreferNetFrameworkTools>true</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>true</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <Import Project="ToolsTest.targets" />
+
+</Project>
