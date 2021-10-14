@@ -192,8 +192,8 @@ module Seq =
     [<CompiledName("Cast")>]
     val cast: source:IEnumerable -> seq<'T>
 
-    /// <summary>Applies the given function to each element of the list. Return
-    /// the list comprised of the results "x" for each element where
+    /// <summary>Applies the given function to each element of the sequence. Returns
+    /// a sequence comprised of the results "x" for each element where
     /// the function returns Some(x).</summary>
     ///
     /// <remarks>The returned sequence may be passed between threads safely. However,
@@ -2789,7 +2789,7 @@ module Seq =
     [<CompiledName("Windowed")>]
     val windowed: windowSize:int -> source:seq<'T> -> seq<'T[]>
 
-    /// <summary>Combines the two sequences into a list of pairs. The two sequences need not have equal lengths:
+    /// <summary>Combines the two sequences into a sequence of pairs. The two sequences need not have equal lengths:
     /// when one sequence is exhausted any remaining elements in the other
     /// sequence are ignored.</summary>
     ///
@@ -2812,7 +2812,7 @@ module Seq =
     [<CompiledName("Zip")>]
     val zip: source1:seq<'T1> -> source2:seq<'T2> -> seq<'T1 * 'T2>
 
-    /// <summary>Combines the three sequences into a list of triples. The sequences need not have equal lengths:
+    /// <summary>Combines the three sequences into a sequence of triples. The sequences need not have equal lengths:
     /// when one sequence is exhausted any remaining elements in the other
     /// sequences are ignored.</summary>
     ///
