@@ -397,12 +397,12 @@ let inline cacheOptByref (cache: byref<'T option>) f =
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
 // we cannot use 'cacheOptByref'. If that is changed, this can be removed.
-let inline cacheOptRef cache f =
-    match !cache with
+let inline cacheOptRef (cache: _ ref) f =
+    match cache.Value with
     | Some v -> v
     | None ->
        let res = f()
-       cache := Some res
+       cache.Value <-  Some res
        res
 
 let inline tryGetCacheValue cache =

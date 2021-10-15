@@ -43,8 +43,8 @@ val FreshenTypars: range -> Typars -> TType list
 
 val FreshenMethInfo: range -> MethInfo -> TType list
 
-[<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
+[<RequireQualifiedAccess>]
 type ContextInfo =
 
     /// No context was given.

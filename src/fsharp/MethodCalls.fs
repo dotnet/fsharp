@@ -466,37 +466,42 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
         NameOpt=nmOpt
         CalledArgumentType=typeOfCalledArg })
 
+/// <summary>
 /// Represents the syntactic matching between a caller of a method and the called method.
 ///
 /// The constructor takes all the information about the caller and called side of a method, match up named arguments, property setters etc.,
 /// and returns a CalledMeth object for further analysis.
+/// </summary>
+/// <param name='infoReader'></param>
+/// <param name='nameEnv'></param>
+/// <param name='isCheckingAttributeCall'></param>
+/// <param name='freshenMethInfo'>A function to help generate fresh type variables the property setters methods in generic classes</param>
+/// <param name='m'>Range</param>
+/// <param name='ad'>The access domain of the place where the call is taking place</param>
+/// <param name='minfo'>The method we're attempting to call</param>
+/// <param name='calledTyArgs'>The 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call</param>
+/// <param name='callerTyArgs'>The 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call</param>
+/// <param name='pinfoOpt'>The property related to the method we're attempting to call, if any</param>
+/// <param name='callerObjArgTys'>The 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments</param>
+/// <param name='callerArgs'>A function to help generate fresh type variables the property setters methods in generic classes</param>
+/// <param name='allowParamArgs'>Do we allow the use of a param args method in its "expanded" form?</param>
+/// <param name='allowOutAndOptArgs'>Do we allow the use of the transformation that converts out arguments as tuple returns?</param>
+/// <param name='tyargsOpt'>Method parameters</param>
 type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       /// A function to help generate fresh type variables the property setters methods in generic classes
        freshenMethInfo,
-       /// Range
        m,
-       /// The access domain of the place where the call is taking place
        ad,
-       /// The method we're attempting to call
        minfo: MethInfo,
-       /// The 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
        calledTyArgs,
-       /// The 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
        callerTyArgs: TType list,
-       /// The property related to the method we're attempting to call, if any
        pinfoOpt: PropInfo option,
-       /// The types of the actual object argument, if any
        callerObjArgTys: TType list,
-       /// The 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
        callerArgs: CallerArgs<'T>,
-       /// Do we allow the use of a param args method in its "expanded" form?
        allowParamArgs: bool,
-       /// Do we allow the use of the transformation that converts out arguments as tuple returns?
        allowOutAndOptArgs: bool,
-       /// Method parameters
        tyargsOpt: TType option)    
     =
     let g = infoReader.g

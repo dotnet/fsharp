@@ -483,9 +483,9 @@ module TcRecdUnionAndEnumDeclarations =
                     | Some fieldId, Parent tcref ->
                         let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
                         CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                    | _ -> ()
-
-                    TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                        TcNamedFieldDecl cenv env parent false tpenv fld
+                    | _ ->
+                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -878,12 +878,21 @@ module IncrClassChecking =
                 not arity.HasNoArgs && not v.IsMutable
 
 
+        /// <summary>
         /// Choose how a binding is represented
-        member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg, 
-                                              ctorInfo: IncrClassCtorLhs, 
-                                              /// The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings
-                                              staticForcedFieldVars: FreeLocals, 
-                                              /// The vars forced to be fields due to instance member bindings
+        /// </summary>
+        /// <param name='cenv'></param>
+        /// <param name='env'></param>
+        /// <param name='isStatic'></param>
+        /// <param name='isCtorArg'></param>
+        /// <param name='ctorInfo'></param>
+        /// <param name='staticForcedFieldVars'>The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings</param>
+        /// <param name='instanceForcedFieldVars'>The vars forced to be fields due to instance member bindings</param>
+        /// <param name='takenFieldNames'></param>
+        /// <param name='bind'></param>
+        member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg,
+                                              ctorInfo: IncrClassCtorLhs,
+                                              staticForcedFieldVars: FreeLocals,
                                               instanceForcedFieldVars: FreeLocals, 
                                               takenFieldNames: Set<string>, 
                                               bind: Binding) = 
@@ -1091,9 +1100,9 @@ module IncrClassChecking =
         /// Given localRep saying how locals have been represented, e.g. as fields.
         /// Given an expr under a given thisVal context.
         //
-        /// Fix up the references to the locals, e.g. 
-        ///     v -> this.fieldv
-        ///     f x -> this.method x
+        // Fix up the references to the locals, e.g.
+        //     v -> this.fieldv
+        //     f x -> this.method x
         member localRep.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo (thisTyInst: TypeInst) expr = 
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
@@ -1143,21 +1152,27 @@ module IncrClassChecking =
       | Phase2CCtorJustAfterSuperInit     
       | Phase2CCtorJustAfterLastLet    
 
-    /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class, 
-    /// generate their initialization expression(s).  
-    let MakeCtorForIncrClassConstructionPhase2C 
+    /// <summary>
+    /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class,
+    /// generate their initialization expression(s).
+    /// </summary>
+    /// <param name='cenv'></param>
+    /// <param name='env'></param>
+    /// <param name='ctorInfo'>The lhs information about the implicit constructor</param>
+    /// <param name='inheritsExpr'>The call to the super class constructor</param>
+    /// <param name='inheritsIsVisible'>Should we place a sequence point at the 'inheritedTys call?</param>
+    /// <param name='decs'>The declarations</param>
+    /// <param name='memberBinds'></param>
+    /// <param name='generalizedTyparsForRecursiveBlock'>Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings</param>
+    /// <param name='safeStaticInitInfo'></param>
+    let MakeCtorForIncrClassConstructionPhase2C
                (cenv: cenv, 
-                env: TcEnv, 
-                /// The lhs information about the implicit constructor
-                ctorInfo: IncrClassCtorLhs, 
-                /// The call to the super class constructor
-                inheritsExpr, 
-                /// Should we place a sequence point at the 'inheritedTys call?
-                inheritsIsVisible, 
-                /// The declarations
+                env: TcEnv,
+                ctorInfo: IncrClassCtorLhs,
+                inheritsExpr,
+                inheritsIsVisible,
                 decs: IncrClassConstructionBindingsPhase2C list, 
-                memberBinds: Binding list, 
-                /// Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings 
+                memberBinds: Binding list,
                 generalizedTyparsForRecursiveBlock, 
                 safeStaticInitInfo: SafeInitData) = 
 
@@ -1459,7 +1474,7 @@ module IncrClassChecking =
             ctorBody
 
         let cctorBodyOpt =
-            /// Omit the .cctor if it's empty 
+            // Omit the .cctor if it's empty
             match cctorInitActions with
             | [] -> None 
             | _ -> 
@@ -1620,6 +1635,7 @@ module MutRecBindingChecking =
 
                             // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
                             let incrClassCtorLhs = TcImplicitCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, doc)
+
                             // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
                             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                             let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -1661,6 +1677,7 @@ module MutRecBindingChecking =
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
                             let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
                             let (SynValData(memberFlagsOpt, _, _)) = valSynData 
+
                             match tcref.TypeOrMeasureKind with
                             | TyparKind.Type -> ()
                             | TyparKind.Measure ->
@@ -1671,9 +1688,15 @@ module MutRecBindingChecking =
                                     match memberFlags.MemberKind with 
                                     | SynMemberKind.Constructor -> error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembersNotConstructors(), m))
                                     | _ -> ()
+
+                            let envForMember = 
+                                match incrClassCtorLhsOpt with
+                                | None -> AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars envForTycon
+                                | Some _ -> envForTycon
+
                             let rbind = NormalizedRecBindingDefn(containerInfo, newslotsOK, declKind, bind)
                             let overridesOK = DeclKind.CanOverrideOrImplement declKind
-                            let (binds, _values), (tpenv, recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForTycon (tpenv, recBindIdx) rbind
+                            let (binds, _values), (tpenv, recBindIdx) = AnalyzeAndMakeAndPublishRecursiveValue overridesOK false cenv envForMember (tpenv, recBindIdx) rbind
                             let cbinds = [ for rbind in binds -> Phase2AMember rbind ]
 
                             let innerState = (incrClassCtorLhsOpt, envForTycon, tpenv, recBindIdx, List.rev binds @ uncheckedBindsRev)
@@ -2156,14 +2179,14 @@ module MutRecBindingChecking =
     /// Update the contents accessible via the recursive namespace declaration, if any
     let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
         match mutRecNSInfo with 
-        | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc) -> 
-            mspecNS.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc
+        | Some (Some (mspecNS: ModuleOrNamespace), mtypeAcc: _ ref) -> 
+            mspecNS.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
         | _ -> ()  
 
     /// Updates the types of the modules to contain the contents so far
     let TcMutRecDefns_UpdateModuleContents mutRecNSInfo defns =
         defns |> MutRecShapes.iterModules (fun (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), _) -> 
-              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc)  
+              mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value)  
 
         TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
@@ -2206,7 +2229,7 @@ module MutRecBindingChecking =
                 let envForDecls =
                     (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange, openDeclsRef) ->
                         let env, openDecls = TcOpenDecl cenv m moduleRange env target
-                        openDeclsRef := openDecls
+                        openDeclsRef.Value <- openDecls
                         env)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
@@ -3586,7 +3609,7 @@ module EstablishTypeDefinitionCores =
     /// Note that for 
     ///              type PairOfInts = int * int
     /// then after running this phase and checking for cycles, operations 
-    // such as 'isRefTupleTy' will return reliable results, e.g. isRefTupleTy on the 
+    /// such as 'isRefTupleTy' will return reliable results, e.g. isRefTupleTy on the
     /// TAST type for 'PairOfInts' will report 'true' 
     //
     let private TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations (cenv: cenv) envinner inSig tpenv pass (MutRecDefnsPhase1DataForTycon(_, synTyconRepr, _, _, _, _)) (tycon: Tycon) (attrs: Attribs) =
@@ -5120,7 +5143,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
-            let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+            let mtypNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
             let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
             let mspecNSOpt = List.tryHead mspecNSs
 
@@ -5151,7 +5174,8 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                         | None -> env, []
 
                     // Publish the combined module type
-                    env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
+                    env.eModuleOrNamespaceTypeAccumulator.Value <- 
+                        CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; mtypRoot]
                     env
 
             return env
@@ -5245,7 +5269,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
     let! envAtEnd = TcSignatureElements cenv parent endm envForModule xml None defs
     
     // mtypeAcc has now accumulated the module type 
-    return !mtypeAcc, envAtEnd
+    return mtypeAcc.Value, envAtEnd
   }
     
 //-------------------------------------------------------------------------
@@ -5389,7 +5413,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               let! mexpr, topAttrsNew, envAtEnd = TcModuleOrNamespaceElements cenv (Parent (mkLocalModRef mspec)) endm envForModule xml None [] mdefs 
 
               // Get the inferred type of the decls and record it in the mspec. 
-              mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+              mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
               let modDefn = TMDefRec(false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], m)
               PublishModuleDefn cenv env mspec 
               let env = AddLocalSubModuleAndReport cenv.tcSink scopem cenv.g cenv.amap m env mspec
@@ -5431,7 +5455,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let envNS = LocateEnv cenv.topCcu env enclosingNamespacePath
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
-          let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
+          let mtypNS = envNS.eModuleOrNamespaceTypeAccumulator.Value
           let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
           let mspecNSOpt = List.tryHead mspecNSs
 
@@ -5462,7 +5486,8 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                       | None -> env, []
 
                   // Publish the combined module type
-                  env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); mtypRoot]
+                  env.eModuleOrNamespaceTypeAccumulator.Value <-
+                      CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; mtypRoot]
                   env, openDecls
           
           let modExprRoot = BuildRootModuleExpr enclosingNamespacePath envNS.eCompPath modExpr
@@ -5592,7 +5617,7 @@ and TcMutRecDefsFinish cenv defs m =
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _), mdefs) -> 
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
-                mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
+                mspec.entity_modul_contents <- MaybeLazy.Strict mtypeAcc.Value
                 [ ModuleOrNamespaceBinding.Module(mspec, mexpr) ])
 
     TMDefRec(true, opens, tycons, binds, m)
@@ -5841,7 +5866,7 @@ let TypeCheckOneImplFile
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
     let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs
 
-    let implFileTypePriorToSig = !mtypeAcc 
+    let implFileTypePriorToSig = mtypeAcc.Value
 
     let topAttrs = 
         let mainMethodAttrs, others = topAttrs |> List.partition (fun (possTargets, _) -> possTargets &&& AttributeTargets.Method <> enum 0) 
@@ -5955,7 +5980,7 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
     let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
     
-    let sigFileType = !mtypeAcc 
+    let sigFileType = mtypeAcc.Value
     
     if not (checkForErrors()) then  
         try sigFileType |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv))

@@ -627,8 +627,8 @@ type ILTokenMappings =
       PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
       EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
 
-let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
-    requiredDataFixups := (pos, lab) :: !requiredDataFixups
+let recordRequiredDataFixup (requiredDataFixups: ('T * 'U) list ref) (buf: ByteBuffer) pos lab =
+    requiredDataFixups.Value <- (pos, lab) :: requiredDataFixups.Value
     // Write a special value in that we check later when applying the fixup
     buf.EmitInt32 0xdeaddddd
 
@@ -1586,23 +1586,22 @@ module Codebuf =
       // or long and adjusting the branch destinations. Record an adjust function to adjust all the other
       // gumpf that refers to fixed offsets in the code stream.
       let newCode, newReqdBrFixups, adjuster =
-          let remainingReqdFixups = ref orderedOrigReqdBrFixups
-          let origWhere = ref 0
-          let newWhere = ref 0
-          let doneLast = ref false
-          let newReqdBrFixups = ref []
+          let mutable remainingReqdFixups = orderedOrigReqdBrFixups
+          let mutable origWhere = 0
+          let mutable newWhere = 0
+          let mutable doneLast = false
+          let mutable newReqdBrFixups = []
+          let mutable adjustments = []
 
-          let adjustments = ref []
-
-          while (!remainingReqdFixups <> [] || not !doneLast) do
-              let doingLast = isNil !remainingReqdFixups
-              let origStartOfNoBranchBlock = !origWhere
-              let newStartOfNoBranchBlock = !newWhere
+          while (remainingReqdFixups <> [] || not doneLast) do
+              let doingLast = isNil remainingReqdFixups
+              let origStartOfNoBranchBlock = origWhere
+              let newStartOfNoBranchBlock = newWhere
 
               let origEndOfNoBranchBlock =
                 if doingLast then origCode.Length
                 else
-                  let _, origStartOfInstr, _ = List.head !remainingReqdFixups
+                  let _, origStartOfInstr, _ = List.head remainingReqdFixups
                   origStartOfInstr
 
               // Copy over a chunk of non-branching code
@@ -1611,25 +1610,25 @@ module Codebuf =
 
               // Record how to adjust addresses in this range, including the branch instruction
               // we write below, or the end of the method if we're doing the last bblock
-              adjustments := (origStartOfNoBranchBlock, origEndOfNoBranchBlock, newStartOfNoBranchBlock) :: !adjustments
+              adjustments <- (origStartOfNoBranchBlock, origEndOfNoBranchBlock, newStartOfNoBranchBlock) :: adjustments
 
               // Increment locations to the branch instruction we're really interested in
-              origWhere := origEndOfNoBranchBlock
-              newWhere := !newWhere + nobranch_len
+              origWhere <- origEndOfNoBranchBlock
+              newWhere <- newWhere + nobranch_len
 
               // Now do the branch instruction. Decide whether the fixup will be short or long in the new code
               if doingLast then
-                  doneLast := true
+                  doneLast <- true
               else
-                  let (i, origStartOfInstr, tgs: ILCodeLabel list) = List.head !remainingReqdFixups
-                  remainingReqdFixups := List.tail !remainingReqdFixups
+                  let (i, origStartOfInstr, tgs: ILCodeLabel list) = List.head remainingReqdFixups
+                  remainingReqdFixups <-List.tail remainingReqdFixups
                   if origCode.[origStartOfInstr] <> 0x11uy then failwith "br fixup sanity check failed (1)"
                   let i_length = if fst i = i_switch then 5 else 1
-                  origWhere := !origWhere + i_length
+                  origWhere <- origWhere + i_length
 
                   let origEndOfInstr = origStartOfInstr + i_length + 4 * tgs.Length
-                  let newEndOfInstrIfSmall = !newWhere + i_length + 1
-                  let newEndOfInstrIfBig = !newWhere + i_length + 4 * tgs.Length
+                  let newEndOfInstrIfSmall = newWhere + i_length + 1
+                  let newEndOfInstrIfBig = newWhere + i_length + 4 * tgs.Length
 
                   let short =
                     match i, tgs with
@@ -1654,28 +1653,28 @@ module Codebuf =
                           newCode.EmitInt32 tgs.Length)
                         false
 
-                  newWhere := !newWhere + i_length
-                  if !newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
+                  newWhere <- newWhere + i_length
+                  if newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
 
                   tgs |> List.iter (fun tg ->
-                        let origFixupLoc = !origWhere
+                        let origFixupLoc = origWhere
                         checkFixup32 origCode origFixupLoc 0xdeadbbbb
 
                         if short then
-                            newReqdBrFixups := (!newWhere, newEndOfInstrIfSmall, tg, true) :: !newReqdBrFixups
+                            newReqdBrFixups <- (newWhere, newEndOfInstrIfSmall, tg, true) :: newReqdBrFixups
                             newCode.EmitIntAsByte 0x98 (* sanity check *)
-                            newWhere := !newWhere + 1
+                            newWhere <- newWhere + 1
                         else
-                            newReqdBrFixups := (!newWhere, newEndOfInstrIfBig, tg, false) :: !newReqdBrFixups
+                            newReqdBrFixups <- (newWhere, newEndOfInstrIfBig, tg, false) :: newReqdBrFixups
                             newCode.EmitInt32 0xf00dd00f (* sanity check *)
-                            newWhere := !newWhere + 4
-                        if !newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
-                        origWhere := !origWhere + 4)
+                            newWhere <- newWhere + 4
+                        if newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
+                        origWhere <- origWhere + 4)
 
-                  if !origWhere <> origEndOfInstr then dprintn "mismatch between origWhere and origEndOfInstr"
+                  if origWhere <> origEndOfInstr then dprintn "mismatch between origWhere and origEndOfInstr"
 
           let adjuster =
-            let arr = Array.ofList (List.rev !adjustments)
+            let arr = Array.ofList (List.rev adjustments)
             fun addr ->
               let i =
                   try binaryChop (fun (a1, a2, _) -> if addr < a1 then -1 elif addr > a2 then 1 else 0) arr
@@ -1686,7 +1685,7 @@ module Codebuf =
               addr - (origStartOfNoBranchBlock - newStartOfNoBranchBlock)
 
           newCode.AsMemory().ToArray(),
-          !newReqdBrFixups,
+          newReqdBrFixups,
           adjuster
 
       // Now adjust everything
@@ -3181,11 +3180,11 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let stringAddressTable =
         let tab = Array.create (strings.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to strings.Length do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let s = strings.[i - 1]
-            pos := !pos + s.Length
+            pos <- pos + s.Length
         tab
 
     let stringAddress n =
@@ -3194,12 +3193,12 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let userStringAddressTable =
         let tab = Array.create (Array.length userStrings + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to Array.length userStrings do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let s = userStrings.[i - 1]
             let n = s.Length + 1
-            pos := !pos + n + ByteBuffer.Z32Size n
+            pos <- pos + n + ByteBuffer.Z32Size n
         tab
 
     let userStringAddress n =
@@ -3208,11 +3207,11 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let blobAddressTable =
         let tab = Array.create (blobs.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to blobs.Length do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let blob = blobs.[i - 1]
-            pos := !pos + blob.Length + ByteBuffer.Z32Size blob.Length
+            pos <- pos + blob.Length + ByteBuffer.Z32Size blob.Length
         tab
 
     let blobAddress n =
@@ -3483,7 +3482,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
               applyFixup32 code locInCode token
     reportTime showTimes "Fixup Metadata"
 
-    entryPointToken, code, codePadding, metadata, data, resources, !requiredDataFixups, pdbData, mappings, guidStart
+    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -4331,7 +4330,7 @@ and writePdb (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfi
     end
     reportTime showTimes "Finalize PDB"
 
-    /// Sign the binary. No further changes to binary allowed past this point!
+    // Sign the binary. No further changes to binary allowed past this point!
     match signer with
     | None -> ()
     | Some s ->

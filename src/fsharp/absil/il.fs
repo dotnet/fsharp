@@ -52,6 +52,17 @@ type PrimaryAssembly =
 // Utilities: type names
 // --------------------------------------------------------------------
 
+/// Global State. All namespace splits ever seen
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
+let memoizeNamespaceTable = ConcurrentDictionary<string, string list>()
+
+//  ++GLOBAL MUTABLE STATE (concurrency-safe)
+let memoizeNamespaceRightTable = ConcurrentDictionary<string, string option * string>()
+
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
+let memoizeNamespacePartTable = ConcurrentDictionary<string, string>()
+
+
 let splitNameAt (nm: string) idx =
     if idx < 0 then failwith "splitNameAt: idx < 0"
     let last = nm.Length - 1
@@ -64,14 +75,8 @@ let rec splitNamespaceAux (nm: string) =
     | -1 -> [nm]
     | idx ->
         let s1, s2 = splitNameAt nm idx
+        let s1 = memoizeNamespacePartTable.GetOrAdd(s1, id)
         s1 :: splitNamespaceAux s2
-
-/// Global State. All namespace splits ever seen
-// ++GLOBAL MUTABLE STATE (concurrency-safe)
-let memoizeNamespaceTable = ConcurrentDictionary<string, string list>()
-
-//  ++GLOBAL MUTABLE STATE (concurrency-safe)
-let memoizeNamespaceRightTable = ConcurrentDictionary<string, string option * string>()
 
 
 let splitNamespace nm =

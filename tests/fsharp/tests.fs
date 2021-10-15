@@ -1557,7 +1557,7 @@ module CoreTests =
     let ``math-numbersVS2008-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI_BASIC
 
     [<Test>]
-    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSC_BASIC "preview"
 
 //BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
 //    [<Test>]
@@ -2762,8 +2762,10 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
     [<Test>]
     let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+#endif
 
     [<Test>]
     let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"

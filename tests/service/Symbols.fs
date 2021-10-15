@@ -7,6 +7,7 @@
 module Tests.Service.Symbols
 #endif
 
+open System
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -1583,3 +1584,42 @@ else (* some long comment here *) if c then
             assertRange (4, 34) (4, 36) mIf2
 
         | _ -> Assert.Fail "Could not get valid AST"
+
+
+module UnionCaseComments =
+    [<Test>]
+    let ``Union Case fields can have comments`` () =
+        let ast = """
+type Foo =
+/// docs for Thing
+| Thing of
+  /// docs for first
+  first: string *
+  /// docs for anon field
+  bool
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types ([
+                    SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
+                        SynUnionCase.SynUnionCase (caseType = SynUnionCaseKind.Fields [
+                            SynField.SynField(xmlDoc = firstXml)
+                            SynField.SynField(xmlDoc = anonXml)
+                        ])
+                    ])))
+                ], _)
+            ])
+          ])) ->
+            let firstDocs = firstXml.ToXmlDoc(false, None).GetXmlText()
+            let anonDocs = anonXml.ToXmlDoc(false, None).GetXmlText()
+
+            let nl = Environment.NewLine
+
+            Assert.AreEqual($"<summary>{nl} docs for first{nl}</summary>", firstDocs)
+            Assert.AreEqual($"<summary>{nl} docs for anon field{nl}</summary>", anonDocs)
+
+        | _ ->
+            failwith "Could not find SynExpr.Do"

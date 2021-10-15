@@ -12,11 +12,11 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Collections
 
-    [<Struct; NoComparison; NoEquality>]
-    [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     /// <summary>
     /// The extra data stored in ResumableStateMachine for tasks
     /// </summary>
+    [<Struct; NoComparison; NoEquality>]
+    [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     type TaskStateMachineData<'T> =
 
         /// <summary>
@@ -143,6 +143,8 @@ namespace Microsoft.FSharp.Control
         /// <summary>
         /// Builds a task using computation expression syntax.
         /// </summary>
+        /// 
+        /// <example-tbd></example-tbd>
         val task: TaskBuilder
 
         /// <summary>
@@ -155,6 +157,8 @@ namespace Microsoft.FSharp.Control
         /// If created on a background thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is null) it is executed immeidately
         /// immediately on that thread.
         /// </remarks>
+        /// 
+        /// <example-tbd></example-tbd>
         val backgroundTask: BackgroundTaskBuilder
     
 

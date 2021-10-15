@@ -535,7 +535,7 @@ type BoundModel private (tcConfig: TcConfig,
                         
                         let tcInfoExtras =
                             {
-                                /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                 latestImplFile = if keepAssemblyContents then implFile else None
                                 tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
                                 tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
@@ -668,7 +668,7 @@ module Utilities =
         | _ -> None
 
 /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
-//
+///
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.

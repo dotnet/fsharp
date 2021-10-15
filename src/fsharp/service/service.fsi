@@ -15,8 +15,8 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-[<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.
+[<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
     /// <summary>
     /// Create an instance of an FSharpChecker.
