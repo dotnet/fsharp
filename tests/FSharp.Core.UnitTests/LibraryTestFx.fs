@@ -83,10 +83,10 @@ module SurfaceArea =
                 let cast (info: #MemberInfo) = (t, info :> MemberInfo)
                 let isDeclaredInFSharpCore (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCoreFullName
                 seq {
-                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
-                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
-                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
-                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! ti.DeclaredEvents     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! ti.DeclaredProperties |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! ti.DeclaredMethods    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! ti.DeclaredFields     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
@@ -107,58 +107,27 @@ module SurfaceArea =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
         let asm, actualNotNormalized = getActual ()
-        let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
+        let actual = 
+            actualNotNormalized 
+            |> Seq.map normalize 
+            |> Seq.filter (String.IsNullOrWhiteSpace >> not) 
+            |> String.concat Environment.NewLine
         
-        let expected =
-            // Split the "expected" string into individual lines, then normalize it.
-            (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
-            |> set
+        let expected = normalize expected
 
-        //
-        // Find types/members which exist in exactly one of the expected or actual surface areas.
-        //
-
-        /// Surface area types/members which were expected to be found but missing from the actual surface area.
-        let unexpectedlyMissing = Set.difference expected actual
-
-        /// Surface area types/members present in the actual surface area but weren't expected to be.
-        let unexpectedlyPresent = Set.difference actual expected
-
-        // If both sets are empty, the surface areas match so allow the test to pass.
-        if Set.isEmpty unexpectedlyMissing
-          && Set.isEmpty unexpectedlyPresent then
-            // pass
-            ()
-        else
-
+        match Tests.TestHelpers.assembleDiffMessage actual expected with
+        | None -> ()
+        | Some diff ->
             let logFile =
                 let workDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                 sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
             System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
-            // The surface areas don't match; prepare an easily-readable output message.
-            let msg =
-                let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
-                let sb = System.Text.StringBuilder ()
-                Printf.bprintf sb "Assembly: %A" asm
-                newLine sb
-                sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
-                Printf.bprintf sb "    windiff %s %s" fileName logFile
-                newLine sb
-                newLine sb
-                sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
-                for s in unexpectedlyMissing do
-                    newLine sb
-                    sb.Append "    " |> ignore
-                    sb.Append s |> ignore
-                newLine sb
-                newLine sb
-                sb.Append "Unexpectedly present (actual, not expected):" |> ignore
-                for s in unexpectedlyPresent do
-                    newLine sb
-                    sb.Append "    " |> ignore
-                    sb.Append s |> ignore
-                newLine sb
-                sb.ToString ()
+            let msg = $"""Assembly: %A{asm}
+
+              Expected and actual surface area don't match. To see the delta, run:
+                  windiff %s{fileName} %s{logFile}
+
+              {diff}"""
 
             failwith msg

@@ -270,7 +270,7 @@ type SeqModule() =
         let stringArray = [|"a";"b"|]
         let stringSeq = Seq.cast stringArray
         
-        let expectedStringSeq = seq["a";"b"]
+        let expectedStringSeq = seq ["a";"b"]
         
         VerifySeqsEqual expectedStringSeq stringSeq
         
@@ -467,7 +467,7 @@ type SeqModule() =
         VerifySeqsEqual expectedStrSeq conStrSeq
         
         // Empty Seq
-        let emptySeqs = seq [seq[ Seq.empty;Seq.empty];seq[ Seq.empty;Seq.empty]]
+        let emptySeqs = seq [seq [ Seq.empty;Seq.empty];seq [ Seq.empty;Seq.empty]]
         let conEmptySeq = Seq.concat emptySeqs
         let expectedEmptySeq =seq { for i in 1..4 do yield Seq.empty}
         

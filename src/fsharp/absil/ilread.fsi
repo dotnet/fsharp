@@ -30,7 +30,7 @@ open System.IO
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type ILReaderMetadataSnapshot = obj * nativeint * int 
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
@@ -65,7 +65,7 @@ type public ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
     
-    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    // ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     inherit System.IDisposable
 
 

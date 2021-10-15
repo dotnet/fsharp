@@ -101,7 +101,6 @@ type internal FSharpLanguageServiceTestable() as this =
             match checkerContainerOpt with
             | Some container -> 
                 let checker = container
-                checker.StopBackgroundCompile()
                 checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             | None -> ()
             
@@ -130,7 +129,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
         let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
-        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
+        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunImmediate
 
     member this.OnActiveViewChanged(textView) =
         bgRequests.OnActiveViewChanged(textView)
@@ -225,4 +224,4 @@ type internal FSharpLanguageServiceTestable() as this =
     //
     // This is for unit testing only
     member this.WaitForBackgroundCompile() =
-        this.FSharpChecker.WaitForBackgroundCompile()
+        ()

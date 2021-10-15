@@ -3,8 +3,8 @@
 
 // System.Func<...> is in System.Core.dll (NetFx3.5)
 
-//<Expects status="success">val f : d:System\.Func<int> -> int</Expects>
-//<Expects status="success">val it : int = 11</Expects>
+//<Expects status="success">val f: d: System\.Func<int> -> int</Expects>
+//<Expects status="success">val it: int = 11</Expects>
 
 let f ( d : System.Func<int> ) = d.Invoke() + 1;;
 

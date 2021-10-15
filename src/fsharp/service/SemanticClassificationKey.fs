@@ -8,10 +8,6 @@ open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
-open FSharp.Compiler.Text.Range
 
 #nowarn "9"
 
@@ -50,7 +46,7 @@ type SemanticClassificationKeyStore(mmf: MemoryMappedFile, length) =
                 isDisposed <- true
                 mmf.Dispose()
 
-[<Sealed>] 
+[<Sealed>]
 type SemanticClassificationKeyStoreBuilder() =
 
     let b = BlobBuilder()
@@ -62,13 +58,13 @@ type SemanticClassificationKeyStoreBuilder() =
     member _.TryBuildAndReset() =
         if b.Count > 0 then
             let length = int64 b.Count
-            let mmf = 
+            let mmf =
                 let mmf =
                     MemoryMappedFile.CreateNew(
-                        null, 
-                        length, 
-                        MemoryMappedFileAccess.ReadWrite, 
-                        MemoryMappedFileOptions.None, 
+                        null,
+                        length,
+                        MemoryMappedFileAccess.ReadWrite,
+                        MemoryMappedFileOptions.None,
                         HandleInheritability.None)
                 use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                 b.WriteContentTo stream
@@ -76,7 +72,7 @@ type SemanticClassificationKeyStoreBuilder() =
 
             b.Clear()
 
-            Some(new SemanticClassificationKeyStore(mmf, length))       
+            Some(new SemanticClassificationKeyStore(mmf, length))
         else
             b.Clear()
             None

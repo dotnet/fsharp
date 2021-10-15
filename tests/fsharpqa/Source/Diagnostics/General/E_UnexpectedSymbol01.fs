@@ -1,7 +1,7 @@
 // #Regression #Diagnostics 
 // Regression test for FSHARP1.0:2099
 // Regression test for FSHARP1.0:2670
-//<Expects id="FS0010" span="(18,50-18,52)" status="error">Unexpected symbol '<-' in pattern</Expects>
+//<Expects id="FS0010" span="(18,50-18,52)" status="error">Unexpected symbol '<-' in binding. Expected '=' or other token.</Expects>
 //<Expects id="FS0588" span="(18,42-18,45)" status="error">The block following this 'let' is unfinished. Every code block is an expression and must have a result. 'let' cannot be the final code element in a block. Consider giving this block an explicit result.</Expects>
 //<Expects status="notin">lambda</Expects>
 

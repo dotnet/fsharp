@@ -8,6 +8,15 @@ open System.Collections.Generic
 /// An index into a global tables of filenames
 type internal FileIndex = int32 
 
+[<RequireQualifiedAccess>]
+type internal RangeDebugPointKind =
+    | None
+    | While
+    | For
+    | Try
+    | Binding
+    | Finally
+
 /// Represents a position in a file
 [<Struct; CustomEquality; NoComparison>]
 type Position =
@@ -20,6 +29,9 @@ type Position =
 
     /// The encoding of the position as a 64-bit integer
     member internal Encoding: int64
+
+    /// Check if the position is adjacent to another postition
+    member internal IsAdjacentTo: otherPos: Position -> bool
 
     /// Decode a position fro a 64-bit integer
     static member internal Decode: int64 -> pos
@@ -69,8 +81,18 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
+    /// When de-sugaring computation expressions we convert a debug point into a plain range, and then later
+    /// recover that the range definitely indicates a debug point.
+    member internal DebugPointKind: RangeDebugPointKind
+
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
+
+    /// Note that a range indicates a debug point
+    member internal NoteDebugPoint: kind: RangeDebugPointKind -> range
+
+    /// Check if the range is adjacent to another range
+    member internal IsAdjacentTo: otherRange: Range -> bool
 
     /// Convert a range to string
     member internal ToShortString: unit -> string

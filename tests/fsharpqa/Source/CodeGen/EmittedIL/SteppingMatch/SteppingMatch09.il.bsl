@@ -36,13 +36,13 @@
   // Offset: 0x00000310 Length: 0x000000EB
 }
 .module SteppingMatch09.dll
-// MVID: {5FCFFD1E-4935-D6AC-A745-03831EFDCF5F}
+// MVID: {611C4D99-4935-D6AC-A745-0383994D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05580000
+// Image base: 0x07080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -121,7 +121,7 @@
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T> list) cil managed
     {
-      // Code size       23 (0x17)
+      // Code size       20 (0x14)
       .maxstack  6
       .locals init ([0] class SteppingMatch09/GenericInner@15 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
@@ -129,21 +129,19 @@
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class SteppingMatch09/GenericInner@15 class SteppingMatch09/GenericInner@15T<!T>::self0@
       IL_0006:  stloc.0
-      IL_0007:  ldarg.1
-      IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>::get_TailOrNull()
-      IL_000d:  brtrue.s   IL_0011
-
-      IL_000f:  br.s       IL_0013
-
-      IL_0011:  br.s       IL_0015
+      IL_0007:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0008:  ldarg.1
+      IL_0009:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>::get_TailOrNull()
+      IL_000e:  brtrue.s   IL_0012
 
       .line 17,17 : 14,15 ''
-      IL_0013:  ldc.i4.1
-      IL_0014:  ret
+      IL_0010:  ldc.i4.1
+      IL_0011:  ret
 
       .line 18,18 : 13,14 ''
-      IL_0015:  ldc.i4.2
-      IL_0016:  ret
+      IL_0012:  ldc.i4.2
+      IL_0013:  ret
     } // end of method GenericInner@15T::Invoke
 
   } // end of class GenericInner@15T
@@ -167,24 +165,22 @@
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
     {
-      // Code size       16 (0x10)
+      // Code size       13 (0xd)
       .maxstack  8
       .line 25,25 : 6,21 ''
-      IL_0000:  ldarg.1
-      IL_0001:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_000c
-
-      IL_000a:  br.s       IL_000e
+      IL_0000:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0001:  ldarg.1
+      IL_0002:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+      IL_0007:  brtrue.s   IL_000b
 
       .line 26,26 : 14,15 ''
-      IL_000c:  ldc.i4.1
-      IL_000d:  ret
+      IL_0009:  ldc.i4.1
+      IL_000a:  ret
 
       .line 27,27 : 13,14 ''
-      IL_000e:  ldc.i4.2
-      IL_000f:  ret
+      IL_000b:  ldc.i4.2
+      IL_000c:  ret
     } // end of method NonGenericInner@25::Invoke
 
     .method private specialname rtspecialname static 
@@ -221,25 +217,23 @@
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> list) cil managed
     {
-      // Code size       21 (0x15)
+      // Code size       18 (0x12)
       .maxstack  8
       .line 34,34 : 6,21 ''
-      IL_0000:  ldarg.1
-      IL_0001:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_000c
-
-      IL_000a:  br.s       IL_000e
+      IL_0000:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0001:  ldarg.1
+      IL_0002:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+      IL_0007:  brtrue.s   IL_000b
 
       .line 35,35 : 14,15 ''
-      IL_000c:  ldc.i4.1
-      IL_000d:  ret
+      IL_0009:  ldc.i4.1
+      IL_000a:  ret
 
       .line 36,36 : 13,14 ''
-      IL_000e:  ldarg.0
-      IL_000f:  ldfld      int32 SteppingMatch09/NonGenericInnerWithCapture@34::x
-      IL_0014:  ret
+      IL_000b:  ldarg.0
+      IL_000c:  ldfld      int32 SteppingMatch09/NonGenericInnerWithCapture@34::x
+      IL_0011:  ret
     } // end of method NonGenericInnerWithCapture@34::Invoke
 
   } // end of class NonGenericInnerWithCapture@34
@@ -247,34 +241,32 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32> 
           funcA(int32 n) cil managed
   {
-    // Code size       40 (0x28)
+    // Code size       37 (0x25)
     .maxstack  8
     .line 5,5 : 9,21 ''
-    IL_0000:  ldarg.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  sub
-    IL_0003:  switch     ( 
-                          IL_0012,
-                          IL_0014)
-    IL_0010:  br.s       IL_0020
-
-    IL_0012:  br.s       IL_0016
-
-    IL_0014:  br.s       IL_001e
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  ldarg.0
+    IL_0002:  ldc.i4.1
+    IL_0003:  sub
+    IL_0004:  switch     ( 
+                          IL_0013,
+                          IL_001b)
+    IL_0011:  br.s       IL_001d
 
     .line 7,7 : 13,21 ''
-    IL_0016:  ldc.i4.s   10
-    IL_0018:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
-    IL_001d:  ret
+    IL_0013:  ldc.i4.s   10
+    IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
+    IL_001a:  ret
 
     .line 9,9 : 13,17 ''
-    IL_001e:  ldnull
-    IL_001f:  ret
+    IL_001b:  ldnull
+    IL_001c:  ret
 
     .line 11,11 : 20,34 ''
-    IL_0020:  ldc.i4.s   22
-    IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
-    IL_0027:  ret
+    IL_001d:  ldc.i4.s   22
+    IL_001f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<int32>::Some(!0)
+    IL_0024:  ret
   } // end of method SteppingMatch09::funcA
 
   .method public static int32  OuterWithGenericInner<a>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> list) cil managed

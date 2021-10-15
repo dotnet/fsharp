@@ -2,9 +2,9 @@
 
 module internal Internal.Utilities.Library.Extras
 
-open System.Collections.Generic
 open System.IO
 open System.Text
+open System.Collections.Generic
 open Internal.Utilities.Collections
 
 val debug: bool
@@ -41,14 +41,6 @@ module Bits =
     val mask32: m:int32 -> n:int -> int
 
     val mask64: m:int32 -> n:int -> int64
-
-module Filename =
-
-    val fullpath: cwd:string -> nm:string -> string
-
-    val hasSuffixCaseInsensitive: suffix:string -> filename:string -> bool
-
-    val isDll: file:string -> bool
 
 module Bool =
     val order: IComparer<bool>
@@ -126,7 +118,7 @@ module ListAssoc =
 module ListSet =
     val inline contains: f:('a -> 'b -> bool) -> x:'a -> l:'b list -> bool
 
-    /// NOTE: O(n)! 
+    /// NOTE: O(n)!
     val insert: f:('a -> 'a -> bool) -> x:'a -> l:'a list -> 'a list
 
     val unionFavourRight : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
@@ -147,7 +139,7 @@ module ListSet =
 
     val unionFavourLeft : f:('a -> 'a -> bool) -> l1:'a list -> l2:'a list -> 'a list
 
-    /// NOTE: not tail recursive! 
+    /// NOTE: not tail recursive!
     val intersect : f:('a -> 'b -> bool) -> l1:'b list -> l2:'a list -> 'a list
 
     /// Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -166,6 +158,24 @@ val p13: x:'a * _y:'b * _z:'c -> 'a
 val p23: _x:'a * y:'b * _z:'c -> 'b
 
 val p33: _x:'a * _y:'b * z:'c -> 'c
+
+val p14: x1:'a * _x2:'b * _x3:'c * _x4:'d -> 'a
+
+val p24: _x1:'a * x2:'b * _x3:'c * _x4:'d -> 'b
+
+val p34: _x1:'a * _x2:'b * x3:'c * _x4:'d -> 'c
+
+val p44: _x1:'a * _x2:'b * _x3:'c * x4:'d -> 'd
+
+val p15: x1:'a * _x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'a
+
+val p25: _x1:'a * x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'b
+
+val p35: _x1:'a * _x2:'b * x3:'c * _x4:'d * _x5:'e -> 'c
+
+val p45: _x1:'a * _x2:'b * _x3:'c * x4:'d * _x5:'e -> 'd
+
+val p55: _x1:'a * _x2:'b * _x3:'c * _x4:'d * x5:'e -> 'e
 
 val map1Of2: f:('a -> 'b) -> a1:'a * a2:'c -> 'b * 'c
 
@@ -221,7 +231,7 @@ type Graph<'Data,'Id when 'Id: comparison> =
             edges:('Data * 'Data) list -> Graph<'Data,'Id>
       member GetNodeData: nodeId:'Id -> 'Data
       member IterateCycles: f:('Data list -> unit) -> unit
-  
+
 /// In some cases we play games where we use 'null' as a more efficient representation
 /// in F#. The functions below are used to give initial values to mutable fields.
 /// This is an unsafe trick, as it relies on the fact that the type of values
@@ -249,34 +259,34 @@ val inline tryGetCacheValue: cache:cache<'a> -> NonNullSlot<'a> voption
 module AsyncUtil =
 
     /// Represents the reified result of an asynchronous computation.
-    [<NoEqualityAttribute; NoComparisonAttribute>]
+    [<NoEquality; NoComparison>]
     type AsyncResult<'T> =
         | AsyncOk of 'T
         | AsyncException of exn
         | AsyncCanceled of System.OperationCanceledException
         static member Commit: res:AsyncResult<'T> -> Async<'T>
-    
+
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<SealedAttribute>]
+    [<Sealed>]
     type AsyncResultCell<'T> =
-  
+
         new: unit -> AsyncResultCell<'T>
         member RegisterResult: res:AsyncResult<'T> -> unit
         member AsyncResult: Async<'T>
-    
+
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
 module StackGuard =
     val EnsureSufficientExecutionStack: recursionDepth:int -> unit
 
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of System.Lazy<'T>
     member Force: unit -> 'T
     member Value: 'T
-  
+
 val inline vsnd: struct ('T * 'T) -> 'T
 
 /// Track a set of resources to cleanup

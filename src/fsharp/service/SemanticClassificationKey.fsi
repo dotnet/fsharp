@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.EditorServices
 
 open System
-open FSharp.Compiler.CodeAnalysis
 
 /// Provides a read only view to iterate over the semantic classification contents.
 [<Sealed>]

@@ -166,6 +166,9 @@ module Bug_FSharp_1_0_6307 =
     // below does not parse
     let t = typeof<global.System.Int32>
 
+module TestSetHashCodeCase =
+    let s = Set.singleton 2147483017
+    s.GetHashCode()  // this was failing due to use of 'abs' in GetHashCode
 
 #if TESTS_AS_APP
 let RUN() = !failures

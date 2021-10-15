@@ -42,11 +42,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =
-            match list with
-            | [] -> []
-            | _ ->
-
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =            
             let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
@@ -67,9 +63,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-            if typeof<'Key>.IsValueType
-                then countByValueType projection list
-                else countByRefType   projection list
+            match list with
+            | [] -> []
+            | _ ->
+                if typeof<'Key>.IsValueType
+                    then countByValueType projection list
+                    else countByRefType   projection list
 
         [<CompiledName("Map")>]
         let map mapping list = Microsoft.FSharp.Primitives.Basics.List.map mapping list
@@ -440,9 +439,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-            if typeof<'Key>.IsValueType
-                then groupByValueType projection list
-                else groupByRefType   projection list
+            match list with
+            | [] -> []
+            | _ ->
+                if typeof<'Key>.IsValueType
+                    then groupByValueType projection list
+                    else groupByRefType   projection list
 
         [<CompiledName("Partition")>]
         let partition predicate list = Microsoft.FSharp.Primitives.Basics.List.partition predicate list
@@ -690,3 +692,89 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold<'T, 'State> (generator:'State -> ('T*'State) option) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold generator state
+
+        [<CompiledName("RemoveAt")>]
+        let removeAt (index: int) (source: 'T list) : 'T list =
+            if index < 0 then invalidArg "index" "index must be within bounds of the list"
+
+            let mutable i = 0
+            let mutable coll = ListCollector()
+            let mutable curr = source
+            while i < index do // traverse and save the linked list until item to be removed
+                  match curr with
+                  | [] -> invalidArg "index" "index must be within bounds of the list" 
+                  | h::t ->
+                      coll.Add(h)
+                      curr <- t
+                  i <- i + 1
+            if curr.IsEmpty then invalidArg "index" "index must be within bounds of the list"
+            else coll.AddManyAndClose(curr.Tail) // when i = index, Head is the item which is ignored and Tail is the rest of the list
+    
+        [<CompiledName("RemoveManyAt")>]
+        let removeManyAt (index: int) (count: int) (source: 'T list) : 'T list =
+            if index < 0 then invalidArg "index" "index must be within bounds of the list"
+
+            let mutable i = 0
+            let mutable coll = ListCollector()
+            let mutable curr = source
+            while i < index + count do // traverse and save the linked list until the last item to be removed
+                  match curr with
+                  | [] -> invalidArg "index" "index must be within bounds of the list" 
+                  | h::t ->
+                      if i < index then coll.Add(h) //items before index we keep
+                      curr <- t
+                  i <- i + 1
+            coll.AddManyAndClose(curr) // when i = index + count, we keep the rest of the list
+    
+        [<CompiledName("UpdateAt")>]
+        let updateAt (index: int) (value: 'T) (source: 'T list) : 'T list =
+            if index < 0 then invalidArg "index" "index must be within bounds of the list"
+
+            let mutable i = 0
+            let mutable coll = ListCollector()
+            let mutable curr = source
+            while i < index do // Traverse and save the linked list until index
+                  match curr with
+                  | [] -> invalidArg "index" "index must be within bounds of the list" 
+                  | h::t ->
+                      coll.Add(h)
+                      curr <- t
+                  i <- i + 1
+            coll.Add(value) // add value instead of Head
+            if curr.IsEmpty then invalidArg "index" "index must be within bounds of the list"
+            else coll.AddManyAndClose(curr.Tail)
+    
+        [<CompiledName("InsertAt")>]
+        let insertAt (index: int) (value: 'T) (source: 'T list) : 'T list =
+            if index < 0 then invalidArg "index" "index must be within bounds of the list"
+
+            let mutable i = 0
+            let mutable coll = ListCollector()
+            let mutable curr = source
+            while i < index do // traverse and save the linked list until index
+                  match curr with
+                  | [] -> invalidArg "index" "index must be within bounds of the list" 
+                  | h::t ->
+                      coll.Add(h)
+                      curr <- t
+                  i <- i + 1
+            
+            coll.Add(value)
+            coll.AddManyAndClose(curr) // insert item BEFORE the item at the index
+    
+        [<CompiledName("InsertManyAt")>]
+        let insertManyAt (index: int) (values: seq<'T>) (source: 'T list) : 'T list =
+            if index < 0 then invalidArg "index" "index must be within bounds of the list"
+
+            let mutable i = 0
+            let mutable coll = ListCollector()
+            let mutable curr = source
+            while i < index do // traverse and save the linked list until index
+                  match curr with
+                  | [] -> invalidArg "index" "index must be within bounds of the list" 
+                  | h::t ->
+                      coll.Add(h)
+                      curr <- t
+                  i <- i + 1
+            coll.AddMany(values) // insert values BEFORE the item at the index
+            coll.AddManyAndClose(curr)

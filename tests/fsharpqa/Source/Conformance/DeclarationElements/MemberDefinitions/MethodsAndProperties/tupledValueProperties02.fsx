@@ -4,10 +4,10 @@
 // Note: the non-curried syntax ((x:decimal, y:decimal)) is expected
 // Run thru fsi
 //<Expects status="success">  type x =</Expects>
-//<Expects status="success">    new : unit -> x</Expects>
-//<Expects status="success">    member Verify : int</Expects>
-//<Expects status="success">    member X : decimal \* decimal with set</Expects>
-//<Expects status="success">    member Y : decimal \* decimal with set</Expects>
+//<Expects status="success">    new: unit -> x</Expects>
+//<Expects status="success">    member Verify: int</Expects>
+//<Expects status="success">    member X: decimal \* decimal with set</Expects>
+//<Expects status="success">    member Y: decimal \* decimal with set</Expects>
 #light
 
 type x ()= class

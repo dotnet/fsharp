@@ -83,9 +83,3 @@ module public FSharpSymbolPatterns =
 
     val internal hasModuleSuffixAttribute: FSharpEntity -> bool
 
-    val internal isOperator: name: string -> bool
-
-    val internal isUnnamedUnionCaseField: FSharpField -> bool
-
-    val internal getEntityAbbreviatedType: FSharpEntity -> (FSharpEntity * FSharpType option)
-

@@ -47,17 +47,32 @@ namespace FSharp.Compiler.Service.Tests
 
         }
 
+        /// <summary>Some docs for Method</summary>
         public int Method(string parameter)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>Some docs for Method2</summary>
         public int Method2(string optParameter = "empty")
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>Some docs for Method3</summary>
         public int Method3(params string[] variadicParameter)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>Some docs for MethodWithOutref</summary>
+        public int MethodWithOutref(out int outParameter)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>Some docs for MethodWithInref</summary>
+        public int MethodWithInref(in int outParameter)
         {
             throw new NotImplementedException();
         }
