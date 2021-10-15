@@ -1046,9 +1046,6 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] 
     type uint64<[<Measure>] 'Measure> = uint64
     
-    [<MeasureAnnotatedAbbreviation>]
-    type uint64<[<Measure>] 'Measure> = uint64
-    
     /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
