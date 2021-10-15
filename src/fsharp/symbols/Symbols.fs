@@ -1332,12 +1332,12 @@ type FSharpGenericParameter(cenv, v:Typar) =
          v.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
     member _.Constraints = v.Constraints |> List.map (fun a -> FSharpGenericParameterConstraint(cenv, a)) |> makeReadOnlyCollection
     
-    member internal x.V = v
+    member internal x.TypeParameter = v
 
     override x.Equals(other: obj) =
         box x === other ||
         match other with
-        |   :? FSharpGenericParameter as p -> typarRefEq v p.V
+        |   :? FSharpGenericParameter as p -> typarRefEq v p.TypeParameter
         |   _ -> false
 
     override x.GetHashCode() = (hash v.Stamp)
@@ -2413,10 +2413,10 @@ type FSharpType(cenv, ty:TType) =
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
 
     member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
-        let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.V, ty.V)) ty
+        let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty
         FSharpType(cenv, typI)
 
-    member private x.V = ty
+    member x.Type = ty
     member private x.cenv = cenv
 
     member private ty.AdjustType t = 
@@ -2426,7 +2426,7 @@ type FSharpType(cenv, ty:TType) =
     override x.Equals(other: obj) =
         box x === other ||
         match other with
-        |   :? FSharpType as t -> typeEquiv cenv.g ty t.V
+        |   :? FSharpType as t -> typeEquiv cenv.g ty t.Type
         |   _ -> false
 
     // Note: This equivalence relation is modulo type abbreviations. The hash is less than perfect.
@@ -2467,7 +2467,7 @@ type FSharpType(cenv, ty:TType) =
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) ty 
 
     static member Prettify(ty: FSharpType) = 
-        let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.V  |> fst
+        let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.Type  |> fst
         ty.AdjustType prettyTy
 
     static member Prettify(types: IList<FSharpType>) = 
@@ -2476,7 +2476,7 @@ type FSharpType(cenv, ty:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTys = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> fst
+            let prettyTys = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.Type ] |> fst
             (xs, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType pty)
         |> makeReadOnlyCollection
 
