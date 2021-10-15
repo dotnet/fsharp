@@ -6467,7 +6467,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     Guid outputPaneGuid = VSConstants.GUID_BuildOutputWindowPane;
                     if (outputWindow.GetPane(ref outputPaneGuid, out outputPane) >= 0 && outputPane != null)
                     {
-                        Marshal.ThrowExceptionForHR(outputPane.OutputString(message));
+                        Marshal.ThrowExceptionForHR(outputPane.OutputStringThreadSafe(message));
                     }
                 }
  

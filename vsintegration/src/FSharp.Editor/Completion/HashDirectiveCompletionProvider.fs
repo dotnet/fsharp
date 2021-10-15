@@ -23,7 +23,14 @@ type internal HashCompletion =
           AllowableExtensions = allowableExtensions
           UseIncludeDirectives = useIncludeDirectives }
 
-type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
+type internal HashDirectiveCompletionProvider
+    (
+        workspace: Workspace,
+        projectInfoManager: FSharpProjectOptionsManager,
+        completions: HashCompletion list
+    ) =
+
+    inherit FSharpCommonCompletionProviderBase()
 
     let [<Literal>] NetworkPath = "\\\\"
     let commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
@@ -91,77 +98,75 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             ]
         HashDirectiveCompletionProvider(workspace, projectInfoManager, completions)
 
-    interface IFSharpCommonCompletionProvider with
+    override _.ProvideCompletionsAsync(context) =
+        asyncMaybe {    
+            let document = context.Document
+            let position = context.Position
+            do! let extension = Path.GetExtension document.FilePath
+                Option.guard (extension = ".fsx" || extension = ".fsscript")
 
-        member _.ProvideCompletionsAsync(context) =
-            asyncMaybe {    
-                let document = context.Document
-                let position = context.Position
-                do! let extension = Path.GetExtension document.FilePath
-                    Option.guard (extension = ".fsx" || extension = ".fsscript")
-
-                let! ct = liftAsync Async.CancellationToken
-                let! text = document.GetTextAsync(ct)
-                do! Option.guard (isInStringLiteral(text, position))
-                let line = text.Lines.GetLineFromPosition(position)
-                let lineText = text.ToString(TextSpan.FromBounds(line.Start, position))
+            let! ct = liftAsync Async.CancellationToken
+            let! text = document.GetTextAsync(ct)
+            do! Option.guard (isInStringLiteral(text, position))
+            let line = text.Lines.GetLineFromPosition(position)
+            let lineText = text.ToString(TextSpan.FromBounds(line.Start, position))
             
-                let! completion, quotedPathGroup =
-                    completions |> List.tryPick (fun completion ->
-                        match completion.DirectiveRegex.Match lineText with
-                        | m when m.Success ->
-                            let quotedPathGroup = m.Groups.["literal"]
-                            let endsWithQuote = PathCompletionUtilities.EndsWithQuote(quotedPathGroup.Value)
-                            if endsWithQuote && (position >= line.Start + m.Length) then
-                                None
-                            else
-                                Some (completion, quotedPathGroup)
-                        | _ -> None)
+            let! completion, quotedPathGroup =
+                completions |> List.tryPick (fun completion ->
+                    match completion.DirectiveRegex.Match lineText with
+                    | m when m.Success ->
+                        let quotedPathGroup = m.Groups.["literal"]
+                        let endsWithQuote = PathCompletionUtilities.EndsWithQuote(quotedPathGroup.Value)
+                        if endsWithQuote && (position >= line.Start + m.Length) then
+                            None
+                        else
+                            Some (completion, quotedPathGroup)
+                    | _ -> None)
 
-                let snapshot = text.FindCorrespondingEditorTextSnapshot()
+            let snapshot = text.FindCorrespondingEditorTextSnapshot()
             
-                do! Option.guard (not (isNull snapshot))
+            do! Option.guard (not (isNull snapshot))
 
-                let extraSearchPaths =
-                    if completion.UseIncludeDirectives then
-                        getIncludeDirectives (text, position)
-                    else []
+            let extraSearchPaths =
+                if completion.UseIncludeDirectives then
+                    getIncludeDirectives (text, position)
+                else []
 
-                let defaultSearchPath = Path.GetDirectoryName document.FilePath
-                let searchPaths = defaultSearchPath :: extraSearchPaths
+            let defaultSearchPath = Path.GetDirectoryName document.FilePath
+            let searchPaths = defaultSearchPath :: extraSearchPaths
 
-                let helper = 
-                    FSharpFileSystemCompletionHelper(
-                        Glyph.OpenFolder,
-                        completion.AllowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
-                        Seq.toImmutableArray searchPaths,
-                        null,
-                        completion.AllowableExtensions |> Seq.toImmutableArray,
-                        rules)
+            let helper = 
+                FSharpFileSystemCompletionHelper(
+                    Glyph.OpenFolder,
+                    completion.AllowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
+                    Seq.toImmutableArray searchPaths,
+                    null,
+                    completion.AllowableExtensions |> Seq.toImmutableArray,
+                    rules)
      
-                let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
-                let! items = helper.GetItemsAsync(pathThroughLastSlash, ct) |> Async.AwaitTask |> liftAsync
-                context.AddItems(items)
-            } 
-            |> Async.Ignore
-            |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+            let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
+            let! items = helper.GetItemsAsync(pathThroughLastSlash, ct) |> Async.AwaitTask |> liftAsync
+            context.AddItems(items)
+        } 
+        |> Async.Ignore
+        |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
-        member _.IsInsertionTrigger(text, position, _) = 
-            // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash
-            // path separator character, or if they type a comma (#r "foo,version...").
-            // Also, if they're starting a word.  i.e. #r "c:\W
-            let ch = text.[position]
-            let isTriggerChar = 
-                ch = '"' || ch = '\\' || ch = ',' || ch = '/' ||
-                    FSharpCommonCompletionUtilities.IsStartingNewWord(text, position, (fun x -> Char.IsLetter x), (fun x -> Char.IsLetterOrDigit x))
-            isTriggerChar && isInStringLiteral(text, position)
+    override _.IsInsertionTrigger(text, position) = 
+        // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash
+        // path separator character, or if they type a comma (#r "foo,version...").
+        // Also, if they're starting a word.  i.e. #r "c:\W
+        let ch = text.[position]
+        let isTriggerChar = 
+            ch = '"' || ch = '\\' || ch = ',' || ch = '/' ||
+                FSharpCommonCompletionUtilities.IsStartingNewWord(text, position, (fun x -> Char.IsLetter x), (fun x -> Char.IsLetterOrDigit x))
+        isTriggerChar && isInStringLiteral(text, position)
  
-        member _.GetTextChangeAsync(baseGetTextChangeAsync, selectedItem, ch, cancellationToken) = 
-            // When we commit "\\" when the user types \ we have to adjust for the fact that the
-            // controller will automatically append \ after we commit.  Because of that, we don't
-            // want to actually commit "\\" as we'll end up with "\\\".  So instead we just commit
-            // "\" and know that controller will append "\" and give us "\\".
-            if selectedItem.DisplayText = NetworkPath && ch = Nullable '\\' then
-                Task.FromResult(Nullable(TextChange(selectedItem.Span, "\\")))
-            else
-                baseGetTextChangeAsync.Invoke(selectedItem, ch, cancellationToken)
+    override _.GetTextChangeAsync(baseGetTextChangeAsync, selectedItem, ch, cancellationToken) = 
+        // When we commit "\\" when the user types \ we have to adjust for the fact that the
+        // controller will automatically append \ after we commit.  Because of that, we don't
+        // want to actually commit "\\" as we'll end up with "\\\".  So instead we just commit
+        // "\" and know that controller will append "\" and give us "\\".
+        if selectedItem.DisplayText = NetworkPath && ch = Nullable '\\' then
+            Task.FromResult(Nullable(TextChange(selectedItem.Span, "\\")))
+        else
+            baseGetTextChangeAsync.Invoke(selectedItem, ch, cancellationToken)
