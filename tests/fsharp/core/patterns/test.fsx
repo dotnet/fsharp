@@ -1345,6 +1345,18 @@ module MatchBangActivePattern =
     |> Async.RunSynchronously
 
 
+module StructActivePatternTest =
+    open System
+    [<return: Struct>]
+    let (|InvariantEqual|_|) str arg = 
+        if String.Compare (str, arg, StringComparison.OrdinalIgnoreCase) = 0 then
+            ValueSome ()
+        else
+            ValueNone
+
+    match "a" with
+    | InvariantEqual "A" -> printfn "a"
+    | _ -> ()
 
 (* check for failure else sign off "ok" *)
 
