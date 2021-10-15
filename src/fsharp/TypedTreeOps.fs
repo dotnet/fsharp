@@ -3312,10 +3312,20 @@ let tryDestOptionTy g ty =
     | [ty1] when isOptionTy g ty -> ValueSome ty1
     | _ -> ValueNone
 
+let tryDestValueOptionTy g ty = 
+    match argsOfAppTy g ty with 
+    | [ty1] when isValueOptionTy g ty -> ValueSome ty1
+    | _ -> ValueNone
+
 let destOptionTy g ty = 
     match tryDestOptionTy g ty with 
     | ValueSome ty -> ty
     | ValueNone -> failwith "destOptionTy: not an option type"
+
+let destValueOptionTy g ty = 
+    match tryDestValueOptionTy g ty with 
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destValueOptionTy: not a value option type"
 
 let isNullableTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
