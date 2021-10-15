@@ -7,7 +7,6 @@
 
 namespace FSharp.Compiler.EditorServices
 
-open System
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 

@@ -9,6 +9,8 @@ neg45.fs(25,5,25,11): typecheck error FS0685: The generic function 'Foo' must be
 
 neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
+neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
+
 neg45.fs(41,23,41,41): typecheck error FS0827: This is not a valid name for an active pattern
 
 neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define the field, constructor or member 'Foo'.
@@ -58,24 +60,24 @@ neg45.fs(89,26,89,40): typecheck error FS0041: A unique overload for method 'M' 
 Known type of argument: R1
 
 Candidates:
- - member D.M : 'a -> 'b
- - member D.M : 'a -> 'b
+ - member D.M: 'a -> 'b
+ - member D.M: 'a -> 'b
 
 neg45.fs(97,26,97,55): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: (R1 * R1)
 
 Candidates:
- - member D.M : 'a -> 'b
- - member D.M : 'a -> 'b
+ - member D.M: 'a -> 'b
+ - member D.M: 'a -> 'b
 
 neg45.fs(104,26,104,31): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: int
 
 Candidates:
- - member D.M : 'a -> 'b
- - member D.M : 'a -> 'b
+ - member D.M: 'a -> 'b
+ - member D.M: 'a -> 'b
 
 neg45.fs(105,24,105,25): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 

@@ -3,7 +3,6 @@
 /// DSL to create structured layout objects with optional breaks and render them
 namespace FSharp.Compiler.Text
 
-open System.Collections.Immutable
 open System.Text
 open System.IO
 open FSharp.Compiler.Text
@@ -86,6 +85,7 @@ module internal WordL =
     val bar: Layout
     val keywordStruct: Layout
     val keywordInherit: Layout
+    val keywordBegin: Layout
     val keywordEnd: Layout
     val keywordNested: Layout
     val keywordType: Layout

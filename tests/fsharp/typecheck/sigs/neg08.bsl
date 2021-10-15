@@ -7,7 +7,7 @@ neg08.fs(16,8,16,10): typecheck error FS0670: This code is not sufficiently gene
 
 neg08.fs(21,1,21,28): typecheck error FS0919: Exception abbreviations must refer to existing exceptions or F# types deriving from System.Exception
 
-neg08.fs(28,16,28,26): typecheck error FS0790: This type is not a record type. Values of class and struct types must be created using calls to object constructors.
+neg08.fs(28,17,28,21): typecheck error FS0039: The record label 'test' is not defined.
 
 neg08.fs(30,9,30,12): typecheck error FS0789: '{ }' is not a valid expression. Records must include at least one field. Empty sequences are specified by using Seq.empty or an empty list '[]'.
 
@@ -21,4 +21,4 @@ neg08.fs(55,7,55,14): typecheck error FS0776: Object construction expressions ma
 
 neg08.fs(61,19,61,26): typecheck error FS0039: The type 'Type' does not define the field, constructor or member 'value__'.
 
-neg08.fs(79,5,79,44): typecheck error FS0502: The member or object constructor 'Random' takes 0 type argument(s) but is here given 1. The required signature is 'static member Variable.Random : y:Variable<'a> -> Variable<'a>'.
+neg08.fs(79,5,79,44): typecheck error FS0502: The member or object constructor 'Random' takes 0 type argument(s) but is here given 1. The required signature is 'static member Variable.Random: y: Variable<'a> -> Variable<'a>'.

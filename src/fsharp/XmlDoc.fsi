@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.Xml
 
-open System.Xml
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 

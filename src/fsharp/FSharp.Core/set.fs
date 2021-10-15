@@ -729,7 +729,7 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
         let mutable res = 0
         for x in this do
             res <- combineHash res (hash x)
-        abs res
+        res
 
     override this.GetHashCode() = this.ComputeHashCode()
 

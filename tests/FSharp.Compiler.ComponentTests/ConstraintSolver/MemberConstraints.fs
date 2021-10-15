@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.ConstraintSolver
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module MemberConstraints =
 
