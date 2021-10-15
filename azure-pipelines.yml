@@ -454,8 +454,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.11
-      insertTargetBranch: rel/d16.11
+      componentBranchName: refs/heads/release/dev17.0
+      insertTargetBranch: rel/d17.0
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'
