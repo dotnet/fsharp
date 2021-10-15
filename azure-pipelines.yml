@@ -393,7 +393,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: $(DotNetSdkVersion)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
@@ -416,7 +416,7 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: 5.0.401
+              version: $(DotNetSdkVersion)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
