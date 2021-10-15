@@ -1911,3 +1911,15 @@ let x8 = $\"\"\"abc{  {contents=1} }def{2}hij\"\"\"
           ((3, 20, 3, 21), (3, 22, 3, 23)); ((4, 16, 4, 17), (4, 18, 4, 19));
           ((4, 22, 4, 23), (4, 24, 4, 25)); ((5, 19, 5, 20), (5, 30, 5, 31));
           ((5, 16, 5, 17), (5, 32, 5, 33)); ((5, 36, 5, 37), (5, 38, 5, 39))|]
+
+
+[<Test>]
+let ``Active pattern 01 - Named args`` () =
+    let _, checkResults = getParseAndCheckResults """
+do let x = 1 in ()
+"""
+    let su = checkResults |> findSymbolUseByName "x"
+    match checkResults.GetDescription(su.Symbol, su.GenericArguments, true, su.Range) with
+    | ToolTipText [ToolTipElement.Group [data]] ->
+        data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
+    | elements -> failwith $"Tooltip elements: {elements}"
