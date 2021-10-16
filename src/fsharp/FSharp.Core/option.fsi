@@ -338,8 +338,8 @@ module Option =
     ///
     /// <example id="flatten-1">
     /// <code lang="fsharp">
-    ///     None |> Option.flatten // evaluates to None
-    ///     (Some (None)) |> Option.flatten // evaluates to None
+    ///     (None: int option option) |> Option.flatten // evaluates to None
+    ///     (Some ((None: int option))) |> Option.flatten // evaluates to None
     ///     (Some (Some 42)) |> Option.flatten // evaluates to Some 42
     /// </code>
     /// </example>
