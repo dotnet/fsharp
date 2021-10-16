@@ -371,7 +371,7 @@ module Option =
     ///
     /// <example id="toArray-1">
     /// <code lang="fsharp">
-    ///     None |> Option.toArray // evaluates to [||]
+    ///     (None: int option) |> Option.toArray // evaluates to [||]
     ///     Some 42 |> Option.toArray // evaluates to [|42|]
     /// </code>
     /// </example>
@@ -386,7 +386,7 @@ module Option =
     ///
     /// <example id="toList-1">
     /// <code lang="fsharp">
-    ///     None |> Option.toList // evaluates to []
+    ///     (None: int option) |> Option.toList // evaluates to []
     ///     Some 42 |> Option.toList // evaluates to [42]
     /// </code>
     /// </example>
@@ -401,7 +401,7 @@ module Option =
     ///
     /// <example id="toNullable-1">
     /// <code lang="fsharp">
-    ///     None |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
+    ///     (None: int option) |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
     ///     Some 42 |> Option.toNullable // evaluates to new System.Nullable(42)
     /// </code>
     /// </example>
