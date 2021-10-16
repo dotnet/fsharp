@@ -241,15 +241,12 @@ module Option =
     /// <param name="action">A function to apply to the option value.</param>
     /// <param name="option">The input option.</param>
     ///
-    /// <returns>Unit if the option is None, otherwise it returns the result of applying the predicate
-    ///
     /// <example id="iter-1">
     /// <code lang="fsharp">
     ///     None |> Option.iter (printfn "%s") // does nothing
     ///     Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
     /// </code>
     /// </example>
-    /// to the option value.</returns>
     [<CompiledName("Iterate")>]
     val iter: action:('T -> unit) -> option:'T option -> unit
 
