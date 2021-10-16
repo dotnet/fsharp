@@ -19,8 +19,8 @@ module Option =
     ///
     /// <example id="isSome-1">
     /// <code lang="fsharp">
-    ///     None |> Option.isSome // evaluates to false
-    ///     Some 42 |> Option.isSome // evaluates to true
+    /// None |> Option.isSome // evaluates to false
+    /// Some 42 |> Option.isSome // evaluates to true
     /// </code>
     /// </example>
     [<CompiledName("IsSome")>]
@@ -34,8 +34,8 @@ module Option =
     ///
     /// <example id="isNone-1">
     /// <code lang="fsharp">
-    ///     None |> Option.isNone // evaluates to true
-    ///     Some 42 |> Option.isNone // evaluates to false
+    /// None |> Option.isNone // evaluates to true
+    /// Some 42 |> Option.isNone // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("IsNone")>]
@@ -52,8 +52,8 @@ module Option =
     ///
     /// <example id="defaultValue-1">
     /// <code lang="fsharp">
-    ///     (99, None) ||> Option.defaultValue // evaluates to 99
-    ///     (99, Some 42) ||> Option.defaultValue // evaluates to 42
+    /// (99, None) ||> Option.defaultValue // evaluates to 99
+    /// (99, Some 42) ||> Option.defaultValue // evaluates to 42
     /// </code>
     /// </example>
     [<CompiledName("DefaultValue")>]
@@ -69,8 +69,8 @@ module Option =
     ///
     /// <example id="defaultWith-1">
     /// <code lang="fsharp">
-    ///     None |> Option.defaultWith (fun () -> 99) // evaluates to 99
-    ///     Some 42 |> Option.defaultWith (fun () -> 99) // evaluates to 42
+    /// None |> Option.defaultWith (fun () -> 99) // evaluates to 99
+    /// Some 42 |> Option.defaultWith (fun () -> 99) // evaluates to 42
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
@@ -85,10 +85,10 @@ module Option =
     ///
     /// <example id="orElse-1">
     /// <code lang="fsharp">
-    ///     ((None: int Option), None) ||> Option.orElse // evaluates to None
-    ///     (Some 99, None) ||> Option.orElse // evaluates to Some 99
-    ///     (None, Some 42) ||> Option.orElse // evaluates to Some 42
-    ///     (Some 99, Some 42) ||> Option.orElse // evaluates to Some 42
+    /// ((None: int Option), None) ||> Option.orElse // evaluates to None
+    /// (Some 99, None) ||> Option.orElse // evaluates to Some 99
+    /// (None, Some 42) ||> Option.orElse // evaluates to Some 42
+    /// (Some 99, Some 42) ||> Option.orElse // evaluates to Some 42
     /// </code>
     /// </example>
     [<CompiledName("OrElse")>]
@@ -104,10 +104,10 @@ module Option =
     ///
     /// <example id="orElseWith-1">
     /// <code lang="fsharp">
-    ///     (None: int Option) |> Option.orElseWith (fun () -> None) // evaluates to None
-    ///     None |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 99
-    ///     Some 42 |> Option.orElseWith (fun () -> None) // evaluates to Some 42
-    ///     Some 42 |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 42
+    /// (None: int Option) |> Option.orElseWith (fun () -> None) // evaluates to None
+    /// None |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 99
+    /// Some 42 |> Option.orElseWith (fun () -> None) // evaluates to Some 42
+    /// Some 42 |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 42
     /// </code>
     /// </example>
     [<CompiledName("OrElseWith")>]
@@ -123,8 +123,8 @@ module Option =
     ///
     /// <example id="get-1">
     /// <code lang="fsharp">
-    ///     Some 42 |> Option.get // evaluates to 42
-    ///     (None: int option) |> Option.get // throws exception!
+    /// Some 42 |> Option.get // evaluates to 42
+    /// (None: int option) |> Option.get // throws exception!
     /// </code>
     /// </example>
     [<CompiledName("GetValue")>]
@@ -138,8 +138,8 @@ module Option =
     ///
     /// <example id="count-1">
     /// <code lang="fsharp">
-    ///     None |> Option.count // evaluates to 0
-    ///     Some 99 |> Option.count // evaluates to 1
+    /// None |> Option.count // evaluates to 0
+    /// Some 99 |> Option.count // evaluates to 1
     /// </code>
     /// </example>
     [<CompiledName("Count")>]
@@ -156,9 +156,9 @@ module Option =
     ///
     /// <example id="fold-1">
     /// <code lang="fsharp">
-    ///     (0, None) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 0
-    ///     (0, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 2
-    ///     (10, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 12
+    /// (0, None) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 0
+    /// (0, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 2
+    /// (10, Some 1) ||> Option.fold (fun accum x -> accum + x * 2) // evaluates to 12
     /// </code>
     /// </example>
     [<CompiledName("Fold")>]
@@ -175,9 +175,9 @@ module Option =
     ///
     /// <example id="foldBack-1">
     /// <code lang="fsharp">
-    ///     (None, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 0
-    ///     (Some 1, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 2
-    ///     (Some 1, 10) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 12
+    /// (None, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 0
+    /// (Some 1, 0) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 2
+    /// (Some 1, 10) ||> Option.foldBack (fun x accum -> accum + x * 2) // evaluates to 12
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
@@ -193,9 +193,9 @@ module Option =
     ///
     /// <example id="exists-1">
     /// <code lang="fsharp">
-    ///     None |> Option.exists (fun x -> x >= 5) // evaluates to false
-    ///     Some 42 |> Option.exists (fun x -> x >= 5) // evaluates to true
-    ///     Some 4 |> Option.exists (fun x -> x >= 5) // evaluates to false
+    /// None |> Option.exists (fun x -> x >= 5) // evaluates to false
+    /// Some 42 |> Option.exists (fun x -> x >= 5) // evaluates to true
+    /// Some 4 |> Option.exists (fun x -> x >= 5) // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("Exists")>]
@@ -211,9 +211,9 @@ module Option =
     ///
     /// <example id="forall-1">
     /// <code lang="fsharp">
-    ///     None |> Option.forall (fun x -> x >= 5) // evaluates to true
-    ///     Some 42 |> Option.forall (fun x -> x >= 5) // evaluates to true
-    ///     Some 4 |> Option.forall (fun x -> x >= 5) // evaluates to false
+    /// None |> Option.forall (fun x -> x >= 5) // evaluates to true
+    /// Some 42 |> Option.forall (fun x -> x >= 5) // evaluates to true
+    /// Some 4 |> Option.forall (fun x -> x >= 5) // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
@@ -228,9 +228,9 @@ module Option =
     ///
     /// <example id="contains-1">
     /// <code lang="fsharp">
-    ///     (99, None) ||> Option.contains // evaluates to false
-    ///     (99, Some 99) ||> Option.contains // evaluates to true
-    ///     (99, Some 100) ||> Option.contains // evaluates to false
+    /// (99, None) ||> Option.contains // evaluates to false
+    /// (99, Some 99) ||> Option.contains // evaluates to true
+    /// (99, Some 100) ||> Option.contains // evaluates to false
     /// </code>
     /// </example>
     [<CompiledName("Contains")>]
@@ -243,8 +243,8 @@ module Option =
     ///
     /// <example id="iter-1">
     /// <code lang="fsharp">
-    ///     None |> Option.iter (printfn "%s") // does nothing
-    ///     Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
+    /// None |> Option.iter (printfn "%s") // does nothing
+    /// Some "Hello world" |> Option.iter (printfn "%s") // prints "Hello world"
     /// </code>
     /// </example>
     [<CompiledName("Iterate")>]
@@ -259,8 +259,8 @@ module Option =
     ///
     /// <example id="map-1">
     /// <code lang="fsharp">
-    ///     None |> Option.map (fun x -> x * 2) // evaluates to None
-    ///     Some 42 |> Option.map (fun x -> x * 2) // evaluates to Some 84
+    /// None |> Option.map (fun x -> x * 2) // evaluates to None
+    /// Some 42 |> Option.map (fun x -> x * 2) // evaluates to Some 84
     /// </code>
     /// </example>
     [<CompiledName("Map")>]
@@ -276,10 +276,10 @@ module Option =
     ///
     /// <example id="map2-1">
     /// <code lang="fsharp">
-    ///     (None, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
-    ///     (Some 5, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
-    ///     (None, Some 10) ||> Option.map2 (fun x y -> x + y) // evaluates to None
-    ///     (Some 5, Some 10) ||> Option.map2 (fun x y -> x + y) // evaluates to Some 15
+    /// (None, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
+    /// (Some 5, None) ||> Option.map2 (fun x y -> x + y) // evaluates to None
+    /// (None, Some 10) ||> Option.map2 (fun x y -> x + y) // evaluates to None
+    /// (Some 5, Some 10) ||> Option.map2 (fun x y -> x + y) // evaluates to Some 15
     /// </code>
     /// </example>
     [<CompiledName("Map2")>]
@@ -296,11 +296,11 @@ module Option =
     ///
     /// <example id="map3-1">
     /// <code lang="fsharp">
-    ///     (None, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
-    ///     (Some 100, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
-    ///     (None, Some 100, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
-    ///     (None, None, Some 100) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
-    ///     (Some 5, Some 100, Some 10) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to Some 115
+    /// (None, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
+    /// (Some 100, None, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
+    /// (None, Some 100, None) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
+    /// (None, None, Some 100) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to None
+    /// (Some 5, Some 100, Some 10) |||> Option.map3 (fun x y z -> x + y + z) // evaluates to Some 115
     /// </code>
     /// </example>
     [<CompiledName("Map3")>]
@@ -316,13 +316,13 @@ module Option =
     ///
     /// <example id="bind-1">
     /// <code lang="fsharp">
-    ///     let tryParse (input: string) =
-    ///         match System.Int32.TryParse input with
-    ///         | true, v -> Some v
-    ///         | false, _ -> None
-    ///     None |> Option.bind tryParse // evaluates to None
-    ///     Some "42" |> Option.bind tryParse // evaluates to Some 42
-    ///     Some "Forty-two" |> Option.bind tryParse // evaluates to None
+    /// let tryParse (input: string) =
+    ///     match System.Int32.TryParse input with
+    ///     | true, v -> Some v
+    ///     | false, _ -> None
+    /// None |> Option.bind tryParse // evaluates to None
+    /// Some "42" |> Option.bind tryParse // evaluates to Some 42
+    /// Some "Forty-two" |> Option.bind tryParse // evaluates to None
     /// </code>
     /// </example>
     [<CompiledName("Bind")>]
@@ -338,9 +338,9 @@ module Option =
     ///
     /// <example id="flatten-1">
     /// <code lang="fsharp">
-    ///     (None: int option option) |> Option.flatten // evaluates to None
-    ///     (Some ((None: int option))) |> Option.flatten // evaluates to None
-    ///     (Some (Some 42)) |> Option.flatten // evaluates to Some 42
+    /// (None: int option option) |> Option.flatten // evaluates to None
+    /// (Some ((None: int option))) |> Option.flatten // evaluates to None
+    /// (Some (Some 42)) |> Option.flatten // evaluates to Some 42
     /// </code>
     /// </example>
     [<CompiledName("Flatten")>]
@@ -355,9 +355,9 @@ module Option =
     ///
     /// <example id="filter-1">
     /// <code lang="fsharp">
-    ///     None |> Option.filter (fun x -> x >= 5) // evaluates to None
-    ///     Some 42 |> Option.filter (fun x -> x >= 5) // evaluates to Some 42
-    ///     Some 4 |> Option.filter (fun x -> x >= 5) // evaluates to None
+    /// None |> Option.filter (fun x -> x >= 5) // evaluates to None
+    /// Some 42 |> Option.filter (fun x -> x >= 5) // evaluates to Some 42
+    /// Some 4 |> Option.filter (fun x -> x >= 5) // evaluates to None
     /// </code>
     /// </example>
     [<CompiledName("Filter")>]
@@ -371,8 +371,8 @@ module Option =
     ///
     /// <example id="toArray-1">
     /// <code lang="fsharp">
-    ///     (None: int option) |> Option.toArray // evaluates to [||]
-    ///     Some 42 |> Option.toArray // evaluates to [|42|]
+    /// (None: int option) |> Option.toArray // evaluates to [||]
+    /// Some 42 |> Option.toArray // evaluates to [|42|]
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
@@ -386,8 +386,8 @@ module Option =
     ///
     /// <example id="toList-1">
     /// <code lang="fsharp">
-    ///     (None: int option) |> Option.toList // evaluates to []
-    ///     Some 42 |> Option.toList // evaluates to [42]
+    /// (None: int option) |> Option.toList // evaluates to []
+    /// Some 42 |> Option.toList // evaluates to [42]
     /// </code>
     /// </example>
     [<CompiledName("ToList")>]
@@ -401,8 +401,8 @@ module Option =
     ///
     /// <example id="toNullable-1">
     /// <code lang="fsharp">
-    ///     (None: int option) |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
-    ///     Some 42 |> Option.toNullable // evaluates to new System.Nullable(42)
+    /// (None: int option) |> Option.toNullable // evaluates to new System.Nullable&lt;int&gt;()
+    /// Some 42 |> Option.toNullable // evaluates to new System.Nullable(42)
     /// </code>
     /// </example>
     [<CompiledName("ToNullable")>]
@@ -416,8 +416,8 @@ module Option =
     ///
     /// <example id="ofNullable-1">
     /// <code lang="fsharp">
-    ///     System.Nullable&lt;int&gt;() |> Option.ofNullable // evaluates to None
-    ///     System.Nullable(42) |> Option.ofNullable // evaluates to Some 42
+    /// System.Nullable&lt;int&gt;() |> Option.ofNullable // evaluates to None
+    /// System.Nullable(42) |> Option.ofNullable // evaluates to Some 42
     /// </code>
     /// </example>
     [<CompiledName("OfNullable")>]
@@ -431,8 +431,8 @@ module Option =
     ///
     /// <example id="ofObj-1">
     /// <code lang="fsharp">
-    ///     (null: string) |> Option.ofObj // evaluates to None
-    ///     "not a null string" |> Option.ofObj // evaluates to (Some "not a null string")
+    /// (null: string) |> Option.ofObj // evaluates to None
+    /// "not a null string" |> Option.ofObj // evaluates to (Some "not a null string")
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
@@ -446,8 +446,8 @@ module Option =
     ///
     /// <example id="toObj-1">
     /// <code lang="fsharp">
-    ///     (None: string option) |> Option.toObj // evaluates to null
-    ///     Some "not a null string" |> Option.toObj // evaluates to "not a null string"
+    /// (None: string option) |> Option.toObj // evaluates to null
+    /// Some "not a null string" |> Option.toObj // evaluates to "not a null string"
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
