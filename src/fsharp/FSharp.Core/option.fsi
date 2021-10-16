@@ -446,7 +446,7 @@ module Option =
     ///
     /// <example id="toObj-1">
     /// <code lang="fsharp">
-    ///     None |> Option.toObj // evaluates to null
+    ///     (None: string option) |> Option.toObj // evaluates to null
     ///     Some "not a null string" |> Option.toObj // evaluates to "not a null string"
     /// </code>
     /// </example>
