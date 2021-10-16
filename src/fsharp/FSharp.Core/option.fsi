@@ -124,7 +124,7 @@ module Option =
     /// <example id="get-1">
     /// <code lang="fsharp">
     ///     Some 42 |> Option.get // evaluates to 42
-    ///     None |> Option.get // throws exception!
+    ///     (None: int option) |> Option.get // throws exception!
     /// </code>
     /// </example>
     [<CompiledName("GetValue")>]
