@@ -85,7 +85,7 @@ module Option =
     ///
     /// <example id="orElse-1">
     /// <code lang="fsharp">
-    ///     (None, None) ||> Option.orElse // evaluates to None
+    ///     ((None: int Option), None) ||> Option.orElse // evaluates to None
     ///     (Some 99, None) ||> Option.orElse // evaluates to Some 99
     ///     (None, Some 42) ||> Option.orElse // evaluates to Some 42
     ///     (Some 99, Some 42) ||> Option.orElse // evaluates to Some 42
