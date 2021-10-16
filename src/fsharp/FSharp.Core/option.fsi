@@ -104,7 +104,7 @@ module Option =
     ///
     /// <example id="orElseWith-1">
     /// <code lang="fsharp">
-    ///     None |> Option.orElseWith (fun () -> None) // evaluates to None
+    ///     (None: int Option) |> Option.orElseWith (fun () -> None) // evaluates to None
     ///     None |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 99
     ///     Some 42 |> Option.orElseWith (fun () -> None) // evaluates to Some 42
     ///     Some 42 |> Option.orElseWith (fun () -> (Some 99)) // evaluates to Some 42
