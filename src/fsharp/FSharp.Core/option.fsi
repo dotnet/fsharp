@@ -316,7 +316,7 @@ module Option =
     ///
     /// <example id="bind-1">
     /// <code lang="fsharp">
-    ///     let tryParse input =
+    ///     let tryParse (input: string) =
     ///         match System.Int32.TryParse input with
     ///         | true, v -> Some v
     ///         | false, _ -> None
