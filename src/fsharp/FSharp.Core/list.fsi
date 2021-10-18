@@ -96,16 +96,18 @@ module List =
     /// 
     /// <example id="averageBy-1"> Average the age of persons by extracting the age from records
     /// <code lang="fsharp">
-    /// type People = {
-    ///    name: string
-    ///    age: int }
+    /// type People = 
+    ///    {
+    ///        Name: string
+    ///        Age: int
+    ///    }
     ///
     /// let getAgeAsFloat person = float person.age
     ///
     /// let people = 
-    ///     [ { name = "Kirk"; age = 26 }
-    ///       { name = "Spock"; age = 90 }
-    ///       { name = "McCoy"; age = 37 } ]
+    ///     [ { Name = "Kirk"; Age = 26 }
+    ///       { Name = "Spock"; Age = 90 }
+    ///       { Name = "McCoy"; Age = 37 } ]
     ///
     /// people |> List.averageBy getAgeAsFloat  // evaluates 51.0
     /// </code>
