@@ -1564,9 +1564,8 @@ module CoreTests =
     [<Test>]
     let ``patterns-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSC_BASIC "preview"
 
-//BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
-//    [<Test>]
-//    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun' "core/patterns" FSI_BASIC
+    [<Test>]
+    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun "core/patterns" FSI_BASIC
 
     [<Test>]
     let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
