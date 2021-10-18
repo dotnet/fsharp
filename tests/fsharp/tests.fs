@@ -1565,7 +1565,7 @@ module CoreTests =
     let ``patterns-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSC_BASIC "preview"
 
     [<Test>]
-    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun "core/patterns" FSI_BASIC
+    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSI_BASIC "preview"
 
     [<Test>]
     let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
