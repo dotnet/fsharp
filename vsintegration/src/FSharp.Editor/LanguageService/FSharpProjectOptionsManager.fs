@@ -139,6 +139,10 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                                 ms.Dispose() // it failed, dispose of stream
                                 None
                         with
+                        | :? OperationCanceledException ->
+                            // Since we cancelled, do not null out the strong compilation ref.
+                            ms.Dispose()
+                            None
                         | _ ->
                             strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                             ms.Dispose() // it failed, dispose of stream
