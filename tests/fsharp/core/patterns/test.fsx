@@ -813,7 +813,7 @@ module RandomTEst =
     type IEvenCooler =
         inherit ICool
     
-#if !NETCOREAPP
+#if !NETCOREAPP && !INTERACTIVE
 module RandomCodeFragment = 
     open System
 
