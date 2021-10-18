@@ -56,6 +56,8 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: DotNetSdkVersion
+    value: '5.0.401'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -94,7 +96,7 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Internal
+            name: NetCore1ESPool-Svc-Internal
             demands: ImageOverride -equals build.windows.10.amd64.vs2019
           timeoutInMinutes: 300
           variables:
@@ -201,7 +203,7 @@ stages:
             #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -495,8 +497,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.9
-      insertTargetBranch: rel/d16.9
+      componentBranchName: refs/heads/release/dev16.11
+      insertTargetBranch: rel/d16.11
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'
