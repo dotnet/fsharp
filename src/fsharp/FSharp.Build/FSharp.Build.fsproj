@@ -7,9 +7,8 @@
     <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
-    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -35,7 +34,7 @@
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
+      <Replacement1>$(FSharpCoreShippedPackageVersionProperty)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
       <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
       <Pattern3>{{FSCorePackageVersion}}</Pattern3>
@@ -44,7 +43,15 @@
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
+    <!--
+        The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
+        rely on new API's just being added to FSharp.Core.
+    -->
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionProperty)"/>
+  </ItemGroup>
+
+  <ItemGroup  Condition="'$(Configuration)' != 'Proto'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 

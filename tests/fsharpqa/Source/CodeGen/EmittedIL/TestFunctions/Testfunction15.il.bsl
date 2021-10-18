@@ -36,13 +36,13 @@
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction15.exe
-// MVID: {60B68B97-A624-4662-A745-0383978BB660}
+// MVID: {611B0ED4-A624-4662-A745-0383D40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B30000
+// Image base: 0x07120000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -96,26 +96,29 @@
           TestFunction15(int32 inp) cil managed
   {
     // Code size       40 (0x28)
-    .maxstack  7
-    .locals init ([0] int32 x)
+    .maxstack  6
+    .locals init ([0] int32 x,
+             [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #1 input at line 6')
     .line 5,5 : 5,18 ''
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.1
     IL_0002:  add
     IL_0003:  stloc.0
-    .line 6,6 : 5,41 ''
-    IL_0004:  ldsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
-    IL_0009:  ldc.i4.1
-    IL_000a:  ldc.i4.2
-    IL_000b:  ldc.i4.3
-    IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    .line 6,6 : 5,12 ''
+    IL_0004:  ldc.i4.1
+    IL_0005:  ldc.i4.2
+    IL_0006:  ldc.i4.3
+    IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0011:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_001b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0020:  tail.
+    IL_001b:  stloc.1
+    .line 6,6 : 16,41 ''
+    IL_001c:  ldsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
+    IL_0021:  ldloc.1
     IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
     IL_0027:  ret

@@ -77,7 +77,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
-    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.CompExpr _, _)
+    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
     | SynExpr.LetOrUseBang _
     | SynExpr.Match _
@@ -89,9 +89,9 @@ let rec IsControlFlowExpression e =
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
 
-let mkSynAnonField (ty: SynType) = SynField([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
+let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, xmlDoc, None, ty.Range)
 
-let mkSynNamedField (ident, ty: SynType, m) = SynField([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
+let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
 let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
@@ -179,8 +179,9 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
             | SynPat.Wild _ -> None
             | _ ->
                 Some (fun e ->
-                    let clause = SynMatchClause(p, None, None, e, m, DebugPointForTarget.No)
-                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], clause.Range))
+                    let clause = SynMatchClause(p, None, None, e, m, DebugPointAtTarget.No)
+                    let artificialMatchRange = (unionRanges m e.Range).MakeSynthetic()
+                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
 
@@ -303,14 +304,9 @@ let mkSynApp5 f x1 x2 x3 x4 x5 m = mkSynApp1 (mkSynApp4 f x1 x2 x3 x4 m) x5 m
 
 let mkSynDotParenSet  m a b c = mkSynTrifix m parenSet a b c
 
-let mkSynDotBrackGet  m mDot a b fromEnd   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One (b, fromEnd, m)], mDot, m)
+let mkSynDotBrackGet  m mDot a b = SynExpr.DotIndexedGet (a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
-
-let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
-
-let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
-    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
 
 let mkSynDotParenGet lhsm dotm a b   =
     match b with
@@ -565,7 +561,8 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr = List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization (c, e1, e2, mRhs)) staticOptimizations rhsExpr
     let rhsExpr, retTyOpt =
         match retInfo with
-        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) -> SynExpr.Typed (rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
+        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) ->
+            SynExpr.Typed (rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
@@ -650,8 +647,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TypeTest (e, _, _)
           | SynExpr.Upcast (e, _, _)
           | SynExpr.AddressOf (_, e, _, _)
-          | SynExpr.CompExpr (_, _, e, _)
-          | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
+          | SynExpr.ComputationExpr (_, e, _)
+          | SynExpr.ArrayOrListComputed (_, e, _)
           | SynExpr.Typed (e, _, _)
           | SynExpr.FromParseError (e, _)
           | SynExpr.Do (e, _)
@@ -731,11 +728,18 @@ let rec synExprContainsError inpExpr =
           | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3opt, _, _, _, _) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 
-          | SynExpr.DotIndexedGet (e1, es, _, _) ->
-              walkExpr e1 || walkExprs [ for e in es do yield! e.Exprs ]
+          | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
+              (match expr1 with Some e -> walkExpr e | None -> false) ||
+              (match expr2 with Some e -> walkExpr e | None -> false)
 
-          | SynExpr.DotIndexedSet (e1, es, e2, _, _, _) ->
-              walkExpr e1 || walkExprs [ for e in es do yield! e.Exprs ] || walkExpr e2
+          | SynExpr.IndexFromEnd (e, _) -> 
+              walkExpr e
+
+          | SynExpr.DotIndexedGet (e1, indexArgs, _, _) ->
+              walkExpr e1 || walkExpr indexArgs
+
+          | SynExpr.DotIndexedSet (e1, indexArgs, e2, _, _, _) ->
+              walkExpr e1 || walkExpr indexArgs || walkExpr e2
 
           | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
@@ -760,3 +764,28 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
+
+let (|SynBinOp|_|) input =
+    match input with
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
+        Some (synId, x1, x2)
+    | _ -> None
+
+let (|SynPipeRight|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_PipeRight" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynPipeRight2|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight2" -> 
+        Some (x1a, x1b, x2)
+    | _ -> None
+
+let (|SynPipeRight3|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight3" -> 
+        Some (x1a, x1b, x1c, x2)
+    | _ -> None

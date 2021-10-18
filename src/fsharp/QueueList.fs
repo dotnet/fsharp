@@ -44,7 +44,7 @@ type internal QueueList<'T>(firstElementsIn:'T list, lastElementsRevIn: 'T list,
         let lastElementsRevIn = List.rev newElements @ lastElementsRev
         QueueList(firstElements, lastElementsRevIn, numLastElementsIn + newLength)
     
-    /// This operation is O(n) anyway, so executing ToList() here is OK
+    // This operation is O(n) anyway, so executing ToList() here is OK
     interface IEnumerable<'T> with 
         member x.GetEnumerator() : IEnumerator<'T> = (x.ToList() :> IEnumerable<_>).GetEnumerator()
 

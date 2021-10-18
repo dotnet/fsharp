@@ -631,7 +631,7 @@ module LeafExpressionConverter =
             // or type T to an argument expecting Expression<T>.
             | ImplicitExpressionConversionHelperQ (_, GenericArgs [|_|], [x1]) -> ConvExprToLinqInContext env x1
              
-            /// Use witnesses if they are available
+            // Use witnesses if they are available
             | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) -> 
                 let fullArgs = witnessArgs @ args
                 let replacementExpr =

@@ -1,9 +1,9 @@
 // #Regression #NoMT #Printing 
 // Regression test for FSHARP1.0:3300
 // Verify that Pretty-printing of measure identifiers round-trips, i.e. displays the long identified (Namespace.Module.Type)
-//<Expects status="success">val it : decimal+</Expects>
-//<Expects status="success">val it : float32+</Expects>
-//<Expects status="success">val it : float+</Expects>
+//<Expects status="success">val it: decimal+</Expects>
+//<Expects status="success">val it: float32+</Expects>
+//<Expects status="success">val it: float+</Expects>
 #light
 
 #r "UnitsOfMeasureIdentifiersRoundTrip02.dll"

@@ -6,7 +6,7 @@
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <DefineConstants>IS_DESIGNTIME</DefineConstants>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionProperty)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

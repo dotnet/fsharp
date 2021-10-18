@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-// MVID: {60BD414C-2432-94A2-A745-03834C41BD60}
+// MVID: {611C4D82-2432-94A2-A745-0383824D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06E80000
+// Image base: 0x07260000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -254,7 +254,7 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       167 (0xa7)
+        // Code size       168 (0xa8)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [mscorlib]System.Exception e)
@@ -273,6 +273,7 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0019:  nop
+        .line 100001,100001 : 0,0 ''
         .try
         {
           IL_001a:  ldarg.0
@@ -359,17 +360,20 @@
         IL_0098:  nop
         IL_0099:  br         IL_0000
 
-        IL_009e:  ldloc.0
-        IL_009f:  ldnull
-        IL_00a0:  cgt.un
-        IL_00a2:  brfalse.s  IL_00a6
+        .line 6,8 : 15,25 ''
+        IL_009e:  nop
+        .line 100001,100001 : 0,0 ''
+        IL_009f:  ldloc.0
+        IL_00a0:  ldnull
+        IL_00a1:  cgt.un
+        IL_00a3:  brfalse.s  IL_00a7
 
         .line 100001,100001 : 0,0 ''
-        IL_00a4:  ldloc.0
-        IL_00a5:  throw
+        IL_00a5:  ldloc.0
+        IL_00a6:  throw
 
         .line 100001,100001 : 0,0 ''
-        IL_00a6:  ret
+        IL_00a7:  ret
       } // end of method f7@6::Close
 
       .method public strict virtual instance bool 
@@ -511,9 +515,10 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       42 (0x2a)
+    // Code size       44 (0x2c)
     .maxstack  6
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> es)
+    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> es,
+             [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 13')
     .line 4,4 : 5,21 ''
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2
@@ -528,11 +533,14 @@
     IL_0017:  dup
     IL_0018:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$SeqExpressionSteppingTest6>'.$SeqExpressionSteppingTest6::es@4
     IL_001d:  stloc.0
-    .line 13,13 : 13,31 ''
+    .line 13,13 : 13,17 ''
     IL_001e:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest6/SeqExpressionSteppingTest6::f7()
-    IL_0023:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0028:  pop
-    IL_0029:  ret
+    IL_0023:  stloc.1
+    .line 13,13 : 21,31 ''
+    IL_0024:  ldloc.1
+    IL_0025:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_002a:  pop
+    IL_002b:  ret
   } // end of method $SeqExpressionSteppingTest6::main@
 
 } // end of class '<StartupCode$SeqExpressionSteppingTest6>'.$SeqExpressionSteppingTest6

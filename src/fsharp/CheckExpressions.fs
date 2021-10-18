@@ -7,7 +7,6 @@ module internal FSharp.Compiler.CheckExpressions
 open System
 open System.Collections.Generic
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -59,7 +58,7 @@ let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -359,9 +358,6 @@ type TcFileState =
       /// we infer type parameters
       mutable recUses: ValMultiMap<Expr ref * range * bool>
 
-      /// Checks to run after all inference is complete.
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -406,11 +402,13 @@ type TcFileState =
 
       isInternalTestSpanStackReferring: bool
       // forward call
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call
-      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     }
 
     /// Create a new compilation environment
@@ -423,7 +421,6 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          postInferenceChecks = ResizeArray()
           createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
@@ -439,7 +436,7 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
-          TcArrayOrListSequenceExpression = tcArrayOrListSequenceExpression
+          TcArrayOrListComputedExpression = tcArrayOrListSequenceExpression
           TcComputationExpression = tcComputationExpression
         }
 
@@ -452,6 +449,52 @@ let CopyAndFixupTypars m rigid tpsorig =
 
 let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
     AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
+
+// If the overall type admits subsumption or type directed conversion, and the original unify would have failed,
+// then allow subsumption or type directed conversion.
+//
+// Any call to UnifyOverallType MUST have a matching call to TcAdjustExprForTypeDirectedConversions
+// to actually build the expression for any conversion applied.
+let UnifyOverallType cenv (env: TcEnv) m overallTy actualTy =
+    match overallTy with
+    | MustConvertTo(isMethodArg, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+        let actualTy = tryNormalizeMeasureInType cenv.g actualTy
+        let reqdTy = tryNormalizeMeasureInType cenv.g reqdTy
+        if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy actualTy then
+            ()
+        else
+            // try adhoc type-directed conversions
+            let reqdTy2, usesTDC, eqn = AdjustRequiredTypeForTypeDirectedConversions cenv.infoReader env.eAccessRights isMethodArg false reqdTy actualTy m
+            match eqn with
+            | Some (ty1, ty2, msg) ->
+                UnifyTypes cenv env m ty1 ty2
+                msg env.DisplayEnv
+            | None -> ()
+            match usesTDC with
+            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
+            | TypeDirectedConversionUsed.No -> ()
+            if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
+                let reqdTyText, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes env.DisplayEnv reqdTy actualTy
+                warning (Error(FSComp.SR.tcSubsumptionImplicitConversionUsed(actualTyText, reqdTyText), m))
+            else
+                // report the error
+                UnifyTypes cenv env m reqdTy actualTy
+    | _ ->
+        UnifyTypes cenv env m overallTy.Commit actualTy
+
+let UnifyOverallTypeAndRecover cenv env m overallTy actualTy =
+    try
+        UnifyOverallType cenv env m overallTy actualTy
+    with e ->
+        errorRecovery e m
+
+// Calls UnifyTypes, but upon error only does the minimal error recovery
+// so that IntelliSense information can continue to be collected.
+let UnifyTypesAndRecover cenv env m expectedTy actualTy =
+    try
+        UnifyTypes cenv env m expectedTy actualTy
+    with e ->
+        errorRecovery e m
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
 let MakeInnerEnvWithAcc addOpenToNameEnv env nm mtypeAcc modKind =
@@ -496,10 +539,12 @@ let MakeInnerEnvForMember env (v: Val) =
     | Some _ -> MakeInnerEnvForTyconRef env v.MemberApparentEntity v.IsExtensionMember
 
 /// Get the current accumulator for the namespace/module we're in
-let GetCurrAccumulatedModuleOrNamespaceType env = !(env.eModuleOrNamespaceTypeAccumulator)
+let GetCurrAccumulatedModuleOrNamespaceType env =
+    env.eModuleOrNamespaceTypeAccumulator.Value
 
 /// Set the current accumulator for the namespace/module we're in, updating the inferred contents
-let SetCurrAccumulatedModuleOrNamespaceType env x = env.eModuleOrNamespaceTypeAccumulator := x
+let SetCurrAccumulatedModuleOrNamespaceType env x =
+    env.eModuleOrNamespaceTypeAccumulator.Value <- x
 
 /// Set up the initial environment accounting for the enclosing "namespace X.Y.Z" definition
 let LocateEnv ccu env enclosingNamespacePath =
@@ -514,7 +559,6 @@ let LocateEnv ccu env enclosingNamespacePath =
     let env = List.fold (fun env id -> MakeInnerEnv false env id Namespace |> fst) env enclosingNamespacePath
     let env = { env with eNameResEnv = { env.NameEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid env.ePath) } }
     env
-
 
 //-------------------------------------------------------------------------
 // Helpers for unification
@@ -745,7 +789,7 @@ let rec TcSynRationalConst c =
   | SynRationalConst.Rational(p, q, _) -> DivRational (intToRational p) (intToRational q)
 
 /// Typecheck constant terms in expressions and patterns
-let TcConst cenv ty m env c =
+let TcConst cenv (overallTy: TType) m env c =
     let rec tcMeasure ms =
         match ms with
         | SynMeasure.One -> Measure.One
@@ -767,7 +811,7 @@ let TcConst cenv ty m env c =
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
 
-    let unif expected = UnifyTypes cenv env m ty expected
+    let unif expected = UnifyTypes cenv env m overallTy expected
 
     let unifyMeasureArg iszero tcr c =
         let measureTy =
@@ -982,8 +1026,8 @@ let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 /// shares the same code paths (e.g. TcLetBinding and TcLetrec) as processing expression bindings (such as "let x = 1 in ...")
 /// Member bindings also use this path.
 //
-/// However there are differences in how different bindings get processed,
-/// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
+// However there are differences in how different bindings get processed,
+// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
 type DeclKind =
     | ModuleOrMemberBinding
 
@@ -1406,7 +1450,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
              (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
 
-    CheckForAbnormalOperatorNames cenv id.idRange vspec.CoreDisplayName memberInfoOpt
+    CheckForAbnormalOperatorNames cenv id.idRange vspec.DisplayNameCoreMangled memberInfoOpt
 
     PublishValueDefn cenv env declKind vspec
 
@@ -1417,9 +1461,8 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
         // * provided by source code (i.e. `member _.Method = ...`)
         // We don't notify sink about it to prevent generating `FSharpSymbol` for it and appearing in completion list.
         | None when
-            let baseOrThisInfo = vspec.BaseOrThisInfo
-            baseOrThisInfo = ValBaseOrThisInfo.BaseVal || // visualfsharp#3699
-            baseOrThisInfo = ValBaseOrThisInfo.MemberThisVal && vspec.LogicalName = "__" -> false
+            vspec.IsBaseVal ||
+            vspec.IsMemberThisVal && vspec.LogicalName = "__" -> false
         | _ -> true
 
     match cenv.tcSink.CurrentSink with
@@ -1914,7 +1957,7 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m cenv env overa
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.Name, ucinfo.Tycon.DisplayName) |> snd, m))
+            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m))
 
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes cenv.g ucref m |> CommitOperationResult
@@ -2038,7 +2081,7 @@ module GeneralizationHelpers =
         | Expr.App (e1, _, _, [], _) -> IsGeneralizableValue g e1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
         | Expr.Obj (_, ty, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
-        | Expr.Link eref -> IsGeneralizableValue g !eref
+        | Expr.Link eref -> IsGeneralizableValue g eref.Value
 
         | _ -> false
 
@@ -2576,7 +2619,7 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
     match vrec with
     | ValInRecScope isComplete when isComplete && not (isNil tinst) ->
         //printfn "pushing post-inference check for '%s', vty = '%s'" v.DisplayName (DebugPrint.showType vty)
-        cenv.postInferenceChecks.Add (fun () ->
+        cenv.css.PushPostInferenceCheck (preDefaults=false, check=fun () ->
             //printfn "running post-inference check for '%s'" v.DisplayName
             //printfn "tau = '%s'" (DebugPrint.showType tau)
             //printfn "vty = '%s'" (DebugPrint.showType vty)
@@ -2630,7 +2673,7 @@ let TcVal checkAttributes cenv env tpenv (vref: ValRef) optInst optAfterResoluti
 
           | None ->
                 // References to 'this' in classes get dereferenced from their implicit reference cell and poked
-              if v.BaseOrThisInfo = CtorThisVal && isRefCellTy cenv.g vty then
+              if v.IsCtorThisVal && isRefCellTy cenv.g vty then
                   let exprForVal = exprForValRef m vref
                   //if AreWithinCtorPreConstruct env then
                   //    warning(SelfRefObjCtor(AreWithinImplicitCtor env, m))
@@ -2907,7 +2950,7 @@ let TryFindIntrinsicOrExtensionMethInfo collectionSettings (cenv: cenv) (env: Tc
     AllMethInfosOfTypeInScope collectionSettings cenv.infoReader env.NameEnv (Some nm) ad IgnoreOverrides m ty
 
 let TryFindFSharpSignatureInstanceGetterProperty (cenv: cenv) (env: TcEnv) m nm ty (sigTys: TType list) =
-    TryFindPropInfo cenv.infoReader m env.AccessRights nm ty
+    TryFindIntrinsicPropInfo cenv.infoReader m env.AccessRights nm ty
     |> List.tryFind (fun propInfo ->
         not propInfo.IsStatic && propInfo.HasGetter &&
         (
@@ -3394,7 +3437,7 @@ let EliminateInitializationGraphs
           // n-ary expressions
             | Expr.Op (op, _, args, m) -> CheckExprOp st op m; List.iter (CheckExpr (strict st)) args
           // misc
-            | Expr.Link eref -> CheckExpr st !eref
+            | Expr.Link eref -> CheckExpr st eref.Value
             | Expr.TyChoose (_, b, _) -> CheckExpr st b
             | Expr.Quote _ -> ()
             | Expr.WitnessArg (_witnessInfo, _m) -> ()
@@ -3402,7 +3445,7 @@ let EliminateInitializationGraphs
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
 
         and CheckDecisionTree st = function
-            | TDSwitch(e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
+            | TDSwitch(_, e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
 
@@ -3482,7 +3525,8 @@ let EliminateInitializationGraphs
                 let vrhs = (mkLazyDelayed g m ty felazy)
 
                 if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes vty [] [] vrhs))
-                fixupPoints |> List.iter (fun (fp, _) -> fp := mkLazyForce g (!fp).Range ty velazy)
+                for (fixupPoint, _) in fixupPoints do
+                    fixupPoint.Value <- mkLazyForce g fixupPoint.Value.Range ty velazy
 
                 [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
                 [mkBind seqPtOpt v (mkLazyForce g m ty velazy)]
@@ -3573,8 +3617,8 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
     and checkAndRewriteCtorUsage expr =
          match expr with
          | Expr.Link eref ->
-               let e = checkAndRewriteCtorUsage !eref
-               eref := e
+               let e = checkAndRewriteCtorUsage eref.Value
+               eref.Value <- e
                expr
 
          // Type applications are ok, e.g.
@@ -3688,18 +3732,24 @@ let buildApp cenv expr resultTy arg m =
 //-------------------------------------------------------------------------
 
 type DelayedItem =
-  /// DelayedTypeApp (typeArgs, mTypeArgs, mExprAndTypeArgs)
-  ///
   /// Represents the <tyargs> in "item<tyargs>"
-  | DelayedTypeApp of SynType list * range * range
+  | DelayedTypeApp of 
+      typeArgs: SynType list * 
+      mTypeArgs: range * 
+      mExprAndTypeArgs: range
 
-  /// DelayedApp (isAtomic, argExpr, mFuncAndArg)
-  ///
-  /// Represents the args in "item args", or "item.[args]".
-  | DelayedApp of ExprAtomicFlag * SynExpr * range
+  /// Represents the args in "item args", or "item.Property(args)".
+  | DelayedApp of 
+      isAtomic: ExprAtomicFlag * 
+      isSugar: bool * 
+      synLeftExprOpt: SynExpr option * 
+      argExpr: SynExpr * 
+      mFuncAndArg: range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
-  | DelayedDotLookup of Ident list * range
+  | DelayedDotLookup of 
+      idents: Ident list * 
+      range
 
   /// Represents an incomplete "item."
   | DelayedDot
@@ -3770,6 +3820,9 @@ type ValSpecResult =
         partialValReprInfo: PartialValReprInfo *
         declKind: DeclKind
 
+type DecodedIndexArg =
+    | IndexArgRange of (SynExpr * bool) option * (SynExpr * bool) option * range * range
+    | IndexArgItem of SynExpr * bool * range
 //-------------------------------------------------------------------------
 // Additional data structures used by checking recursive bindings
 //-------------------------------------------------------------------------
@@ -4440,7 +4493,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
-        let te, tpenv' = TcExprNoRecover cenv kind env tpenv e
+        let te, tpenv' = TcExprNoRecover cenv (MustEqual kind) env tpenv e
 
         // Evaluate the constant expression using static attribute argument rules
         let te = EvalLiteralExprOrAttribArg g te
@@ -4528,7 +4581,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv (tcref: TyconRef) (args: SynType list) m =
     let typeBeforeArguments =
         match tcref.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+        | TProvidedTypeRepr info -> info.ProvidedType
         | _ -> failwith "unreachable"
 
     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m)
@@ -4658,8 +4711,13 @@ and TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with
-        | Item.NewDef _ -> None // the name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
-        | _ -> altNameRefCell := SynSimplePatAlternativeIdInfo.Decided altId; Some altId // the name is in scope as a pattern identifier, so use the alternate ID
+        | Item.NewDef _ ->
+            // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
+            None
+        | _ ->
+            // The name is in scope as a pattern identifier, so use the alternate ID
+            altNameRefCell.Value <- SynSimplePatAlternativeIdInfo.Decided altId
+            Some altId
     | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId } -> Some altId
     | None -> None
 
@@ -4998,7 +5056,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     // See FSharp 1.0 3502
                     let dtys, rty = stripFunTy cenv.g vexpty
 
-                    if dtys.Length = args.Length + 1 && isOptionTy cenv.g rty && isUnitTy cenv.g (destOptionTy cenv.g rty) then
+                    if dtys.Length = args.Length + 1 &&
+                       ((isOptionTy cenv.g rty && isUnitTy cenv.g (destOptionTy cenv.g rty)) ||
+                        (isValueOptionTy cenv.g rty && isUnitTy cenv.g (destValueOptionTy cenv.g rty))) then
                         args, SynPat.Const(SynConst.Unit, m)
                     else
                         List.frontAndBack args
@@ -5011,8 +5071,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let activePatResTys = NewInferenceTypes apinfo.Names
             let activePatType = apinfo.OverallType cenv.g m ty activePatResTys isStructRetTy
 
-            let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range))
-            let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
+            let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, false, None, arg, unionRanges (rangeOfLid longId) arg.Range))
+            let activePatExpr, tpenv = PropagateThenTcDelayed cenv (MustEqual activePatType) env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
 
             if idx >= activePatResTys.Length then error(Error(FSComp.SR.tcInvalidIndexIntoActivePatternArray(), m))
             let argty = List.item idx activePatResTys
@@ -5050,7 +5110,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                             extraPatterns.Add pat
                             match item with
                             | Item.UnionCase(uci, _) ->
-                                errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.Name, id.idText), id.idRange))
+                                errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.DisplayName, id.idText), id.idRange))
                             | Item.ExnCase tcref ->
                                 errorR (Error (FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (tcref.DisplayName, id.idText), id.idRange))
                             | _ ->
@@ -5148,7 +5208,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
         | Item.RecdField rfinfo ->
             CheckRecdFieldInfoAccessible cenv.amap lidRange env.AccessRights rfinfo
-            if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.Name), lidRange))
+            if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), lidRange))
             CheckRecdFieldInfoAttributes cenv.g rfinfo lidRange |> CommitOperationResult
             match rfinfo.LiteralValue with
             | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), lidRange))
@@ -5269,37 +5329,33 @@ and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv e
 
     let rec dummyCheckedDelayed delayed =
         match delayed with
-        | DelayedApp (_hpa, arg, _mExprAndArg) :: otherDelayed ->
+        | DelayedApp (_hpa, _, _, arg, _mExprAndArg) :: otherDelayed ->
             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv arg
             dummyCheckedDelayed otherDelayed
         | _ -> ()
     dummyCheckedDelayed delayed
 
-// Calls UnifyTypes, but upon error only does the minimal error recovery
-// so that IntelliSense information can continue to be collected.
-and UnifyTypesAndRecover cenv env m expectedTy actualTy =
-    try
-        UnifyTypes cenv env m expectedTy actualTy
-    with e ->
-        errorRecovery e m
-
 and TcExprOfUnknownType cenv env tpenv expr =
     let exprty = NewInferenceType ()
-    let expr', tpenv = TcExpr cenv exprty env tpenv expr
+    let expr', tpenv = TcExpr cenv (MustEqual exprty) env tpenv expr
     expr', exprty, tpenv
 
-and TcExprFlex cenv flex compat ty (env: TcEnv) tpenv (e: SynExpr) =
+and TcExprFlex cenv flex compat (desiredTy: TType) (env: TcEnv) tpenv (synExpr: SynExpr) =
+    // This is the old way of introducing flexibility via subtype constraints, still active
+    // for compat reasons.
     if flex then
         let argty = NewInferenceType ()
         if compat then
             (destTyparTy cenv.g argty).SetIsCompatFlex(true)
-        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css e.Range NoTrace ty argty
-        let e', tpenv = TcExpr cenv argty env tpenv e
-        let e' = mkCoerceIfNeeded cenv.g ty argty e'
-        e', tpenv
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css synExpr.Range NoTrace desiredTy argty
+        let expr2, tpenv = TcExprFlex2 cenv argty env false tpenv synExpr
+        let expr3 = mkCoerceIfNeeded cenv.g desiredTy argty expr2
+        expr3, tpenv
     else
-        TcExpr cenv ty env tpenv e
+        TcExprFlex2 cenv desiredTy env false tpenv synExpr
 
+and TcExprFlex2 cenv desiredTy env isMethodArg tpenv synExpr =
+    TcExpr cenv (MustConvertTo (isMethodArg, desiredTy)) env tpenv synExpr
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
     // Start an error recovery handler
@@ -5312,10 +5368,10 @@ and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
         // Error recovery - return some rubbish expression, but replace/annotate
         // the type of the current expression with a type variable that indicates an error
         errorRecovery e m
-        solveTypAsError cenv env.DisplayEnv m ty
-        mkThrow m ty (mkOne cenv.g m), tpenv
+        solveTypAsError cenv env.DisplayEnv m ty.Commit
+        mkThrow m ty.Commit (mkOne cenv.g m), tpenv
 
-and TcExprNoRecover cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
+and TcExprNoRecover cenv (ty: OverallTy) (env: TcEnv) tpenv (expr: SynExpr) =
 
     // Count our way through the expression shape that makes up an object constructor
     // See notes at definition of "ctor" re. object model constructors.
@@ -5323,8 +5379,7 @@ and TcExprNoRecover cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
         if GetCtorShapeCounter env > 0 then AdjustCtorShapeCounter (fun x -> x - 1) env
         else env
 
-    TcExprThen cenv ty env tpenv expr []
-
+    TcExprThen cenv ty env tpenv false expr []
 
 // This recursive entry is only used from one callsite (DiscardAfterMissingQualificationAfterDot)
 // and has been added relatively late in F# 4.0 to preserve the structure of previous code. It pushes a 'delayed' parameter
@@ -5333,7 +5388,7 @@ and TcExprOfUnknownTypeThen cenv env tpenv expr delayed =
     let exprty = NewInferenceType ()
     let expr', tpenv =
       try
-        TcExprThen cenv exprty env tpenv expr delayed
+        TcExprThen cenv (MustEqual exprty) env tpenv false expr delayed
       with e ->
         let m = expr.Range
         errorRecovery e m
@@ -5382,41 +5437,73 @@ and TryTcStmt cenv env tpenv synExpr =
 /// During checking of expressions of the form (x(y)).z(w1, w2)
 /// keep a stack of things on the right. This lets us recognize
 /// method applications and other item-based syntax.
-and TcExprThen cenv overallTy env tpenv synExpr delayed =
+and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     match synExpr with
 
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
         if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
         // Check to see if pattern translation decided to use an alternative identifier.
         match altNameRefCellOpt with
-        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> TcExprThen cenv overallTy env tpenv (SynExpr.LongIdent (isOpt, LongIdentWithDots([altId], []), None, mLongId)) delayed
+        | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId} -> 
+            TcExprThen cenv overallTy env tpenv isArg (SynExpr.LongIdent (isOpt, LongIdentWithDots([altId], []), None, mLongId)) delayed
         | _ -> TcLongIdentThen cenv overallTy env tpenv longId delayed
 
     // f x
-    | SynExpr.App (hpa, _, func, arg, mFuncAndArg) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, arg, mFuncAndArg)) :: delayed)
+    // f(x)  // hpa=true
+    // f[x]  // hpa=true
+    | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+        
+        // func (arg)[arg2] gives warning that .[ must be used.
+        match delayed with
+        | DelayedApp (hpa2, isSugar2, _, arg2, _) :: _ when not isInfix && (hpa = ExprAtomicFlag.NonAtomic) && isAdjacentListExpr isSugar2 hpa2 (Some synExpr) arg2 -> 
+            let mWarning = unionRanges arg.Range arg2.Range
+            match arg with 
+            | SynExpr.Paren _ -> 
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcParenThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    informationalWarning(Error(FSComp.SR.tcParenThenAdjacentListArgumentReserved(), mWarning))
+            | SynExpr.ArrayOrListComputed _
+            | SynExpr.ArrayOrList _ ->
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcListThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    informationalWarning(Error(FSComp.SR.tcListThenAdjacentListArgumentReserved(), mWarning))
+            | _ -> 
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    warning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentNeedsAdjustment(), mWarning))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    informationalWarning(Error(FSComp.SR.tcOtherThenAdjacentListArgumentReserved(), mWarning))
+
+        | _ -> ()
+
+        TcExprThen cenv overallTy env tpenv false func ((DelayedApp (hpa, isInfix, Some func, arg, mFuncAndArg)) :: delayed)
 
     // e<tyargs>
     | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false func ((DelayedTypeApp (typeArgs, mTypeArgs, mFuncAndTypeArgs)) :: delayed)
 
     // e1.id1
     // e1.id1.id2
     // etc.
     | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
-        TcExprThen cenv overallTy env tpenv e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
+        TcExprThen cenv overallTy env tpenv false e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
     // e1.[e2]
     // e1.[e21, ..., e2n]
     // etc.
-    | SynExpr.DotIndexedGet (e1, e2, mDot, mWholeExpr) ->
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv synExpr e1 e2 delayed
+    | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
+        if not isArg && cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
 
     // e1.[e2] <- e3
     // e1.[e21, ..., e2n] <- e3
     // etc.
-    | SynExpr.DotIndexedSet (e1, e2, _, _, mDot, mWholeExpr) ->
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv synExpr e1 e2 delayed
+    | SynExpr.DotIndexedSet (e1, IndexerArgs indexArgs, e3, mOfLeftOfSet, mDot, mWholeExpr) ->
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (e3, mOfLeftOfSet)) e1 indexArgs delayed
 
     | _ ->
         match delayed with
@@ -5425,7 +5512,7 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
             let expr, exprty, tpenv = TcExprUndelayedNoType cenv env tpenv synExpr
             PropagateThenTcDelayed cenv overallTy env tpenv synExpr.Range (MakeApplicableExprNoFlex cenv expr) exprty ExprAtomicFlag.NonAtomic delayed
 
-and TcExprs cenv env m tpenv flexes argTys args =
+and TcExprsWithFlexes cenv env m tpenv flexes argTys args =
     if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))
     (tpenv, List.zip3 flexes argTys args) ||> List.mapFold (fun tpenv (flex, ty, e) ->
          TcExprFlex cenv flex false ty env tpenv e)
@@ -5443,16 +5530,110 @@ and CheckSuperInit cenv objTy m =
 
 and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
     let overallTy = NewInferenceType ()
-    let expr, tpenv = TcExprUndelayed cenv overallTy env tpenv synExpr
+    let expr, tpenv = TcExprUndelayed cenv (MustEqual overallTy) env tpenv synExpr
     expr, overallTy, tpenv
 
-and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
+/// Process a leaf construct where the actual type (or an approximation of it such as 'list<_>'
+/// or 'array<_>') is already sufficiently pre-known, and the information in the overall type
+/// can be eagerly propagated into the actual type (UnifyOverallType), including pre-calculating
+/// any type-directed conversion. This must mean that types extracted when processing the expression are not
+/// considered in determining any type-directed conversion. 
+///
+/// Used for:
+///   - Array or List expressions (both computed and fixed-size), to propagate from the overall type into the array/list type
+///     e.g. to infer element types, which may be relevant to processing each individual expression and the 'yield'
+///     returns.
+///
+///   - 'new ABC<_>(args)' expressions, to propagate from the overall type into the 'ABC<_>' type, e.g. to infer type parameters,
+///     which may be relevant to checking the arguments.
+///
+///   - object expressions '{ new ABC<_>(args) with ... }', to propagate from the overall type into the
+///     object type, e.g. to infer type parameters, which may be relevant to checking the arguments and
+///     methods of the object expression.
+///
+///   - string literal expressions (though the propagation is not essential in this case)
+///
+and TcPropagatingExprLeafThenConvert cenv overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
+    match overallTy with
+    | MustConvertTo _ when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+        assert (cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
+
+        // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
+        UnifyOverallType cenv env m overallTy actualTy
+
+        // Process the construct
+        let expr, tpenv = f ()
+
+        // Build the conversion
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
+        expr2, tpenv
+    | _ ->
+        UnifyTypes cenv env m overallTy.Commit actualTy
+        f ()
+
+/// Process a leaf construct, for cases where we propogate the overall type eagerly in
+/// some cases. Then apply additional type-directed conversions.
+///
+/// However in some cases favour propagating characteristics of the overall type.
+///
+/// 'isPropagating' indicates if propagation occurs
+/// 'processExpr' does the actual processing of the construct.
+///
+/// Used for
+///  - tuple       (except if overallTy is a tuple type or a variable type that can become one)
+///  - anon record (except if overallTy is an anon record type or a variable type that can become one)
+///  - record      (except if overallTy is requiresCtor || haveCtor or a record type or a variable type that can become one))
+and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
+    match overallTy with
+    | MustConvertTo(_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+        TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
+            let exprTy = NewInferenceType()
+
+            // Here 'processExpr' will eventually do the unification with exprTy.
+            let expr, tpenv = processExpr exprTy
+            expr, exprTy, tpenv)
+    | _ ->
+        // Here 'processExpr' will do the unification with the overall type.
+        processExpr overallTy.Commit
+
+/// Process a leaf construct where the processing of the construct is initially independent
+/// of the overall type. Determine and apply additional type-directed conversions after the processing 
+/// is complete, as the inferred type of the expression may enable a type-directed conversion.
+///
+/// Used for:
+///   - trait call 
+///   - LibraryOnlyUnionCaseFieldGet
+///   - constants 
+and TcNonPropagatingExprLeafThenConvert cenv (overallTy: OverallTy) (env: TcEnv) m processExpr =
+    // Process the construct
+    let expr, exprTy, tpenv = processExpr ()
+
+    // Now compute the conversion, based on the post-processing type
+    UnifyOverallType cenv env m overallTy exprTy
+
+    let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy exprTy env (* true  *) m expr
+    expr2, tpenv
+
+and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy (env: TcEnv) (* canAdhoc *) m expr =
+    match overallTy with
+    | MustConvertTo (_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        AdjustExprForTypeDirectedConversions tcVal cenv.g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+    | _ ->
+        expr
+
+and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     match synExpr with
+    // ( * )
+    | SynExpr.Paren(SynExpr.IndexRange (None, opm, None, _m1, _m2, _), _, _, _) ->
+        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
+        TcExpr cenv overallTy env tpenv replacementExpr
+
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) ->
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the
         // construct is a dot-lookup for the result of the construct.
-        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy.Commit, env.AccessRights)
         let env = ShrinkContext env mWholeExprIncludingParentheses expr2.Range
         TcExpr cenv overallTy env tpenv expr2
 
@@ -5460,18 +5641,18 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
 
         TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
     | SynExpr.Const (synConst, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
 
     | SynExpr.Lambda _ ->
@@ -5497,10 +5678,10 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     | SynExpr.MatchLambda (isExnMatch, mArg, clauses, spMatch, m) ->
 
-        let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
+        let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let idv1, idve1 = mkCompGenLocal mArg (cenv.synArgNameGenerator.New()) domainTy
         let envinner = ExitFamilyRegion env
-        let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy resultTy envinner tpenv clauses
+        let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
         let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
         overallExpr, tpenv
 
@@ -5513,14 +5694,15 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     // e: ty
     | SynExpr.Typed (synBodyExpr, synType, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
-        UnifyTypes cenv env m overallTy tgtTy
-        let expr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
-        expr, tpenv
+        UnifyOverallType cenv env m overallTy tgtTy
+        let bodyExpr, tpenv = TcExpr cenv (MustConvertTo (false, tgtTy)) env tpenv synBodyExpr
+        let bodyExpr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy tgtTy env (* true  *) m bodyExpr
+        bodyExpr2, tpenv
 
     // e :? ty
     | SynExpr.TypeTest (synInnerExpr, tgtTy, m) ->
         let innerExpr, srcTy, tpenv = TcExprOfUnknownType cenv env tpenv synInnerExpr
-        UnifyTypes cenv env m overallTy cenv.g.bool_ty
+        UnifyTypes cenv env m overallTy.Commit cenv.g.bool_ty
         let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
         TcRuntimeTypeTest (*isCast*)false (*isOperator*)true cenv env.DisplayEnv m tgtTy srcTy
         let expr = mkCallTypeTest cenv.g m tgtTy innerExpr
@@ -5538,10 +5720,10 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
           match synExpr with
           | SynExpr.Upcast (_, tgtTy, m) ->
               let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
-              UnifyTypes cenv env m tgtTy overallTy
+              UnifyTypes cenv env m tgtTy overallTy.Commit
               tgtTy, tpenv
           | SynExpr.InferredUpcast _ ->
-              overallTy, tpenv
+              overallTy.Commit, tpenv
           | _ -> failwith "upcast"
         TcStaticUpcast cenv env.DisplayEnv m tgtTy srcTy
         let expr = mkCoerceExpr(innerExpr, tgtTy, m, srcTy)
@@ -5553,9 +5735,9 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
           match synExpr with
           | SynExpr.Downcast (_, tgtTy, m) ->
               let tgtTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tgtTy
-              UnifyTypes cenv env m tgtTy overallTy
+              UnifyTypes cenv env m tgtTy overallTy.Commit
               tgtTy, tpenv, true
-          | SynExpr.InferredDowncast _ -> overallTy, tpenv, false
+          | SynExpr.InferredDowncast _ -> overallTy.Commit, tpenv, false
           | _ -> failwith "downcast"
         TcRuntimeTypeTest (*isCast*)true isOperator cenv env.DisplayEnv m tgtTy srcTy
 
@@ -5565,32 +5747,42 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         expr, tpenv
 
     | SynExpr.Null m ->
-        AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace overallTy
-        mkNull m overallTy, tpenv
+        AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
+        mkNull m overallTy.Commit, tpenv
 
     | SynExpr.Lazy (synInnerExpr, m) ->
         let innerTy = NewInferenceType ()
-        UnifyTypes cenv env m overallTy (mkLazyTy cenv.g innerTy)
-        let innerExpr, tpenv = TcExpr cenv innerTy env tpenv synInnerExpr
+        UnifyTypes cenv env m overallTy.Commit (mkLazyTy cenv.g innerTy)
+        let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) env tpenv synInnerExpr
         let expr = mkLazyDelayed cenv.g m innerTy (mkUnitDelayLambda cenv.g m innerExpr)
         expr, tpenv
 
     | SynExpr.Tuple (isExplicitStruct, args, _, m) ->
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
-        // No subsumption at tuple construction
-        let flexes = argTys |> List.map (fun _ -> false)
-        let args', tpenv = TcExprs cenv env m tpenv flexes argTys args
-        let expr = mkAnyTupled cenv.g m tupInfo args' argTys
-        expr, tpenv
+        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env m (fun overallTy ->
+            let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+
+            let flexes = argTys |> List.map (fun _ -> false)
+            let args', tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
+            let expr = mkAnyTupled cenv.g m tupInfo args' argTys
+            expr, tpenv
+        )
 
     | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
-        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
+        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnonRecdTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+            TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
+        )
 
     | SynExpr.ArrayOrList (isArray, args, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+       CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
+       let argty = NewInferenceType ()
+       let actualTy = if isArray then mkArrayType cenv.g argty else mkListTy cenv.g argty
 
-        let argty = NewInferenceType ()
-        UnifyTypes cenv env m overallTy (if isArray then mkArrayType cenv.g argty else mkListTy cenv.g argty)
+       // Propagating type directed conversion, e.g. for 
+       //     let x : seq<int64>  = [ 1; 2 ]
+       // Consider also the case where there is no relation but an op_Implicit is enabled from List<_> to C
+       //    let x : C = [ B(); B() ]
+
+       TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* canAdhoc  *) m (fun () ->
 
         // Always allow subsumption if a nominal type is known prior to type checking any arguments
         let flex = not (isTyparTy cenv.g argty)
@@ -5608,30 +5800,65 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             if isArray then Expr.Op (TOp.Array, [argty], args', m)
             else List.foldBack (mkCons cenv.g argty) args' (mkNil cenv.g m argty)
         expr, tpenv
+       )
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
-        let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
-        UnifyTypes cenv env mNewExpr overallTy objTy
-        TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
+      let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
 
-    | SynExpr.ObjExpr (objTy, argopt, binds, extraImpls, mNewExpr, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
-        TcObjectExpr cenv overallTy env tpenv (objTy, argopt, binds, extraImpls, mNewExpr, m)
+      TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
+        TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
+      )
+
+    | SynExpr.ObjExpr (synObjTy, argopt, binds, extraImpls, mNewExpr, m) ->
+      CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
+
+      // Note, allowing canAdhoc = true would disable subtype-based propagation from overallTy into checking of structure
+      //
+      // For example
+      //    let x : A seq = { new Collection<_> with ... the element type should be known in here! }
+      //
+      // So op_Implicit is effectively disabled for direct uses of object expressions
+      //let canAdhoc = false
+
+      let mObjTy = synObjTy.Range
+
+      let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synObjTy
+
+      // Work out the type of any interfaces to implement
+      let extraImpls, tpenv =
+          (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
+              let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
+              if not (isInterfaceTy cenv.g intfTy) then
+                error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
+              if isErasedType cenv.g intfTy then
+                  errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
+              (m, intfTy, overrides), tpenv)
+
+      let realObjTy = if isObjTy cenv.g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
+
+      TcPropagatingExprLeafThenConvert cenv overallTy realObjTy env (* canAdhoc *) m (fun () ->
+        TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, m)
+      )
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
-        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.AccessRights)
+
+      CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
+      let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
+      let haveCtor = Option.isSome inherits
+      TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
+      )
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
-        UnifyTypes cenv env m overallTy cenv.g.unit_ty
-        let guardExpr, tpenv = TcExpr cenv cenv.g.bool_ty env tpenv synGuardExpr
+        UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
+        let guardExpr, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) env tpenv synGuardExpr
         let bodyExpr, tpenv = TcStmt cenv env tpenv synBodyExpr
         mkWhile cenv.g (spWhile, NoSpecialWhileLoopMarker, guardExpr, bodyExpr, m), tpenv
 
     | SynExpr.For (spBind, id, start, dir, finish, body, m) ->
-        UnifyTypes cenv env m overallTy cenv.g.unit_ty
-        let startExpr, tpenv = TcExpr cenv cenv.g.int_ty env tpenv start
-        let finishExpr, tpenv = TcExpr cenv cenv.g.int_ty env tpenv finish
+        UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
+        let startExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv start
+        let finishExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv finish
         let idv, _ = mkLocal id.idRange id.idText cenv.g.int_ty
         let envinner = AddLocalVal cenv.g cenv.tcSink m idv env
 
@@ -5645,15 +5872,20 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.ForEach (spForLoop, SeqExprOnly seqExprOnly, isFromSource, pat, enumSynExpr, bodySynExpr, m) ->
         assert isFromSource
         if seqExprOnly then warning (Error(FSComp.SR.tcExpressionRequiresSequence(), m))
+        let enumSynExpr =
+            match RewriteRangeExpr enumSynExpr with
+            | Some e -> e
+            | None -> enumSynExpr
         TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, m, spForLoop)
 
-    | SynExpr.CompExpr (isArrayOrList, isNotNakedRefCell, comp, m) ->
+    | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
         let env = ExitFamilyRegion env
-        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m
+        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
-    | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
-        cenv.TcArrayOrListSequenceExpression cenv env overallTy tpenv (isArray, comp)  m
+    | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
+        let env = ExitFamilyRegion env
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
+        cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
@@ -5661,37 +5893,40 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
-        let filterClauses = synWithClauses |> List.map (function SynMatchClause(pat, optWhenExpr, arrow, _, m, _) -> SynMatchClause(pat, optWhenExpr, arrow, (SynExpr.Const (SynConst.Int32 1, m)), m, DebugPointForTarget.No))
-        let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty cenv.g.int_ty env tpenv filterClauses
+        let filterClauses =
+            synWithClauses |> List.map (fun clause ->
+                let (SynMatchClause(pat, optWhenExpr, arrow, _, m, _)) = clause
+                let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
+                SynMatchClause(pat, optWhenExpr, arrow, oneExpr, m, DebugPointAtTarget.No))
+        let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty (MustEqual cenv.g.int_ty) env tpenv filterClauses
         let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
         let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
-        let v2, handlerExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true Rethrow None cenv.g.exn_ty overallTy checkedHandlerClauses
-        mkTryWith cenv.g (bodyExpr, v1, filterExpr, v2, handlerExpr, mTryToLast, overallTy, spTry, spWith), tpenv
+        let v2, handlerExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true Rethrow None cenv.g.exn_ty overallTy.Commit checkedHandlerClauses
+        mkTryWith cenv.g (bodyExpr, v1, filterExpr, v2, handlerExpr, mTryToLast, overallTy.Commit, spTry, spWith), tpenv
 
     | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         let finallyExpr, tpenv = TcStmt cenv env tpenv synFinallyExpr
-        mkTryFinally cenv.g (bodyExpr, finallyExpr, mTryToLast, overallTy, spTry, spFinally), tpenv
+        mkTryFinally cenv.g (bodyExpr, finallyExpr, mTryToLast, overallTy.Commit, spTry, spFinally), tpenv
 
     | SynExpr.JoinIn (e1, mInToken, e2, mAll) ->
         errorR(Error(FSComp.SR.parsUnfinishedExpression("in"), mInToken))
         let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv e1)
         let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv e2)
-        mkDefault(mAll, overallTy), tpenv
+        mkDefault(mAll, overallTy.Commit), tpenv
 
     | SynExpr.ArbitraryAfterError (_debugStr, m) ->
         //solveTypAsError cenv env.DisplayEnv m overallTy
-        mkDefault(m, overallTy), tpenv
+        mkDefault(m, overallTy.Commit), tpenv
 
-    // expr. (already reported as an error)
     | SynExpr.DiscardAfterMissingQualificationAfterDot (e1, m) ->
         let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv e1 [DelayedDot])
-        mkDefault(m, overallTy), tpenv
+        mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.FromParseError (e1, m) ->
         //solveTypAsError cenv env.DisplayEnv m overallTy
         let _, tpenv = suppressErrorReporting (fun () -> TcExpr cenv overallTy env tpenv e1)
-        mkDefault(m, overallTy), tpenv
+        mkDefault(m, overallTy.Commit), tpenv
 
     | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m) ->
         if dir then
@@ -5718,7 +5953,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             TcExpr cenv overallTy env tpenv otherExpr
 
     | SynExpr.Do (synInnerExpr, m) ->
-        UnifyTypes cenv env m overallTy cenv.g.unit_ty
+        UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
         TcStmtThatCantBeCtorBody cenv env tpenv synInnerExpr
 
     | SynExpr.IfThenElse _ ->
@@ -5733,29 +5968,32 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         let e3', tpenv = TcExpr cenv overallTy env tpenv e3
         Expr.StaticOptimization (constraints', e2', e3', m), tpenv
 
-    /// e1.longId <- e2
+    // e1.longId <- e2
     | SynExpr.DotSet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
         else
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
-    /// e1 <- e2
+    // e1 <- e2
     | SynExpr.Set (e1, e2, mStmt) ->
-        TcExprThen cenv overallTy env tpenv e1 [MakeDelayedSet(e2, mStmt)]
+        TcExprThen cenv overallTy env tpenv false e1 [MakeDelayedSet(e2, mStmt)]
 
-    /// e1.longId(e2) <- e3, very rarely used named property setters
+    // e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
+            TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
         else
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); DelayedApp(ExprAtomicFlag.Atomic, e2, mStmt); MakeDelayedSet(e3, mStmt)]
+            TcExprThen cenv overallTy env tpenv false e1 
+                [ DelayedDotLookup(longId, mExprAndDotLookup); 
+                  DelayedApp(ExprAtomicFlag.Atomic, false, None, e2, mStmt)
+                  MakeDelayedSet(e3, mStmt)]
 
     | SynExpr.LongIdentSet (lidwd, e2, m) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
@@ -5770,9 +6008,12 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             // just drop rhs on the floor
             TcLongIdentThen cenv overallTy env tpenv lidwd [ ]
         else
-            TcLongIdentThen cenv overallTy env tpenv lidwd [ DelayedApp(ExprAtomicFlag.Atomic, e1, mStmt); MakeDelayedSet(e2, mStmt) ]
+            TcLongIdentThen cenv overallTy env tpenv lidwd 
+                [ DelayedApp(ExprAtomicFlag.Atomic, false, None, e1, mStmt)
+                  MakeDelayedSet(e2, mStmt) ]
 
     | SynExpr.TraitCall (tps, memSpfn, arg, m) ->
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
         let synTypes = tps |> List.map (fun tp -> SynType.Var(tp, m))
         let traitInfo, tpenv = TcPseudoMemberSpec cenv NewTyparsOK env synTypes tpenv memSpfn m
         if BakedInTraitConstraintNames.Contains traitInfo.MemberName then
@@ -5784,21 +6025,22 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         if not (isNil namedCallerArgs) then errorR(Error(FSComp.SR.tcNamedArgumentsCannotBeUsedInMemberTraits(), m))
         // Subsumption at trait calls if arguments have nominal type prior to unification of any arguments or return type
         let flexes = argTys |> List.map (isTyparTy cenv.g >> not)
-        let args', tpenv = TcExprs cenv env m tpenv flexes argTys args
+        let args', tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         AddCxMethodConstraint env.DisplayEnv cenv.css m NoTrace traitInfo
-        UnifyTypes cenv env m overallTy returnTy
-        Expr.Op (TOp.TraitCall traitInfo, [], args', m), tpenv
+        Expr.Op (TOp.TraitCall traitInfo, [], args', m), returnTy, tpenv
+      )
 
     | SynExpr.LibraryOnlyUnionCaseFieldGet (e1, c, n, m) ->
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
         let e1', ty1, tpenv = TcExprOfUnknownType cenv env tpenv e1
         let mkf, ty2 = TcUnionCaseOrExnField cenv env ty1 m c n
                           ((fun (a, b) n -> mkUnionCaseFieldGetUnproven cenv.g (e1', a, b, n, m)),
                            (fun a n -> mkExnCaseFieldGet(e1', a, n, m)))
-        UnifyTypes cenv env m overallTy ty2
-        mkf n, tpenv
+        mkf n, ty2, tpenv
+      )
 
     | SynExpr.LibraryOnlyUnionCaseFieldSet (e1, c, n, e2, m) ->
-        UnifyTypes cenv env m overallTy cenv.g.unit_ty
+        UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
         let e1', ty1, tpenv = TcExprOfUnknownType cenv env tpenv e1
         let mkf, ty2 = TcUnionCaseOrExnField cenv env ty1 m c n
                           ((fun (a, b) n e2' ->
@@ -5807,7 +6049,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
                            (fun a n e2' ->
                              if not (isExnFieldMutable a n) then errorR(Error(FSComp.SR.tcFieldIsNotMutable(), m))
                              mkExnCaseFieldSet(e1', a, n, e2', m)))
-        let e2', tpenv = TcExpr cenv ty2 env tpenv e2
+        let e2', tpenv = TcExpr cenv (MustEqual ty2) env tpenv e2
         mkf n e2', tpenv
 
     | SynExpr.LibraryOnlyILAssembly (s, tyargs, args, rtys, m) ->
@@ -5816,18 +6058,18 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         let tyargs', tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tyargs
         // No subsumption at uses of IL assembly code
         let flexes = argTys |> List.map (fun _ -> false)
-        let args', tpenv = TcExprs cenv env m tpenv flexes argTys args
+        let args', tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         let rtys', tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv rtys
         let returnTy =
             match rtys' with
             | [] -> cenv.g.unit_ty
             | [ returnTy ] -> returnTy
             | _ -> error(InternalError("Only zero or one pushed items are permitted in IL assembly code", m))
-        UnifyTypes cenv env m overallTy returnTy
+        UnifyTypes cenv env m overallTy.Commit returnTy
         mkAsmExpr (Array.toList s, tyargs', args', rtys', m), tpenv
 
     | SynExpr.Quote (oper, raw, ast, isFromQueryExpression, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
     | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
@@ -5850,11 +6092,36 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.MatchBang (_, _, _, m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
+    | SynExpr.IndexFromEnd (range=m)
+    | SynExpr.IndexRange (range=m) ->
+        error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
+
+// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+//
+// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
+//    [| 1..4 |]
+// becomes [| for i in (..) 1 4 do yield i |]
+// instead of generating the array directly from the ranges
+and RewriteRangeExpr expr = 
+    match expr with
+    // a..b..c (parsed as (a..b)..c )
+    | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some expr1, _, Some synStepExpr, _, _, _)), _, Some expr2, _m1, _m2, wholem) ->
+        Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
+    // a..b
+    | SynExpr.IndexRange (Some expr1, opm, Some expr2, _m1, _m2, wholem) ->
+        let otherExpr =
+            match mkSynInfix opm expr1 ".." expr2 with
+            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
+            | _ -> failwith "impossible"
+        Some otherExpr  
+    | _ -> None
+
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
     | SynExpr.Lambda (isMember, isSubsequent, spats, _, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
-        let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
+        let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
@@ -5873,7 +6140,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
                  { envinner with eLambdaArgInfos = rest }
             | [] -> envinner
                    
-        let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
+        let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo (false, resultTy)) takenNames tpenv bodyExpr
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) ->
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
@@ -5883,22 +6150,97 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     | e -> 
         // Dive into the expression to check for syntax errors and suppress them if they show.
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
-            //TcExprFlex cenv true true overallTy env tpenv e)
             TcExpr cenv overallTy env tpenv e)
 
+and (|IndexArgOptionalFromEnd|) indexArg = 
+    match indexArg with
+    | SynExpr.IndexFromEnd (a, m) -> (a, true, m)
+    | expr -> (expr, false, expr.Range)
+
+and DecodeIndexArg indexArg = 
+    match indexArg with
+    | SynExpr.IndexRange (info1, _opm, info2, m1, m2, _) ->
+        let info1 = 
+            match info1 with 
+            | Some (IndexArgOptionalFromEnd (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
+            | None -> None 
+        let info2 = 
+            match info2 with 
+            | Some (IndexArgOptionalFromEnd (expr2, isFromEnd2, _)) -> Some (expr2, isFromEnd2)
+            | None -> None 
+        IndexArgRange (info1, info2, m1, m2)
+    | IndexArgOptionalFromEnd (expr, isFromEnd, m) ->
+        IndexArgItem(expr, isFromEnd, m)
+
+and (|IndexerArgs|) e =
+    match e with 
+    | SynExpr.IndexRange _ -> [e]
+    | SynExpr.IndexFromEnd _ -> [e]
+    | SynExpr.Tuple (false, args, _, _) -> args
+    | e -> [e]
+
+and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (setInfo: _ option) synLeftExpr indexArgs delayed =
+    let leftExpr, e1ty, tpenv = TcExprOfUnknownType cenv env tpenv synLeftExpr
+    let expandedIndexArgs = ExpandIndexArgs (Some synLeftExpr) indexArgs
+    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some synLeftExpr) leftExpr e1ty expandedIndexArgs indexArgs delayed
+
+// Eliminate GetReverseIndex from index args
+and ExpandIndexArgs (synLeftExprOpt: SynExpr option) indexArgs =
+
+    // xs.GetReverseIndex rank offset - 1
+    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
+        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
+        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
+        match synLeftExprOpt with 
+        | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
+        | Some xsId -> 
+            mkSynApp1
+                (mkSynDot range range xsId (mkSynId (range.MakeSynthetic()) "GetReverseIndex"))
+                sliceArgs
+                range
+
+    let mkSynSomeExpr (m: range) x = 
+        let m = m.MakeSynthetic()
+        SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m FSharpLib.CorePath "Some", x, m)
+
+    let mkSynNoneExpr (m: range) =
+        let m = m.MakeSynthetic()
+        mkSynLidGet m FSharpLib.CorePath "None"
+
+    let expandedIndexArgs =
+        indexArgs
+        |> List.mapi ( fun pos indexerArg ->
+            match DecodeIndexArg indexerArg with
+            | IndexArgItem(expr, fromEnd, range) ->
+                [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
+            | IndexArgRange(info1, info2, range1, range2) ->
+                [
+                   match info1 with 
+                   | Some (a1, isFromEnd1) ->
+                       yield mkSynSomeExpr range1 (if isFromEnd1 then rewriteReverseExpr pos a1 range1 else a1)
+                   | None -> 
+                       yield mkSynNoneExpr range1
+                   match info2 with 
+                   | Some (a2, isFromEnd2) ->
+                       yield mkSynSomeExpr range2 (if isFromEnd2 then rewriteReverseExpr pos a2 range2 else a2)
+                   | None ->
+                       yield mkSynNoneExpr range1
+                ]
+        )
+        |> List.collect id
+
+    expandedIndexArgs
 
 // Check expr.[idx]
 // This is a little over complicated for my liking. Basically we want to interpret e1.[idx] as e1.Item(idx).
 // However it's not so simple as all that. First "Item" can have a different name according to an attribute in
-// .NET metadata. This means we manually typecheck 'e1' and look to see if it has a nominal type. We then
+// .NET metadata. This means we manually typecheck 'expr and look to see if it has a nominal type. We then
 // do the right thing in each case.
-and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArgs delayed =
+and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprOpt expr e1ty expandedIndexArgs indexArgs delayed =
     let ad = env.AccessRights
-    let e1', e1ty, tpenv = TcExprOfUnknownType cenv env tpenv e1
-
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR
     // has a member called 'Item'
-    let isIndex = indexArgs |> List.forall( fun x -> match x with SynIndexerArg.One _ -> true | _ -> false)
+    let isIndex = indexArgs |> List.forall (fun indexArg -> match DecodeIndexArg indexArg with IndexArgItem _ -> true | _ -> false)
     let propName =
         if isIndex then
             FoldPrimaryHierarchyOfType (fun ty acc ->
@@ -5928,47 +6270,10 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
-    // xs.GetReverseIndex rank offset - 1
-    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
-        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
-        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
-        let xsId = e1
-
-        mkSynApp1
-            (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
-            sliceArgs
-            range
-
-    let rewriteReverseOption (app: SynExpr) (rank: int) (range: range) =
-       match app with
-       | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr rank e1 range, outerRange)
-       | _ -> app
-
-    let expandedIndexArgs =
-        indexArgs
-        |> List.mapi ( fun pos indexerArg ->
-            match indexerArg with
-            | SynIndexerArg.One(expr, fromEnd, range) ->
-                [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
-            | SynIndexerArg.Two
-                (
-                    a1,
-                    fromEnd1,
-                    a2,
-                    fromEnd2,
-                    range1,
-                    range2) ->
-                [
-                   if fromEnd1 then rewriteReverseOption a1 pos range1 else a1 ;
-                   if fromEnd2 then rewriteReverseOption a2 pos range2 else a2
-                ]
-        )
-        |> List.collect id
-
     let MakeIndexParam setSliceArrayOption =
-       match indexArgs with
+       match List.map DecodeIndexArg indexArgs with
        | [] -> failwith "unexpected empty index list"
-       | [SynIndexerArg.One _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
+       | [IndexArgItem _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
        | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
 
     let attemptArrayString =
@@ -5978,114 +6283,121 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         let info =
             if isArray then
                 let fixedIndex3d4dEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
-                match wholeExpr with
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _], _, _)                                                   -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], _, _)                             -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], _, _)         -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _)                                                                        -> Some (indexOpPath, "GetArray", expandedIndexArgs)
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _)                                            -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], e3, _, _, _)                      -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _)  -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _], e3, _, _, _)                                                                 -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                                                        -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2DFixed1", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2DFixed2", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                                -> Some (sliceOpPath, "GetArraySlice3D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)            -> Some (sliceOpPath, "GetArraySlice4D", expandedIndexArgs)
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _], e3, _, _, _)                                                                 -> Some (sliceOpPath, "SetArraySlice", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2DFixed1", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2DFixed2", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                         -> Some (sliceOpPath, "SetArraySlice3D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)     -> Some (sliceOpPath, "SetArraySlice4D", (expandedIndexArgs @ [e3]))
-                    | _ when fixedIndex3d4dEnabled ->
-                        match wholeExpr with
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [e3])
-                        | _                                                                                                                         -> None
+                let indexArgs = List.map DecodeIndexArg indexArgs
+                match indexArgs, setInfo with
+                | [IndexArgItem _; IndexArgItem _], None                                        -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], None                        -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], None          -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
+                | [IndexArgItem _], None                                                       -> Some (indexOpPath, "GetArray", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _], Some (e3, _)                                -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], Some (e3, _)                -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], Some (e3, _)  -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _], Some (e3, _)                                               -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _], None                                                       -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed1", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed2", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2D", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _], None                           -> Some (sliceOpPath, "GetArraySlice3D", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None             -> Some (sliceOpPath, "GetArraySlice4D", expandedIndexArgs)
+                | [IndexArgRange _], Some (e3, _)                                               -> Some (sliceOpPath, "SetArraySlice", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed1", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgItem _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed2", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _)                   -> Some (sliceOpPath, "SetArraySlice3D", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _)     -> Some (sliceOpPath, "SetArraySlice4D", (expandedIndexArgs @ [e3]))
+                | _ when fixedIndex3d4dEnabled ->
+                    match indexArgs, setInfo with
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [e3])
                     | _ -> None
+                | _ -> None
 
             elif isString then
-                match wholeExpr with
-                | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _) -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
-                | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _) -> Some (indexOpPath, "GetString", expandedIndexArgs)
+                match List.map DecodeIndexArg indexArgs, setInfo with
+                | [IndexArgRange _], None -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
+                | [IndexArgItem _], None -> Some (indexOpPath, "GetString", expandedIndexArgs)
                 | _ -> None
 
             else None
 
         match info with
-            | None -> None
-            | Some (path, functionName, indexArgs) ->
-                let operPath = mkSynLidGet mDot path (CompileOpName functionName)
-                let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
-                let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
-                UnifyTypes cenv env mWholeExpr domainTy e1ty
-                let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
-                let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
-                Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
+        | None -> None
+        | Some (path, functionName, indexArgs) ->
+            let operPath = mkSynLidGet (mDot.MakeSynthetic()) path functionName
+            let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
+            let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
+            UnifyTypes cenv env mWholeExpr domainTy e1ty
+            let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
+            let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, true, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
+            Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
     match attemptArrayString with
     | Some res -> res
-    | None ->
-    if isNominal || Option.isSome propName then
+    | None when isNominal || Option.isSome propName ->
         let nm =
             match propName with
             | None -> "Item"
             | Some nm -> nm
         let delayed =
-            match wholeExpr with
+            match setInfo with
             // e1.[e2]
-            | SynExpr.DotIndexedGet _ ->
-                DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mWholeExpr) :: delayed
-            // e1.[e2] <- e3
-            | SynExpr.DotIndexedSet (_, _, e3, mOfLeftOfSet, _, _) ->
-                match isIndex with
-                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
-                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam (Some e3), mWholeExpr) :: delayed
+            | None  ->
+                [ DelayedDotLookup([ ident(nm, mWholeExpr)], mWholeExpr)
+                  DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, MakeIndexParam None, mWholeExpr)
+                  yield! delayed ]
+            // e1.[e2] <- e3   --> e1.Item(e2) <- e3
+            | Some (e3, mOfLeftOfSet) ->
+                if isIndex then
+                    [ DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet)
+                      DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, MakeIndexParam None, mOfLeftOfSet)
+                      MakeDelayedSet(e3, mWholeExpr)
+                      yield! delayed ]
+                else
+                    [ DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet)
+                      DelayedApp(ExprAtomicFlag.Atomic, true, synLeftExprOpt, MakeIndexParam (Some e3), mWholeExpr)
+                      yield! delayed ]
 
-            | _ -> error(InternalError("unreachable", mWholeExpr))
-        PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv e1') e1ty ExprAtomicFlag.Atomic delayed
+        PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv expr) e1ty ExprAtomicFlag.Atomic delayed
 
-    else
+    | _ ->
         // deprecated constrained lookup
         error(Error(FSComp.SR.tcObjectOfIndeterminateTypeUsedRequireTypeConstraint(), mWholeExpr))
 
@@ -6110,10 +6422,10 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
         if not (isAppTy cenv.g objTy) && not (isAnyTupleTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
 
-        TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
+        TcCtorCall false cenv env tpenv (MustEqual objTy) objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
 
 /// Check an 'inheritedTys declaration in an implicit or explicit class
-and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit args mWholeCall delayed afterTcOverloadResolutionOpt =
+and TcCtorCall isNaked cenv env tpenv (overallTy: OverallTy) objTy mObjTyOpt item superInit args mWholeCall delayed afterTcOverloadResolutionOpt =
     let ad = env.AccessRights
     let isSuperInit = (if superInit then CtorValUsedAsSuperInit else NormalValUse)
     let mItem = match mObjTyOpt with Some m -> m | None -> mWholeCall
@@ -6145,14 +6457,13 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
         match mObjTyOpt with
         | Some mObjTy -> CallNameResolutionSink cenv.tcSink (mObjTy, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
         | None -> ()
-        TcNewDelegateThen cenv objTy env tpenv mItem mWholeCall ty arg ExprAtomicFlag.NonAtomic delayed
+        TcNewDelegateThen cenv (MustEqual objTy) env tpenv mItem mWholeCall ty arg ExprAtomicFlag.NonAtomic delayed
 
     | _ ->
         error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
 
-
 // Check a record construction expression
-and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList m =
+and TcRecordConstruction cenv (overallTy: TType) env tpenv optOrigExprInfo objTy fldsList m =
     let tcref, tinst = destAppTy cenv.g objTy
     let tycon = tcref.Deref
     UnifyTypes cenv env m overallTy objTy
@@ -6167,7 +6478,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList
         [ for fname, fexpr in fldsList do
               let fspec =
                   try
-                      fspecs |> List.find (fun fspec -> fspec.Name = fname)
+                      fspecs |> List.find (fun fspec -> fspec.LogicalName = fname)
                   with :? KeyNotFoundException ->
                       error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy), m))
               let fty = actualTyOfRecdFieldForTycon tycon tinst fspec
@@ -6190,8 +6501,8 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList
             let fieldNameUnbound nom = List.forall (fun (name, _) -> name <> nom) fldsList
             let flds =
                 fspecs |> List.choose (fun rfld ->
-                    if fieldNameUnbound rfld.Name && not rfld.IsZeroInit
-                    then Some(rfld.Name, mkRecdFieldGetViaExprAddr (oldvaddre, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
+                    if fieldNameUnbound rfld.LogicalName && not rfld.IsZeroInit
+                    then Some(rfld.LogicalName, mkRecdFieldGetViaExprAddr (oldvaddre, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
                     else None)
             flds
 
@@ -6202,7 +6513,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList
 
     // Check all fields are bound
     fspecs |> List.iter (fun fspec ->
-      if not (fldsList |> List.exists (fun (fname, _) -> fname = fspec.Name)) then
+      if not (fldsList |> List.exists (fun (fname, _) -> fname = fspec.LogicalName)) then
         error(Error(FSComp.SR.tcFieldRequiresAssignment(fspec.rfield_id.idText, fullDisplayTextOfTyconRef tcref), m)))
 
     // Other checks (overlap with above check now clear)
@@ -6467,17 +6778,15 @@ and CheckSuperType cenv ty m =
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
 
 
-and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, mWholeExpr) =
-    let mObjTy = synObjTy.Range
+and TcObjectExpr cenv env tpenv (objTy, realObjTy, argopt, binds, extraImpls, mObjTy, mNewExpr, mWholeExpr) =
 
-    let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synObjTy
     match tryTcrefOfAppTy cenv.g objTy with
     | ValueNone -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(), mNewExpr))
     | ValueSome tcref ->
     let isRecordTy = tcref.IsRecordTycon
     if not isRecordTy && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
 
-    CheckSuperType cenv objTy synObjTy.Range
+    CheckSuperType cenv objTy mObjTy
 
     // Add the object type to the ungeneralizable items
     let env = {env with eUngeneralizableItems = addFreeItemOfTy objTy env.eUngeneralizableItems }
@@ -6501,34 +6810,21 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
                 | NormalizedBinding (_, _, _, _, [], _, _, _, SynPat.Named(id, _, _, _), NormalizedBindingRhs(_, _, rhsExpr), _, _) -> id.idText, rhsExpr
                 | _ -> error(Error(FSComp.SR.tcOnlySimpleBindingsCanBeUsedInConstructionExpressions(), b.RangeOfBindingWithoutRhs)))
 
-        TcRecordConstruction cenv overallTy env tpenv None objTy fldsList mWholeExpr
+        TcRecordConstruction cenv objTy env tpenv None objTy fldsList mWholeExpr
     else
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mObjTy ad objTy)
 
         if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env = 1 then
             error(Error(FSComp.SR.tcObjectsMustBeInitializedWithObjectExpression(), mNewExpr))
 
-      // Work out the type of any interfaces to implement
-        let extraImpls, tpenv =
-          (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
-              let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
-              if not (isInterfaceTy cenv.g intfTy) then
-                error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
-              if isErasedType cenv.g intfTy then
-                  errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
-              (m, intfTy, overrides), tpenv)
-
-        let realObjTy = if isObjTy cenv.g objTy && not (isNil extraImpls) then (p23 (List.head extraImpls)) else objTy
-        UnifyTypes cenv env mWholeExpr overallTy realObjTy
-
         let ctorCall, baseIdOpt, tpenv =
             match item, argopt with
             | Item.CtorGroup(methodName, minfos), Some (arg, baseIdOpt) ->
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
-                let afterResolution = ForNewConstructors cenv.tcSink env synObjTy.Range methodName minfos
+                let afterResolution = ForNewConstructors cenv.tcSink env mObjTy methodName minfos
                 let ad = env.AccessRights
 
-                let expr, tpenv = TcMethodApplicationThen cenv env objTy None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic []
+                let expr, tpenv = TcMethodApplicationThen cenv env (MustEqual objTy) None tpenv None [] mWholeExpr mObjTy methodName ad PossiblyMutates false meths afterResolution CtorValUsedAsSuperInit [arg] ExprAtomicFlag.Atomic []
                 // The 'base' value is always bound
                 let baseIdOpt = (match baseIdOpt with None -> Some(ident("base", mObjTy)) | Some id -> Some id)
                 expr, baseIdOpt, tpenv
@@ -6550,6 +6846,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
 
         let overridesAndVirts, tpenv = ComputeObjectExprOverrides cenv env tpenv impls
 
+        // 2. check usage conditions
         overridesAndVirts |> List.iter (fun (m, implty, dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, overrides) ->
             let overrideSpecs = overrides |> List.map fst
 
@@ -6557,7 +6854,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
 
             DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
 
-        // 6c. create the specs of overrides
+        // 3. create the specs of overrides
         let allTypeImpls =
           overridesAndVirts |> List.map (fun (m, implty, _, dispatchSlotsKeyed, _, overrides) ->
               let overrides' =
@@ -6577,12 +6874,13 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
                             let overridden =
                                 match searchForOverride with
                                 | Some x -> x
-                                | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), synObjTy.Range))
+                                | None -> error(Error(FSComp.SR.tcAtLeastOneOverrideIsInvalid(), mObjTy))
 
                             yield TObjExprMethod(overridden.GetSlotSig(cenv.amap, m), bindingAttribs, mtps, [thisVal] :: methodVars, bindingBody, id.idRange) ]
               (implty, overrides'))
 
         let objTy', overrides' = allTypeImpls.Head
+        assert (typeEquiv cenv.g objTy objTy')
         let extraImpls = allTypeImpls.Tail
 
         // 7. Build the implementation
@@ -6590,21 +6888,19 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
         let expr = mkCoerceIfNeeded cenv.g realObjTy objTy' expr
         expr, tpenv
 
-
-
 //-------------------------------------------------------------------------
 // TcConstStringExpr
 //-------------------------------------------------------------------------
 
 /// Check a constant string expression. It might be a 'printf' format string
-and TcConstStringExpr cenv overallTy env m tpenv s =
+and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv s =
 
-    if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then
+    if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit cenv.g.string_ty) then
         mkString cenv.g m s, tpenv
     else
         TcFormatStringExpr cenv overallTy env m tpenv s
 
-and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
+and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) =
     let g = cenv.g
     let aty = NewInferenceType ()
     let bty = NewInferenceType ()
@@ -6614,7 +6910,7 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
     let formatTy = mkPrintfFormatTy g aty bty cty dty ety
 
     // This might qualify as a format string - check via a type directed rule
-    let ok = not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy
+    let ok = not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy
 
     if ok then
         // Parse the format string to work out the phantom types
@@ -6637,11 +6933,12 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
         fmtExpr, tpenv
 
     else
-        UnifyTypes cenv env m overallTy g.string_ty
-        mkString g m fmtString, tpenv
+        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+            mkString g m fmtString, tpenv
+        )
 
 /// Check an interpolated string expression
-and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedStringPart list) =
+and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
     let synFillExprs =
@@ -6675,12 +6972,12 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
 
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
-        if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.string_ty) then
+        if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.string_ty) then
 
             // And if that succeeds, the result of printing is a string
             UnifyTypes cenv env m printerArgTy g.unit_ty
             UnifyTypes cenv env m printerResidueTy g.string_ty
-            UnifyTypes cenv env m printerResultTy overallTy
+            UnifyTypes cenv env m printerResultTy overallTy.Commit
 
             // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
             UnifyTypes cenv env m printerTy printerResultTy
@@ -6688,14 +6985,14 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
             Choice1Of2 (true, newFormatMethod)
 
         // ... or if that fails then may be a FormattableString by a type-directed rule....
-        elif (not (isObjTy g overallTy) &&
-              ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty)
-               || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_IFormattable_ty))) then
+        elif (not (isObjTy g overallTy.Commit) &&
+              ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_FormattableString_ty)
+               || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit g.system_IFormattable_ty))) then
 
             // And if that succeeds, the result of printing is a string
             UnifyTypes cenv env m printerArgTy g.unit_ty
             UnifyTypes cenv env m printerResidueTy g.string_ty
-            UnifyTypes cenv env m printerResultTy overallTy
+            UnifyTypes cenv env m printerResultTy overallTy.Commit
 
             // Find the FormattableStringFactor.Create method in the .NET libraries
             let ad = env.eAccessRights
@@ -6709,15 +7006,13 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
             | None -> languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
-        elif not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy then
+        elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
 
             // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
             UnifyTypes cenv env m printerTy printerResultTy
             Choice1Of2 (false, newFormatMethod)
 
         else
-            // this should fail and produce an error
-            UnifyTypes cenv env m overallTy g.string_ty
             Choice1Of2 (true, newFormatMethod)
 
     let isFormattableString = (match stringKind with Choice2Of2 _ -> true | _ -> false)
@@ -6777,6 +7072,8 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
 
         UnifyTypes cenv env m printerTupleTy printerTupleTyRequired
 
+        // Type check the expressions filling the holes
+
         if List.isEmpty synFillExprs then
             let str = mkString g m printfFormatString
 
@@ -6787,7 +7084,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
         else
             // Type check the expressions filling the holes
             let flexes = argTys |> List.map (fun _ -> false)
-            let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argTys synFillExprs
+            let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
 
             let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -6802,8 +7099,10 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
             let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
 
             if isString then
-                // Make the call to sprintf
-                mkCall_sprintf g m printerTy fmtExpr [], tpenv
+                TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                    // Make the call to sprintf
+                    mkCall_sprintf g m printerTy fmtExpr [], tpenv
+                )
             else
                 fmtExpr, tpenv
 
@@ -6812,7 +7111,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
 
         // Type check the expressions filling the holes
         let flexes = argTys |> List.map (fun _ -> false)
-        let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argTys synFillExprs
+        let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -6823,7 +7122,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
         let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createFormattableStringMethod NormalValUse [] [dotnetFormatStringExpr; argsExpr] []
 
         let resultExpr =
-            if typeEquiv g overallTy g.system_IFormattable_ty then
+            if typeEquiv g overallTy.Commit g.system_IFormattable_ty then
                 mkCoerceIfNeeded g g.system_IFormattable_ty g.system_FormattableString_ty createExpr
             else
                 createExpr
@@ -6834,16 +7133,18 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
 //-------------------------------------------------------------------------
 
 /// Check a constant expression.
-and TcConstExpr cenv overallTy env m tpenv c =
+and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
     match c with
 
-    // NOTE: these aren't "really" constants
     | SynConst.Bytes (bytes, _, m) ->
-       UnifyTypes cenv env m overallTy (mkByteArrayTy cenv.g)
+      let actualTy = mkByteArrayTy cenv.g
+      TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* true *) m <| fun ()->
        Expr.Op (TOp.Bytes bytes, [], [], m), tpenv
 
     | SynConst.UInt16s arr ->
-       UnifyTypes cenv env m overallTy (mkArrayType cenv.g cenv.g.uint16_ty); Expr.Op (TOp.UInt16s arr, [], [], m), tpenv
+      let actualTy = mkArrayType cenv.g cenv.g.uint16_ty
+      TcPropagatingExprLeafThenConvert cenv overallTy actualTy env (* true *) m <| fun () ->
+       Expr.Op (TOp.UInt16s arr, [], [], m), tpenv
 
     | SynConst.UserNum (s, suffix) ->
         let expr =
@@ -6878,9 +7179,10 @@ and TcConstExpr cenv overallTy env m tpenv c =
         TcExpr cenv overallTy env tpenv expr
 
     | _ ->
-        let c' = TcConst cenv overallTy m env c
-        Expr.Const (c', m, overallTy), tpenv
-
+      TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
+        let cTy = NewInferenceType()
+        let c' = TcConst cenv cTy m env c
+        Expr.Const (c', m, cTy), cTy, tpenv)
 
 //-------------------------------------------------------------------------
 // TcAssertExpr
@@ -6895,8 +7197,7 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
-
-and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
+and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
     let haveCtor = Option.isSome inherits
@@ -6908,7 +7209,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
           match inherits with
           | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
           | None ->
-              let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
+              let olde, tpenv = TcExpr cenv (MustEqual overallTy) env tpenv origExpr
               Some olde, tpenv
 
     let hasOrigExpr = optOrigExpr.IsSome
@@ -6966,7 +7267,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match inherits, GetSuperTypeOfType cenv.g cenv.amap mWholeExpr overallTy with
         | Some (superTy, arg, m, _, _), Some realSuperTy ->
             // Constructor expression, with an explicit 'inheritedTys clause. Check the inherits clause.
-            let e, tpenv = TcExpr cenv realSuperTy env tpenv (SynExpr.New (true, superTy, arg, m))
+            let e, tpenv = TcExpr cenv (MustEqual realSuperTy) env tpenv (SynExpr.New (true, superTy, arg, m))
             Some e, tpenv
         | None, Some realSuperTy when requiresCtor ->
             // Constructor expression, No 'inherited' clause, hence look for a default constructor
@@ -6989,7 +7290,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
 
 // Check '{| .... |}'
-and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
+and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
     let unsortedFieldSynExprsGiven = List.map snd unsortedFieldIdsAndSynExprsGiven
 
     match optOrigSynExpr with
@@ -7019,7 +7320,7 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
 
         let flexes = unsortedFieldTys |> List.map (fun _ -> true)
 
-        let unsortedCheckedArgs, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedFieldTys unsortedFieldSynExprsGiven
+        let unsortedCheckedArgs, tpenv = TcExprsWithFlexes cenv env mWholeExpr tpenv flexes unsortedFieldTys unsortedFieldSynExprsGiven
 
         mkAnonRecd cenv.g mWholeExpr anonInfo unsortedFieldIds unsortedCheckedArgs unsortedFieldTys, tpenv
 
@@ -7034,7 +7335,7 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
         // Unlike in the case of record type copy-and-update {| a with X = 1 |} does not force a.X to exist or have had type 'int'
 
         let origExprTy = NewInferenceType()
-        let origExprChecked, tpenv = TcExpr cenv origExprTy env tpenv origExpr
+        let origExprChecked, tpenv = TcExpr cenv (MustEqual origExprTy) env tpenv origExpr
         let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" origExprTy
         let mOrigExpr = origExpr.Range
 
@@ -7104,7 +7405,7 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
 
         // Check the expressions in unsorted order
         let unsortedFieldExprsGiven, tpenv =
-            TcExprs cenv env mWholeExpr tpenv flexes unsortedFieldTysGiven unsortedFieldSynExprsGiven
+            TcExprsWithFlexes cenv env mWholeExpr tpenv flexes unsortedFieldTysGiven unsortedFieldSynExprsGiven
 
         let unsortedFieldExprsGiven = unsortedFieldExprsGiven |> List.toArray
 
@@ -7128,7 +7429,6 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
         let expr = mkCompGenLet mOrigExpr oldv origExprChecked expr
         expr, tpenv
 
-
 and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWholeExpr, spForLoop) =
     let tryGetOptimizeSpanMethodsAux g m ty isReadOnlySpan =
         match (if isReadOnlySpan then tryDestReadOnlySpanTy g m ty else tryDestSpanTy g m ty) with
@@ -7149,7 +7449,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
         else
             tryGetOptimizeSpanMethodsAux g m ty true
 
-    UnifyTypes cenv env mWholeExpr overallTy cenv.g.unit_ty
+    UnifyTypes cenv env mWholeExpr overallTy.Commit cenv.g.unit_ty
 
     let mPat = pat.Range
     //let mBodyExpr = bodySynExpr.Range
@@ -7230,11 +7530,11 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
     // Add the pattern match compilation
     let bodyExpr =
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
-        CompilePatternForMatch 
-            cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None) 
-            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.Yes, None), mForLoopStart)] 
-            enumElemTy 
-            overallTy
+        CompilePatternForMatch
+            cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
+            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.Yes, None), mForLoopStart)] 
+            enumElemTy
+            overallTy.Commit
 
     // Apply the fixup to bind the elemVar if needed
     let bodyExpr = bodyExprFixup elemVar bodyExpr
@@ -7279,13 +7579,13 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
     let astTy = NewInferenceType ()
 
     // Assert the overall type for the domain of the quotation template
-    UnifyTypes cenv env m overallTy (if raw then mkRawQuotedExprTy cenv.g else mkQuotedExprTy cenv.g astTy)
+    UnifyTypes cenv env m overallTy.Commit (if raw then mkRawQuotedExprTy cenv.g else mkQuotedExprTy cenv.g astTy)
 
     // Check the expression
-    let expr, tpenv = TcExpr cenv astTy env tpenv ast
+    let expr, tpenv = TcExpr cenv (MustEqual astTy) env tpenv ast
 
     // Wrap the expression
-    let expr = Expr.Quote (expr, ref None, isFromQueryExpression, m, overallTy)
+    let expr = Expr.Quote (expr, ref None, isFromQueryExpression, m, overallTy.Commit)
 
     // Coerce it if needed
     let expr = if raw then mkCoerceExpr(expr, (mkRawQuotedExprTy cenv.g), m, (tyOfExpr cenv.g expr)) else expr
@@ -7302,7 +7602,7 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
 ///
 /// We propagate information from the expected overall type 'overallTy'. The use
 /// of function application syntax unambiguously implies that 'overallTy' is a function type.
-and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
+and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableExpr) exprty delayed =
 
     let rec propagate isAddrOf delayedList mExpr exprty =
         match delayedList with
@@ -7317,13 +7617,14 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                         mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewByRefKindInferenceType cenv.g mExpr)
                     elif isByrefTy cenv.g exprty then
                         // Implicit dereference on byref on return
-                        if isByrefTy cenv.g overallTy then
+                        if isByrefTy cenv.g overallTy.Commit then
                              errorR(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), mExpr))
                         destByrefTy cenv.g exprty
                     else
                         exprty
 
-                UnifyTypesAndRecover cenv env mExpr overallTy exprty
+                // at the end of the application chain allow coercion introduction
+                UnifyOverallTypeAndRecover cenv env mExpr overallTy exprty
 
         | DelayedDot :: _
         | DelayedSet _ :: _
@@ -7332,7 +7633,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             // Note this case should not occur: would eventually give an "Unexpected type application" error in TcDelayed
             propagate isAddrOf delayedList' mExprAndTypeArgs exprty
 
-        | DelayedApp (_, arg, mExprAndArg) :: delayedList' ->
+        | DelayedApp (atomicFlag, isSugar, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | ValueSome (_, resultTy) ->
@@ -7349,35 +7650,68 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate isAddrOf delayedList' mExprAndArg resultTy
 
             | _ ->
-                let mArg = arg.Range
-                match arg with
-                | SynExpr.CompExpr _ -> ()
-                | SynExpr.ArrayOrListOfSeqExpr (false, _, _) ->
-                    // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
-                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    if IsIndexerType cenv.g cenv.amap expr.Type then
-                        match expr.Expr with
-                        | Expr.Val (d, _, _) ->
-                            error (NotAFunctionButIndexer(denv, overallTy, Some d.DisplayName, mExpr, mArg))
-                        | _ ->
-                            error (NotAFunctionButIndexer(denv, overallTy, None, mExpr, mArg))
+                let mArg = synArg.Range
+                match synArg with
+                // async { ... }
+                // seq { ... }
+                | SynExpr.ComputationExpr _ -> ()
+
+                // expr[idx]
+                // expr[idx1, idx2]
+                // expr[idx1..]
+                // expr[..idx1]
+                // expr[idx1..idx2]
+                | SynExpr.ArrayOrListComputed(false, _, _) ->
+                    let isAdjacent = isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg
+                    if isAdjacent && cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                        // This is the non-error path
+                        ()
                     else
-                        error (NotAFunction(denv, overallTy, mExpr, mArg))
+                        // This is the error path. The error we give depends on what's enabled.
+                        // 
+                        // First, 'delayed' is about to be dropped on the floor, do rudimentary checking to get name resolutions in its body
+                        RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
+                        let vName =
+                            match expr.Expr with
+                            | Expr.Val (d, _, _) -> Some d.DisplayName
+                            | _ -> None
+                        if isAdjacent then
+                            if IsIndexerType cenv.g cenv.amap expr.Type then
+                                if cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
+                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
+                                match vName with
+                                | Some nm -> 
+                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(nm, nm), mExprAndArg))
+                                | _ -> 
+                                    error(Error(FSComp.SR.tcNotAFunctionButIndexerIndexingNotYetEnabled(), mExprAndArg))
+                            else
+                                match vName with
+                                | Some nm -> 
+                                    error(Error(FSComp.SR.tcNotAnIndexerNamedIndexingNotYetEnabled(nm), mExprAndArg))
+                                | _ -> 
+                                    error(Error(FSComp.SR.tcNotAnIndexerIndexingNotYetEnabled(), mExprAndArg))
+                        else
+                            if IsIndexerType cenv.g cenv.amap expr.Type then
+                                let old = not (cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
+                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
+                            else
+                                error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+
+                // f x  (where 'f' is not a function)
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv, overallTy, mExpr, mArg))
+                    error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
 
     propagate false delayed expr.Range exprty
 
-and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomicFlag) delayed =
+and PropagateThenTcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprty (atomicFlag: ExprAtomicFlag) delayed =
     Propagate cenv overallTy env tpenv expr exprty delayed
     TcDelayed cenv overallTy env tpenv mExpr expr exprty atomicFlag delayed
 
-
 /// Typecheck "expr ... " constructs where "..." is a sequence of applications,
 /// type applications and dot-notation projections.
-and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomicFlag) delayed =
+and TcDelayed cenv (overallTy: OverallTy) env tpenv mExpr expr exprty (atomicFlag: ExprAtomicFlag) delayed =
 
     // OK, we've typechecked the thing on the left of the delayed lookup chain.
     // We can now record for posterity the type of this expression and the location of the expression.
@@ -7387,22 +7721,28 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     match delayed with
     | []
     | DelayedDot :: _ ->
-        UnifyTypes cenv env mExpr overallTy exprty
-        expr.Expr, tpenv
+        // at the end of the application chain allow coercion introduction
+        UnifyOverallType cenv env mExpr overallTy exprty
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy exprty env (* true  *) mExpr expr.Expr
+        expr2, tpenv
+
     // Expr.M (args) where x.M is a .NET method or index property
     // expr.M<tyargs>(args) where x.M is a .NET method or index property
     // expr.M where x.M is a .NET method or index property
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
+
     // f x
-    | DelayedApp (hpa, arg, mExprAndArg) :: otherDelayed ->
-        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty arg hpa otherDelayed
+    | DelayedApp (atomicFlag, isSugar, synLeftExpr, synArg, mExprAndArg) :: otherDelayed ->
+        TcApplicationThen cenv overallTy env tpenv mExprAndArg synLeftExpr expr exprty synArg atomicFlag isSugar otherDelayed
+
     // f<tyargs>
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))
+
     | DelayedSet (synExpr2, mStmt) :: otherDelayed ->
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
-        UnifyTypes cenv env mExpr overallTy cenv.g.unit_ty
+        UnifyTypes cenv env mExpr overallTy.Commit cenv.g.unit_ty
         let expr = expr.Expr
         let _wrap, exprAddress, _readonly, _writeonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
         let vty = tyOfExpr cenv.g expr
@@ -7410,7 +7750,6 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
         let expr2, tpenv = TcExprFlex cenv true false vty env tpenv synExpr2
         let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
         mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
-
 
 /// Convert the delayed identifiers to a dot-lookup.
 ///
@@ -7469,7 +7808,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                           | Item.CtorGroup _
                           | Item.FakeInterfaceCtor _ -> false
                           | _ -> true) ->
-                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t
+                    let overallTy = match overallTyOpt with None -> MustEqual (NewInferenceType()) | Some t -> t
                     let _, _ = TcItemThen cenv overallTy env tpenv res delayed
                     true
                 | _ ->
@@ -7524,9 +7863,9 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             check overallTyOpt resultOpt expr delayed
 
         // expr : type" allowed with no subsequent qualifications
-        | SynExpr.Typed (synBodyExpr, synType, _m) when delayed.IsEmpty && overallTyOpt.IsNone ->
-            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType  env tpenv synType
-            check (Some tgtTy) resultOpt synBodyExpr delayed
+        | SynExpr.Typed (synBodyExpr, synType, _) when delayed.IsEmpty && overallTyOpt.IsNone ->
+            let tgtTy, _tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
+            check (Some (MustEqual tgtTy)) resultOpt synBodyExpr delayed
 
         | _ ->
             error (Error(FSComp.SR.expressionHasNoName(), m))
@@ -7539,47 +7878,99 @@ and TcNameOfExprResult cenv (lastIdent: Ident) m =
     Expr.Const(Const.String(lastIdent.idText), constRange, cenv.g.string_ty)
 
 //-------------------------------------------------------------------------
-// TcFunctionApplicationThen: Typecheck "expr x" + projections
+// TcApplicationThen: Typecheck "expr x" + projections
 //-------------------------------------------------------------------------
 
-and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (synArg: SynExpr) atomicFlag delayed =
+// leftExpr[idx] gives a warning 
+and isAdjacentListExpr isSugar atomicFlag (synLeftExprOpt: SynExpr option) (synArg: SynExpr) =
+    not isSugar  &&
+    if atomicFlag = ExprAtomicFlag.Atomic then
+        match synArg with
+        | SynExpr.ArrayOrList (false, _, _)
+        | SynExpr.ArrayOrListComputed (false, _, _) -> true
+        | _ -> false
+    else
+        match synLeftExprOpt with
+        | Some synLeftExpr -> 
+            match synArg with
+            | SynExpr.ArrayOrList (false, _, _)
+            | SynExpr.ArrayOrListComputed (false, _, _) ->
+                synLeftExpr.Range.IsAdjacentTo synArg.Range 
+            | _ -> false
+        | _ -> false
+
+// Check f x
+// Check f[x]
+// Check seq { expr }
+// Check async { expr }
+and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftExprOpt leftExpr exprty (synArg: SynExpr) atomicFlag isSugar delayed =
     let denv = env.DisplayEnv
     let mArg = synArg.Range
-    let mFunExpr = expr.Range
+    let mLeftExpr = leftExpr.Range
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
-    // it is an error or a computation expression
-    match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
+    // it is an error or a computation expression or indexer or delegate invoke
+    match UnifyFunctionTypeUndoIfFailed cenv denv mLeftExpr exprty with
     | ValueSome (domainTy, resultTy) ->
-        match expr with
+
+        // atomicLeftExpr[idx] unifying as application gives a warning 
+        if not isSugar then
+            match synArg, atomicFlag with
+            | (SynExpr.ArrayOrList (false, _, _) | SynExpr.ArrayOrListComputed (false, _, _)), ExprAtomicFlag.Atomic ->
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
+                elif not (cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore()) then
+                    informationalWarning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListReserved(), mExprAndArg))
+            | _ -> ()
+
+        match leftExpr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
             TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) cenv.g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
             // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
             // Set a flag in the syntax tree to say we noticed a leading 'seq'
-            match synArg with
-            | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) ->
-                isNotNakedRefCell :=
-                    !isNotNakedRefCell
-                    ||
-                    (match expr with
-                     | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true
-                     | _ -> false)
-            | _ -> ()
+            //
+            // Note that 'seq' predated computation expressions and is not actually a computation expression builder
+            // though users don't realise that.
+            let synArg =
+                match synArg with
+                | SynExpr.ComputationExpr (false, comp, m) when 
+                        (match leftExpr with
+                         | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true
+                         | _ -> false) ->
+                    SynExpr.ComputationExpr (true, comp, m)
+                | _ -> synArg
 
-            let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-            let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
+            let arg, tpenv = TcExprFlex2 cenv domainTy env false tpenv synArg
+            let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->
-        // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }'
+        // Type-directed invokables
+
         match synArg with
-        | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) ->
-            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mFunExpr, expr.Expr, exprty, comp)
+        // leftExpr[idx]
+        // leftExpr[idx] <- expr2
+        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m) 
+              when 
+                isAdjacentListExpr isSugar atomicFlag synLeftExprOpt synArg && 
+                cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
+
+            let expandedIndexArgs = ExpandIndexArgs synLeftExprOpt indexArgs
+            let setInfo, delayed = 
+                match delayed with 
+                | DelayedSet(e3, _) :: rest -> Some (e3, unionRanges leftExpr.Range synArg.Range), rest
+                | _ -> None, delayed
+            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synLeftExprOpt leftExpr.Expr exprty expandedIndexArgs indexArgs delayed
+
+        // Perhaps 'leftExpr' is a computation expression builder, and 'arg' is '{ ... }'
+        | SynExpr.ComputationExpr (false, comp, _m) ->
+            let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mLeftExpr, leftExpr.Expr, exprty, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
+
         | _ ->
-            error (NotAFunction(denv, overallTy, mFunExpr, mArg))
+            error (NotAFunction(denv, overallTy.Commit, mLeftExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs
@@ -7601,7 +7992,7 @@ and GetLongIdentTypeNameInfo delayed =
     | _ ->
         TypeNameResolutionInfo.Default
 
-and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) delayed =
+and TcLongIdentThen cenv (overallTy: OverallTy) env tpenv (LongIdentWithDots(longId, _)) delayed =
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
@@ -7614,7 +8005,7 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) dela
 // Typecheck "item+projections"
 //------------------------------------------------------------------------- *)
 // mItem is the textual range covered by the long identifiers that make up the item
-and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) delayed =
+and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) delayed =
     let g = cenv.g
     let delayed = delayRest rest mItem delayed
     let ad = env.eAccessRights
@@ -7639,6 +8030,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
           | _ ->
               ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy item
         let numArgTys = List.length argTys
+
         // Subsumption at data constructions if argument type is nominal prior to equations for any arguments or return types
         let flexes = argTys |> List.map (isTyparTy g >> not)
 
@@ -7652,10 +8044,10 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
         match delayed with
         // This is where the constructor is applied to an argument
-        | DelayedApp (atomicFlag, (FittedArgs args as origArg), mExprAndArg) :: otherDelayed ->
+        | DelayedApp (atomicFlag, _, _, (FittedArgs args as origArg), mExprAndArg) :: otherDelayed ->
             // assert the overall result type if possible
             if isNil otherDelayed then
-                UnifyTypes cenv env mExprAndArg overallTy ucaseAppTy
+                UnifyOverallType cenv env mExprAndArg overallTy ucaseAppTy
 
             let numArgs = List.length args
             UnionCaseOrExnCheck env numArgTys numArgs mExprAndArg
@@ -7718,7 +8110,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
                             else
                                 match item with
                                 | Item.UnionCase(uci, _) ->
-                                    error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.Name, id.idText), id.idRange))
+                                    error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(uci.DisplayName, id.idText), id.idRange))
                                 | Item.ExnCase tcref ->
                                     error(Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName(tcref.DisplayName, id.idText), id.idRange))
                                 | Item.ActivePatternResult _ ->
@@ -7729,7 +8121,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
                     assert (Seq.forall (box >> ((<>) null) ) fittedArgs)
                     List.ofArray fittedArgs
 
-            let args', tpenv = TcExprs cenv env mExprAndArg tpenv flexes argTys args
+            let args', tpenv = TcExprsWithFlexes cenv env mExprAndArg tpenv flexes argTys args
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv (mkConstrApp mExprAndArg args')) ucaseAppTy atomicFlag otherDelayed
 
         | DelayedTypeApp (_x, mTypeArgs, _mExprAndTypeArgs) :: _delayed' ->
@@ -7798,7 +8190,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         // Static method calls Type.Foo(arg1, ..., argn)
         let meths = List.map (fun minfo -> minfo, None) minfos
         match delayed with
-        | DelayedApp (atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+        | DelayedApp (atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
 
         | DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed ->
@@ -7812,7 +8204,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
               CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, [], ItemOccurence.Use, env.eAccessRights)
 
               match otherDelayed with
-              | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+              | DelayedApp(atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
                   TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag otherDelayed
               | _ ->
                   TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
@@ -7828,7 +8220,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
             match otherDelayed with
-            | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+            | DelayedApp(atomicFlag, _, _, arg, mExprAndArg) :: otherDelayed ->
                 TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
             | _ ->
                 TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
@@ -7846,12 +8238,12 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | minfo :: _ -> minfo.ApparentEnclosingType
             | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
         match delayed with
-        | DelayedApp (_, arg, mExprAndArg) :: otherDelayed ->
+        | DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.eAccessRights)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
-        | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedApp (_, arg, mExprAndArg) :: otherDelayed ->
+        | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: DelayedApp(_, _, _, arg, mExprAndArg) :: otherDelayed ->
 
             let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
@@ -7953,8 +8345,8 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.While _
             | SynExpr.For _
             | SynExpr.ForEach _
-            | SynExpr.ArrayOrListOfSeqExpr _
-            | SynExpr.CompExpr _
+            | SynExpr.ArrayOrListComputed _
+            | SynExpr.ComputationExpr _
             | SynExpr.Lambda _
             | SynExpr.MatchLambda _
             | SynExpr.Match _
@@ -7988,19 +8380,21 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _
             | SynExpr.TraitCall _
+            | SynExpr.IndexFromEnd _
+            | SynExpr.IndexRange _
                 -> false
-
 
         // Propagate the known application structure into function types
         Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) delayed
 
         // Take all simple arguments and process them before applying the constraint.
         let delayed1, delayed2 =
-            let pred = (function DelayedApp (_, arg, _) -> isSimpleArgument arg | _ -> false)
+            let pred = (function DelayedApp (_, _, _, arg, _) -> isSimpleArgument arg | _ -> false)
             List.takeWhile pred delayed, List.skipWhile pred delayed
-        let intermediateTy = if isNil delayed2 then overallTy else NewInferenceType ()
 
-        let resultExpr, tpenv = TcDelayed cenv intermediateTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) ExprAtomicFlag.NonAtomic delayed1
+        let intermediateTy = if isNil delayed2 then overallTy.Commit else NewInferenceType ()
+
+        let resultExpr, tpenv = TcDelayed cenv (MustEqual intermediateTy) env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) ExprAtomicFlag.NonAtomic delayed1
 
         // Add the constraint after the application arguments have been checked to allow annotations to kick in on rigid type parameters
         AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
@@ -8012,9 +8406,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
     | Item.DelegateCtor ty ->
         match delayed with
-        | DelayedApp (atomicFlag, arg, mItemAndArg) :: otherDelayed ->
+        | DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
             TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
-        | DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs) :: DelayedApp (atomicFlag, arg, mItemAndArg) :: otherDelayed ->
+        | DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs) :: DelayedApp (atomicFlag, _, _, arg, mItemAndArg) :: otherDelayed ->
             let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
 
             // Report information about the whole expression including type arguments to VS
@@ -8030,7 +8424,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         // Mutable value set: 'v <- e'
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
             vref.Deref.SetHasBeenReferenced()
             CheckValAccessible mItem env.AccessRights vref
             CheckValAttributes g vref mItem |> CommitOperationResult
@@ -8101,7 +8495,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Static Property Set (possibly indexer)
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
             let meths = pinfos |> SettersOfPropInfos
             if meths.IsEmpty then
                 let meths = pinfos |> GettersOfPropInfos
@@ -8131,7 +8525,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         let exprty = finfo.FieldType(cenv.amap, mItem)
         match delayed with
         | DelayedSet(e2, mStmt) :: _delayed' ->
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
             let expr = BuildILStaticFieldSet mStmt finfo e2'
@@ -8158,7 +8552,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
     | Item.RecdField rfinfo ->
         // Get static F# field or literal
         CheckRecdFieldInfoAccessible cenv.amap mItem ad rfinfo
-        if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.Name), mItem))
+        if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mItem))
         CheckRecdFieldInfoAttributes g rfinfo mItem |> CommitOperationResult
         let fref = rfinfo.RecdFieldRef
         let fieldTy = rfinfo.FieldType
@@ -8168,7 +8562,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
             // Set static F# field
             CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit g.unit_ty
             let fieldTy = rfinfo.FieldType
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false fieldTy env tpenv e2
@@ -8203,9 +8597,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
 and GetSynMemberApplicationArgs delayed tpenv =
     match delayed with
-    | DelayedApp (atomicFlag, arg, _) :: otherDelayed ->
+    | DelayedApp (atomicFlag, _, _, arg, _) :: otherDelayed ->
         atomicFlag, None, [arg], otherDelayed, tpenv
-    | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, arg, _mExprAndArg) :: otherDelayed ->
+    | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, _, _, arg, _mExprAndArg) :: otherDelayed ->
         (atomicFlag, Some (tyargs, mTypeArgs), [arg], otherDelayed, tpenv)
     | DelayedTypeApp(tyargs, mTypeArgs, _) :: otherDelayed ->
         (ExprAtomicFlag.Atomic, Some (tyargs, mTypeArgs), [], otherDelayed, tpenv)
@@ -8284,7 +8678,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Instance property setter
-            UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit cenv.g.unit_ty
             let meths = SettersOfPropInfos pinfos
             if meths.IsEmpty then
                 let meths = pinfos |> GettersOfPropInfos
@@ -8317,7 +8711,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             // Mutable value set: 'v <- e'
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mItem))
             CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
-            UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit cenv.g.unit_ty
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false fieldTy env tpenv e2
             BuildRecdFieldSet cenv.g mStmt objExpr rfinfo e2', tpenv
@@ -8348,7 +8742,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         match delayed with
         // Set instance IL field
         | DelayedSet(e2, mStmt) :: _delayed' ->
-            UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
+            UnifyTypes cenv env mStmt overallTy.Commit cenv.g.unit_ty
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
             let expr = BuildILFieldSet cenv.g mStmt objExpr finfo e2'
@@ -8417,8 +8811,9 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
 and TcMethodApplicationThen
        cenv
        env
-       overallTy           // The type of the overall expression including "delayed". The method "application" may actually be a use of a member as
-                    // a first-class function value, when this would be a function type.
+        // The type of the overall expression including "delayed". The method "application" may actually be a use of a member as
+        // a first-class function value, when this would be a function type.
+       (overallTy: OverallTy)
        objTyOpt   // methodType
        tpenv
        callerTyArgs // The return type of the overall expression including "delayed"
@@ -8442,7 +8837,7 @@ and TcMethodApplicationThen
 
     // Work out if we know anything about the return type of the overall expression. If there are any delayed
     // lookups then we don't know anything.
-    let exprTy = if isNil delayed then overallTy else NewInferenceType ()
+    let exprTy = if isNil delayed then overallTy else MustEqual (NewInferenceType ())
 
     // Call the helper below to do the real checking
     let (expr, attributeAssignedNamedItems, delayed), tpenv =
@@ -8481,7 +8876,7 @@ and TcMethodApplication
         mMethExpr // range of the entire method expression
         mItem
         methodName
-         (objTyOpt: TType option)
+        (objTyOpt: TType option)
         ad
         mut
         isProp
@@ -8489,7 +8884,7 @@ and TcMethodApplication
         afterResolution
         isSuperInit
         curriedCallerArgs
-        exprTy
+        (exprTy: OverallTy)
         delayed
     =
 
@@ -8507,7 +8902,7 @@ and TcMethodApplication
     let curriedCallerArgs, exprTy, delayed =
         match calledMeths with
         | [calledMeth] when not isProp && calledMeth.NumArgs.Length > 1 ->
-            [], NewInferenceType (), [ for x in curriedCallerArgs -> DelayedApp(ExprAtomicFlag.NonAtomic, x, x.Range) ] @ delayed
+            [], MustEqual (NewInferenceType ()), [ for x in curriedCallerArgs -> DelayedApp(ExprAtomicFlag.NonAtomic, false, None, x, x.Range) ] @ delayed
         | _ when not isProp && calledMeths |> List.exists (fun calledMeth -> calledMeth.NumArgs.Length > 1) ->
             // This condition should only apply when multiple conflicting curried extension members are brought into scope
             error(Error(FSComp.SR.tcOverloadsCannotHaveCurriedArguments(), mMethExpr))
@@ -8581,9 +8976,9 @@ and TcMethodApplication
                         curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
 
                 // The call lambda has function type
-                let exprTy = mkFunTy (NewInferenceType ()) exprTy
+                let exprTy = mkFunTy (NewInferenceType ()) exprTy.Commit
 
-                (None, Some unnamedCurriedCallerArgs.Head.Head, exprTy)
+                (None, Some unnamedCurriedCallerArgs.Head.Head, MustEqual exprTy)
 
             | _ ->
                 let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared MakeUnnamedCallerArgInfo
@@ -8640,10 +9035,10 @@ and TcMethodApplication
             // method will take. Optional and out args are _not_ included, which means they will be resolved
             // to their default values (for optionals) and be part of the return tuple (for out args).
             | None, [calledMeth] ->
-                let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes exprTy calledMeth
+                let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes exprTy.Commit calledMeth
                 let unnamedCurriedCallerArgs = curriedArgTys |> List.mapSquared (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr))
                 let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
-                unnamedCurriedCallerArgs, namedCurriedCallerArgs, returnTy
+                unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
 
             // "type directed" rule for first-class uses of ambiguous methods.
             // By context we know a type for the input argument. If it's a tuple
@@ -8651,7 +9046,7 @@ and TcMethodApplication
             // type we assume the number of arguments is just "1".
             | None, _ ->
 
-                let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy
+                let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
                 let argTys = if isUnitTy cenv.g domainTy then [] else tryDestRefTupleTy cenv.g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
                 let argTys =
@@ -8661,7 +9056,7 @@ and TcMethodApplication
                        [domainTy]
                 let unnamedCurriedCallerArgs = [argTys |> List.map (fun ty -> CallerArg(ty, mMethExpr, false, dummyExpr)) ]
                 let namedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.map (fun _ -> [])
-                unnamedCurriedCallerArgs, namedCurriedCallerArgs, returnTy
+                unnamedCurriedCallerArgs, namedCurriedCallerArgs, MustEqual returnTy
 
             | Some (unnamedCurriedCallerArgs, namedCurriedCallerArgs), _ ->
                 let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr, argTy, mArg) -> CallerArg(argTy, mArg, false, argExpr))
@@ -8710,9 +9105,10 @@ and TcMethodApplication
                 // method will take. Optional and out args are _not_ included, which means they will be resolved
                 // to their default values (for optionals) and be part of the return tuple (for out args).
                 | [calledMeth] ->
-                    UnifyMatchingSimpleArgumentTypes exprTy calledMeth
+                    let curriedArgTys, returnTy = UnifyMatchingSimpleArgumentTypes exprTy.Commit calledMeth
+                    curriedArgTys, MustEqual returnTy
                 | _ ->
-                    let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy
+                    let domainTy, returnTy = UnifyFunctionType None cenv denv mMethExpr exprTy.Commit
                     let argTys = if isUnitTy cenv.g domainTy then [] else tryDestRefTupleTy cenv.g domainTy
                     // Only apply this rule if a candidate method exists with this number of arguments
                     let argTys =
@@ -8720,7 +9116,7 @@ and TcMethodApplication
                             argTys
                         else
                             [domainTy]
-                    [argTys], returnTy
+                    [argTys], MustEqual returnTy
 
             let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
             let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr cenv.g e, e.Range, false, e))
@@ -8738,10 +9134,21 @@ and TcMethodApplication
             let lambdaPropagationInfo =
                 if preArgumentTypeCheckingCalledMethGroup.Length > 1 then
                     [| for meth in preArgumentTypeCheckingCalledMethGroup do
-                        match ExamineMethodForLambdaPropagation meth with
+                        match ExamineMethodForLambdaPropagation cenv.g mMethExpr meth ad with
                         | Some (unnamedInfo, namedInfo) ->
                             let calledObjArgTys = meth.CalledObjArgTys mMethExpr
-                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr calledTy callerTy) then
+                            if (calledObjArgTys, callerObjArgTys) ||> Seq.forall2 (fun calledTy callerTy -> 
+                                let noEagerConstraintApplication = MethInfoHasAttribute cenv.g mMethExpr cenv.g.attrib_NoEagerConstraintApplicationAttribute meth.Method
+
+                                // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+                                // Tasks and Resumable Code RFC
+                                if noEagerConstraintApplication && not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+                                    errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
+
+                                let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerTy) else emptyFreeTypars
+
+                                AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
+
                                 yield (List.toArraySquared unnamedInfo, List.toArraySquared namedInfo)
                         | None -> () |]
                 else
@@ -8785,7 +9192,7 @@ and TcMethodApplication
             CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.CallerArgumentType))
 
-        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName 0 None callerArgs ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy)
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName callerArgs ad postArgumentTypeCheckingCalledMethGroup true returnTy
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
@@ -8823,7 +9230,6 @@ and TcMethodApplication
 
         | AfterResolution.RecordResolution(_, _, _, onFailure), None ->
             onFailure()
-
 
         // Raise the errors from the constraint solving
         RaiseOperationResult errors
@@ -8867,13 +9273,15 @@ and TcMethodApplication
             | _ -> ()
     end
 
-    if (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
+    if not finalCalledMeth.IsIndexParamArraySetter &&
+       (finalCalledMeth.ArgSets |> List.existsi (fun i argSet -> argSet.UnnamedCalledArgs |> List.existsi (fun j ca -> ca.Position <> (i, j)))) then
         errorR(Deprecated(FSComp.SR.tcUnnamedArgumentsDoNotFormPrefix(), mMethExpr))
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
     let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
-        AdjustCallerArgs TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
+        let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+        AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
     // Record the resolution of the named argument for the Language Service
     allArgs |> List.iter (fun assignedArg ->
@@ -8891,13 +9299,13 @@ and TcMethodApplication
         BuildPossiblyConditionalMethodCall cenv env mut mMethExpr isProp finalCalledMethInfo isSuperInit finalCalledMethInst objArgs allArgsCoerced
 
     // Handle byref returns
-    let callExpr1 =
+    let callExpr1, exprty =
         // byref-typed returns get implicitly dereferenced
         let vty = tyOfExpr cenv.g callExpr0
         if isByrefTy cenv.g vty then
-            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty
+            mkDerefAddrExpr mMethExpr callExpr0 mMethExpr vty, destByrefTy cenv.g vty
         else
-            callExpr0
+            callExpr0, exprty
 
     // Bind "out" parameters as part of the result tuple
     let callExpr2, exprty =
@@ -8913,9 +9321,12 @@ and TcMethodApplication
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr cenv.g expr
 
+    // Subsumption or conversion to return type
+    let callExpr2b = TcAdjustExprForTypeDirectedConversions cenv returnTy exprty env mMethExpr callExpr2
+
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr3 =
-        let expr = callExpr2
+        let expr = callExpr2b
         if isCheckingAttributeCall then
             [], expr
         elif isNil finalAssignedItemSetters then
@@ -8952,7 +9363,7 @@ and TcMethodApplication
         | Some synArgExpr ->
             match lambdaVars with
             | Some [lambdaVars] ->
-                let argExpr, tpenv = TcExpr cenv (mkRefTupledVarsTy cenv.g lambdaVars) env tpenv synArgExpr
+                let argExpr, tpenv = TcExpr cenv (MustEqual (mkRefTupledVarsTy cenv.g lambdaVars)) env tpenv synArgExpr
                 mkApps cenv.g ((expr, tyOfExpr cenv.g expr), [], [argExpr], mMethExpr), tpenv
             | _ ->
                 error(InternalError("unreachable - expected some lambda vars for a tuple mismatch", mItem))
@@ -8980,7 +9391,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
         | AssignedPropSetter (pinfo, pminfo, pminst) ->
             MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
-            let argExprPrebinder, argExpr = AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
             let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst
             argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo])
@@ -8989,7 +9401,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             // Get or set instance IL field
             ILFieldInstanceChecks cenv.g cenv.amap ad m finfo
             let calledArgTy = finfo.FieldType (cenv.amap, m)
-            let argExprPrebinder, argExpr = AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildILFieldSet cenv.g m objExpr finfo argExpr
             argExprPrebinder, action, Item.ILField finfo
 
@@ -8997,7 +9410,8 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
             RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo
             let calledArgTy = rfinfo.FieldType
             CheckRecdFieldMutation m denv rfinfo
-            let argExprPrebinder, argExpr = AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+            let tcVal = LightweightTcValForUsingInBuildMethodCall cenv.g
+            let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExpr tcVal cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr
             argExprPrebinder, action, Item.RecdField rfinfo
 
@@ -9032,7 +9446,7 @@ and TcMethodNamedArg cenv env (lambdaPropagationInfo, tpenv) (CallerNamedArg(id,
     let arg', (lambdaPropagationInfo, tpenv) = TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, arg)
     CallerNamedArg(id, arg'), (lambdaPropagationInfo, tpenv)
 
-and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(argTy, mArg, isOpt, argExpr)) =
+and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(callerArgTy, mArg, isOpt, argExpr)) =
 
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
@@ -9067,9 +9481,9 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then
                                         loop callerLambdaRangeTy (lambdaVarNum + 1)
                                 | _ -> ()
-                    loop argTy 0
+                    loop callerArgTy 0
 
-    let e', tpenv = TcExpr cenv argTy env tpenv argExpr
+    let e', tpenv = TcExprFlex2 cenv callerArgTy env true tpenv argExpr
 
     // After we have checked, propagate the info from argument into the overloads that receive it.
     //
@@ -9081,16 +9495,21 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
               | ArgDoesNotMatch _ -> ()
               | NoInfo | CallerLambdaHasArgTypes _ ->
                   yield info
-              | CalledArgMatchesType adjustedCalledTy ->
-                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg adjustedCalledTy argTy then
+              | CalledArgMatchesType (adjustedCalledArgTy, noEagerConstraintApplication) ->
+                  // If matching, we can solve 'tp1 --> tp2' but we can't transfer extra
+                  // constraints from tp1 to tp2.  
+                  //
+                  // The 'task' feature requires this fix to SRTP resolution. 
+                  let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight cenv.g true callerArgTy) else emptyFreeTypars
+                  if AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed env.DisplayEnv cenv.css mArg extraRigidTps adjustedCalledArgTy callerArgTy then
                      yield info |]
 
-    CallerArg(argTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
+    CallerArg(callerArgTy, mArg, isOpt, e'), (lambdaPropagationInfo, tpenv)
 
 /// Typecheck "new Delegate(fun x y z -> ...)" constructs
-and TcNewDelegateThen cenv overallTy env tpenv mDelTy mExprAndArg delegateTy arg atomicFlag delayed =
+and TcNewDelegateThen cenv (overallTy: OverallTy) env tpenv mDelTy mExprAndArg delegateTy arg atomicFlag delayed =
     let ad = env.eAccessRights
-    UnifyTypes cenv env mExprAndArg overallTy delegateTy
+    UnifyTypes cenv env mExprAndArg overallTy.Commit delegateTy
     let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, fty)) = GetSigOfFunctionForDelegate cenv.infoReader delegateTy mDelTy ad
     // We pass isInstance = true here because we're checking the rights to access the "Invoke" method
     MethInfoChecks cenv.g cenv.amap true None [] env.eAccessRights mExprAndArg invokeMethInfo
@@ -9153,10 +9572,10 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             let envinner = ShrinkContext envinner m body.Range
             // tailcall
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) ->
-                cont (fst (mkf (x, overallTy)), tpenv))
+                cont (fst (mkf (x, overallTy.Commit)), tpenv))
 
     | SynExpr.IfThenElse (_, _, synBoolExpr, _, synThenExpr, _, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
-        let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv synBoolExpr
+        let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv (MustEqual cenv.g.bool_ty) env tpenv synBoolExpr
         let thenExpr, tpenv =
             let env =
                 match env.eContextInfo with
@@ -9167,22 +9586,22 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
                     | _ -> { env with eContextInfo = ContextInfo.IfExpression synThenExpr.Range }
 
             if not isRecovery && Option.isNone synElseExprOpt then
-                UnifyTypes cenv env m cenv.g.unit_ty overallTy
+                UnifyTypes cenv env m cenv.g.unit_ty overallTy.Commit
 
             TcExprThatCanBeCtorBody cenv overallTy env tpenv synThenExpr
 
         match synElseExprOpt with
         | None ->
             let elseExpr = mkUnit cenv.g mIfToThen
-            let spElse = DebugPointForTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
-            let overallExpr = primMkCond spIfToThen DebugPointForTarget.Yes spElse m overallTy boolExpr thenExpr elseExpr
+            let spElse = DebugPointAtTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
+            let overallExpr = primMkCond spIfToThen DebugPointAtTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
             cont (overallExpr, tpenv)
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
-                let resExpr = primMkCond spIfToThen DebugPointForTarget.Yes DebugPointForTarget.Yes m overallTy boolExpr thenExpr elseExpr
+                let resExpr = primMkCond spIfToThen DebugPointAtTarget.Yes DebugPointAtTarget.Yes m overallTy.Commit boolExpr thenExpr elseExpr
                 cont (resExpr, tpenv))
 
     | _ ->
@@ -9191,32 +9610,33 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
 /// Typecheck and compile pattern-matching constructs
 and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputExprOpt inputTy resultTy env tpenv synClauses =
     let clauses, tpenv = TcMatchClauses cenv inputTy resultTy env tpenv synClauses
-    let matchVal, expr = CompilePatternForMatchClauses cenv env mExpr matchm true actionOnFailure inputExprOpt inputTy resultTy clauses
+    let matchVal, expr = CompilePatternForMatchClauses cenv env mExpr matchm true actionOnFailure inputExprOpt inputTy resultTy.Commit clauses
     matchVal, expr, tpenv
 
 and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr: SynExpr option) =
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
     let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
-    let optWhenExpr', tpenv =
+    let optWhenExprR, tpenv =
         match optWhenExpr with
         | Some whenExpr ->
             let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
-            let whenExpr', tpenv = TcExpr cenv cenv.g.bool_ty guardEnv tpenv whenExpr
-            Some whenExpr', tpenv
+            let whenExprR, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) guardEnv tpenv whenExpr
+            Some whenExprR, tpenv
         | None -> None, tpenv
-    patf' (TcPatPhase2Input (values, true)), optWhenExpr', NameMap.range vspecMap, envinner, tpenv
+    patf' (TcPatPhase2Input (values, true)), optWhenExprR, NameMap.range vspecMap, envinner, tpenv
 
-and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
+and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     let mutable first = true
     let isFirst() = if first then first <- false; true else false
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy resultTy env isFirst tpenv (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) =
-    let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
+and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
+    let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
+    let pat', optWhenExprR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
-    TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt, None), patm), tpenv
+    TClause(pat', optWhenExprR, TTarget(vspecs, e', spTgt, None), patm), tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     match c with
@@ -9501,8 +9921,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 let (PartialValReprInfo(argInfos, _)) = partialValReprInfo
                 let envinner = { envinner with eLambdaArgInfos = argInfos }
 
-                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv overallExprTy envinner tpenv rhsExpr
-                else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
+                if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
+                else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
 
         if bkind = SynBindingKind.StandaloneExpression && not cenv.isScript then
             UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
@@ -9543,7 +9963,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 and TcLiteral cenv overallTy env tpenv (attrs, synLiteralValExpr) =
     let hasLiteralAttr = HasFSharpAttribute cenv.g cenv.g.attrib_LiteralAttribute attrs
     if hasLiteralAttr then
-        let literalValExpr, _ = TcExpr cenv overallTy env tpenv synLiteralValExpr
+        let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) env tpenv synLiteralValExpr
         match EvalLiteralExprOrAttribArg cenv.g literalValExpr with
         | Expr.Const (c, _, ty) ->
             if c = Const.Zero && isStructTy cenv.g ty then
@@ -9692,7 +10112,7 @@ and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribut
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
                 let afterResolution = ForNewConstructors cenv.tcSink env tyid.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ =
-                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (NewInferenceType ()) []
+                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr cenv.g expr)
 
@@ -9900,7 +10320,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the compilation of the pattern to the bodyExpr we get from mkCleanup
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
-            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointForTarget.No, None), m)]
+            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.No, None), m)]
             let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx, bodyExprTy
@@ -10027,12 +10447,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (bindingTy, m, syn
                      match dispatchSlotsArityMatch with
                      | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] ->
-                         let details =
-                             slots
-                             |> Seq.map (NicePrint.stringOfMethInfo cenv.infoReader m envinner.DisplayEnv)
-                             |> Seq.map (sprintf "%s   %s" Environment.NewLine)
-                             |> String.concat ""
-
+                         let details = NicePrint.multiLineStringOfMethInfos cenv.infoReader m envinner.DisplayEnv slots
                          errorR(Error(FSComp.SR.tcOverrideArityMismatch details, memberId.idRange))
                          []
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
@@ -10294,7 +10709,7 @@ and AnalyzeRecursiveInstanceMemberDecl
 
          CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange
 
-         // Determine if a uniquely-identified-override List.exists based on the information
+         // Determine if a uniquely-identified-override exists based on the information
          // at the member signature. If so, we know the type of this member, and the full slotsig
          // it implements. Apply the inferred slotsig.
          let optInferredImplSlotTys, declaredTypars =

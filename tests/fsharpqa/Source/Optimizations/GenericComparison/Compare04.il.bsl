@@ -41,13 +41,13 @@
   // Offset: 0x00000238 Length: 0x000000B9
 }
 .module Compare04.dll
-// MVID: {60BE1F16-053B-F88E-A745-0383161FBE60}
+// MVID: {611C550D-053B-F88E-A745-03830D551C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04FB0000
+// Image base: 0x071C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -84,6 +84,7 @@
       IL_000a:  ldc.i4.1
       IL_000b:  cgt
       IL_000d:  stloc.2
+      .line 16707566,16707566 : 0,0 ''
       IL_000e:  ldloc.2
       IL_000f:  brfalse.s  IL_0018
 
@@ -98,6 +99,7 @@
       IL_0019:  ldc.i4.2
       IL_001a:  cgt
       IL_001c:  stloc.3
+      .line 16707566,16707566 : 0,0 ''
       IL_001d:  ldloc.3
       IL_001e:  brfalse.s  IL_0027
 
@@ -112,6 +114,7 @@
       IL_0028:  ldc.i4.4
       IL_0029:  cgt
       IL_002b:  stloc.s    V_4
+      .line 16707566,16707566 : 0,0 ''
       IL_002d:  ldloc.s    V_4
       IL_002f:  brfalse.s  IL_0039
 
@@ -127,6 +130,7 @@
       IL_0043:  call       int32 [netstandard]System.String::CompareOrdinal(string,
                                                                             string)
       IL_0048:  stloc.s    V_5
+      .line 16707566,16707566 : 0,0 ''
       IL_004a:  ldloc.s    V_5
       IL_004c:  brfalse.s  IL_0053
 

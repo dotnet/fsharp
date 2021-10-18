@@ -2,5 +2,6 @@
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false,
     "FSharp.suggestGitignore": false,
-    "FSharp.workspacePath": "FSharp.sln"
+    "FSharp.workspacePath": "FSharp.sln",
+    "dotnet-test-explorer.testProjectPath": "tests/*Tests/"
 }

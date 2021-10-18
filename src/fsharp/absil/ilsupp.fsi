@@ -39,7 +39,7 @@ type PdbMethod
 type PdbVariable
 type PdbMethodScope
 
-type PdbSequencePoint = 
+type PdbDebugPoint = 
     { pdbSeqPointOffset: int;
       pdbSeqPointDocument: PdbDocument;
       pdbSeqPointLine: int;
@@ -61,7 +61,7 @@ val pdbDocumentGetLanguageVendor: PdbDocument -> byte[] (* guid *)
 val pdbDocumentFindClosestLine: PdbDocument -> int -> int
 
 val pdbMethodGetToken: PdbMethod -> int32
-val pdbMethodGetSequencePoints: PdbMethod -> PdbSequencePoint array
+val pdbMethodGetDebugPoints: PdbMethod -> PdbDebugPoint array
 
 val pdbScopeGetChildren: PdbMethodScope -> PdbMethodScope array
 val pdbScopeGetOffsets: PdbMethodScope -> int * int

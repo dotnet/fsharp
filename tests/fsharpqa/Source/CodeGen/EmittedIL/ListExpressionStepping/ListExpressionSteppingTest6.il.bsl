@@ -36,13 +36,13 @@
   // Offset: 0x00000298 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {60BD4553-98A2-AB14-A745-03835345BD60}
+// MVID: {611C4D7C-98A2-AB14-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04EC0000
+// Image base: 0x06930000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -118,6 +118,7 @@
         IL_003a:  ldloc.1
         IL_003b:  isinst     [mscorlib]System.IDisposable
         IL_0040:  stloc.s    V_4
+        .line 100001,100001 : 0,0 ''
         IL_0042:  ldloc.s    V_4
         IL_0044:  brfalse.s  IL_004e
 
@@ -169,6 +170,7 @@
         IL_0091:  ldloc.s    V_5
         IL_0093:  isinst     [mscorlib]System.IDisposable
         IL_0098:  stloc.s    V_8
+        .line 100001,100001 : 0,0 ''
         IL_009a:  ldloc.s    V_8
         IL_009c:  brfalse.s  IL_00a6
 

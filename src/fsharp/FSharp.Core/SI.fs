@@ -4,112 +4,112 @@
 namespace Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
     open Microsoft.FSharp.Core
 
-    [<Measure>] 
     /// The SI unit of length
+    [<Measure>]
     type metre               
 
-    [<Measure>] 
     /// The SI unit of length
+    [<Measure>]
     type meter = metre               
 
-    [<Measure>] 
     /// The SI unit of mass
+    [<Measure>]
     type kilogram
 
-    [<Measure>] 
     /// The SI unit of time
+    [<Measure>]
     type second
 
-    [<Measure>] 
     /// The SI unit of electric current
+    [<Measure>]
     type ampere             
 
-    [<Measure>] 
     /// The SI unit of thermodynamic temperature
+    [<Measure>]
     type kelvin              
 
-    [<Measure>] 
     /// The SI unit of amount of substance
+    [<Measure>]
     type mole
 
-    [<Measure>] 
     /// The SI unit of luminous intensity
+    [<Measure>]
     type candela            
 
-    [<Measure>] 
     /// The SI unit of frequency
+    [<Measure>]
     type hertz = / second
 
-    [<Measure>] 
     /// The SI unit of force
+    [<Measure>]
     type newton = kilogram metre / second^2 
 
-    [<Measure>] 
     /// The SI unit of pressure, stress
+    [<Measure>]
     type pascal = newton / metre^2
 
-    [<Measure>] 
     /// The SI unit of energy, work, amount of heat
+    [<Measure>]
     type joule = newton metre
 
-    [<Measure>] 
     /// The SI unit of power, radiant flux
+    [<Measure>]
     type watt = joule / second       
 
-    [<Measure>] 
     /// The SI unit of electric charge, amount of electricity
+    [<Measure>]
     type coulomb = second ampere 
 
-    [<Measure>] 
     /// The SI unit of electric potential difference, electromotive force
+    [<Measure>]
     type volt = watt/ampere        
 
-    [<Measure>] 
     /// The SI unit of capacitance
+    [<Measure>]
     type farad = coulomb/volt
 
-    [<Measure>] 
     /// The SI unit of electric resistance
+    [<Measure>]
     type ohm = volt/ampere       
 
-    [<Measure>] 
     /// The SI unit of electric conductance
+    [<Measure>]
     type siemens = ampere/volt         
 
-    [<Measure>] 
     /// The SI unit of magnetic flux
+    [<Measure>]
     type weber = volt second        
 
-    [<Measure>] 
     /// The SI unit of magnetic flux density
+    [<Measure>]
     type tesla = weber/metre^2      
 
-    [<Measure>] 
     /// The SI unit of inductance
+    [<Measure>]
     type henry = weber/ampere        
 
-    [<Measure>] 
     /// The SI unit of luminous flux
+    [<Measure>]
     type lumen = candela        
 
-    [<Measure>] 
     /// The SI unit of illuminance
+    [<Measure>]
     type lux = lumen/metre^2 
 
-    [<Measure>] 
     /// The SI unit of activity referred to a radionuclide
+    [<Measure>]
     type becquerel = second^-1       
 
-    [<Measure>] 
     /// The SI unit of absorbed dose
+    [<Measure>]
     type gray = joule/kilogram       
 
-    [<Measure>] 
     /// The SI unit of does equivalent
+    [<Measure>]
     type sievert = joule/kilogram       
 
-    [<Measure>] 
     /// The SI unit of catalytic activity
+    [<Measure>]
     type katal = mole/second 
 
 
@@ -118,106 +118,106 @@ namespace Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
 
-    [<Measure>] 
     /// A synonym for Metre, the SI unit of length
+    [<Measure>]
     type m = metre              
 
-    [<Measure>] 
     /// A synonym for kilogram, the SI unit of mass
+    [<Measure>]
     type kg = kilogram
 
-    [<Measure>] 
     /// A synonym for second, the SI unit of time
+    [<Measure>]
     type s = second
 
-    [<Measure>] 
     /// A synonym for ampere, the SI unit of electric current
+    [<Measure>]
     type A = ampere            
 
-    [<Measure>] 
     /// A synonym for kelvin, the SI unit of thermodynamic temperature
+    [<Measure>]
     type K = kelvin             
 
-    [<Measure>] 
     /// A synonym for mole, the SI unit of amount of substance
+    [<Measure>]
     type mol  = mole
 
-    [<Measure>] 
     /// A synonym for candela, the SI unit of luminous intensity
+    [<Measure>]
     type cd = candela            
 
-    [<Measure>] 
     /// A synonym for hertz, the SI unit of frequency
+    [<Measure>]
     type Hz = hertz
 
-    [<Measure>] 
     /// A synonym for newton, the SI unit of force
+    [<Measure>]
     type N = newton
 
-    [<Measure>] 
     /// A synonym for pascal, the SI unit of pressure, stress
+    [<Measure>]
     type Pa = pascal
 
-    [<Measure>] 
     /// A synonym for joule, the SI unit of energy, work, amount of heat
+    [<Measure>]
     type J = joule
 
-    [<Measure>] 
     /// A synonym for watt, the SI unit of power, radiant flux
+    [<Measure>]
     type W = watt     
 
-    [<Measure>] 
     /// A synonym for coulomb, the SI unit of electric charge, amount of electricity
+    [<Measure>]
     type C = coulomb 
 
-    [<Measure>] 
     /// A synonym for volt, the SI unit of electric potential difference, electromotive force
+    [<Measure>]
     type V = volt
 
-    [<Measure>] 
     /// A synonym for farad, the SI unit of capacitance
+    [<Measure>]
     type F = farad
 
-    [<Measure>] 
     /// A synonym for siemens, the SI unit of electric conductance
+    [<Measure>]
     type S = siemens         
 
-    [<Measure>] 
     /// A synonym for UnitNames.ohm, the SI unit of electric resistance.
+    [<Measure>]
     type ohm = Microsoft.FSharp.Data.UnitSystems.SI.UnitNames.ohm         
 
-    [<Measure>] 
     /// A synonym for weber, the SI unit of magnetic flux
+    [<Measure>]
     type Wb = weber
 
-    [<Measure>] 
     /// A synonym for tesla, the SI unit of magnetic flux density
+    [<Measure>]
     type T = tesla
 
-    [<Measure>] 
     /// A synonym for lumen, the SI unit of luminous flux
+    [<Measure>]
     type lm = lumen
 
-    [<Measure>] 
     /// A synonym for lux, the SI unit of illuminance
+    [<Measure>]
     type lx = lux
 
-    [<Measure>] 
     /// A synonym for becquerel, the SI unit of activity referred to a radionuclide
+    [<Measure>]
     type Bq = becquerel
 
-    [<Measure>] 
     /// A synonym for gray, the SI unit of absorbed dose
+    [<Measure>]
     type Gy = gray
 
-    [<Measure>] 
     /// A synonym for sievert, the SI unit of does equivalent
+    [<Measure>]
     type Sv = sievert
 
-    [<Measure>] 
     /// A synonym for katal, the SI unit of catalytic activity
+    [<Measure>]
     type kat = katal
 
-    [<Measure>] 
     /// A synonym for henry, the SI unit of inductance
+    [<Measure>]
     type H = henry

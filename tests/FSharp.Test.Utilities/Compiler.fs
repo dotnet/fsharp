@@ -213,6 +213,9 @@ module rec Compiler =
     let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:5.0" ] "withLangVersion50 is only supported on F#" cUnit
 
+    let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -367,7 +370,8 @@ module rec Compiler =
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
-        let parseResults = CompilerAssert.Parse source
+        let fileName = if fsSource.SourceKind = SourceKind.Fsx then "test.fsx" else "test.fs"
+        let parseResults = CompilerAssert.Parse(source, fileName = fileName)
         let failed = parseResults.ParseHadErrors
 
         let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
@@ -448,6 +452,8 @@ module rec Compiler =
             | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                printfn "---------output-------\n%s\n-------"  output
+                printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     Success executionResult
@@ -637,7 +643,13 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Diagnostics)
+                let message = 
+                    [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
+                      match r.Output with
+                      | Some (ExecutionOutput output) ->
+                          sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | _ -> () ]
+                    |> String.concat "\n"
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =
@@ -717,7 +729,7 @@ module rec Compiler =
             match result with
             | Success r | Failure r ->
                 if not <| diagnosticMatches pattern r.Diagnostics then
-                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
+                    failwithf "Expected diagnostic message pattern was not found in compilation diagnostics.\nDiagnostics:\n%A" r.Diagnostics
             result
 
         let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =

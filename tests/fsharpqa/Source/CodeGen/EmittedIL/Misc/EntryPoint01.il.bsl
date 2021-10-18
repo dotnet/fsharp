@@ -36,13 +36,13 @@
   // Offset: 0x00000258 Length: 0x00000090
 }
 .module EntryPoint01.exe
-// MVID: {60B68B7F-9846-72C1-A745-03837F8BB660}
+// MVID: {611C4D7C-9846-72C1-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071C0000
+// Image base: 0x06DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,33 +66,37 @@
   {
     .entrypoint
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       35 (0x23)
+    // Code size       37 (0x25)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 8,8 : 9,39 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\EntryPoint01.fs'
+    .line 8,8 : 4,49 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\EntryPoint01.fs'
     .line 100001,100001 : 0,0 ''
     IL_0000:  ldc.i4.0
     IL_0001:  stsfld     int32 '<StartupCode$EntryPoint01>'.$EntryPoint01::init@
     IL_0006:  ldsfld     int32 '<StartupCode$EntryPoint01>'.$EntryPoint01::init@
     IL_000b:  pop
-    IL_000c:  call       int32 EntryPoint01::get_static_initializer()
-    IL_0011:  ldc.i4.s   10
-    IL_0013:  bne.un.s   IL_0019
+    IL_000c:  nop
+    .line 8,8 : 9,39 ''
+    IL_000d:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_000e:  call       int32 EntryPoint01::get_static_initializer()
+    IL_0013:  ldc.i4.s   10
+    IL_0015:  bne.un.s   IL_001b
 
     .line 8,8 : 40,41 ''
-    IL_0015:  ldc.i4.0
+    IL_0017:  ldc.i4.0
     .line 100001,100001 : 0,0 ''
-    IL_0016:  nop
-    IL_0017:  br.s       IL_001b
+    IL_0018:  nop
+    IL_0019:  br.s       IL_001d
 
     .line 8,8 : 47,48 ''
-    IL_0019:  ldc.i4.1
+    IL_001b:  ldc.i4.1
     .line 100001,100001 : 0,0 ''
-    IL_001a:  nop
+    IL_001c:  nop
     .line 100001,100001 : 0,0 ''
-    IL_001b:  tail.
-    IL_001d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<int32>(int32)
-    IL_0022:  ret
+    IL_001d:  tail.
+    IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<int32>(int32)
+    IL_0024:  ret
   } // end of method EntryPoint01::main
 
   .property int32 static_initializer()

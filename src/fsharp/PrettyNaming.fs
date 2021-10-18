@@ -27,7 +27,7 @@ let [<Literal>] qmarkSet = "?<-"
 /// Prefix for compiled (mangled) operator names.
 let [<Literal>] opNamePrefix = "op_"
 
-let private opNameTable = 
+let opNameTable = 
     [|("[]", "op_Nil")
       ("::", "op_ColonColon")
       ("+", "op_Addition")
@@ -85,7 +85,7 @@ let private opNameTable =
       (parenSet, "op_ArrayAssign")
     |]
 
-let private opCharTranslateTable =
+let opCharTranslateTable =
     [|( '>', "Greater")
       ( '<', "Less") 
       ( '+', "Plus")
@@ -113,22 +113,190 @@ let private opCharTranslateTable =
       ( ']', "RBrack") |]
 
 /// The set of characters usable in custom operators.
-let private opCharSet =
+let opCharSet =
     let t = HashSet<_>()
     for c, _ in opCharTranslateTable do
         t.Add(c) |> ignore
     t
         
-/// Returns `true` if given string is an operator or double backticked name, e.g. ( |>> ) or ( long identifier ).
-/// (where ( long identifier ) is the display name for ``long identifier``).
-let IsOperatorOrBacktickedName (name: string) =
-    let nameLen = name.Length
-    let rec loop i = (i < nameLen && (opCharSet.Contains(name.[i]) || loop (i+1)))
-    loop 0
+/// The characters that are allowed to be the first character of an identifier.
+let IsIdentifierFirstCharacter c =
+    if c = '_' then true
+    else
+        match Char.GetUnicodeCategory c with
+        // Letters
+        | UnicodeCategory.UppercaseLetter
+        | UnicodeCategory.LowercaseLetter
+        | UnicodeCategory.TitlecaseLetter
+        | UnicodeCategory.ModifierLetter
+        | UnicodeCategory.OtherLetter
+        | UnicodeCategory.LetterNumber -> true
+        | _ -> false
 
-/// Returns `true` if given string is an operator display name, e.g. ( |>> )
-let IsOperatorName (name: string) =
-    let rec isOperatorName (name: string) idx endIndex =
+/// The characters that are allowed to be in an identifier.
+let IsIdentifierPartCharacter c =
+    if c = '\'' then true   // Tick
+    else
+        match Char.GetUnicodeCategory c with
+        // Letters
+        | UnicodeCategory.UppercaseLetter
+        | UnicodeCategory.LowercaseLetter
+        | UnicodeCategory.TitlecaseLetter
+        | UnicodeCategory.ModifierLetter
+        | UnicodeCategory.OtherLetter
+        | UnicodeCategory.LetterNumber
+        // Numbers
+        | UnicodeCategory.DecimalDigitNumber
+        // Connectors
+        | UnicodeCategory.ConnectorPunctuation
+        // Combiners
+        | UnicodeCategory.NonSpacingMark
+        | UnicodeCategory.SpacingCombiningMark -> true
+        | _ -> false
+
+/// Keywords paired with their descriptions. Used in completion and quick info.
+let keywordsWithDescription : (string * string) list =
+    [ "abstract",  FSComp.SR.keywordDescriptionAbstract()
+      "and",       FSComp.SR.keyworkDescriptionAnd()
+      "as",        FSComp.SR.keywordDescriptionAs()
+      "assert",    FSComp.SR.keywordDescriptionAssert()
+      "base",      FSComp.SR.keywordDescriptionBase()
+      "begin",     FSComp.SR.keywordDescriptionBegin()
+      "class",     FSComp.SR.keywordDescriptionClass()
+      "const",     FSComp.SR.keywordDescriptionConst()
+      "default",   FSComp.SR.keywordDescriptionDefault()
+      "delegate",  FSComp.SR.keywordDescriptionDelegate()
+      "do",        FSComp.SR.keywordDescriptionDo()
+      "done",      FSComp.SR.keywordDescriptionDone()
+      "downcast",  FSComp.SR.keywordDescriptionDowncast()
+      "downto",    FSComp.SR.keywordDescriptionDownto()
+      "elif",      FSComp.SR.keywordDescriptionElif()
+      "else",      FSComp.SR.keywordDescriptionElse()
+      "end",       FSComp.SR.keywordDescriptionEnd()
+      "exception", FSComp.SR.keywordDescriptionException()
+      "extern",    FSComp.SR.keywordDescriptionExtern()
+      "false",     FSComp.SR.keywordDescriptionTrueFalse()
+      "finally",   FSComp.SR.keywordDescriptionFinally()
+      "for",       FSComp.SR.keywordDescriptionFor()
+      "fun",       FSComp.SR.keywordDescriptionFun()
+      "function",  FSComp.SR.keywordDescriptionFunction()
+      "global",    FSComp.SR.keywordDescriptionGlobal()
+      "if",        FSComp.SR.keywordDescriptionIf()
+      "in",        FSComp.SR.keywordDescriptionIn()
+      "inherit",   FSComp.SR.keywordDescriptionInherit()
+      "inline",    FSComp.SR.keywordDescriptionInline()
+      "interface", FSComp.SR.keywordDescriptionInterface()
+      "internal",  FSComp.SR.keywordDescriptionInternal()
+      "lazy",      FSComp.SR.keywordDescriptionLazy()
+      "let",       FSComp.SR.keywordDescriptionLet()
+      "let!",      FSComp.SR.keywordDescriptionLetBang()
+      "match",     FSComp.SR.keywordDescriptionMatch()
+      "match!",    FSComp.SR.keywordDescriptionMatchBang()
+      "member",    FSComp.SR.keywordDescriptionMember()
+      "module",    FSComp.SR.keywordDescriptionModule()
+      "mutable",   FSComp.SR.keywordDescriptionMutable()
+      "namespace", FSComp.SR.keywordDescriptionNamespace()
+      "new",       FSComp.SR.keywordDescriptionNew()
+      "not",       FSComp.SR.keywordDescriptionNot()
+      "null",      FSComp.SR.keywordDescriptionNull()
+      "of",        FSComp.SR.keywordDescriptionOf()
+      "open",      FSComp.SR.keywordDescriptionOpen()
+      "or",        FSComp.SR.keywordDescriptionOr()
+      "override",  FSComp.SR.keywordDescriptionOverride()
+      "private",   FSComp.SR.keywordDescriptionPrivate()
+      "public",    FSComp.SR.keywordDescriptionPublic()
+      "rec",       FSComp.SR.keywordDescriptionRec()
+      "return",    FSComp.SR.keywordDescriptionReturn()
+      "return!",   FSComp.SR.keywordDescriptionReturnBang()
+      "static",    FSComp.SR.keywordDescriptionStatic()
+      "struct",    FSComp.SR.keywordDescriptionStruct()
+      "then",      FSComp.SR.keywordDescriptionThen()
+      "to",        FSComp.SR.keywordDescriptionTo()
+      "true",      FSComp.SR.keywordDescriptionTrueFalse()
+      "try",       FSComp.SR.keywordDescriptionTry()
+      "type",      FSComp.SR.keywordDescriptionType()
+      "upcast",    FSComp.SR.keywordDescriptionUpcast()
+      "use",       FSComp.SR.keywordDescriptionUse()
+      "use!",      FSComp.SR.keywordDescriptionUseBang()
+      "val",       FSComp.SR.keywordDescriptionVal()
+      "void",      FSComp.SR.keywordDescriptionVoid()
+      "when",      FSComp.SR.keywordDescriptionWhen()
+      "while",     FSComp.SR.keywordDescriptionWhile()
+      "with",      FSComp.SR.keywordDescriptionWith()
+      "yield",     FSComp.SR.keywordDescriptionYield()
+      "yield!",    FSComp.SR.keywordDescriptionYieldBang()
+      "->",        FSComp.SR.keywordDescriptionRightArrow()
+      "<-",        FSComp.SR.keywordDescriptionLeftArrow()
+      ":>",        FSComp.SR.keywordDescriptionCast()
+      ":?>",       FSComp.SR.keywordDescriptionDynamicCast()
+      "<@",        FSComp.SR.keywordDescriptionTypedQuotation()
+      "@>",        FSComp.SR.keywordDescriptionTypedQuotation()
+      "<@@",       FSComp.SR.keywordDescriptionUntypedQuotation()
+      "@@>",       FSComp.SR.keywordDescriptionUntypedQuotation() ]
+
+let keywordLookup = set (List.map fst keywordsWithDescription)
+
+// Some legacy compat operator names are not encode using op_XYZ and this
+// do not carry sufficient information to distinguish between 
+//     let (or) x y = x || y 
+//     let ``or`` x y = x || y 
+//     let (land) x y = x || y 
+//     let ``land`` x y = x || y 
+// All are deprecated except 'mod'. All except those two get double-backticks
+let IsUnencodedOpName (name: string) = 
+    match name with
+    | "mod" -> true
+    | _ -> false
+
+let IsUnencodedLegacyOpName (name: string) = 
+    match name with
+    | "or" | "land" | "lor" | "lsl"
+    | "lsr" | "asr" | "lxor" -> true
+    | _ -> false
+
+let IsIdentifierName (name: string) =
+    not (keywordLookup.Contains name) &&
+    not (IsUnencodedOpName name) &&
+    not (IsUnencodedLegacyOpName name) &&
+    let nameLen = name.Length
+    nameLen > 0 && 
+    IsIdentifierFirstCharacter name.[0] &&
+    let rec loop i = (i >= nameLen || (IsIdentifierPartCharacter(name.[i]) && loop (i+1)))
+    loop 1
+
+let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
+    if idx = name.Length - 1 then
+        seenNonOpChar
+    else
+        let c = name.[idx]
+        if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
+            false
+        else
+            isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
+
+/// Determines if the specified name is a valid name for an active pattern.
+let IsActivePatternName (name: string) =
+    // The name must contain at least one character between the starting and ending delimiters.
+    let nameLen = name.Length
+    if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
+        false
+    else
+        isCoreActivePatternName name 1 false
+
+/// Returns `true` if given string is an operator display name (DisplayName), e.g. 
+///    (::)
+///    ([])
+///    (|>>)
+///    (+)
+///    ( * )
+/// Also returns true for core display names (DisplayNameCore) without the parens:
+///    ::
+///    []
+///    |>>
+///    +
+///    *
+let IsOperatorDisplayName (name: string) =
+    let rec loop (name: string) idx endIndex =
         if idx = endIndex then
             true
         else
@@ -136,28 +304,42 @@ let IsOperatorName (name: string) =
             if not (opCharSet.Contains(c)) || c = ' ' then
                 false
             else
-                isOperatorName name (idx + 1) endIndex
+                loop name (idx + 1) endIndex
 
-    let skipParens = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
-    let startIndex = if skipParens then 2 else 0
-    let endIndex = if skipParens then name.Length - 2 else name.Length
+    let skipParens2 = name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")
+    let skipParens1 = name.StartsWithOrdinal("(") && name.EndsWithOrdinal(")")
+    let skip = if skipParens2 then 2 elif skipParens1 then 1 else 0
+    let startIndex = skip
+    let endIndex = name.Length - skip
+    (startIndex < endIndex && loop name startIndex endIndex) ||
+    (name = ".. ..") ||
+    (name = "(.. ..)")
 
-    isOperatorName name startIndex endIndex || name = ".. .."
+//IsOperatorDisplayName "+"
+//IsOperatorDisplayName "(+)"
+//IsOperatorDisplayName "(::)"
+//IsOperatorDisplayName "::"
+//IsOperatorDisplayName "([])"
+//IsOperatorDisplayName "(*)"
+//IsOperatorDisplayName "( ** )"
+//IsOperatorDisplayName "(  )" // false
+//IsOperatorDisplayName "( +)" // false
 
-let IsMangledOpName (n: string) =
-    n.StartsWithOrdinal(opNamePrefix)
+let IsMangledOpName (name: string) =
+    name.StartsWithOrdinal(opNamePrefix)
 
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
 /// This function should only be used for custom operators
 /// if an operator is or potentially may be a built-in operator,
 /// use the 'CompileOpName' function instead.
-let private compileCustomOpName =
+let compileCustomOpName =
     let t2 =
         let t2 = Dictionary<_, _> opCharTranslateTable.Length
         for x, y in opCharTranslateTable do
             t2.Add (x, y)
         t2
+
     /// The maximum length of the name for a custom operator character.
     /// This value is used when initializing StringBuilders to avoid resizing.
     let maxOperatorNameLength =
@@ -196,23 +378,21 @@ let standardOpNames =
         opNames.Add (x, y)
     opNames
 
-/// Compiles an operator into a mangled operator name.
-/// For example, "!%" becomes "op_DereferencePercent".
-/// This function accepts both built-in and custom operators.
 let CompileOpName op =
-        match standardOpNames.TryGetValue op with
-        | true, x -> x
-        | false, _ ->
-            if IsOperatorOrBacktickedName op then
-                compileCustomOpName op
-            else op
+    match standardOpNames.TryGetValue op with
+    | true, x -> x
+    | false, _ ->
+        if IsUnencodedOpName op || IsUnencodedLegacyOpName op || IsIdentifierName op then
+            op
+        else
+            compileCustomOpName op
 
 /// Decompiles the mangled name of a custom operator back into an operator.
 /// For example, "op_DereferencePercent" becomes "!%".
 /// This function should only be used for mangled names of custom operators
 /// if a mangled name potentially represents a built-in operator,
 /// use the 'DecompileOpName' function instead.
-let private decompileCustomOpName =
+let decompileCustomOpName =
     // Memoize this operation. Custom operators are typically used more than once
     // so this avoids repeating decompilation.
     let decompiledOperators = ConcurrentDictionary<_, _> StringComparer.Ordinal
@@ -284,27 +464,77 @@ let standardOpsDecompile =
         ops.Add(y, x)
     ops
 
-/// Decompiles a mangled operator name back into an operator.
-/// For example, "op_DereferencePercent" becomes "!%".
-/// This function accepts mangled names for both built-in and custom operators.
 let DecompileOpName opName =
-        match standardOpsDecompile.TryGetValue opName with
-        | true, res -> res
-        | false, _ ->
-            if IsMangledOpName opName then
-                decompileCustomOpName opName
-            else
-                opName
+    match standardOpsDecompile.TryGetValue opName with
+    | true, res -> res
+    | false, _ ->
+        if IsMangledOpName opName then
+            decompileCustomOpName opName
+        else
+            opName
 
-let DemangleOperatorName nm =
-    let nm = DecompileOpName nm
-    if IsOperatorOrBacktickedName nm then "( " + nm + " )"
-    else nm
+let DoesIdentifierNeedBackticks (name: string) : bool =
+    not (IsUnencodedOpName name) && 
+    not (IsIdentifierName name) && 
+    not (IsActivePatternName name)
+
+/// A utility to help determine if an identifier needs to be quoted 
+let AddBackticksToIdentifierIfNeeded (name: string) : string =
+    if DoesIdentifierNeedBackticks name && 
+       not (name.StartsWithOrdinal("`")) &&
+       not (name.EndsWithOrdinal("`")) then 
+        "``" + name + "``" 
+    else 
+        name
+
+/// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
+let NormalizeIdentifierBackticks (name: string) : string =
+    let s =
+        if name.StartsWithOrdinal("``") && name.EndsWithOrdinal("``") then
+            name.[2..name.Length - 3]
+        else name
+    AddBackticksToIdentifierIfNeeded s
+
+let ConvertNameToDisplayName name =
+    AddBackticksToIdentifierIfNeeded name
+
+let ConvertValNameToDisplayName isBaseVal name =
+    if isBaseVal && name = "base" then
+        "base" 
+    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
+        let nm = DecompileOpName name
+        // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
+        if IsMangledOpName name && (nm = name) then
+            AddBackticksToIdentifierIfNeeded nm
+        // Add parentheses for multiply-like symbols, with spacing to avoid confusion with comments
+        elif nm <> "*" && (nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*") then
+            "( " + nm + " )"
+        // Add parentheses for other symbols, no spacing
+        else
+            "(" + nm + ")"
+    else
+        ConvertNameToDisplayName name
     
-let DemangleOperatorNameAsLayout nonOpTagged nm =
-    let nm = DecompileOpName nm
-    if IsOperatorOrBacktickedName nm then wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
-    else wordL (nonOpTagged nm)
+let ConvertNameToDisplayLayout nonOpLayout name =
+    if DoesIdentifierNeedBackticks name then
+        leftL (TaggedText.tagPunctuation "``") ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
+    else
+        nonOpLayout name
+
+let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
+    if isBaseVal && name = "base" then
+        nonOpLayout "base" 
+    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
+        let nm = DecompileOpName name
+        // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
+        if IsMangledOpName name && (nm = name) then
+            ConvertNameToDisplayLayout nonOpLayout name
+        elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
+            wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
+        else
+            leftL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+    else
+        ConvertNameToDisplayLayout nonOpLayout name
 
 let opNameCons = CompileOpName "::"
 
@@ -317,41 +547,6 @@ let opNameEqualsNullable = CompileOpName "=?"
 let opNameNullableEquals = CompileOpName "?="
 
 let opNameNullableEqualsNullable = CompileOpName "?=?"
-
-/// The characters that are allowed to be the first character of an identifier.
-let IsIdentifierFirstCharacter c =
-    if c = '_' then true
-    else
-        match Char.GetUnicodeCategory c with
-        // Letters
-        | UnicodeCategory.UppercaseLetter
-        | UnicodeCategory.LowercaseLetter
-        | UnicodeCategory.TitlecaseLetter
-        | UnicodeCategory.ModifierLetter
-        | UnicodeCategory.OtherLetter
-        | UnicodeCategory.LetterNumber -> true
-        | _ -> false
-
-/// The characters that are allowed to be in an identifier.
-let IsIdentifierPartCharacter c =
-    if c = '\'' then true   // Tick
-    else
-        match Char.GetUnicodeCategory c with
-        // Letters
-        | UnicodeCategory.UppercaseLetter
-        | UnicodeCategory.LowercaseLetter
-        | UnicodeCategory.TitlecaseLetter
-        | UnicodeCategory.ModifierLetter
-        | UnicodeCategory.OtherLetter
-        | UnicodeCategory.LetterNumber
-        // Numbers
-        | UnicodeCategory.DecimalDigitNumber
-        // Connectors
-        | UnicodeCategory.ConnectorPunctuation
-        // Combiners
-        | UnicodeCategory.NonSpacingMark
-        | UnicodeCategory.SpacingCombiningMark -> true
-        | _ -> false
 
 /// Is this character a part of a long identifier?
 let IsLongIdentifierPartCharacter c =
@@ -464,9 +659,9 @@ let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     | _ ->
         Other
 
-let [<Literal>] private compilerGeneratedMarker = "@"
+let [<Literal>] compilerGeneratedMarker = "@"
 
-let [<Literal>] private compilerGeneratedMarkerChar = '@'
+let [<Literal>] compilerGeneratedMarkerChar = '@'
     
 let IsCompilerGeneratedName (nm: string) =
     nm.IndexOf compilerGeneratedMarkerChar <> -1
@@ -486,7 +681,7 @@ let CompilerGeneratedNameSuffix (basicName: string) suffix =
 // Handle mangled .NET generic type names
 //------------------------------------------------------------------------- 
      
-let [<Literal>] private mangledGenericTypeNameSym = '`'
+let [<Literal>] mangledGenericTypeNameSym = '`'
 
 let TryDemangleGenericNameAndPos (n: string) =
     // check what comes after the symbol is a number 
@@ -524,7 +719,7 @@ let DecodeGenericTypeName (mangledName: string) =
     | ValueSome pos -> DecodeGenericTypeNameWithPos pos mangledName
     | _ -> NameArityPair(mangledName, 0)
 
-let private chopStringTo (s: string) (c: char) =
+let chopStringTo (s: string) (c: char) =
     match s.IndexOf c with
     | -1 -> s
     | idx ->
@@ -559,9 +754,9 @@ let SplitNamesForILPath (s : string) : string list =
         
 /// Return a string array delimited by the given separator.
 /// Note that a quoted string is not going to be mangled into pieces. 
-let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
+let inline isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
 
-let private splitAroundQuotation (text: string) (separator: char) =
+let splitAroundQuotation (text: string) (separator: char) =
     let length = text.Length
     let result = ResizeArray()
     let mutable insideQuotation = false
@@ -588,7 +783,7 @@ let private splitAroundQuotation (text: string) (separator: char) =
 
 /// Return a string array delimited by the given separator up to the maximum number.
 /// Note that a quoted string is not going to be mangled into pieces.
-let private splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
+let splitAroundQuotationWithCount (text: string) (separator: char) (count: int)=
     if count <= 1 then [| text |] else
     let mangledText  = splitAroundQuotation text separator
     match mangledText.Length > count with
@@ -600,25 +795,6 @@ let [<Literal>] FSharpModuleSuffix = "Module"
 let [<Literal>] MangledGlobalName = "`global`"
     
 let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
-
-/// Determines if the specified name is a valid name for an active pattern.
-let IsActivePatternName (name: string) =
-    // The name must contain at least one character between the starting and ending delimiters.
-    let nameLen = name.Length
-    if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
-        false
-    else
-        let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
-            if idx = name.Length - 1 then
-                seenNonOpChar
-            else
-                let c = name.[idx]
-                if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
-                    false
-                else
-                    isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
-
-        isCoreActivePatternName name 1 false
 
 type ActivePatternInfo = 
     | APInfo of bool * (string  * range) list * range
@@ -654,10 +830,10 @@ let ActivePatternInfoOfValName nm (m: range) =
     else 
         None
     
-let private mangleStaticStringArg (nm: string, v: string) = 
+let mangleStaticStringArg (nm: string, v: string) = 
     nm + "=" + "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
 
-let private tryDemangleStaticStringArg (mangledText: string) =
+let tryDemangleStaticStringArg (mangledText: string) =
     match splitAroundQuotationWithCount mangledText '=' 2 with
     | [| nm; v |] ->
         if v.Length >= 2 then

@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Test
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
 [<TestFixture>]
 module LargeExprTests =
 
@@ -5515,3 +5516,4 @@ let test () : unit =
 test ()
 """
         CompilerAssert.RunScript source []
+#endif

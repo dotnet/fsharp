@@ -48,9 +48,9 @@ val (|SingleIdent|_|): inp:SynExpr -> Ident option
 /// This affects placement of sequence points
 val IsControlFlowExpression: e:SynExpr -> bool
 
-val mkSynAnonField: ty:SynType -> SynField
+val mkSynAnonField: ty:SynType * xmlDoc:PreXmlDoc -> SynField
 
-val mkSynNamedField: ident:Ident * ty:SynType * m:range -> SynField
+val mkSynNamedField: ident:Ident * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
 
 val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
@@ -119,13 +119,13 @@ val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr
 
 val mkSynDotParenSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
+val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
 val mkSynQMarkSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
+//val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
-val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
+//val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
 val mkSynDotParenGet: lhsm:range -> dotm:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
@@ -263,3 +263,10 @@ val noInferredTypars: SynValTyparDecls
 val synExprContainsError: inpExpr:SynExpr -> bool
 
 val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list
+
+val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
+
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+

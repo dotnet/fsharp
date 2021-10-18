@@ -318,7 +318,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     | FSI_FILE -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
 
     | FSI_STDIN ->
-        use cleanup = (cleanUpFSharpCore cfg)
+        use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
 
@@ -327,7 +327,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         testOkFile.CheckExists()
 
     | GENERATED_SIGNATURE ->
-        use cleanup = (cleanUpFSharpCore cfg)
+        use _cleanup = (cleanUpFSharpCore cfg)
 
         let source1 =
             ["test.ml"; "test.fs"; "test.fsx"]
@@ -338,11 +338,9 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
@@ -351,7 +349,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
-        use cleanup = (cleanUpFSharpCore cfg)
+        use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         let sources = extraSources |> List.filter (fileExists cfg)

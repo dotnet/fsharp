@@ -315,10 +315,9 @@ let BindVal cenv env (v: Val) =
        not (v.DisplayName.StartsWithOrdinal("_")) && 
        not v.IsCompilerGenerated then 
 
-        match v.BaseOrThisInfo with 
-        | ValBaseOrThisInfo.CtorThisVal ->
+        if v.IsCtorThisVal then
             warning (Error(FSComp.SR.chkUnusedThisVariable v.DisplayName, v.Range))
-        | _ -> 
+        else
             warning (Error(FSComp.SR.chkUnusedValue v.DisplayName, v.Range))
 
 let BindVals cenv env vs = List.iter (BindVal cenv env) vs
@@ -451,7 +450,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
            // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
-           ((v.BaseOrThisInfo = BaseVal) || (isByrefLikeTy cenv.g m v.Type)) &&
+           (v.IsBaseVal || isByrefLikeTy cenv.g m v.Type) &&
            not (ListSet.contains valEq v syntacticArgs)
 
         let frees = freeInExpr CollectLocals body
@@ -469,11 +468,11 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
                 // For safety, such functions are assumed to have no known arity, and so can not accept byrefs. 
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
 
-            elif v.BaseOrThisInfo = BaseVal then
+            elif v.IsBaseVal then
                 errorR(Error(FSComp.SR.chkBaseUsedInInvalidWay(), m))
 
             else
-                (* Should be dead code, unless governing tests change *)
+                // Should be dead code, unless governing tests change 
                 errorR(InternalError(FSComp.SR.chkVariableUsedInInvalidWay(v.DisplayName), m))
         Some frees
     else
@@ -765,6 +764,11 @@ and CheckValRef (cenv: cenv) (env: env) v m (context: PermitByRefExpr) =
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
         if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.RefCellNotationInformationals then
+            if valRefEq cenv.g v cenv.g.refcell_deref_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDeref(), m))
+            if valRefEq cenv.g v cenv.g.refcell_assign_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellAssign(), m))
+            if valRefEq cenv.g v cenv.g.refcell_incr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellIncr(), m))
+            if valRefEq cenv.g v cenv.g.refcell_decr_vref then informationalWarning(Error(FSComp.SR.chkInfoRefcellDecr(), m))
 
         // ByRefLike-typed values can only occur in permitting contexts 
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 
@@ -784,7 +788,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
 
     if cenv.reportErrors then 
 
-        if vref.BaseOrThisInfo = BaseVal then 
+        if vref.IsBaseVal then 
             errorR(Error(FSComp.SR.chkLimitationsOfBaseKeyword(), m))
 
         let isCallOfConstructorOfAbstractType = 
@@ -816,7 +820,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         let isReturnOfStructThis = 
             context.PermitOnlyReturnable && 
             isByrefTy g vref.Type &&
-            (vref.BaseOrThisInfo = MemberThisVal)
+            (vref.IsMemberThisVal)
 
         if isReturnOfStructThis then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
@@ -1180,7 +1184,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
     // Allow base calls to F# methods
     | Expr.App (InnerExprPat(ExprValWithPossibleTypeInst(v, vFlags, _, _)  as f), _fty, tyargs, Expr.Val (baseVal, _, _) :: rest, m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
-                baseVal.BaseOrThisInfo = BaseVal) ->
+                baseVal.IsBaseVal) ->
 
         let memberInfo = Option.get v.MemberInfo
         if memberInfo.MemberFlags.IsDispatchSlot then
@@ -1198,7 +1202,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
     // Allow base calls to IL methods
     | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), tyargs, Expr.Val (baseVal, _, _) :: rest, m) 
-          when not isVirtual && baseVal.BaseOrThisInfo = BaseVal ->
+          when not isVirtual && baseVal.IsBaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
         match tryTcrefOfAppTy g baseVal.Type with
@@ -1532,7 +1536,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // C# applies a rule where the APIs to struct types can't return the addresses of fields in that struct.
         // There seems no particular reason for this given that other protections in the language, though allowing
         // it would mean "readonly" on a struct doesn't imply immutability-of-contents - it only implies 
-        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.BaseOrThisInfo = MemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
+        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.IsMemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
         if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
@@ -1557,7 +1561,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
 
-        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.BaseOrThisInfo = MemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
+        if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.IsMemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -1777,7 +1781,7 @@ and CheckDecisionTree cenv env x =
     | TDBind(bind, rest) -> 
         CheckBinding cenv env false PermitByRefExpr.Yes bind |> ignore
         CheckDecisionTree cenv env rest 
-    | TDSwitch (e, cases, dflt, m) -> 
+    | TDSwitch (_, e, cases, dflt, m) -> 
         CheckDecisionTreeSwitch cenv env (e, cases, dflt, m)
 
 and CheckDecisionTreeSwitch cenv env (e, cases, dflt, m) =
@@ -2091,7 +2095,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                             if tcref.UnionCasesArray.Length = 1 && hasNoArgs then 
                                let ucase1 = tcref.UnionCasesArray.[0]
                                for f in ucase1.RecdFieldsArray do
-                                   if f.Name = nm then error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), f.Name, ucase1.Range))
+                                   if f.LogicalName = nm then
+                                       error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), f.LogicalName, ucase1.Range))
 
                 // Default augmentation contains the nasty 'Case<UnionCase>' etc.
                 let prefix = "New"
@@ -2108,10 +2113,10 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                     | None -> ()
 
                 match tcref.GetFieldByName nm with 
-                | Some rf -> error(NameClash(nm, kind, v.DisplayName, v.Range, "field", rf.Name, rf.Range))
+                | Some rf -> error(NameClash(nm, kind, v.DisplayName, v.Range, "field", rf.LogicalName, rf.Range))
                 | None -> ()
 
-            check false v.CoreDisplayName
+            check false v.DisplayNameCoreMangled
             check false v.DisplayName
             check false (v.CompiledName cenv.g.CompilerGlobalState)
 
@@ -2158,7 +2163,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
-    CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
+    CheckTypeForAccess cenv env (fun () -> rfield.LogicalName) access m fieldTy
 
     if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
         // Permit Span fields in IsByRefLike types
@@ -2389,7 +2394,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then 
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))
 
-    // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
+    // Considers TFSharpObjectRepr, TFSharpRecdRepr and TFSharpUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr, TAsmRepr. [Yes - these are FSharp.Core.dll only]
     tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
     
@@ -2429,7 +2434,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         match tycon.TypeReprInfo with 
         | TFSharpObjectRepr r ->
             match r.fsobjmodel_kind with 
-            | TTyconDelegate ss ->
+            | TFSharpDelegate ss ->
                 //ss.ClassTypars 
                 //ss.MethodTypars 
                 ss.FormalReturnType |> Option.iter visitType
@@ -2497,7 +2502,7 @@ and CheckNothingAfterEntryPoint cenv m =
 
 and CheckDefnInModule cenv env x = 
     match x with 
-    | TMDefRec(isRec, tycons, mspecs, m) -> 
+    | TMDefRec(isRec, _opens, tycons, mspecs, m) -> 
         CheckNothingAfterEntryPoint cenv m
         if isRec then BindVals cenv env (allValsOfModDef x |> Seq.toList)
         CheckEntityDefns cenv env tycons
@@ -2506,6 +2511,8 @@ and CheckDefnInModule cenv env x =
         CheckNothingAfterEntryPoint cenv m
         CheckModuleBinding cenv env bind 
         BindVal cenv env bind.Var
+    | TMDefOpens _ ->
+        ()
     | TMDefDo(e, m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckNoReraise cenv None e
