@@ -6,6 +6,7 @@
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <PackagePath>typeproviders</PackagePath>
+    <NoWarn>$(NoWarn);NU5100;NU5118</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
