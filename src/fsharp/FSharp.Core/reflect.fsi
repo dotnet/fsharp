@@ -20,18 +20,65 @@ open Microsoft.FSharp.Collections
 type UnionCaseInfo =
     /// <summary>The name of the case.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="Name-1">
+    /// <code lang="fsharp">
+    /// type Weather = Rainy | Sunny
+    /// 
+    /// typeof&lt;Weather&gt;
+    /// |> FSharpType.GetUnionCases 
+    /// |> Array.map (fun x -> x.Name)    
+    /// </code>
+    /// Evaluates to <c>[|"Rainy", "Sunny"|]</c>
+    /// </example>
     member Name : string
 
     /// <summary>The type in which the case occurs.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="DeclaringType-1">
+    /// <code lang="fsharp">
+    /// type Weather = Rainy | Sunny
+    /// 
+    /// let rainy = 
+    ///     typeof&lt;Weather&gt;
+    ///     |> FSharpType.GetUnionCases
+    ///     |> Array.head
+    /// 
+    /// rainy.DeclaringType
+    /// </code>
+    /// Evaluates to a value of type <c>System.Type</c>
+    /// that holds type information for <c>Weather</c>.
+    /// </example>
     member DeclaringType: Type
     
     /// <summary>Returns the custom attributes associated with the case.</summary>
     /// <returns>An array of custom attributes.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="GetCustomAttributes-1">
+    /// <code lang="fsharp">
+    /// type Weather =
+    ///     | Rainy
+    ///     | Sunny
+    /// let ty = FSharpType.GetUnionCases typeof&lt;Weather&gt;
+    /// ty |> Array.map (fun x -> GetCustomAttributes(x))
+    /// </code>
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// [|[|Microsoft.FSharp.Core.CompilationMappingAttribute
+    ///     {ResourceName = null;
+    ///      SequenceNumber = 0;
+    ///      SourceConstructFlags = UnionCase;
+    ///      TypeDefinitions = null;
+    ///      TypeId = Microsoft.FSharp.Core.CompilationMappingAttribute;
+    ///      VariantNumber = 0;}|];
+    /// [|Microsoft.FSharp.Core.CompilationMappingAttribute
+    ///     {ResourceName = null;
+    ///      SequenceNumber = 1;
+    ///      SourceConstructFlags = UnionCase;
+    ///      TypeDefinitions = null;
+    ///      TypeId = Microsoft.FSharp.Core.CompilationMappingAttribute;
+    ///      VariantNumber = 0;}|]|]
+    /// </code>
+    /// </example>
     member GetCustomAttributes: unit -> obj[]
 
     /// <summary>Returns the custom attributes associated with the case matching the given attribute type.</summary>
@@ -39,24 +86,107 @@ type UnionCaseInfo =
     ///
     /// <returns>An array of custom attributes.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="GetCustomAttributes-2">
+    /// <code lang="fsharp">
+    /// type Signal(signal: string) =
+    ///    inherit System.Attribute()
+    ///    member this.Signal = signal
+    /// 
+    /// type Answer =
+    ///     | [&lt;Signal("Thumbs up")&gt;] Yes
+    ///     | [&lt;Signal("Thumbs down")&gt;] No
+    /// 
+    /// typeof&lt;Answer&gt;
+    /// |> FSharpType.GetUnionCases
+    /// |> Array.map (fun x -> x.GetCustomAttributes(typeof&lt;Signal&gt;))
+    /// </code>
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// [|[|FSI_0147+Signal {Signal = "Thumbs up";
+    ///                      TypeId = FSI_0147+Signal;}|];
+    ///   [|FSI_0147+Signal {Signal = "Thumbs down";
+    ///                      TypeId = FSI_0147+Signal;}|]|]
+    /// </code>
+    /// </example>
     member GetCustomAttributes: attributeType:System.Type -> obj[]
 
     /// <summary>Returns the custom attributes data associated with the case.</summary>
     /// <returns>An list of custom attribute data items.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="GetCustomAttributesData-1">
+    /// <code lang="fsharp">
+    /// type Signal(signal: string) =
+    ///   inherit System.Attribute()
+    ///   member this.Signal = signal
+    /// 
+    /// type Answer =
+    ///     | [&lt;Signal("Thumbs up")&gt;] Yes
+    ///     | [&lt;Signal("Thumbs down")&gt;] No
+    /// 
+    /// let answerYes =
+    ///     typeof&lt;Answer&gt;
+    ///     |> FSharpType.GetUnionCases
+    ///     |> Array.find (fun x -> x.Name = "Yes")
+    /// 
+    /// answerYes.GetCustomAttributesData()
+    /// </code>
+    /// Evaluates to
+    /// <code lang="fsharp">
+    ///  [|[FSI_0150+Signal("Thumbs up")] 
+    ///      {AttributeType = FSI_0150+Signal;
+    ///       Constructor = Void .ctor(System.String);
+    ///       ConstructorArguments = seq ["Thumbs up"];
+    ///       NamedArguments = seq [];};
+    ///    [Microsoft.FSharp.Core.CompilationMappingAttribute((Microsoft.FSharp.Core.SourceConstructFlags)8, (Int32)0)]
+    ///      {AttributeType = Microsoft.FSharp.Core.CompilationMappingAttribute;
+    ///       Constructor = Void .ctor(Microsoft.FSharp.Core.SourceConstructFlags, Int32);
+    ///       ConstructorArguments = seq
+    ///                                [(Microsoft.FSharp.Core.SourceConstructFlags)8;
+    ///                                 (Int32)0];
+    ///       NamedArguments = seq [];}|]
+    /// </code>
+    /// </example>
     member GetCustomAttributesData: unit -> System.Collections.Generic.IList<CustomAttributeData>
 
     /// <summary>The fields associated with the case, represented by a PropertyInfo.</summary>
     /// <returns>The fields associated with the case.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="GetFields-1">
+    /// <code lang="fsharp">
+    /// type Shape =
+    ///     | Rectangle of width : float * length : float
+    ///     | Circle of radius : float
+    ///     | Prism of width : float * float * height : float
+    /// 
+    /// typeof&lt;Shape&gt;
+    /// |> FSharpType.GetUnionCases
+    /// |> Array.map (fun unionCase ->
+    ///     unionCase.GetFields()
+    ///     |> Array.map (fun fieldInfo -> 
+    ///         fieldInfo.Name, 
+    ///         fieldInfo.PropertyType.Name))
+    /// </code>
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// [|[|("width", "Double"); ("length", "Double")|];
+    ///   [|("radius", "Double")|];
+    ///   [|("width", "Double"); ("Item2", "Double"); ("height", "Double")|]|]
+    /// </code>
+    /// </example>
     member GetFields: unit -> PropertyInfo []
 
     /// <summary>The integer tag for the case.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="Tag-1">
+    /// <code lang="fsharp">
+    /// type CoinToss = Heads | Tails
+    /// 
+    /// typeof&lt;CoinToss&gt;
+    /// |> FSharpType.GetUnionCases
+    /// |> Array.map (fun x -> $"{x.Name} has tag {x.Tag}")
+    /// </code>
+    /// Evaluates to <c>[|"Heads has tag 0"; "Tails has tag 1"|]</c>
+    /// </example>
     member Tag: int
 
 /// <summary>Contains operations associated with constructing and analyzing values associated with F# types
