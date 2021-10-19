@@ -58,8 +58,10 @@ type UnionCaseInfo =
     /// type Weather =
     ///     | Rainy
     ///     | Sunny
-    /// let ty = FSharpType.GetUnionCases typeof&lt;Weather&gt;
-    /// ty |> Array.map (fun x -> GetCustomAttributes(x))
+    /// 
+    /// typeof&lt;Weather&gt;
+    /// |> FSharpType.GetUnionCases 
+    /// |> Array.map (fun x -> x.GetCustomAttributes())
     /// </code>
     /// Evaluates to
     /// <code lang="fsharp">
