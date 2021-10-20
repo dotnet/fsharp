@@ -364,6 +364,8 @@ type FSharpEntity =
     /// Get the source text of the entity's signature to be used as metadata.
     member TryGetMetadataText: unit -> ISourceText option
 
+    member AsType: unit -> FSharpType
+
 /// Represents a delegate signature in an F# symbol
 [<Class>] 
 type FSharpDelegateSignature =

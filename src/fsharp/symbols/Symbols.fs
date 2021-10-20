@@ -1235,6 +1235,10 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
 
     member private x.V = d
 
+    member x.AsType() =
+        let ty = generalizedTyconRef entity
+        FSharpType(cenv, ty)
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
