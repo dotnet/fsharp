@@ -114,7 +114,12 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
         match weakPEReferences.TryGetValue comp with
         | true, fsRefProj -> fsRefProj
         | _ ->
+            let mutable strongComp = comp
             let weakComp = WeakReference<Compilation>(comp)
+            let stamp = DateTime.UtcNow
+
+            // Getting a C# reference assembly can fail if there are compilation errors that cannot be resolved.
+            // To mitigate this, we store the last successful compilation of a C# project and re-use it until we get a new successful compilation.
             let getStream =
                 fun ct ->
                     let tryStream (comp: Compilation) =
@@ -124,15 +129,22 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                             let result = comp.Emit(ms, options = emitOptions, cancellationToken = ct)
 
                             if result.Success then
+                                strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 lastSuccessfulCompilations.[projectId] <- comp
                                 ms.Position <- 0L
                                 ms :> Stream
                                 |> Some
                             else
+                                strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 ms.Dispose() // it failed, dispose of stream
                                 None
                         with
+                        | :? OperationCanceledException ->
+                            // Since we cancelled, do not null out the strong compilation ref.
+                            ms.Dispose()
+                            None
                         | _ ->
+                            strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                             ms.Dispose() // it failed, dispose of stream
                             None
 
@@ -146,12 +158,14 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                     | _ ->
                         match lastSuccessfulCompilations.TryGetValue(projectId) with
                         | true, comp -> tryStream comp
-                        | _ -> None                           
+                        | _ -> None
+                        
+            let getStamp = fun () -> stamp
 
             let fsRefProj =
                 FSharpReferencedProject.CreatePortableExecutable(
                     referencedProject.OutputFilePath, 
-                    DateTime.UtcNow,
+                    getStamp,
                     getStream
                 )
             weakPEReferences.Add(comp, fsRefProj)

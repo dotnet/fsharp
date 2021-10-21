@@ -269,7 +269,7 @@ type BackgroundCompiler(
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
                             member x.FileName = nm }
                             
-                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
+                | FSharpReferencedProject.PEReference(nm,getStamp,delayedReader) ->
                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
@@ -285,7 +285,7 @@ type BackgroundCompiler(
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                               }
-                            member x.TryGetLogicalTimeStamp _ = stamp |> Some
+                            member x.TryGetLogicalTimeStamp _ = getStamp() |> Some
                             member x.FileName = nm }
 
                 | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
