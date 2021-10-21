@@ -4066,7 +4066,6 @@ FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.Stri
 FSharp.Compiler.IO.IFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
-FSharp.Compiler.IO.IFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullPathShim(System.String)
