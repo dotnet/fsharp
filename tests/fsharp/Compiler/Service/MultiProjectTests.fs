@@ -42,7 +42,8 @@ namespace CSharpTest
                 ms :> Stream
                 |> Some
 
-        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", DateTime.UtcNow, getStream)
+        let stamp = DateTime.UtcNow
+        let csRefProj = FSharpReferencedProject.CreatePortableExecutable("""Z:\csharp_test.dll""", (fun () -> stamp), getStream)
 
         let fsOptions = CompilerAssert.DefaultProjectOptions
         let fsOptions =
