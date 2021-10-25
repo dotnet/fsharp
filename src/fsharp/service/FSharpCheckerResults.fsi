@@ -264,6 +264,14 @@ type public FSharpCheckFileResults =
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
     member GetToolTip: line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> ToolTipText
 
+    /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
+    ///
+    /// <param name="symbol">The symbol.</param>
+    /// <param name="inst">Generic arguments.</param>
+    /// <param name="displayFullName">Display the symbol full name.</param>
+    /// <param name="range">The position.</param>
+    member GetDescription: symbol: FSharpSymbol * inst: (FSharpGenericParameter * FSharpType) list * displayFullName: bool * range: range -> ToolTipText 
+
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///
     /// <param name="line">The line number where the information is being requested.</param>
