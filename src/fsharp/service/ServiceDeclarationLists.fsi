@@ -88,25 +88,28 @@ type internal CompletionItem =
     }
     member Item: Item
 
-[<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
-// Note: this type holds a weak reference to compiler resources. 
+// Note: this type holds a weak reference to compiler resources.
+[<Sealed>]
 type public DeclarationListItem =
-    /// Get the display name for the declaration.
+    /// Get the text to display in the declaration list for the declaration.
     member Name: string
 
-    /// Get the name for the declaration as it's presented in source code.
+    /// Get the text for the declaration as it's to be inserted into source code.
     member NameInCode: string
 
     /// Get the description
     member Description: ToolTipText
 
+    /// Get the glyph to use
     member Glyph: FSharpGlyph
 
+    /// Get the accessibility of the item
     member Accessibility: FSharpAccessibility
 
+    /// Get the completion kind of the item
     member Kind: CompletionItemKind
 
     member IsOwnMember: bool
@@ -120,11 +123,11 @@ type public DeclarationListItem =
     member NamespaceToOpen: string option
 
 
-[<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
-// Note: this type holds a weak reference to compiler resources. 
+// Note: this type holds a weak reference to compiler resources.
+[<Sealed>]
 type public DeclarationListInfo =
 
     member Items: DeclarationListItem[]

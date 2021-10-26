@@ -171,6 +171,13 @@ let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
 //---------------------------------------------------------------------
 // Portable PDB Writer
 //---------------------------------------------------------------------
+
+let b0 n = (n &&& 0xFF)
+let b1 n = ((n >>> 8) &&& 0xFF)
+let b2 n = ((n >>> 16) &&& 0xFF)
+let b3 n = ((n >>> 24) &&& 0xFF)
+let i32AsBytes i = [| byte (b0 i); byte (b1 i); byte (b2 i); byte (b3 i) |]
+
 let cvMagicNumber = 0x53445352L
 let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) =
     let iddCvBuffer =
@@ -178,11 +185,11 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
         let path = (Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
         let offset, size = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
-        Buffer.BlockCopy(BitConverter.GetBytes cvMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int cvMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
-        Buffer.BlockCopy(BitConverter.GetBytes 1, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes 1, 0, buffer, offset, size)
         let offset, size = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
@@ -200,9 +207,9 @@ let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLeng
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let offset, size = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
-        Buffer.BlockCopy(BitConverter.GetBytes pdbMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)        // Uncompressed size
-        Buffer.BlockCopy(BitConverter.GetBytes (int uncompressedLength), 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
         let offset, size = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
@@ -751,17 +758,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     try FileSystem.FileDeleteShim fpdb with _ -> ()
 
-    let pdbw = ref Unchecked.defaultof<PdbWriter>
-
-    try
-        pdbw := pdbInitialize f fpdb
-    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
+    let pdbw =
+        try
+            pdbInitialize f fpdb
+        with _ -> 
+            error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
 
     match info.EntryPoint with
     | None -> ()
-    | Some x -> pdbSetUserEntryPoint !pdbw x
+    | Some x -> pdbSetUserEntryPoint pdbw x
 
-    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument !pdbw doc.File)
+    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument pdbw doc.File)
     let getDocument i =
       if i < 0 || i > docs.Length then failwith "getDocument: bad doc number"
       docs.[i]
@@ -772,17 +779,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
     let spCounts = info.Methods |> Array.map (fun x -> x.DebugPoints.Length)
     let allSps = Array.collect (fun x -> x.DebugPoints) info.Methods |> Array.indexed
 
-    let spOffset = ref 0
+    let mutable spOffset = 0
     info.Methods |> Array.iteri (fun i minfo ->
 
-          let sps = Array.sub allSps !spOffset spCounts.[i]
-          spOffset := !spOffset + spCounts.[i]
+          let sps = Array.sub allSps spOffset spCounts.[i]
+          spOffset <- spOffset + spCounts.[i]
           begin match minfo.Range with
           | None -> ()
           | Some (a,b) ->
-              pdbOpenMethod !pdbw minfo.MethToken
+              pdbOpenMethod pdbw minfo.MethToken
 
-              pdbSetMethodRange !pdbw
+              pdbSetMethodRange pdbw
                 (getDocument a.Document) a.Line a.Column
                 (getDocument b.Document) b.Line b.Column
 
@@ -791,17 +798,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                   let res = Dictionary<int,PdbDebugPoint list ref>()
                   for (_,sp) in sps do
                       let k = sp.Document
-                      let mutable xsR = Unchecked.defaultof<_>
-                      if res.TryGetValue(k,&xsR) then
-                          xsR := sp :: !xsR
-                      else
+                      match res.TryGetValue(k) with
+                      | true, xsR ->
+                          xsR.Value <- sp :: xsR.Value
+                      | _ ->
                           res.[k] <- ref [sp]
 
                   res
 
               spsets
-              |> Seq.iter (fun kv ->
-                  let spset = !kv.Value
+              |> Seq.iter (fun (KeyValue(_, vref)) ->
+                  let spset = vref.Value
                   if not spset.IsEmpty then
                     let spset = Array.ofList spset
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
@@ -811,7 +818,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                             (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn))
                     // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here
                     if sps.Length < 5000 then
-                        pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
+                        pdbDefineSequencePoints pdbw (getDocument spset.[0].Document) sps)
 
               // Write the scopes
               let rec writePdbScope parent sco =
@@ -821,21 +828,21 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                           match parent with
                           | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                           | None -> true
-                      if nested then pdbOpenScope !pdbw sco.StartOffset
-                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
+                      if nested then pdbOpenScope pdbw sco.StartOffset
+                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable pdbw v.Name v.Signature v.Index)
                       sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
-                      if nested then pdbCloseScope !pdbw sco.EndOffset
+                      if nested then pdbCloseScope pdbw sco.EndOffset
 
               match minfo.RootScope with
               | None -> ()
               | Some rootscope -> writePdbScope None rootscope
-              pdbCloseMethod !pdbw
+              pdbCloseMethod pdbw
           end)
     reportTime showTimes "PDB: Wrote methods"
 
-    let res = pdbWriteDebugInfo !pdbw
+    let res = pdbWriteDebugInfo pdbw
     for pdbDoc in docs do pdbCloseDocument pdbDoc
-    pdbClose !pdbw f fpdb
+    pdbClose pdbw f fpdb
 
     reportTime showTimes "PDB: Closed"
     [| { iddCharacteristics = res.iddCharacteristics

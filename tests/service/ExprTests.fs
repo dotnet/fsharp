@@ -3002,7 +3002,7 @@ module StressBigExpressions
 let BigListExpression =
 
    [("C", "M.C", "file1", ((3, 5), (3, 6)), ["class"]);
-    ("( .ctor )", "M.C.( .ctor )", "file1", ((3, 5), (3, 6)),["member"; "ctor"]);
+    ("``.ctor``", "M.C.``.ctor``", "file1", ((3, 5), (3, 6)),["member"; "ctor"]);
     ("P", "M.C.P", "file1", ((4, 13), (4, 14)), ["member"; "getter"]);
     ("x", "x", "file1", ((4, 11), (4, 12)), []);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1",((6, 12), (6, 13)), ["val"]);
@@ -3018,13 +3018,13 @@ let BigListExpression =
     ("CAbbrev", "M.CAbbrev", "file1", ((9, 5), (9, 12)), ["abbrev"]);
     ("M", "M", "file1", ((1, 7), (1, 8)), ["module"]);
     ("D1", "N.D1", "file2", ((5, 5), (5, 7)), ["class"]);
-    ("( .ctor )", "N.D1.( .ctor )", "file2", ((5, 5), (5, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D1.``.ctor``", "file2", ((5, 5), (5, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D1.SomeProperty", "file2", ((6, 13), (6, 25)),["member"; "getter"]);
     ("x", "x", "file2", ((6, 11), (6, 12)), []);
     ("M", "M", "file2", ((6, 28), (6, 29)), ["module"]);
     ("xxx", "M.xxx", "file2", ((6, 28), (6, 33)), ["val"]);
     ("D2", "N.D2", "file2", ((8, 5), (8, 7)), ["class"]);
-    ("( .ctor )", "N.D2.( .ctor )", "file2", ((8, 5), (8, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D2.``.ctor``", "file2", ((8, 5), (8, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D2.SomeProperty", "file2", ((9, 13), (9, 25)),["member"; "getter"]); ("x", "x", "file2", ((9, 11), (9, 12)), []);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",((9, 36), (9, 37)), ["val"]);
     ("M", "M", "file2", ((9, 28), (9, 29)), ["module"]);
@@ -3043,7 +3043,7 @@ let BigListExpression =
     ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),["field"; "default"; "mutable"]);
     ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
     ("int", "Microsoft.FSharp.Core.int", "file2", ((15, 10), (15, 13)),["abbrev"]); ("a", "a", "file2", ((15, 8), (15, 9)), []);
-    ("( .ctor )", "N.D3.( .ctor )", "file2", ((15, 5), (15, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D3.``.ctor``", "file2", ((15, 5), (15, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D3.SomeProperty", "file2", ((21, 13), (21, 25)),["member"; "getter"]);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",((16, 14), (16, 15)), ["val"]);
     ("a", "a", "file2", ((16, 12), (16, 13)), []);

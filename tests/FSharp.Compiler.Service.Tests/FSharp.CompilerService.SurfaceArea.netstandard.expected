@@ -327,6 +327,30 @@ FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Microsoft.FSharp.Collections.F
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType] get_ArgTypes()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingSignature: Void .ctor(ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILType)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String get_targetNamespace()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String targetNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType get_targetType()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType targetType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportNamespace()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportType()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportNamespace(System.String)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportType(ILType)
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 Tag
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 get_Tag()
+FSharp.Compiler.AbstractIL.IL+ILDebugImport: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] Imports
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] get_Imports()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] Parent
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] get_Parent()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILDebugImports: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports], ILDebugImport[])
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Ansi
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Auto
 FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding+Tags: Int32 Unicode
@@ -1730,6 +1754,8 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributes
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILAttributesStored
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingConv
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILCallingSignature
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImport
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImports
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDefaultPInvokeEncoding
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILEventDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILEventDefs
@@ -1969,10 +1995,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpP
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Tokenization.FSharpTokenInfo[][] TokenizeFile(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualCheckFileCount
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualParseFileCount
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 MaxMemory
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualCheckFileCount()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualParseFileCount()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_MaxMemory()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer] CheckFileInProject(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckProject(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -1993,8 +2017,6 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.Diagnostics.FSharpDiagnostic[],System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.Assembly]]] CompileToDynamicAssembly(System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.IO.TextWriter,System.IO.TextWriter]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions],FSharp.Compiler.CodeAnalysis.FSharpProjectOptions] ProjectChecked
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions],FSharp.Compiler.CodeAnalysis.FSharpProjectOptions] get_ProjectChecked()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] MaxMemoryReached
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_MaxMemoryReached()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] BeforeBackgroundFileCheck
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] FileChecked
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] FileParsed
@@ -2010,7 +2032,6 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.G
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
@@ -2061,10 +2082,12 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ConditionalCompilationDefines()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] LightSyntax
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] get_LightSyntax()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String LangVersionText
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
@@ -2105,7 +2128,7 @@ FSharp.Compiler.CodeAnalysis.FSharpReferencedProject
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFSharp(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions)
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, System.DateTime, Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String FileName
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
@@ -4004,9 +4027,9 @@ FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[S
 FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.DefaultFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.DefaultFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullPathShim(System.String)
@@ -4035,9 +4058,9 @@ FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.
 FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.IFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.IFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullPathShim(System.String)
@@ -4954,9 +4977,11 @@ FSharp.Compiler.Symbols.FSharpSymbol: Microsoft.FSharp.Core.FSharpOption`1[FShar
 FSharp.Compiler.Symbols.FSharpSymbol: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] Attributes
 FSharp.Compiler.Symbols.FSharpSymbol: System.Collections.Generic.IList`1[FSharp.Compiler.Symbols.FSharpAttribute] get_Attributes()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String DisplayName
+FSharp.Compiler.Symbols.FSharpSymbol: System.String DisplayNameCore
 FSharp.Compiler.Symbols.FSharpSymbol: System.String FullName
 FSharp.Compiler.Symbols.FSharpSymbol: System.String ToString()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String get_DisplayName()
+FSharp.Compiler.Symbols.FSharpSymbol: System.String get_DisplayNameCore()
 FSharp.Compiler.Symbols.FSharpSymbol: System.String get_FullName()
 FSharp.Compiler.Symbols.FSharpSymbolPatterns
 FSharp.Compiler.Symbols.FSharpSymbolPatterns: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpActivePatternCase] |ActivePatternCase|_|(FSharp.Compiler.Symbols.FSharpSymbol)
@@ -5603,25 +5628,27 @@ FSharp.Compiler.Syntax.ParserDetail: Int32 Tag
 FSharp.Compiler.Syntax.ParserDetail: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParserDetail: System.String ToString()
 FSharp.Compiler.Syntax.PrettyNaming
+FSharp.Compiler.Syntax.PrettyNaming: Boolean DoesIdentifierNeedBackticks(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsActivePatternName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsCompilerGeneratedName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierFirstCharacter(Char)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierPartCharacter(Char)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsInfixOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLongIdentifierPartCharacter(Char)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsMangledOpName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsOperatorName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsOperatorOrBacktickedName(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsOperatorDisplayName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsPrefixOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsPunctuation(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsTernaryOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Collections.FSharpList`1[System.String] GetLongNameFromString(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryChopPropertyName(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: System.String AddBackticksToIdentifierIfNeeded(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String CompileOpName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String DecompileOpName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: System.String DemangleOperatorName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FormatAndOtherOverloadsString(Int32)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FsiDynamicModulePrefix
+FSharp.Compiler.Syntax.PrettyNaming: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String get_FsiDynamicModulePrefix()
 FSharp.Compiler.Syntax.QualifiedNameOfFile
 FSharp.Compiler.Syntax.QualifiedNameOfFile: FSharp.Compiler.Syntax.Ident Id
@@ -9214,13 +9241,13 @@ FSharp.Compiler.Text.TextTag: Int32 Tag
 FSharp.Compiler.Text.TextTag: Int32 get_Tag()
 FSharp.Compiler.Text.TextTag: System.String ToString()
 FSharp.Compiler.Tokenization.FSharpKeywords
-FSharp.Compiler.Tokenization.FSharpKeywords: Boolean DoesIdentifierNeedQuotation(System.String)
+FSharp.Compiler.Tokenization.FSharpKeywords: Boolean DoesIdentifierNeedBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] KeywordNames
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_KeywordNames()
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] KeywordsWithDescription
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_KeywordsWithDescription()
+FSharp.Compiler.Tokenization.FSharpKeywords: System.String AddBackticksToIdentifierIfNeeded(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: System.String NormalizeIdentifierBackticks(System.String)
-FSharp.Compiler.Tokenization.FSharpKeywords: System.String QuoteIdentifierIfNeeded(System.String)
 FSharp.Compiler.Tokenization.FSharpLexer
 FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Tokenization.FSharpToken,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpLexerFlags], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.Tokenization.FSharpLexerFlags
@@ -10442,6 +10469,8 @@ FSharp.Compiler.Xml.PreXmlDoc
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(FSharp.Compiler.Xml.PreXmlDoc)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.PreXmlDoc: Boolean IsEmpty
+FSharp.Compiler.Xml.PreXmlDoc: Boolean get_IsEmpty()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Empty
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Merge(FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Xml.PreXmlDoc)
@@ -10465,29 +10494,3 @@ FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String get_targetNamespace()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace: System.String targetNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType get_targetType()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType: ILType targetType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags: Int32 ImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean IsImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportNamespace()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Boolean get_IsImportType()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportNamespace
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+ImportType
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: FSharp.Compiler.AbstractIL.IL+ILDebugImport+Tags
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportNamespace(System.String)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: ILDebugImport NewImportType(ILType)
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 Tag
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILDebugImport: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] Imports
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: ILDebugImport[] get_Imports()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] Parent
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports] get_Parent()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILDebugImports: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILDebugImports], ILDebugImport[])
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImport
-FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILDebugImports

@@ -113,8 +113,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" 
-      || (v.BaseOrThisInfo = MemberThisVal)) &&
+     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 

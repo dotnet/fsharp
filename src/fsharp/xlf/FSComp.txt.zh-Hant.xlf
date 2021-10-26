@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 fsi、.fsx 或 .fsscript。若要啟用已被取代的 .ml 或 .mli 副檔名，請使用 '--langversion:5.0' and '--mlcompatibility'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 .fs、.fsi、.fsx 或 .fsscript。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
@@ -167,6 +177,11 @@
         <target state="translated">具有多個泛型具現化的介面</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="translated">ML 相容性修訂</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -292,6 +307,11 @@
         <target state="translated">'InlineIfLambda' 屬性存在於簽章中，但不存在於實作中。</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">XML 註解沒有放置在有效的語言元素上。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">用於在型別提供者中，將常數常值指定為型別參數引數的關鍵字。</target>
@@ -300,6 +320,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">位元組字串不能是插補字串</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="translated">不再支援 IF-FSHARP/IF-CAML 區域</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -315,6 +340,41 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">插補字串無效。三引號字串常值不可用於插補運算式。請考慮為內插補點運算式使用明確的 'let' 繫結。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">此建構已被取代。{0}。您可以使用 '--langversion:5.0' and '--mlcompatibility' 來啟用此功能。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="translated">在舊版本的 F# '{0}' 是保留關鍵字，但是使用此關鍵字現已被取代</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">在 F# 2.0 #light使用 'off\" 或 '#indent off\"'已被取代，而且已不再支援</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">在 F# 2.0 中，在泛型型別名稱前 (例如 '(int, int) Map') 使用多個小括號內的型別參數已被取代，而且已不再支援</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M: sig ... end ' 已被取代，而且已不再支援。將 ':' 變更為 '=' 並移除 'sig' 和 'end' ，並改用縮排</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M = sig ... end ' 已被取代，而且已不再支援。移除 'sig' 和 'end' ，並改用縮排</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="translated">在 F# 2.0 中使用 'module M = struct ... end ' 已被取代，而且已不再支援。移除 'struct' 和 'end'，並改用縮排</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -405,6 +465,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">型別定義中出現非預期的權杖。類型 '{0}' 之後應該要有 '='。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">此成員存取不明確。請在物件建立前後加上括弧，例如「(new SomeType(args)).MemberName」</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -625,6 +690,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">無法將 '{0}' 指派給標記為常值的值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">使用具有 'NoEagerConstraintApplicationAttribute' 的方法需要 /langversion:preview 或更新版本</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -4248,8 +4318,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">若也提供了常數值，宣告就只能是 [&lt;Literal&gt;] 屬性，例如 'val x : int = 1'</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="translated">若也提供了常數值，宣告就只能是 [&lt;Literal&gt;] 屬性，例如 'val x: int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

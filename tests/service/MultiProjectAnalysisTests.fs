@@ -798,24 +798,6 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 //------------------------------------------------------------------------------------
 
 
-
-[<Test>]
-let ``Test max memory gets triggered`` () =
-    let checker = FSharpChecker.Create()
-    let reached = ref false
-    checker.MaxMemoryReached.Add (fun () -> reached := true)
-    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual false
-    checker.MaxMemory <- 0
-    let wholeProjectResults2 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual true
-    let wholeProjectResults3 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunImmediate
-    reached.Value |> shouldEqual true
-
-
-//------------------------------------------------------------------------------------
-
-
 [<Test>]
 let ``In-memory cross-project references to projects using generative type provides should fallback to on-disk references`` () =
     // The type provider and its dependency are compiled as part of the solution build

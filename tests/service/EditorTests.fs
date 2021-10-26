@@ -85,7 +85,7 @@ let ``Intro test`` () =
 
     // Get tool tip at the specified location
     let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
-    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
+    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo: unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
@@ -138,8 +138,8 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj []")]);
-             ("Concat", [("values", "string []")]);
+             ("Concat", [("args", "obj[]")]);
+             ("Concat", [("values", "string[]")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);

@@ -212,8 +212,8 @@ let g (t : T) = t.Count()
 Known type of argument: float
 
 Available overloads:
- - new : bool -> X // Argument at index 1 doesn't match
- - new : int -> X // Argument at index 1 doesn't match""" ]
+ - new: bool -> X // Argument at index 1 doesn't match
+ - new: int -> X // Argument at index 1 doesn't match""" ]
 
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
@@ -294,11 +294,11 @@ let x =
         """
         let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Known type of argument: 'a0 when 'a0 : null
+Known type of argument: 'a0 when 'a0: null
 
 Candidates:
- - System.Console.WriteLine(buffer: char []) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit
+ - System.Console.WriteLine(buffer: char[]) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj[]) : unit
  - System.Console.WriteLine(value: obj) : unit
  - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
@@ -320,8 +320,8 @@ b.Do(1, 1)
 Known types of arguments: int * int
 
 Candidates:
- - member A.Do : a:int * b:'T -> unit
- - member A.Do : a:int * b:int -> unit""" ]
+ - member A.Do: a: int * b: 'T -> unit
+ - member A.Do: a: int * b: int -> unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]

@@ -36,6 +36,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\DebugScopes.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ByrefTailcalls.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />

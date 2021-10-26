@@ -65,7 +65,7 @@ type public ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
     
-    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    // ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     inherit System.IDisposable
 
 

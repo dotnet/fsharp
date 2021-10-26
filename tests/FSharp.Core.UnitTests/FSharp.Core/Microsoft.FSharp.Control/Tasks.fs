@@ -188,7 +188,6 @@ type SmokeTestsForCompilation() =
             t.Wait()
             if t.Result <> 5 then failwith "failed"
 
-
 exception TestException of string
 
 [<AutoOpen>]
@@ -1265,6 +1264,69 @@ type BasicsNotInParallel() =
                     require ran "never ran")
             taskOuter.Wait()
                  
+type Issue12184() =
+    member this.TaskMethod() =
+        task {
+            // The overload resolution for Bind commits to 'Async<int>' since the type annotation is present.
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(value: int) : Async<int> =
+        async {
+            return (value * 2)
+        }
+
+type Issue12184b() =
+    member this.TaskMethod() =
+        task {
+            // The overload resolution for Bind commits to 'YieldAwaitable' since the type annotation is present.
+            let! result = this.AsyncMethod(21)
+            return result
+        }
+
+    member _.AsyncMethod(_value: int) : System.Runtime.CompilerServices.YieldAwaitable =
+        Task.Yield()
+
+// check this compiles 
+module Issue12184c =
+    let TaskMethod(t) =
+        task {
+            // The overload resolution for Bind commits to 'Task<_>' via overload since no type annotation is available
+            //
+            // This should not do an early commit to "task like" nor propogate SRTP constraints from the task-like overload for Bind.
+            let! result = t
+            return result
+        }
+
+#if NETCOREAPP
+// check this compiles 
+module Issue12184d =
+    let TaskMethod(t: ValueTask) =
+        task {
+            // The overload resolution for Bind commits to 'ValueTask' via SRTP pattern since the type annotation is available
+            let! result = t
+            return result
+        }
+
+// check this compiles 
+module Issue12184e =
+    let TaskMethod(t: ValueTask<int>) =
+        task {
+            // The overload resolution for Bind commits to 'ValueTask<_>' via SRTP pattern since the type annotation is available
+            let! result = t
+            return result
+        }
+#endif
+
+// check this compiles 
+module Issue12184f =
+    let TaskMethod(t: Task) =
+        task {
+            // The overload resolution for Bind commits to 'Task' via SRTP pattern since the type annotation is available
+            let! result = t
+            return result
+        }
 
 #if STANDALONE 
 module M = 

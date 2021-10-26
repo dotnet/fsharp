@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">Расширение файла "{0}" не распознано. Исходные файлы должны иметь расширения FS, FSI, FSX или FSSCRIPT. Чтобы включить использование нерекомендуемых расширений ML или MLI, примените команду "--langversion:5.0" и "--mlcompatibility".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="translated">Расширение файла "{0}" не распознано. Исходные файлы должны иметь расширения FS, FSI, FSX или FSSCRIPT</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">Компонент "{0}" недоступен в F# {1}. Используйте версию языка {2} или выше.</target>
@@ -167,6 +177,11 @@
         <target state="translated">интерфейсы с множественным универсальным созданием экземпляра</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="translated">Редакции совместимости ML</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -292,6 +307,11 @@
         <target state="translated">Атрибут "InlineIfLambda" присутствует в сигнатуре, но отсутствует в реализации.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">За XML-комментарием не следует допустимый элемент языка.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Ключевое слово для указания константного литерала в качестве аргумента параметра типа в поставщиках типов.</target>
@@ -300,6 +320,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">невозможно выполнить интерполяцию для строки байтов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="translated">Регионы IF-FSHARP/IF-CAML больше не поддерживаются</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -315,6 +340,41 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Недопустимая интерполированная строка. Строковые литералы с тройными кавычками запрещено использовать в интерполированных выражениях. Рекомендуется использовать явную привязку "let" для выражения интерполяции.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">Эта конструкция не рекомендуется к использованию. {0}. Вы можете включить эту функцию с помощью команд "--langversion:5.0" и "--mlcompatibility".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="translated">"{0}" было зарезервированным ключевым словом в предыдущих версиях F#, но использование этого ключевого слова теперь не рекомендуется</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">Использование «#light \"off\"» или «#indent \"off\"» не рекомендуется в F# 2.0 и больше не поддерживается</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">Использование нескольких параметров типа в круглых скобках перед именем универсального типа, например "(int, int) Map", не рекомендуется в F# 2.0 и больше не поддерживается</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">Использование "module M: sig ... end" не рекомендуется в F# 2.0 и больше не поддерживается. Измените ":" на "=" и удалите "sig" и "end" (используйте вместо них отступы)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">Использование "module M = sig ... end" не рекомендуется в F# 2.0 и больше не поддерживается. Удалите "sig" и "end" (используйте вместо них отступы)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="translated">Использование "module M = struct ... end" не рекомендуется в F# 2.0 и больше не поддерживается. Удалите "struct" и "end" (используйте вместо них отступы)</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -405,6 +465,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Неоднозначный доступ к этому элементу. Заключите операцию создания объекта в круглые скобки, например (new Объект(аргументы)).Элемент</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -625,6 +690,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">Невозможно присвоить "{0}" значению, помеченному как литерал</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">Для использования методов с "NoEagerConstraintApplicationAttribute" требуется /langversion:preview или более поздняя версия</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
@@ -4248,8 +4318,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Объявление может представлять собой только атрибут [&lt;Literal&gt;], если указано значение константы, например, 'val x : int = 1'</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="translated">Объявление может представлять собой только атрибут [&lt;Literal&gt;], если указано значение константы, например, "val x: int = 1"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

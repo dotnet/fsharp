@@ -211,7 +211,7 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWithOrdinal("init") 
+        rfref.RecdField.LogicalName.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
@@ -811,7 +811,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldGet (tcref, i), [], [obj] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, cenv.g.exn_ty))
                 E.FSharpFieldGet(Some objR, typR, ConvRecdFieldRef cenv fref) 
@@ -819,7 +819,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldSet (tcref, i), [], [obj;e2] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, cenv.g.exn_ty))
                 E.FSharpFieldSet(Some objR, typR, ConvRecdFieldRef cenv fref, ConvExpr cenv env e2) 
@@ -1201,9 +1201,9 @@ module FSharpExprConvert =
         elif env.substVals.ContainsVal v then 
             let e = env.substVals.[v]
             ConvExprPrim cenv env e
-        elif v.BaseOrThisInfo = CtorThisVal then 
+        elif v.IsCtorThisVal then 
             E.ThisValue(ConvType cenv v.Type) 
-        elif v.BaseOrThisInfo = BaseVal then 
+        elif v.IsBaseVal then 
             E.BaseValue(ConvType cenv v.Type) 
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 

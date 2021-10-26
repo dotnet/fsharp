@@ -468,7 +468,8 @@ module MainModuleBuilder =
                                                  yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
-                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileForWriteShim(tcConfig.win32icon))
+                  use iconStream = FileSystem.OpenFileForReadShim(tcConfig.win32icon)
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, iconStream)
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
 

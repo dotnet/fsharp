@@ -330,7 +330,7 @@ module InterfaceFileWriter =
                 if tcConfig.printSignatureFile = "" then
                     Console.Out
                 else
-                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.OpenOrCreate).GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -349,7 +349,7 @@ module InterfaceFileWriter =
             for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
                 let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
-                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
+                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
                 writeHeader filename os
                 writeToFile os impl
 

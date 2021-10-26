@@ -692,13 +692,17 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
-    static member Parse (source: string) =
-        let sourceFileName = "test.fs"
-        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
+    static member Parse (source: string, ?langVersion: string, ?fileName: string) =
+        let langVersion = defaultArg langVersion "default"
+        let sourceFileName = defaultArg fileName "test.fsx"
+        let parsingOptions =
+            { FSharpParsingOptions.Default with
+                SourceFiles = [| sourceFileName |]
+                LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string) expectedParseErrors =
-        let parseResults = CompilerAssert.Parse source
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+        let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
 

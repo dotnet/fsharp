@@ -259,7 +259,7 @@ type internal FSharpSignatureHelpProvider
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
-                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                not (PrettyNaming.IsOperatorDisplayName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
 
@@ -512,6 +512,7 @@ type internal FSharpSignatureHelpProvider
             let caretLineColumn = caretLinePos.Character
 
             let adjustedColumnInSource =
+
                 let rec loop ch pos =
                     if Char.IsWhiteSpace(ch) then
                         loop sourceText.[pos - 1] (pos - 1)

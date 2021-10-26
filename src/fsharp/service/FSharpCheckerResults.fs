@@ -107,7 +107,7 @@ type internal DelayedILModuleReader =
 [<RequireQualifiedAccess;NoComparison;CustomEquality>]
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | PEReference of projectFileName: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.FileName =
@@ -119,8 +119,8 @@ type FSharpReferencedProject =
     static member CreateFSharp(projectFileName, options) =
         FSharpReference(projectFileName, options)
 
-    static member CreatePortableExecutable(projectFileName, stamp, getStream) =
-        PEReference(projectFileName, stamp, DelayedILModuleReader(projectFileName, getStream))
+    static member CreatePortableExecutable(projectFileName, getStamp, getStream) =
+        PEReference(projectFileName, getStamp, DelayedILModuleReader(projectFileName, getStream))
 
     static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
         ILModuleReference(projectFileName, getStamp, getReader)
@@ -131,8 +131,8 @@ type FSharpReferencedProject =
             match this, o with
             | FSharpReference(projectFileName1, options1), FSharpReference(projectFileName2, options2) ->
                 projectFileName1 = projectFileName2 && options1 = options2
-            | PEReference(projectFileName1, stamp1, _), PEReference(projectFileName2, stamp2, _) ->
-                projectFileName1 = projectFileName2 && stamp1 = stamp2
+            | PEReference(projectFileName1, getStamp1, _), PEReference(projectFileName2, getStamp2, _) ->
+                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
                 projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | _ ->
@@ -181,8 +181,8 @@ and FSharpProjectOptions =
             match r1, r2 with
             | FSharpReferencedProject.FSharpReference(n1,a), FSharpReferencedProject.FSharpReference(n2,b) ->
                 n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)
-            | FSharpReferencedProject.PEReference(n1, stamp1, _), FSharpReferencedProject.PEReference(n2, stamp2, _) ->
-                n1 = n2 && stamp1 = stamp2
+            | FSharpReferencedProject.PEReference(n1, getStamp1, _), FSharpReferencedProject.PEReference(n2, getStamp2, _) ->
+                n1 = n2 && (getStamp1()) = (getStamp2())
             | _ ->
                 false) &&
         options1.LoadTime = options2.LoadTime
@@ -1167,8 +1167,8 @@ type internal TypeCheckInfo
                         let isOpItem(nm, item: CompletionItem list) =
                             match item |> List.map (fun x -> x.Item) with
                             | [Item.Value _]
-                            | [Item.MethodGroup(_,[_],_)] -> IsOperatorName nm
-                            | [Item.UnionCase _] -> IsOperatorName nm
+                            | [Item.MethodGroup(_,[_],_)] -> IsOperatorDisplayName nm
+                            | [Item.UnionCase _] -> IsOperatorDisplayName nm
                             | _ -> false
 
                         let isFSharpList nm = (nm = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
@@ -1523,6 +1523,7 @@ type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -1536,6 +1537,7 @@ type FSharpParsingOptions =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
           ErrorSeverityOptions = FSharpDiagnosticOptions.Default
+          LangVersionText = LanguageVersion.Default.VersionText
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
@@ -1545,6 +1547,7 @@ type FSharpParsingOptions =
         { SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
+          LangVersionText = tcConfig.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfig.light
           CompilingFsLib = tcConfig.compilingFslib
@@ -1555,6 +1558,7 @@ type FSharpParsingOptions =
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
+          LangVersionText = tcConfigB.langVersion.VersionText
           IsInteractive = isInteractive
           LightSyntax = tcConfigB.light
           CompilingFsLib = tcConfigB.compilingFslib
@@ -1635,13 +1639,9 @@ module internal ParseAndCheckFile =
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         (fun _ -> tokenizer.GetToken())
 
-    // Public callers are unable to answer LanguageVersion feature support questions.
-    // External Tools including the VS IDE will enable the default LanguageVersion
-    let isFeatureSupported (_featureId:LanguageFeature) = true
-    let checkLanguageFeatureErrorRecover _featureId _range = ()
 
-    let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
+    let createLexbuf langVersion sourceText =
+        UnicodeLexing.SourceTextAsLexbuf(true, LanguageVersion(langVersion), sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1656,7 +1656,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let matchingBraces = ResizeArray<_>()
-        usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1733,7 +1733,7 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            usingLexbufForParsing(createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
 
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
@@ -1917,10 +1917,10 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
     member _.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
 
 
-[<Sealed>]
 /// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
 //
 // Note: objects returned by the methods of this type do not require the corresponding background builder to be alive.
+[<Sealed>]
 type FSharpCheckFileResults
         (filename: string,
          errors: FSharpDiagnostic[],

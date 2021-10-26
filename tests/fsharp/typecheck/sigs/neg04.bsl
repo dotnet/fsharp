@@ -117,7 +117,7 @@ is not compatible with type
 
 
 neg04.fs(147,10,147,20): typecheck error FS0193: Type constraint mismatch. The type 
-    'int []'    
+    'int[]'    
 is not compatible with type
     'IBar'    
 

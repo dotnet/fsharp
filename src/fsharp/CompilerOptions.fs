@@ -294,10 +294,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               f (getSwitch opt); t
           | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := true; t
+              f.Value <- true; t
           | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := false; t
+              f.Value <- false; t
           | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
@@ -1630,7 +1630,7 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let filename = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header).GetWriter()
+            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else
