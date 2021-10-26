@@ -100,8 +100,8 @@ module internal PervasiveAutoOpens =
                 cancellationToken)
             task.Result
 
-[<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+[<Struct>]
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
@@ -504,8 +504,8 @@ module ResizeArray =
         // rounding down here is good because it ensures we don't go over
         let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
+        // chunk the provided input into arrays that are smaller than the LOH limit
+        // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
@@ -1130,6 +1130,10 @@ module MapAutoOpens =
         
         static member Empty : Map<'Key, 'Value> = Map.empty
     
+#if USE_SHIPPED_FSCORE        
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
+#endif
+
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))

@@ -596,7 +596,11 @@ module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
         
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-        
+
+#if USE_SHIPPED_FSCORE        
+        member Values: 'Value list
+#endif
+
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
         member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison

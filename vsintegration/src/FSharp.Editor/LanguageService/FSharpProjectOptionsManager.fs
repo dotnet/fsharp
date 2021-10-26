@@ -116,10 +116,6 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
         | _ ->
             let mutable strongComp = comp
             let weakComp = WeakReference<Compilation>(comp)
-            let stamp = DateTime.UtcNow
-
-            // Getting a C# reference assembly can fail if there are compilation errors that cannot be resolved.
-            // To mitigate this, we store the last successful compilation of a C# project and re-use it until we get a new successful compilation.
             let getStream =
                 fun ct ->
                     let tryStream (comp: Compilation) =
@@ -140,7 +136,8 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                                 None
                         with
                         | :? OperationCanceledException ->
-                            // Since we cancelled, do not null out the strong compilation ref.
+                            // Since we cancelled, do not null out the strong compilation ref and update the stamp.
+                            stamp <- DateTime.UtcNow
                             ms.Dispose()
                             None
                         | _ ->

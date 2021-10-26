@@ -190,8 +190,9 @@ type public IFileSystem =
     /// A shim over File.Delete
     abstract FileDeleteShim: fileName: string -> unit
 
-    /// A shim over Directory.Exists
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
+    /// A shim over Directory.Exists, but returns a string, the FullName of the resulting
+    /// DirectoryInfo.
+    abstract DirectoryCreateShim: path: string -> string
 
     /// A shim over Directory.Exists
     abstract DirectoryExistsShim: path: string -> bool
@@ -258,8 +259,8 @@ type DefaultFileSystem =
     abstract FileDeleteShim: fileName: string -> unit
     override FileDeleteShim: fileName: string -> unit
     
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
-    override DirectoryCreateShim: path: string -> DirectoryInfo
+    abstract DirectoryCreateShim: path: string -> string
+    override DirectoryCreateShim: path: string -> string
     
     abstract DirectoryExistsShim: path: string -> bool
     override DirectoryExistsShim: path: string -> bool
