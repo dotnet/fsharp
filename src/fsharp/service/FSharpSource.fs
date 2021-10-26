@@ -9,7 +9,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 
 [<RequireQualifiedAccess>]
-type DocumentText =
+type TextContainer =
     | OnDisk
     | Stream of Stream
     | SourceText of ISourceText
@@ -22,81 +22,71 @@ type DocumentText =
             | _ -> ()
 
 [<AbstractClass>]
-type FSharpDocument internal () =
+type FSharpSource internal () =
 
     abstract FilePath : string
 
     abstract TimeStamp : DateTime
 
-    abstract IsOpen : bool
+    abstract GetTextContainer: unit -> TextContainer
 
-    abstract GetText : unit -> DocumentText
-
-type private FSharpDocumentMemoryMappedFile(filePath: string, timeStamp: DateTime, isOpen, openStream: unit -> Stream) =
-    inherit FSharpDocument()
+type private FSharpSourceMemoryMappedFile(filePath: string, timeStamp: DateTime, openStream: unit -> Stream) =
+    inherit FSharpSource()
 
     override _.FilePath = filePath
 
     override _.TimeStamp = timeStamp
 
-    override _.IsOpen = isOpen
+    override _.GetTextContainer() =
+        openStream () |> TextContainer.Stream
 
-    override _.GetText() =
-        openStream () |> DocumentText.Stream
-
-type private FSharpDocumentByteArray(filePath: string, timeStamp: DateTime, isOpen, bytes: byte[]) =
-    inherit FSharpDocument()
+type private FSharpSourceByteArray(filePath: string, timeStamp: DateTime, bytes: byte[]) =
+    inherit FSharpSource()
 
     override _.FilePath = filePath
 
     override _.TimeStamp = timeStamp
 
-    override _.IsOpen = isOpen
+    override _.GetTextContainer() =
+        TextContainer.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
 
-    override _.GetText() =
-        DocumentText.Stream(new MemoryStream(bytes, 0, bytes.Length, false) :> Stream)
-
-type private FSharpDocumentFromFile(filePath: string) =
-    inherit FSharpDocument()
+type private FSharpSourceFromFile(filePath: string) =
+    inherit FSharpSource()
 
     override _.FilePath = filePath
 
     override _.TimeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
-    override _.IsOpen = false
+    override _.GetTextContainer() =
+        TextContainer.OnDisk
 
-    override _.GetText() =
-        DocumentText.OnDisk
-
-type private FSharpDocumentCustom(filePath: string, isOpen, getTimeStamp, getSourceText) =
-    inherit FSharpDocument()
+type private FSharpSourceCustom(filePath: string, getTimeStamp, getSourceText) =
+    inherit FSharpSource()
 
     override _.FilePath = filePath
 
     override _.TimeStamp = getTimeStamp()
 
-    override _.IsOpen = isOpen
+    override _.GetTextContainer() =
+        TextContainer.SourceText(getSourceText())
 
-    override _.GetText() =
-        DocumentText.SourceText(getSourceText())
+type FSharpSource with
 
-type FSharpDocument with
-
-    static member Create(filePath, isOpen, getTimeStamp, getSourceText) =
-        FSharpDocumentCustom(filePath, isOpen, getTimeStamp, getSourceText) :> FSharpDocument
+    static member Create(filePath, getTimeStamp, getSourceText) =
+        FSharpSourceCustom(filePath, getTimeStamp, getSourceText) :> FSharpSource
 
     static member CreateFromFile(filePath: string) =
-        FSharpDocumentFromFile(filePath) :> FSharpDocument
+        FSharpSourceFromFile(filePath) :> FSharpSource
 
-    static member CreateCopyFromFile(filePath: string, isOpen) =
+    static member CreateCopyFromFile(filePath: string) =
         let timeStamp = FileSystem.GetLastWriteTimeShim(filePath)
 
         // We want to use mmaped documents only when
         // not running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null), (see: https://github.com/mono/mono/issues/10245)
         if runningOnMono then
             let bytes = FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = false).ReadAllBytes()
-            FSharpDocumentByteArray(filePath, timeStamp, isOpen, bytes) :> FSharpDocument
+            FSharpSourceByteArray(filePath, timeStamp, bytes) :> FSharpSource
         else
             let openStream = fun () ->
                 FileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile = true, shouldShadowCopy = true)
-            FSharpDocumentMemoryMappedFile(filePath, timeStamp, isOpen, openStream) :> FSharpDocument
+            FSharpSourceMemoryMappedFile(filePath, timeStamp, openStream) :> FSharpSource

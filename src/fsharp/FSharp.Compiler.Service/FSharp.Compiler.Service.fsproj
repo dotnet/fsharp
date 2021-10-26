@@ -843,11 +843,11 @@
 	<Compile Include="..\service\SemanticClassificationKey.fs">
 		<Link>Service/SemanticClassificationKey.fs</Link>
 	</Compile>
-	<Compile Include="..\service\FSharpDocument.fsi">
-      <Link>Service/FSharpDocument.fsi</Link>
+	<Compile Include="..\service\FSharpSource.fsi">
+      <Link>Service/FSharpSource.fsi</Link>
     </Compile>
-    <Compile Include="..\service\FSharpDocument.fs">
-      <Link>Service/FSharpDocument.fs</Link>
+    <Compile Include="..\service\FSharpSource.fs">
+      <Link>Service/FSharpSource.fs</Link>
     </Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
