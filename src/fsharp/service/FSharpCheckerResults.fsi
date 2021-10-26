@@ -97,7 +97,7 @@ type public FSharpProjectOptions =
 and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | PEReference of projectFileName: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member FileName : string
@@ -109,7 +109,7 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
     /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
     /// If the stream evaluation throws an exception, it will be automatically handled.
-    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
+    static member CreatePortableExecutable : projectFileName: string * getStamp: (unit -> DateTime) * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
     /// Creates a reference from an ILModuleReader.
     static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
