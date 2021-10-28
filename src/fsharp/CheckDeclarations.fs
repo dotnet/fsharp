@@ -1658,7 +1658,7 @@ module MutRecBindingChecking =
                             | _ -> ()
 
                             if not isStatic && tcref.IsStructOrEnumTycon then 
-                                let allDo = letBinds |> List.forall (function SynBinding(_, SynBindingKind.Do, _, _, _, _, _, _, _, _, _, _) -> true | _ -> false)
+                                let allDo = letBinds |> List.forall (function SynBinding(kind = SynBindingKind.Do) -> true | _ -> false)
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                 if allDo then 
                                     errorR(Deprecated(FSComp.SR.tcStructsMayNotContainDoBindings(), (trimRangeToLine m)))
@@ -1728,7 +1728,7 @@ module MutRecBindingChecking =
                                 | Phase2AOpen _ 
 #endif
                                 | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit -> false
-                                | Phase2AIncrClassBindings (_, binds, _, _, _) -> binds |> List.exists (function SynBinding (_, SynBindingKind.Do, _, _, _, _, _, _, _, _, _, _) -> true | _ -> false)
+                                | Phase2AIncrClassBindings (_, binds, _, _, _) -> binds |> List.exists (function SynBinding (kind = SynBindingKind.Do) -> true | _ -> false)
                                 | Phase2AIncrClassCtorJustAfterLastLet
                                 | Phase2AMember _ -> true
                             let restRev = List.rev rest
@@ -4716,7 +4716,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> true 
                             | _ -> false
                         let attribs = mkAttributeList attribs mWholeAutoProp
-                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None)
+                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, synExpr, synExpr.Range, [], attribs, None)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
@@ -4751,7 +4751,7 @@ module TcDeclarations =
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member))
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4764,7 +4764,7 @@ module TcDeclarations =
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet))
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
@@ -4784,7 +4784,7 @@ module TcDeclarations =
 
             let isConcrete = 
                 members |> List.exists (function 
-                    | SynMemberDefn.Member(SynBinding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), _, _, _, _, _), _) -> not memberFlags.IsDispatchSlot 
+                    | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), _) -> not memberFlags.IsDispatchSlot 
                     | SynMemberDefn.Interface (_, defOpt, _) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
                     | SynMemberDefn.ImplicitCtor _ -> true
@@ -4799,7 +4799,7 @@ module TcDeclarations =
             let hasSelfReferentialCtor = 
                 members |> List.exists (function 
                     | SynMemberDefn.ImplicitCtor (_, _, _, thisIdOpt, _, _) 
-                    | SynMemberDefn.Member(SynBinding(_, _, _, _, _, _, SynValData(_, _, thisIdOpt), _, _, _, _, _), _) -> thisIdOpt.IsSome
+                    | SynMemberDefn.Member(SynBinding(valData = SynValData(_, _, thisIdOpt)), _) -> thisIdOpt.IsSome
                     | _ -> false)
 
             let implicitCtorSynPats = 
@@ -4811,7 +4811,7 @@ module TcDeclarations =
             // members of the type
             let preEstablishedHasDefaultCtor = 
                 members |> List.exists (function 
-                    | SynMemberDefn.Member(SynBinding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), SynPatForConstructorDecl SynPatForNullaryArgs, _, _, _, _), _) -> 
+                    | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _); headPat = SynPatForConstructorDecl SynPatForNullaryArgs), _) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor 
                     | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _, _) -> isNil spats
                     | _ -> false)
@@ -5280,7 +5280,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
 let ElimModuleDoBinding bind =
     match bind with 
     | SynModuleDecl.DoExpr (spExpr, expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, spExpr)
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, None, expr, m, spExpr)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
@@ -5310,7 +5310,7 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env =
 
 let CheckLetOrDoInNamespace binds m =
     match binds with 
-    | [ SynBinding (None, (SynBindingKind.StandaloneExpression | SynBindingKind.Do), false, false, [], _, _, _, None, (SynExpr.Do (SynExpr.Const (SynConst.Unit, _), _) | SynExpr.Const (SynConst.Unit, _)), _, _) ] ->
+    | [ SynBinding (None, (SynBindingKind.StandaloneExpression | SynBindingKind.Do), false, false, [], _, _, _, None, _, (SynExpr.Do (SynExpr.Const (SynConst.Unit, _), _) | SynExpr.Const (SynConst.Unit, _)), _, _) ] ->
         ()
     | [] -> 
         error(Error(FSComp.SR.tcNamespaceCannotContainValues(), m)) 

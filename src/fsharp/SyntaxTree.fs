@@ -1212,6 +1212,7 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
+        equalsRange: Range option *
         expr: SynExpr  *
         range: range *
         debugPoint: DebugPointAtBinding

@@ -63,7 +63,7 @@ let mkSynDoBinding (vis, strict, expr, m) =
              (if strict then SynBindingKind.Do else SynBindingKind.StandaloneExpression),
              false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
              (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m),
-             None, expr, m, DebugPointAtBinding.NoneAtDo)
+             None, None, expr, m, DebugPointAtBinding.NoneAtDo)
 
 let mkSynDoDecl (e: SynExpr) = 
     let spExpr = if IsControlFlowExpression e then DebugPointAtBinding.NoneAtDo else DebugPointAtBinding.Yes e.Range
@@ -1723,8 +1723,9 @@ classDefnMemberGetSetElements:
 
 classDefnMemberGetSetElement: 
   | opt_inline opt_attributes bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock 
-     { let mRhs = ($6 : SynExpr).Range 
-       ($1, $2, $3, $4, $6, mRhs) }
+     { let mEquals = rhs parseState 5
+       let mRhs = ($6 : SynExpr).Range 
+       ($1, $2, $3, $4, Some mEquals, $6, mRhs) }
 
 
 /* The core of a member definition */
@@ -1732,19 +1733,20 @@ memberCore:
   /* Methods and simple getter properties */
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock  
      { let mRhs = $5.Range 
-       let optReturnType = $3 
+       let optReturnType = $3
+       let mEquals = rhs parseState 4
        let bindingBuilder, mBindLhs = $2 
        (fun vis memFlagsBuilder attrs rangeStart ->
             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
             let memberFlags = Some (memFlagsBuilder SynMemberKind.Member)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let binding = (bindingBuilder xmlDoc) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags)
+            let binding = (bindingBuilder xmlDoc) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, Some mEquals, $5, mRhs, [], attrs, memberFlags)
             let memberRange = unionRanges rangeStart mRhs
             [ SynMemberDefn.Member (binding, memberRange) ]) }
 
   /* Properties with explicit get/set, also indexer properties */
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
-     { let mWhole = (rhs parseState 2, $4) ||> unionRangeWithListBy (fun (_, _, _, _, _, m2) -> m2) 
+     { let mWhole = (rhs parseState 2, $4) ||> unionRangeWithListBy (fun (_, _, _, _, _, _, m2) -> m2) 
        let propertyNameBindingBuilder, _ = $2 
        let optPropertyType = $3 
        let isMutable = false
@@ -1754,7 +1756,7 @@ memberCore:
              let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
 
              // Iterate over 1 or 2 'get'/'set' entries
-             $4 |> List.choose (fun (optInline, optAttrs, (bindingBuilder, mBindLhs), optReturnType, expr, exprm) ->
+             $4 |> List.choose (fun (optInline, optAttrs, (bindingBuilder, mBindLhs), optReturnType, mEquals, expr, exprm) ->
 
                    let optInline = $1 || optInline 
                    // optional attributes are only applied to getters and setters
@@ -1765,8 +1767,8 @@ memberCore:
 
                    let attrs = attrs @ optAttrs
 
-                   let binding = (bindingBuilder xmlDoc) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member))
-                   let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, _, _, mBindLhs, spBind)) = binding 
+                   let binding = (bindingBuilder xmlDoc) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, None, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member))
+                   let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, _, _, _, mBindLhs, spBind)) = binding 
                    let memberKind = 
                          let getset = 
                                let rec go p = 
@@ -1814,9 +1816,9 @@ memberCore:
                        | _ -> optReturnType 
 
                    // REDO with the correct member kind 
-                   let binding = (bindingBuilder PreXmlDoc.Empty) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind))
+                   let binding = (bindingBuilder PreXmlDoc.Empty) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, mEquals, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind))
 
-                   let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind)) = binding
+                   let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, mEquals, rhsExpr, mBindLhs, spBind)) = binding
                    let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
                 
                    let (SynValData(_, valSynInfo, _)) = valSynData 
@@ -1874,9 +1876,9 @@ memberCore:
 
                    let bindingPatAdjusted, xmlDocAdjusted = 
 
-                       let bindingOuter = (propertyNameBindingBuilder xmlDoc) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member))
+                       let bindingOuter = (propertyNameBindingBuilder xmlDoc) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, mEquals, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member))
 
-                       let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _)) = bindingOuter 
+                       let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                    
                        let lidOuter, lidVisOuter = 
                            match bindingPatOuter with 
@@ -1925,7 +1927,7 @@ memberCore:
 
                        go pv, PreXmlDoc.Merge doc2 doc
 
-                   let binding = SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mWholeBindLhs, spBind)
+                   let binding = SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, mEquals, rhsExpr, mWholeBindLhs, spBind)
                    let memberRange = unionRanges rangeStart mWhole
                    Some (SynMemberDefn.Member (binding, memberRange))))
        }
@@ -2002,13 +2004,14 @@ classDefnMember:
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
         let m = unionRanges mWholeBindLhs $7.Range 
+        let mEquals = rhs parseState 6
         let expr = $7
         let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
         let vis = $2 
         let declPat = SynPat.LongIdent (LongIdentWithDots([mkSynId (rhs parseState 3) "new"], []), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
-        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, grabXmlDoc(parseState, $1, 1), valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible), m) ] }
+        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, grabXmlDoc(parseState, $1, 1), valSynData, declPat, None, Some mEquals, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible), m) ] }
         
   | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -2714,7 +2717,7 @@ cPrototype:
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
-                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
+                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, None, rhsExpr, mRhs, [], attrs, None)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -2823,7 +2826,7 @@ attr_localBinding:
 localBinding: 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  typedExprWithStaticOptimizationsBlock 
       { let (expr:SynExpr), opts = $6
-        let eqm = rhs parseState 5 
+        let eqm = rhs parseState 5
         let mRhs = expr.Range 
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
@@ -2833,7 +2836,7 @@ localBinding:
             let mWhole = (unionRanges mLetKwd mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let spBind = if IsControlFlowExpression expr then DebugPointAtBinding.NoneAtLet else DebugPointAtBinding.Yes mWhole
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            (bindingBuilder xmlDoc) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None))
+            (bindingBuilder xmlDoc) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, Some eqm, expr, mRhs, opts, attrs, None))
         localBindingRange, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
@@ -2846,7 +2849,7 @@ localBinding:
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
             let eqm = rhs parseState 5
             let zeroWidthAtEnd = eqm.EndRange
-            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding1", zeroWidthAtEnd), mRhs, [], attrs, None))
+            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, Some eqm, arbExpr("localBinding1", zeroWidthAtEnd), mRhs, [], attrs, None))
         mWhole, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
@@ -2858,7 +2861,7 @@ localBinding:
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
-            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None))
+            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, None, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None))
         mWhole, localBindingBuilder }
 
 

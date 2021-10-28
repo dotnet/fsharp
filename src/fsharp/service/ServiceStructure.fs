@@ -436,7 +436,7 @@ module Structure =
                 for attr in attrs do
                     parseExpr attr.ArgExpr
 
-        and parseBinding (SynBinding(_, kind, _, _, attrs, _, SynValData(memberFlags, _, _), _, _, expr, br, _) as binding) =
+        and parseBinding (SynBinding(_, kind, _, _, attrs, _, SynValData(memberFlags, _, _), _, _, _, expr, br, _) as binding) =
             match kind with
             | SynBindingKind.Normal ->
                 let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs

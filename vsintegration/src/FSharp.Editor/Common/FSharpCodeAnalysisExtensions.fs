@@ -14,7 +14,7 @@ type FSharpParseFileResults with
 
             override _.VisitBinding(_path, defaultTraverse, binding) =
                 match binding with
-                | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, pat, _, _, _, _) as binding ->
+                | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, pat, _, _, _, _, _) as binding ->
                     if Position.posEq binding.RangeOfHeadPattern.Start pos then
                         Some binding.RangeOfBindingWithRhs
                     else

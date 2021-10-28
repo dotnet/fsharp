@@ -504,7 +504,7 @@ module ParsedInput =
 
         and walkPat = walkPatWithKind None
 
-        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, _, e, _, _)) =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkPat pat)
             |> Option.orElseWith (fun () -> walkExpr e)
@@ -1225,7 +1225,7 @@ module ParsedInput =
     
         and walkTypar (SynTypar _) = ()
     
-        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, _, e, _, _)) =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e

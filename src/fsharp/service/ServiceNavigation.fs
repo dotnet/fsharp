@@ -135,7 +135,7 @@ module NavigationImpl =
             NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
 
         // Process let-binding
-        let processBinding isMember enclosingEntityKind isAbstract (SynBinding(_, _, _, _, _, _, SynValData(memberOpt, _, _), synPat, _, synExpr, _, _)) =
+        let processBinding isMember enclosingEntityKind isAbstract (SynBinding(_, _, _, _, _, _, SynValData(memberOpt, _, _), synPat, _, _, synExpr, _, _)) =
             let m = 
                 match synExpr with 
                 | SynExpr.Typed (e, _, _) -> e.Range // fix range for properties with type annotations
@@ -563,7 +563,7 @@ module NavigateTo =
             | SynMemberKind.PropertyGetSet -> NavigableItemKind.Property
             | SynMemberKind.Member -> NavigableItemKind.Member
     
-        let addBinding (SynBinding(_, _, _, _, _, _, valData, headPat, _, _, _, _)) itemKind container =
+        let addBinding (SynBinding(_, _, _, _, _, _, valData, headPat, _, _, _, _, _)) itemKind container =
             let (SynValData(memberFlagsOpt, _, _)) = valData
             let kind =
                 match itemKind with
