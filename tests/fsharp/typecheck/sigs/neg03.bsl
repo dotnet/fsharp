@@ -88,9 +88,9 @@ neg03.fs(84,9,84,23): typecheck error FS0025: Incomplete pattern matches on this
 
 neg03.fs(85,9,85,27): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '"a"' may indicate a case not covered by the pattern(s).
 
-neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s).
+neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s).
 
-neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s).
+neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).
 
 neg03.fs(91,11,91,26): typecheck error FS0026: This rule will never be matched
 

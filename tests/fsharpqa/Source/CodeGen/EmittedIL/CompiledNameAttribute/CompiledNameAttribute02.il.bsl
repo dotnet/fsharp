@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly CompiledNameAttribute02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute02
 {
-  // Offset: 0x00000000 Length: 0x000002E8
+  // Offset: 0x00000000 Length: 0x000002E4
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute02
 {
-  // Offset: 0x000002F0 Length: 0x000000CD
+  // Offset: 0x000002E8 Length: 0x000000CD
 }
 .module CompiledNameAttribute02.exe
-// MVID: {59B1923F-F755-F3C0-A745-03833F92B159}
+// MVID: {6124062C-F755-F3C0-A745-03832C062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x018A0000
+// Image base: 0x06A90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,14 +60,18 @@
                              int32 y) cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 06 4D 65 74 68 6F 64 00 00 )                // ...Method..
-      // Code size       4 (0x4)
-      .maxstack  8
+      // Code size       6 (0x6)
+      .maxstack  4
+      .locals init ([0] class CompiledNameAttribute02/T a)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 34,39 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute02.fs'
-      IL_0000:  ldarg.1
-      IL_0001:  ldarg.2
-      IL_0002:  add
-      IL_0003:  ret
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute02.fs'
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      .line 5,5 : 34,39 ''
+      IL_0002:  ldarg.1
+      IL_0003:  ldarg.2
+      IL_0004:  add
+      IL_0005:  ret
     } // end of method T::SomeCompiledName
 
   } // end of class T

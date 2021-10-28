@@ -56,7 +56,19 @@ type Position(code:int64) =
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
+    member p.IsAdjacentTo(otherPos: Position) =
+        p.Line = otherPos.Line && p.Column + 1 = otherPos.Column
+
 and pos = Position
+
+[<RequireQualifiedAccess>]
+type RangeDebugPointKind =
+    | None
+    | While
+    | For
+    | Try
+    | Binding
+    | Finally
 
 [<AutoOpen>]
 module RangeImpl =
@@ -79,6 +91,9 @@ module RangeImpl =
     let isSyntheticBitCount = 1
 
     [<Literal>]
+    let debugPointKindBitCount = 3
+
+    [<Literal>]
     let fileIndexShift   = 0
 
     [<Literal>]
@@ -97,33 +112,40 @@ module RangeImpl =
     let isSyntheticShift = 58
 
     [<Literal>]
-    let fileIndexMask =   0b0000000000000000000000000000000000000000111111111111111111111111L
+    let debugPointKindShift = 59
 
     [<Literal>]
-    let startColumnMask = 0b0000000000000000000011111111111111111111000000000000000000000000L
+    let fileIndexMask =     0b0000000000000000000000000000000000000000111111111111111111111111L
 
     [<Literal>]
-    let endColumnMask =   0b1111111111111111111100000000000000000000000000000000000000000000L
+    let startColumnMask =   0b0000000000000000000011111111111111111111000000000000000000000000L
 
     [<Literal>]
-    let startLineMask =   0b0000000000000000000000000000000001111111111111111111111111111111L
+    let endColumnMask =     0b1111111111111111111100000000000000000000000000000000000000000000L
 
     [<Literal>]
-    let heightMask =      0b0000001111111111111111111111111110000000000000000000000000000000L
+    let startLineMask =     0b0000000000000000000000000000000001111111111111111111111111111111L
 
     [<Literal>]
-    let isSyntheticMask = 0b0000010000000000000000000000000000000000000000000000000000000000L
+    let heightMask =        0b0000001111111111111111111111111110000000000000000000000000000000L
+
+    [<Literal>]
+    let isSyntheticMask =   0b0000010000000000000000000000000000000000000000000000000000000000L
+
+    [<Literal>]
+    let debugPointKindMask= 0b0011100000000000000000000000000000000000000000000000000000000000L
 
     #if DEBUG
     let _ = assert (posBitCount <= 64)
     let _ = assert (fileIndexBitCount + startColumnBitCount + endColumnBitCount <= 64)
-    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount <= 64)
+    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount + debugPointKindBitCount <= 64)
 
     let _ = assert (startColumnShift   = fileIndexShift   + fileIndexBitCount)
     let _ = assert (endColumnShift = startColumnShift   + startColumnBitCount)
 
     let _ = assert (heightShift      = startLineShift + startLineBitCount)
     let _ = assert (isSyntheticShift = heightShift      + heightBitCount)
+    let _ = assert (debugPointKindShift = isSyntheticShift + isSyntheticBitCount)
 
     let _ = assert (fileIndexMask =   mask64 fileIndexShift   fileIndexBitCount)
     let _ = assert (startLineMask =   mask64 startLineShift   startLineBitCount)
@@ -131,13 +153,14 @@ module RangeImpl =
     let _ = assert (heightMask =      mask64 heightShift      heightBitCount)
     let _ = assert (endColumnMask =   mask64 endColumnShift   endColumnBitCount)
     let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
+    let _ = assert (debugPointKindMask = mask64 debugPointKindShift debugPointKindBitCount)
     #endif
 
 
 /// A unique-index table for file names.
 type FileIndexTable() =
-    let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new ConcurrentDictionary<string, int>()
+    let indexToFileTable = ResizeArray<_>(11)
+    let fileToIndexTable = ConcurrentDictionary<string, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -191,7 +214,7 @@ module FileIndex =
 
     // ++GLOBAL MUTABLE STATE
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
-    let fileIndexTable = new FileIndexTable()
+    let fileIndexTable = FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex
@@ -229,6 +252,15 @@ type Range(code1:int64, code2: int64) =
 
     member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
+    member r.DebugPointKind = 
+        match int32((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
+        | 1 -> RangeDebugPointKind.While
+        | 2 -> RangeDebugPointKind.For
+        | 3 -> RangeDebugPointKind.Try
+        | 4 -> RangeDebugPointKind.Finally
+        | 5 -> RangeDebugPointKind.Binding
+        | _ -> RangeDebugPointKind.None
+
     member r.Start = pos (r.StartLine, r.StartColumn)
 
     member r.End = pos (r.EndLine, r.EndColumn)
@@ -244,6 +276,20 @@ type Range(code1:int64, code2: int64) =
     member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
 
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+
+    member r.IsAdjacentTo(otherRange: Range) =
+        r.FileIndex = otherRange.FileIndex && r.End.Encoding = otherRange.Start.Encoding
+
+    member r.NoteDebugPoint(kind) = 
+        let code = 
+            match kind with 
+            | RangeDebugPointKind.None -> 0 
+            | RangeDebugPointKind.While -> 1
+            | RangeDebugPointKind.For -> 2
+            | RangeDebugPointKind.Try -> 3
+            | RangeDebugPointKind.Finally -> 4
+            | RangeDebugPointKind.Binding -> 5
+        range(code1, code2 ||| (int64 code <<< debugPointKindShift))
 
     member r.Code1 = code1
 
@@ -273,7 +319,7 @@ type Range(code1:int64, code2: int64) =
 
     override r.GetHashCode() = hash code1 + hash code2
 
-    override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+    override r.ToString() = sprintf "%s (%d,%d--%d,%d)" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn
 
 and range = Range
 
@@ -336,30 +382,35 @@ module Range =
     /// rangeOrder: not a total order, but enough to sort on ranges
     let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
-    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
 
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) =
         if m1.FileIndex <> m2.FileIndex then m2 else
+        
+        // If all identical then return m1. This preserves DebugPointKind when no merging takes place
+        if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then m1 else 
+
         let b =
           if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
           else m1
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
-        Position.posGeq m2.Start m1.Start &&
-        Position.posGeq m1.End m2.End
+        posGeq m2.Start m1.Start &&
+        posGeq m1.End m2.End
 
     let rangeContainsPos (m1:range) p =
-        Position.posGeq p m1.Start &&
-        Position.posGeq m1.End p
+        posGeq p m1.Start &&
+        posGeq m1.End p
 
     let rangeBeforePos (m1:range) p =
-        Position.posGeq p m1.End
+        posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
@@ -378,9 +429,9 @@ module Range =
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
           range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Position.stringOfPos r.Start) (Position.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
-    let toZ (m:range) = Position.toZ m.Start, Position.toZ m.End
+    let toZ (m:range) = toZ m.Start, toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
 

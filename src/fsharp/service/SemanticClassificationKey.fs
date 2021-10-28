@@ -8,10 +8,6 @@ open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
-open FSharp.Compiler.Text.Range
 
 #nowarn "9"
 

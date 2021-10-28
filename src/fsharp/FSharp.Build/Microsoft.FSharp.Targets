@@ -232,7 +232,7 @@ this file.
                  @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
-        Returns=""
+        Returns="@(FscCommandLineArgs)"
         DependsOnTargets="$(CoreCompileDependsOn)"
     >
 
@@ -339,6 +339,7 @@ this file.
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
         </ItemGroup>
 
+       <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />

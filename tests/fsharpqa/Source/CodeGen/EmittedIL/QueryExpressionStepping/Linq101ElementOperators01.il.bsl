@@ -45,13 +45,13 @@
   // Offset: 0x00000388 Length: 0x00000127
 }
 .module Linq101ElementOperators01.exe
-// MVID: {60B78A59-19D7-C20D-A745-0383598AB760}
+// MVID: {611C4D82-19D7-C20D-A745-0383824D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x09100000
+// Image base: 0x06A90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -189,11 +189,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
@@ -205,10 +204,11 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -255,41 +255,37 @@
         IL_005d:  ldarg.0
         IL_005e:  ldnull
         IL_005f:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 12,12 : 9,29 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
+
+      .line 12,12 : 9,29 ''
       IL_0076:  nop
-      IL_0077:  br         IL_0000
-
-      IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007f:  ret
     } // end of method products12@12::Close
 
     .method public strict virtual instance bool 
@@ -534,11 +530,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/startsWithO@22::pc
@@ -550,10 +545,11 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -600,41 +596,37 @@
         IL_005d:  ldarg.0
         IL_005e:  ldnull
         IL_005f:  stfld      string Linq101ElementOperators01/startsWithO@22::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 22,22 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
+
+      .line 22,22 : 9,28 ''
       IL_0076:  nop
-      IL_0077:  br         IL_0000
-
-      IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007f:  ret
     } // end of method startsWithO@22::Close
 
     .method public strict virtual instance bool 
@@ -880,11 +872,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
@@ -896,10 +887,11 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -946,41 +938,37 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 31,31 : 9,28 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
+
+      .line 31,31 : 9,28 ''
       IL_0076:  nop
-      IL_0077:  br         IL_0000
-
-      IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007f:  ret
     } // end of method firstNumOrDefault@31::Close
 
     .method public strict virtual instance bool 
@@ -1184,11 +1172,10 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       133 (0x85)
+      // Code size       128 (0x80)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
-               [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
+               [1] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
@@ -1200,10 +1187,11 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br.s       IL_007c
+      IL_0014:  br.s       IL_0076
 
       .line 100001,100001 : 0,0 ''
       IL_0016:  nop
+      .line 100001,100001 : 0,0 ''
       .try
       {
         IL_0017:  ldarg.0
@@ -1250,41 +1238,37 @@
         IL_005d:  ldarg.0
         IL_005e:  ldc.i4.0
         IL_005f:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
-        IL_0064:  ldnull
-        IL_0065:  stloc.1
-        IL_0066:  leave.s    IL_0074
+        IL_0064:  leave.s    IL_0070
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0068:  castclass  [mscorlib]System.Exception
-        IL_006d:  stloc.2
+        IL_0066:  castclass  [mscorlib]System.Exception
+        IL_006b:  stloc.1
         .line 52,52 : 9,29 ''
-        IL_006e:  ldloc.2
-        IL_006f:  stloc.0
-        IL_0070:  ldnull
-        IL_0071:  stloc.1
-        IL_0072:  leave.s    IL_0074
+        IL_006c:  ldloc.1
+        IL_006d:  stloc.0
+        IL_006e:  leave.s    IL_0070
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0074:  ldloc.1
-      IL_0075:  pop
-      .line 100001,100001 : 0,0 ''
+      IL_0070:  nop
+      IL_0071:  br         IL_0000
+
+      .line 52,52 : 9,29 ''
       IL_0076:  nop
-      IL_0077:  br         IL_0000
-
-      IL_007c:  ldloc.0
-      IL_007d:  ldnull
-      IL_007e:  cgt.un
-      IL_0080:  brfalse.s  IL_0084
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldloc.0
+      IL_0078:  ldnull
+      IL_0079:  cgt.un
+      IL_007b:  brfalse.s  IL_007f
 
       .line 100001,100001 : 0,0 ''
-      IL_0082:  ldloc.0
-      IL_0083:  throw
+      IL_007d:  ldloc.0
+      IL_007e:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0084:  ret
+      IL_007f:  ret
     } // end of method fourthLowNum@52::Close
 
     .method public strict virtual instance bool 

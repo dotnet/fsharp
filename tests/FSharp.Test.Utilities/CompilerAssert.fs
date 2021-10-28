@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open System
 open System.IO
@@ -15,20 +15,19 @@ open FSharp.Compiler.Text
 open System.Runtime.Loader
 #endif
 open NUnit.Framework
-open FSharp.Test.Utilities.Utilities
+open FSharp.Test.Utilities
 open TestFramework
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (qualifiedItemName: string, expectedIL: string) =
-        ILChecker.checkILItem qualifiedItemName dllFilePath [ expectedIL ]
-
-    member this.VerifyIL (expectedIL: string list) =
+    member _.VerifyIL (expectedIL: string list) =
         ILChecker.checkIL dllFilePath expectedIL
 
-    member this.VerifyILWithLineNumbers (qualifiedItemName: string, expectedIL: string) =
-        ILChecker.checkILItemWithLineNumbers qualifiedItemName dllFilePath [ expectedIL ]
+[<Sealed>]
+type PdbDebugInfo(debugInfo: string) =
+
+    member _.InfoText = debugInfo
 
 type Worker () =
     inherit MarshalByRefObject()
@@ -129,15 +128,20 @@ type CompilerAssert private () =
     static let rawCompile inputFilePath outputFilePath isExe options source =
         File.WriteAllText (inputFilePath, source)
         let args =
-            options
-            |> Array.append defaultProjectOptions.OtherOptions
-            |> Array.append [| "fsc.dll"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
-        let errors, _ = checker.Compile args |> Async.RunSynchronously
+            [| yield "fsc.dll"; 
+               yield inputFilePath; 
+               yield "-o:" + outputFilePath; 
+               yield (if isExe then "--target:exe" else "--target:library"); 
+               yield "--nowin32manifest" 
+               yield! defaultProjectOptions.OtherOptions
+               yield! options
+             |]
+        let errors, _ = checker.Compile args |> Async.RunImmediate
         errors, outputFilePath
 
     static let compileAux isExe options source f : unit =
-        let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+        let inputFilePath = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then ".exe" else ".dll")
         try
             f (rawCompile inputFilePath outputFilePath isExe options source)
         finally
@@ -191,10 +195,8 @@ type CompilerAssert private () =
             checkEqual "ErrorRange" expectedErrorRange actualErrorRange
             checkEqual "Message" expectedErrorMsg actualErrorMsg)
 
-    static let gate = obj ()
-
     static let compile isExe options source f =
-        lock gate (fun _ -> compileAux isExe options source f)
+        compileAux isExe options source f
 
     static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
         let compilationRefs, deps =
@@ -337,7 +339,7 @@ type CompilerAssert private () =
         "tfm": "net5.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "5.0.0"
+            "version": "6.0"
         }
     }
 }"""
@@ -357,15 +359,14 @@ type CompilerAssert private () =
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
-        lock gate (fun () ->
-            compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
-                assertErrors 0 ignoreWarnings errors expectedErrors))
+        compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
+            assertErrors 0 ignoreWarnings errors expectedErrors)
 
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
 
     static member CompileRaw(cmpl: Compilation, ?ignoreWarnings) =
-        lock gate (fun () -> returnCompilation cmpl (defaultArg ignoreWarnings false))
+        returnCompilation cmpl (defaultArg ignoreWarnings false)
 
     static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
@@ -379,29 +380,28 @@ type CompilerAssert private () =
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
         let newProcess = defaultArg newProcess false
         let onOutput = defaultArg onOutput (fun _ -> ())
-        lock gate (fun () ->
-            compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
-                assertErrors 0 ignoreWarnings errors [||]
-                beforeExecute outputFilePath deps
-                if newProcess then
-                    let (exitCode, output, errors) = executeBuiltAppNewProcessAndReturnResult outputFilePath
-                    if exitCode <> 0 then
-                        Assert.Fail errors
-                    onOutput output
-                else
-                    executeBuiltApp outputFilePath deps))
+        compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
+            assertErrors 0 ignoreWarnings errors [||]
+            beforeExecute outputFilePath deps
+            if newProcess then
+                let (exitCode, output, errors) = executeBuiltAppNewProcessAndReturnResult outputFilePath
+                if exitCode <> 0 then
+                    Assert.Fail errors
+                onOutput output
+            else
+                executeBuiltApp outputFilePath deps)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
     static member CompileOfAst isExe source =
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then "exe" else ".dll")
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
 
         let parseResults =
             checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -414,7 +414,7 @@ type CompilerAssert private () =
 
         let compileErrors, statusCode =
             checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
         Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
@@ -425,7 +425,7 @@ type CompilerAssert private () =
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
         let parseResults =
             checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
@@ -438,7 +438,7 @@ type CompilerAssert private () =
 
         let compileErrors, statusCode, assembly =
             checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
-            |> Async.RunSynchronously
+            |> Async.RunImmediate
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
         Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
@@ -446,118 +446,112 @@ type CompilerAssert private () =
         Option.get assembly
 
     static member Pass (source: string) =
-        lock gate <| fun () ->
-            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunImmediate
 
-            Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
-            match fileAnswer with
-            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+        match fileAnswer with
+        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
 
     static member PassWithOptions options (source: string) =
-        lock gate <| fun () ->
-            let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
+        let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
 
-            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronously
+        let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunImmediate
 
-            Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
-            match fileAnswer with
-            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+        match fileAnswer with
+        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
+        Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
 
     static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceDirectory:string) (sourceFile: string) =
-        lock gate <| fun () ->
-            let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
-            let parseResults, fileAnswer =
-                checker.ParseAndCheckFileInProject(
-                    sourceFile,
-                    0,
-                    SourceText.ofString (File.ReadAllText absoluteSourceFile),
-                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|sourceFile|] })
-                |> Async.RunSynchronously
+        let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
+        let parseResults, fileAnswer =
+            checker.ParseAndCheckFileInProject(
+                sourceFile,
+                0,
+                SourceText.ofString (File.ReadAllText absoluteSourceFile),
+                { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|sourceFile|] })
+            |> Async.RunImmediate
 
-            Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
+        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
-            match fileAnswer with
-            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+        match fileAnswer with
+        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            let errorsExpectedBaseLine =
-                let bslFile = Path.ChangeExtension(absoluteSourceFile, "bsl")
-                if not (FileSystem.FileExistsShim bslFile) then
-                    // new test likely initialized, create empty baseline file
-                    File.WriteAllText(bslFile, "")
-                File.ReadAllText(Path.ChangeExtension(absoluteSourceFile, "bsl"))
-            let errorsActual =
-                typeCheckResults.Diagnostics
-                |> Array.map (sprintf "%A")
-                |> String.concat "\n"
-            File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
+        let errorsExpectedBaseLine =
+            let bslFile = Path.ChangeExtension(absoluteSourceFile, "bsl")
+            if not (FileSystem.FileExistsShim bslFile) then
+                // new test likely initialized, create empty baseline file
+                File.WriteAllText(bslFile, "")
+            File.ReadAllText(Path.ChangeExtension(absoluteSourceFile, "bsl"))
+        let errorsActual =
+            typeCheckResults.Diagnostics
+            |> Array.map (sprintf "%A")
+            |> String.concat "\n"
+        File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
 
-            Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
+        Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
 
     static member TypeCheckWithOptionsAndName options name (source: string) =
-        lock gate <| fun () ->
-            let errors =
-                let parseResults, fileAnswer =
-                    checker.ParseAndCheckFileInProject(
-                        name,
-                        0,
-                        SourceText.ofString source,
-                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|name|] })
-                    |> Async.RunSynchronously
-
-                if parseResults.Diagnostics.Length > 0 then
-                    parseResults.Diagnostics
-                else
-
-                    match fileAnswer with
-                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
-                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
-
-            errors
-
-    static member TypeCheckWithOptions options (source: string) =
-        lock gate <| fun () ->
-            let errors =
-                let parseResults, fileAnswer =
-                    checker.ParseAndCheckFileInProject(
-                        "test.fs",
-                        0,
-                        SourceText.ofString source,
-                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                    |> Async.RunSynchronously
-
-                if parseResults.Diagnostics.Length > 0 then
-                    parseResults.Diagnostics
-                else
-
-                    match fileAnswer with
-                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
-                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
-
-            errors
-
-    /// Parses and type checks the given source. Fails if type checker is aborted.
-    static member ParseAndTypeCheck(options, name, source: string) =
-        lock gate <| fun () ->
+        let errors =
             let parseResults, fileAnswer =
                 checker.ParseAndCheckFileInProject(
                     name,
                     0,
                     SourceText.ofString source,
-                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                |> Async.RunSynchronously
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|name|] })
+                |> Async.RunImmediate
 
-            match fileAnswer with
-            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
-            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
+            if parseResults.Diagnostics.Length > 0 then
+                parseResults.Diagnostics
+            else
+
+                match fileAnswer with
+                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
+
+        errors
+
+    static member TypeCheckWithOptions options (source: string) =
+        let errors =
+            let parseResults, fileAnswer =
+                checker.ParseAndCheckFileInProject(
+                    "test.fs",
+                    0,
+                    SourceText.ofString source,
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                |> Async.RunImmediate
+
+            if parseResults.Diagnostics.Length > 0 then
+                parseResults.Diagnostics
+            else
+
+                match fileAnswer with
+                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
+
+        errors
+
+    /// Parses and type checks the given source. Fails if type checker is aborted.
+    static member ParseAndTypeCheck(options, name, source: string) =
+        let parseResults, fileAnswer =
+            checker.ParseAndCheckFileInProject(
+                name,
+                0,
+                SourceText.ofString source,
+                { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+            |> Async.RunImmediate
+
+        match fileAnswer with
+        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+        | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
 
     /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
     static member TypeCheck(options, name, source: string) =
@@ -568,25 +562,24 @@ type CompilerAssert private () =
         checkResults
 
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
-        lock gate <| fun () ->
-            let errors =
-                let parseResults, fileAnswer =
-                    checker.ParseAndCheckFileInProject(
-                        "test.fs",
-                        0,
-                        SourceText.ofString source,
-                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                    |> Async.RunSynchronously
+        let errors =
+            let parseResults, fileAnswer =
+                checker.ParseAndCheckFileInProject(
+                    "test.fs",
+                    0,
+                    SourceText.ofString source,
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                |> Async.RunImmediate
 
-                if parseResults.Diagnostics.Length > 0 then
-                    parseResults.Diagnostics
-                else
+            if parseResults.Diagnostics.Length > 0 then
+                parseResults.Diagnostics
+            else
 
-                    match fileAnswer with
-                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
-                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
+                match fileAnswer with
+                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
-            assertErrors libAdjust false errors expectedTypeErrors
+        assertErrors libAdjust false errors expectedTypeErrors
 
 
     static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
@@ -631,6 +624,28 @@ type CompilerAssert private () =
             f (ILVerifier outputFilePath)
         )
 
+    static member CompileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: string) =
+        let options = [| yield! options; yield"--test:DumpDebugInfo" |]
+        compile false options source (fun (errors, outputFilePath) ->
+            let errors =
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had errors: %A" errors)
+            let debugInfoFile = outputFilePath + ".debuginfo"
+            if not (File.Exists expectedFile) then 
+                File.Copy(debugInfoFile, expectedFile)
+                failwith $"debug info expected file {expectedFile} didn't exist, now copied over"
+            let debugInfo = File.ReadAllLines(debugInfoFile)
+            let expected = File.ReadAllLines(expectedFile)
+            if debugInfo <> expected then 
+                File.Copy(debugInfoFile, expectedFile, overwrite=true)
+                failwith $"""debug info mismatch
+Expected is in {expectedFile}
+Actual is in {debugInfoFile}
+Updated automatically, please check diffs in your pull request, changes must be scrutinized
+"""
+        )
+
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
@@ -665,26 +680,29 @@ type CompilerAssert private () =
         errorMessages
 
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
-        lock gate <| fun () ->
-            let errorMessages = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
-            if expectedErrorMessages.Length <> errorMessages.Count then
-                Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
-            else
-                (expectedErrorMessages, errorMessages)
-                ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
-                    Assert.AreEqual(expectedErrorMessage, errorMessage)
-            )
+        let errorMessages = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+        if expectedErrorMessages.Length <> errorMessages.Count then
+            Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
+        else
+            (expectedErrorMessages, errorMessages)
+            ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
+                Assert.AreEqual(expectedErrorMessage, errorMessage)
+        )
 
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
-    static member Parse (source: string) =
-        let sourceFileName = "test.fs"
-        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
-        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
+    static member Parse (source: string, ?langVersion: string, ?fileName: string) =
+        let langVersion = defaultArg langVersion "default"
+        let sourceFileName = defaultArg fileName "test.fsx"
+        let parsingOptions =
+            { FSharpParsingOptions.Default with
+                SourceFiles = [| sourceFileName |]
+                LangVersionText = langVersion }
+        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string) expectedParseErrors =
-        let parseResults = CompilerAssert.Parse source
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+        let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
 
@@ -692,6 +710,7 @@ type CompilerAssert private () =
             parseResults.Diagnostics
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
+        printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
         Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors

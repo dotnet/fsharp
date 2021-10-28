@@ -5,7 +5,7 @@
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">net5.0</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionProperty)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
   </PropertyGroup>
 

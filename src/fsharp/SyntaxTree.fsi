@@ -214,22 +214,33 @@ type SynAccess =
 /// of a decision tree, that is whether the construct corresponds to a debug
 /// point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForTarget =
+type DebugPointAtTarget =
     | Yes
     | No
 
-/// Represents whether a debug point should be present for either the
+/// Represents whether a debug point should be present at the switch
+/// logic of a decision tree. These are introduced for 'when' expressions
+/// and the encoding of 'a && b', 'a || b'
+[<RequireQualifiedAccess>]
+type DebugPointAtSwitch =
+    | Yes of range
+    | No
+
+/// Represents whether a debug point should be suppressed for either the
 /// first or second part of a sequential execution, that is whether the
 /// construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
 type DebugPointAtSequential =
-    | Both
+    | SuppressNeither
 
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
-    | StmtOnly
+    | SuppressStmt
+
+    // This means "suppress both"
+    | SuppressBoth
 
     // This means "suppress b in 'a;b'" and "suppress a in 'a before b'"
-    | ExprOnly
+    | SuppressExpr
 
 /// Represents whether a debug point should be present for a 'try', that is whether
 /// the construct corresponds to a debug point in the original source.
@@ -318,7 +329,6 @@ type RecordFieldName = LongIdentWithDots * bool
 /// 1, "3", ident, ident.[expr] and (expr). If an atomic expression has type T,
 /// then the largest expression ending at the same range as the atomic expression
 /// also has type T.
-[<RequireQualifiedAccess>]
 type ExprAtomicFlag =
     | Atomic = 0
     | NonAtomic = 1
@@ -404,6 +414,20 @@ type SynTypeConstraint =
        typar: SynTypar *
        typeArgs: SynType list *
        range: range
+
+    member Range: range
+
+/// List of type parameter declarations with optional type constraints,
+/// enclosed in `< ... >` (postfix) or `( ... )` (prefix), or a single prefix parameter.
+[<RequireQualifiedAccess>]
+type SynTyparDecls =
+    | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
+    | PrefixList of decls: SynTyparDecl list * range: range
+    | SinglePrefix of decl: SynTyparDecl * range: range
+
+    member TyparDecls: SynTyparDecl list
+    member Constraints: SynTypeConstraint list
+    member Range: range
 
 /// Represents a syntax tree for F# types
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
@@ -579,7 +603,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(RecordFieldName * (SynExpr option) * BlockSeparator option) list *
+        recordFields:(RecordFieldName * SynExpr option * BlockSeparator option) list *
         range: range
 
     /// F# syntax: new C(...)
@@ -601,14 +625,14 @@ type SynExpr =
 
     /// F# syntax: 'while ... do ...'
     | While of
-        whileSeqPoint: DebugPointAtWhile *
+        whileDebugPoint: DebugPointAtWhile *
         whileExpr: SynExpr *
         doExpr: SynExpr *
         range: range
 
     /// F# syntax: 'for i = ... to ... do ...'
     | For of
-        forSeqPoint: DebugPointAtFor *
+        forDebugPoint: DebugPointAtFor *
         ident: Ident *
         identBody: SynExpr *
         direction: bool *
@@ -618,7 +642,7 @@ type SynExpr =
 
     /// F# syntax: 'for ... in ... do ...'
     | ForEach of
-        forSeqPoint: DebugPointAtFor *
+        forDebugPoint: DebugPointAtFor *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -627,15 +651,33 @@ type SynExpr =
         range: range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of
+    | ArrayOrListComputed of
         isArray: bool *
         expr: SynExpr *
         range: range
 
+    /// F# syntax: expr..
+    /// F# syntax: ..expr
+    /// F# syntax: expr..expr
+    /// F# syntax: *
+    /// A two-element range indexer argument a..b, a.., ..b. Also used to represent
+    /// a range in a list, array or sequence expression.
+    | IndexRange of
+        expr1: SynExpr option *
+        opm: range *
+        expr2: SynExpr option*
+        range1: range *
+        range2: range *
+        range: range
+
+    /// F# syntax: ^expr
+    | IndexFromEnd of
+        expr: SynExpr *
+        range: range
+
     /// F# syntax: { expr }
-    | CompExpr of
-        isArrayOrList: bool *
-        isNotNakedRefCell: bool ref *
+    | ComputationExpr of
+        hasSeqBuilder: bool *
         expr: SynExpr *
         range: range
 
@@ -649,6 +691,7 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
+        arrow: Range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
         range: range
@@ -658,12 +701,12 @@ type SynExpr =
         isExnMatch: bool *
         keywordRange: range *
         matchClauses: SynMatchClause list *
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         range: range
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range 
@@ -718,16 +761,16 @@ type SynExpr =
         withCases: SynMatchClause list *
         withRange: range *
         range: range *
-        trySeqPoint: DebugPointAtTry *
-        withSeqPoint: DebugPointAtWith
+        tryDebugPoint: DebugPointAtTry *
+        withDebugPoint: DebugPointAtWith
 
     /// F# syntax: try expr finally expr
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
-        trySeqPoint: DebugPointAtTry *
-        finallySeqPoint: DebugPointAtFinally
+        tryDebugPoint: DebugPointAtTry *
+        finallyDebugPoint: DebugPointAtFinally
 
     /// F# syntax: lazy expr
     | Lazy of
@@ -738,7 +781,7 @@ type SynExpr =
     ///
     ///  isTrueSeq: false indicates "let v = a in b; v"
     | Sequential of
-        seqPoint: DebugPointAtSequential *
+        debugPoint: DebugPointAtSequential *
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
@@ -747,8 +790,12 @@ type SynExpr =
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
     | IfThenElse of
+        ifKeyword: range *
+        isElif: bool *
         ifExpr: SynExpr *
+        thenKeyword: range *
         thenExpr: SynExpr *
+        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
@@ -800,14 +847,14 @@ type SynExpr =
     /// F# syntax: expr.[expr, ..., expr]
     | DotIndexedGet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         dotRange: range *
         range: range
 
     /// F# syntax: expr.[expr, ..., expr] <- expr
     | DotIndexedSet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         valueExpr: SynExpr *
         leftOfSetRange: range *
         dotRange: range *
@@ -888,7 +935,7 @@ type SynExpr =
 
     /// Used internally during type checking for translating computation expressions.
     | SequentialOrImplicitYield of
-        seqPoint:DebugPointAtSequential *
+        debugPoint:DebugPointAtSequential *
         expr1:SynExpr *
         expr2:SynExpr *
         ifNotStmt:SynExpr *
@@ -915,7 +962,7 @@ type SynExpr =
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
     | LetOrUseBang of
-        bindSeqPoint: DebugPointAtBinding *
+        bindDebugPoint: DebugPointAtBinding *
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
@@ -926,7 +973,7 @@ type SynExpr =
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range
@@ -1011,29 +1058,6 @@ type SynInterpolatedStringPart =
     | String of value: string * range: range
     | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
 
-/// Represents a syntax tree for an F# indexer expression argument
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIndexerArg =
-    /// A two-element range indexer argument
-    | Two of
-        expr1: SynExpr *
-        fromEnd1: bool *
-        expr2: SynExpr *
-        fromEnd2: bool *
-        range1: range *
-        range2: range
-
-    /// A one-element item indexer argument
-    | One of
-        expr: SynExpr *
-        fromEnd: bool * range
-
-    /// Gets the syntax range of this construct
-    member Range: range
-
-    /// Get the one or two expressions as a list
-    member Exprs: SynExpr list
-
 /// Represents a syntax tree for simple F# patterns
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
@@ -1048,14 +1072,14 @@ type SynSimplePat =
     ///   name of the identifier is already bound.
     ///
     /// isCompilerGenerated: true if a compiler generated name
-    /// isThisVar: true if 'this' variable in member
-    /// isOptArg: true if a '?' is in front of the name
+    /// isThisVal: true if 'this' variable in member
+    /// isOptional: true if a '?' is in front of the name
     | Id of
         ident: Ident *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         isCompilerGenerated: bool *
-        isThisVar: bool *
-        isOptArg: bool *
+        isThisVal: bool *
+        isOptional: bool *
         range: range
 
     /// A type annotated simple pattern
@@ -1069,6 +1093,8 @@ type SynSimplePat =
         pat: SynSimplePat *
         attributes: SynAttributes *
         range: range
+
+    member Range: range
 
 /// Represents the alternative identifier for a simple pattern
 [<RequireQualifiedAccess>]
@@ -1099,9 +1125,8 @@ type SynStaticOptimizationConstraint =
 /// function definition or other binding point, after the elimination of pattern matching
 /// from the construct, e.g. after changing a "function pat1 -> rule1 | ..." to a
 /// "fun v -> match v with ..."
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-
     | SimplePats of
         pats: SynSimplePat list *
         range: range
@@ -1110,6 +1135,8 @@ type SynSimplePats =
         pats: SynSimplePats *
         targetType: SynType *
         range: range
+
+    member Range: range
 
 /// Represents a syntax tree for arguments patterns 
 [<RequireQualifiedAccess>]
@@ -1121,8 +1148,10 @@ type SynArgPats =
         pats: (Ident * SynPat) list *
         range: range
 
+    member Patterns: SynPat list
+
 /// Represents a syntax tree for an F# pattern
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
 
     /// A constant in a pattern
@@ -1134,11 +1163,10 @@ type SynPat =
     | Wild of
         range: range
 
-    /// A named pattern 'pat as ident'
+    /// A name pattern 'ident' 
     | Named of
-        pat: SynPat *
         ident: Ident *
-        isSelfIdentifier: bool *
+        isThisVal: bool *
         accessibility: SynAccess option *
         range: range
 
@@ -1163,6 +1191,12 @@ type SynPat =
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of
         pats: SynPat list *
+        range: range
+
+    /// A conjunctive pattern 'pat1 as pat2'
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     /// A long identifier pattern possibly with argument patterns
@@ -1251,9 +1285,10 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
+        arrow: Range option *
         resultExpr: SynExpr *
         range: range *
-        spInfo: DebugPointForTarget
+        debugPoint: DebugPointAtTarget
 
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range
@@ -1309,7 +1344,7 @@ type SynBinding =
     | SynBinding of
         accessibility: SynAccess option *
         kind: SynBindingKind *
-        mustInline: bool *
+        isInline: bool *
         isMutable: bool *
         attributes: SynAttributes *
         xmlDoc: PreXmlDoc *
@@ -1318,7 +1353,7 @@ type SynBinding =
         returnInfo: SynBindingReturnInfo option *
         expr: SynExpr  *
         range: range *
-        seqPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1592,7 +1627,7 @@ type SynField =
 type SynComponentInfo =
     | SynComponentInfo of
         attributes: SynAttributes *
-        typeParams: SynTyparDecl list *
+        typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
         longId: LongIdent *
         xmlDoc: PreXmlDoc *
@@ -1647,14 +1682,14 @@ type SynArgInfo =
 
     member Ident: Ident option
 
+    member Attributes: SynAttributes
+
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
-
     | SynValTyparDecls of
-        typars: SynTyparDecl list *
-        canInfer: bool *
-        constraints: SynTypeConstraint list
+        typars: SynTyparDecls option *
+        canInfer: bool
 
 /// Represents the syntactic elements associated with the "return" of a function or method. 
 [<NoEquality; NoComparison>]
@@ -1837,7 +1872,7 @@ type SynModuleDecl =
 
     /// A 'do expr' within a module
     | DoExpr of
-       spInfo: DebugPointAtBinding *
+       debugPoint: DebugPointAtBinding *
        expr: SynExpr *
        range: range
 
@@ -1993,12 +2028,21 @@ type SynModuleOrNamespaceSig =
     /// Gets the syntax range of this construct
     member Range: range
 
+/// Represents a parsed hash directive argument
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type ParsedHashDirectiveArgument =
+    | String of value: string * stringKind: SynStringKind * range: Range
+    | SourceIdentifier of constant: string * value: string * range: Range
+
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents a parsed hash directive
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
         ident: string *
-        args: string list *
+        args: ParsedHashDirectiveArgument list *
         range: range
 
 /// Represents the syntax tree for the contents of a parsed implementation file

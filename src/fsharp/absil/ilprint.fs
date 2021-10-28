@@ -6,7 +6,6 @@ open System.IO
 open System.Reflection
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Library
 
 open FSharp.Compiler.AbstractIL.AsciiConstants
@@ -109,7 +108,7 @@ let output_array sep f os (a:_ []) =
       for i in 0..a.Length-2 do
         f os a.[i]
         output_string os sep
-      f os (a.[a.Length - 1])
+      f os a.[a.Length - 1]
 
 let output_parens f os a = output_string os "("; f os a; output_string os ")"
 
@@ -260,13 +259,13 @@ and output_arr_bounds os = function
   | ILArrayShape l ->
       output_seq ", "
           (fun os -> function
-            | (None, None)  -> output_string os ""
-            | (None, Some sz) ->
+            | None, None  -> output_string os ""
+            | None, Some sz ->
                 output_int os sz
-            | (Some lower, None) ->
+            | Some lower, None ->
                 output_int os lower
                 output_string os " ... "
-            | (Some lower, Some d) ->
+            | Some lower, Some d ->
                 output_int os lower
                 output_string os " ... "
                 output_int os d)
@@ -584,7 +583,7 @@ let goutput_freevar env os l =
 let goutput_freevars env os ps =
   output_parens (output_seq ", " (goutput_freevar env)) os ps
 
-let output_source os (s:ILSourceMarker) =
+let output_source os (s:ILDebugPoint) =
   if s.Document.File <> "" then
     output_string os " .line "
     output_int os s.Line
@@ -635,13 +634,13 @@ let rec goutput_instr env os inst =
       output_after_tailcall os tl
   | I_ldarg u16 -> output_string os "ldarg"; output_short_u16 os u16
   | I_ldarga  u16 -> output_string os "ldarga "; output_u16 os u16
-  | (AI_ldc (dt, ILConst.I4 x)) ->
+  | AI_ldc (dt, ILConst.I4 x) ->
       output_string os "ldc."; output_basic_type os dt; output_short_i32 os x
-  | (AI_ldc (dt, ILConst.I8 x)) ->
+  | AI_ldc (dt, ILConst.I8 x) ->
       output_string os "ldc."; output_basic_type os dt; output_string os " "; output_i64 os x
-  | (AI_ldc (dt, ILConst.R4 x)) ->
+  | AI_ldc (dt, ILConst.R4 x) ->
       output_string os "ldc."; output_basic_type os dt; output_string os " "; output_ieee32 os x
-  | (AI_ldc (dt, ILConst.R8 x)) ->
+  | AI_ldc (dt, ILConst.R8 x) ->
       output_string os "ldc."; output_basic_type os dt; output_string os " "; output_ieee64 os x
   | I_ldftn mspec -> output_string os "ldftn "; goutput_mspec env os mspec
   | I_ldvirtftn mspec -> output_string os "ldvirtftn "; goutput_mspec env os mspec
@@ -730,7 +729,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(typ, shape))
         output_string os ".ctor"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
   | I_stelem_any (shape, dt)     ->
       if shape = ILArrayShape.SingleDimensional then
         output_string os "stelem.any "; goutput_typ env os dt
@@ -752,7 +751,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok, shape))
         output_string os "Get"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
   | I_ldelema   (ro, _, shape, tok)  ->
       if ro = ReadonlyAddress then output_string os "readonly. "
       if shape = ILArrayShape.SingleDimensional then
@@ -764,7 +763,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok, shape))
         output_string os "Address"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
 
   | I_box       tok     -> output_string os "box "; goutput_typ env os tok
   | I_unbox     tok     -> output_string os "unbox "; goutput_typ env os tok
@@ -830,7 +829,7 @@ let goutput_mdef env os (md:ILMethodDef) =
       elif md.IsStatic then
             "static " +
             (match md.Body with
-              MethodBody.PInvoke (attrLazy) ->
+              MethodBody.PInvoke attrLazy ->
                 let attr = attrLazy.Value
                 "pinvokeimpl(\"" + attr.Where.Name + "\" as \"" + attr.Name + "\"" +
                 (match attr.CallingConv with
@@ -1063,8 +1062,8 @@ let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
   try
     let env = mk_ppenv ilg
     let env = ppenv_enter_modul env
-    goutput_tdefs false ([]) env os modul.TypeDefs
-    goutput_tdefs true ([]) env os modul.TypeDefs
+    goutput_tdefs false [] env os modul.TypeDefs
+    goutput_tdefs true [] env os modul.TypeDefs
   with e ->
     output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush()
     reraise()

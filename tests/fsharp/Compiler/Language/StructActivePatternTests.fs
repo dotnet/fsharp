@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Compiler.Diagnostics
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<TestFixture>]
 module StructActivePatternTests =

@@ -3,7 +3,7 @@ open System
 open System.IO
 open FSharp.Compiler.Interactive.Shell
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<Collection("SingleThreaded")>]
 module FsiTests =
@@ -532,15 +532,15 @@ module FsiTests =
         inherit FSharpFunc<int, int>()
         override _.Invoke x = x
 
-    type ``Test2FSharp @ Func``() =
+    type Test2FSharpInheritFunc() =
         inherit TestFSharpFunc()
 
     [<Fact>]
     let ``Creation of a bound value succeeds if the value is a type that inherits FSharpFunc`` () =
         use fsiSession = createFsiSession ()
 
-        fsiSession.AddBoundValue("test", ``Test2FSharp @ Func``())
+        fsiSession.AddBoundValue("test", Test2FSharpInheritFunc())
 
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-        Assert.shouldBe typeof<``Test2FSharp @ Func``> boundValue.Value.ReflectionType
+        Assert.shouldBe typeof<Test2FSharpInheritFunc> boundValue.Value.ReflectionType

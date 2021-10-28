@@ -5,12 +5,17 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);44;45;54;55;57;61;62;69;65;75;1204;2003;NU5125</NoWarn>
+    <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
+    <NoWarn>$(NoWarn);57</NoWarn> <!-- Experimental -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
+    <NoWarn>$(NoWarn);NU5125</NoWarn>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --maxerrors:20 --extraoptimizationloops:1 --times</OtherFlags>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --extraoptimizationloops:1 --times</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
@@ -59,6 +64,7 @@
     <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,7 +79,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -110,18 +116,6 @@
     </Compile>
     <Compile Include="..\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
     <Compile Include="..\utils\ResizeArray.fsi">
       <Link>Utilities\ResizeArray.fsi</Link>
@@ -201,6 +195,12 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
+    <Compile Include="..\block.fsi">
+      <Link>Utilities\block.fsi</Link>
+    </Compile>
+    <Compile Include="..\block.fs">
+      <Link>Utilities\block.fs</Link>
+    </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
     </Compile>
@@ -245,6 +245,18 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fsi">
+      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fs">
+      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fsi">
+      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fs">
+      <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
     <FsLex Include="..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -401,7 +413,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <None Include="..\pplex.fsl">
@@ -668,6 +680,12 @@
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerStateMachines.fsi">
+      <Link>Optimize\LowerStateMachines.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerStateMachines.fs">
+      <Link>Optimize\LowerStateMachines.fs</Link>
+    </Compile>
     <Compile Include="..\autobox.fsi">
       <Link>Optimize\autobox.fsi</Link>
     </Compile>
@@ -700,6 +718,12 @@
     </Compile>
     <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
     </Compile>
     <Compile Include="..\CompilerConfig.fsi">
       <Link>Driver\CompilerConfig.fsi</Link>
@@ -799,12 +823,6 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
-    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\SemanticClassification.fsi">
@@ -825,6 +843,12 @@
 	<Compile Include="..\service\SemanticClassificationKey.fs">
 		<Link>Service/SemanticClassificationKey.fs</Link>
 	</Compile>
+	<Compile Include="..\service\FSharpSource.fsi">
+      <Link>Service/FSharpSource.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\FSharpSource.fs">
+      <Link>Service/FSharpSource.fs</Link>
+    </Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -959,7 +983,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)" />
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionProperty)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -987,6 +1011,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
 </Project>

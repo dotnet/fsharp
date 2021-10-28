@@ -1130,7 +1130,7 @@ module internal VsMocks =
 
     // peekhole to IVsTrackProjectDocuments2 - allows to receive notifications about removed files
     type public IVsTrackProjectDocuments2Listener = 
-        abstract member OnAfterRemoveFiles : IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
+        abstract member OnAfterRemoveFiles: IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
 
 
     let vsTrackProjectDocuments2 = 

@@ -39,7 +39,7 @@ type ResolveDependenciesResult =
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member Roots: seq<string>
 
-[<DependencyManagerAttribute>]
+[<DependencyManager>]
 type FSharpDependencyManager =
     new: outputDirectory:string option -> FSharpDependencyManager
 

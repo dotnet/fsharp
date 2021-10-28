@@ -1,6 +1,6 @@
 // #Regression #NoMT #FSI 
 // Public fields did not print.
-//<Expects status="success">val it : PublicField = FSI_0002+PublicField \{X = 2;
+//<Expects status="success">val it: PublicField = FSI_0002+PublicField \{X = 2;
 //                                             Y = 1;\}</Expects>
 [<Struct>]
 type PublicField = 

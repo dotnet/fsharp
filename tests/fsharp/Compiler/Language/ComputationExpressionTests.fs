@@ -1,7 +1,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]

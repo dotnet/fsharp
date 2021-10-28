@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Test.Assert
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Assert
-open FSharp.Test.Utilities.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -20,11 +19,12 @@ open System.Text.RegularExpressions
 
 
 module rec Compiler =
+    type BaselineFile = { FilePath: string; Content: string option }
 
     type Baseline =
         { SourceFilename: string option
-          OutputBaseline: string option
-          ILBaseline:     string option }
+          OutputBaseline: BaselineFile
+          ILBaseline:     BaselineFile }
 
     type TestType =
         | Text of string
@@ -213,6 +213,9 @@ module rec Compiler =
     let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:5.0" ] "withLangVersion50 is only supported on F#" cUnit
 
+    let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -367,7 +370,8 @@ module rec Compiler =
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
-        let parseResults = CompilerAssert.Parse source
+        let fileName = if fsSource.SourceKind = SourceKind.Fsx then "test.fsx" else "test.fs"
+        let parseResults = CompilerAssert.Parse(source, fileName = fileName)
         let failed = parseResults.ParseHadErrors
 
         let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
@@ -442,12 +446,14 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
+        | Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                printfn "---------output-------\n%s\n-------"  output
+                printfn "---------errors-------\n%s\n-------"  errors
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     Success executionResult
@@ -516,17 +522,15 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
-        match baseline.SourceFilename with
-        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
-        | _ -> ()
+    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
+        FileSystem.OpenFileForWriteShim(baselineFile.FilePath + ".err").Write(actualErrors)
 
     let private verifyFSBaseline (fs) : unit =
         match fs.Baseline with
         | None -> failwith "Baseline was not provided."
         | Some bsl ->
             let errorsExpectedBaseLine =
-                match bsl.OutputBaseline with
+                match bsl.OutputBaseline.Content with
                 | Some b -> b.Replace("\r\n","\n")
                 | None ->  String.Empty
 
@@ -535,7 +539,7 @@ module rec Compiler =
             let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
-                createBaselineErrors bsl errorsActual "fs.bsl.err"
+                createBaselineErrors bsl.OutputBaseline errorsActual
 
             Assert.AreEqual(errorsExpectedBaseLine, errorsActual)
 
@@ -563,13 +567,13 @@ module rec Compiler =
                 | None -> failwith "Operation didn't produce any output!"
                 | Some p ->
                     let expectedIL =
-                        match bsl.ILBaseline with
+                        match bsl.ILBaseline.Content with
                         | Some b -> b.Replace("\r\n","\n")
                         | None ->  String.Empty
                     let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
-                        createBaselineErrors bsl actualIL "fs.il.err"
+                        createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
@@ -611,13 +615,15 @@ module rec Compiler =
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-
+            
             let inline checkEqual k a b =
              if a <> b then
                  Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+            // For lists longer than 100 errors:
+            errors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count"  expected.Length errors.Length
+            checkEqual "Errors count" expected.Length errors.Length
 
             (errors, expected)
             ||> List.iter2 (fun actualError expectedError ->
@@ -637,7 +643,13 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Diagnostics)
+                let message = 
+                    [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
+                      match r.Output with
+                      | Some (ExecutionOutput output) ->
+                          sprintf "----output-----\n%s\n----error-------\n%s\n----------" output.StdOut output.StdErr
+                      | _ -> () ]
+                    |> String.concat "\n"
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =
@@ -717,7 +729,7 @@ module rec Compiler =
             match result with
             | Success r | Failure r ->
                 if not <| diagnosticMatches pattern r.Diagnostics then
-                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
+                    failwithf "Expected diagnostic message pattern was not found in compilation diagnostics.\nDiagnostics:\n%A" r.Diagnostics
             result
 
         let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =

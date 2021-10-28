@@ -3,8 +3,6 @@
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal FSharp.Compiler.Features
 
-open System
-
 //------------------------------------------------------------------------------------------------------------------
 // Language version command line switch
 //------------------------------------------------------------------------------------------------------------------
@@ -21,6 +19,7 @@ type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
+    | RelaxWhitespace2
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration
@@ -29,18 +28,26 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | AdditionalTypeDirectedConversions
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
     | StructActivePattern
     | PrintfBinaryFormat
+    | IndexerNotationWithoutDot
+    | RefCellNotationInformationals
+    | UseBindingValueDiscard
+    | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
+    | MLCompatRevisions
 
 /// LanguageVersion management
-type LanguageVersion (specifiedVersionAsString) =
+type LanguageVersion (versionText) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -76,15 +83,26 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
+            LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
+            LanguageFeature.RelaxWhitespace2, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
+            LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
+            LanguageFeature.IndexerNotationWithoutDot, previewVersion
+            LanguageFeature.RefCellNotationInformationals, previewVersion
+            LanguageFeature.UseBindingValueDiscard, previewVersion
+            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
+            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
+            LanguageFeature.MLCompatRevisions,previewVersion
         ]
 
+    static let defaultLanguageVersion = LanguageVersion("default")
+
     let specified =
-        match specifiedVersionAsString with
+        match versionText with
         | "?" -> 0m
         | "preview" -> previewVersion
         | "default" -> defaultVersion
@@ -108,6 +126,14 @@ type LanguageVersion (specifiedVersionAsString) =
         | false, _ -> false
 
     /// Has preview been explicitly specified
+    member _.IsExplicitlySpecifiedAs50OrBefore() =
+        match versionText with
+        | "4.6" -> true
+        | "4.7" -> true
+        | "5.0" -> true
+        | _ -> false
+
+    /// Has preview been explicitly specified
     member _.IsPreviewEnabled =
         specified = previewVersion
 
@@ -127,6 +153,9 @@ type LanguageVersion (specifiedVersionAsString) =
                 sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
 
+    /// Get the text used to specify the version
+    member _.VersionText = versionText
+
     /// Get the specified LanguageVersion
     member _.SpecifiedVersion = specified
 
@@ -139,6 +168,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop()
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
+        | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
         | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration()
@@ -147,18 +177,35 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
+        | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions()
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
+        | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot()
+        | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals()
+        | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
+        | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
+        | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
+        | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
+
+    override x.Equals(yobj: obj) =
+        match yobj with 
+        | :? LanguageVersion as y -> x.SpecifiedVersion = y.SpecifiedVersion
+        | _ -> false
+
+    override x.GetHashCode() = hash x.SpecifiedVersion
+
+    static member Default = defaultLanguageVersion

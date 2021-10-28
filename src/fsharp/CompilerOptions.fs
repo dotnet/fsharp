@@ -8,17 +8,13 @@ open System
 open System.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
@@ -82,7 +78,7 @@ let FilterCompilerOptionBlock pred block =
 let compilerOptionUsage (CompilerOption(s, tag, spec, _, _)) =
     let s = if s="--" then "" else s (* s="flag" for "--flag" options. s="--" for "--" option. Adjust printing here for "--" case. *)
     match spec with
-    | (OptionUnit _ | OptionSet _ | OptionClear _ | OptionHelp _) -> sprintf "--%s" s
+    | OptionUnit _ | OptionSet _ | OptionClear _ | OptionHelp _ -> sprintf "--%s" s
     | OptionStringList _ -> sprintf "--%s:%s" s tag
     | OptionIntList _ -> sprintf "--%s:%s" s tag
     | OptionSwitch _ -> sprintf "--%s[+|-]" s
@@ -99,7 +95,7 @@ let PrintCompilerOption (CompilerOption(_s, _tag, _spec, _, help) as compilerOpt
     let defaultLineWidth = 80 // the fallback width
     let lineWidth =
         try
-            System.Console.BufferWidth
+            Console.BufferWidth
         with e -> defaultLineWidth
     let lineWidth = if lineWidth=0 then defaultLineWidth else lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
     // Lines have this form: <flagWidth><space><description>
@@ -249,7 +245,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
   let rec processArg args =
     match args with
     | [] -> ()
-    | ((rsp: string) :: t) when rsp.StartsWithOrdinal("@") ->
+    | rsp: string :: t when rsp.StartsWithOrdinal("@") ->
         let responseFileOptions =
             let fullpath =
                 try
@@ -287,51 +283,51 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
         let rec attempt l =
           match l with
-          | (CompilerOption(s, _, OptionHelp f, d, _) :: _) when optToken = s  && argString = "" ->
+          | CompilerOption(s, _, OptionHelp f, d, _) :: _ when optToken = s  && argString = "" ->
               reportDeprecatedOption d
               f blocks; t
-          | (CompilerOption(s, _, OptionUnit f, d, _) :: _) when optToken = s  && argString = "" ->
+          | CompilerOption(s, _, OptionUnit f, d, _) :: _ when optToken = s  && argString = "" ->
               reportDeprecatedOption d
               f (); t
-          | (CompilerOption(s, _, OptionSwitch f, d, _) :: _) when getSwitchOpt optToken = s && argString = "" ->
+          | CompilerOption(s, _, OptionSwitch f, d, _) :: _ when getSwitchOpt optToken = s && argString = "" ->
               reportDeprecatedOption d
               f (getSwitch opt); t
-          | (CompilerOption(s, _, OptionSet f, d, _) :: _) when optToken = s && argString = "" ->
+          | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := true; t
-          | (CompilerOption(s, _, OptionClear f, d, _) :: _) when optToken = s && argString = "" ->
+              f.Value <- true; t
+          | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := false; t
-          | (CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _) when optToken = s ->
+              f.Value <- false; t
+          | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (getOptionArg compilerOption oa)
               t
-          | (CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (try int32 oa with _ ->
                       errorR(Error(FSComp.SR.buildArgInvalidInt(getOptionArg compilerOption argString), rangeCmdArgs)); 0)
               t
-          | (CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
                   f (try float oa with _ ->
                       errorR(Error(FSComp.SR.buildArgInvalidFloat(getOptionArg compilerOption argString), rangeCmdArgs)); 0.0)
               t
-          | (CompilerOption(s, _, OptionRest f, d, _) :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionRest f, d, _) :: _ when optToken = s ->
               reportDeprecatedOption d
               List.iter f t; []
-          | (CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0)) al
               t
-          | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s ->
+          | CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
@@ -339,28 +335,28 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                   List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0) switch) al
               t
               // here
-          | (CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _) when optToken = s ->
+          | CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   List.iter f (getOptionArgList compilerOption argString)
               t
-          | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s ->
+          | CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _ when getSwitchOpt optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   let switch = getSwitch opt
                   List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
               t
-          | (CompilerOption(_, _, OptionGeneral (pred, exec), d, _) :: _) when pred args ->
+          | CompilerOption(_, _, OptionGeneral (pred, exec), d, _) :: _ when pred args ->
               reportDeprecatedOption d
               let rest = exec args in rest // arguments taken, rest remaining
-          | (_ :: more) -> attempt more
+          | _ :: more -> attempt more
           | [] ->
               if opt.Length = 0 || opt.[0] = '-' || isSlashOpt opt
                then
                   // want the whole opt token - delimiter and all
-                  let unrecOpt = (opt.Split([|':'|]).[0])
+                  let unrecOpt = opt.Split([|':'|]).[0]
                   errorR(Error(FSComp.SR.buildUnrecognizedOption unrecOpt, rangeCmdArgs))
                   t
               else
@@ -386,7 +382,7 @@ let setFlag r n =
 let SetOptimizeOff(tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 0 }
     tcConfigB.doDetuple <- false
     tcConfigB.doTLR <- false
@@ -395,7 +391,7 @@ let SetOptimizeOff(tcConfigB: TcConfigBuilder) =
 let SetOptimizeOn(tcConfigB: TcConfigBuilder) =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
     tcConfigB.doDetuple <- true
     tcConfigB.doTLR <- true
@@ -424,7 +420,7 @@ let localoptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some (switch = OptionSwitch.On) }
 
 let crossOptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some (switch = OptionSwitch.On) }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some (switch = OptionSwitch.On) }
 
 let splittingSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with abstractBigTargets = switch = OptionSwitch.On }
@@ -439,7 +435,7 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
     let fail() = error(Error(FSComp.SR.optsInvalidSubSystemVersion text, rangeCmdArgs))
 
     // per spec for 357994: Validate input string, should be two positive integers x.y when x>=4 and y>=0 and both <= 65535
-    if System.String.IsNullOrEmpty text then
+    if String.IsNullOrEmpty text then
        fail()
     else
         match text.Split('.') with
@@ -544,7 +540,7 @@ let tagLangVersionValues = "{?|version|latest|preview}"
 let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  jitOptUser . . . . . . : %+A" tcConfigB.optSettings.jitOptUser
     printfn "  localOptUser . . . . . : %+A" tcConfigB.optSettings.localOptUser
-    printfn "  crossModuleOptUser . . : %+A" tcConfigB.optSettings.crossModuleOptUser
+    printfn "  crossAssemblyOptimizationUser . . : %+A" tcConfigB.optSettings.crossAssemblyOptimizationUser
     printfn "  lambdaInlineThreshold  : %+A" tcConfigB.optSettings.lambdaInlineThreshold
     printfn "  ignoreSymStoreSeqPts . : %+A" tcConfigB.ignoreSymbolStoreSequencePoints
     printfn "  doDetuple  . . . . . . : %+A" tcConfigB.doDetuple
@@ -840,9 +836,9 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some (FSComp.SR.optsMlcompatibility()))
 
 /// LanguageVersion management
-let setLanguageVersion (specifiedVersion) =
+let setLanguageVersion specifiedVersion =
 
-    let languageVersion = new LanguageVersion(specifiedVersion)
+    let languageVersion = LanguageVersion(specifiedVersion)
     let dumpAllowedValues () =
         printfn "%s" (FSComp.SR.optsSupportedLangVersions())
         for v in languageVersion.ValidOptions do printfn "%s" v
@@ -883,7 +879,7 @@ let codePageFlag (tcConfigB: TcConfigBuilder) =
          OptionInt (fun n ->
             try
                 System.Text.Encoding.GetEncoding n |> ignore
-            with :? System.ArgumentException as err ->
+            with :? ArgumentException as err ->
                 error(Error(FSComp.SR.optsProblemWithCodepage(n, err.Message), rangeCmdArgs))
 
             tcConfigB.inputCodePage <- Some n), None,
@@ -1110,7 +1106,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption
        ("stackReserveSize", tagNone,
         OptionString (fun s -> tcConfigB.stackReserveSize <- Some(int32 s)),
-        Some(InternalCommandLineOption("--stackReserveSize", rangeCmdArgs)), Some ("for an exe, set stack reserve size"))
+        Some(InternalCommandLineOption("--stackReserveSize", rangeCmdArgs)), Some "for an exe, set stack reserve size")
 
     CompilerOption
        ("tlr", tagInt,
@@ -1139,9 +1135,14 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("tokenize", tagNone,
-        OptionUnit (fun () -> tcConfigB.tokenizeOnly <- true),
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Only),
         Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)), None)
 
+    CompilerOption
+       ("tokenize-unfiltered", tagNone,
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Unfiltered),
+        Some(InternalCommandLineOption("--tokenize-unfiltered", rangeCmdArgs)), None)
+    
     CompilerOption
        ("testInteractionParser", tagNone,
         OptionUnit (fun () -> tcConfigB.testInteractionParser <- true),
@@ -1323,12 +1324,12 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("jit-tracking", tagNone,
-        OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ),
+        OptionUnit (fun _ -> tcConfigB.jitTracking <- true ),
         Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
 
     CompilerOption
        ("no-jit-tracking", tagNone,
-        OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ),
+        OptionUnit (fun _ -> tcConfigB.jitTracking <- false ),
         Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
 
     CompilerOption
@@ -1358,12 +1359,12 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("cross-optimize", tagNone,
-        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }),
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some true }),
         Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
 
     CompilerOption
        ("no-cross-optimize", tagNone,
-        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }),
+        OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossAssemblyOptimizationUser = Some false }),
         Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
 
     CompilerOption
@@ -1629,7 +1630,7 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let filename = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header).GetWriter()
+            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else
@@ -1650,27 +1651,27 @@ let ReportTime (tcConfig:TcConfig) descr =
     | Some prevDescr ->
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
-            System.Console.ReadLine() |> ignore
+            Console.ReadLine() |> ignore
         // Intentionally putting this right after the pause so a debugger can be attached.
         match tcConfig.simulateException with
-        | Some("fsc-oom") -> raise(System.OutOfMemoryException())
-        | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
-        | Some("fsc-invop") -> raise(System.InvalidOperationException())
-        | Some("fsc-av") -> raise(System.AccessViolationException())
-        | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
-        | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-        | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-        | Some("fsc-oe") -> raise(System.OverflowException())
-        | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
-        | Some("fsc-bif") -> raise(System.BadImageFormatException())
+        | Some("fsc-oom") -> raise(OutOfMemoryException())
+        | Some("fsc-an") -> raise(ArgumentNullException("simulated"))
+        | Some("fsc-invop") -> raise(InvalidOperationException())
+        | Some("fsc-av") -> raise(AccessViolationException())
+        | Some("fsc-aor") -> raise(ArgumentOutOfRangeException())
+        | Some("fsc-dv0") -> raise(DivideByZeroException())
+        | Some("fsc-nfn") -> raise(NotFiniteNumberException())
+        | Some("fsc-oe") -> raise(OverflowException())
+        | Some("fsc-atmm") -> raise(ArrayTypeMismatchException())
+        | Some("fsc-bif") -> raise(BadImageFormatException())
         | Some("fsc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
-        | Some("fsc-ior") -> raise(System.IndexOutOfRangeException())
-        | Some("fsc-ic") -> raise(System.InvalidCastException())
-        | Some("fsc-ip") -> raise(System.InvalidProgramException())
-        | Some("fsc-ma") -> raise(System.MemberAccessException())
-        | Some("fsc-ni") -> raise(System.NotImplementedException())
-        | Some("fsc-nr") -> raise(System.NullReferenceException())
-        | Some("fsc-oc") -> raise(System.OperationCanceledException())
+        | Some("fsc-ior") -> raise(IndexOutOfRangeException())
+        | Some("fsc-ic") -> raise(InvalidCastException())
+        | Some("fsc-ip") -> raise(InvalidProgramException())
+        | Some("fsc-ma") -> raise(MemberAccessException())
+        | Some("fsc-ni") -> raise(NotImplementedException())
+        | Some("fsc-nr") -> raise(NullReferenceException())
+        | Some("fsc-oc") -> raise(OperationCanceledException())
         | Some("fsc-fail") -> failwith "simulated"
         | _ -> ()
 
@@ -1681,14 +1682,14 @@ let ReportTime (tcConfig:TcConfig) descr =
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let timeNow = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-        let maxGen = System.GC.MaxGeneration
-        let gcNow = [| for i in 0 .. maxGen -> System.GC.CollectionCount i |]
+        let maxGen = GC.MaxGeneration
+        let gcNow = [| for i in 0 .. maxGen -> GC.CollectionCount i |]
         let ptime = System.Diagnostics.Process.GetCurrentProcess()
         let wsNow = ptime.WorkingSet64/1000000L
 
         match tPrev, nPrev with
         | Some (timePrev, gcPrev:int []), Some prevDescr ->
-            let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount i - gcPrev.[i] |]
+            let spanGC = [| for i in 0 .. maxGen -> GC.CollectionCount i - gcPrev.[i] |]
             dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d"
                 timeNow (timeNow - timePrev)
                 wsNow

@@ -6,7 +6,7 @@ open System
 open System.Text
 
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
@@ -69,8 +69,7 @@ type public HashIfExpression() =
         CompileThreadStatic.ErrorLogger <- errorLogger
 
         let parser (s : string) =
-            let isFeatureSupported (_featureId:LanguageFeature) = true
-            let lexbuf          = LexBuffer<char>.FromChars (true, isFeatureSupported, s.ToCharArray ())
+            let lexbuf          = LexBuffer<char>.FromChars (true, LanguageVersion.Default, s.ToCharArray ())
             lexbuf.StartPos     <- startPos
             lexbuf.EndPos       <- startPos
             let tokenStream     = PPLexer.tokenstream args

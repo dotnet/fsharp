@@ -46,10 +46,10 @@ val InitialImplicitCtorInfo: unit -> CtorInfo
 [<NoEquality; NoComparison>]
 type UngeneralizableItem
 
-[<NoEquality; NoComparison>]
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
+[<NoEquality; NoComparison>]
 type TcEnv =
     { /// Name resolution information 
       eNameResEnv: NameResolutionEnv 
@@ -98,10 +98,13 @@ type TcEnv =
       eCtorInfo: CtorInfo option
 
       eCallerMemberName: string option
+
+      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
+      eLambdaArgInfos: ArgReprInfo list list
     } 
 
     member DisplayEnv : DisplayEnv
-    member NameEnv : NameResolution.NameResolutionEnv
+    member NameEnv : NameResolutionEnv
     member AccessRights : AccessorDomain
 
 //-------------------------------------------------------------------------
@@ -112,7 +115,7 @@ type TcEnv =
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range * bool
 exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -175,11 +178,8 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
+      mutable recUses: ValMultiMap<Expr ref * range * bool>
       
-      /// Checks to run after all inference is complete. 
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -187,7 +187,7 @@ type TcFileState =
       isScript: bool 
 
       /// Environment needed to convert IL types to F# types in the importer. 
-      amap: Import.ImportMap 
+      amap: ImportMap 
 
       /// Used to generate new syntactic argument names in post-parse syntactic processing
       synArgNameGenerator: SynArgNameGenerator
@@ -224,11 +224,13 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+
       // forward call 
-      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      TcComputationExpression: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
     static member Create: 
         g: TcGlobals *
@@ -243,11 +245,11 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         // forward call to CheckComputationExpressions.fs
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
-        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
-        tcComputationExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) 
+        tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) 
          -> TcFileState
 
 /// Represents information about the module or type in which a member or value is declared.
@@ -508,7 +510,7 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: g: TcGlobals -> NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: g: TcGlobals -> TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
 val AddLocalValPrimitive: g: TcGlobals -> v: Val -> TcEnv -> TcEnv
@@ -597,7 +599,7 @@ val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: Paren
 val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
-val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<(Val * TypeScheme)> * NameMap<Val>
+val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<Val * TypeScheme> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option
@@ -649,28 +651,37 @@ val TcAttributesCanFail: cenv:TcFileState -> env:TcEnv -> attrTgt:AttributeTarge
 val TcAttributesWithPossibleTargets: canFail: bool -> cenv: TcFileState -> env: TcEnv -> attrTgt: AttributeTargets -> synAttribs: SynAttribute list -> (AttributeTargets * Attrib) list * bool
 
 /// Check a constant value, e.g. a literal
-val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
+val TcConst: cenv: TcFileState -> overallTy: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
 
 /// Check a syntactic expression and convert it to a typed tree expression
-val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExpr: cenv:TcFileState -> ty:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+val RewriteRangeExpr: expr: SynExpr -> SynExpr option
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    
 
 /// Check a syntactic expression and convert it to a typed tree expression. Possibly allow for subsumption flexibility
 /// and insert a coercion if necessary.
-val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> e:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> desiredTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Process a leaf construct where the actual type of that construct is already pre-known,
+/// and the overall type can be eagerly propagated into the actual type, including pre-calculating
+/// any type-directed conversion.
+val TcPropagatingExprLeafThenConvert: cenv:TcFileState -> overallTy: OverallTy -> actualTy: TType -> env: TcEnv -> m: range  -> f: (unit -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
 
 /// Check a syntactic statement and convert it to a typed tree expression.
 val TcStmtThatCantBeCtorBody: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a syntactic expression and convert it to a typed tree expression
-val TcExprUndelayed: cenv:TcFileState -> overallTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
+val TcExprUndelayed: cenv:TcFileState -> overallTy:OverallTy -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
 
 /// Check a linear expression (e.g. a sequence of 'let') in a tail-recursive way
 /// and convert it to a typed tree expression, using the bodyChecker to check the parts
 /// that are not linear.
-val TcLinearExprs: bodyChecker:(TType -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:TType -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
+val TcLinearExprs: bodyChecker:(OverallTy -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:OverallTy -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
 
 /// Try to check a syntactic statement and indicate if it's type is not unit without emitting a warning
 val TryTcStmt: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> bool * Expr * UnscopedTyparEnv    

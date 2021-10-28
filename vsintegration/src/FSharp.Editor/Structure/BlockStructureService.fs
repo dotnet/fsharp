@@ -23,7 +23,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Attribute
@@ -49,7 +49,6 @@ module internal BlockStructure =
         | Scope.IfThenElse-> FSharpBlockTypes.Conditional
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.SpecialFunc
         | Scope.Lambda
@@ -84,7 +83,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Type
@@ -104,7 +103,6 @@ module internal BlockStructure =
         | Scope.IfThenElse
         | Scope.Tuple
         | Scope.ArrayOrList
-        | Scope.CompExprInternal
         | Scope.Quote
         | Scope.Lambda
         | Scope.LetOrUseBang
@@ -141,18 +139,15 @@ module internal BlockStructure =
 open BlockStructure
  
 [<Export(typeof<IFSharpBlockStructureService>)>]
-type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
-        
-    static let userOpName = "FSharpBlockStructure"
+type internal FSharpBlockStructureService [<ImportingConstructor>] () =
 
     interface IFSharpBlockStructureService with
  
         member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName)
-                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpBlockStructureService)) |> liftAsync
+                return createBlockSpans document.Project.IsFSharpBlockStructureEnabled sourceText parseResults.ParseTree |> Seq.toImmutableArray
             } 
             |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
             |> Async.map FSharpBlockStructure

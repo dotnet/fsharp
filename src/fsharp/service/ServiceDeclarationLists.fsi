@@ -8,9 +8,9 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.AccessibilityLogic
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -88,25 +88,28 @@ type internal CompletionItem =
     }
     member Item: Item
 
-[<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
-// Note: this type holds a weak reference to compiler resources. 
+// Note: this type holds a weak reference to compiler resources.
+[<Sealed>]
 type public DeclarationListItem =
-    /// Get the display name for the declaration.
+    /// Get the text to display in the declaration list for the declaration.
     member Name: string
 
-    /// Get the name for the declaration as it's presented in source code.
+    /// Get the text for the declaration as it's to be inserted into source code.
     member NameInCode: string
 
     /// Get the description
     member Description: ToolTipText
 
+    /// Get the glyph to use
     member Glyph: FSharpGlyph
 
+    /// Get the accessibility of the item
     member Accessibility: FSharpAccessibility
 
+    /// Get the completion kind of the item
     member Kind: CompletionItemKind
 
     member IsOwnMember: bool
@@ -120,11 +123,11 @@ type public DeclarationListItem =
     member NamespaceToOpen: string option
 
 
-[<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
-// Note: this type holds a weak reference to compiler resources. 
+// Note: this type holds a weak reference to compiler resources.
+[<Sealed>]
 type public DeclarationListInfo =
 
     member Items: DeclarationListItem[]
@@ -136,6 +139,7 @@ type public DeclarationListInfo =
     // Implementation details used by other code in the compiler    
     static member internal Create:
         infoReader:InfoReader * 
+        ad:AccessorDomain *
         m:range * 
         denv:DisplayEnv * 
         getAccessibility:(Item -> FSharpAccessibility) * 
@@ -203,10 +207,10 @@ type public MethodGroup =
     /// The methods (or other items) in the group
     member Methods: MethodGroupItem[] 
 
-    static member internal Create: InfoReader * range * DisplayEnv * ItemWithInst list -> MethodGroup
+    static member internal Create: InfoReader * AccessorDomain * range * DisplayEnv * ItemWithInst list -> MethodGroup
 
 module internal DeclarationListHelpers =
-    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
+    val FormatStructuredDescriptionOfItem: isDecl:bool -> InfoReader -> AccessorDomain -> range -> DisplayEnv -> ItemWithInst -> ToolTipElement
 
     val RemoveDuplicateCompletionItems: TcGlobals -> CompletionItem list -> CompletionItem list
 

@@ -7,8 +7,8 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
 open Internal.Utilities.Rational
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -77,7 +77,7 @@ type MatchBuilder =
     member AddTarget: DecisionTreeTarget -> int
 
     /// Add a new destination target that is an expression result
-    member AddResultTarget: Expr * DebugPointForTarget -> DecisionTree
+    member AddResultTarget: Expr * DebugPointAtTarget -> DecisionTree
 
     /// Finish the targets
     member CloseTargets: unit -> DecisionTreeTarget list
@@ -86,13 +86,13 @@ type MatchBuilder =
     member Close: DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val mkBoolSwitch: DebugPointAtSwitch -> range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond: DebugPointAtBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond: DebugPointAtBinding -> DebugPointAtTarget -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond: DebugPointAtBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond: DebugPointAtBinding -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -659,7 +659,7 @@ val tryTcrefOfAppTy: TcGlobals -> TType -> ValueOption<TyconRef>
 
 val tryDestTyparTy: TcGlobals -> TType -> ValueOption<Typar>
 
-val tryDestFunTy: TcGlobals -> TType -> ValueOption<(TType * TType)>
+val tryDestFunTy: TcGlobals -> TType -> ValueOption<TType * TType>
 
 val tryDestAnonRecdTy: TcGlobals -> TType -> ValueOption<AnonRecdTypeInfo * TType list>
 
@@ -994,7 +994,7 @@ type DisplayEnv =
       escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout: (Val -> Layout option)
+      generatedValueLayout: Val -> Layout option
       genericParameterStyle: GenericParameterStyle }
 
     member SetOpenPaths: string list list -> DisplayEnv
@@ -1255,7 +1255,7 @@ val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> boo
 val remarkExpr: range -> Expr -> Expr
  
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments
-val primMkApp: (Expr * TType) -> TypeInst -> Exprs -> range -> Expr
+val primMkApp: Expr * TType -> TypeInst -> Exprs -> range -> Expr
 
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments.
 /// Reduce the application via let-bindings if the function value is a lambda expression.
@@ -1309,7 +1309,12 @@ val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
 val AdjustArityOfLambdaBody: TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
 /// Make an application expression, doing beta reduction by introducing let-bindings
+/// if the function expression is a construction of a lambda
 val MakeApplicationAndBetaReduce: TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
+
+/// Make a delegate invoke expression for an F# delegate type, doing beta reduction by introducing let-bindings
+/// if the delegate expression is a construction of a delegate.
+val MakeFSharpDelegateInvokeAndTryBetaReduce: TcGlobals -> invokeRef: Expr * f: Expr * fty: TType * tyargs: TypeInst * argsl: Exprs * m: range -> Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1422,6 +1427,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Determine if a type is a value option type
+val isValueOptionTy: TcGlobals -> TType -> bool
+
 /// Determine if a type is an option type
 val isOptionTy: TcGlobals -> TType -> bool
 
@@ -1430,6 +1438,9 @@ val destOptionTy: TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Try to take apart an option type
+val destValueOptionTy: TcGlobals -> TType -> TType
 
 /// Determine is a type is a System.Nullable type
 val isNullableTy: TcGlobals -> TType -> bool
@@ -1541,6 +1552,9 @@ val isInterfaceTyconRef: TyconRef -> bool
 
 /// Determine if a type is a delegate type
 val isDelegateTy: TcGlobals -> TType -> bool
+
+/// Determine if a type is a delegate type defined in F# 
+val isFSharpDelegateTy: TcGlobals -> TType -> bool
 
 /// Determine if a type is an interface type
 val isInterfaceTy: TcGlobals -> TType -> bool
@@ -1750,7 +1764,15 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
-val mkCompGenSequential: range -> Expr -> Expr -> Expr
+val mkThenDoSequential: DebugPointAtSequential -> range -> expr: Expr -> stmt: Expr -> Expr
+
+/// This is used for tacking on code _before_ the expression. The SuppressStmt
+/// setting is used for debug points, suppressing the debug points for the statement if possible.
+val mkCompGenSequential: range -> stmt: Expr -> expr: Expr -> Expr
+
+/// This is used for tacking on code _after_ the expression. The SuppressStmt
+/// setting is used for debug points, suppressing the debug points for the statement if possible.
+val mkCompGenThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
 val mkSequentials: DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 
@@ -2145,6 +2167,7 @@ val TryFindInternalsVisibleToAttr: ILAttribute -> string option
 val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
 
 val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
+
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
 
 
@@ -2307,6 +2330,8 @@ type ExprRewritingEnv =
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
       IsUnderQuotations: bool }    
 
+val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
+
 val RewriteExpr: ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile: ExprRewritingEnv -> TypedImplFile -> TypedImplFile
@@ -2383,13 +2408,13 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
+val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType) option
 
-val rebuildLinearMatchExpr: (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
+val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
-val rebuildLinearOpExpr: (TOp * TypeInst * Expr list * Expr * range) -> Expr
+val rebuildLinearOpExpr: TOp * TypeInst * Expr list * Expr * range -> Expr
 
 val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
@@ -2397,7 +2422,7 @@ val (|InnerExprPat|): Expr -> Expr
 
 val allValsOfModDef: ModuleOrNamespaceExpr -> seq<Val>
 
-val BindUnitVars: TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr
+val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
@@ -2424,7 +2449,31 @@ val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 /// Match expressions that are an application of a particular F# function value
 val (|ValApp|_|): TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
+/// Match expressions that represent the creation of an instance of an F# delegate value
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Unique * Val list list * Expr * range * (Expr -> Expr)) option
+
+/// Match a .Invoke on a delegate
+val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * TypeInst * Expr * Exprs * range) option
+
+/// Match 'if __useResumableCode then ... else ...' expressions
+val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
+
 val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
+/// Recognise a 'match __resumableEntry() with ...' expression
+val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
+
+/// Recognise a '__stateMachine' expression
+val (|StructStateMachineExpr|_|): 
+    g: TcGlobals -> 
+    expr: Expr -> 
+        (TType * (Val * Expr) * (Val * Val * Expr) *  (Val * Expr)) option
+
+/// Recognise a sequential or binding construct in a resumable code
+val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
+
+/// Recognise a '__resumeAt' expression
+val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr option
 
 /// Recognise a while expression
 val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
@@ -2441,6 +2490,12 @@ val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType
 /// Add a label to use as the target for a goto
 val mkLabelled: range -> ILCodeLabel -> Expr -> Expr 
 
+/// Any delegate type with ResumableCode attribute, or any function returning such a delegate type
+val isResumableCodeTy: TcGlobals -> TType -> bool
+
+/// The delegate type ResumableCode, or any function returning this a delegate type
+val isReturnsResumableCodeTy: TcGlobals -> TType -> bool
+
 /// Shared helper for binding attributes
 val TryBindTyconRefAttribute:
     g:TcGlobals ->
@@ -2451,3 +2506,26 @@ val TryBindTyconRefAttribute:
     f2:(Attrib -> 'a option) ->
     f3:(obj option list * (string * obj option) list -> 'a option) 
     -> 'a option
+
+val (|ResumableCodeInvoke|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+       (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option    
+
+val (|OpPipeRight|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * range) option
+
+val (|OpPipeRight2|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * Expr * range) option
+
+val (|OpPipeRight3|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * Expr * Expr * range) option
+
+/// This uses 'expr thendo ()' with a note that there should be a debug point on the 'expr'
+val mkDebugPoint: g: TcGlobals -> m: range -> expr: Expr -> Expr

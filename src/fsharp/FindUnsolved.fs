@@ -170,14 +170,14 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
     match x with 
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
-    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
+    | TDSwitch (_, e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
 and accSwitch cenv env (e, cases, dflt, _m) =
     accExpr cenv env e
@@ -253,11 +253,12 @@ and accModuleOrNamespaceDefs cenv env x =
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(_, tycons, mbinds, _m) -> 
+    | TMDefRec(_, _opens, tycons, mbinds, _m) -> 
         accTycons cenv env tycons
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind, _m)  -> accBind cenv env bind 
     | TMDefDo(e, _m)  -> accExpr cenv env e
+    | TMDefOpens __ -> ()
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 

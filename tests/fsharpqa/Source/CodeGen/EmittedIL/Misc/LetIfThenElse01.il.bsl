@@ -36,13 +36,13 @@
   // Offset: 0x000001E0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {60B68B7F-BE5A-D8FD-A745-03837F8BB660}
+// MVID: {611C4D7C-BE5A-D8FD-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AF0000
+// Image base: 0x06920000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,7 +54,7 @@
   .method public static class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 
           F<a>(!!a y) cil managed
   {
-    // Code size       124 (0x7c)
+    // Code size       128 (0x80)
     .maxstack  6
     .locals init ([0] int32 x1,
              [1] valuetype [mscorlib]System.DateTime V_1,
@@ -66,95 +66,103 @@
              [7] valuetype [mscorlib]System.DateTime V_7)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 6,6 : 12,51 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\LetIfThenElse01.fs'
-    IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0005:  stloc.1
-    IL_0006:  ldloca.s   V_1
-    IL_0008:  call       instance int32 [mscorlib]System.DateTime::get_Year()
-    IL_000d:  ldc.i4     0x7d0
-    IL_0012:  ble.s      IL_0018
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
+    IL_0006:  stloc.1
+    IL_0007:  ldloca.s   V_1
+    IL_0009:  call       instance int32 [mscorlib]System.DateTime::get_Year()
+    IL_000e:  ldc.i4     0x7d0
+    IL_0013:  ble.s      IL_0019
 
     .line 6,6 : 52,53 ''
-    IL_0014:  ldc.i4.1
+    IL_0015:  ldc.i4.1
     .line 100001,100001 : 0,0 ''
-    IL_0015:  nop
-    IL_0016:  br.s       IL_001a
+    IL_0016:  nop
+    IL_0017:  br.s       IL_001b
 
     .line 6,6 : 59,60 ''
-    IL_0018:  ldc.i4.2
+    IL_0019:  ldc.i4.2
     .line 100001,100001 : 0,0 ''
-    IL_0019:  nop
+    IL_001a:  nop
     .line 100001,100001 : 0,0 ''
-    IL_001a:  stloc.0
+    IL_001b:  stloc.0
     .line 7,7 : 12,51 ''
-    IL_001b:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0020:  stloc.3
-    IL_0021:  ldloca.s   V_3
-    IL_0023:  call       instance int32 [mscorlib]System.DateTime::get_Year()
-    IL_0028:  ldc.i4     0x7d0
-    IL_002d:  ble.s      IL_0033
+    IL_001c:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_001d:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
+    IL_0022:  stloc.3
+    IL_0023:  ldloca.s   V_3
+    IL_0025:  call       instance int32 [mscorlib]System.DateTime::get_Year()
+    IL_002a:  ldc.i4     0x7d0
+    IL_002f:  ble.s      IL_0035
 
     .line 7,7 : 52,53 ''
-    IL_002f:  ldc.i4.1
+    IL_0031:  ldc.i4.1
     .line 100001,100001 : 0,0 ''
-    IL_0030:  nop
-    IL_0031:  br.s       IL_0035
+    IL_0032:  nop
+    IL_0033:  br.s       IL_0037
 
     .line 7,7 : 59,60 ''
-    IL_0033:  ldc.i4.2
+    IL_0035:  ldc.i4.2
     .line 100001,100001 : 0,0 ''
-    IL_0034:  nop
+    IL_0036:  nop
     .line 100001,100001 : 0,0 ''
-    IL_0035:  stloc.2
+    IL_0037:  stloc.2
     .line 8,8 : 12,51 ''
-    IL_0036:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_003b:  stloc.s    V_5
-    IL_003d:  ldloca.s   V_5
-    IL_003f:  call       instance int32 [mscorlib]System.DateTime::get_Year()
-    IL_0044:  ldc.i4     0x7d0
-    IL_0049:  bge.s      IL_004f
+    IL_0038:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0039:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
+    IL_003e:  stloc.s    V_5
+    IL_0040:  ldloca.s   V_5
+    IL_0042:  call       instance int32 [mscorlib]System.DateTime::get_Year()
+    IL_0047:  ldc.i4     0x7d0
+    IL_004c:  bge.s      IL_0052
 
     .line 8,8 : 52,53 ''
-    IL_004b:  ldc.i4.1
+    IL_004e:  ldc.i4.1
     .line 100001,100001 : 0,0 ''
-    IL_004c:  nop
-    IL_004d:  br.s       IL_0051
+    IL_004f:  nop
+    IL_0050:  br.s       IL_0054
 
     .line 8,8 : 59,60 ''
-    IL_004f:  ldc.i4.2
+    IL_0052:  ldc.i4.2
     .line 100001,100001 : 0,0 ''
-    IL_0050:  nop
+    IL_0053:  nop
     .line 100001,100001 : 0,0 ''
-    IL_0051:  stloc.s    x2
+    IL_0054:  stloc.s    x2
     .line 9,9 : 12,51 ''
-    IL_0053:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
-    IL_0058:  stloc.s    V_7
-    IL_005a:  ldloca.s   V_7
-    IL_005c:  call       instance int32 [mscorlib]System.DateTime::get_Year()
-    IL_0061:  ldc.i4     0x7d0
-    IL_0066:  bge.s      IL_006c
+    IL_0056:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0057:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
+    IL_005c:  stloc.s    V_7
+    IL_005e:  ldloca.s   V_7
+    IL_0060:  call       instance int32 [mscorlib]System.DateTime::get_Year()
+    IL_0065:  ldc.i4     0x7d0
+    IL_006a:  bge.s      IL_0070
 
     .line 9,9 : 52,53 ''
-    IL_0068:  ldc.i4.1
-    .line 100001,100001 : 0,0 ''
-    IL_0069:  nop
-    IL_006a:  br.s       IL_006e
-
-    .line 9,9 : 59,60 ''
-    IL_006c:  ldc.i4.2
+    IL_006c:  ldc.i4.1
     .line 100001,100001 : 0,0 ''
     IL_006d:  nop
+    IL_006e:  br.s       IL_0072
+
+    .line 9,9 : 59,60 ''
+    IL_0070:  ldc.i4.2
     .line 100001,100001 : 0,0 ''
-    IL_006e:  stloc.s    y2
+    IL_0071:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0072:  stloc.s    y2
     .line 10,10 : 3,14 ''
-    IL_0070:  ldloc.0
-    IL_0071:  ldloc.2
-    IL_0072:  ldloc.s    x2
-    IL_0074:  ldloc.s    y2
-    IL_0076:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
+    IL_0074:  ldloc.0
+    IL_0075:  ldloc.2
+    IL_0076:  ldloc.s    x2
+    IL_0078:  ldloc.s    y2
+    IL_007a:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
                                                                                                       !1,
                                                                                                       !2,
                                                                                                       !3)
-    IL_007b:  ret
+    IL_007f:  ret
   } // end of method LetIfThenElse01::F
 
 } // end of class LetIfThenElse01
@@ -171,12 +179,13 @@
     .entrypoint
     // Code size       10 (0xa)
     .maxstack  3
-    .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_0,
+    .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> 'Pipe #1 input at line 12',
              [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1)
-    .line 12,12 : 1,15 ''
+    .line 12,12 : 1,5 ''
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [mscorlib]System.Tuple`4<int32,int32,int32,int32> LetIfThenElse01::F<int32>(!!0)
     IL_0006:  stloc.0
+    .line 12,12 : 9,15 ''
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
     IL_0009:  ret

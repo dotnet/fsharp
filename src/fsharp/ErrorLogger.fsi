@@ -8,7 +8,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 
 /// Represents the style being used to format errors
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccess>]
 type ErrorStyle =
     | DefaultErrors
     | EmacsErrors
@@ -79,7 +79,7 @@ type Exiter =
 val QuitProcessExiter: Exiter
 
 /// Closed enumeration of build phases.
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccess>]
 type BuildPhase =
     | DefaultPhase
     | Compile
@@ -95,18 +95,18 @@ type BuildPhase =
 
 /// Literal build phase subcategory strings.
 module BuildPhaseSubcategory =
-    [<LiteralAttribute>] val DefaultPhase: string = ""
-    [<LiteralAttribute>] val Compile: string = "compile"
-    [<LiteralAttribute>] val Parameter: string = "parameter"
-    [<LiteralAttribute>] val Parse: string = "parse"
-    [<LiteralAttribute>] val TypeCheck: string = "typecheck"
-    [<LiteralAttribute>] val CodeGen: string = "codegen"
-    [<LiteralAttribute>] val Optimize: string = "optimize"
-    [<LiteralAttribute>] val IlxGen: string = "ilxgen"
-    [<LiteralAttribute>] val IlGen: string = "ilgen"
-    [<LiteralAttribute>] val Output: string = "output"
-    [<LiteralAttribute>] val Interactive: string = "interactive"
-    [<LiteralAttribute>] val Internal: string = "internal"
+    [<Literal>] val DefaultPhase: string = ""
+    [<Literal>] val Compile: string = "compile"
+    [<Literal>] val Parameter: string = "parameter"
+    [<Literal>] val Parse: string = "parse"
+    [<Literal>] val TypeCheck: string = "typecheck"
+    [<Literal>] val CodeGen: string = "codegen"
+    [<Literal>] val Optimize: string = "optimize"
+    [<Literal>] val IlxGen: string = "ilxgen"
+    [<Literal>] val IlGen: string = "ilgen"
+    [<Literal>] val Output: string = "output"
+    [<Literal>] val Interactive: string = "interactive"
+    [<Literal>] val Internal: string = "internal"
 
 type PhasedDiagnostic =
     { Exception: exn
@@ -131,7 +131,7 @@ type PhasedDiagnostic =
     ///
     member Subcategory: unit -> string
   
-[<AbstractClass()>]
+[<AbstractClass>]
 type ErrorLogger =
 
     new: nameForDebugging:string -> ErrorLogger
@@ -189,20 +189,26 @@ module ErrorLoggerExtensions =
         member ErrorRecoveryNoRange: exn:exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushThreadBuildPhaseUntilUnwind: phase:BuildPhase -> System.IDisposable
+val PushThreadBuildPhaseUntilUnwind: phase:BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushErrorLoggerPhaseUntilUnwind: errorLoggerTransformer:(ErrorLogger -> #ErrorLogger) -> System.IDisposable
+val PushErrorLoggerPhaseUntilUnwind: errorLoggerTransformer:(ErrorLogger -> #ErrorLogger) -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase:BuildPhase -> unit
 
 val SetThreadErrorLoggerNoUnwind: errorLogger:ErrorLogger -> unit
 
+/// Reports an error diagnostic and continues
 val errorR: exn:exn -> unit
 
+/// Reports a warning diagnostic
 val warning: exn:exn -> unit
 
+/// Reports an error and raises a ReportedError exception
 val error: exn:exn -> 'a
+
+/// Reports an informational diagnostic
+val informationalWarning: exn:exn -> unit
 
 val simulateError: p:PhasedDiagnostic -> 'a
 
@@ -228,14 +234,16 @@ val libraryOnlyWarning: m:range -> unit
 
 val deprecatedOperator: m:range -> unit
 
-val mlCompatWarning: s:System.String -> m:range -> unit
+val mlCompatWarning: s:string -> m:range -> unit
+
+val mlCompatError: s:string -> m:range -> unit
 
 val suppressErrorReporting: f:(unit -> 'a) -> 'a
 
 val conditionallySuppressErrorReporting: cond:bool -> f:(unit -> 'a) -> 'a
 
 /// The result type of a computational modality to colelct warnings and possibly fail
-[<NoEqualityAttribute (); NoComparisonAttribute>]
+[<NoEquality; NoComparison>]
 type OperationResult<'T> =
     | OkResult of warnings: exn list * 'T
     | ErrorResult of warnings: exn list * exn
@@ -256,7 +264,7 @@ val CompleteD: OperationResult<unit>
 
 val ResultD: x:'a -> OperationResult<'a>
 
-val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> exn list option
+val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> (exn list * 'a) option
 
 val ( ++ ): res:OperationResult<'a> -> f:('a -> OperationResult<'b>) -> OperationResult<'b>
 
@@ -302,7 +310,13 @@ val TryD: f:(unit -> OperationResult<'a>) -> g:(exn -> OperationResult<'a>) -> O
 
 val RepeatWhileD: nDeep:int -> body:(int -> OperationResult<bool>) -> OperationResult<unit>
 
-val AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+val inline AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+
+val inline AtLeastOne2D: f:('a -> 'b -> OperationResult<bool>) -> xs:'a list -> ys:'b list -> OperationResult<bool>
+
+val inline MapReduceD: mapper:('a -> OperationResult<'b>) -> zero: 'b -> reducer: ('b -> 'b -> 'b) -> l:'a list -> OperationResult<'b>
+
+val inline MapReduce2D: mapper:('a -> 'b -> OperationResult<'c>) -> zero: 'c -> reducer: ('c -> 'c -> 'c) -> xs:'a list -> ys:'b list -> OperationResult<'c>
 
 module OperationResult =
     val inline ignore: res:OperationResult<'a> -> OperationResult<unit>

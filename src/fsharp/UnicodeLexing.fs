@@ -8,18 +8,18 @@ open Internal.Utilities.Text.Lexing
 
 type Lexbuf =  LexBuffer<char>
 
-let StringAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, s: string) =
-    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, supportsFeature, s.ToCharArray())
+let StringAsLexbuf (reportLibraryOnlyFeatures, langVersion, s: string) =
+    LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, s.ToCharArray())
 
-let FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, bufferFiller) =
-    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, supportsFeature, bufferFiller)
+let FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, bufferFiller) =
+    LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, langVersion, bufferFiller)
 
-let SourceTextAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, sourceText) =
-    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, supportsFeature, sourceText)
+let SourceTextAsLexbuf (reportLibraryOnlyFeatures, langVersion, sourceText) =
+    LexBuffer<char>.FromSourceText(reportLibraryOnlyFeatures, langVersion, sourceText)
 
-let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, reader: StreamReader) =
+let StreamReaderAsLexbuf (reportLibraryOnlyFeatures, langVersion, reader: StreamReader) =
     let mutable isFinished = false
-    FunctionAsLexbuf (reportLibraryOnlyFeatures, supportsFeature, fun (chars, start, length) ->
+    FunctionAsLexbuf (reportLibraryOnlyFeatures, langVersion, fun (chars, start, length) ->
         if isFinished then 0
         else
             let nBytesRead = reader.Read(chars, start, length)

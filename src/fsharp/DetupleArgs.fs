@@ -288,7 +288,7 @@ module GlobalUsageAnalysis =
           let context = []
           recognise context origExpr
 
-      let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
+      let targetIntercept exprF z = function TTarget(_argvs, body, _, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
       
       {ExprFolder0 with
@@ -300,7 +300,6 @@ module GlobalUsageAnalysis =
          tmethodIntercept = tmethodIntercept
       }
 
-
     //-------------------------------------------------------------------------
     // GlobalUsageAnalysis - entry point
     //-------------------------------------------------------------------------
@@ -309,7 +308,6 @@ module GlobalUsageAnalysis =
         let folder = UsageFolders g
         let z = FoldImplFile folder z0 expr
         z
-
 
 let internalError str = raise(Failure(str))
 
@@ -392,7 +390,7 @@ let rec minimalCallPattern callPattern =
         match minimalCallPattern tss with
         | []  -> []              (* drop trailing UnknownTS *)
         | tss -> UnknownTS :: tss (* non triv tss tail *)
-    | (TupleTS ts) :: tss -> TupleTS ts :: minimalCallPattern tss
+    | TupleTS ts :: tss -> TupleTS ts :: minimalCallPattern tss
 
 /// Combines a list of callpatterns into one common callpattern.
 let commonCallPattern callPatterns =
@@ -692,7 +690,7 @@ let rec collapseArg env bindings ts (x: Expr) =
         let bindings, xs = buildProjections env bindings x xtys
         collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
-and collapseArgs env bindings n (callPattern) args =
+and collapseArgs env bindings n callPattern args =
     match callPattern, args with
     | [], args        -> bindings, args
     | ts :: tss, arg :: args -> 
@@ -715,7 +713,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
 
     // Is it a val app, where the val has a transform? 
     match fx with
-    | Expr.Val (vref, _, m) -> 
+    | Expr.Val (vref, _, vm) -> 
         let f = vref.Deref
         match hasTransfrom penv f with
         | Some trans -> 
@@ -723,7 +721,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
             let callPattern       = trans.transformCallPattern 
             let transformedVal       = trans.transformedVal         
             let fCty     = transformedVal.Type
-            let fCx      = exprForVal m transformedVal
+            let fCx      = exprForVal vm transformedVal
             (* [[f tps args ]] -> transformedVal tps [[COLLAPSED: args]] *)
             let env      = {prefix = "arg";m = m;eg=penv.g}
             let bindings = []

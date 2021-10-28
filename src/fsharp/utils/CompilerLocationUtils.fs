@@ -7,8 +7,11 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.Win32
 open Microsoft.FSharp.Core
+
+#if !FX_NO_WIN_REGISTRY
+open Microsoft.Win32
+#endif
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
@@ -37,7 +40,7 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+    let isRunningOnCoreClr = typeof<obj>.Assembly.FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
 
 #if !FX_NO_WIN_REGISTRY
@@ -59,7 +62,7 @@ module internal FSharpEnvironment =
     // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0".
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
-    let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+    let maxDataLength = (System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
 #if !FX_NO_WIN_REGISTRY
     let KEY_WOW64_DEFAULT = 0x0000
@@ -199,8 +202,12 @@ module internal FSharpEnvironment =
             match probePoint with
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p
             | _ ->
-                    // For the prototype compiler, we can just use the current domain
-                    tryCurrentDomain()
+                let fallback() =
+                    let d = Assembly.GetExecutingAssembly()
+                    Some (Path.GetDirectoryName d.Location)
+                match tryCurrentDomain() with
+                | None -> fallback()
+                | Some path -> Some path
         with e -> None
 
 #if !FX_NO_WIN_REGISTRY
@@ -253,9 +260,9 @@ module internal FSharpEnvironment =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [| "net48"; "net472"; "net471";"net47";"net462";"net461"; "net452"; "net451"; "net45"; "netstandard2.0" |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
-            [| "net5.0"; "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
+            [| "net6.0"; "net5.0"; "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
         else
-            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
 
     let toolPaths = [| "tools"; "typeproviders" |]
@@ -336,7 +343,7 @@ module internal FSharpEnvironment =
                 // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
                 try
                     let name = AssemblyName designTimeAssemblyName
-                    Some (Assembly.Load (name))
+                    Some (Assembly.Load name)
                 with e ->
                     raiseError None e
 
@@ -346,24 +353,35 @@ module internal FSharpEnvironment =
     let getFSharpCoreLibraryName = "FSharp.Core"
     let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
 
-    let getFSharpCompilerLocation() =
-        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-        match BinFolderOfDefaultFSharpCompiler (Some location) with
+    let getFSharpCompilerLocationWithDefaultFromType (defaultLocation: Type) =
+        let location =
+            try
+                Some (Path.GetDirectoryName(defaultLocation.Assembly.Location))
+            with | _ ->
+                None
+        match BinFolderOfDefaultFSharpCompiler (location) with
         | Some path -> path
         | None ->
+            let path = location |> Option.defaultValue "<null>"
     #if DEBUG
             Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
                 customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
-                location)
+                path)
     #endif
             // Use the location of this dll
-            location
+            path
 
-    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
-    let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
+    // Fallback to ambient FSharp.CompilerService.dll
+    let getFSharpCompilerLocation() = Path.Combine(getFSharpCompilerLocationWithDefaultFromType(typeof<TypeInThisAssembly>));
+
+    // Fallback to ambient FSharp.Core.dll
+    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocationWithDefaultFromType(typeof<Unit>), getFSharpCoreLibraryName + ".dll")
+
+    // Must be alongside the location of FSharp.CompilerService.dll
+    let getDefaultFsiLibraryLocation() = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation()), fsiLibraryName + ".dll")
 
     // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
+    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(getFSharpCompilerLocation()), "Tools")
 
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -371,10 +389,7 @@ module internal FSharpEnvironment =
 
     let fileExists pathToFile =
         try
-            if File.Exists(pathToFile) then
-                true
-            else
-                false
+            File.Exists(pathToFile)
         with | _ -> false
 
     // Look for global install of dotnet sdk
