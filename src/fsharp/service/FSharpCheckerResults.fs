@@ -1240,6 +1240,17 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
                 ToolTipText [ToolTipElement.CompositionError err])
 
+    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, m: range) =
+        let (nenv, accessorDomain), _ = GetBestEnvForPos m.Start
+        let denv = nenv.DisplayEnv
+
+        let item = symbol.Item
+        let inst = inst |> List.map (fun (typar, t) -> typar.TypeParameter, t.Type)
+        let itemWithInst = { ItemWithInst.Item = item; ItemWithInst.TyparInst = inst }
+
+        let toolTipElement = FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst
+        ToolTipText [toolTipElement]
+
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
         let Compute() =
@@ -1917,10 +1928,10 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
     member _.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
 
 
-[<Sealed>]
 /// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
 //
 // Note: objects returned by the methods of this type do not require the corresponding background builder to be alive.
+[<Sealed>]
 type FSharpCheckFileResults
         (filename: string,
          errors: FSharpDiagnostic[],
@@ -1970,6 +1981,10 @@ type FSharpCheckFileResults
                 scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ ->
             dflt
+
+    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
+        threadSafeOp (fun () -> ToolTipText []) (fun scope ->
+            scope.GetDescription(symbol, inst, displayFullName, range))
 
     member _.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->

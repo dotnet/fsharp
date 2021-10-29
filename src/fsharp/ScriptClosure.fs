@@ -471,7 +471,7 @@ module ScriptPreprocessClosure =
 type LoadClosure with
     /// Analyze a script text and find the closure of its references.
     /// Used from FCS, when editing a script file.
-    //
+    ///
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText

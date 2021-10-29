@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Test
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
 [<TestFixture>]
 module LargeExprTests =
 
@@ -991,9 +992,6 @@ let main _ = 0
             """
 
     [<Test>]
-#if NETCOREAPP
-    [<Ignore("SKIPPED: https://github.com/dotnet/runtime/issues/47663")>]
-#endif
     let LargeRecordWithStringFieldsDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -5518,3 +5516,4 @@ let test () : unit =
 test ()
 """
         CompilerAssert.RunScript source []
+#endif

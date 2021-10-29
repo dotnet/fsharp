@@ -2762,8 +2762,10 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
     [<Test>]
     let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+#endif
 
     [<Test>]
     let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"
@@ -3022,12 +3024,6 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
-
-    [<Test>]
-    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg131"
-
-    [<Test>]
-    let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

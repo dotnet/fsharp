@@ -132,9 +132,9 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName isListItem ppF fnF r = 
+    let OutputFullName displayFullName ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
-      if not isListItem then 
+      if not displayFullName then 
         match ppF r with 
         | None -> emptyL
         | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
@@ -145,7 +145,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -153,11 +153,11 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
             let resL = toArray resL
@@ -198,7 +198,7 @@ module DeclarationListHelpers =
             let tau = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
@@ -215,7 +215,7 @@ module DeclarationListHelpers =
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv infoReader ecref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -373,7 +373,7 @@ module DeclarationListHelpers =
                             // be shown in the tip.
                             showDocumentation = false  }
             let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
             let layout = toArray layout
             let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
@@ -445,7 +445,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader ad m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
         |  _ -> 
             ToolTipElement.None
@@ -456,8 +456,8 @@ module DeclarationListHelpers =
             (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-/// Represents one parameter for one method (or other item) in a group. 
 type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.

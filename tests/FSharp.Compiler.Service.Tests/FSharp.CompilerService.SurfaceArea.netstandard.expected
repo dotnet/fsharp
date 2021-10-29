@@ -1951,6 +1951,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.FindDeclResult GetDeclarationLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_PartialAssemblySignature()
@@ -1995,10 +1996,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.CodeAnalysis.FSharpP
 FSharp.Compiler.CodeAnalysis.FSharpChecker: FSharp.Compiler.Tokenization.FSharpTokenInfo[][] TokenizeFile(System.String)
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualCheckFileCount
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 ActualParseFileCount
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 MaxMemory
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualCheckFileCount()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_ActualParseFileCount()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Int32 get_MaxMemory()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer] CheckFileInProject(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults] ParseAndCheckProject(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2019,8 +2018,6 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.Diagnostics.FSharpDiagnostic[],System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.Assembly]]] CompileToDynamicAssembly(System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.IO.TextWriter,System.IO.TextWriter]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions],FSharp.Compiler.CodeAnalysis.FSharpProjectOptions] ProjectChecked
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions],FSharp.Compiler.CodeAnalysis.FSharpProjectOptions] get_ProjectChecked()
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] MaxMemoryReached
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit] get_MaxMemoryReached()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] BeforeBackgroundFileCheck
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] FileChecked
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.IEvent`2[Microsoft.FSharp.Control.FSharpHandler`1[System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]],System.Tuple`2[System.String,FSharp.Compiler.CodeAnalysis.FSharpProjectOptions]] FileParsed
@@ -2036,7 +2033,6 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearCache(System.Collections.G
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
@@ -4032,9 +4028,9 @@ FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[S
 FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.DefaultFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.DefaultFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetFullPathShim(System.String)
@@ -4063,9 +4059,9 @@ FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.
 FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.IFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
+FSharp.Compiler.IO.IFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullFilePathInDirectoryShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.String GetFullPathShim(System.String)
@@ -10474,6 +10470,8 @@ FSharp.Compiler.Xml.PreXmlDoc
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(FSharp.Compiler.Xml.PreXmlDoc)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.PreXmlDoc: Boolean IsEmpty
+FSharp.Compiler.Xml.PreXmlDoc: Boolean get_IsEmpty()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Empty
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Merge(FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Xml.PreXmlDoc)

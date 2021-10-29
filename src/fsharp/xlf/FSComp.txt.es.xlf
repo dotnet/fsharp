@@ -1,15 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSComp.resx">
     <body>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">No se reconoce la extensión de archivo de '{0}'. Los archivos de código fuente deben tener las extensiones .fs, .fsi, .fsx o .fsscript. Para habilitar el uso en desuso de las extensiones .ml o .mli, use '--langversion:5.0' y '--mlcompatibility'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <target state="translated">No se reconoce la extensión de archivo de '{0}'. Los archivos de código fuente deben tener las extensiones .fs, .fsi, .fsx o .fsscript</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
-        <target state="new">ML compatibility revisions</target>
+        <target state="translated">Revisiones de compatibilidad de ML</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -307,6 +307,11 @@
         <target state="translated">El atributo "InlineIfLambda" está presente en la firma, pero no en la implementación.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">El comentario XML no está situado en un elemento válido del lenguaje.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Palabra clave para especificar un literal de constante como argumento de parámetro de tipo en los proveedores de tipo.</target>
@@ -319,7 +324,7 @@
       </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
+        <target state="translated">Ya no se admiten las regiones IF-FSHARP/IF-CAML</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -339,37 +344,37 @@
       </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">Esta construcción está en desuso. {0}. Puede habilitar esta característica usando '--langversion:5.0' y '--mlcompatibility'.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <target state="translated">En versiones anteriores de F# '{0}' era una palabra clave reservada, pero el uso de esta palabra clave ahora está en desuso</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
         <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">El uso de '#light \"off\"' o '#indent \"off\"' quedó en desuso en F# 2.0 y ya no se admite</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
         <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">El uso de varios parámetros de tipo entre paréntesis antes de un nombre de tipo genérico como '(int, int) Map' quedó en desuso en F# 2.0 y ya no se admite</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigColonNoLongerSupported">
         <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">El uso del 'módulo M: sig... end ' quedó en desuso en F# 2.0 y ya no se admite. Cambie ':' por '=', quite 'sig' y 'end' y use sangría en su lugar.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigEndNoLongerSupported">
         <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">El uso de 'module M = sig... end ' quedó en desuso en F# 2.0 y ya no se admite. Quite "sig" y "end" y use la sangría en su lugar.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatStructEndNoLongerSupported">
         <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <target state="translated">El uso de 'module M = struct... end ' quedó en desuso en F# 2.0 y ya no se admite. Quite 'struct' y 'end' y use sangría en su lugar.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -460,6 +465,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Token inesperado en la definición de tipo. Se esperaba "=" después del tipo "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Este acceso de miembro es ambiguo. Use paréntesis alrededor de la creación del objeto, por ejemplo, '(nuevo AlgúnTipo(args)).NombreMiembro'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -4309,7 +4319,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
+        <target state="translated">Una declaración solo puede ser el atributo [&lt;Literal&gt;] si también se proporciona un valor constante, por ejemplo, "val x: int = 1"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

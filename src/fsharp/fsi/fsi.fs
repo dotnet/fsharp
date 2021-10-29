@@ -234,9 +234,9 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
     member x.Symbol = symbolUse.Symbol
     member x.ImplementationDeclaration = decl
 
-[<AbstractClass>]
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
+[<AbstractClass>]
 type FsiEvaluationSessionHostConfig () =
     let evaluationEvent = Event<EvaluationEventArgs>()
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -940,7 +940,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
     /// When using a key-reading console this holds the first line after it is read
     let mutable firstLine = None
 
-    /// Peek on the standard input so that the user can type into it from a console window.
+    // Peek on the standard input so that the user can type into it from a console window.
     do if fsiOptions.Interact then
          if fsiOptions.PeekAheadOnConsoleToPermitTyping then
           (Thread(fun () ->
@@ -1416,7 +1416,7 @@ type internal FsiDynamicCompiler
                  let infoReader = InfoReader(istate.tcGlobals, istate.tcImports.GetImportMap())
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, infoReader, istate.emEnv, istate.ilxGenerator, vref)
 
-             /// Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
+             // Clear the value held in the previous "it" binding, if any, as long as it has never been referenced.
              match prevIt with
              | Some prevVal when not prevVal.Deref.HasBeenReferenced ->
                  istate.ilxGenerator.ClearGeneratedValue (valuePrinter.GetEvaluationContext istate.emEnv, prevVal.Deref)

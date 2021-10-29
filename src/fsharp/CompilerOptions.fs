@@ -294,10 +294,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               f (getSwitch opt); t
           | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := true; t
+              f.Value <- true; t
           | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := false; t
+              f.Value <- false; t
           | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString

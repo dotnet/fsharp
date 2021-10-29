@@ -2,6 +2,7 @@
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.Text
 open NUnit.Framework
 
 [<Test>]
@@ -134,6 +135,19 @@ match () with
              SynPat.Named _, _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
+
+[<Test>]
+let ``Match clause 08 - Range`` () =
+    let parseResults = getParseResults """
+match () with
+| a
+b
+"""
+    match getSingleModuleMemberDecls parseResults with
+    | [ SynModuleDecl.DoExpr (_, (SynExpr.Match _ as m), _); SynModuleDecl.DoExpr (_, (SynExpr.Ident _ as i), _) ] ->
+        Assert.True(Position.posLt m.Range.End i.Range.Start)
+    | _ -> failwith "Unexpected tree"
+
 
 [<Test>]
 let ``Let - Parameter - Paren 01`` () =

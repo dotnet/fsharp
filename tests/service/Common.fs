@@ -381,6 +381,9 @@ let getParseResultsOfSignatureFile (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
 
+let getParseAndCheckResultsOfSignatureFile (source: string) =
+    parseAndCheckScript("/home/user/Test.fsi", source)
+
 let getParseAndCheckResultsPreview (source: string) =
     parseAndCheckScriptPreview("/home/user/Test.fsx", source)
 
