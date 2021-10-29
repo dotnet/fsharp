@@ -777,8 +777,9 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
+        equalsRange: Range option *
         rhs: SynExpr *
-        andBangs:(DebugPointAtBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs: AndBang list *
         body:SynExpr *
         range: range 
 
@@ -939,6 +940,17 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
+
+[<NoEquality; NoComparison>]
+type AndBang =
+    | AndBang of
+        debugPoint: DebugPointAtBinding *
+        isUse: bool *
+        isFromSource: bool *
+        pat: SynPat *
+        equalsRange: Range *
+        body: SynExpr *
+        range: Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

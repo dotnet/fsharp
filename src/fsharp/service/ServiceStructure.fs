@@ -247,10 +247,10 @@ module Structure =
             | SynExpr.DoBang (e, r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, _, eLet, es, eBody, _) ->
                 [
                     yield eLet
-                    for _,_,_,_,eAndBang,_ in es do 
+                    for AndBang(body = eAndBang) in es do 
                         yield eAndBang
                 ]
                 |> List.iter (fun e ->

@@ -679,10 +679,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e2 
                       yield! walkExpr false e3 
 
-                  | SynExpr.LetOrUseBang (spBind, _, _, _, e1, es, e2, _) -> 
+                  | SynExpr.LetOrUseBang (spBind, _, _, _, _, e1, es, e2, _) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
-                      for andBangSpBind,_,_,_,eAndBang,_ in es do
+                      for AndBang(debugPoint = andBangSpBind; body = eAndBang) in es do
                           yield! walkBindSeqPt andBangSpBind
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2

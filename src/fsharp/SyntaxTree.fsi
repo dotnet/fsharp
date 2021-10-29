@@ -966,8 +966,9 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
+        equalsRange: Range option *
         rhs: SynExpr *
-        andBangs:(DebugPointAtBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs: AndBang list *
         body:SynExpr *
         range: range 
 
@@ -1052,6 +1053,17 @@ type SynExpr =
 
     /// Indicates if this expression arises from error recovery
     member IsArbExprAndThusAlreadyReportedError: bool
+
+[<NoEquality; NoComparison>]
+type AndBang =
+    | AndBang of
+        debugPoint: DebugPointAtBinding *
+        isUse: bool *
+        isFromSource: bool *
+        pat: SynPat *
+        equalsRange: Range *
+        body: SynExpr *
+        range: Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

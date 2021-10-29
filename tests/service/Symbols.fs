@@ -373,6 +373,31 @@ module SyntaxExpressions =
         | _ ->
             Assert.Fail "Could not find SynExpr.Do"
 
+    [<Test>]
+    let ``SynExpr.LetOrUseBang contains the range of the equals sign`` () =
+        let ast =
+            """
+comp {
+    let! x = y
+    and! z = someFunction ()
+    return ()
+}
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr = SynExpr.App(argExpr =
+                            SynExpr.ComputationExpr(expr =
+                                SynExpr.LetOrUseBang(equalsRange = Some mLetBangEquals
+                                                     andBangs = [ AndBang(equalsRange = mAndBangEquals) ]))))
+                    ])
+                ])) ->
+            assertRange (3, 11) (3, 12) mLetBangEquals
+            assertRange (4, 11) (4, 12) mAndBangEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+        
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

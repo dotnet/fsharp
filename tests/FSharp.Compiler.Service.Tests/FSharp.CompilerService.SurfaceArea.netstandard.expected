@@ -5123,6 +5123,25 @@ FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 GetHashCode(System.Collections.IEqua
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 Tag
 FSharp.Compiler.Symbols.FSharpXmlDoc: Int32 get_Tag()
 FSharp.Compiler.Symbols.FSharpXmlDoc: System.String ToString()
+FSharp.Compiler.Syntax.AndBang
+FSharp.Compiler.Syntax.AndBang: Boolean get_isFromSource()
+FSharp.Compiler.Syntax.AndBang: Boolean get_isUse()
+FSharp.Compiler.Syntax.AndBang: Boolean isFromSource
+FSharp.Compiler.Syntax.AndBang: Boolean isUse
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.AndBang NewAndBang(FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.DebugPointAtBinding debugPoint
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.DebugPointAtBinding get_debugPoint()
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.SynExpr body
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.SynExpr get_body()
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.SynPat get_pat()
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Syntax.SynPat pat
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Text.Range equalsRange
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Text.Range get_equalsRange()
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.AndBang: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.AndBang: Int32 Tag
+FSharp.Compiler.Syntax.AndBang: Int32 get_Tag()
+FSharp.Compiler.Syntax.AndBang: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtBinding
 FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 NoneAtDo
 FSharp.Compiler.Syntax.DebugPointAtBinding+Tags: Int32 NoneAtInvisible
@@ -6402,8 +6421,10 @@ FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Syntax.SynPat get_p
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Syntax.SynPat pat
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.Syntax.DebugPointAtBinding,System.Boolean,System.Boolean,FSharp.Compiler.Syntax.SynPat,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range]] andBangs
-FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.Syntax.DebugPointAtBinding,System.Boolean,System.Boolean,FSharp.Compiler.Syntax.SynPat,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range]] get_andBangs()
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.AndBang] andBangs
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.AndBang] get_andBangs()
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
+FSharp.Compiler.Syntax.SynExpr+LetOrUseBang: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+LibraryOnlyILAssembly: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] args
@@ -6885,7 +6906,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewJoinIn(FSharp.
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLambda(Boolean, Boolean, FSharp.Compiler.Syntax.SynSimplePats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat],FSharp.Compiler.Syntax.SynExpr]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLazy(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLetOrUse(Boolean, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLetOrUseBang(FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.Syntax.DebugPointAtBinding,System.Boolean,System.Boolean,FSharp.Compiler.Syntax.SynPat,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range]], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLetOrUseBang(FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, Boolean, FSharp.Compiler.Syntax.SynPat, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.AndBang], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLibraryOnlyILAssembly(System.Object, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLibraryOnlyStaticOptimization(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynStaticOptimizationConstraint], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewLibraryOnlyUnionCaseFieldGet(FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], Int32, FSharp.Compiler.Text.Range)

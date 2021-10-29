@@ -606,10 +606,10 @@ module ParsedInput =
             | SynExpr.Match (_, e, synMatchClauseList, _)
             | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
-            | SynExpr.LetOrUseBang(_, _, _, _, e1, es, e2, _) ->
+            | SynExpr.LetOrUseBang(_, _, _, _, _, e1, es, e2, _) ->
                 [
                     yield e1
-                    for _,_,_,_,eAndBang,_ in es do
+                    for AndBang(body = eAndBang) in es do
                         yield eAndBang
                     yield e2
                 ]
@@ -1350,10 +1350,10 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, _, e1, es, e2, _) ->
                 walkPat pat
                 walkExpr e1
-                for _,_,_,patAndBang,eAndBang,_ in es do
+                for AndBang(pat = patAndBang; body = eAndBang) in es do
                     walkPat patAndBang
                     walkExpr eAndBang
                 walkExpr e2
