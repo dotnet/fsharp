@@ -586,7 +586,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       match copyExprOpt with
                       | Some (e, _) -> yield! walkExpr true e
                       | None -> ()
-                      yield! walkExprs (fs |> List.map snd)
+                      yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
 
                   | SynExpr.ObjExpr (_, args, bs, is, _, _) -> 
                       match args with

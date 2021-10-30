@@ -4810,8 +4810,8 @@ braceBarExprCore:
      { let orig, flds = $2
        let flds = 
            flds |> List.choose (function 
-             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, e) 
-             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 3
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -4821,8 +4821,8 @@ braceBarExprCore:
        let orig, flds = $2 
        let flds = 
            flds |> List.choose (function 
-             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, e) 
-             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, mEquals, e) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, mEquals, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 2
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }

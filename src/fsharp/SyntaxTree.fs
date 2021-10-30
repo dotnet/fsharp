@@ -483,7 +483,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * SynExpr) list *
+        recordFields:(Ident * Range option * SynExpr) list *
         range: range
 
     | ArrayOrList of

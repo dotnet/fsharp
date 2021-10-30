@@ -7291,11 +7291,11 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, m
 
 // Check '{| .... |}'
 and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, unsortedFieldIdsAndSynExprsGiven, mWholeExpr) =
-    let unsortedFieldSynExprsGiven = List.map snd unsortedFieldIdsAndSynExprsGiven
+    let unsortedFieldSynExprsGiven = List.map (fun (_, _, e) -> e) unsortedFieldIdsAndSynExprsGiven
 
     match optOrigSynExpr with
     | None ->
-        let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map fst |> List.toArray
+        let unsortedFieldIds = unsortedFieldIdsAndSynExprsGiven |> List.map (fun (f, _, _) -> f) |> List.toArray
         let anonInfo, sortedFieldTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedFieldIds
 
         // Sort into canonical order
@@ -7308,7 +7308,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         let sigma = List.map fst sortedIndexedArgs |> List.toArray
         let sortedFieldExprs = List.map snd sortedIndexedArgs
 
-        sortedFieldExprs |> List.iteri (fun j (x, _) ->
+        sortedFieldExprs |> List.iteri (fun j (x, _, _) ->
             let item = Item.AnonRecdField(anonInfo, sortedFieldTys, j, x.idRange)
             CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights))
 
@@ -7355,7 +7355,7 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         ///   - Choice1Of2 for a new binding
         ///   - Choice2Of2 for a binding coming from the original expression
         let unsortedIdAndExprsAll =
-            [| for id, e in unsortedFieldIdsAndSynExprsGiven do
+            [| for id, _, e in unsortedFieldIdsAndSynExprsGiven do
                     yield (id, Choice1Of2 e)
                match tryDestAnonRecdTy cenv.g origExprTy with
                | ValueSome (anonInfo, tinst) ->

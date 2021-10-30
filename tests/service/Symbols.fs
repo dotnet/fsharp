@@ -468,6 +468,32 @@ comp {
             assertRange (4, 12) (4, 13) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExpr.AnonRecord contains the range of the equals sign in the fields`` () =
+        let ast =
+            """
+{| X = 5
+   Y    = 6
+   Z        = 7 |}
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.AnonRecd(recordFields = [
+                                (_, Some mEqualsX, _)
+                                (_, Some mEqualsY, _)
+                                (_, Some mEqualsZ, _)
+                            ]))
+                    ])
+                ])) ->
+            assertRange (2, 5) (2, 6) mEqualsX
+            assertRange (3, 8) (3, 9) mEqualsY
+            assertRange (4, 12) (4, 13) mEqualsZ
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

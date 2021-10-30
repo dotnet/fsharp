@@ -273,7 +273,7 @@ module SyntaxTraversal =
                                     None
                             )
                         | _ -> ()
-                        for _,x in synExprList do 
+                        for _, _, x in synExprList do 
                             yield dive x x.Range traverseSynExpr
                     ] |> pick expr
 
