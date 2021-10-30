@@ -77,8 +77,6 @@ type internal FSharpCompletionProvider
 
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
         
-    static let getRules showAfterCharIsTyped = if showAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
-
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list), intelliSenseOptions: IntelliSenseOptions) =
@@ -154,7 +152,7 @@ type internal FSharpCompletionProvider
                     FSharpCommonCompletionItem.Create(
                         declarationItem.Name,
                         null,
-                        rules = getRules intellisenseOptions.ShowAfterCharIsTyped,
+                        rules = noCommitOnSpaceRules,
                         glyph = Nullable glyph,
                         filterText = filterText,
                         inlineDescription = namespaceName)
