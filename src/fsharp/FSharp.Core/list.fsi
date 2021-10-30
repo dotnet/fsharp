@@ -25,14 +25,14 @@ module List =
     /// 
     /// <example id="allPairs-1">
     /// <code lang="fsharp">
-    /// let people = ["Kirk"; "Spock"; "McCoy"]
-    /// let numbers = [1;2]
+    /// let people = [ "Kirk"; "Spock"; "McCoy" ]
+    /// let numbers = [ 1; 2 ]
     ///
     /// people |> List.allPairs numbers 
     /// </code>
-    /// The sample evaluates to 
-    /// <code>
-    /// [(1, "Kirk"); (1, "Spock"); (1, "McCoy"); (2, "Kirk"); (2, "Spock"); (2, "McCoy")]
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// [ (1, "Kirk"); (1, "Spock"); (1, "McCoy"); (2, "Kirk"); (2, "Spock"); (2, "McCoy") ]
     /// </code>
     /// </example>
     [<CompiledName("AllPairs")>]
@@ -48,9 +48,13 @@ module List =
     /// 
     /// <example id="append-1">
     /// <code lang="fsharp">
-    /// List.append [1..3] [4..7]     //  evaluates [1; 2; 3; 4; 5; 6; 7]
+    /// List.append [ 1..3 ] [ 4..7 ]
     /// 
-    /// [4..7] |> List.append [1..3]  //  evaluates [1; 2; 3; 4; 5; 6; 7]
+    /// [ 4..7 ] |> List.append [ 1..3 ]
+    /// </code>
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// [ 1; 2; 3; 4; 5; 6; 7 ]
     /// </code>
     /// </example>
     [<CompiledName("Append")>]
