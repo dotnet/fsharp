@@ -774,7 +774,7 @@ module InterfaceStubGenerator =
                     List.tryPick walkExpr synExprList
 
                 | SynExpr.Record (_inheritOpt, _copyOpt, fields, _range) -> 
-                    List.tryPick (fun (_, e, _) -> Option.bind walkExpr e) fields
+                    List.tryPick (fun (RecordInstanceField(expr = e)) -> Option.bind walkExpr e) fields
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr

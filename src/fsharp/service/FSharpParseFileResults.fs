@@ -580,7 +580,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       match copyExprOpt with
                       | Some (e, _) -> yield! walkExpr true e
                       | None -> ()
-                      yield! walkExprs (fs |> List.choose p23)
+                      yield! walkExprs (fs |> List.choose (fun (RecordInstanceField(expr = e)) -> e))
 
                   | SynExpr.AnonRecd (_isStruct, copyExprOpt, fs, _) ->
                       match copyExprOpt with

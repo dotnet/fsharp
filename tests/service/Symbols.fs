@@ -397,7 +397,77 @@ comp {
             assertRange (3, 11) (3, 12) mLetBangEquals
             assertRange (4, 11) (4, 12) mAndBangEquals
         | _ -> Assert.Fail "Could not get valid AST"
-        
+
+    [<Test>]
+    let ``SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+        let ast =
+            """
+{ V = v
+  X      =   // some comment
+                someLongFunctionCall
+                    a
+                    b
+                    c }
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Record(recordFields = [
+                                RecordInstanceField(equalsRange = Some mEqualsV)
+                                RecordInstanceField(equalsRange = Some mEqualsX)
+                            ]))
+                    ])
+                ])) ->
+            assertRange (2, 4) (2, 5) mEqualsV
+            assertRange (3, 9) (3, 10) mEqualsX
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``inherit SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+        let ast =
+            """
+{ inherit Exception(msg); X = 1; }
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Record(baseInfo = Some _ ; recordFields = [
+                                RecordInstanceField(equalsRange = Some mEquals)
+                            ]))
+                    ])
+                ])) ->
+            assertRange (2, 28) (2, 29) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``copy SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+        let ast =
+            """
+{ foo with
+        X
+            =
+                12 }
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Record(copyInfo = Some _ ; recordFields = [
+                                RecordInstanceField(equalsRange = Some mEquals)
+                            ]))
+                    ])
+                ])) ->
+            assertRange (4, 12) (4, 13) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

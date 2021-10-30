@@ -400,7 +400,7 @@ module Structure =
                 match recCopy with
                 | Some (e, _) -> parseExpr e
                 | _ -> ()
-                recordFields |> List.choose (fun (_, e, _) -> e) |> List.iter parseExpr
+                recordFields |> List.choose (fun (RecordInstanceField(expr = e)) -> e) |> List.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
             | _ -> ()

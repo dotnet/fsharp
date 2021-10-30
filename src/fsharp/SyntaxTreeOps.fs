@@ -688,7 +688,7 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.Record (_, origExpr, fs, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              let flds = fs |> List.choose (fun (_, v, _) -> v)
+              let flds = fs |> List.choose (fun (RecordInstanceField(expr = v)) -> v)
               walkExprs flds
 
           | SynExpr.ObjExpr (_, _, bs, is, _, _) ->

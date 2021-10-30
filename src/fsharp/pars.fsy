@@ -45,10 +45,10 @@ let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
 // to form
 // binding1*sep1, binding2*sep2
 let rebindRanges first fields lastSep = 
-    let rec run (name, value) l acc = 
+    let rec run (name, mEquals, value) l acc = 
         match l with
-        | [] -> List.rev ((name, value, lastSep) :: acc)
-        | (f, m) :: xs -> run f xs ((name, value, m) :: acc)
+        | [] -> List.rev (RecordInstanceField(name, mEquals, value, lastSep) :: acc)
+        | (f, m) :: xs -> run f xs (RecordInstanceField(name, mEquals, value, m) :: acc)
     run first fields []
 
 let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
@@ -4601,8 +4601,8 @@ recdExpr:
      { let arg = match $4 with None -> mkSynUnit (lhs parseState) | Some e -> e 
        let l = List.rev $5
        let dummyField = mkRecdField (LongIdentWithDots([], [])) // dummy identifier, it will be discarded
-       let l = rebindRanges (dummyField, None) l $6 
-       let (_, _, inheritsSep) = List.head l
+       let l = rebindRanges (dummyField, None, None) l $6 
+       let (RecordInstanceField(_, _, _, inheritsSep)) = List.head l
        let bindings = List.tail l
        (Some ($2, arg, rhs2 parseState 2 4, inheritsSep, rhs parseState 1), None, bindings) }
 
@@ -4614,8 +4614,9 @@ recdExprCore:
      { match $1 with 
        | LongOrSingleIdent(false, (LongIdentWithDots(_, _) as f), None, m) ->  
             let f = mkRecdField f
+            let mEquals = rhs parseState 2
             let l = List.rev $4
-            let l = rebindRanges (f, Some $3) l $5
+            let l = rebindRanges (f, Some mEquals, Some $3) l $5
             (None, l)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsFieldBinding()) }
 
@@ -4628,22 +4629,23 @@ recdExprCore:
       reportParseErrorAt m (FSComp.SR.parsUnderscoreInvalidFieldName())
       reportParseErrorAt m (FSComp.SR.parsFieldBinding())
       let f = mkUnderscoreRecdField m
-      (None, [ (f, None, None)  ]) }
+      (None, [ RecordInstanceField(f, None, None, None)  ]) }
 
   | UNDERSCORE EQUALS
     { let m = rhs parseState 1
       reportParseErrorAt m (FSComp.SR.parsUnderscoreInvalidFieldName())      
       let f = mkUnderscoreRecdField m
-
+      let mEquals = rhs parseState 2
       reportParseErrorAt (rhs2 parseState 1 2) (FSComp.SR.parsFieldBinding())
       
-      (None, [ (f, None, None) ]) }
+      (None, [ RecordInstanceField(f, Some mEquals, None, None) ]) }
 
   | UNDERSCORE EQUALS declExprBlock recdExprBindings opt_seps_recd
     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnderscoreInvalidFieldName())
       let f = mkUnderscoreRecdField (rhs parseState 1)
+      let mEquals = rhs parseState 2
       let l = List.rev $4
-      let l = rebindRanges (f, Some $3) l $5
+      let l = rebindRanges (f, Some mEquals, Some $3) l $5
       (None, l) }
 
 /* handles case like {x with}  */
@@ -4700,23 +4702,26 @@ recdExprBindings:
 
 recdBinding:
   | pathOrUnderscore EQUALS declExprBlock
-     { ($1, Some $3) }
+     { let mEquals = rhs parseState 2
+       ($1, Some mEquals, Some $3) }
 
   | pathOrUnderscore EQUALS
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None) }
+     { let mEquals = rhs parseState 2
+       reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+       ($1, Some mEquals, None) }
 
   | pathOrUnderscore EQUALS ends_coming_soon_or_recover
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None) }
+     { let mEquals = rhs parseState 2
+       reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+       ($1, Some mEquals, None) }
 
   | pathOrUnderscore
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None) }
+       ($1, None, None) }
 
   | pathOrUnderscore ends_coming_soon_or_recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-       ($1, None) }
+       ($1, None, None) }
 
 /* There is a minor conflict between
        seq { new ty() }  // sequence expression with one very odd 'action' expression
@@ -4805,8 +4810,8 @@ braceBarExprCore:
      { let orig, flds = $2
        let flds = 
            flds |> List.choose (function 
-             | ((LongIdentWithDots([id], _), _), Some e, _) -> Some (id, e) 
-             | ((LongIdentWithDots([id], _), _), None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, e) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 3
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }
@@ -4816,8 +4821,8 @@ braceBarExprCore:
        let orig, flds = $2 
        let flds = 
            flds |> List.choose (function 
-             | ((LongIdentWithDots([id], _), _), Some e, _) -> Some (id, e) 
-             | ((LongIdentWithDots([id], _), _), None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, Some e, _) -> Some (id, e) 
+             | RecordInstanceField((LongIdentWithDots([id], _), _), mEquals, None, _) -> Some (id, arbExpr("anonField", id.idRange)) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None) 
        let m = rhs2 parseState 1 2
        (fun isStruct -> SynExpr.AnonRecd (isStruct, orig, flds, m)) }

@@ -5683,6 +5683,19 @@ FSharp.Compiler.Syntax.QualifiedNameOfFile: Int32 get_Tag()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String Text
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String ToString()
 FSharp.Compiler.Syntax.QualifiedNameOfFile: System.String get_Text()
+FSharp.Compiler.Syntax.RecordInstanceField
+FSharp.Compiler.Syntax.RecordInstanceField: FSharp.Compiler.Syntax.RecordInstanceField NewRecordInstanceField(System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]])
+FSharp.Compiler.Syntax.RecordInstanceField: Int32 Tag
+FSharp.Compiler.Syntax.RecordInstanceField: Int32 get_Tag()
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] expr
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] get_expr()
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]] blockSeparator
+FSharp.Compiler.Syntax.RecordInstanceField: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]] get_blockSeparator()
+FSharp.Compiler.Syntax.RecordInstanceField: System.String ToString()
+FSharp.Compiler.Syntax.RecordInstanceField: System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean] fieldName
+FSharp.Compiler.Syntax.RecordInstanceField: System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean] get_fieldName()
 FSharp.Compiler.Syntax.ScopedPragma
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(FSharp.Compiler.Syntax.ScopedPragma)
 FSharp.Compiler.Syntax.ScopedPragma: Boolean Equals(System.Object)
@@ -6551,8 +6564,8 @@ FSharp.Compiler.Syntax.SynExpr+Quote: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Quote: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+Record: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Record: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]]] get_recordFields()
-FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]]] recordFields
+FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.RecordInstanceField] get_recordFields()
+FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.RecordInstanceField] recordFields
 FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]] copyInfo
 FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]] get_copyInfo()
 FSharp.Compiler.Syntax.SynExpr+Record: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]] baseInfo
@@ -6922,7 +6935,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewNull(FSharp.Co
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewObjExpr(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.Ident]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynInterfaceImpl], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewParen(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewQuote(FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]], Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[FSharp.Compiler.Syntax.LongIdentWithDots,System.Boolean],Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewRecord(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Syntax.SynType,FSharp.Compiler.Syntax.SynExpr,FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]],FSharp.Compiler.Text.Range]], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.SynExpr,System.Tuple`2[FSharp.Compiler.Text.Range,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Position]]]], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.RecordInstanceField], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequential(FSharp.Compiler.Syntax.DebugPointAtSequential, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrImplicitYield(FSharp.Compiler.Syntax.DebugPointAtSequential, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)

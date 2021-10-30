@@ -557,7 +557,7 @@ module ParsedInput =
             | SynExpr.ArrayOrList (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.Record (_, _, fields, r) -> 
                 ifPosInRange r (fun _ ->
-                    fields |> List.tryPick (fun (_, e, _) -> e |> Option.bind (walkExprWithKind parentKind)))
+                    fields |> List.tryPick (fun (RecordInstanceField(expr = e)) -> e |> Option.bind (walkExprWithKind parentKind)))
             | SynExpr.New (_, t, e, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
             | SynExpr.ObjExpr (ty, _, bindings, ifaces, _, _) -> 
                 walkType ty
@@ -1288,7 +1288,7 @@ module ParsedInput =
             | SynExpr.TryFinally (e1, e2, _, _, _)
             | SynExpr.While (_, e1, e2, _) -> List.iter walkExpr [e1; e2]
             | SynExpr.Record (_, _, fields, _) ->
-                fields |> List.iter (fun ((ident, _), e, _) ->
+                fields |> List.iter (fun (RecordInstanceField(fieldName = (ident, _); expr = e)) ->
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident

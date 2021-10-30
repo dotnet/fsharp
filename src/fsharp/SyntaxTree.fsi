@@ -603,7 +603,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(RecordFieldName * SynExpr option * BlockSeparator option) list *
+        recordFields: RecordInstanceField list *
         range: range
 
     /// F# syntax: new C(...)
@@ -1064,6 +1064,14 @@ type AndBang =
         equalsRange: Range *
         body: SynExpr *
         range: Range
+
+[<NoEquality; NoComparison>]
+type RecordInstanceField =
+    | RecordInstanceField of
+        fieldName: RecordFieldName *
+        equalsRange: Range option *
+        expr: SynExpr option *
+        blockSeparator: BlockSeparator option
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

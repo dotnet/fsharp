@@ -327,7 +327,7 @@ module SyntaxTraversal =
                             )
                         | _ -> ()
                         let copyOpt = Option.map fst copyOpt
-                        for (field, _), e, sepOpt in fields do
+                        for RecordInstanceField((field, _), _, e, sepOpt) in fields do
                             yield dive (path, copyOpt, Some field) field.Range (fun r -> 
                                 if rangeContainsPos field.Range pos then
                                     visitor.VisitRecordField r
