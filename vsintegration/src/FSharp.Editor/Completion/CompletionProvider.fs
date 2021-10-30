@@ -43,23 +43,6 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IndexPropName = "Index"
     static let [<Literal>] KeywordDescription = "KeywordDescription"
 
-    static let keywordCompletionItems =
-        FSharpKeywords.KeywordsWithDescription
-        |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorDisplayName keyword))
-        |> List.sortBy (fun (keyword, _) -> keyword)
-        |> List.mapi (fun n (keyword, description) ->
-            FSharpCommonCompletionItem.Create(
-                displayText = keyword,
-                displayTextSuffix = "",
-                rules = CompletionItemRules.Default,
-                glyph = Nullable Glyph.Keyword,
-                sortText = sprintf "%06d" (1000000 + n))
-                .AddProperty(KeywordDescription, description))
-    
-    let settings: EditorOptions = workspace.Services.GetService()
-
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
-        
     static let noCommitOnSpaceRules = 
         // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
         //
@@ -79,6 +62,23 @@ type internal FSharpCompletionProvider
     
     static let getRules showAfterCharIsTyped = if showAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
+    static let keywordCompletionItems =
+        FSharpKeywords.KeywordsWithDescription
+        |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorDisplayName keyword))
+        |> List.sortBy (fun (keyword, _) -> keyword)
+        |> List.mapi (fun n (keyword, description) ->
+            FSharpCommonCompletionItem.Create(
+                displayText = keyword,
+                displayTextSuffix = "",
+                rules = noCommitOnSpaceRules,
+                glyph = Nullable Glyph.Keyword,
+                sortText = sprintf "%06d" (1000000 + n))
+                .AddProperty(KeywordDescription, description))
+    
+    let settings: EditorOptions = workspace.Services.GetService()
+
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
+        
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list), intelliSenseOptions: IntelliSenseOptions) =
