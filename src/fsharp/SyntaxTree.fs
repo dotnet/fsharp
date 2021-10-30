@@ -520,6 +520,7 @@ type SynExpr =
     | For of
         forDebugPoint: DebugPointAtFor *
         ident: Ident *
+        equalsRange: Range option *
         identBody: SynExpr *
         direction: bool *
         toBody: SynExpr *

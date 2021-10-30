@@ -393,7 +393,7 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr, _, synExpr2, synExpr3, _range) -> 
+                | SynExpr.For (_sequencePointInfoForForLoop, _ident, _, synExpr, _, synExpr2, synExpr3, _range) -> 
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr
                      dive synExpr3 synExpr3.Range traverseSynExpr]

@@ -798,7 +798,7 @@ module InterfaceStubGenerator =
                 | SynExpr.ForEach (_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr1, _, synExpr2, synExpr3, _range) -> 
+                | SynExpr.For (_sequencePointInfoForForLoop, _ident, _, synExpr1, _, synExpr2, synExpr3, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
 
                 | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->

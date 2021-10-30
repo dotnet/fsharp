@@ -5856,7 +5856,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let bodyExpr, tpenv = TcStmt cenv env tpenv synBodyExpr
         mkWhile cenv.g (spWhile, NoSpecialWhileLoopMarker, guardExpr, bodyExpr, m), tpenv
 
-    | SynExpr.For (spBind, id, start, dir, finish, body, m) ->
+    | SynExpr.For (spBind, id, _, start, dir, finish, body, m) ->
         UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
         let startExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv start
         let finishExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv finish

@@ -604,7 +604,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e1 
                       yield! walkExpr false e2
 
-                  | SynExpr.For (spFor, _, e1, _, e2, e3, _) -> 
+                  | SynExpr.For (spFor, _, _, e1, _, e2, e3, _) -> 
                       yield! walkForSeqPt spFor
                       yield! walkExpr false e1 
                       yield! walkExpr true e2 

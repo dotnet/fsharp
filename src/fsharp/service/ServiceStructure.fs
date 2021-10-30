@@ -263,7 +263,7 @@ module Structure =
                     parseExpr e
                 )
                 parseExpr eBody
-            | SynExpr.For (_, _, _, _, _, e, r)
+            | SynExpr.For (doBody = e; range = r)
             | SynExpr.ForEach (_, _, _, _, _, e, r) ->
                 rcheck Scope.For Collapse.Below r r
                 parseExpr e

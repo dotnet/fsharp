@@ -698,7 +698,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.While (_, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.For (_, _, e1, _, e2, e3, _) ->
+          | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
           | SynExpr.MatchLambda (_, _, cl, _, _) ->

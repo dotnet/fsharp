@@ -104,7 +104,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
                 clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
-            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.For (doBody = body)
             | SynExpr.TryFinally (body, _, _, _, _)
             | SynExpr.LetOrUse (_, _, _, body, _)
             | SynExpr.While (_, _, body, _)
@@ -135,7 +135,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Match (_, _, clauses, _) | SynExpr.MatchBang (_, _, clauses, _) ->
                 clauses |> List.forall (fun (SynMatchClause(resultExpr = e)) -> YieldFree e)
 
-            | SynExpr.For (_, _, _, _, _, body, _)
+            | SynExpr.For (doBody = body)
             | SynExpr.TryFinally (body, _, _, _, _)
             | SynExpr.LetOrUse (_, _, _, body, _)
             | SynExpr.While (_, _, body, _)
@@ -712,7 +712,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.Match (DebugPointAtBinding.Yes mMatch, _, _, _) -> mMatch
         | SynExpr.TryWith (_, _, _, _, _, DebugPointAtTry.Yes mTry, _) -> mTry
         | SynExpr.TryFinally (_, _, _, DebugPointAtTry.Yes mTry, _)  -> mTry
-        | SynExpr.For (DebugPointAtFor.Yes mBind, _, _, _, _, _, _) -> mBind
+        | SynExpr.For (forDebugPoint = DebugPointAtFor.Yes mBind) -> mBind
         | SynExpr.ForEach (DebugPointAtFor.Yes mBind, _, _, _, _, _, _) -> mBind
         | SynExpr.While (DebugPointAtWhile.Yes mWhile, _, _, _) -> mWhile
         | _ -> innerComp1.Range
@@ -950,7 +950,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     (fun holeFill -> 
                         translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [SynMatchClause(pat, None, None, holeFill, mPat, DebugPointAtTarget.Yes)], spBind, mFor) ])) )
 
-        | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
+        | SynExpr.For (spBind, id, _, start, dir, finish, innerComp, m) ->
             let mFor = match spBind with DebugPointAtFor.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.For) | _ -> m
             if isQuery then errorR(Error(FSComp.SR.tcNoIntegerForLoopInQuery(), mFor))
             Some (trans CompExprTranslationPass.Initial q varSpace (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)) translatedCtxt )
@@ -1770,7 +1770,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 let lam = mkLambda mFor matchv (matchExpr, tyOfExpr cenv.g matchExpr)
                 Some(mkSeqCollect cenv env m enumElemTy genOuterTy lam enumExpr, tpenv)
 
-        | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
+        | SynExpr.For (spBind, id, _, start, dir, finish, innerComp, m) ->
             Some(tcSequenceExprBody env genOuterTy tpenv (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)))
 
         | SynExpr.While (spWhile, guardExpr, innerComp, _m) -> 

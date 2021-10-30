@@ -571,6 +571,25 @@ comp {
             assertRange (3, 8) (3, 9) mEqualsY
             assertRange (4, 12) (4, 13) mEqualsZ
         | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``SynExpr.For contains the range of the equals sign`` () =
+        let ast =
+            """
+for i = 1 to 10 do
+    printf "%d " i
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.For(equalsRange = Some mEquals))
+                    ])
+                ])) ->
+            assertRange (2, 6) (2, 7) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
 
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
