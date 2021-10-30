@@ -98,7 +98,7 @@ module XmlDocParsing =
         and getXmlDocablesSynModuleOrNamespace (SynModuleOrNamespace(_, _,  _, synModuleDecls, _, _, _, _)) =
             (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
 
-        and getXmlDocablesSynTypeDefn (SynTypeDefn(SynComponentInfo(synAttributes, _, _, _, preXmlDoc, _, _, compRange), synTypeDefnRepr, synMemberDefns, _, tRange)) =
+        and getXmlDocablesSynTypeDefn (SynTypeDefn(SynComponentInfo(synAttributes, _, _, _, preXmlDoc, _, _, compRange), _, synTypeDefnRepr, synMemberDefns, _, tRange)) =
             let stuff = 
                 match synTypeDefnRepr with
                 | SynTypeDefnRepr.ObjectModel(_, synMemberDefns, _) -> (synMemberDefns |> List.collect getXmlDocablesSynMemberDefn)

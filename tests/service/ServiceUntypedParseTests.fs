@@ -197,7 +197,7 @@ module TypeMemberRanges =
     let getTypeMemberRange source =
         let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
-        | [ SynModuleDecl.Types ([ SynTypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
+        | [ SynModuleDecl.Types ([ SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (_, memberDecls, _)) ], _) ] ->
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 

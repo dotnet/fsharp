@@ -1774,6 +1774,7 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
+        equalsRange: Range option *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *

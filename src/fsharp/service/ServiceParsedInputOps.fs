@@ -697,7 +697,7 @@ module ParsedInput =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> None
 
-        and walkTypeDefn (SynTypeDefn (info, repr, members, _, _)) =
+        and walkTypeDefn (SynTypeDefn (info, _, repr, members, _, _)) =
             walkComponentInfo false info
             |> Option.orElseWith (fun () -> walkTypeDefnRepr repr)
             |> Option.orElseWith (fun () -> List.tryPick walkMember members)
@@ -954,7 +954,7 @@ module ParsedInput =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(SynComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
+                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = SynComponentInfo(longId = [id]))) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with
@@ -1466,7 +1466,7 @@ module ParsedInput =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> ()
     
-        and walkTypeDefn (SynTypeDefn (info, repr, members, implicitCtor, _)) =
+        and walkTypeDefn (SynTypeDefn (info, _, repr, members, implicitCtor, _)) =
             let isTypeExtensionOrAlias =
                 match repr with
                 | SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Augmentation, _, _)

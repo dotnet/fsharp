@@ -1298,11 +1298,11 @@ moduleDefn:
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h)) = $4
+        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), mEquals, e, f, g, h)) = $4
         _xmlDoc.MarkAsInvalid()
         let attrs = $1@cas
         let mTc = (h, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-        let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, g, mTc))
+        let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), mEquals, e, f, g, mTc))
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 
@@ -1528,9 +1528,9 @@ tyconDefnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconDefn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, implicitConstructor, range)) = $2
+           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, members, implicitConstructor, range)) = $2
            _xmlDoc.MarkAsInvalid()
-           SynTypeDefn(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, implicitConstructor, range)
+           SynTypeDefn(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, members, implicitConstructor, range)
        tyconDefn :: $3 }
   |                             
      { [] }
@@ -1538,30 +1538,33 @@ tyconDefnList:
 /* A type definition */
 tyconDefn: 
   | typeNameInfo 
-     { SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range) }
+     { SynTypeDefn($1, None, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range) }
 
   | typeNameInfo opt_equals tyconDefnRhsBlock 
-     { if not $2 then (
+     { match $2 with
+       | Some _ -> ()
+       | None ->
             let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
             // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
             let typeNameId = List.last lid
             raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
-       )
+       
        let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)    
-       SynTypeDefn($1, tcDefRepr, members, None, mWhole) }
+       SynTypeDefn($1, $2, tcDefRepr, members, None, mWhole) }
 
   | typeNameInfo tyconDefnAugmentation
      { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun mem -> mem.Range)
-       SynTypeDefn($1, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation, [], m), $2, None, m) }
+       SynTypeDefn($1, None, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation, [], m), $2, None, m) }
 
   | typeNameInfo opt_attributes opt_declVisibility opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
      { let vis, spats, az = $3, $5, $6
        let nameRange = rhs parseState 1
        let (tcDefRepr, members) = $8 nameRange
        let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
+       let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
        let xmlDoc = grabXmlDoc(parseState, $2, 2)
        let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, xmlDoc, rangeOfLid lid)
@@ -1572,7 +1575,7 @@ tyconDefn:
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
        
-       SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole) }
+       SynTypeDefn($1, Some mEquals, tcDefRepr, members, Some memberCtorPattern, mWhole) }
 
 
 /* The right-hand-side of a type definition */
@@ -5569,8 +5572,8 @@ deprecated_opt_equals:
   | /* EMPTY */ {  }
 
 opt_equals:
-  | EQUALS      { true }
-  | /* EMPTY */ { false } 
+  | EQUALS      { let mEquals = rhs parseState 1 in (Some mEquals) }
+  | /* EMPTY */ { None } 
 
 opt_OBLOCKSEP: 
   | OBLOCKSEP   { }

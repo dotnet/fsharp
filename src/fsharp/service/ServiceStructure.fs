@@ -533,7 +533,7 @@ module Structure =
                     parseAttributes attrs
             | _ -> ()
 
-        and parseTypeDefn (SynTypeDefn(SynComponentInfo(_, TyparDecls typeArgs, _, _, _, _, _, r), objectModel, members, _, fullrange)) = 
+        and parseTypeDefn (SynTypeDefn(SynComponentInfo(_, TyparDecls typeArgs, _, _, _, _, _, r), _, objectModel, members, _, fullrange)) = 
            let typeArgsRange = rangeOfTypeArgsElse r typeArgs
            let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with

@@ -349,6 +349,84 @@ and [<CustomEquality ; NoComparison>] Bar<'context, 'a> =
             assertRange (6, 4) (10, 5) t2.Range
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with ObjectModel Delegate contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+type X = delegate of string -> string
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
+                                          typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)) ]
+            )
+        ]) ])) ->
+            assertRange (2, 7) (2, 8) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with ObjectModel class contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foobar () =
+    class
+    end
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
+                                          typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Class)) ]
+            )
+        ]) ])) ->
+            assertRange (2, 15) (2, 16) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with Enum contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Bear =
+    | BlackBear = 1
+    | PolarBear = 2
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
+                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum _)) ]
+            )
+        ]) ])) ->
+            assertRange (2, 10) (2, 11) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with Union contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Shape =
+    | Square of int 
+    | Rectangle of int * int
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
+                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Union _)) ]
+            )
+        ]) ])) ->
+            assertRange (2, 11) (2, 12) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =

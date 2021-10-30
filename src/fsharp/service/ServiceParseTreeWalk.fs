@@ -690,7 +690,7 @@ module SyntaxTraversal =
 #endif
                         )
 
-        and traverseSynTypeDefn origPath (SynTypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
+        and traverseSynTypeDefn origPath (SynTypeDefn(synComponentInfo, _, synTypeDefnRepr, synMemberDefns, _, tRange) as tydef) =
             let path = SyntaxNode.SynTypeDefn tydef :: origPath
             
             match visitor.VisitComponentInfo (origPath, synComponentInfo) with

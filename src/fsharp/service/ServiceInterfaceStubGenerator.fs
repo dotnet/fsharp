@@ -705,7 +705,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(_componentInfo, _, representation, members, _, range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
