@@ -5267,6 +5267,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             else List.foldBack (mkConsListPat cenv.g argty) args' (mkNilListPat cenv.g m argty)), acc
 
     | SynPat.Record (flds, m) ->
+        let flds = List.map (fun (f, _, p) -> f,p) flds
         let tinst, tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty flds m
         // REVIEW: use _fldsList to type check pattern in code order not field defn order
         let gtyp = mkAppTy tcref tinst

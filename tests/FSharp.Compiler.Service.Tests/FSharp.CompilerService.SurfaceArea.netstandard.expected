@@ -7827,8 +7827,8 @@ FSharp.Compiler.Syntax.SynPat+QuoteExpr: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynPat+QuoteExpr: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynPat+Record: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynPat+Record: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.SynPat]] fieldPats
-FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.SynPat]] get_fieldPats()
+FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Text.Range,FSharp.Compiler.Syntax.SynPat]] fieldPats
+FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Text.Range,FSharp.Compiler.Syntax.SynPat]] get_fieldPats()
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 Ands
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 ArrayOrList
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 As
@@ -7919,7 +7919,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewOptionalVal(FSha
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewOr(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewParen(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewQuoteExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewRecord(Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.SynPat]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewRecord(Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Text.Range,FSharp.Compiler.Syntax.SynPat]], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTyped(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewWild(FSharp.Compiler.Text.Range)

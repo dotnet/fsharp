@@ -1103,7 +1103,7 @@ type SynPat =
         range: range
 
     | Record of
-        fieldPats: ((LongIdent * Ident) * SynPat) list *
+        fieldPats: ((LongIdent * Ident) * Range * SynPat) list *
         range: range
 
     | Null of

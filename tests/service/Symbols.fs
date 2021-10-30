@@ -1834,7 +1834,6 @@ else (* some long comment here *) if c then
 
         | _ -> Assert.Fail "Could not get valid AST"
 
-
 module UnionCaseComments =
     [<Test>]
     let ``Union Case fields can have comments`` () =
@@ -1872,3 +1871,23 @@ type Foo =
 
         | _ ->
             failwith "Could not find SynExpr.Do"
+
+module Patterns =
+    [<Test>]
+    let ``SynPat.Record contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+match x with
+| { Foo = bar } -> ()
+| _ -> ()
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Match(clauses = [ SynMatchClause(pat = SynPat.Record(fieldPats = [ (_, mEquals, _) ])) ; _ ])
+            )
+        ]) ])) ->
+            assertRange (3, 8) (3, 9) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"

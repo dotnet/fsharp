@@ -3341,7 +3341,9 @@ recordPatternElementsAux: /* Fix 1190 */
       { let r = $1 in let (rs, dropMark) = $3 in (r :: rs), lhs parseState }
 
 recordPatternElement:  
-  | path EQUALS parenPattern { (List.frontAndBack $1.Lid, $3) }
+  | path EQUALS parenPattern 
+    { let mEquals = rhs parseState 2
+      (List.frontAndBack $1.Lid, mEquals, $3) }
 
 listPatternElements:
   | /* EMPTY */                                      

@@ -1247,7 +1247,7 @@ type SynPat =
 
     /// A record pattern
     | Record of
-        fieldPats: ((LongIdent * Ident) * SynPat) list *
+        fieldPats: ((LongIdent * Ident) * Range * SynPat) list *
         range: range
 
     /// The 'null' pattern
