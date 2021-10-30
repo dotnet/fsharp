@@ -43,19 +43,19 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IndexPropName = "Index"
     static let [<Literal>] KeywordDescription = "KeywordDescription"
 
+    // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
+    //
+    // * type Foo() =
+    //       member val a = 12 with get, <<---- Don't commit autocomplete!
+    //
+    // * type MyRecord = { name: <<---- Don't commit autocomplete!
+    //
+    // * type My< <<---- Don't commit autocomplete!
+    //
+    // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
+    //
+    // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
     static let noCommitOnSpaceRules = 
-        // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
-        //
-        // * type Foo() =
-        //       member val a = 12 with get, <<---- Don't commit autocomplete!
-        //
-        // * type MyRecord = { name: <<---- Don't commit autocomplete!
-        //
-        // * type My< <<---- Don't commit autocomplete!
-        //
-        // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
-        //
-        // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
         let noCommitChars = [|' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|'|].ToImmutableArray()
 
         CompletionItemRules.Default.WithCommitCharacterRules(ImmutableArray.Create (CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars)))
