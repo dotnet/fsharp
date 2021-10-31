@@ -4980,7 +4980,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let getArgPatterns () =
             match args with
             | SynArgPats.Pats args -> args
-            | SynArgPats.NamePatPairs (pairs, _) -> List.map snd pairs
+            | SynArgPats.NamePatPairs (pairs, _) -> List.map (fun (_, _, pat) -> pat) pairs
 
         let tcArgPatterns () =
             let args = getArgPatterns ()
@@ -5104,7 +5104,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     let result = Array.zeroCreate numArgTys
                     let extraPatterns = List ()
 
-                    for id, pat in pairs do
+                    for id, _, pat in pairs do
                         match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
                         | None ->
                             extraPatterns.Add pat

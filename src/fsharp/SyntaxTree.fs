@@ -1033,13 +1033,13 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * SynPat) list *
+        pats: (Ident * Range * SynPat) list *
         range: range
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map snd
+        | NamePatPairs (pats, _) -> pats |> List.map (fun (_,_, pat) -> pat)
 
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynPat =

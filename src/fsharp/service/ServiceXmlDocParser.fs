@@ -16,7 +16,7 @@ module XmlDocParsing =
         
     let (|ConstructorPats|) = function
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.NamePatPairs(xs, _) -> List.map (fun (_, _, pat) -> pat) xs
 
     let rec digNamesFrom pat =
         match pat with

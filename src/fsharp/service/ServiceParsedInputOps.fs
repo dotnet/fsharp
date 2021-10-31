@@ -436,7 +436,7 @@ module ParsedInput =
     let GetEntityKind (pos: pos, parsedInput: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
+            | SynArgPats.NamePatPairs(xs, _) -> List.map (fun (_, _, pat) -> pat) xs
 
         /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) = function
@@ -1148,7 +1148,7 @@ module ParsedInput =
 
     let (|ConstructorPats|) = function
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.NamePatPairs(xs, _) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =

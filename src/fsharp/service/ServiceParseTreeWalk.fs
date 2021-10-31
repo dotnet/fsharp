@@ -620,7 +620,7 @@ module SyntaxTraversal =
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
                     | SynArgPats.NamePatPairs (ps, _) ->
-                        ps |> List.map snd |> List.tryPick (traversePat path)
+                        ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
                 | SynPat.Typed (p, ty, _) ->
                     [ traversePat path p; traverseSynType path ty ] |> List.tryPick id
                 | _ -> None

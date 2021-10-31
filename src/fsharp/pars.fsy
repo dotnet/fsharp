@@ -3121,7 +3121,8 @@ namePatPairs:
 
 namePatPair:
    | ident EQUALS parenPattern
-     { ($1, $3) }
+     { let mEquals = rhs parseState 2
+       ($1, mEquals, $3) }
 
 constrPattern:
   | atomicPatternLongIdent explicitValTyparDecls

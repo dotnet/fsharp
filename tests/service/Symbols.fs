@@ -2140,3 +2140,21 @@ match x with
         ]) ])) ->
             assertRange (3, 8) (3, 9) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynArgPats.NamePatPairs contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+match x with
+| X(Y  = y) -> y
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Match(clauses = [ SynMatchClause(pat = SynPat.LongIdent(argPats = SynArgPats.NamePatPairs(pats = [ _, mEquals ,_ ])))])
+            )
+        ]) ])) ->
+            assertRange (3, 7) (3, 8) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"

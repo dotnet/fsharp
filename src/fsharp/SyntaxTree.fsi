@@ -1166,7 +1166,7 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * SynPat) list *
+        pats: (Ident * Range * SynPat) list *
         range: range
 
     member Patterns: SynPat list
