@@ -730,7 +730,7 @@ module InterfaceStubGenerator =
                 match memberDefn with
                 | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) ->
                     None
-                | SynMemberDefn.AutoProperty(_attributes, _isStatic, _id, _type, _memberKind, _memberFlags, _xmlDoc, _access, expr, _r1, _r2) ->
+                | SynMemberDefn.AutoProperty(_attributes, _isStatic, _id, _type, _memberKind, _memberFlags, _xmlDoc, _access, _, expr, _r1, _r2) ->
                     walkExpr expr
                 | SynMemberDefn.Interface(interfaceType, members, _range) ->
                     if rangeContainsPos interfaceType.Range pos then

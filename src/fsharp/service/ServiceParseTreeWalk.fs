@@ -736,7 +736,7 @@ module SyntaxTraversal =
                         visitor.VisitImplicitInherit(path, traverseSynExpr path, synType, synExpr, range)
                         )
                 ] |> pick m
-            | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> traverseSynExpr path synExpr
+            | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, _, synExpr, _, _) -> traverseSynExpr path synExpr
             | SynMemberDefn.LetBindings(synBindingList, isRecursive, _, range) -> 
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | Some x -> Some x

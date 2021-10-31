@@ -135,7 +135,7 @@ module XmlDocParsing =
                 | None -> [] 
                 | Some(x) -> x |> List.collect getXmlDocablesSynMemberDefn
             | SynMemberDefn.NestedType(synTypeDefn, _, _) -> getXmlDocablesSynTypeDefn synTypeDefn
-            | SynMemberDefn.AutoProperty(synAttributes, _, _, _, _, _, _, _, _, _, range) -> 
+            | SynMemberDefn.AutoProperty(attributes = synAttributes; range = range) -> 
                 let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                 let line = fullRange.StartLine 
                 let indent = indentOf line

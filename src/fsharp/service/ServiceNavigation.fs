@@ -231,7 +231,7 @@ module NavigationImpl =
                          | SynMemberDefn.Member(bind, _) -> processBinding true enclosingEntityKind false bind
                          | SynMemberDefn.ValField(SynField(_, _, Some(rcid), _, _, _, access, range), _) ->
                              [ createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access) ]
-                         | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc, access,_synExpr, _, _) -> 
+                         | SynMemberDefn.AutoProperty(_attribs,_isStatic,id,_tyOpt,_propKind,_,_xmlDoc, access, _, _synExpr, _, _) -> 
                              [ createMember(id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access) ]
                          | SynMemberDefn.AbstractSlot(SynValSig(_, id, _, ty, _, _, _, _, access, _, _), _, _) ->
                              [ createMember(id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access) ]
@@ -723,7 +723,7 @@ module NavigateTo =
             match memberDefn with
             | SynMemberDefn.AbstractSlot(synValSig, memberFlags, _) ->
                 addMember synValSig memberFlags false container
-            | SynMemberDefn.AutoProperty(_, _, id, _, _, _, _, _, _, _, _) ->
+            | SynMemberDefn.AutoProperty(ident = id) ->
                 addIdent NavigableItemKind.Property id false container
             | SynMemberDefn.Interface(_, members, _) ->
                 match members with

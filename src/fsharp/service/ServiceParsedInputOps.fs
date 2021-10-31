@@ -657,7 +657,7 @@ module ParsedInput =
             | SynMemberDefn.Inherit(t, _, _) -> walkType t
             | SynMemberDefn.ValField(field, _) -> walkField field
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty(Attributes attrs, _, _, t, _, _, _, _, e, _, _) -> 
+            | SynMemberDefn.AutoProperty(attributes = Attributes attrs; typeOpt = t; synExpr = e) -> 
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> Option.bind walkType t)
                 |> Option.orElseWith (fun () -> walkExpr e)
@@ -1425,7 +1425,7 @@ module ParsedInput =
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
             | SynMemberDefn.ValField (field, _) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty (Attributes attrs, _, _, t, _, _, _, _, e, _, _) ->
+            | SynMemberDefn.AutoProperty (attributes = Attributes attrs; typeOpt = t; synExpr = e) ->
                 List.iter walkAttribute attrs
                 Option.iter walkType t
                 walkExpr e

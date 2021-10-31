@@ -433,6 +433,26 @@ type Shape =
             assertRange (2, 11) (2, 12) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with AutoProperty contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResults
+                """
+/// mutable class with auto-properties
+type Person(name : string, age : int) =
+    /// Full name
+    member val Name = name with get, set
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_ ; SynMemberDefn.AutoProperty(equalsRange = mEquals)])) ]
+            )
+        ]) ])) ->
+            assertRange (5, 20) (5, 21) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =

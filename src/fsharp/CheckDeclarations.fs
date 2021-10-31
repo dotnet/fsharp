@@ -2423,7 +2423,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
         defn |> List.choose (fun mem ->
             match mem with
             | SynMemberDefn.Member(_, m) -> Some(TyconBindingDefn(containerInfo, newslotsOK, declKind, mem, m))
-            | SynMemberDefn.AutoProperty(_, _, _, _, _, _, _, _, _, _, m) -> Some(TyconBindingDefn(containerInfo, newslotsOK, declKind, mem, m))
+            | SynMemberDefn.AutoProperty(range = m) -> Some(TyconBindingDefn(containerInfo, newslotsOK, declKind, mem, m))
             | _ -> errorR(Error(FSComp.SR.tcMemberNotPermittedInInterfaceImplementation(), mem.Range)); None)
 
     let tyconBindingsOfTypeDefn (MutRecDefnsPhase2DataForTycon(_, parent, declKind, tcref, baseValOpt, safeInitInfo, declaredTyconTypars, members, _, newslotsOK, _)) = 
@@ -4639,7 +4639,7 @@ module TcDeclarations =
              | SynMemberDefn.AbstractSlot (_, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
              | SynMemberDefn.Interface (_, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
              | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
-             | SynMemberDefn.AutoProperty (_, _, _, _, _, _, _, _, _, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
+             | SynMemberDefn.AutoProperty (range = m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
              | SynMemberDefn.ImplicitInherit (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
              | SynMemberDefn.Inherit (_, _, m) :: _ -> errorR(Error(FSComp.SR.tcInheritDeclarationMissingArguments(), m))
@@ -4652,7 +4652,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (_, m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
-             | SynMemberDefn.AutoProperty(_, _, _, _, _, _, _, _, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
+             | SynMemberDefn.AutoProperty(range = m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (_, false, _, m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.AbstractSlot (_, _, m) :: _ 
              | SynMemberDefn.Interface (_, _, m) :: _ 
@@ -4703,7 +4703,7 @@ module TcDeclarations =
                 // Convert auto properties to let bindings in the pre-list
                 let rec preAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, synExpr, _mGetSet, mWholeAutoProp) -> 
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, _, xmlDoc, _access, _, synExpr, _mGetSet, mWholeAutoProp) -> 
                         // Only the keep the field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                         let mLetPortion = synExpr.Range
@@ -4730,7 +4730,7 @@ module TcDeclarations =
                 // Convert auto properties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
+                    | SynMemberDefn.AutoProperty(Attributes attribs, isStatic, id, tyOpt, propKind, memberFlags, xmlDoc, access, _, _synExpr, mGetSetOpt, _mWholeAutoProp) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)

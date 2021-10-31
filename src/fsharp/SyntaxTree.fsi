@@ -1862,6 +1862,7 @@ type SynMemberDefn =
         memberFlags:(SynMemberKind -> SynMemberFlags) *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
+        equalsRange: Range *
         synExpr: SynExpr *
         getSetRange: range option *
         range: range

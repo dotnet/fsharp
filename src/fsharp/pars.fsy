@@ -2039,12 +2039,13 @@ valDefnDecl:
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSequentialExprBlock classMemberSpfnGetSet
      { let mGetSetOpt, getSet = $8
+       let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
        (fun attribs isStatic flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range
-           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, $7, mGetSetOpt, memberRange) ]) }
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, mEquals, $7, mGetSetOpt, memberRange) ]) }
 
 
 /* An optional type on an auto-property definition */
@@ -4789,7 +4790,7 @@ objExprBindings:
       { $2 |> 
         (List.choose (function 
                           | SynMemberDefn.Member(b, m) -> Some b
-                          | SynMemberDefn.AutoProperty(_, _, _, _, _, _, _, _, _, _, m) -> errorR(Error(FSComp.SR.parsIllegalMemberVarInObjectImplementation(), m)); None
+                          | SynMemberDefn.AutoProperty(range = m) -> errorR(Error(FSComp.SR.parsIllegalMemberVarInObjectImplementation(), m)); None
                           | x -> errorR(Error(FSComp.SR.parsMemberIllegalInObjectImplementation(), x.Range)); None)) }
 
 objExprInterfaces:
