@@ -705,7 +705,7 @@ module ParsedInput =
         and walkSynModuleDecl isTopLevel (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace isTopLevel fragment
-            | SynModuleDecl.NestedModule(info, _, modules, _, range) ->
+            | SynModuleDecl.NestedModule(info, _, _, modules, _, range) ->
                 walkComponentInfo true info
                 |> Option.orElseWith (fun () -> ifPosInRange range (fun _ -> List.tryPick (walkSynModuleDecl false) modules))
             | SynModuleDecl.Open _ -> None
@@ -1481,7 +1481,7 @@ module ParsedInput =
         and walkSynModuleDecl (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace fragment
-            | SynModuleDecl.NestedModule (info, _, modules, _, _) ->
+            | SynModuleDecl.NestedModule (info, _, _, modules, _, _) ->
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
@@ -1551,7 +1551,7 @@ module ParsedInput =
             | [] -> None
             | firstDecl :: _ -> 
                 match firstDecl with
-                | SynModuleDecl.NestedModule (_, _, _, _, r)
+                | SynModuleDecl.NestedModule (range = r)
                 | SynModuleDecl.Let (_, _, r)
                 | SynModuleDecl.DoExpr (_, _, r)
                 | SynModuleDecl.Types (_, r)
@@ -1595,7 +1595,7 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(SynComponentInfo(_, _, _, ident, _, _, _, _), _, decls, _, range) ->
+            | SynModuleDecl.NestedModule(SynComponentInfo(longId = ident), _, _, decls, _, range) ->
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
                 if range.EndLine >= currentLine then

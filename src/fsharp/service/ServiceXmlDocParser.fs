@@ -56,7 +56,7 @@ module XmlDocParsing =
 
         let rec getXmlDocablesSynModuleDecl decl =
             match decl with 
-            | SynModuleDecl.NestedModule(_,  _, synModuleDecls, _, _) -> 
+            | SynModuleDecl.NestedModule(decls = synModuleDecls) -> 
                 (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
             | SynModuleDecl.Let(_, synBindingList, range) -> 
                 let anyXmlDoc = 

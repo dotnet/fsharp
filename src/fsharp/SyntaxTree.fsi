@@ -1885,6 +1885,7 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
+        equalsRange: Range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
         range: range
@@ -1968,6 +1969,7 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
+        equalsRange: Range option *
         moduleDecls: SynModuleSigDecl list *
         range: range
 

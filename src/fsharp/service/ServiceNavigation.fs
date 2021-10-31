@@ -267,7 +267,7 @@ module NavigationImpl =
             | SynModuleDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, rangeOfLid lid, [], NavigationEntityKind.Namespace, false, None) ]
                 
-            | SynModuleDecl.NestedModule(SynComponentInfo(_, _, _, lid, _, _, access, _), _isRec, decls, _, m) ->
+            | SynModuleDecl.NestedModule(SynComponentInfo(_, _, _, lid, _, _, access, _), _isRec, _, decls, _, m) ->
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
@@ -412,7 +412,7 @@ module NavigationImpl =
             | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, NavigationItemKind.Module, FSharpGlyph.Module, m, rangeOfLid lid, [], NavigationEntityKind.Module, false, None) ]
                 
-            | SynModuleSigDecl.NestedModule(SynComponentInfo(_, _, _, lid, _, _, access, _), _, decls, m) ->                
+            | SynModuleSigDecl.NestedModule(SynComponentInfo(_, _, _, lid, _, _, access, _), _, _, decls, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
                 let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
@@ -611,7 +611,7 @@ module NavigateTo =
                 addExceptionRepr representation true container |> ignore
             | SynModuleSigDecl.NamespaceFragment fragment ->
                 walkSynModuleOrNamespaceSig fragment container
-            | SynModuleSigDecl.NestedModule(componentInfo, _, nestedDecls, _) ->
+            | SynModuleSigDecl.NestedModule(componentInfo, _, _, nestedDecls, _) ->
                 let container = addComponentInfo NavigableContainerType.Module NavigableItemKind.Module componentInfo true container
                 for decl in nestedDecls do
                     walkSynModuleSigDecl decl container
@@ -674,7 +674,7 @@ module NavigateTo =
                 addModuleAbbreviation lhs false container
             | SynModuleDecl.NamespaceFragment(fragment) ->
                 walkSynModuleOrNamespace fragment container
-            | SynModuleDecl.NestedModule(componentInfo, _, modules, _, _) ->
+            | SynModuleDecl.NestedModule(componentInfo, _, _, modules, _, _) ->
                 let container = addComponentInfo NavigableContainerType.Module NavigableItemKind.Module componentInfo false container
                 for m in modules do
                     walkSynModuleDecl m container

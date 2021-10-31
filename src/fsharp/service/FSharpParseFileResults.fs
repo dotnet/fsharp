@@ -733,7 +733,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkBindSeqPt spExpr
                       yield! walkExpr false expr
                   | SynModuleDecl.ModuleAbbrev _ -> ()
-                  | SynModuleDecl.NestedModule(_, _isRec, decls, _, m) when isMatchRange m ->
+                  | SynModuleDecl.NestedModule(_, _isRec, _, decls, _, m) when isMatchRange m ->
                       for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) when isMatchRange m -> 
                       for d in tydefs do yield! walkTycon d

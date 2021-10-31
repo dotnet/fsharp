@@ -694,7 +694,7 @@ module InterfaceStubGenerator =
                     None
                 | SynModuleDecl.NamespaceFragment(fragment) ->
                     walkSynModuleOrNamespace fragment
-                | SynModuleDecl.NestedModule(_, _, modules, _, _) ->
+                | SynModuleDecl.NestedModule(decls = modules) ->
                     List.tryPick walkSynModuleDecl modules
                 | SynModuleDecl.Types(typeDefs, _range) ->
                     List.tryPick walkSynTypeDefn typeDefs

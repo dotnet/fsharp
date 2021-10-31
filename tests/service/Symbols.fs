@@ -1320,6 +1320,40 @@ module Nested =
         ]) ])) ->
             assertRange (4, 0) (6, 6) nm.Range
         | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``Range of equal sign should be present`` () =
+        let parseResults = 
+            getParseResults
+                """
+module X =
+    ()
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.NestedModule(equalsRange = Some equalsM)
+        ]) ])) ->
+            assertRange (2, 9) (2, 10) equalsM
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of equal sign should be present, signature file`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace Foo
+
+module X =
+    val bar : int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.NestedModule(equalsRange = Some equalsM)
+        ]) ])) ->
+            assertRange (4, 9) (4, 10) equalsM
+        | _ -> Assert.Fail "Could not get valid AST"
 
 module SynBindings =
     [<Test>]

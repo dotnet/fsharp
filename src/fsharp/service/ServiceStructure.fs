@@ -605,7 +605,7 @@ module Structure =
                 for t in types do
                     parseTypeDefn t
             // Fold the attributes above a module
-            | SynModuleDecl.NestedModule (SynComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, decls, _, _) ->                
+            | SynModuleDecl.NestedModule (SynComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, _, decls, _, _) ->                
                 // Outline the full scope of the module
                 let r = Range.endToEnd cmpRange decl.Range
                 rcheck Scope.Module Collapse.Below decl.Range r
@@ -830,7 +830,7 @@ module Structure =
             | SynModuleSigDecl.Types (typeSigs, _) ->
                 List.iter parseTypeDefnSig typeSigs
             // Fold the attributes above a module
-            | SynModuleSigDecl.NestedModule (SynComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, decls, moduleRange) ->
+            | SynModuleSigDecl.NestedModule (SynComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, _, decls, moduleRange) ->
                 let rangeEnd = lastModuleSigDeclRangeElse moduleRange decls
                 // Outline the full scope of the module
                 let collapse = Range.endToEnd cmpRange rangeEnd

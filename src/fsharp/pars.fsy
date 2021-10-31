@@ -808,7 +808,7 @@ moduleSpfn:
         let info = SynComponentInfo($1 @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
-        SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
+        SynModuleSigDecl.NestedModule(info, isRec, $4, $5, m) }
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
@@ -1335,7 +1335,8 @@ moduleDefn:
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
-            [ SynModuleDecl.NestedModule(info, isRec, def, false, (rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
+            let mEquals = rhs parseState 4
+            [ SynModuleDecl.NestedModule(info, isRec, Some mEquals, def, false, (rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
   | attributes recover
@@ -5637,8 +5638,9 @@ colonOrEquals:
           mlCompatError (FSComp.SR.mlCompatSigColonNoLongerSupported())(lhs parseState)
       else
           mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState)
+      None
     }
-  | EQUALS { } 
+  | EQUALS { let mEquals = rhs parseState 1 in Some mEquals } 
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
 string:

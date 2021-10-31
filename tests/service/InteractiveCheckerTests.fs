@@ -38,7 +38,7 @@ let internal identsAndRanges (input: ParsedInput) =
         match moduleDecl with
         | SynModuleDecl.Types(typeDefns, _) -> (typeDefns |> List.collect extractFromTypeDefn)
         | SynModuleDecl.ModuleAbbrev(ident, _, range) -> [ identAndRange (ident.ToString()) range ]
-        | SynModuleDecl.NestedModule(componentInfo, _, decls, _, _) -> (extractFromComponentInfo componentInfo) @ (decls |> List.collect extractFromModuleDecl)
+        | SynModuleDecl.NestedModule(moduleInfo =componentInfo; decls = decls) -> (extractFromComponentInfo componentInfo) @ (decls |> List.collect extractFromModuleDecl)
         | SynModuleDecl.Let _ -> failwith "Not implemented yet"
         | SynModuleDecl.DoExpr(_, _, _range) -> failwith "Not implemented yet"
         | SynModuleDecl.Exception(_, _range) -> failwith "Not implemented yet"
