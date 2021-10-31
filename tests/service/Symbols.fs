@@ -401,10 +401,16 @@ type Bear =
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
                 typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
-                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum _)) ]
+                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                                              SynTypeDefnSimpleRepr.Enum(cases = [
+                                                  SynEnumCase(equalsRange = mEqualsEnumCase1)
+                                                  SynEnumCase(equalsRange = mEqualsEnumCase2)
+                                              ]))) ]
             )
         ]) ])) ->
             assertRange (2, 10) (2, 11) mEquals
+            assertRange (3, 16) (3, 17) mEqualsEnumCase1
+            assertRange (4, 16) (4, 17) mEqualsEnumCase2
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -1061,10 +1067,16 @@ type Bear =
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(
                 types = [ SynTypeDefnSig(equalsRange = Some mEquals
-                                         typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Enum _)) ]
+                                         typeRepr = SynTypeDefnSigRepr.Simple(repr =
+                                             SynTypeDefnSimpleRepr.Enum(cases = [
+                                                SynEnumCase(equalsRange = mEqualsEnumCase1)
+                                                SynEnumCase(equalsRange = mEqualsEnumCase2)
+                                         ]) )) ]
             )
         ]) ])) ->
             assertRange (4, 10) (4, 11) mEquals
+            assertRange (5, 16) (5, 17) mEqualsEnumCase1
+            assertRange (6, 16) (6, 17) mEqualsEnumCase2
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]

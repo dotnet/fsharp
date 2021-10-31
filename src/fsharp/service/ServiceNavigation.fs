@@ -195,7 +195,7 @@ module NavigationImpl =
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
-                        [ for SynEnumCase(_, id, _, _, _, m) in cases ->
+                        [ for SynEnumCase(ident = id; range = m) in cases ->
                             createMember(id, NavigationItemKind.Field, FSharpGlyph.EnumMember, m, NavigationEntityKind.Enum, false, access) ]
                     let nested = cases@topMembers
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodyRange mb nested, nested, NavigationEntityKind.Enum, false, access) ]
@@ -367,7 +367,7 @@ module NavigationImpl =
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
                 | SynTypeDefnSimpleRepr.Enum(cases, mb) -> 
                     let cases = 
-                        [ for SynEnumCase(_, id, _, _, _, m) in cases ->
+                        [ for SynEnumCase(ident = id; range = m) in cases ->
                             createMember(id, NavigationItemKind.Field, FSharpGlyph.EnumMember, m, NavigationEntityKind.Enum, false, access) ]
                     let nested = cases@topMembers
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Enum, m, bodyRange mb nested, nested, NavigationEntityKind.Enum, false, access) ]
@@ -548,7 +548,7 @@ module NavigateTo =
             | Some id -> addIdent NavigableItemKind.Field id isSig container
             | _ -> ()
         
-        let addEnumCase(SynEnumCase(_, id, _, _, _, _)) isSig = 
+        let addEnumCase(SynEnumCase(ident = id)) isSig = 
             addIdent NavigableItemKind.EnumCase id isSig
         
         let addUnionCase(SynUnionCase(_, id, _, _, _, _)) isSig container = 
