@@ -121,7 +121,7 @@ module List =
     /// a list of values <c>v</c> where the applied function returned <c>Some(v)</c>.
     /// 
     /// Returns an empty list when the input list is empty or when the the applied chooser function
-    /// retuns <c>None</c> for all elements.
+    /// returns <c>None</c> for all elements.
     /// </summary>
     ///
     /// <param name="chooser">The function to be applied to the list elements.</param>
@@ -175,7 +175,7 @@ module List =
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
-    /// <summary>Divides the input list into lists (chunks) with at a positive numer of at most <c>chunkSize</c> elements.
+    /// <summary>Divides the input list into lists (chunks) with at a positive number of at most <c>chunkSize</c> elements.
     /// Returns a new list containing the generated lists (chunks) as its elements.
     /// 
     /// Returns an empty list when the input list is empty.</summary>
@@ -776,7 +776,7 @@ module List =
     /// <returns>The final state value.</returns>
     ///
     /// <example id="fold2-1">
-    /// <code lang="fsharp">Count the numer of times the coins match:
+    /// <code lang="fsharp">Count the number of times the coins match:
     /// type CoinToss = Head | Tails
     ///
     /// let inputs1 = [Tails; Head; Tails]
@@ -1778,7 +1778,7 @@ module List =
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
     /// </code>
-    /// Evaluates to <c>[0; 1; -1; 2]</c>. Note <c>0</c> is the intial
+    /// Evaluates to <c>[0; 1; -1; 2]</c>. Note <c>0</c> is the initial
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
     /// </example>
@@ -1806,7 +1806,7 @@ module List =
     ///     | In i -> acc + i
     ///     | Out o -> acc - o)
     /// </code>
-    /// Evaluates to <c> [2; 1; 3; 0]</c> by processing each input from back to front. Note <c>0</c> is the intial
+    /// Evaluates to <c> [2; 1; 3; 0]</c> by processing each input from back to front. Note <c>0</c> is the initial
     /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state, and the states
     /// are produced from back to front.
     /// Note <c>acc</c> is a commonly used abbreviation for "accumulator".
