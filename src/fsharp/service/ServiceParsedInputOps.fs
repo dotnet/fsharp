@@ -640,7 +640,7 @@ module ParsedInput =
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.Interface(t, _) -> walkType t
             | SynMemberSig.ValField(f, _) -> walkField f
-            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, repr, memberSigs, _), _) -> 
+            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, _, repr, memberSigs, _), _) -> 
                 walkComponentInfo false info
                 |> Option.orElseWith (fun () -> walkTypeDefnSigRepr repr)
                 |> Option.orElseWith (fun () -> List.tryPick walkMemberSig memberSigs)
@@ -1399,7 +1399,7 @@ module ParsedInput =
             | SynMemberSig.Interface(t, _) -> walkType t
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.ValField(f, _) -> walkField f
-            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, repr, memberSigs, _), _) ->
+            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, _, repr, memberSigs, _), _) ->
                 let isTypeExtensionOrAlias =
                     match repr with
                     | SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, _)

@@ -3201,7 +3201,7 @@ module EstablishTypeDefinitionCores =
             [ for def in defs do 
                match def with 
                | SynModuleSigDecl.Types (typeSpecs, _) -> 
-                  for SynTypeDefnSig(SynComponentInfo(_, TyparDecls typars, _, ids, _, _, _, _), trepr, extraMembers, _) in typeSpecs do 
+                  for SynTypeDefnSig(SynComponentInfo(_, TyparDecls typars, _, ids, _, _, _, _), _, trepr, extraMembers, _) in typeSpecs do 
                       if isNil typars then
                           match trepr with 
                           | SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.None _, _) when not (isNil extraMembers) -> ()
@@ -4914,7 +4914,7 @@ module TcDeclarations =
     //-------------------------------------------------------------------------
 
     /// Separates the signature declaration into core (shape) and body.
-    let rec private SplitTyconSignature (SynTypeDefnSig(synTyconInfo, trepr, extraMembers, _)) = 
+    let rec private SplitTyconSignature (SynTypeDefnSig(synTyconInfo, _, trepr, extraMembers, _)) = 
 
         let implements1 = 
             extraMembers |> List.choose (function SynMemberSig.Interface (f, m) -> Some(f, m) | _ -> None) 
@@ -5225,7 +5225,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                 | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr, members, _), _) ->
                       let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _, doc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
-                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
+                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
                       decls, (false, false)
 
                 | SynModuleSigDecl.Val (vspec, _) -> 

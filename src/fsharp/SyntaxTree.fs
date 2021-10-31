@@ -1449,6 +1449,7 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
+        equalsRange: Range option *
         typeRepr: SynTypeDefnSigRepr *
         members: SynMemberSig list *
         range: range

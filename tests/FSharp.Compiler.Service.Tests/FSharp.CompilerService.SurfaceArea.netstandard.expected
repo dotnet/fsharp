@@ -8625,7 +8625,7 @@ FSharp.Compiler.Syntax.SynTypeDefnRepr: System.String ToString()
 FSharp.Compiler.Syntax.SynTypeDefnSig
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo get_typeInfo()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo typeInfo
-FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr get_typeRepr()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr typeRepr
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range Range
@@ -8636,6 +8636,8 @@ FSharp.Compiler.Syntax.SynTypeDefnSig: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeDefnSig: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig] get_members()
 FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig] members
+FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
+FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.SynTypeDefnSig: System.String ToString()
 FSharp.Compiler.Syntax.SynTypeDefnSigRepr
 FSharp.Compiler.Syntax.SynTypeDefnSigRepr+Exception: FSharp.Compiler.Syntax.SynExceptionDefnRepr get_repr()

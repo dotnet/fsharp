@@ -347,7 +347,7 @@ module NavigationImpl =
             let nested = processSigMembers memberSigs
             processExnRepr baseName nested repr
 
-        and processTycon baseName (SynTypeDefnSig(SynComponentInfo(_, _, _, lid, _, _, access, _), repr, membDefns, m)) =
+        and processTycon baseName (SynTypeDefnSig(SynComponentInfo(_, _, _, lid, _, _, access, _), _, repr, membDefns, m)) =
             let topMembers = processSigMembers membDefns
             match repr with
             | SynTypeDefnSigRepr.Exception repr -> processExnRepr baseName [] repr
@@ -623,7 +623,7 @@ module NavigateTo =
             | SynModuleSigDecl.HashDirective _
             | SynModuleSigDecl.Open _ -> ()
     
-        and walkSynTypeDefnSig (SynTypeDefnSig(componentInfo, repr, members, _)) container = 
+        and walkSynTypeDefnSig (SynTypeDefnSig(componentInfo, _, repr, members, _)) container = 
             let container = addComponentInfo NavigableContainerType.Type NavigableItemKind.Type componentInfo true container
             for m in members do
                 walkSynMemberSig m container

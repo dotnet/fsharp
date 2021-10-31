@@ -717,7 +717,7 @@ module Structure =
             match typeSigs with
             | [] -> range
             | ls ->
-                let (SynTypeDefnSig(_, _, memberSigs, r)) = List.last ls
+                let (SynTypeDefnSig(members = memberSigs; range = r)) = List.last ls
                 lastMemberSigRangeElse r memberSigs
 
         let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecl list) =
@@ -746,7 +746,7 @@ module Structure =
                 parseTypeDefnSig typeDefSig
             | _ -> ()
 
-        and parseTypeDefnSig (SynTypeDefnSig (SynComponentInfo(attribs, TyparDecls typeArgs, _, longId, _, _, _, r) as __, objectModel, memberSigs, _)) = 
+        and parseTypeDefnSig (SynTypeDefnSig (SynComponentInfo(attribs, TyparDecls typeArgs, _, longId, _, _, _, r) as __, _, objectModel, memberSigs, _)) = 
             parseAttributes attribs
 
             let makeRanges memberSigs =

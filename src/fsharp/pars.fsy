@@ -812,14 +812,14 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g)) = $4
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), equalsRange, typeRepr, members, range)) = $4
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let mTc =
             let keywordM = rhs parseState 3
-            (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges g
+            (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), e, f, mTc))
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr, members, mTc))
         let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
@@ -876,9 +876,9 @@ tyconSpfnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconSpfn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, range)) = $2
+           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, members, range)) = $2
            _xmlDoc.MarkAsInvalid()
-           SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), typeRepr, members, range)
+           SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, members, range)
        tyconSpfn :: $3 }
 
   |
@@ -889,9 +889,10 @@ tyconSpfnList:
 tyconSpfn: 
   | typeNameInfo  EQUALS tyconSpfnRhsBlock 
       { let lhsm = rhs parseState 1 
-        $3 lhsm $1 }
+        let mEquals = rhs parseState 2
+        $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
-      { SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), $2, lhs parseState) }
+      { SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), $2, lhs parseState) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -906,42 +907,42 @@ tyconSpfnRhsBlock:
   /* representation. */
   | OBLOCKBEGIN  tyconSpfnRhs opt_OBLOCKSEP classSpfnMembers opt_classSpfn oblockend opt_classSpfn  
      { let m = lhs parseState 
-       (fun lhsm nameInfo -> 
-           $2 lhsm nameInfo (checkForMultipleAugmentations m ($4 @ $5) $7)) }
+       (fun lhsm nameInfo mEquals -> 
+           $2 lhsm nameInfo mEquals (checkForMultipleAugmentations m ($4 @ $5) $7)) }
 
   | tyconSpfnRhs opt_classSpfn
      { let m = lhs parseState 
-       (fun lhsm nameInfo -> 
-           $1 lhsm nameInfo $2) }
+       (fun lhsm nameInfo mEquals -> 
+           $1 lhsm nameInfo mEquals $2) }
 
 
 /* The right-hand-side of a type definition in a signature */
 tyconSpfnRhs: 
   | tyconDefnOrSpfnSimpleRepr 
-     { (fun lhsm nameInfo augmentation -> 
+     { (fun lhsm nameInfo mEquals augmentation -> 
            let declRange = unionRanges lhsm $1.Range
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole)) }
 
   | tyconClassSpfn 
      { let objectModelRange = lhs parseState 
        let needsCheck, (kind, decls) = $1
-       (fun nameRange nameInfo augmentation -> 
+       (fun nameRange nameInfo mEquals augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())
            
            let declRange = unionRanges nameRange objectModelRange
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole)) }
 
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
        let invoke = SynMemberSig.Member(SynValSig([], mkSynId m "Invoke", inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m), AbstractMemberFlags SynMemberKind.Member, m) 
-       (fun nameRange nameInfo augmentation -> 
+       (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole)) }
 
 
 /* The right-hand-side of an object type definition in a signature */

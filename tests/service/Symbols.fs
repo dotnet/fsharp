@@ -1003,6 +1003,92 @@ type FooType =
             assertRange (5, 4) (6, 20) mv
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefnSig with ObjectModel Delegate contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace Foo
+
+type X = delegate of string -> string
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types = [ SynTypeDefnSig(equalsRange = Some mEquals
+                                         typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)) ]
+            )
+        ]) ])) ->
+            assertRange (4, 7) (4, 8) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefnSig with ObjectModel class contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+type Foobar =
+    class
+    end
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types = [ SynTypeDefnSig(equalsRange = Some mEquals
+                                         typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Class)) ]
+            )
+        ]) ])) ->
+            assertRange (4, 12) (4, 13) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefnSig with Enum contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+type Bear =
+    | BlackBear = 1
+    | PolarBear = 2
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types = [ SynTypeDefnSig(equalsRange = Some mEquals
+                                         typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Enum _)) ]
+            )
+        ]) ])) ->
+            assertRange (4, 10) (4, 11) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefnSig with Union contains the range of the equals sign`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace SomeNamespace
+
+type Shape =
+    | Square of int 
+    | Rectangle of int * int
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types = [ SynTypeDefnSig(equalsRange = Some mEquals
+                                         typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Union _)) ]
+            )
+        ]) ])) ->
+            assertRange (4, 11) (4, 12) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynMatchClause =
     [<Test>]
     let ``Range of single SynMatchClause`` () =

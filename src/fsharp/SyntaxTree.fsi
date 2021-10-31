@@ -1619,6 +1619,7 @@ type SynTypeDefnSig =
     /// The information for a type definition in a signature
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
+        equalsRange: Range option *
         typeRepr: SynTypeDefnSigRepr *
         members: SynMemberSig list *
         range: range
