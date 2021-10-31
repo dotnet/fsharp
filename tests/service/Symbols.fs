@@ -495,7 +495,7 @@ comp {
                         SynModuleDecl.DoExpr(expr = SynExpr.App(argExpr =
                             SynExpr.ComputationExpr(expr =
                                 SynExpr.LetOrUseBang(equalsRange = Some mLetBangEquals
-                                                     andBangs = [ AndBang(equalsRange = mAndBangEquals) ]))))
+                                                     andBangs = [ SynExprAndBang(equalsRange = mAndBangEquals) ]))))
                     ])
                 ])) ->
             assertRange (3, 11) (3, 12) mLetBangEquals
@@ -503,7 +503,7 @@ comp {
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+    let ``SynExpr.Record contains the range of the equals sign in SynExprRecordField`` () =
         let ast =
             """
 { V = v
@@ -520,8 +520,8 @@ comp {
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.DoExpr(expr =
                             SynExpr.Record(recordFields = [
-                                RecordInstanceField(equalsRange = Some mEqualsV)
-                                RecordInstanceField(equalsRange = Some mEqualsX)
+                                SynExprRecordField(equalsRange = Some mEqualsV)
+                                SynExprRecordField(equalsRange = Some mEqualsX)
                             ]))
                     ])
                 ])) ->
@@ -530,7 +530,7 @@ comp {
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``inherit SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+    let ``inherit SynExpr.Record contains the range of the equals sign in SynExprRecordField`` () =
         let ast =
             """
 { inherit Exception(msg); X = 1; }
@@ -542,7 +542,7 @@ comp {
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.DoExpr(expr =
                             SynExpr.Record(baseInfo = Some _ ; recordFields = [
-                                RecordInstanceField(equalsRange = Some mEquals)
+                                SynExprRecordField(equalsRange = Some mEquals)
                             ]))
                     ])
                 ])) ->
@@ -550,7 +550,7 @@ comp {
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
-    let ``copy SynExpr.Record contains the range of the equals sign in RecordInstanceField`` () =
+    let ``copy SynExpr.Record contains the range of the equals sign in SynExprRecordField`` () =
         let ast =
             """
 { foo with
@@ -565,7 +565,7 @@ comp {
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.DoExpr(expr =
                             SynExpr.Record(copyInfo = Some _ ; recordFields = [
-                                RecordInstanceField(equalsRange = Some mEquals)
+                                SynExprRecordField(equalsRange = Some mEquals)
                             ]))
                     ])
                 ])) ->

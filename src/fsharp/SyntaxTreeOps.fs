@@ -618,7 +618,7 @@ let inferredTyparDecls = SynValTyparDecls(None, true)
 let noInferredTypars = SynValTyparDecls(None, false)
 
 let rec synExprContainsError inpExpr =
-    let rec walkBind (SynBinding(expr = synExpr)) = walkExpr synExpr
+    let rec walkBind (SynBinding(expr=synExpr)) = walkExpr synExpr
 
     and walkExprs es = es |> List.exists walkExpr
 
@@ -688,7 +688,7 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.Record (_, origExpr, fs, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              let flds = fs |> List.choose (fun (RecordInstanceField(expr = v)) -> v)
+              let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
               walkExprs flds
 
           | SynExpr.ObjExpr (_, _, bs, is, _, _) ->
@@ -698,7 +698,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.While (_, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) ->
+          | SynExpr.For (identBody=e1; toBody=e2; doBody=e3) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
           | SynExpr.MatchLambda (_, _, cl, _, _) ->
@@ -748,7 +748,7 @@ let rec synExprContainsError inpExpr =
               walkExpr e || walkMatchClauses cl
 
           | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
-              walkExpr e1 || walkExprs [ for AndBang(body = e) in es do yield e ] || walkExpr e2
+              walkExpr e1 || walkExprs [ for SynExprAndBang(body=e) in es do yield e ] || walkExpr e2
 
           | SynExpr.InterpolatedString (parts, _, _m) ->
               walkExprs 

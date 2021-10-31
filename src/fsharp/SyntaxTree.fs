@@ -494,7 +494,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields: RecordInstanceField list *
+        recordFields: SynExprRecordField list *
         range: range
 
     | New of
@@ -780,7 +780,7 @@ type SynExpr =
         pat: SynPat *
         equalsRange: Range option *
         rhs: SynExpr *
-        andBangs: AndBang list *
+        andBangs: SynExprAndBang list *
         body:SynExpr *
         range: range 
 
@@ -943,8 +943,8 @@ type SynExpr =
         | _ -> false
 
 [<NoEquality; NoComparison>]
-type AndBang =
-    | AndBang of
+type SynExprAndBang =
+    | SynExprAndBang of
         debugPoint: DebugPointAtBinding *
         isUse: bool *
         isFromSource: bool *
@@ -954,8 +954,8 @@ type AndBang =
         range: Range
 
 [<NoEquality; NoComparison>]
-type RecordInstanceField =
-    | RecordInstanceField of
+type SynExprRecordField =
+    | SynExprRecordField of
         fieldName: RecordFieldName *
         equalsRange: Range option *
         expr: SynExpr option *

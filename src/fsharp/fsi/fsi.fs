@@ -2317,7 +2317,7 @@ type internal FsiInteractionProcessor
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
                     | SynModuleDecl.DoExpr (DebugPointAtBinding.Yes _, _, _)
-                    | SynModuleDecl.Let (_, SynBinding(debugPoint = DebugPointAtBinding.Yes _) :: _, _) -> true
+                    | SynModuleDecl.Let (bindings=SynBinding(debugPoint=DebugPointAtBinding.Yes _) :: _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList

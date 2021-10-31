@@ -206,7 +206,7 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynModule m :: origPath
                 match m with
                 | SynModuleDecl.ModuleAbbrev(_ident, _longIdent, _range) -> None
-                | SynModuleDecl.NestedModule(_synComponentInfo, _isRec, _, synModuleDecls, _, _range) -> synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick decl
+                | SynModuleDecl.NestedModule(decls=synModuleDecls) -> synModuleDecls |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path)) |> pick decl
                 | SynModuleDecl.Let(isRecursive, synBindingList, range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
@@ -327,7 +327,7 @@ module SyntaxTraversal =
                             )
                         | _ -> ()
                         let copyOpt = Option.map fst copyOpt
-                        for RecordInstanceField((field, _), _, e, sepOpt) in fields do
+                        for SynExprRecordField(fieldName=(field, _); expr=e; blockSeparator=sepOpt) in fields do
                             yield dive (path, copyOpt, Some field) field.Range (fun r -> 
                                 if rangeContainsPos field.Range pos then
                                     visitor.VisitRecordField r
@@ -393,7 +393,7 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.For (_sequencePointInfoForForLoop, _ident, _, synExpr, _, synExpr2, synExpr3, _range) -> 
+                | SynExpr.For (identBody=synExpr; toBody=synExpr2; doBody=synExpr3) -> 
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr
                      dive synExpr3 synExpr3.Range traverseSynExpr]
@@ -571,12 +571,12 @@ module SyntaxTraversal =
 
                 | SynExpr.YieldOrReturnFrom (_, synExpr, _range) -> traverseSynExpr synExpr
 
-                | SynExpr.LetOrUseBang(_sequencePointInfoForBinding, _, _, synPat, _, synExpr, andBangSynExprs, synExpr2, _range) -> 
+                | SynExpr.LetOrUseBang(pat=synPat; rhs=synExpr; andBangs=andBangSynExprs; body=synExpr2) -> 
                     [
                         yield dive synPat synPat.Range traversePat
                         yield dive synExpr synExpr.Range traverseSynExpr
                         yield!
-                            [ for AndBang(pat = andBangSynPat; body = andBangSynExpr) in andBangSynExprs do
+                            [ for SynExprAndBang(pat=andBangSynPat; body=andBangSynExpr) in andBangSynExprs do
                                 yield (dive andBangSynPat andBangSynPat.Range traversePat)
                                 yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)]
                         yield dive synExpr2 synExpr2.Range traverseSynExpr
@@ -658,8 +658,8 @@ module SyntaxTraversal =
                         match mems |> Seq.toList with
                         | [mem] -> // the typical case, a single member has this range 'r'
                             Some (dive mem r (traverseSynMemberDefn path  traverseInherit))
-                        |  [SynMemberDefn.Member(SynBinding(headPat = SynPat.LongIdent(lid1,Some(info1),_,_,_,_)),_) as mem1
-                            SynMemberDefn.Member(SynBinding(headPat = SynPat.LongIdent(lid2,Some(info2),_,_,_,_)),_) as mem2] -> // can happen if one is a getter and one is a setter
+                        |  [SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid1; extraId=Some(info1)))) as mem1
+                            SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(longDotId=lid2; extraId=Some(info2)))) as mem2] -> // can happen if one is a getter and one is a setter
                             // ensure same long id
                             assert( (lid1.Lid,lid2.Lid) ||> List.forall2 (fun x y -> x.idText = y.idText) )
                             // ensure one is getter, other is setter
@@ -736,7 +736,7 @@ module SyntaxTraversal =
                         visitor.VisitImplicitInherit(path, traverseSynExpr path, synType, synExpr, range)
                         )
                 ] |> pick m
-            | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, _, synExpr, _, _) -> traverseSynExpr path synExpr
+            | SynMemberDefn.AutoProperty(synExpr=synExpr) -> traverseSynExpr path synExpr
             | SynMemberDefn.LetBindings(synBindingList, isRecursive, _, range) -> 
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | Some x -> Some x
@@ -774,7 +774,7 @@ module SyntaxTraversal =
             let defaultTraverse b =
                 let path = SyntaxNode.SynBinding b :: origPath
                 match b with
-                | SynBinding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, synPat, _synBindingReturnInfoOption, _, synExpr, _range, _sequencePointInfoForBinding) ->
+                | SynBinding(headPat=synPat; expr=synExpr) ->
                     [ traversePat path synPat
                       traverseSynExpr path synExpr ]
                     |> List.tryPick id

@@ -7219,7 +7219,7 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, optOrigExpr, flds, m
         let flds =
             [
                 // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
-                for RecordInstanceField(fieldName = (lidwd, isOk); expr = v) in flds do
+                for SynExprRecordField(fieldName=(lidwd, isOk); expr=v) in flds do
                     if not isOk then
                         // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
                         // we assume that parse errors were already reported
@@ -8337,7 +8337,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
 
             | SynExpr.Tuple (_, synExprs, _, _)
             | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
-            | SynExpr.Record (_, copyOpt, fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (RecordInstanceField(expr = e)) -> e) >> Option.forall isSimpleArgument)
+            | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
             | SynExpr.IfThenElse (_, _, synExpr, _, synExpr2, _, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
             | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
@@ -9535,7 +9535,7 @@ and bindLetRec (binds: Bindings) m e =
 and CheckRecursiveBindingIds binds =
     let hashOfBinds = HashSet<string>()
 
-    for SynBinding.SynBinding(headPat = b; range = m) in binds do
+    for SynBinding.SynBinding(headPat=b; range=m) in binds do
         let nm =
             match b with
             | SynPat.Named(id, _, _, _)
