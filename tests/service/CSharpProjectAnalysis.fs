@@ -122,6 +122,9 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
 
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test that symbols of csharp inner classes/enums are reported from dervied generic class`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
