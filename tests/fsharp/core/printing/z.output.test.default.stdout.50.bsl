@@ -6261,3 +6261,5 @@ val SomeLiteralWithASomewhatLongName2: string
 val ShortName: string = "hi"
 
 > > > 
+
+val it: System.DayOfWeek = Tuesday {value__ = 2;}

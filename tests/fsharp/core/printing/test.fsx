@@ -1088,3 +1088,6 @@ let ShortName = "hi"
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)
+
+System.DayOfWeek.Monday
+;;
