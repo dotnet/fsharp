@@ -57,7 +57,9 @@ val prettyLayoutOfMethInfoFreeStyle: infoReader:InfoReader -> m:range -> denv:Di
 
 val prettyLayoutOfPropInfoFreeStyle: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:PropInfo -> Layout
 
-val stringOfMethInfo: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
+val stringOfMethInfo: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> minfo:MethInfo -> string
+
+val multiLineStringOfMethInfos: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> minfos:MethInfo list -> string
 
 val stringOfParamData: denv:DisplayEnv -> paramData:ParamData -> string
 
@@ -67,9 +69,9 @@ val layoutExnDef: denv:DisplayEnv -> infoReader:InfoReader -> x:EntityRef -> Lay
 
 val stringOfTyparConstraints: denv:DisplayEnv -> x:(Typar * TyparConstraint) list -> string
 
-val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
+val layoutTyconDefn: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
 
-val layoutEntityRef: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
+val layoutEntityDefn: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
 
 val layoutUnionCases: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:RecdField list -> Layout
 

@@ -97,7 +97,7 @@ type public FSharpProjectOptions =
 and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | PEReference of projectFileName: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member FileName : string
@@ -109,7 +109,7 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
     /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
     /// If the stream evaluation throws an exception, it will be automatically handled.
-    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
+    static member CreatePortableExecutable : projectFileName: string * getStamp: (unit -> DateTime) * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
     /// Creates a reference from an ILModuleReader.
     static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
@@ -120,6 +120,8 @@ type public FSharpSymbolUse =
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
+
+    member GenericArguments: (FSharpGenericParameter * FSharpType) list 
 
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
     /// and other methods to format items in a way that is suitable for a specific source code location.
@@ -156,7 +158,7 @@ type public FSharpSymbolUse =
     member IsPrivateToFile: bool 
 
     // For internal use only
-    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new: denv: DisplayEnv * symbol:FSharpSymbol * inst: TyparInst * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -177,6 +179,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -260,6 +263,14 @@ type public FSharpCheckFileResults =
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
     member GetToolTip: line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> ToolTipText
+
+    /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
+    ///
+    /// <param name="symbol">The symbol.</param>
+    /// <param name="inst">Generic arguments.</param>
+    /// <param name="displayFullName">Display the symbol full name.</param>
+    /// <param name="range">The position.</param>
+    member GetDescription: symbol: FSharpSymbol * inst: (FSharpGenericParameter * FSharpType) list * displayFullName: bool * range: range -> ToolTipText 
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///

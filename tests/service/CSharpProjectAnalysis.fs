@@ -57,6 +57,9 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
     results, assemblies
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test that csharp references are recognized as such`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
@@ -85,6 +88,10 @@ let ``Test that csharp references are recognized as such`` () =
     //// Check that we get xml docs
     members.[".ctor"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.#ctor(System.Int32,System.String)"
     members.["Method"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method(System.String)"
+    members.["Method2"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method2(System.String)"
+    members.["Method3"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method3(System.String[])"
+    members.["MethodWithOutref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithOutref(System.Int32@)"
+    members.["MethodWithInref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithInref(System.Int32@)"
     members.["Property"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.Property"
     members.["Event"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.Event"
     members.["InterfaceMethod"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceMethod(System.String)"
@@ -92,6 +99,9 @@ let ``Test that csharp references are recognized as such`` () =
     members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test that symbols of csharp inner classes/enums are reported`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
@@ -134,6 +144,9 @@ let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
           "member StaticMember"; "NestedEnumClass"|]
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Ctor test`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
@@ -165,6 +178,9 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different types with the same short name equality check`` () =
     let source = """
 module CtorTest
@@ -182,6 +198,9 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different namespaces with the same short name equality check`` () =
     let source = """
 module CtorTest

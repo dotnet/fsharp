@@ -25,6 +25,11 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Test.Utilities", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\fsharp\FSharpSuite.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D0E98C0D-490B-4C61-9329-0862F6E87645} = {D0E98C0D-490B-4C61-9329-0862F6E87645}
+		{8B3E283D-B5FE-4055-9D80-7E3A32F3967B} = {8B3E283D-B5FE-4055-9D80-7E3A32F3967B}
+		{C94C257C-3C0A-4858-B5D8-D746498D1F08} = {C94C257C-3C0A-4858-B5D8-D746498D1F08}
+	EndProjectSection
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject

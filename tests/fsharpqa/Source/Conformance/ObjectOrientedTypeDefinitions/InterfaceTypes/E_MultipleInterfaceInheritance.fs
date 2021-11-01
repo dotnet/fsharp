@@ -64,8 +64,8 @@ if ( {new I_003<int> with
 //<Expects id="FS0039" status="error" span="(45,7-45,9)">The type 'T' does not define the field, constructor or member 'Me'</Expects>
 //<Expects id="FS0039" status="error" span="(49,7-49,11)">The type 'T' does not define the field, constructor or member 'Home'</Expects>
 //<Expects id="FS0366" status="error" span="(53,6-55,8)">No implementation was given for those members: </Expects>
-//<Expects span="(53,6-55,8)">'abstract member I_002\.Me : 'a -> int'\.</Expects>
-//<Expects span="(53,6-55,8)">'abstract member I_002\.Me : 'a -> int'\.</Expects>
+//<Expects span="(53,6-55,8)">'abstract I_002\.Me: 'a -> int'\.</Expects>
+//<Expects span="(53,6-55,8)">'abstract I_002\.Me: 'a -> int'\.</Expects>
 //<Expects span="(53,6-53,8)">Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'\.</Expects>
 //<Expects id="FS0001" status="error" span="(57,24-57,32)">This expression was expected to have type.    'int'    .but here has type.    'string'</Expects>
 //<Expects id="FS0001" status="error" span="(58,24-58,30)">This expression was expected to have type.    'int'    .but here has type.    'char'</Expects>

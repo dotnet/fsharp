@@ -41,13 +41,13 @@
   // Offset: 0x000007A8 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {60B68B90-05F6-D6CB-A745-0383908BB660}
+// MVID: {611C52B1-05F6-D6CB-A745-0383B1521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05BE0000
+// Image base: 0x06550000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -229,28 +229,30 @@
     .method assembly static int32  f() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       37 (0x25)
+      // Code size       38 (0x26)
       .maxstack  8
       .line 7,7 : 23,37 ''
-      IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 StaticInit_Struct01/C::init@4
-      IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_0013
+      IL_0000:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 StaticInit_Struct01/C::init@4
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_000f:  nop
-      .line 100001,100001 : 0,0 ''
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_0010:  nop
-      IL_0011:  br.s       IL_0014
+      .line 100001,100001 : 0,0 ''
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
 
       .line 100001,100001 : 0,0 ''
-      IL_0013:  nop
-      IL_0014:  ldsfld     int32 StaticInit_Struct01/C::x
-      IL_0019:  ldstr      "2"
-      IL_001e:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_0023:  add
-      IL_0024:  ret
+      IL_0014:  nop
+      IL_0015:  ldsfld     int32 StaticInit_Struct01/C::x
+      IL_001a:  ldstr      "2"
+      IL_001f:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0024:  add
+      IL_0025:  ret
     } // end of method C::f
 
     .method public hidebysig virtual final 

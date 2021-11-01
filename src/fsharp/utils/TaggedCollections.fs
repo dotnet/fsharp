@@ -582,7 +582,7 @@ namespace Internal.Utilities.Collections.Tagged
                 let mutable res = 0
                 for x in this do
                     res <- combineHash res (Unchecked.hash x)
-                abs res
+                res
 
         override this.GetHashCode() = this.ComputeHashCode()
           
@@ -1072,7 +1072,7 @@ namespace Internal.Utilities.Collections.Tagged
             for KeyValue(x,y) in this do
                 res <- combineHash res (Unchecked.hash x)
                 res <- combineHash res (Unchecked.hash y)
-            abs res
+            res
 
         override this.GetHashCode() = this.ComputeHashCode()
 

@@ -96,8 +96,9 @@ module IncrementalBuildSyntaxTree =
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
-    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
+    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, source: FSharpSource, isLastCompiland) =
 
+        let filename = source.FilePath
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
@@ -123,7 +124,14 @@ module IncrementalBuildSyntaxTree =
                             )
                         )
                     else
-                        ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+                        use text = source.GetTextContainer()
+                        match text with
+                        | TextContainer.Stream(stream) ->
+                            ParseOneInputStream(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)false, stream)
+                        | TextContainer.SourceText(sourceText) ->
+                            ParseOneInputSourceText(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, sourceText)
+                        | TextContainer.OnDisk ->
+                            ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
                 fileParsed.Trigger filename
 
@@ -147,7 +155,7 @@ module IncrementalBuildSyntaxTree =
             | _ -> parse sigNameOpt
 
         member _.Invalidate() =
-            SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
+            SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, source, isLastCompiland)
 
         member _.FileName = filename
 
@@ -535,7 +543,7 @@ type BoundModel private (tcConfig: TcConfig,
                         
                         let tcInfoExtras =
                             {
-                                /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                 latestImplFile = if keepAssemblyContents then implFile else None
                                 tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
                                 tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
@@ -668,7 +676,7 @@ module Utilities =
         | _ -> None
 
 /// The implementation of the information needed by TcImports in CompileOps.fs for an F# assembly reference.
-//
+///
 /// Constructs the build data (IRawFSharpAssemblyData) representing the assembly when used
 /// as a cross-assembly reference.  Note the assembly has not been generated on disk, so this is
 /// a virtualized view of the assembly contents as computed by background checking.
@@ -703,8 +711,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 module IncrementalBuilderHelpers =
 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) (_m: range, filename: string, _isLastCompiland) =
-        cache.GetFileTimeStamp filename
+    let StampFileNameTask (cache: TimeStampCache) (_m: range, source: FSharpSource, _isLastCompiland) =
+        cache.GetFileTimeStamp source.FilePath
 
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) (_ref, timeStamper) =
@@ -768,8 +776,8 @@ module IncrementalBuilderHelpers =
                 return frameworkTcImports
           }
 
-        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
+        let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -911,8 +919,8 @@ module IncrementalBuilderHelpers =
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalBoundModelWithErrors
     }
 
-    let GetSyntaxTree tcConfig fileParsed lexResourceManager (sourceRange: range, filename: string, isLastCompiland) =
-        SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
+    let GetSyntaxTree tcConfig fileParsed lexResourceManager (sourceRange: range, source, isLastCompiland) =
+        SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, source, isLastCompiland)
 
 [<NoComparison;NoEquality>]
 type IncrementalBuilderInitialState =
@@ -924,7 +932,7 @@ type IncrementalBuilderInitialState =
         outfile: string
         assemblyName: string
         lexResourceManager: Lexhelp.LexResourceManager
-        fileNames: block<range * string * (bool * bool)>
+        fileNames: block<range * FSharpSource * (bool * bool)>
         enablePartialTypeChecking: bool
         beforeFileChecked: Event<string>
         fileChecked: Event<string>
@@ -1332,10 +1340,10 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member _.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
-        let CompareFileNames (_, f2, _) =
+        let CompareFileNames (_, f2: FSharpSource, _) =
             let result =
-                   String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
-                || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
+                   String.Compare(filename, f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
+                || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2.FilePath, StringComparison.CurrentCultureIgnoreCase)=0
             result
         match fileNames |> Block.tryFindIndex CompareFileNames with
         | Some slot -> Some slot
@@ -1358,7 +1366,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         let syntaxTree = GetSyntaxTree initialState.tcConfig initialState.fileParsed initialState.lexResourceManager fileInfo
         syntaxTree.Parse None
 
-    member _.SourceFiles  = fileNames |> Seq.map (fun (_, f, _) -> f) |> List.ofSeq
+    member _.SourceFiles  = fileNames |> Seq.map (fun (_, f, _) -> f.FilePath) |> List.ofSeq
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
@@ -1582,6 +1590,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     beforeFileChecked,
                     fileChecked,
                     importsInvalidatedByTypeProvider
+                )
+
+            let sourceFiles =
+                sourceFiles
+                |> List.map (fun (m, filename, isLastCompiland) ->
+                    (m, FSharpSource.CreateFromFile(filename), isLastCompiland)
                 )
 
             let initialState =

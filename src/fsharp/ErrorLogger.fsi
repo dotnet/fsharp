@@ -198,11 +198,17 @@ val SetThreadBuildPhaseNoUnwind: phase:BuildPhase -> unit
 
 val SetThreadErrorLoggerNoUnwind: errorLogger:ErrorLogger -> unit
 
+/// Reports an error diagnostic and continues
 val errorR: exn:exn -> unit
 
+/// Reports a warning diagnostic
 val warning: exn:exn -> unit
 
+/// Reports an error and raises a ReportedError exception
 val error: exn:exn -> 'a
+
+/// Reports an informational diagnostic
+val informationalWarning: exn:exn -> unit
 
 val simulateError: p:PhasedDiagnostic -> 'a
 
@@ -228,7 +234,9 @@ val libraryOnlyWarning: m:range -> unit
 
 val deprecatedOperator: m:range -> unit
 
-val mlCompatWarning: s:String -> m:range -> unit
+val mlCompatWarning: s:string -> m:range -> unit
+
+val mlCompatError: s:string -> m:range -> unit
 
 val suppressErrorReporting: f:(unit -> 'a) -> 'a
 
@@ -256,7 +264,7 @@ val CompleteD: OperationResult<unit>
 
 val ResultD: x:'a -> OperationResult<'a>
 
-val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> exn list option
+val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> (exn list * 'a) option
 
 val ( ++ ): res:OperationResult<'a> -> f:('a -> OperationResult<'b>) -> OperationResult<'b>
 
@@ -302,7 +310,13 @@ val TryD: f:(unit -> OperationResult<'a>) -> g:(exn -> OperationResult<'a>) -> O
 
 val RepeatWhileD: nDeep:int -> body:(int -> OperationResult<bool>) -> OperationResult<unit>
 
-val AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+val inline AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+
+val inline AtLeastOne2D: f:('a -> 'b -> OperationResult<bool>) -> xs:'a list -> ys:'b list -> OperationResult<bool>
+
+val inline MapReduceD: mapper:('a -> OperationResult<'b>) -> zero: 'b -> reducer: ('b -> 'b -> 'b) -> l:'a list -> OperationResult<'b>
+
+val inline MapReduce2D: mapper:('a -> 'b -> OperationResult<'c>) -> zero: 'c -> reducer: ('c -> 'c -> 'c) -> xs:'a list -> ys:'b list -> OperationResult<'c>
 
 module OperationResult =
     val inline ignore: res:OperationResult<'a> -> OperationResult<unit>

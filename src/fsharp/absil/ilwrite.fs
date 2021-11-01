@@ -222,59 +222,57 @@ type RowElement(tag: int32, idx: int32) =
 
 // These create RowElements
 let UShort (x: uint16) = RowElement(RowElementTags.UShort, int32 x)
+
 let ULong (x: int32) = RowElement(RowElementTags.ULong, x)
+
 /// Index into cenv.data or cenv.resources. Gets fixed up later once we known an overall
 /// location for the data section. flag indicates if offset is relative to cenv.resources.
 let Data (x: int, k: bool) = RowElement((if k then RowElementTags.DataResources else RowElementTags.Data ), x)
+
 /// pos. in guid array
 let Guid (x: int) = RowElement(RowElementTags.Guid, x)
+
 /// pos. in blob array
 let Blob (x: int) = RowElement(RowElementTags.Blob, x)
+
 /// pos. in string array
 let StringE (x: int) = RowElement(RowElementTags.String, x)
+
 /// pos. in some table
 let SimpleIndex (t, x: int) = RowElement(RowElementTags.SimpleIndex t, x)
+
 let TypeDefOrRefOrSpec (t, x: int) = RowElement(RowElementTags.TypeDefOrRefOrSpec t, x)
+
 let TypeOrMethodDef (t, x: int) = RowElement(RowElementTags.TypeOrMethodDef t, x)
+
 let HasConstant (t, x: int) = RowElement(RowElementTags.HasConstant t, x)
+
 let HasCustomAttribute (t, x: int) = RowElement(RowElementTags.HasCustomAttribute t, x)
+
 let HasFieldMarshal (t, x: int) = RowElement(RowElementTags.HasFieldMarshal t, x)
+
 let HasDeclSecurity (t, x: int) = RowElement(RowElementTags.HasDeclSecurity t, x)
+
 let MemberRefParent (t, x: int) = RowElement(RowElementTags.MemberRefParent t, x)
+
 let HasSemantics (t, x: int) = RowElement(RowElementTags.HasSemantics t, x)
+
 let MethodDefOrRef (t, x: int) = RowElement(RowElementTags.MethodDefOrRef t, x)
+
 let MemberForwarded (t, x: int) = RowElement(RowElementTags.MemberForwarded t, x)
+
 let Implementation (t, x: int) = RowElement(RowElementTags.Implementation t, x)
+
 let CustomAttributeType (t, x: int) = RowElement(RowElementTags.CustomAttributeType t, x)
+
 let ResolutionScope (t, x: int) = RowElement(RowElementTags.ResolutionScope t, x)
-(*
-type RowElement =
-    | UShort of uint16
-    | ULong of int32
-    | Data of int * bool // Index into cenv.data or cenv.resources. Will be adjusted later in writing once we fix an overall location for the data section. flag indicates if offset is relative to cenv.resources.
-    | Guid of int // pos. in guid array
-    | Blob of int // pos. in blob array
-    | String of int // pos. in string array
-    | SimpleIndex of TableName * int // pos. in some table
-    | TypeDefOrRefOrSpec of TypeDefOrRefTag * int
-    | TypeOrMethodDef of TypeOrMethodDefTag * int
-    | HasConstant of HasConstantTag * int
-    | HasCustomAttribute of HasCustomAttributeTag * int
-    | HasFieldMarshal of HasFieldMarshalTag * int
-    | HasDeclSecurity of HasDeclSecurityTag * int
-    | MemberRefParent of MemberRefParentTag * int
-    | HasSemantics of HasSemanticsTag * int
-    | MethodDefOrRef of MethodDefOrRefTag * int
-    | MemberForwarded of MemberForwardedTag * int
-    | Implementation of ImplementationTag * int
-    | CustomAttributeType of CustomAttributeTypeTag * int
-    | ResolutionScope of ResolutionScopeTag * int
-*)
 
 type BlobIndex = int
+
 type StringIndex = int
 
 let BlobIndex (x: BlobIndex) : int = x
+
 let StringIndex (x: StringIndex) : int = x
 
 let inline combineHash x2 acc = 37 * acc + x2 // (acc <<< 6 + acc >>> 2 + x2 + 0x9e3779b9)
@@ -295,7 +293,6 @@ let equalRows (elems: RowElement[]) (elems2: RowElement[]) =
         i <- i + 1
     ok
 
-
 type GenericRow = RowElement[]
 
 /// This is the representation of shared rows is used for most shared row types.
@@ -303,8 +300,11 @@ type GenericRow = RowElement[]
 /// representations.
 [<Struct; CustomEquality; NoComparison>]
 type SharedRow(elems: RowElement[], hashCode: int) =
+
     member x.GenericRow = elems
+
     override x.GetHashCode() = hashCode
+
     override x.Equals(obj: obj) =
         match obj with
         | :? SharedRow as y -> equalRows elems y.GenericRow
@@ -329,13 +329,15 @@ let MemberRefRow(mrp: RowElement, nmIdx: StringIndex, blobIdx: BlobIndex) =
 /// hash code for these rows, and indeed the GetHashCode and Equals should not be needed.
 [<Struct; CustomEquality; NoComparison>]
 type UnsharedRow(elems: RowElement[]) =
+
     member x.GenericRow = elems
+
     override x.GetHashCode() = hashRow elems
+
     override x.Equals(obj: obj) =
         match obj with
         | :? UnsharedRow as y -> equalRows elems y.GenericRow
         | _ -> false
-
 
 //=====================================================================
 //=====================================================================
@@ -360,30 +362,19 @@ let envForOverrideSpec (ospec: ILOverridesSpec) = { EnclosingTyparCount=ospec.De
 type MetadataTable<'T> =
     { name: string
       dict: Dictionary<'T, int> // given a row, find its entry number
-#if DEBUG
-      mutable lookups: int
-#endif
       mutable rows: ResizeArray<'T> }
+
     member x.Count = x.rows.Count
 
     static member New(nm, hashEq) =
         { name=nm
-#if DEBUG
-          lookups=0
-#endif
           dict = Dictionary<_, _>(100, hashEq)
           rows= ResizeArray<_>() }
 
     member tbl.EntriesAsArray =
-#if DEBUG
-        if showEntryLookups then dprintf "--> table %s had %d entries and %d lookups\n" tbl.name tbl.Count tbl.lookups
-#endif
         tbl.rows |> ResizeArray.toArray
 
     member tbl.Entries =
-#if DEBUG
-        if showEntryLookups then dprintf "--> table %s had %d entries and %d lookups\n" tbl.name tbl.Count tbl.lookups
-#endif
         tbl.rows |> ResizeArray.toList
 
     member tbl.AddSharedEntry x =
@@ -398,9 +389,6 @@ type MetadataTable<'T> =
         n
 
     member tbl.FindOrAddSharedEntry x =
-#if DEBUG
-        tbl.lookups <- tbl.lookups + 1
-#endif
         match tbl.dict.TryGetValue x with
         | true, res -> res
         | _ -> tbl.AddSharedEntry x
@@ -435,14 +423,21 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
        |> combineHash (hash argtys.Length)
        |> combineHash (hash isStatic)
 
-    member key.TypeIdx = tidx
-    member key.GenericArity = garity
-    member key.Name = nm
-    member key.ReturnType = rty
-    member key.ArgTypes = argtys
-    member key.IsStatic = isStatic
-    override x.GetHashCode() = hashCode
-    override x.Equals(obj: obj) =
+    member _.TypeIdx = tidx
+
+    member _.GenericArity = garity
+
+    member _.Name = nm
+
+    member _.ReturnType = rty
+
+    member _.ArgTypes = argtys
+
+    member _.IsStatic = isStatic
+
+    override _.GetHashCode() = hashCode
+
+    override _.Equals(obj: obj) =
         match obj with
         | :? MethodDefKey as y ->
             let compareILTypes o1 o2 =
@@ -462,11 +457,16 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
 type FieldDefKey(tidx: int, nm: string, ty: ILType) =
     // precompute the hash. hash doesn't include the type
     let hashCode = hash tidx |> combineHash (hash nm)
-    member key.TypeIdx = tidx
-    member key.Name = nm
-    member key.Type = ty
-    override x.GetHashCode() = hashCode
-    override x.Equals(obj: obj) =
+
+    member _.TypeIdx = tidx
+
+    member _.Name = nm
+
+    member _.Type = ty
+
+    override _.GetHashCode() = hashCode
+
+    override _.Equals(obj: obj) =
         match obj with
         | :? FieldDefKey as y ->
             tidx = y.TypeIdx &&
@@ -475,7 +475,9 @@ type FieldDefKey(tidx: int, nm: string, ty: ILType) =
         | _ -> false
 
 type PropertyTableKey = PropKey of int (* type. def. idx. *) * string * ILType * ILTypes
+
 type EventTableKey = EventKey of int (* type. def. idx. *) * string
+
 type TypeDefTableKey = TdKey of string list (* enclosing *) * string (* type name *)
 
 //---------------------------------------------------------------------
@@ -497,25 +499,39 @@ type MetadataTable =
 [<NoEquality; NoComparison>]
 type cenv =
     { ilg: ILGlobals
+
       emitTailcalls: bool
+
       deterministic: bool
+
       showTimes: bool
+
       desiredMetadataVersion: ILVersionInfo
+
       requiredDataFixups: (int32 * (int * bool)) list ref
+
       /// References to strings in codestreams: offset of code and a (fixup-location, string token) list)
       mutable requiredStringFixups: (int32 * (int * int) list) list
+
       codeChunks: ByteBuffer
+
       mutable nextCodeAddr: int32
 
-      // Collected debug information
+      /// Collected debug information
       mutable moduleGuid: byte[]
+
       generatePdb: bool
+
       pdbinfo: ResizeArray<PdbMethodData>
+
       documents: MetadataTable<PdbDocumentData>
+
       /// Raw data, to go into the data section
       data: ByteBuffer
+
       /// Raw resource data, to go into the data section
       resources: ByteBuffer
+
       mutable entrypoint: (bool * int) option
 
       /// Caches
@@ -523,18 +539,32 @@ type cenv =
 
       /// The following are all used to generate unique items in the output
       tables: MetadataTable[]
+
       AssemblyRefs: MetadataTable<SharedRow>
+
       fieldDefs: MetadataTable<FieldDefKey>
+
       methodDefIdxsByKey: MetadataTable<MethodDefKey>
+
       methodDefIdxs: Dictionary<ILMethodDef, int>
+
       propertyDefs: MetadataTable<PropertyTableKey>
+
       eventDefs: MetadataTable<EventTableKey>
+
       typeDefs: MetadataTable<TypeDefTableKey>
+
       guids: MetadataTable<byte[]>
+
       blobs: MetadataTable<byte[]>
+
       strings: MetadataTable<string>
+
       userStrings: MetadataTable<string>
+
       normalizeAssemblyRefs: ILAssemblyRef -> ILAssemblyRef
+
+      pdbImports: Dictionary<ILDebugImports, PdbImports>
     }
     member cenv.GetTable (tab: TableName) = cenv.tables.[tab.Index]
 
@@ -597,8 +627,8 @@ type ILTokenMappings =
       PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
       EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
 
-let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
-    requiredDataFixups := (pos, lab) :: !requiredDataFixups
+let recordRequiredDataFixup (requiredDataFixups: ('T * 'U) list ref) (buf: ByteBuffer) pos lab =
+    requiredDataFixups.Value <- (pos, lab) :: requiredDataFixups.Value
     // Write a special value in that we check later when applying the fixup
     buf.EmitInt32 0xdeaddddd
 
@@ -1475,7 +1505,7 @@ type CodeBuffer =
       mutable reqdStringFixupsInMethod: (int * int) list
       /// data for exception handling clauses
       mutable seh: ExceptionClauseSpec list
-      seqpoints: ResizeArray<PdbSequencePoint> }
+      seqpoints: ResizeArray<PdbDebugPoint> }
 
     interface IDisposable with
         member this.Dispose() =
@@ -1492,7 +1522,7 @@ type CodeBuffer =
 
     member codebuf.EmitExceptionClause seh = codebuf.seh <- seh :: codebuf.seh
 
-    member codebuf.EmitSeqPoint cenv (m: ILSourceMarker) =
+    member codebuf.EmitSeqPoint cenv (m: ILDebugPoint) =
         if cenv.generatePdb then
           // table indexes are 1-based, document array indexes are 0-based
           let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1
@@ -1556,23 +1586,22 @@ module Codebuf =
       // or long and adjusting the branch destinations. Record an adjust function to adjust all the other
       // gumpf that refers to fixed offsets in the code stream.
       let newCode, newReqdBrFixups, adjuster =
-          let remainingReqdFixups = ref orderedOrigReqdBrFixups
-          let origWhere = ref 0
-          let newWhere = ref 0
-          let doneLast = ref false
-          let newReqdBrFixups = ref []
+          let mutable remainingReqdFixups = orderedOrigReqdBrFixups
+          let mutable origWhere = 0
+          let mutable newWhere = 0
+          let mutable doneLast = false
+          let mutable newReqdBrFixups = []
+          let mutable adjustments = []
 
-          let adjustments = ref []
-
-          while (!remainingReqdFixups <> [] || not !doneLast) do
-              let doingLast = isNil !remainingReqdFixups
-              let origStartOfNoBranchBlock = !origWhere
-              let newStartOfNoBranchBlock = !newWhere
+          while (remainingReqdFixups <> [] || not doneLast) do
+              let doingLast = isNil remainingReqdFixups
+              let origStartOfNoBranchBlock = origWhere
+              let newStartOfNoBranchBlock = newWhere
 
               let origEndOfNoBranchBlock =
                 if doingLast then origCode.Length
                 else
-                  let _, origStartOfInstr, _ = List.head !remainingReqdFixups
+                  let _, origStartOfInstr, _ = List.head remainingReqdFixups
                   origStartOfInstr
 
               // Copy over a chunk of non-branching code
@@ -1581,25 +1610,25 @@ module Codebuf =
 
               // Record how to adjust addresses in this range, including the branch instruction
               // we write below, or the end of the method if we're doing the last bblock
-              adjustments := (origStartOfNoBranchBlock, origEndOfNoBranchBlock, newStartOfNoBranchBlock) :: !adjustments
+              adjustments <- (origStartOfNoBranchBlock, origEndOfNoBranchBlock, newStartOfNoBranchBlock) :: adjustments
 
               // Increment locations to the branch instruction we're really interested in
-              origWhere := origEndOfNoBranchBlock
-              newWhere := !newWhere + nobranch_len
+              origWhere <- origEndOfNoBranchBlock
+              newWhere <- newWhere + nobranch_len
 
               // Now do the branch instruction. Decide whether the fixup will be short or long in the new code
               if doingLast then
-                  doneLast := true
+                  doneLast <- true
               else
-                  let (i, origStartOfInstr, tgs: ILCodeLabel list) = List.head !remainingReqdFixups
-                  remainingReqdFixups := List.tail !remainingReqdFixups
+                  let (i, origStartOfInstr, tgs: ILCodeLabel list) = List.head remainingReqdFixups
+                  remainingReqdFixups <-List.tail remainingReqdFixups
                   if origCode.[origStartOfInstr] <> 0x11uy then failwith "br fixup sanity check failed (1)"
                   let i_length = if fst i = i_switch then 5 else 1
-                  origWhere := !origWhere + i_length
+                  origWhere <- origWhere + i_length
 
                   let origEndOfInstr = origStartOfInstr + i_length + 4 * tgs.Length
-                  let newEndOfInstrIfSmall = !newWhere + i_length + 1
-                  let newEndOfInstrIfBig = !newWhere + i_length + 4 * tgs.Length
+                  let newEndOfInstrIfSmall = newWhere + i_length + 1
+                  let newEndOfInstrIfBig = newWhere + i_length + 4 * tgs.Length
 
                   let short =
                     match i, tgs with
@@ -1624,28 +1653,28 @@ module Codebuf =
                           newCode.EmitInt32 tgs.Length)
                         false
 
-                  newWhere := !newWhere + i_length
-                  if !newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
+                  newWhere <- newWhere + i_length
+                  if newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
 
                   tgs |> List.iter (fun tg ->
-                        let origFixupLoc = !origWhere
+                        let origFixupLoc = origWhere
                         checkFixup32 origCode origFixupLoc 0xdeadbbbb
 
                         if short then
-                            newReqdBrFixups := (!newWhere, newEndOfInstrIfSmall, tg, true) :: !newReqdBrFixups
+                            newReqdBrFixups <- (newWhere, newEndOfInstrIfSmall, tg, true) :: newReqdBrFixups
                             newCode.EmitIntAsByte 0x98 (* sanity check *)
-                            newWhere := !newWhere + 1
+                            newWhere <- newWhere + 1
                         else
-                            newReqdBrFixups := (!newWhere, newEndOfInstrIfBig, tg, false) :: !newReqdBrFixups
+                            newReqdBrFixups <- (newWhere, newEndOfInstrIfBig, tg, false) :: newReqdBrFixups
                             newCode.EmitInt32 0xf00dd00f (* sanity check *)
-                            newWhere := !newWhere + 4
-                        if !newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
-                        origWhere := !origWhere + 4)
+                            newWhere <- newWhere + 4
+                        if newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
+                        origWhere <- origWhere + 4)
 
-                  if !origWhere <> origEndOfInstr then dprintn "mismatch between origWhere and origEndOfInstr"
+                  if origWhere <> origEndOfInstr then dprintn "mismatch between origWhere and origEndOfInstr"
 
           let adjuster =
-            let arr = Array.ofList (List.rev !adjustments)
+            let arr = Array.ofList (List.rev adjustments)
             fun addr ->
               let i =
                   try binaryChop (fun (a1, a2, _) -> if addr < a1 then -1 elif addr > a2 then 1 else 0) arr
@@ -1656,7 +1685,7 @@ module Codebuf =
               addr - (origStartOfNoBranchBlock - newStartOfNoBranchBlock)
 
           newCode.AsMemory().ToArray(),
-          !newReqdBrFixups,
+          newReqdBrFixups,
           adjuster
 
       // Now adjust everything
@@ -1666,7 +1695,7 @@ module Codebuf =
               tab.[tglab] <- adjuster origBrDest
           tab
       let newReqdStringFixups = List.map (fun (origFixupLoc, stok) -> adjuster origFixupLoc, stok) origReqdStringFixups
-      let newSeqPoints = Array.map (fun (sp: PdbSequencePoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
+      let newSeqPoints = Array.map (fun (sp: PdbDebugPoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
       let newExnClauses =
           origExnClauses |> List.map (fun (st1, sz1, st2, sz2, kind) ->
               (adjuster st1, (adjuster (st1 + sz1) - adjuster st1),
@@ -2014,19 +2043,21 @@ module Codebuf =
         | _ -> failwith "an IL instruction cannot be emitted"
 
 
-    let mkScopeNode cenv (localSigs: _[]) (startOffset, endOffset, ls: ILLocalDebugMapping list, childScopes) =
-        if isNil ls || not cenv.generatePdb then childScopes
+    let mkScopeNode cenv importScope (localSigs: _[]) (startOffset, endOffset, ls: ILLocalDebugMapping list, childScopes) =
+        if isNil ls || not cenv.generatePdb then
+            childScopes
         else
           [ { Children= Array.ofList childScopes
               StartOffset=startOffset
               EndOffset=endOffset
               Locals=
-                  ls |> List.filter (fun v -> v.LocalName <> "")
-                     |> List.map (fun x ->
-                          { Name=x.LocalName
-                            Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
-                            Index= x.LocalIndex } )
-                      |> Array.ofList } ]
+                  [| for x in ls do 
+                       if x.LocalName <> "" then
+                           { Name=x.LocalName
+                             Signature= (try localSigs.[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
+                             Index= x.LocalIndex } |]
+              Imports = importScope
+            } ]
 
 
     // Used to put local debug scopes and exception handlers into a tree form
@@ -2100,7 +2131,7 @@ module Codebuf =
 
         trees
 
-    let rec makeLocalsTree cenv localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) =
+    let rec makeLocalsTree cenv importScope localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) =
         let localInsideLocal (locspec1: ILLocalDebugInfo) (locspec2: ILLocalDebugInfo) =
           labelRangeInsideLabelRange lab2pc locspec1.Range locspec2.Range
 
@@ -2110,17 +2141,16 @@ module Codebuf =
             roots |> List.collect (fun (cl, ch) ->
                 let s1, e1 = labelsToRange lab2pc cl.Range
                 let s1, e1 = pc2pos.[s1], pc2pos.[e1]
-                let children = makeLocalsTree cenv localSigs pc2pos lab2pc ch
-                mkScopeNode cenv localSigs (s1, e1, cl.DebugMappings, children))
+                let children = makeLocalsTree cenv importScope localSigs pc2pos lab2pc ch
+                mkScopeNode cenv importScope localSigs (s1, e1, cl.DebugMappings, children))
         trees
-
 
     // Emit the SEH tree
     let rec emitExceptionHandlerTree (codebuf: CodeBuffer) (Node (x, childSEH)) =
         List.iter (emitExceptionHandlerTree codebuf) childSEH // internal first
         x |> Option.iter codebuf.EmitExceptionClause
 
-    let emitCode cenv localSigs (codebuf: CodeBuffer) env (code: ILCode) =
+    let emitCode cenv importScope localSigs (codebuf: CodeBuffer) env (code: ILCode) =
         let instrs = code.Instrs
 
         // Build a table mapping Abstract IL pcs to positions in the generated code buffer
@@ -2150,12 +2180,15 @@ module Codebuf =
         List.iter (emitExceptionHandlerTree codebuf) SEHTree
 
         // Build the locals information, ready to emit
-        let localsTree = makeLocalsTree cenv localSigs pc2pos code.Labels code.Locals
-        localsTree
+        let localsTree = makeLocalsTree cenv importScope localSigs pc2pos code.Labels code.Locals
 
-    let EmitTopCode cenv localSigs env nm code =
+        // Adjust the scopes for shadowing
+        let unshadowed = List.collect (unshadowScopes >> Array.toList) localsTree
+        unshadowed
+
+    let EmitMethodCode cenv importScope localSigs env nm code =
         use codebuf = CodeBuffer.Create nm
-        let origScopes = emitCode cenv localSigs codebuf env code
+        let origScopes = emitCode cenv importScope localSigs codebuf env code
         let origCode = codebuf.code.AsMemory().ToArray()
         let origExnClauses = List.rev codebuf.seh
         let origReqdStringFixups = codebuf.reqdStringFixupsInMethod
@@ -2167,10 +2200,13 @@ module Codebuf =
             applyBrFixups origCode origExnClauses origReqdStringFixups origAvailBrFixups origReqdBrFixups origSeqPoints origScopes
 
         let rootScope =
-            { Children= Array.ofList newScopes
+            { 
+              Children= Array.ofList newScopes
               StartOffset=0
               EndOffset=newCode.Length
-              Locals=[| |] }
+              Locals=[| |] 
+              Imports = importScope 
+            }
 
         (newReqdStringFixups, newExnClauses, newCode, newSeqPoints, rootScope)
 
@@ -2181,6 +2217,24 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
     let bytes = emitBytesViaBuffer (fun bb -> bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD
                                               EmitType cenv env bb ty)
     GetBytesAsBlobIdx cenv bytes
+
+let GenPdbImport (cenv: cenv) env (input: ILDebugImport) =
+    match input with 
+    | ILDebugImport.ImportType ty -> PdbImport.ImportType (getTypeDefOrRefAsUncodedToken (GetTypeAsTypeDefOrRef cenv env ty))
+    | ILDebugImport.ImportNamespace nsp -> PdbImport.ImportNamespace nsp
+
+let rec GenPdbImports (cenv: cenv) env (input: ILDebugImports option) =
+    match input with 
+    | None -> None
+    | Some ilImports -> 
+        match cenv.pdbImports.TryGetValue(ilImports) with
+        | true, v -> Some v
+        | _ ->
+            let v : PdbImports = 
+                { Imports = ilImports.Imports |> Array.map (GenPdbImport cenv env)
+                  Parent = GenPdbImports cenv env ilImports.Parent }
+            cenv.pdbImports.[ilImports] <- v
+            Some v
 
 let GenILMethodBody mname cenv env (il: ILMethodBody) =
     let localSigs =
@@ -2193,7 +2247,8 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
       else
         [| |]
 
-    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitTopCode cenv localSigs env mname il.Code
+    let imports = GenPdbImports cenv env il.DebugImports
+    let requiredStringFixups, seh, code, seqpoints, scopes = Codebuf.EmitMethodCode cenv imports localSigs env mname il.Code
     let codeSize = code.Length
     use methbuf = ByteBuffer.Create (codeSize * 3)
     // Do we use the tiny format?
@@ -2476,7 +2531,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 Params= [| |] (* REVIEW *)
                 RootScope = Some rootScope
                 Range=
-                  match ilmbody.SourceMarker with
+                  match ilmbody.DebugPoint with
                   | Some m when cenv.generatePdb ->
                       // table indexes are 1-based, document array indexes are 0-based
                       let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1
@@ -2488,7 +2543,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                               Line=m.EndLine
                               Column=m.EndColumn })
                   | _ -> None
-                SequencePoints=seqpoints }
+                DebugPoints=seqpoints }
           cenv.AddCode code
           addr
       | MethodBody.Abstract
@@ -2502,7 +2557,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 Params = [| |]
                 RootScope = None
                 Range = None
-                SequencePoints = [| |] }
+                DebugPoints = [| |] }
           0x0000
       | MethodBody.Native ->
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
@@ -2888,6 +2943,20 @@ let ResourceCapacity = 200
 let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
+    let tables =
+        Array.init 64 (fun i ->
+            if (i = TableNames.AssemblyRef.Index ||
+                i = TableNames.MemberRef.Index ||
+                i = TableNames.ModuleRef.Index ||
+                i = TableNames.File.Index ||
+                i = TableNames.TypeRef.Index ||
+                i = TableNames.TypeSpec.Index ||
+                i = TableNames.MethodSpec.Index ||
+                i = TableNames.StandAloneSig.Index ||
+                i = TableNames.GenericParam.Index) then
+                MetadataTable.Shared (MetadataTable<SharedRow>.New ("row table "+string i, EqualityComparer.Default))
+            else
+                MetadataTable.Unshared (MetadataTable<UnsharedRow>.New ("row table "+string i, EqualityComparer.Default)))
     use cenv =
         { emitTailcalls=emitTailcalls
           deterministic = deterministic
@@ -2900,21 +2969,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           nextCodeAddr = cilStartAddress
           data = ByteBuffer.Create DataCapacity
           resources = ByteBuffer.Create ResourceCapacity
-          tables=
-              Array.init 64 (fun i ->
-                  if (i = TableNames.AssemblyRef.Index ||
-                      i = TableNames.MemberRef.Index ||
-                      i = TableNames.ModuleRef.Index ||
-                      i = TableNames.File.Index ||
-                      i = TableNames.TypeRef.Index ||
-                      i = TableNames.TypeSpec.Index ||
-                      i = TableNames.MethodSpec.Index ||
-                      i = TableNames.StandAloneSig.Index ||
-                      i = TableNames.GenericParam.Index) then
-                      MetadataTable.Shared (MetadataTable<SharedRow>.New ("row table "+string i, EqualityComparer.Default))
-                    else
-                      MetadataTable.Unshared (MetadataTable<UnsharedRow>.New ("row table "+string i, EqualityComparer.Default)))
-
+          tables= tables
           AssemblyRefs = MetadataTable<_>.New("ILAssemblyRef", EqualityComparer.Default)
           documents=MetadataTable<_>.New("pdbdocs", EqualityComparer.Default)
           trefCache=Dictionary<_, _>(100)
@@ -2934,7 +2989,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           blobs= MetadataTable<_>.New("blobs", HashIdentity.Structural)
           strings= MetadataTable<_>.New("strings", EqualityComparer.Default)
           userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default)
-          normalizeAssemblyRefs = normalizeAssemblyRefs }
+          normalizeAssemblyRefs = normalizeAssemblyRefs 
+          pdbImports = Dictionary<_, _>(HashIdentity.Reference) }
 
     // Now the main compilation step
     GenModule cenv m
@@ -3124,11 +3180,11 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let stringAddressTable =
         let tab = Array.create (strings.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to strings.Length do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let s = strings.[i - 1]
-            pos := !pos + s.Length
+            pos <- pos + s.Length
         tab
 
     let stringAddress n =
@@ -3137,12 +3193,12 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let userStringAddressTable =
         let tab = Array.create (Array.length userStrings + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to Array.length userStrings do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let s = userStrings.[i - 1]
             let n = s.Length + 1
-            pos := !pos + n + ByteBuffer.Z32Size n
+            pos <- pos + n + ByteBuffer.Z32Size n
         tab
 
     let userStringAddress n =
@@ -3151,11 +3207,11 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
 
     let blobAddressTable =
         let tab = Array.create (blobs.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to blobs.Length do
-            tab.[i] <- !pos
+            tab.[i] <- pos
             let blob = blobs.[i - 1]
-            pos := !pos + blob.Length + ByteBuffer.Z32Size blob.Length
+            pos <- pos + blob.Length + ByteBuffer.Z32Size blob.Length
         tab
 
     let blobAddress n =
@@ -3426,7 +3482,7 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
               applyFixup32 code locInCode token
     reportTime showTimes "Fixup Metadata"
 
-    entryPointToken, code, codePadding, metadata, data, resources, !requiredDataFixups, pdbData, mappings, guidStart
+    entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups.Value, pdbData, mappings, guidStart
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -4274,7 +4330,7 @@ and writePdb (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfi
     end
     reportTime showTimes "Finalize PDB"
 
-    /// Sign the binary. No further changes to binary allowed past this point!
+    // Sign the binary. No further changes to binary allowed past this point!
     match signer with
     | None -> ()
     | Some s ->

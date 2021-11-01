@@ -36,13 +36,13 @@
   // Offset: 0x000003A0 Length: 0x0000010D
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {60B68B7F-39CA-41B5-A745-03837F8BB660}
+// MVID: {6124062D-39CA-41B5-A745-03832D062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00EF0000
+// Image base: 0x06BD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,14 +58,18 @@
     .method public hidebysig instance int32 
             F(object o) cil managed
     {
-      // Code size       9 (0x9)
-      .maxstack  8
+      // Code size       11 (0xb)
+      .maxstack  3
+      .locals init ([0] class M/C x)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 36,36 : 29,44 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ArgumentNamesInClosures01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ArgumentNamesInClosures01.fs'
       IL_0000:  ldarg.0
-      IL_0001:  tail.
-      IL_0003:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
-      IL_0008:  ret
+      IL_0001:  stloc.0
+      .line 36,36 : 29,44 ''
+      IL_0002:  ldarg.0
+      IL_0003:  tail.
+      IL_0005:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
+      IL_000a:  ret
     } // end of method C::F
 
   } // end of class C
@@ -92,11 +96,15 @@
             instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32> 
             get_F() cil managed
     {
-      // Code size       6 (0x6)
-      .maxstack  8
+      // Code size       8 (0x8)
+      .maxstack  3
+      .locals init ([0] class M/T x)
+      .line 100001,100001 : 0,0 ''
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
       .line 41,41 : 22,23 ''
-      IL_0000:  ldsfld     class M/get_F@41 M/get_F@41::@_instance
-      IL_0005:  ret
+      IL_0002:  ldsfld     class M/get_F@41 M/get_F@41::@_instance
+      IL_0007:  ret
     } // end of method T::get_F
 
     .property instance class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>

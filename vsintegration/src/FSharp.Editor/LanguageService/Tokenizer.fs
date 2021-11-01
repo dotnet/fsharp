@@ -848,7 +848,7 @@ module internal Tokenizer =
         | _, :? FSharpActivePatternCase -> 
             // Different from union cases, active patterns don't accept double-backtick identifiers
             isFixableIdentifier name && not (String.IsNullOrEmpty name) && Char.IsUpper(name.[0]) 
-        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorName name
+        | LexerSymbolKind.Operator, _ -> PrettyNaming.IsOperatorDisplayName name
         | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
         | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
         | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name

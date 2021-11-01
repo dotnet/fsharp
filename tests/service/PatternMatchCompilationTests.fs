@@ -77,7 +77,7 @@ match 1, 2 with
     assertHasSymbolUsages ["y"] checkResults
     dumpErrors checkResults |> shouldEqual [
         "(3,2--3,6): The type '(int * int)' does not have 'null' as a proper value"
-        "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
     ]
 
 
@@ -406,7 +406,7 @@ match box 1 with
         "(7,43--7,44): The type 'obj' does not match the type 'uint64'"
         "(8,43--8,44): The type 'obj' does not match the type 'int8'"
         "(8,41--8,42): The type 'obj' does not match the type 'int8'"
-        "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
     
 [<Test>]
@@ -457,7 +457,7 @@ match Unchecked.defaultof<int> with
 """
     assertHasSymbolUsages ["a"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(2,6--2,25): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(2,6--2,25): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(6,2--6,6): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
     ]
 
@@ -607,15 +607,15 @@ Some w |> eq<obj>
         "(10,4--10,18): Incomplete pattern matches on this expression."
         "(11,4--11,14): Incomplete pattern matches on this expression."
         "(12,4--12,16): Incomplete pattern matches on this expression."
-        "(23,4--23,15): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
-        "(22,4--22,13): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(23,4--23,15): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
+        "(22,4--22,13): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
         "(21,4--21,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
         "(20,4--20,14): Incomplete pattern matches on this expression. For example, the value 'true' may indicate a case not covered by the pattern(s)."
         "(19,4--19,11): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
         "(18,4--18,14): Incomplete pattern matches on this expression. For example, the value '[|_; _|]' may indicate a case not covered by the pattern(s)."
         "(17,4--17,12): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
-        "(15,21--15,29): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(13,9--13,17): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(15,21--15,29): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(13,9--13,17): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
 
 [<Test>]
@@ -651,7 +651,7 @@ let z as
         "(14,9--14,10): Unexpected symbol '|' in binding"
         "(15,13--15,14): Unexpected symbol '=' in pattern. Expected ')' or other token."
         "(15,9--15,10): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:10). Try indenting this token further or using standard formatting conventions."
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
         "(17,16--17,17): Unexpected identifier in pattern. Expected '(' or other token."
         "(20,0--20,0): Incomplete structured construct at or before this point in binding"
         "(3,13--3,17): This expression was expected to have type 'int' but here has type 'bool'"
@@ -743,15 +743,15 @@ Some w |> eq<obj>
         "(10,4--10,18): Incomplete pattern matches on this expression."
         "(11,4--11,14): Incomplete pattern matches on this expression."
         "(12,4--12,16): Incomplete pattern matches on this expression."
-        "(23,4--23,15): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
-        "(22,4--22,13): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(23,4--23,15): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
+        "(22,4--22,13): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
         "(21,4--21,13): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
         "(20,4--20,14): Incomplete pattern matches on this expression. For example, the value 'true' may indicate a case not covered by the pattern(s)."
         "(19,4--19,11): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
         "(18,4--18,14): Incomplete pattern matches on this expression. For example, the value '[|_; _|]' may indicate a case not covered by the pattern(s)."
         "(17,4--17,12): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
-        "(15,21--15,29): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(13,9--13,17): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(15,21--15,29): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(13,9--13,17): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
 
 [<Test>]
@@ -787,7 +787,7 @@ let z as =
         "(14,8--14,10): Unexpected keyword 'as' in binding"
         "(15,8--15,10): Unexpected keyword 'as' in pattern. Expected ')' or other token."
         "(15,6--15,7): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:7). Try indenting this token further or using standard formatting conventions."
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
         "(16,0--16,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token."
         "(15,0--15,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword."
         "(17,0--17,3): Incomplete structured construct at or before this point in implementation file"
@@ -856,17 +856,17 @@ Some x |> eq<obj>
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
     dumpErrors checkResults |> shouldEqual [
         "(11,25--11,26): This expression was expected to have type 'int' but here has type 'obj'"
-        "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,21): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(( some-other-subtype ),_)' may indicate a case not covered by the pattern(s)."
-        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(20,6--20,21): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s)."
+        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
     
 [<Test>]
@@ -932,20 +932,20 @@ Some w |> eq<obj>
     assertHasSymbolUsages (set ['a' .. 'y'] |> Set.remove 'n' |> Set.map string |> Set.toList) checkResults
     dumpErrors checkResults |> shouldEqual [
         "(21,2--21,8): This type test or downcast will always hold"
-        "(34,6--34,14): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
-        "(32,6--32,14): Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s)."
+        "(34,6--34,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
+        "(32,6--32,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
         "(30,6--30,14): Incomplete pattern matches on this expression. For example, the value 'false' may indicate a case not covered by the pattern(s)."
         "(28,6--28,15): Incomplete pattern matches on this expression. For example, the value 'true' may indicate a case not covered by the pattern(s)."
         "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
         "(24,6--24,16): Incomplete pattern matches on this expression. For example, the value '[|_; _|]' may indicate a case not covered by the pattern(s)."
         "(22,6--22,14): Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,23): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(20,6--20,23): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(16,6--16,11): Incomplete pattern matches on this expression."
         "(14,6--14,11): Incomplete pattern matches on this expression."
         "(12,6--12,11): Incomplete pattern matches on this expression."
         "(10,6--10,11): Incomplete pattern matches on this expression."
-        "(8,6--8,20): Incomplete pattern matches on this expression. For example, the value '[( some-other-subtype )]' may indicate a case not covered by the pattern(s)."
+        "(8,6--8,20): Incomplete pattern matches on this expression. For example, the value '[``some-other-subtype``]' may indicate a case not covered by the pattern(s)."
     ]
 
 [<Test>]
@@ -981,7 +981,7 @@ let :? z as
         "(14,12--14,13): Unexpected symbol '|' in binding"
         "(15,16--15,17): Unexpected symbol '=' in pattern. Expected ')' or other token."
         "(15,12--15,13): Unmatched '('"
-        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:13). Try indenting this token further or using standard formatting conventions."
+        "(16,0--16,3): Possible incorrect indentation: this token is offside of context started at position (15:1). Try indenting this token further or using standard formatting conventions."
         "(17,19--17,20): Unexpected identifier in pattern. Expected '(' or other token."
         "(20,0--20,0): Incomplete structured construct at or before this point in binding"
         "(3,7--3,8): The type 'a' is not defined."
@@ -1049,16 +1049,16 @@ Some "" |> eq<int> // No more type checks after the above line?
     dumpErrors checkResults |> shouldEqual [
         "(27,2--27,14): This expression was expected to have type 'obj' but here has type 'struct ('a * 'b)'"
         "(52,2--52,13): This expression was expected to have type 'obj' but here has type 'AAA'"
-        "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(( some-other-subtype ),_)' may indicate a case not covered by the pattern(s)."
-        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(24,6--24,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(22,6--22,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(20,6--20,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(18,6--18,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(16,6--16,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(14,6--14,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(12,6--12,14): Incomplete pattern matches on this expression. For example, the value '(``some-other-subtype``,_)' may indicate a case not covered by the pattern(s)."
+        "(10,6--10,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(8,6--8,11): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
     ]
     
 [<Test>]
@@ -1143,16 +1143,16 @@ Some "" |> eq<int>
         "(45,5--45,6): The value or constructor 'q' is not defined."
         "(46,5--46,6): The value or constructor 'r' is not defined."
         "(55,12--55,31): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
-        "(26,6--26,14): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(24,6--24,14): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(22,6--22,14): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(20,6--20,15): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
-        "(18,6--18,12): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
+        "(26,6--26,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(24,6--24,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(22,6--22,14): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(20,6--20,15): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+        "(18,6--18,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(16,6--16,11): Incomplete pattern matches on this expression."
         "(14,6--14,11): Incomplete pattern matches on this expression."
         "(12,6--12,11): Incomplete pattern matches on this expression."
         "(10,6--10,11): Incomplete pattern matches on this expression."
-        "(8,6--8,20): Incomplete pattern matches on this expression. For example, the value '[( some-other-subtype )]' may indicate a case not covered by the pattern(s)."
+        "(8,6--8,20): Incomplete pattern matches on this expression. For example, the value '[``some-other-subtype``]' may indicate a case not covered by the pattern(s)."
     ]
 
 [<Test>]
@@ -1189,11 +1189,11 @@ let as :? z =
         "(15,13--15,15): Unexpected keyword 'as' in pattern. Expected '(' or other token."
         "(16,8--16,10): Unexpected keyword 'as' in pattern. Expected ')' or other token."
         "(16,6--16,7): Unmatched '('"
-        "(17,0--17,3): Possible incorrect indentation: this token is offside of context started at position (16:7). Try indenting this token further or using standard formatting conventions."
+        "(17,0--17,3): Possible incorrect indentation: this token is offside of context started at position (16:1). Try indenting this token further or using standard formatting conventions."
         "(17,0--17,3): Unexpected keyword 'let' or 'use' in binding. Expected incomplete structured construct at or before this point or other token."
         "(16,0--16,3): Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword."
         "(17,8--17,10): Unexpected keyword 'as' in pattern. Expected ']' or other token."
-        "(18,0--18,3): Possible incorrect indentation: this token is offside of context started at position (17:7). Try indenting this token further or using standard formatting conventions."
+        "(18,0--18,3): Possible incorrect indentation: this token is offside of context started at position (17:1). Try indenting this token further or using standard formatting conventions."
         "(19,0--19,3): Possible incorrect indentation: this token is offside of context started at position (18:1). Try indenting this token further or using standard formatting conventions."
         "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."
         "(20,0--20,0): Possible incorrect indentation: this token is offside of context started at position (19:1). Try indenting this token further or using standard formatting conventions."

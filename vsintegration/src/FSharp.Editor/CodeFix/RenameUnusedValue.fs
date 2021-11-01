@@ -34,10 +34,10 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let ident = sourceText.ToString(context.Span)
+
             // Prefixing operators and backticked identifiers does not make sense.
-            // We have to use the additional check for backtickes because `IsOperatorOrBacktickedName` operates on display names
-            // where backtickes are replaced with parens.
-            if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
+            // We have to use the additional check for backtickes 
+            if PrettyNaming.IsIdentifierName ident then
                 let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(context.Span.Start, SymbolLookupKind.Greedy, false, false, nameof(FSharpRenameUnusedValueCodeFixProvider))
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
                 let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  

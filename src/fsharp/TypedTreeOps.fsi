@@ -77,7 +77,7 @@ type MatchBuilder =
     member AddTarget: DecisionTreeTarget -> int
 
     /// Add a new destination target that is an expression result
-    member AddResultTarget: Expr * DebugPointForTarget -> DecisionTree
+    member AddResultTarget: Expr * DebugPointAtTarget -> DecisionTree
 
     /// Finish the targets
     member CloseTargets: unit -> DecisionTreeTarget list
@@ -86,13 +86,13 @@ type MatchBuilder =
     member Close: DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val mkBoolSwitch: DebugPointAtSwitch -> range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond: DebugPointAtBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond: DebugPointAtBinding -> DebugPointAtTarget -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond: DebugPointAtBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond: DebugPointAtBinding -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -1427,6 +1427,9 @@ val mkVoidPtrTy: TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType: TcGlobals -> TType -> TType
 
+/// Determine if a type is a value option type
+val isValueOptionTy: TcGlobals -> TType -> bool
+
 /// Determine if a type is an option type
 val isOptionTy: TcGlobals -> TType -> bool
 
@@ -1435,6 +1438,9 @@ val destOptionTy: TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Try to take apart an option type
+val destValueOptionTy: TcGlobals -> TType -> TType
 
 /// Determine is a type is a System.Nullable type
 val isNullableTy: TcGlobals -> TType -> bool
@@ -2402,9 +2408,9 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
+val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType) option
 
-val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType -> Expr
+val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
@@ -2505,4 +2511,21 @@ val (|ResumableCodeInvoke|_|):
     g:TcGlobals ->
     expr: Expr -> 
        (Expr * Expr * Expr list * range * (Expr * Expr list -> Expr)) option    
-       
+
+val (|OpPipeRight|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * range) option
+
+val (|OpPipeRight2|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * Expr * range) option
+
+val (|OpPipeRight3|_|):
+    g:TcGlobals ->
+    expr: Expr -> 
+        (TType * Expr * Expr * Expr * Expr * range) option
+
+/// This uses 'expr thendo ()' with a note that there should be a debug point on the 'expr'
+val mkDebugPoint: g: TcGlobals -> m: range -> expr: Expr -> Expr

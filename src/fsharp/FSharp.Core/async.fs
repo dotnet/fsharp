@@ -233,9 +233,9 @@ namespace Microsoft.FSharp.Control
                 // NOTE: this must be a tailcall
                 cont res
 
+    /// Represents rarely changing components of an in-flight async computation
     [<NoEquality; NoComparison>]
     [<AutoSerializable(false)>]
-    /// Represents rarely changing components of an in-flight async computation
     type AsyncActivationAux =
         { /// The active cancellation token
           token: CancellationToken
@@ -249,9 +249,9 @@ namespace Microsoft.FSharp.Control
           /// Holds some commonly-allocated callbacks and a mutable location to use for a trampoline
           trampolineHolder: TrampolineHolder }
 
+    /// Represents context for an in-flight async computation
     [<NoEquality; NoComparison>]
     [<AutoSerializable(false)>]
-    /// Represents context for an in-flight async computation
     type AsyncActivationContents<'T> =
         { /// The success continuation
           cont: cont<'T>
@@ -305,8 +305,9 @@ namespace Microsoft.FSharp.Control
             contents.aux.ccont (OperationCanceledException (contents.aux.token))
 
         /// Check for trampoline hijacking.
+        //
         // Note, this must make tailcalls, so may not be an instance member taking a byref argument,
-        /// nor call any members taking byref arguments.
+        // nor call any members taking byref arguments.
         static member inline HijackCheckThenCall (ctxt: AsyncActivation<'T>) cont arg =
             ctxt.aux.trampolineHolder.HijackCheckThenCall cont arg
 
@@ -756,7 +757,7 @@ namespace Microsoft.FSharp.Control
         ///   - Hijack check after 'entering' the implied try/finally and after MoveNext call
         ///   - Do not apply 'GetEnumerator' with exception protection. However for an 'async'
         ///     in an 'async { ... }' the exception protection will be provided by the enclosing
-        //      Delay or Bind or similar construct.
+        ///      Delay or Bind or similar construct.
         ///   - Apply 'MoveNext' with exception protection
         ///   - Apply 'Current' with exception protection
 

@@ -27,7 +27,7 @@ Available overloads:
 
 neg_System.Convert.ToString.OverloadList.fsx(2,1,2,47): typecheck error FS0041: No overloads match for method 'ToString'.
 
-Known types of arguments: provider:char * value:int
+Known types of arguments: provider: char * value: int
 
 Available overloads:
  - System.Convert.ToString(value: System.DateTime, provider: System.IFormatProvider) : string // Argument 'value' doesn't match

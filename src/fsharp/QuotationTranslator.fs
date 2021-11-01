@@ -200,14 +200,14 @@ let (|ObjectInitializationCheck|_|) g expr =
         (
            _, _,
            TDSwitch
-            (
+            (_, 
                 Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet (RecdFieldRef(_, name)), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
             ),
            [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _, _); _ |], _, resultTy
         ) when
             IsCompilerGeneratedName name &&
             name.StartsWithOrdinal("init") &&
-            selfRef.BaseOrThisInfo = MemberThisVal &&
+            selfRef.IsMemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
     | _ -> None
@@ -618,7 +618,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let propRetTypeR = ConvType cenv env m fspec.FormalType
             let callArgR = ConvExpr cenv env obj
             let exnTypeR = ConvType cenv env m (generalizedTyconRef tcref)
-            QP.mkPropGet( (parentTyconR, fspec.Name, propRetTypeR, []), [], [QP.mkCoerce (exnTypeR, callArgR)])
+            QP.mkPropGet( (parentTyconR, fspec.LogicalName, propRetTypeR, []), [], [QP.mkCoerce (exnTypeR, callArgR)])
 
         | TOp.Coerce, [tgtTy;srcTy], [x]  ->
             let xR = ConvExpr cenv env x
@@ -933,7 +933,7 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     elif env.vs.ContainsVal v then
         if not (List.isEmpty tyargs) then wfail(InternalError("ignoring generic application of local quoted variable", m))
         QP.mkVar(env.vs.[v])
-    elif v.BaseOrThisInfo = CtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
+    elif v.IsCtorThisVal && cenv.isReflectedDefinition = IsReflectedDefinition.Yes then
         QP.mkThisVar(ConvType cenv env m v.Type)
     else
         let vty = v.Type
@@ -1043,7 +1043,7 @@ and ConvConst cenv env m c ty =
 
 and ConvDecisionTree cenv env tgs typR x =
     match x with
-    | TDSwitch(e1, csl, dfltOpt, m) ->
+    | TDSwitch(_, e1, csl, dfltOpt, m) ->
         let acc =
             match dfltOpt with
             | Some d -> ConvDecisionTree cenv env tgs typR d
@@ -1188,7 +1188,7 @@ and ConvILType cenv env m ty =
 and TryElimErasableTyconRef cenv m (tcref: TyconRef) =
     match tcref.TypeReprInfo with
     // Get the base type
-    | TProvidedTypeExtensionPoint info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
+    | TProvidedTypeRepr info when info.IsErased -> Some (info.BaseTypeForErased (m, cenv.g.obj_ty))
     | _ -> None
 #endif
 
@@ -1198,7 +1198,7 @@ and ConvTyconRef cenv (tcref: TyconRef) m =
     | Some baseTy -> ConvTyconRef cenv (tcrefOfAppTy cenv.g baseTy) m
     | None ->
     match tcref.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info when not cenv.g.isInteractive && not info.IsErased ->
+    | TProvidedTypeRepr info when not cenv.g.isInteractive && not info.IsErased ->
         // Note, generated types are (currently) non-generic
         let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
         ConvILTypeRefUnadjusted cenv m tref
