@@ -56,7 +56,7 @@ let VerifyCompletionListWithOptions(fileContents: string, marker: string, expect
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -107,7 +107,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
