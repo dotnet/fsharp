@@ -125,6 +125,10 @@ namespace FSharp.Compiler.Service.Tests
             }
         }
     }
+    public class CSharpGenericOuterClass<T> : CSharpOuterClass
+    {
+        public T InnerProperty { get; }
+    }
 
     public class String
     {

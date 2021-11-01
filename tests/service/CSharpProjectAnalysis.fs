@@ -57,7 +57,6 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
     results, assemblies
 
 [<Test>]
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 let ``Test that csharp references are recognized as such`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
@@ -93,7 +92,6 @@ let ``Test that csharp references are recognized as such`` () =
     members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 let ``Test that symbols of csharp inner classes/enums are reported`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
@@ -112,8 +110,30 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
             "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
             "member StaticMember"; "NestedEnumClass"|]
 
+
 [<Test>]
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+let ``Test that symbols of csharp inner classes/enums are reported from dervied generic class`` () =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let content = """
+module NestedEnumClass
+open FSharp.Compiler.Service.Tests
+
+let _ = CSharpGenericOuterClass<int>
+let _ = CSharpGenericOuterClass<int>.InnerEnum.Case1
+let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
+"""
+
+    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
+    results.GetAllUsesOfAllSymbols()
+    |> Array.map (fun su -> su.Symbol.ToString())
+    |> shouldEqual 
+        [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
+          "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
+          "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";
+          "CSharpGenericOuterClass`1"; "int"; "CSharpGenericOuterClass`1"; "InnerClass";
+          "member StaticMember"; "NestedEnumClass"|]
+
+[<Test>]
 let ``Ctor test`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
@@ -145,7 +165,6 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 let ``Different types with the same short name equality check`` () =
     let source = """
 module CtorTest
@@ -163,7 +182,6 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 let ``Different namespaces with the same short name equality check`` () =
     let source = """
 module CtorTest
