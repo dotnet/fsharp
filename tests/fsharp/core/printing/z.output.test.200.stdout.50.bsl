@@ -1958,6 +1958,6 @@ val SomeLiteralWithASomewhatLongName2: string
 [<Literal>]
 val ShortName: string = "hi"
 
-val it: System.DayOfWeek = Tuesday
+> val it: System.DayOfWeek = Tuesday
 
 > > > 
