@@ -60,13 +60,15 @@ let mkSynCompGenSimplePatVar id = SynSimplePat.Id (id, None, true, false, false,
 let (|LongOrSingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (isOpt, lidwd, altId, _m) -> Some (isOpt, lidwd, altId, lidwd.RangeWithoutAnyExtraDot)
-    | SynExpr.Ident id -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
+    | SynExpr.Ident id
+    | SynExpr.Operator (ident=id) -> Some (false, LongIdentWithDots([id], []), None, id.idRange)
     | _ -> None
 
 let (|SingleIdent|_|) inp =
     match inp with
     | SynExpr.LongIdent (false, LongIdentWithDots([id], _), None, _) -> Some id
-    | SynExpr.Ident id -> Some id
+    | SynExpr.Ident id
+    | SynExpr.Operator (ident=id) -> Some id
     | _ -> None
 
 /// This affects placement of sequence points
@@ -262,7 +264,9 @@ let opNameParenGet  = CompileOpName parenGet
 
 let opNameQMark = CompileOpName qmark
 
-let mkSynOperator opm oper = mkSynIdGet opm (CompileOpName oper)
+let mkSynOperator opm oper =
+    let ident = mkSynId opm (CompileOpName oper)
+    SynExpr.Operator(oper, ident ,opm)
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
@@ -641,6 +645,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LibraryOnlyStaticOptimization _
           | SynExpr.Null _
           | SynExpr.Ident _
+          | SynExpr.Operator _
           | SynExpr.ImplicitZero _
           | SynExpr.Const _ -> false
 

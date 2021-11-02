@@ -654,6 +654,12 @@ type SynExpr =
     | Ident of
         ident: Ident
 
+    // nojaf test
+    | Operator of
+        originalText: string *
+        ident: Ident *
+        range: Range
+
     | LongIdent of
         isOptional: bool *
         longDotId: LongIdentWithDots *
@@ -909,7 +915,8 @@ type SynExpr =
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) 
-        | SynExpr.InterpolatedString (range=m) -> m
+        | SynExpr.InterpolatedString (range=m)
+        | SynExpr.Operator(range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
     member e.RangeWithoutAnyExtraDot =

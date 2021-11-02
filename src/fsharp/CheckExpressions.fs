@@ -5639,7 +5639,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcExpr cenv overallTy env tpenv expr2
 
     | SynExpr.DotIndexedGet _ | SynExpr.DotIndexedSet _
-    | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
+    | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.Operator _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
@@ -8332,6 +8332,7 @@ and TcItemThen cenv (overallTy: OverallTy) env tpenv (tinstEnclosing, item, mIte
             | SynExpr.InterpolatedString _
             | SynExpr.Null _
             | SynExpr.Ident _
+            | SynExpr.Operator _
             | SynExpr.Const _
             | SynExpr.LongIdent _ -> true
 

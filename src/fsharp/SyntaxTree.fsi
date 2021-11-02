@@ -808,6 +808,12 @@ type SynExpr =
     | Ident of
         ident: Ident
 
+    // nojaf test
+    | Operator of
+        originalText: string *
+        ident: Ident *
+        range: Range
+    
     /// F# syntax: ident.ident...ident
     ///
     /// isOptional: true if preceded by a '?' for an optional named parameter

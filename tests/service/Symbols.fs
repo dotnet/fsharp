@@ -617,6 +617,26 @@ for i = 1 to 10 do
             assertRange (2, 6) (2, 7) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExpr.Operator captures an operator`` () =
+
+        let ast =
+            """
+let v = 1 ++ 2
+let x = op_plus
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Let(bindings=[ SynBinding(expr = SynExpr.App(funcExpr = SynExpr.App(funcExpr = SynExpr.Operator(originalText=ot)))) ])
+                        SynModuleDecl.Let(bindings = [ SynBinding(expr = SynExpr.Ident _) ])
+                    ])
+                ])) ->
+            Assert.AreEqual("++", ot)
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

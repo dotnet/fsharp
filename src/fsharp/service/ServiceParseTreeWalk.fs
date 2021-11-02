@@ -496,7 +496,8 @@ module SyntaxTraversal =
                      | Some x -> yield dive x x.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.Ident _ident -> None
+                | SynExpr.Ident _
+                | SynExpr.Operator _ -> None
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
 
