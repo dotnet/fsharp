@@ -721,7 +721,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     let checkForBinaryApp comp = 
         match comp with 
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
-                  IsInfixOperator nm.idText && 
+                  IsMangledInfixOperator nm.idText && 
                   (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range

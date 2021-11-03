@@ -982,7 +982,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
         else
             List.foldBack (fun x -> qualifiedMangledNameOfTyconRef (tcrefOfAppTy g x)) optIntfSlotTys logicalName
 
-    if not isCompGen && IsMangledOpName id.idText && IsInfixOperator id.idText then
+    if not isCompGen && IsMangledOpName id.idText && IsMangledInfixOperator id.idText then
         let m = id.idRange
         let name = DecompileOpName id.idText
         // Check symbolic members. Expect valSynData implied arity to be [[2]].
