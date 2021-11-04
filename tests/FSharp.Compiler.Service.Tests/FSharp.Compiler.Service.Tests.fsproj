@@ -78,7 +78,7 @@
     <Compile Include="..\service\PrettyNaming.fs">
       <Link>PrettyNaming.fs</Link>
     </Compile>
-	<Compile Include="..\service\Program.fs">
+    <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
   </ItemGroup>
