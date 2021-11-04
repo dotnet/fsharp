@@ -3,7 +3,7 @@
 title: Guidance
 category: FSharp.Core
 categoryindex: 3
-index: 5
+index: 1
 ---
 *)
 # Notes and Guidance on FSharp.Core

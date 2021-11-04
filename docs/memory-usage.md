@@ -3,14 +3,14 @@
 title: Memory usage
 category: Compiler
 categoryindex: 1
-index: 4
+index: 6
 ---
 *)
-## Compiler Memory Usage
+# Compiler Memory Usage
 
 Overall memory usage is a primary determinant of the usability of the F# compiler and instances of the F# compiler service. Overly high memory usage results in poor throughput (particularly due to increased GC times) and low user interface responsivity in tools such as Visual Studio or other editing environments. In some extreme cases, it can lead to Visual Studio crashing or another IDE becoming unusable due to constant paging from absurdly high memory usage. Luckily, these extreme cases are very rare.
 
-### Why memory usage matters
+## Why memory usage matters
 
 When you do a single compilation to produce a binary, memory usage typically doesn't matter much. It's often fine to allocate a lot of memory because it will just be reclaimed after compilation is over.
 
@@ -23,11 +23,11 @@ However, the F# compiler is not simply a batch process that accepts source code 
 
 Thinking about the F# compiler in these ways makes performance far more complicated than just throughput of a batch compilation process.
 
-### Kinds of data processed and served in F# tooling
+## Kinds of data processed and served in F# tooling
 
 The following tables are split into two categories: syntactic and semantic. They contain common kinds of information requested, the kind of data that is involved, and roughly how expensive the operation is.
 
-#### IDE actions based on syntax
+### IDE actions based on syntax
 
 |  Action | Data inspected | Data returned | Cost (S/M/L/XL) |
 |---------|---------------|---------------|-----------------|
@@ -51,7 +51,7 @@ Editor formatting is a bit of an exception. Most IDEs offer common commands for 
 
 Most of the syntax operations require an entire document's source text or parse tree. It stands to reason that this could be improved by operating on a diff of a parse tree instead of the whole thing. This is likely a very complex thing to implement though, since none of the F# compiler infrastructure works in this way today.
 
-#### IDE actions based on semantics
+### IDE actions based on semantics
 
 |  Action | Data inspected | Data returned | Cost (S/M/L/XL) |
 |---------|---------------|---------------|-----------------|
@@ -91,7 +91,7 @@ For example, commands like Find All References and Rename can be cheap if a code
 
 In contrast, actions like highlighting all symbols in a document aren't terribly expensive even for very large file files. That's because the symbols to be inspected are ultimately only in a single document.
 
-### Analyzing compiler memory usage
+## Analyzing compiler memory usage
 
 In general, the F# compiler allocates a lot of memory. More than it needs to. However, most of the "easy" sources of allocations have been squashed out and what remains are many smaller sources of allocations. The remaining "big" pieces allocate as a result of their current architecture, so it isn't straightforward to address them.
 
@@ -100,13 +100,13 @@ To analyze memory usage of F# tooling, you have two primary avenues:
 1. Take a process dump on your machine and analyze it with process dump analysis tools like [dotMemory](https://www.jetbrains.com/dotmemory/)
 2. Use a sampling tool like [PerfView](https://github.com/Microsoft/perfview) or [dotTrace](https://www.jetbrains.com/profiler/) to collect a trace of your system while you perform various tasks in an IDE, ideally for 60 seconds or more.
 
-#### Analyzing a process dump file
+### Analyzing a process dump file
 
 Process dump files are extremely information-rich data files that can be used to see the distribution of memory usage across various types. Tools like [dotMemory](https://www.jetbrains.com/dotmemory/) will show these distributions and intelligently group things to help identify the biggest areas worth improving. Additionally, they will notice things like duplicate strings and sparse arrays, which are often great ways to improve memory usage since it means more memory is being used than is necessary.
 
 As of F# 5, one of the most prominent sources of memory usage is `ILModuleReader`, often making up more than 20% of total memory usage for a given session. There is a considerably large "long tail" of small chunks of memory usage that in aggreate add up to a lot of resource utilization. Many can be improved.
 
-#### Analyzing a sample trace of IDE usage
+### Analyzing a sample trace of IDE usage
 
 The other important tool to understand memory and CPU usage for a given sample of IDE usage is a trace file. These are collected and analyzed by tools like [PerfView](https://github.com/Microsoft/perfview) and [dotTrace](https://www.jetbrains.com/profiler/).
 
@@ -126,7 +126,7 @@ When analyzing a trace, there are a few things to look out for:
 
 After analyzing a trace, you should have a good idea of places that could see improvement. Often times a tuple can be made into a struct tuple, or some convenient string processing could be adjusted to use a `ReadonlySpan<'T>` or turned into a more verbose loop that avoids allocations.
 
-### The cross-project references problem
+## The cross-project references problem
 
 The compiler is generally built to compile one assembly: the assumption that the compiler is compiling one assembly is baked into several aspects of the design of the Typed Tree.
 

@@ -3,7 +3,7 @@
 title: Coding standards
 category: Compiler
 categoryindex: 1
-index: 1
+index: 2
 ---
 *)
 # Coding standards and idioms
