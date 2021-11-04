@@ -1,3 +1,11 @@
+(**
+---
+title: FSharpChecker caches
+category: Compiler Service
+categoryindex: 2
+index: 10
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**

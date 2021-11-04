@@ -1,21 +1,29 @@
+(**
+---
+title: Expressions
+category: Compiler Service
+categoryindex: 2
+index: 3
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
-Compiler Services: Processing untyped syntax tree
+Compiler Services: Processing SyntaxTree
 =================================================
 
-This tutorial demonstrates how to get the untyped abstract syntax tree (AST)
+This tutorial demonstrates how to get the SyntaxTree (AST)
 for F# code and how to walk over the tree. This can be used for creating tools
 such as code formatter, basic refactoring or code navigation tools. The untyped
 syntax tree contains information about the code structure, but does not contain
 types and there are some ambiguities that are resolved only later by the type
-checker. You can also combine the untyped AST information with the API available
+checker. You can also combine the SyntaxTree information with the API available
 from [editor services](editor.html). 
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published
 
 
-Getting the untyped AST
+Getting the SyntaxTree
 -----------------------
 
 To access the untyped AST, you need to create an instance of `FSharpChecker`.

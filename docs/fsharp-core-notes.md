@@ -1,3 +1,11 @@
+(**
+---
+title: Guidance
+category: FSharp.Core
+categoryindex: 3
+index: 5
+---
+*)
 # Notes and Guidance on FSharp.Core
 
 This technical guide discusses the FSharp.Core library.
@@ -62,6 +70,7 @@ The following table can help you decide the minimum language/package version you
 |F# 4.6|4.6.2|
 |F# 4.7|4.7.2|
 |F# 5.0|5.0.0|
+|F# 6.0|6.0.0|
 
 If you want to be compatible with much older projects using an F# 4.0 compiler or earlier, you can still do that but it's not recommended. People using those codebases should upgrade instead.
 
