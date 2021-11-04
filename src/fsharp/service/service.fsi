@@ -15,8 +15,8 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-[<Sealed; AutoSerializable(false)>]
 /// Used to parse and check F# source code.
+[<Sealed; AutoSerializable(false)>]
 type public FSharpChecker =
     /// <summary>
     /// Create an instance of an FSharpChecker.
@@ -349,7 +349,7 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="sourceText">Optionally, specify source that must match the previous parse precisely.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
+    member TryGetRecentCheckResultsForFile: filename: string * options:FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string -> (FSharpParseFileResults * FSharpCheckFileResults * (* hash *)int64) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
@@ -359,25 +359,13 @@ type public FSharpChecker =
     ///  For example, dependent references may have been deleted or created.
     /// </summary>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    /// <param name="startBackgroundCompile">Start a background compile of the project if a project with the same name has already been seen before.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit
+    member InvalidateConfiguration: options: FSharpProjectOptions * ?userOpName: string -> unit
 
     /// <summary>Clear the internal cache of the given projects.</summary>
     /// <param name="options">The given project options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
-
-    /// <summary>Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>.</summary>
-    member CheckProjectInBackground: options: FSharpProjectOptions  * ?userOpName: string -> unit
-
-    /// Stop the background compile.
-    //[<Obsolete("Explicitly stopping background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on https://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
-    member StopBackgroundCompile:  unit -> unit
-
-    /// Block until the background compile finishes.
-    //[<Obsolete("Explicitly waiting for background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on https://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
-    member WaitForBackgroundCompile: unit -> unit
 
     /// Report a statistic for testability
     static member ActualParseFileCount: int
@@ -387,11 +375,6 @@ type public FSharpChecker =
 
     /// Flush all caches and garbage collect
     member ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: unit -> unit
-
-    /// Current queue length of the service, for debug purposes.
-    /// In addition, a single async operation or a step of a background build
-    /// may be in progress - such an operation is not counted in the queue length.
-    member CurrentQueueLength: int
 
     /// <summary>
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
@@ -419,33 +402,10 @@ type public FSharpChecker =
     /// The event will be raised on a background thread.
     member FileChecked: IEvent<string * FSharpProjectOptions>
 
-    /// Raised after the maxMB memory threshold limit is reached
-    member MaxMemoryReached: IEvent<unit>
-
-    /// <summary>
-    ///   A maximum number of megabytes of allocated memory. If the figure reported by <c>System.GC.GetTotalMemory(false)</c> goes over this limit, the FSharpChecker object will attempt to free memory and reduce cache sizes to a minimum.
-    /// </summary>
-    member MaxMemory: int with get, set
-
-    /// <summary>
-    /// Get or set a flag which controls if background work is started implicitly.
-    ///
-    /// If true, calls to CheckFileInProject implicitly start a background check of that project, replacing
-    /// any other background checks in progress. This is useful in IDE applications with spare CPU cycles as
-    /// it prepares the project analysis results for use.  The default is 'true'.
-    /// </summary>
-    member ImplicitlyStartBackgroundWork: bool with get, set
-
-    /// Get or set the pause time in milliseconds before background work is started.
-    member PauseBeforeBackgroundWork: int with get, set
-
     /// Notify the host that a project has been fully checked in the background (using file contents provided by the file system API)
     ///
     /// The event may be raised on a background thread.
     member ProjectChecked: IEvent<FSharpProjectOptions>
-
-    // For internal use only
-    member internal ReactorOps: IReactorOperations
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker

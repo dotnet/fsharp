@@ -7,13 +7,11 @@
 
 namespace FSharp.Compiler.EditorServices
 
-open System.Collections.Immutable
 open Internal.Utilities.Library  
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.ErrorLogger
@@ -24,7 +22,6 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.SymbolHelpers
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
@@ -104,8 +101,8 @@ module DeclarationListHelpers =
                 let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInst minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
-                let layout = LayoutRender.toArray layout
-                let tpsL = List.map LayoutRender.toArray tpsL
+                let layout = toArray layout
+                let tpsL = List.map toArray tpsL
                 ToolTipElementData.Create(layout, xml, tpsL) ]
  
         ToolTipElement.Group layouts
@@ -135,9 +132,9 @@ module DeclarationListHelpers =
                           member x.Equals(item1, item2) = (fullDisplayTextOfModRef item1 = fullDisplayTextOfModRef item2)
                           member x.GetHashCode item = hash item.Stamp  }
 
-    let OutputFullName isListItem ppF fnF r = 
+    let OutputFullName displayFullName ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
-      if not isListItem then 
+      if not displayFullName then 
         match ppF r with 
         | None -> emptyL
         | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
@@ -148,7 +145,7 @@ module DeclarationListHelpers =
     let pubpathOfTyconRef (x: TyconRef) = x.PublicPath
 
     /// Output the quick info information of a language item
-    let rec FormatItemDescriptionToToolTipElement isListItem (infoReader: InfoReader) m denv (item: ItemWithInst) = 
+    let rec FormatItemDescriptionToToolTipElement displayFullName (infoReader: InfoReader) ad m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
         let denv = SimplerDisplayEnv denv 
@@ -156,15 +153,15 @@ module DeclarationListHelpers =
         match item.Item with
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
             // operator with solution
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
             let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
-            let tpsL = List.map LayoutRender.toArray tpsL
-            let resL = LayoutRender.toArray resL
-            let remarks = LayoutRender.toArray remarks
+            let tpsL = List.map toArray tpsL
+            let resL = toArray resL
+            let remarks = toArray remarks
             ToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
 
         // Union tags (constructors)
@@ -180,18 +177,18 @@ module DeclarationListHelpers =
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv rty
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // Active pattern tag inside the declaration (result)             
         | Item.ActivePatternResult(apinfo, ty, idx, _) ->
             let items = apinfo.ActiveTags
             let layout = 
-                wordL (tagText ((FSComp.SR.typeInfoActivePatternResult()))) ^^
+                wordL (tagText (FSComp.SR.typeInfoActivePatternResult())) ^^
                 wordL (tagActivePatternResult (List.item idx items) |> mkNav apinfo.Range) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // Active pattern tags 
@@ -201,7 +198,7 @@ module DeclarationListHelpers =
             let tau = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout v
+            let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
@@ -210,17 +207,17 @@ module DeclarationListHelpers =
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
 
-            let layout = LayoutRender.toArray layout
-            let tpsL = List.map LayoutRender.toArray tpsL
-            let remarks = LayoutRender.toArray remarks
+            let layout = toArray layout
+            let tpsL = List.map toArray tpsL
+            let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, tpsL, remarks=remarks)
 
         // F# exception names
         | Item.ExnCase ecref -> 
             let layout = NicePrint.layoutExnDef denv infoReader ecref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
-            let layout = LayoutRender.toArray layout
-            let remarks = LayoutRender.toArray remarks
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
+            let layout = toArray layout
+            let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
@@ -231,7 +228,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText)
 
         // F# record field names
@@ -241,7 +238,7 @@ module DeclarationListHelpers =
             let layout = 
                 NicePrint.layoutTyconRef denv rfinfo.TyconRef ^^
                 SepL.dot ^^
-                wordL (tagRecordField (DecompileOpName rfield.Name) |> mkNav rfield.DefinitionRange) ^^
+                wordL (tagRecordField rfield.DisplayName |> mkNav rfield.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty ^^
                 (
@@ -249,7 +246,7 @@ module DeclarationListHelpers =
                     | None -> emptyL
                     | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
                 )
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         | Item.UnionCaseField (ucinfo, fieldIndex) ->
@@ -261,7 +258,7 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv fieldTy
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText)
 
         // Not used
@@ -269,7 +266,7 @@ module DeclarationListHelpers =
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoPatternVariable())) ^^
                 wordL (tagUnknownEntity id.idText)
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // .NET fields
@@ -288,7 +285,7 @@ module DeclarationListHelpers =
                         WordL.equals ^^
                         try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // .NET events
@@ -302,13 +299,13 @@ module DeclarationListHelpers =
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv rty
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // F# and .NET properties
         | Item.Property(_, pinfo :: _) -> 
             let layout = NicePrint.prettyLayoutOfPropInfoFreeStyle  g amap m denv pinfo
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // Custom operations in queries
@@ -334,7 +331,7 @@ module DeclarationListHelpers =
                 SepL.dot ^^
                 wordL (tagMethod minfo.DisplayName)
 
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
         // F# constructors and methods
@@ -350,7 +347,7 @@ module DeclarationListHelpers =
         | Item.FakeInterfaceCtor ty ->
            let ty, _ = PrettyTypes.PrettifyType g ty
            let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
-           let layout = LayoutRender.toArray layout
+           let layout = toArray layout
            ToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types
@@ -362,11 +359,11 @@ module DeclarationListHelpers =
                LeftL.leftParen ^^
                NicePrint.layoutType denv fty ^^
                RightL.rightParen
-           let layout = LayoutRender.toArray layout
+           let layout = toArray layout
            ToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, ((TType_app(tcref, _)) :: _))
+        | Item.Types(_, TType_app(tcref, _) :: _)
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with
                             // tooltips are space-constrained, so use shorter names
@@ -375,14 +372,14 @@ module DeclarationListHelpers =
                             // on types/members. The doc comments for the actual member will still
                             // be shown in the tip.
                             showDocumentation = false  }
-            let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
-            let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
-            let layout = LayoutRender.toArray layout
-            let remarks = LayoutRender.toArray remarks
+            let layout = NicePrint.layoutTyconDefn denv infoReader ad m (* width *) tcref.Deref
+            let remarks = OutputFullName displayFullName pubpathOfTyconRef fullDisplayTextOfTyconRefAsLayout tcref
+            let layout = toArray layout
+            let remarks = toArray remarks
             ToolTipElement.Single (layout, xml, remarks=remarks)
 
         // F# Modules and namespaces
-        | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
+        | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             //let os = StringBuilder()
             let modrefs = modrefs |> RemoveDuplicateModuleRefs
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
@@ -418,10 +415,10 @@ module DeclarationListHelpers =
                         else 
                             emptyL
                     )
-                let layout = LayoutRender.toArray layout
+                let layout = toArray layout
                 ToolTipElement.Single (layout, xml)
             else
-                let layout = LayoutRender.toArray layout
+                let layout = toArray layout
                 ToolTipElement.Single (layout, xml)
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
@@ -433,7 +430,7 @@ module DeclarationListHelpers =
                 wordL (tagRecordField nm) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, FSharpXmlDoc.None)
             
         // Named parameters
@@ -444,23 +441,23 @@ module DeclarationListHelpers =
                 wordL (tagParameter id.idText) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
-            let layout = LayoutRender.toArray layout
+            let layout = toArray layout
             ToolTipElement.Single (layout, xml, paramName = id.idText)
             
         | Item.SetterArg (_, item) -> 
-            FormatItemDescriptionToToolTipElement isListItem infoReader m denv (ItemWithNoInst item)
+            FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
         |  _ -> 
             ToolTipElement.None
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
         ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader ad m denv item)
             (fun err -> ToolTipElement.CompositionError err)
 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-/// Represents one parameter for one method (or other item) in a group. 
 type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: TaggedText[], isOptional: bool) = 
 
     /// The name of the parameter.
@@ -493,12 +490,10 @@ module internal DescriptionListsImpl =
 
     let PrettyParamOfRecdField g denv (f: RecdField) =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
-        let display = LayoutRender.toArray display
+        let display = toArray display
         MethodGroupItemParameter(
-          name = f.Name,
+          name = f.DisplayNameCore,
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
-          // Note: the instantiation of any type parameters is currently incorporated directly into the type
-          // rather than being returned separately.
           display = display,
           isOptional=false)
     
@@ -508,10 +503,8 @@ module internal DescriptionListsImpl =
             if isGenerated i f then 
                 initial.Display 
             else 
-                // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
-                // the union type containing this case.
                 let display = NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
-                LayoutRender.toArray display
+                toArray display
 
         MethodGroupItemParameter(
           name=initial.ParameterName,
@@ -521,7 +514,7 @@ module internal DescriptionListsImpl =
 
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         let display = NicePrint.layoutOfParamData denv paramData
-        let display = LayoutRender.toArray display
+        let display = toArray display
         MethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -540,7 +533,7 @@ module internal DescriptionListsImpl =
                     let nm = id.idText
                     // detect parameter type, if ptyOpt is None - this is .NET style optional argument
                     let pty = match ptyOpt with ValueSome x -> x | _ -> pty
-                    (nm, isOptArg, SepL.questionMark ^^ (wordL (TaggedText.tagParameter nm))),  pty
+                    (nm, isOptArg, SepL.questionMark ^^ (wordL (tagParameter nm))),  pty
                 // Layout an unnamed argument 
                 | None, _, _ -> 
                     ("", isOptArg, emptyL), pty
@@ -550,11 +543,11 @@ module internal DescriptionListsImpl =
                     let prefix = 
                         if isParamArrayArg then
                             NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
-                            wordL (TaggedText.tagParameter nm) ^^
+                            wordL (tagParameter nm) ^^
                             RightL.colon
                             //sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
                         else 
-                            wordL (TaggedText.tagParameter nm) ^^
+                            wordL (tagParameter nm) ^^
                             RightL.colon
                             //sprintf "%s: " nm
                     (nm, isOptArg, prefix), pty)
@@ -568,7 +561,7 @@ module internal DescriptionListsImpl =
         let prettyParams = 
           (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tau tyL -> 
             let display = paramPrefix ^^ tyL
-            let display = LayoutRender.toArray display
+            let display = toArray display
             MethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
@@ -588,7 +581,7 @@ module internal DescriptionListsImpl =
         let parameters = 
             (prettyParamTys, prettyParamTysL)
             ||> List.map2 (fun tau tyL ->
-                let display = LayoutRender.toArray tyL
+                let display = toArray tyL
                 MethodGroupItemParameter(
                     name = "",
                     canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
@@ -607,15 +600,15 @@ module internal DescriptionListsImpl =
         let amap = infoReader.amap
         let g = infoReader.g
         match item with
-        | SymbolHelpers.ItemIsWithStaticArguments m g staticParameters ->
+        | ItemIsWithStaticArguments m g staticParameters ->
             staticParameters 
                 |> Array.map (fun sp -> 
                     let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType), m))
                     let spKind = NicePrint.prettyLayoutOfType denv ty
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
-                    let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedText.tagParameter spName) ^^ RightL.colon ^^ spKind
-                    let display = LayoutRender.toArray display
+                    let display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (tagParameter spName) ^^ RightL.colon ^^ spKind
+                    let display = toArray display
                     MethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
@@ -632,7 +625,7 @@ module internal DescriptionListsImpl =
     let rec PrettyParamsAndReturnTypeOfItem (infoReader:InfoReader) m denv (item: ItemWithInst) = 
         let amap = infoReader.amap
         let g = infoReader.g
-        let denv = { SymbolHelpers.SimplerDisplayEnv denv with useColonForReturnType=true}
+        let denv = { SimplerDisplayEnv denv with useColonForReturnType=true}
         match item.Item with
         | Item.Value vref -> 
             let getPrettyParamsOfTypes() = 
@@ -657,7 +650,7 @@ module internal DescriptionListsImpl =
             | Some valRefInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let (_, argInfos,  lastRetTy, _) = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
@@ -738,8 +731,8 @@ module internal DescriptionListsImpl =
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
-        | Item.CtorGroup(_, (minfo :: _)) 
-        | Item.MethodGroup(_, (minfo :: _), _) -> 
+        | Item.CtorGroup(_, minfo :: _) 
+        | Item.MethodGroup(_, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
             let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
@@ -756,7 +749,7 @@ module internal DescriptionListsImpl =
         | Item.CustomOperation (_, usageText, Some minfo) -> 
             match usageText() with 
             | None -> 
-                let argNamesAndTys = SymbolHelpers.ParamNameAndTypesOfUnaryCustomOperation g minfo 
+                let argNamesAndTys = ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_, ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
@@ -796,13 +789,13 @@ module internal DescriptionListsImpl =
             match repr with
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
-                | TTyconClass -> FSharpGlyph.Class
-                | TTyconInterface -> FSharpGlyph.Interface
-                | TTyconStruct -> FSharpGlyph.Struct
-                | TTyconDelegate _ -> FSharpGlyph.Delegate
-                | TTyconEnum _ -> FSharpGlyph.Enum
-            | TRecdRepr _ -> FSharpGlyph.Type
-            | TUnionRepr _ -> FSharpGlyph.Union
+                | TFSharpClass -> FSharpGlyph.Class
+                | TFSharpInterface -> FSharpGlyph.Interface
+                | TFSharpStruct -> FSharpGlyph.Struct
+                | TFSharpDelegate _ -> FSharpGlyph.Delegate
+                | TFSharpEnum _ -> FSharpGlyph.Enum
+            | TFSharpRecdRepr _ -> FSharpGlyph.Type
+            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct
@@ -812,8 +805,8 @@ module internal DescriptionListsImpl =
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _-> FSharpGlyph.Typedef 
-            | TProvidedNamespaceExtensionPoint  _-> FSharpGlyph.Typedef  
+            | TProvidedTypeRepr _-> FSharpGlyph.Typedef 
+            | TProvidedNamespaceRepr  _-> FSharpGlyph.Typedef  
 #endif
             | TNoRepr -> FSharpGlyph.Class  
          
@@ -902,7 +895,7 @@ module internal DescriptionListsImpl =
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if !NO_EXTENSIONTYPING
-        | SymbolHelpers.ItemIsWithStaticArguments m g _ -> 
+        | ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
 #endif
@@ -915,16 +908,16 @@ module internal DescriptionListsImpl =
 
 /// An intellisense declaration
 [<Sealed>]
-type DeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
+type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
-    member _.Name = name
+    member _.Name = textInDeclList
 
-    member _.NameInCode = nameInCode
+    member _.NameInCode = textInCode
 
     member _.Description = 
         match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv) -> 
-            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
+        | Choice1Of2 (items: CompletionItem list, infoReader, ad, m, denv) -> 
+            ToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem true infoReader ad m denv x.ItemWithInst))
         | Choice2Of2 result -> 
             result
 
@@ -949,6 +942,23 @@ type DeclarationListItem(name: string, nameInCode: string, fullName: string, gly
 type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, isError: bool) = 
     static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
 
+    // Check whether this item looks like an operator.
+    static let isOperatorItem name (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorDisplayName name
+            | _ -> false
+        | _ -> false              
+
+    static let isActivePatternItem (items: CompletionItem list) =
+        match items with
+        | [item] ->
+            match item.Item with
+            | Item.Value vref -> IsActivePatternName vref.DisplayNameCoreMangled
+            | _ -> false
+        | _ -> false
+
     member _.Items = declarations
 
     member _.IsForType = isForType
@@ -956,7 +966,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility: (Item -> FSharpAccessibility), items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
@@ -973,12 +983,12 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, (TType_app(tcref, _) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, TType_app(tcref, _) :: _) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
                 | Item.FakeInterfaceCtor (TType_app(tcref, _)) 
                 | Item.DelegateCtor (TType_app(tcref, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
+                | Item.CtorGroup (_, cinfo :: _) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
                 | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
                 | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
@@ -995,7 +1005,7 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
         // Group by full name for unresolved items and by display name for resolved ones.
-        let items = 
+        let decls = 
             items
             |> List.rev
             // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
@@ -1009,104 +1019,72 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     | [||] -> u.DisplayName
                     | ns -> (ns |> String.concat ".") + "." + u.DisplayName
                 | None -> x.Item.DisplayName)
+
             |> List.map (fun (_, items) -> 
                 let item = items.Head
-                let name = 
+                let textInDeclList = 
+                    match item.Unresolved with
+                    | Some u -> u.DisplayName
+                    | None -> item.Item.DisplayNameCore
+                let textInCode = 
                     match item.Unresolved with
                     | Some u -> u.DisplayName
                     | None -> item.Item.DisplayName
-                name, items)
+                textInDeclList, textInCode, items)
 
-        // Filter out operators, active patterns (as values) and the empty list
-        let items = 
-            // Check whether this item looks like an operator.
-            let isOperatorItem name (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
-                    | _ -> false
-                | _ -> false              
-
-            let isActivePatternItem (items: CompletionItem list) =
-                match items with
-                | [item] ->
-                    match item.Item with
-                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
-                    | _ -> false
-                | _ -> false
-
-            items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem displayName items) && 
-                not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
+            // Filter out operators, active patterns (as values)
+            |> List.filter (fun (_textInDeclList, textInCode, items) -> 
+                not (isOperatorItem textInCode items) && 
                 not (isActivePatternItem items))
 
-        let decls = 
-            items 
-            |> List.map (fun (displayName, itemsWithSameFullName) -> 
-                match itemsWithSameFullName with
-                | [] -> failwith "Unexpected empty bag"
-                | _ ->
-                    let items =
-                        match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
-                        | [], unresolved -> unresolved
-                        // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
-                        | resolved, _ -> resolved 
+            |> List.map (fun (textInDeclList, textInCode, itemsWithSameFullName) -> 
+                let items =
+                    match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
+                    | [], unresolved -> unresolved
+                    // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
+                    | resolved, _ -> resolved 
                     
-                    let item = items.Head
-                    let glyph = GlyphOfItem(denv, item.Item)
+                let item = items.Head
+                let glyph = GlyphOfItem(denv, item.Item)
 
-                    let name, nameInCode =
-                        if displayName.StartsWithOrdinal("( ") && displayName.EndsWithOrdinal(" )") then
-                            let cleanName = displayName.[2..displayName.Length - 3]
-                            cleanName,
-                            if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
-                        else 
-                            displayName,
-                            match item.Unresolved with
-                            | Some _ -> displayName
-                            | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
+                let cutAttributeSuffix (name: string) =
+                    if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && IsAttribute infoReader item.Item then
+                        name.[0..name.Length - "Attribute".Length - 1]
+                    else name
 
-                    let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
-
-                    let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWithOrdinal("Attribute") && isAttributeItem.Value then
-                            name.[0..name.Length - "Attribute".Length - 1]
-                        else name
-
-                    let name = cutAttributeSuffix name
-                    let nameInCode = cutAttributeSuffix nameInCode
+                let textInDeclList = cutAttributeSuffix textInDeclList
+                let textInCode = cutAttributeSuffix textInCode
                     
-                    let fullName = 
-                        match item.Unresolved with
-                        | Some x -> x.FullName
-                        | None -> SymbolHelpers.FullNameOfItem g item.Item
+                let fullName = 
+                    match item.Unresolved with
+                    | Some x -> x.FullName
+                    | None -> FullNameOfItem g item.Item
                     
-                    let namespaceToOpen = 
-                        item.Unresolved 
-                        |> Option.map (fun x -> x.Namespace)
-                        |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith fsharpNamespace then None
-                            else Some ns)
-                        |> Option.map (fun ns ->
-                            match currentNamespace with
-                            | Some currentNs ->
-                               if ns |> Array.startsWith currentNs then
-                                 ns.[currentNs.Length..]
-                               else ns
-                            | None -> ns)
-                        |> Option.bind (function
-                            | [||] -> None
-                            | ns -> Some (System.String.Join(".", ns)))
+                let namespaceToOpen = 
+                    item.Unresolved 
+                    |> Option.map (fun x -> x.Namespace)
+                    |> Option.bind (fun ns ->
+                        if ns |> Array.startsWith fsharpNamespace then None
+                        else Some ns)
+                    |> Option.map (fun ns ->
+                        match currentNamespace with
+                        | Some currentNs ->
+                            if ns |> Array.startsWith currentNs then
+                                ns.[currentNs.Length..]
+                            else ns
+                        | None -> ns)
+                    |> Option.bind (function
+                        | [||] -> None
+                        | ns -> Some (System.String.Join(".", ns)))
 
-                    DeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv), getAccessibility item.Item,
-                        item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
+                DeclarationListItem(
+                    textInDeclList, textInCode, fullName, glyph, Choice1Of2 (items, infoReader, ad, m, denv), getAccessibility item.Item,
+                    item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
-        new DeclarationListInfo(Array.ofList decls, isForType, false)
+        DeclarationListInfo(Array.ofList decls, isForType, false)
     
     static member Error message = 
-        new DeclarationListInfo(
+        DeclarationListInfo(
                 [| DeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (ToolTipText [ToolTipElement.CompositionError message]),
                                              FSharpAccessibility(taccessPublic), CompletionItemKind.Other, false, 0, false, None) |], false, true)
     
@@ -1174,9 +1152,9 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
 
     member _.Methods = methods
 
-    static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
+    static member Create (infoReader: InfoReader, ad, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g
-        if isNil items then new MethodGroup("", [| |]) else
+        if isNil items then MethodGroup("", [| |]) else
         let name = items.Head.Item.DisplayName 
 
         let methods = 
@@ -1195,7 +1173,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv { item with Item = flatItem }]
+                        let description = ToolTipText [FormatStructuredDescriptionOfItem true infoReader ad m denv { item with Item = flatItem }]
 
                         let hasParamArrayArg = 
                             match flatItem with 
@@ -1206,15 +1184,15 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                         let hasStaticParameters = 
                             match flatItem with 
 #if !NO_EXTENSIONTYPING
-                            | SymbolHelpers.ItemIsProvidedTypeWithStaticArguments m g _ -> false 
+                            | ItemIsProvidedTypeWithStaticArguments m g _ -> false 
 #endif
                             | _ -> true
 
-                        let prettyRetTyL = LayoutRender.toArray prettyRetTyL
+                        let prettyRetTyL = toArray prettyRetTyL
                         MethodGroupItem(
                           description = description,
                           returnType = prettyRetTyL,
-                          xmlDoc = SymbolHelpers.GetXmlCommentForItem infoReader m flatItem,
+                          xmlDoc = GetXmlCommentForItem infoReader m flatItem,
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,
@@ -1230,7 +1208,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                 yield! methods 
            |]
 
-        new MethodGroup(name, methods)
+        MethodGroup(name, methods)
 
 
 

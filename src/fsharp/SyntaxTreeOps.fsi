@@ -48,9 +48,9 @@ val (|SingleIdent|_|): inp:SynExpr -> Ident option
 /// This affects placement of sequence points
 val IsControlFlowExpression: e:SynExpr -> bool
 
-val mkSynAnonField: ty:SynType -> SynField
+val mkSynAnonField: ty:SynType * xmlDoc:PreXmlDoc -> SynField
 
-val mkSynNamedField: ident:Ident * ty:SynType * m:range -> SynField
+val mkSynNamedField: ident:Ident * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
 
 val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
@@ -87,7 +87,7 @@ val PushPatternToExpr: synArgNameGenerator:SynArgNameGenerator -> isMember:bool 
 ///        let (UnionCase x) = tmp1 in
 ///        let (UnionCase y) = tmp2 in
 ///        body"
-val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
+val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> arrow:Range option -> rhs:SynExpr -> SynSimplePats list * SynExpr
 
 val opNameParenGet: string
 
@@ -119,13 +119,13 @@ val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr
 
 val mkSynDotParenSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
+val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
 val mkSynQMarkSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
+//val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
-val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
+//val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
 val mkSynDotParenGet: lhsm:range -> dotm:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
@@ -141,7 +141,7 @@ val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
 
 val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
 
-val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> e:SynExpr -> SynExpr
+val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> arrow:Range option -> e:SynExpr -> SynExpr
 
 val arbExpr: debugStr:string * range:range -> SynExpr
 
@@ -152,6 +152,10 @@ val mkAttributeList: attrs:SynAttribute list -> range:range -> SynAttributeList 
 val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list
 
 val ( |Attributes| ): synAttributes:SynAttributeList list -> SynAttribute list
+
+val ( |TyparDecls| ): typarDecls: SynTyparDecls option -> SynTyparDecl list
+val ( |TyparsAndConstraints| ): typarDecls: SynTyparDecls option -> SynTyparDecl list * SynTypeConstraint list
+val ( |ValTyparDecls| ): valTyparDecls: SynValTyparDecls -> SynTyparDecl list * SynTypeConstraint list * bool
 
 val rangeOfNonNilAttrs: attrs:SynAttributes -> range
 
@@ -222,11 +226,6 @@ module SynInfo =
     /// rather than member signatures.
     val AdjustMemberArgs: memFlags:SynMemberKind -> infosForArgs:'a list list -> 'a list list
 
-    /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
-    /// is an immediate 'fun ... -> ...' or 'function ...' expression. This is noted in the F# language specification.
-    /// This does not apply to member definitions.
-    val InferLambdaArgs: origRhsExpr:SynExpr -> SynArgInfo list list
-
     val InferSynReturnData: retInfo:SynReturnInfo option -> SynArgInfo
 
     val emptySynValData: SynValData
@@ -241,7 +240,7 @@ val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list *
 val mkSynBinding:
     xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * mEquals: Range option * origRhsExpr:SynExpr * mRhs:range *
       staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option 
         -> SynBinding
 
@@ -262,3 +261,12 @@ val inferredTyparDecls: SynValTyparDecls
 val noInferredTypars: SynValTyparDecls
 
 val synExprContainsError: inpExpr:SynExpr -> bool
+
+val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list
+
+val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
+
+val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
+
+val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
+

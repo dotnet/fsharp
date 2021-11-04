@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.AttributeChecking
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module AttributeCheckingTests =
 

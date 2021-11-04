@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Compare03
 {
-  // Offset: 0x00000000 Length: 0x00000231
+  // Offset: 0x00000000 Length: 0x00000233
 }
 .mresource public FSharpOptimizationData.Compare03
 {
   // Offset: 0x00000238 Length: 0x000000B9
 }
 .module Compare03.dll
-// MVID: {5F1FBE49-0562-F88E-A745-038349BE1F5F}
+// MVID: {611C550D-0562-F88E-A745-03830D551C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C20000
+// Image base: 0x05000000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,7 +70,7 @@
                [3] int32 V_3,
                [4] int32 V_4)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,25 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare03.fsx'
+      .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare03.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       .line 8,8 : 8,32 ''
@@ -83,6 +83,7 @@
       IL_0007:  ldc.i4.1
       IL_0008:  cgt
       IL_000a:  stloc.2
+      .line 16707566,16707566 : 0,0 ''
       IL_000b:  ldloc.2
       IL_000c:  brfalse.s  IL_0012
 
@@ -97,6 +98,7 @@
       IL_0013:  ldc.i4.2
       IL_0014:  cgt
       IL_0016:  stloc.3
+      .line 16707566,16707566 : 0,0 ''
       IL_0017:  ldloc.3
       IL_0018:  brfalse.s  IL_001e
 
@@ -111,6 +113,7 @@
       IL_001f:  ldc.i4.4
       IL_0020:  cgt
       IL_0022:  stloc.s    V_4
+      .line 16707566,16707566 : 0,0 ''
       IL_0024:  ldloc.s    V_4
       IL_0026:  brfalse.s  IL_002d
 

@@ -17,7 +17,6 @@ open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -585,7 +584,7 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod (sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) meth.LogicalName), m))
                     | _ -> ()
 
 
@@ -603,7 +602,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
         
         let availImpliedInterfaces : TType list = 
-            [ for (reqdTy, m) in allReqdTys do
+            [ for reqdTy, m in allReqdTys do
                 if not (isInterfaceTy g reqdTy) then 
                     let baseTyOpt = if isObjExpr then Some reqdTy else GetSuperTypeOfType g amap m reqdTy 
                     match baseTyOpt with 
@@ -637,7 +636,7 @@ module DispatchSlotChecking =
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
-        [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+        [ for i, reqdTy, reqdTyRange, impliedTys in reqdTyInfos do
 
             // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
             // duplicates.
@@ -683,10 +682,10 @@ module DispatchSlotChecking =
                           if not minfo.IsAbstract then 
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
 
-            /// Check that no interface type is implied twice
-            for (j, _, _, impliedTys2) in reqdTyInfos do
+            // Check that no interface type is implied twice
+            for j, _, _, impliedTys2 in reqdTyInfos do
                 if i > j then
-                    for (ty, dispatchSlots) in dispatchSlotSet do
+                    for ty, dispatchSlots in dispatchSlotSet do
                         if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
                             if  dispatchSlots 
                                 |> List.exists (fun reqdSlot ->
@@ -759,7 +758,7 @@ module DispatchSlotChecking =
         
 
         // We check all the abstracts related to the class hierarchy and then check each interface implementation
-        for ((reqdTy, m), slotImplSet) in allImpls do
+        for (reqdTy, m), slotImplSet in allImpls do
             let (SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, _)) = slotImplSet
             try 
 
@@ -798,7 +797,7 @@ module DispatchSlotChecking =
                     let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
                     slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
                 else
-                    [ for ((reqdTy, m), (SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _))) in allImpls do
+                    [ for (reqdTy, m), SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overridenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do

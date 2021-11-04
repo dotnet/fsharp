@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly SteppingMatch07
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch07
 {
-  // Offset: 0x00000000 Length: 0x0000067D
+  // Offset: 0x00000000 Length: 0x00000675
 }
 .mresource public FSharpOptimizationData.SteppingMatch07
 {
-  // Offset: 0x00000688 Length: 0x000001D9
+  // Offset: 0x00000680 Length: 0x000001D9
 }
 .module SteppingMatch07.dll
-// MVID: {59B19213-D373-07F3-A745-03831392B159}
+// MVID: {611C4D99-D373-07F3-A745-0383994D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03330000
+// Image base: 0x06780000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -205,77 +205,64 @@
             instance int32  CompareTo(class SteppingMatch07/Discr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       64 (0x40)
+      // Code size       49 (0x31)
       .maxstack  4
       .locals init ([0] int32 V_0,
                [1] int32 V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch07.fs'
-      IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000a
-
-      IL_0008:  br.s       IL_0032
+      .line 4,4 : 6,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch07.fs'
+      IL_0000:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0001:  ldarg.0
+      IL_0002:  ldnull
+      IL_0003:  cgt.un
+      IL_0005:  brfalse.s  IL_0027
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  ldnull
-      IL_000c:  cgt.un
-      IL_000e:  brfalse.s  IL_0012
-
-      IL_0010:  br.s       IL_0014
-
-      IL_0012:  br.s       IL_0030
+      IL_0007:  ldarg.1
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0025
 
       .line 100001,100001 : 0,0 ''
-      IL_0014:  ldarg.0
+      IL_000d:  ldarg.0
+      IL_000e:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_0013:  stloc.0
+      IL_0014:  ldarg.1
       IL_0015:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_001a:  stloc.0
-      IL_001b:  ldarg.1
-      IL_001c:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0021:  stloc.1
-      IL_0022:  ldloc.0
-      IL_0023:  ldloc.1
-      IL_0024:  bne.un.s   IL_0028
-
-      IL_0026:  br.s       IL_002a
-
-      IL_0028:  br.s       IL_002c
+      IL_001a:  stloc.1
+      .line 100001,100001 : 0,0 ''
+      IL_001b:  ldloc.0
+      IL_001c:  ldloc.1
+      IL_001d:  bne.un.s   IL_0021
 
       .line 100001,100001 : 0,0 ''
-      IL_002a:  ldc.i4.0
-      IL_002b:  ret
+      IL_001f:  ldc.i4.0
+      IL_0020:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002c:  ldloc.0
-      IL_002d:  ldloc.1
-      IL_002e:  sub
-      IL_002f:  ret
+      IL_0021:  ldloc.0
+      IL_0022:  ldloc.1
+      IL_0023:  sub
+      IL_0024:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0030:  ldc.i4.1
-      IL_0031:  ret
+      IL_0025:  ldc.i4.1
+      IL_0026:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0032:  ldarg.1
-      IL_0033:  ldnull
-      IL_0034:  cgt.un
-      IL_0036:  brfalse.s  IL_003a
-
-      IL_0038:  br.s       IL_003c
-
-      IL_003a:  br.s       IL_003e
+      IL_0027:  ldarg.1
+      IL_0028:  ldnull
+      IL_0029:  cgt.un
+      IL_002b:  brfalse.s  IL_002f
 
       .line 100001,100001 : 0,0 ''
-      IL_003c:  ldc.i4.m1
-      IL_003d:  ret
+      IL_002d:  ldc.i4.m1
+      IL_002e:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003e:  ldc.i4.0
-      IL_003f:  ret
+      IL_002f:  ldc.i4.0
+      IL_0030:  ret
     } // end of method Discr::CompareTo
 
     .method public hidebysig virtual final 
@@ -297,7 +284,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       81 (0x51)
+      // Code size       65 (0x41)
       .maxstack  4
       .locals init ([0] class SteppingMatch07/Discr V_0,
                [1] int32 V_1,
@@ -306,102 +293,86 @@
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  SteppingMatch07/Discr
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_000f
-
-      IL_000d:  br.s       IL_0011
-
-      IL_000f:  br.s       IL_003e
+      IL_000b:  brfalse.s  IL_0032
 
       .line 100001,100001 : 0,0 ''
-      IL_0011:  ldarg.1
-      IL_0012:  unbox.any  SteppingMatch07/Discr
-      IL_0017:  ldnull
-      IL_0018:  cgt.un
-      IL_001a:  brfalse.s  IL_001e
-
-      IL_001c:  br.s       IL_0020
-
-      IL_001e:  br.s       IL_003c
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  SteppingMatch07/Discr
+      IL_0013:  ldnull
+      IL_0014:  cgt.un
+      IL_0016:  brfalse.s  IL_0030
 
       .line 100001,100001 : 0,0 ''
-      IL_0020:  ldarg.0
-      IL_0021:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0026:  stloc.1
-      IL_0027:  ldloc.0
-      IL_0028:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_002d:  stloc.2
-      IL_002e:  ldloc.1
-      IL_002f:  ldloc.2
-      IL_0030:  bne.un.s   IL_0034
-
-      IL_0032:  br.s       IL_0036
-
-      IL_0034:  br.s       IL_0038
+      IL_0018:  ldarg.0
+      IL_0019:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_001e:  stloc.1
+      IL_001f:  ldloc.0
+      IL_0020:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_0025:  stloc.2
+      .line 100001,100001 : 0,0 ''
+      IL_0026:  ldloc.1
+      IL_0027:  ldloc.2
+      IL_0028:  bne.un.s   IL_002c
 
       .line 100001,100001 : 0,0 ''
-      IL_0036:  ldc.i4.0
-      IL_0037:  ret
+      IL_002a:  ldc.i4.0
+      IL_002b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0038:  ldloc.1
-      IL_0039:  ldloc.2
-      IL_003a:  sub
-      IL_003b:  ret
+      IL_002c:  ldloc.1
+      IL_002d:  ldloc.2
+      IL_002e:  sub
+      IL_002f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003c:  ldc.i4.1
-      IL_003d:  ret
+      IL_0030:  ldc.i4.1
+      IL_0031:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003e:  ldarg.1
-      IL_003f:  unbox.any  SteppingMatch07/Discr
-      IL_0044:  ldnull
-      IL_0045:  cgt.un
-      IL_0047:  brfalse.s  IL_004b
-
-      IL_0049:  br.s       IL_004d
-
-      IL_004b:  br.s       IL_004f
+      IL_0032:  ldarg.1
+      IL_0033:  unbox.any  SteppingMatch07/Discr
+      IL_0038:  ldnull
+      IL_0039:  cgt.un
+      IL_003b:  brfalse.s  IL_003f
 
       .line 100001,100001 : 0,0 ''
-      IL_004d:  ldc.i4.m1
-      IL_004e:  ret
+      IL_003d:  ldc.i4.m1
+      IL_003e:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_004f:  ldc.i4.0
-      IL_0050:  ret
+      IL_003f:  ldc.i4.0
+      IL_0040:  ret
     } // end of method Discr::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       21 (0x15)
+      // Code size       18 (0x12)
       .maxstack  3
       .locals init ([0] int32 V_0)
+      .line 4,4 : 6,11 ''
+      IL_0000:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000a
-
-      IL_0008:  br.s       IL_0013
+      IL_0001:  ldarg.0
+      IL_0002:  ldnull
+      IL_0003:  cgt.un
+      IL_0005:  brfalse.s  IL_0010
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldc.i4.0
-      IL_000b:  stloc.0
-      IL_000c:  ldarg.0
-      IL_000d:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0012:  ret
+      IL_0007:  ldc.i4.0
+      IL_0008:  stloc.0
+      IL_0009:  ldarg.0
+      IL_000a:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_000f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0013:  ldc.i4.0
-      IL_0014:  ret
+      IL_0010:  ldc.i4.0
+      IL_0011:  ret
     } // end of method Discr::GetHashCode
 
     .method public hidebysig virtual final 
@@ -422,140 +393,128 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       55 (0x37)
+      // Code size       48 (0x30)
       .maxstack  4
       .locals init ([0] class SteppingMatch07/Discr V_0,
                [1] class SteppingMatch07/Discr V_1,
                [2] int32 V_2,
                [3] int32 V_3)
+      .line 4,4 : 6,11 ''
+      IL_0000:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000a
-
-      IL_0008:  br.s       IL_002f
+      IL_0001:  ldarg.0
+      IL_0002:  ldnull
+      IL_0003:  cgt.un
+      IL_0005:  brfalse.s  IL_0028
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  isinst     SteppingMatch07/Discr
-      IL_0010:  stloc.0
+      IL_0007:  ldarg.1
+      IL_0008:  isinst     SteppingMatch07/Discr
+      IL_000d:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_000e:  ldloc.0
+      IL_000f:  brfalse.s  IL_0026
+
+      .line 100001,100001 : 0,0 ''
       IL_0011:  ldloc.0
-      IL_0012:  brfalse.s  IL_0016
-
-      IL_0014:  br.s       IL_0018
-
-      IL_0016:  br.s       IL_002d
-
-      .line 100001,100001 : 0,0 ''
-      IL_0018:  ldloc.0
-      IL_0019:  stloc.1
-      IL_001a:  ldarg.0
+      IL_0012:  stloc.1
+      IL_0013:  ldarg.0
+      IL_0014:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_0019:  stloc.2
+      IL_001a:  ldloc.1
       IL_001b:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0020:  stloc.2
-      IL_0021:  ldloc.1
-      IL_0022:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0027:  stloc.3
-      IL_0028:  ldloc.2
-      IL_0029:  ldloc.3
-      IL_002a:  ceq
-      IL_002c:  ret
+      IL_0020:  stloc.3
+      .line 100001,100001 : 0,0 ''
+      IL_0021:  ldloc.2
+      IL_0022:  ldloc.3
+      IL_0023:  ceq
+      IL_0025:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002d:  ldc.i4.0
-      IL_002e:  ret
+      IL_0026:  ldc.i4.0
+      IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_002f:  ldarg.1
-      IL_0030:  ldnull
-      IL_0031:  cgt.un
-      IL_0033:  ldc.i4.0
-      IL_0034:  ceq
-      IL_0036:  ret
+      IL_0028:  ldarg.1
+      IL_0029:  ldnull
+      IL_002a:  cgt.un
+      IL_002c:  ldc.i4.0
+      IL_002d:  ceq
+      IL_002f:  ret
     } // end of method Discr::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(class SteppingMatch07/Discr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       49 (0x31)
+      // Code size       42 (0x2a)
       .maxstack  4
       .locals init ([0] int32 V_0,
                [1] int32 V_1)
+      .line 4,4 : 6,11 ''
+      IL_0000:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0000:  ldarg.0
-      IL_0001:  ldnull
-      IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000a
-
-      IL_0008:  br.s       IL_0029
+      IL_0001:  ldarg.0
+      IL_0002:  ldnull
+      IL_0003:  cgt.un
+      IL_0005:  brfalse.s  IL_0022
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  ldnull
-      IL_000c:  cgt.un
-      IL_000e:  brfalse.s  IL_0012
-
-      IL_0010:  br.s       IL_0014
-
-      IL_0012:  br.s       IL_0027
+      IL_0007:  ldarg.1
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0020
 
       .line 100001,100001 : 0,0 ''
-      IL_0014:  ldarg.0
+      IL_000d:  ldarg.0
+      IL_000e:  ldfld      int32 SteppingMatch07/Discr::_tag
+      IL_0013:  stloc.0
+      IL_0014:  ldarg.1
       IL_0015:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_001a:  stloc.0
-      IL_001b:  ldarg.1
-      IL_001c:  ldfld      int32 SteppingMatch07/Discr::_tag
-      IL_0021:  stloc.1
-      IL_0022:  ldloc.0
-      IL_0023:  ldloc.1
-      IL_0024:  ceq
-      IL_0026:  ret
+      IL_001a:  stloc.1
+      .line 100001,100001 : 0,0 ''
+      IL_001b:  ldloc.0
+      IL_001c:  ldloc.1
+      IL_001d:  ceq
+      IL_001f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
+      IL_0020:  ldc.i4.0
+      IL_0021:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0029:  ldarg.1
-      IL_002a:  ldnull
-      IL_002b:  cgt.un
-      IL_002d:  ldc.i4.0
-      IL_002e:  ceq
-      IL_0030:  ret
+      IL_0022:  ldarg.1
+      IL_0023:  ldnull
+      IL_0024:  cgt.un
+      IL_0026:  ldc.i4.0
+      IL_0027:  ceq
+      IL_0029:  ret
     } // end of method Discr::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       24 (0x18)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class SteppingMatch07/Discr V_0)
       .line 4,4 : 6,11 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     SteppingMatch07/Discr
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_000c
-
-      IL_000a:  br.s       IL_000e
-
-      IL_000c:  br.s       IL_0016
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000e:  ldarg.0
-      IL_000f:  ldloc.0
-      IL_0010:  callvirt   instance bool SteppingMatch07/Discr::Equals(class SteppingMatch07/Discr)
-      IL_0015:  ret
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  callvirt   instance bool SteppingMatch07/Discr::Equals(class SteppingMatch07/Discr)
+      IL_0011:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0016:  ldc.i4.0
-      IL_0017:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method Discr::Equals
 
     .property instance int32 Tag()
@@ -599,25 +558,27 @@
 
   .method public static void  funcE(class SteppingMatch07/Discr n) cil managed
   {
-    // Code size       33 (0x21)
+    // Code size       34 (0x22)
     .maxstack  8
     .line 6,6 : 9,21 ''
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance int32 SteppingMatch07/Discr::get_Tag()
-    IL_0006:  ldc.i4.1
-    IL_0007:  bne.un.s   IL_000b
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 SteppingMatch07/Discr::get_Tag()
+    IL_0007:  ldc.i4.1
+    IL_0008:  bne.un.s   IL_000c
 
-    IL_0009:  br.s       IL_0016
+    IL_000a:  br.s       IL_0017
 
     .line 8,8 : 13,35 ''
-    IL_000b:  ldstr      "A"
-    IL_0010:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_0015:  ret
+    IL_000c:  ldstr      "A"
+    IL_0011:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0016:  ret
 
     .line 10,10 : 13,35 ''
-    IL_0016:  ldstr      "B"
-    IL_001b:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_0020:  ret
+    IL_0017:  ldstr      "B"
+    IL_001c:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0021:  ret
   } // end of method SteppingMatch07::funcE
 
 } // end of class SteppingMatch07

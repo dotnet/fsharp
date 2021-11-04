@@ -4,10 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 
 [<TestFixture>]
 module OpenTypeDeclarationTests =
@@ -2257,7 +2256,7 @@ let main _ =
 
     [<Test>]
     let ``Opening type providers with abbreviation result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2299,7 +2298,7 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening type providers result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2339,7 +2338,7 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening type providers with nested result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2376,7 +2375,7 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening generative type providers in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2414,7 +2413,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 
     [<Test>]
     let ``Opening generative type providers directly in unqualified access to types and members - Errors`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """

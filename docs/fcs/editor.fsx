@@ -6,10 +6,10 @@ Compiler Services: Editor services
 
 This tutorial demonstrates how to use the editor services provided by the F# compiler.
 This API is used to provide auto-complete, tool-tips, parameter info help, matching of
-brackets and other functions in F# editors including Visual Studio, Xamarin Studio and Emacs 
+brackets and other functions in F# editors including Visual Studio, Xamarin Studio and Emacs
 (see [fsharpbindings](https://github.com/fsharp/fsharpbinding) project for more information).
-Similarly to [the tutorial on using untyped AST](untypedtree.html), we start by 
-getting the `InteractiveChecker` object. 
+Similarly to [the tutorial on using untyped AST](untypedtree.html), we start by
+getting the `InteractiveChecker` object.
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published
 
@@ -25,62 +25,62 @@ of `InteractiveChecker`:
 // Reference F# compiler API
 #r "FSharp.Compiler.Service.dll"
 
-open System
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-// Create an interactive checker instance 
+// Create an interactive checker instance
 let checker = FSharpChecker.Create()
 
 (**
 
-As [previously](untypedtree.html), we use `GetProjectOptionsFromScriptRoot` to get a context 
+As [previously](untypedtree.html), we use `GetProjectOptionsFromScriptRoot` to get a context
 where the specified input is the only file passed to the compiler (and it is treated as a
-script file or stand-alone F# source code). 
+script file or stand-alone F# source code).
 
 *)
 // Sample input as a multi-line string
-let input = 
-  """
+let input =
+    """
   open System
 
-  let foo() = 
+  let foo() =
     let msg = String.Concat("Hello"," ","world")
-    if true then 
+    if true then
       printfn "%s" msg.
   """
 // Split the input & define file name
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions, errors = 
+let projOptions, _diagnostics =
     checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
     |> Async.RunSynchronously
 
-let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+let parsingOptions, _diagnostics2 =
+    checker.GetParsingOptionsFromProjectOptions(projOptions)
 
 (**
-To perform type checking, we first need to parse the input using 
+To perform type checking, we first need to parse the input using
 `ParseFile`, which gives us access to the [untyped AST](untypedtree.html). However,
 then we need to call `CheckFileInProject` to perform the full type checking. This function
-also requires the result of `ParseFileInProject`, so the two functions are often called 
-together. 
+also requires the result of `ParseFileInProject`, so the two functions are often called
+together.
 *)
-// Perform parsing  
+// Perform parsing
 
-let parseFileResults = 
+let parseFileResults =
     checker.ParseFile(file, SourceText.ofString input, parsingOptions)
     |> Async.RunSynchronously
 (**
-Before we look at the interesting operations provided by `TypeCheckResults`, we 
+Before we look at the interesting operations provided by `TypeCheckResults`, we
 need to run the type checker on a sample input. On F# code with errors, you would get some type checking
 result (but it may contain incorrectly "guessed" results).
-*)        
+*)
 
 // Perform type checking
-let checkFileAnswer = 
+let checkFileAnswer =
     checker.CheckFileInProject(parseFileResults, file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
@@ -88,7 +88,7 @@ let checkFileAnswer =
 Alternatively you can use `ParseAndCheckFileInProject` to check both in one step:
 *)
 
-let parseResults2, checkFileAnswer2 = 
+let parseResults2, checkFileAnswer2 =
     checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
@@ -99,9 +99,9 @@ tutorial), but also a `CheckFileAnswer` value, which gives us access to all
 the interesting functionality...
 *)
 
-let checkFileResults = 
+let checkFileResults =
     match checkFileAnswer with
-    | FSharpCheckFileAnswer.Succeeded(res) -> res
+    | FSharpCheckFileAnswer.Succeeded (res) -> res
     | res -> failwithf "Parsing did not finish... (%A)" res
 
 (**
@@ -133,7 +133,9 @@ identifier (the other option lets you get tooltip with full assembly location wh
 let identToken = FSharpTokenTag.Identifier
 
 // Get tool tip at the specified location
-let tip = checkFileResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
+let tip =
+    checkFileResults.GetToolTip(4, 7, inputLines.[1], [ "foo" ], identToken)
+
 printfn "%A" tip
 
 (**
@@ -144,7 +146,7 @@ printfn "%A" tip
 Aside from the location and token kind, the function also requires the current contents of the line
 (useful when the source code changes) and a `Names` value, which is a list of strings representing
 the current long name. For example to get tooltip for the `Random` identifier in a long name
-`System.Random`, you would use location somewhere in the string `Random` and you would pass 
+`System.Random`, you would use location somewhere in the string `Random` and you would pass
 `["System"; "Random"]` as the `Names` value.
 
 The returned value is of type `ToolTipText` which contains a discriminated union `ToolTipElement`.
@@ -154,18 +156,23 @@ The union represents different kinds of tool tips that you can get from the comp
 
 The next method exposed by `TypeCheckResults` lets us perform auto-complete on a given location.
 This can be called on any identifier or in any scope (in which case you get a list of names visible
-in the scope) or immediately after `.` to get a list of members of some object. Here, we get a 
+in the scope) or immediately after `.` to get a list of members of some object. Here, we get a
 list of members of the string value `msg`.
 
-To do this, we call `GetDeclarationListInfo` with the location of the `.` symbol on the last line 
+To do this, we call `GetDeclarationListInfo` with the location of the `.` symbol on the last line
 (ending with `printfn "%s" msg.`). The offsets are one-based, so the location is `7, 23`.
 We also need to specify a function that says that the text has not changed and the current identifier
 where we need to perform the completion.
 *)
 // Get declarations (autocomplete) for a location
-let decls = 
-    checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun () -> []))
+let decls =
+    checkFileResults.GetDeclarationListInfo(
+        Some parseFileResults,
+        7,
+        inputLines.[6],
+        PartialLongName.Empty 23,
+        (fun () -> [])
+    )
 
 // Print the names of available items
 for item in decls.Items do
@@ -178,15 +185,15 @@ deprecated because it accepted zero-based line numbers.  At some point it will b
 *)
 
 (**
-When you run the code, you should get a list containing the usual string methods such as 
-`Substring`, `ToUpper`, `ToLower` etc. The fourth argument of `GetDeclarations`, here `([], "msg")`, 
+When you run the code, you should get a list containing the usual string methods such as
+`Substring`, `ToUpper`, `ToLower` etc. The fourth argument of `GetDeclarations`, here `([], "msg")`,
 specifies the context for the auto-completion. Here, we want a completion on a complete name
 `msg`, but you could for example use `(["System"; "Collections"], "Generic")` to get a completion list
 for a fully qualified namespace.
 
 ### Getting parameter information
 
-The next common feature of editors is to provide information about overloads of a method. In our 
+The next common feature of editors is to provide information about overloads of a method. In our
 sample code, we use `String.Concat` which has a number of overloads. We can get the list using
 `GetMethods` operation. As previously, this takes zero-indexed offset of the location that we are
 interested in (here, right at the end of the `String.Concat` identifier) and we also need to provide
@@ -195,13 +202,15 @@ changes):
 
 *)
 // Get overloads of the String.Concat method
-let methods = 
-    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
+let methods =
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some [ "String"; "Concat" ])
 
 // Print concatenated parameter lists
 for mi in methods.Methods do
-    [ for p in mi.Parameters do for tt in p.Display do yield tt.Text ]
-    |> String.concat ", " 
+    [ for p in mi.Parameters do
+          for tt in p.Display do
+              yield tt.Text ]
+    |> String.concat ", "
     |> printfn "%s(%s)" methods.MethodName
 (**
 The code uses the `Display` property to get the annotation for each parameter. This returns information
@@ -209,7 +218,7 @@ such as `arg0: obj` or `params args: obj[]` or `str0: string, str1: string`. We 
 and print a type annotation with the method name.
 *)
 
-(** 
+(**
 
 ## Asynchronous and immediate operations
 
@@ -226,7 +235,7 @@ is raised.
 
 > The [fsharpbinding](https://github.com/fsharp/fsharpbinding) project has more advanced
 example of handling the background work where all requests are sent through an F# agent.
-This may be a more appropriate for implementing editor support. 
+This may be a more appropriate for implementing editor support.
 
 *)
 
@@ -246,6 +255,5 @@ knowledge of the [FSharpChecker operations queue](queue.html) and the [FSharpChe
 Finally, if you are implementing an editor support for an editor that cannot directly call .NET API,
 you can call many of the methods discussed here via a command line interface that is available in the
 [FSharp.AutoComplete](https://github.com/fsharp/fsharpbinding/tree/master/FSharp.AutoComplete) project.
-
 
 *)

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly ListExpressionSteppingTest2
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ListExpressionSteppingTest2
 {
-  // Offset: 0x00000000 Length: 0x0000026D
+  // Offset: 0x00000000 Length: 0x000002C8
 }
 .mresource public FSharpOptimizationData.ListExpressionSteppingTest2
 {
-  // Offset: 0x00000278 Length: 0x000000AF
+  // Offset: 0x000002D0 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest2.exe
-// MVID: {59B1920C-D3DE-B780-A745-03830C92B159}
+// MVID: {611C4D7C-D3DE-B780-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00690000
+// Image base: 0x06F60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,216 +55,380 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar serializable sealed nested assembly beforefieldinit specialname f1@6
-           extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #1 stage #2 at line 18@18'<a>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<!a,int32>,class [mscorlib]System.Tuple`2<!a,int32>>
     {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-      .field public int32 pc
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field public int32 current
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method public specialname rtspecialname 
-              instance void  .ctor(int32 pc,
-                                   int32 current) cil managed
-      {
-        // Code size       21 (0x15)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldarg.1
-        IL_0002:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        IL_0007:  ldarg.0
-        IL_0008:  ldarg.2
-        IL_0009:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::current
-        IL_000e:  ldarg.0
-        IL_000f:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
-        IL_0014:  ret
-      } // end of method f1@6::.ctor
-
-      .method public strict virtual instance int32 
-              GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
-      {
-        // Code size       123 (0x7b)
-        .maxstack  6
-        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest2.fs'
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        IL_0006:  ldc.i4.1
-        IL_0007:  sub
-        IL_0008:  switch     ( 
-                              IL_001b,
-                              IL_001d,
-                              IL_001f)
-        IL_0019:  br.s       IL_002a
-
-        IL_001b:  br.s       IL_0021
-
-        IL_001d:  br.s       IL_0024
-
-        IL_001f:  br.s       IL_0027
-
-        .line 100001,100001 : 0,0 ''
-        IL_0021:  nop
-        IL_0022:  br.s       IL_004b
-
-        .line 100001,100001 : 0,0 ''
-        IL_0024:  nop
-        IL_0025:  br.s       IL_006b
-
-        .line 100001,100001 : 0,0 ''
-        IL_0027:  nop
-        IL_0028:  br.s       IL_0072
-
-        .line 100001,100001 : 0,0 ''
-        IL_002a:  nop
-        .line 6,6 : 11,26 ''
-        IL_002b:  ldstr      "hello"
-        IL_0030:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_0035:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_003a:  pop
-        IL_003b:  ldarg.0
-        IL_003c:  ldc.i4.1
-        IL_003d:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        .line 7,7 : 11,18 ''
-        IL_0042:  ldarg.0
-        IL_0043:  ldc.i4.1
-        IL_0044:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::current
-        IL_0049:  ldc.i4.1
-        IL_004a:  ret
-
-        .line 8,8 : 11,28 ''
-        IL_004b:  ldstr      "goodbye"
-        IL_0050:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-        IL_0055:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_005a:  pop
-        IL_005b:  ldarg.0
-        IL_005c:  ldc.i4.2
-        IL_005d:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        .line 9,9 : 11,18 ''
-        IL_0062:  ldarg.0
-        IL_0063:  ldc.i4.2
-        IL_0064:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::current
-        IL_0069:  ldc.i4.1
-        IL_006a:  ret
-
-        IL_006b:  ldarg.0
-        IL_006c:  ldc.i4.3
-        IL_006d:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        IL_0072:  ldarg.0
-        IL_0073:  ldc.i4.0
-        IL_0074:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::current
-        IL_0079:  ldc.i4.0
-        IL_007a:  ret
-      } // end of method f1@6::GenerateNext
-
-      .method public strict virtual instance void 
-              Close() cil managed
-      {
-        // Code size       8 (0x8)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldc.i4.3
-        IL_0002:  stfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        IL_0007:  ret
-      } // end of method f1@6::Close
-
-      .method public strict virtual instance bool 
-              get_CheckClose() cil managed
-      {
-        // Code size       56 (0x38)
-        .maxstack  8
-        .line 100001,100001 : 0,0 ''
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::pc
-        IL_0006:  switch     ( 
-                              IL_001d,
-                              IL_001f,
-                              IL_0021,
-                              IL_0023)
-        IL_001b:  br.s       IL_0031
-
-        IL_001d:  br.s       IL_0025
-
-        IL_001f:  br.s       IL_0028
-
-        IL_0021:  br.s       IL_002b
-
-        IL_0023:  br.s       IL_002e
-
-        .line 100001,100001 : 0,0 ''
-        IL_0025:  nop
-        IL_0026:  br.s       IL_0036
-
-        .line 100001,100001 : 0,0 ''
-        IL_0028:  nop
-        IL_0029:  br.s       IL_0034
-
-        .line 100001,100001 : 0,0 ''
-        IL_002b:  nop
-        IL_002c:  br.s       IL_0032
-
-        .line 100001,100001 : 0,0 ''
-        IL_002e:  nop
-        IL_002f:  br.s       IL_0036
-
-        .line 100001,100001 : 0,0 ''
-        IL_0031:  nop
-        IL_0032:  ldc.i4.0
-        IL_0033:  ret
-
-        IL_0034:  ldc.i4.0
-        IL_0035:  ret
-
-        IL_0036:  ldc.i4.0
-        IL_0037:  ret
-      } // end of method f1@6::get_CheckClose
-
-      .method public strict virtual instance int32 
-              get_LastGenerated() cil managed
+      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!a> @_instance
+      .method assembly specialname rtspecialname 
+              instance void  .ctor() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::current
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<!a,int32>,class [mscorlib]System.Tuple`2<!a,int32>>::.ctor()
         IL_0006:  ret
-      } // end of method f1@6::get_LastGenerated
+      } // end of method 'Pipe #1 stage #2 at line 18@18'::.ctor
 
-      .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
-              GetFreshEnumerator() cil managed
+      .method public strict virtual instance class [mscorlib]System.Tuple`2<!a,int32> 
+              Invoke(class [mscorlib]System.Tuple`2<!a,int32> tupledArg) cil managed
+      {
+        // Code size       24 (0x18)
+        .maxstack  7
+        .locals init ([0] !a a,
+                 [1] int32 b)
+        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest2.fs'
+        IL_0000:  ldarg.1
+        IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<!a,int32>::get_Item1()
+        IL_0006:  stloc.0
+        IL_0007:  ldarg.1
+        IL_0008:  call       instance !1 class [mscorlib]System.Tuple`2<!a,int32>::get_Item2()
+        IL_000d:  stloc.1
+        .line 18,18 : 38,44 ''
+        IL_000e:  ldloc.0
+        IL_000f:  ldloc.1
+        IL_0010:  ldc.i4.1
+        IL_0011:  add
+        IL_0012:  newobj     instance void class [mscorlib]System.Tuple`2<!a,int32>::.ctor(!0,
+                                                                                           !1)
+        IL_0017:  ret
+      } // end of method 'Pipe #1 stage #2 at line 18@18'::Invoke
+
+      .method private specialname rtspecialname static 
+              void  .cctor() cil managed
+      {
+        // Code size       11 (0xb)
+        .maxstack  10
+        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!a>::.ctor()
+        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!a>::@_instance
+        IL_000a:  ret
+      } // end of method 'Pipe #1 stage #2 at line 18@18'::.cctor
+
+    } // end of class 'Pipe #1 stage #2 at line 18@18'
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit xs1@19<a>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<!a,int32>,class [mscorlib]System.Tuple`2<!a,int32>>
+    {
+      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a> @_instance
+      .method assembly specialname rtspecialname 
+              instance void  .ctor() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       8 (0x8)
+        // Code size       7 (0x7)
         .maxstack  8
-        IL_0000:  ldc.i4.0
-        IL_0001:  ldc.i4.0
-        IL_0002:  newobj     instance void ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::.ctor(int32,
-                                                                                                               int32)
-        IL_0007:  ret
-      } // end of method f1@6::GetFreshEnumerator
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<!a,int32>,class [mscorlib]System.Tuple`2<!a,int32>>::.ctor()
+        IL_0006:  ret
+      } // end of method xs1@19::.ctor
 
-    } // end of class f1@6
+      .method public strict virtual instance class [mscorlib]System.Tuple`2<!a,int32> 
+              Invoke(class [mscorlib]System.Tuple`2<!a,int32> tupledArg) cil managed
+      {
+        // Code size       24 (0x18)
+        .maxstack  7
+        .locals init ([0] !a a,
+                 [1] int32 b)
+        .line 100001,100001 : 0,0 ''
+        IL_0000:  ldarg.1
+        IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<!a,int32>::get_Item1()
+        IL_0006:  stloc.0
+        IL_0007:  ldarg.1
+        IL_0008:  call       instance !1 class [mscorlib]System.Tuple`2<!a,int32>::get_Item2()
+        IL_000d:  stloc.1
+        .line 19,19 : 38,44 ''
+        IL_000e:  ldloc.0
+        IL_000f:  ldloc.1
+        IL_0010:  ldc.i4.1
+        IL_0011:  add
+        IL_0012:  newobj     instance void class [mscorlib]System.Tuple`2<!a,int32>::.ctor(!0,
+                                                                                           !1)
+        IL_0017:  ret
+      } // end of method xs1@19::Invoke
+
+      .method private specialname rtspecialname static 
+              void  .cctor() cil managed
+      {
+        // Code size       11 (0xb)
+        .maxstack  10
+        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::.ctor()
+        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!a>::@_instance
+        IL_000a:  ret
+      } // end of method xs1@19::.cctor
+
+    } // end of class xs1@19
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'Pipe #2 stage #2 at line 24@24'<a>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<!a,int32,int32>,class [mscorlib]System.Tuple`3<!a,int32,int32>>
+    {
+      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a> @_instance
+      .method assembly specialname rtspecialname 
+              instance void  .ctor() cil managed
+      {
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       7 (0x7)
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<!a,int32,int32>,class [mscorlib]System.Tuple`3<!a,int32,int32>>::.ctor()
+        IL_0006:  ret
+      } // end of method 'Pipe #2 stage #2 at line 24@24'::.ctor
+
+      .method public strict virtual instance class [mscorlib]System.Tuple`3<!a,int32,int32> 
+              Invoke(class [mscorlib]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      {
+        // Code size       32 (0x20)
+        .maxstack  7
+        .locals init ([0] !a a,
+                 [1] int32 b,
+                 [2] int32 c)
+        .line 100001,100001 : 0,0 ''
+        IL_0000:  ldarg.1
+        IL_0001:  call       instance !0 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item1()
+        IL_0006:  stloc.0
+        IL_0007:  ldarg.1
+        IL_0008:  call       instance !1 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item2()
+        IL_000d:  stloc.1
+        IL_000e:  ldarg.1
+        IL_000f:  call       instance !2 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item3()
+        IL_0014:  stloc.2
+        .line 24,24 : 40,49 ''
+        IL_0015:  ldloc.0
+        IL_0016:  ldloc.1
+        IL_0017:  ldc.i4.1
+        IL_0018:  add
+        IL_0019:  ldloc.2
+        IL_001a:  newobj     instance void class [mscorlib]System.Tuple`3<!a,int32,int32>::.ctor(!0,
+                                                                                                 !1,
+                                                                                                 !2)
+        IL_001f:  ret
+      } // end of method 'Pipe #2 stage #2 at line 24@24'::Invoke
+
+      .method private specialname rtspecialname static 
+              void  .cctor() cil managed
+      {
+        // Code size       11 (0xb)
+        .maxstack  10
+        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a>::.ctor()
+        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!a>::@_instance
+        IL_000a:  ret
+      } // end of method 'Pipe #2 stage #2 at line 24@24'::.cctor
+
+    } // end of class 'Pipe #2 stage #2 at line 24@24'
+
+    .class auto ansi serializable sealed nested assembly beforefieldinit xs2@25<a>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<!a,int32,int32>,class [mscorlib]System.Tuple`3<!a,int32,int32>>
+    {
+      .field static assembly initonly class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!a> @_instance
+      .method assembly specialname rtspecialname 
+              instance void  .ctor() cil managed
+      {
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       7 (0x7)
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`3<!a,int32,int32>,class [mscorlib]System.Tuple`3<!a,int32,int32>>::.ctor()
+        IL_0006:  ret
+      } // end of method xs2@25::.ctor
+
+      .method public strict virtual instance class [mscorlib]System.Tuple`3<!a,int32,int32> 
+              Invoke(class [mscorlib]System.Tuple`3<!a,int32,int32> tupledArg) cil managed
+      {
+        // Code size       32 (0x20)
+        .maxstack  7
+        .locals init ([0] !a a,
+                 [1] int32 b,
+                 [2] int32 c)
+        .line 100001,100001 : 0,0 ''
+        IL_0000:  ldarg.1
+        IL_0001:  call       instance !0 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item1()
+        IL_0006:  stloc.0
+        IL_0007:  ldarg.1
+        IL_0008:  call       instance !1 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item2()
+        IL_000d:  stloc.1
+        IL_000e:  ldarg.1
+        IL_000f:  call       instance !2 class [mscorlib]System.Tuple`3<!a,int32,int32>::get_Item3()
+        IL_0014:  stloc.2
+        .line 25,25 : 40,49 ''
+        IL_0015:  ldloc.0
+        IL_0016:  ldloc.1
+        IL_0017:  ldc.i4.1
+        IL_0018:  add
+        IL_0019:  ldloc.2
+        IL_001a:  newobj     instance void class [mscorlib]System.Tuple`3<!a,int32,int32>::.ctor(!0,
+                                                                                                 !1,
+                                                                                                 !2)
+        IL_001f:  ret
+      } // end of method xs2@25::Invoke
+
+      .method private specialname rtspecialname static 
+              void  .cctor() cil managed
+      {
+        // Code size       11 (0xb)
+        .maxstack  10
+        IL_0000:  newobj     instance void class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!a>::.ctor()
+        IL_0005:  stsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!a>::@_instance
+        IL_000a:  ret
+      } // end of method xs2@25::.cctor
+
+    } // end of class xs2@25
 
     .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
             f1() cil managed
     {
-      // Code size       15 (0xf)
-      .maxstack  8
+      // Code size       59 (0x3b)
+      .maxstack  4
+      .locals init ([0] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0)
       .line 6,9 : 9,19 ''
-      IL_0000:  ldc.i4.0
-      IL_0001:  ldc.i4.0
-      IL_0002:  newobj     instance void ListExpressionSteppingTest2/ListExpressionSteppingTest2/f1@6::.ctor(int32,
-                                                                                                             int32)
-      IL_0007:  tail.
-      IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_000e:  ret
+      IL_0000:  nop
+      .line 6,6 : 11,26 ''
+      IL_0001:  ldstr      "hello"
+      IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0010:  pop
+      .line 7,7 : 11,18 ''
+      IL_0011:  ldloca.s   V_0
+      IL_0013:  ldc.i4.1
+      IL_0014:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_0019:  nop
+      .line 8,8 : 11,28 ''
+      IL_001a:  ldstr      "goodbye"
+      IL_001f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_0024:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0029:  pop
+      .line 9,9 : 11,18 ''
+      IL_002a:  ldloca.s   V_0
+      IL_002c:  ldc.i4.2
+      IL_002d:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+      IL_0032:  nop
+      .line 6,9 : 9,19 ''
+      IL_0033:  ldloca.s   V_0
+      IL_0035:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+      IL_003a:  ret
     } // end of method ListExpressionSteppingTest2::f1
+
+    .method public static class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!a,int32,int32>>> 
+            f2<a>(!!a x) cil managed
+    {
+      // Code size       194 (0xc2)
+      .maxstack  6
+      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!a,int32>> xs1,
+               [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 'Pipe #1 input #1 at line 16',
+               [2] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #1 input #2 at line 16',
+               [3] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!a,int32>> 'Pipe #1 stage #1 at line 17',
+               [4] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!a,int32>> 'Pipe #1 stage #2 at line 18',
+               [5] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!a,int32,int32>> xs2,
+               [6] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a> 'Pipe #2 input #1 at line 22',
+               [7] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #2 input #2 at line 22',
+               [8] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'Pipe #2 input #3 at line 22',
+               [9] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!a,int32,int32>> 'Pipe #2 stage #1 at line 23',
+               [10] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!a,int32,int32>> 'Pipe #2 stage #2 at line 24')
+      .line 15,19 : 9,45 ''
+      IL_0000:  nop
+      .line 16,16 : 13,20 ''
+      IL_0001:  ldarg.0
+      IL_0002:  ldarg.0
+      IL_0003:  ldarg.0
+      IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
+      IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_000e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0013:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0018:  stloc.1
+      .line 16,16 : 22,28 ''
+      IL_0019:  ldc.i4.0
+      IL_001a:  ldc.i4.1
+      IL_001b:  ldc.i4.2
+      IL_001c:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+                                                                                                                                                                       int32,
+                                                                                                                                                                       int32)
+      IL_0021:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_002b:  stloc.2
+      .line 17,17 : 16,24 ''
+      IL_002c:  ldloc.1
+      IL_002d:  ldloc.2
+      IL_002e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!0,!!1>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip<!!0,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
+                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1>)
+      IL_0033:  stloc.3
+      .line 18,18 : 15,45 ''
+      IL_0034:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #1 stage #2 at line 18@18'<!!a>::@_instance
+      IL_0039:  ldloc.3
+      IL_003a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [mscorlib]System.Tuple`2<!!0,int32>,class [mscorlib]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_003f:  stloc.s    'Pipe #1 stage #2 at line 18'
+      .line 19,19 : 15,45 ''
+      IL_0041:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs1@19<!!a>::@_instance
+      IL_0046:  ldloc.s    'Pipe #1 stage #2 at line 18'
+      IL_0048:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [mscorlib]System.Tuple`2<!!0,int32>,class [mscorlib]System.Tuple`2<!!0,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_004d:  stloc.0
+      .line 21,25 : 9,50 ''
+      IL_004e:  nop
+      .line 22,22 : 13,20 ''
+      IL_004f:  ldarg.0
+      IL_0050:  ldarg.0
+      IL_0051:  ldarg.0
+      IL_0052:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
+      IL_0057:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_005c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0061:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::Cons(!0,
+                                                                                                                                                                    class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0066:  stloc.s    'Pipe #2 input #1 at line 22'
+      .line 22,22 : 22,28 ''
+      IL_0068:  ldc.i4.0
+      IL_0069:  ldc.i4.1
+      IL_006a:  ldc.i4.2
+      IL_006b:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+                                                                                                                                                                       int32,
+                                                                                                                                                                       int32)
+      IL_0070:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0075:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_007a:  stloc.s    'Pipe #2 input #2 at line 22'
+      .line 22,22 : 30,36 ''
+      IL_007c:  ldc.i4.0
+      IL_007d:  ldc.i4.1
+      IL_007e:  ldc.i4.2
+      IL_007f:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+                                                                                                                                                                       int32,
+                                                                                                                                                                       int32)
+      IL_0084:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0089:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_008e:  stloc.s    'Pipe #2 input #3 at line 22'
+      .line 23,23 : 17,26 ''
+      IL_0090:  ldloc.s    'Pipe #2 input #1 at line 22'
+      IL_0092:  ldloc.s    'Pipe #2 input #2 at line 22'
+      IL_0094:  ldloc.s    'Pipe #2 input #3 at line 22'
+      IL_0096:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!0,!!1,!!2>> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Zip3<!!0,int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>,
+                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1>,
+                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!2>)
+      IL_009b:  stloc.s    'Pipe #2 stage #1 at line 23'
+      .line 24,24 : 15,50 ''
+      IL_009d:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/'Pipe #2 stage #2 at line 24@24'<!!a>::@_instance
+      IL_00a2:  ldloc.s    'Pipe #2 stage #1 at line 23'
+      IL_00a4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [mscorlib]System.Tuple`3<!!0,int32,int32>,class [mscorlib]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_00a9:  stloc.s    'Pipe #2 stage #2 at line 24'
+      .line 25,25 : 15,50 ''
+      IL_00ab:  ldsfld     class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!0> class ListExpressionSteppingTest2/ListExpressionSteppingTest2/xs2@25<!!a>::@_instance
+      IL_00b0:  ldloc.s    'Pipe #2 stage #2 at line 24'
+      IL_00b2:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!1> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Map<class [mscorlib]System.Tuple`3<!!0,int32,int32>,class [mscorlib]System.Tuple`3<!!0,int32,int32>>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+                                                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_00b7:  stloc.s    xs2
+      .line 27,27 : 9,17 ''
+      IL_00b9:  ldloc.0
+      IL_00ba:  ldloc.s    xs2
+      IL_00bc:  newobj     instance void class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!a,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!a,int32,int32>>>::.ctor(!0,
+                                                                                                                                                                                                                                                                                                      !1)
+      IL_00c1:  ret
+    } // end of method ListExpressionSteppingTest2::f2
 
   } // end of class ListExpressionSteppingTest2
 
@@ -280,12 +444,16 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       7 (0x7)
+    // Code size       14 (0xe)
     .maxstack  8
     .line 11,11 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest2/ListExpressionSteppingTest2::f1()
     IL_0005:  pop
-    IL_0006:  ret
+    .line 29,29 : 13,17 ''
+    IL_0006:  ldc.i4.5
+    IL_0007:  call       class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!0,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!0,int32,int32>>> ListExpressionSteppingTest2/ListExpressionSteppingTest2::f2<int32>(!!0)
+    IL_000c:  pop
+    IL_000d:  ret
   } // end of method $ListExpressionSteppingTest2::main@
 
 } // end of class '<StartupCode$ListExpressionSteppingTest2>'.$ListExpressionSteppingTest2

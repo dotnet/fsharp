@@ -1,6 +1,5 @@
 // Instructions: 
-//    Debug\net40\bin\fsc.exe --debug+ --tailcalls- --optimize- tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx
-//    Release\net40\bin\fsc.exe --debug+ --tailcalls- --optimize- tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx
+//    artifacts\bin\fsc\Debug\net472\fsc.exe --debug+ --tailcalls- --optimize- --langversion:preview tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx
 //    devenv /debugexe TheBigFileOfDebugStepping.exe
 //
 //   Repeat the above with
@@ -11,9 +10,15 @@
 //      - Different visual debuggers
 
 open System
+open System.Threading.Tasks
 
 type U2 = U2 of int * int
 
+
+let (!) (r: 'T ref)  = r.Value
+let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
+let incr (r: int ref)  = r.Value <- r.Value + 1
+let decr (r: int ref)  = r.Value <- r.Value - 1
 
 let InnerRecursiveFunction (str: string) =
     let rec even n = if n = 0 then str else odd (n-1)
@@ -34,15 +39,15 @@ let rec TailcallRecursionTest2 (U2(a,b)) =
         TailcallRecursionTest2 (U2(a-1,b-1)) // check the 'a' and 'b' update correctly
 
 let AsyncExpressionSteppingTest1 () = 
-    async { printfn "hello"
-            printfn "stuck in the middle"
-            printfn "goodbye"}
+    async { Console.WriteLine "hello"
+            Console.WriteLine "stuck in the middle"
+            Console.WriteLine "goodbye"}
 
 let AsyncExpressionSteppingTest2 () = 
     let x = ref 0 
     async { while !x < 4 do 
                 incr x
-                printfn "hello" }
+                Console.WriteLine "hello" }
                    
 
 let AsyncExpressionSteppingTest3 () = 
@@ -62,17 +67,17 @@ let AsyncExpressionSteppingTest4 () =
                 return z 
             finally 
                 incr x
-                printfn "done" }
+                Console.WriteLine "done" }
 
 
 let es = [3;4;5]
 let AsyncExpressionSteppingTest5 () = 
     async { for x in es do
-                printfn "hello"
-                printfn "hello 2"
+                Console.WriteLine "hello"
+                Console.WriteLine "hello 2"
             for x in es do
-                printfn "goodbye"
-                printfn "goodbye 2" }
+                Console.WriteLine "goodbye"
+                Console.WriteLine "goodbye 2" }
 
 
 let f2 () = 
@@ -123,9 +128,9 @@ let ListExpressionSteppingTest1 () =
     [ yield 1 ]
 
 let ListExpressionSteppingTest2 () = 
-    [ printfn "hello"
+    [ Console.WriteLine "hello"
       yield 1
-      printfn "goodbye"
+      Console.WriteLine "goodbye"
       yield 2]
 
 
@@ -133,7 +138,7 @@ let ListExpressionSteppingTest3 () =
     let x = ref 0 
     [ while !x < 4 do 
             incr x
-            printfn "hello"
+            Console.WriteLine "hello"
             yield x ]
 
 
@@ -157,25 +162,43 @@ let ListExpressionSteppingTest5 () =
             yield z 
       finally 
             incr x
-            printfn "done" ]
+            Console.WriteLine "done" ]
 
 
 let ListExpressionSteppingTest6 () = 
     [ for x in es do
-            printfn "hello"
+            Console.WriteLine "hello"
             yield x 
       for x in es do
-            printfn "goodbye"
+            Console.WriteLine "goodbye"
             yield x ]
+
+let ListExpressionSteppingTest7 () = 
+    [ for x in 1..4 do
+            printfn "hello"
+            yield x ]
+
+let ListExpressionSteppingTest8 () = 
+    [ for x in 1..4 do
+        match x with 
+        | 1 -> 
+            printfn "hello"
+            yield x 
+        | 2 -> 
+            printfn "hello"
+            yield x 
+        | _ -> 
+            yield x 
+        ]
 
 let SeqExpressionSteppingTest1 () = 
     seq { yield 1 }
 
 
 let SeqExpressionSteppingTest2 () = 
-    seq { printfn "hello"
+    seq { Console.WriteLine "hello"
           yield 1
-          printfn "goodbye"
+          Console.WriteLine "goodbye"
           yield 2 }
 
 
@@ -184,7 +207,7 @@ let SeqExpressionSteppingTest3 () =
     let x = ref 0 
     seq { while !x < 4 do 
                 incr x
-                printfn "hello"
+                Console.WriteLine "hello"
                 yield x }
 
 
@@ -209,15 +232,15 @@ let SeqExpressionSteppingTest5 () =
                 yield z 
           finally 
                 incr x
-                printfn "done" }
+                Console.WriteLine "done" }
 
 
 let SeqExpressionSteppingTest6 () = 
     seq { for x in es do
-                printfn "hello"
+                Console.WriteLine "hello"
                 yield x 
           for x in es do
-                printfn "goodbye"
+                Console.WriteLine "goodbye"
                 yield x }
 
 
@@ -344,8 +367,8 @@ let OuterWithNonGenericInnerWithCapture x list =
 
 
 let TestFunction1() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
 
 
@@ -400,17 +423,17 @@ type C(x:int,y:int) =
 let TestFunction19(inp) =
     let c1 = C(inp,inp)
     let c2 = C(inp,inp)
-    printfn "c1 = %A, c2 = %A" c1 c2
+    Console.WriteLine $"c1 = {c1}, c2 = {c2}"
 
 let TestFunction1_0() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction2() =
     let x = TestFunction1_0()
-    printfn "Hello";
-    printfn "World"    
+    Console.WriteLine "Hello";
+    Console.WriteLine "World"    
     
 
 type D(x:int,y:int) = 
@@ -423,27 +446,27 @@ type D(x:int,y:int) =
 let TestFunction20(inp) =
     let d1 = D(inp,inp)
     let d2 = D(inp,inp)
-    printfn "d1 = %A, d2 = %A" d1 d2
+    Console.WriteLine $"done d1 = {d1}, d2 = {d2}"
 
 
 let TestFunction21(U2(a,b)) =
-    printfn "a = %A, a = %A" a b
+    Console.WriteLine $"a = {a}, b = {b}"
 
 let TestFunction1_1() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction3() =
     try 
        let x = TestFunction1_1()
-       printfn "Hello";
+       Console.WriteLine "Hello";
     with _ -> 
-       printfn "World"        
+       Console.WriteLine "World"        
 
 let TestFunction1_2() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction3b() =
@@ -451,11 +474,11 @@ let TestFunction3b() =
        let x = TestFunction1_2()
        failwith "hello"
     with Failure _ -> 
-       printfn "World"  
+       Console.WriteLine "World"  
 
 let TestFunction1_3() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction3c() =
@@ -463,43 +486,43 @@ let TestFunction3c() =
        let x = TestFunction1_3()
        failwith "hello"
     with Failure msg when msg = "hello" -> 
-       printfn "World"        
+       Console.WriteLine "World"        
 
 
 let TestFunction1_4() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction4() =
     try 
        let x = TestFunction1_4()
-       printfn "Hello";
+       Console.WriteLine "Hello";
     finally 
-       printfn "World"
+       Console.WriteLine "World"
 
 let TestFunction1_5() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction5() =
     let x = 
        let y = TestFunction1_5()
-       printfn "Hello";
+       Console.WriteLine "Hello";
        y + y
     x + x
 
 
 let TestFunction1_6() =
-    printfn "Hello";
-    printfn "World";
+    Console.WriteLine "Hello";
+    Console.WriteLine "World";
     3+4
     
 let TestFunction6() =
     let f() = 
        let y = TestFunction1_6()
-       printfn "Hello";
+       Console.WriteLine "Hello";
        y + y
     f() + f()
 
@@ -608,6 +631,174 @@ let LocalValueShadowsArgument2 x =
             null // breakpoint 2
     ()
 
+let TaskExpressionSteppingTest0 () = 
+    task  { Console.WriteLine "hello"
+            Console.WriteLine "stuck in the middle"
+            Console.WriteLine "goodbye"}
+
+let TaskExpressionSteppingTest1 () = 
+    task  { Console.WriteLine "hello"
+            Console.WriteLine "stuck in the middle"
+            do! Task.Delay 100
+            Console.WriteLine "goodbye"}
+
+let TaskExpressionSteppingTest2 () = 
+    let x = ref 0 
+    task  { while !x < 4 do 
+                incr x
+                Console.WriteLine "hello" }
+
+let TaskExpressionSteppingTest3 () = 
+    task  { let x = ref 0 
+            incr x
+            let y = ref 0 
+            incr y
+            let z = !x + !y
+            return z }
+
+let TaskExpressionSteppingTest4 () = 
+    task  { let x = ref 0 
+            try 
+                let y = ref 0 
+                incr y
+                let z = !x + !y
+                return z 
+            finally 
+                incr x
+                Console.WriteLine "done" }
+
+let TaskExpressionSteppingTest5 () = 
+    task  { for x in es do
+                Console.WriteLine "hello"
+                Console.WriteLine "hello 2"
+            for x in es do
+                Console.WriteLine "goodbye"
+                Console.WriteLine "goodbye 2" }
+
+let tf2 () = 
+    task  { let x = ref 0 
+            incr x
+            let y = ref 0 
+            incr y
+            let z = !x + !y
+            return z }
+
+let TaskExpressionSteppingTest6b () = 
+    task  { let! x1 = tf2()
+            let!    x2 = tf2()
+            let! x3 = tf2()
+            let y = ref 0 
+            incr y
+            let! x4 = tf2()
+            let z = x1 + !y + x4
+            return z }
+
+let TaskExpressionSteppingTest7a () = 
+    task  { let x = ref 0 
+            try 
+                let y = ref 0 
+                incr y
+                let z = !x + !y
+                return z 
+            with exn ->
+                incr x
+                Console.WriteLine "done"
+                return 0 }
+
+let TaskExpressionSteppingTest7b () = 
+    task  { let x = ref 0 
+            try 
+                let y = ref 0 
+                incr y
+                failwith "fail"
+                let z = !x + !y
+                return z 
+            with exn ->
+                incr x
+                Console.WriteLine "done"
+                return 0 }
+
+let TaskBreakpoints1 () = 
+    task  { let! res1 = 
+                tf2()
+            let! res2 = 
+                match 1 with 
+                | 1 -> tf2()
+                | _ -> tf2()
+            let! res3 = 
+                match 1 with 
+                | 1 -> 
+                    let x = 
+                        match 4 with 
+                        | 2 -> tf2()
+                        | _ -> tf2()
+                    tf2()
+                | _ -> 
+                    let x = 
+                        match 4 with 
+                        | 2 -> tf2()
+                        | _ -> tf2()
+                    tf2()
+            return () }
+
+module InlinedCode =
+    // NOTE: you can't place breakpoints in this method and hit them in either Debug and Release code
+    let inline bodyRunner z body =
+        let x = 1 + z
+        printfn "running"
+        body x
+        body x
+
+    let test() =
+        let bodyWrapper =
+            let x = 1 + System.Random().Next()
+            bodyRunner 3 (fun n ->
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line1, x = %d" x
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line2, n = %d" n)
+
+        let bodyWrapper2 =
+            // TEST: check you can place breakpoint here and hit it in both Debug and Release code
+            let x = 1 + System.Random().Next()
+            bodyRunner 3 <| (fun n ->
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line1, x = %d" x
+                // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                printfn "line2, n = %d" n)
+        ()
+
+module Pipelined =
+    let testListPipeline() =
+        let data = [ 1 .. 5 ]
+    
+        // MANUAL TEST: check stepping through this looks ok
+        let newData =
+            data
+            |> List.filter (fun x -> 
+                  // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                  x > 3)
+            |> List.map (fun x -> 
+                  // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                  x * x)
+        
+        printfn "%A" newData
+
+    let testArrayPipeline() =
+            let data = [| 1 .. 5 |]
+    
+            let newData =
+                data
+                |> Array.filter (fun x -> 
+                    // MANUAL TEST: check you can place breakpoint here and hit it in both Debug and Release code
+                    x > 3)
+                |> Array.map (fun x -> 
+                    // MANUAL TEST: check you can place breakpoint here and hit it in both Debug code
+                    // TODO: surprisingly no breakpoint hit here in release code
+                    x * x)
+        
+            printfn "%A" newData
+
 TailcallRecursionTest1 3
 TailcallRecursionTest2 (U2(3,4))
 SteppingMatch01 (Choice1Of2 3)
@@ -674,6 +865,8 @@ ListExpressionSteppingTest3()
 ListExpressionSteppingTest4()
 ListExpressionSteppingTest5()
 ListExpressionSteppingTest6()
+ListExpressionSteppingTest7()
+ListExpressionSteppingTest8()
 SeqExpressionSteppingTest1()|> Seq.length
 SeqExpressionSteppingTest2()|> Seq.length
 SeqExpressionSteppingTest3()|> Seq.length
@@ -685,3 +878,165 @@ InnerFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
 InnerRecursiveFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
 LocalValueShadowsArgument1 "123"
 LocalValueShadowsArgument2 "123"
+
+module Task =
+    let RunSynchronously (t: System.Threading.Tasks.Task<_>) = t.Wait(); t.Result
+
+TaskExpressionSteppingTest0() |> Task.RunSynchronously
+TaskExpressionSteppingTest1() |> Task.RunSynchronously
+TaskExpressionSteppingTest2() |> Task.RunSynchronously
+TaskExpressionSteppingTest3() |> Task.RunSynchronously
+TaskExpressionSteppingTest4() |> Task.RunSynchronously
+TaskExpressionSteppingTest5() |> Task.RunSynchronously
+TaskExpressionSteppingTest6b() |> Task.RunSynchronously
+TaskExpressionSteppingTest7a() |> Task.RunSynchronously
+TaskExpressionSteppingTest7b() |> Task.RunSynchronously
+TaskBreakpoints1() |> Task.RunSynchronously
+InlinedCode.test()
+Pipelined.testListPipeline()
+Pipelined.testArrayPipeline()
+
+module BooleanLogic =
+
+    let testFunctionWithAnd x y =
+        x && y
+
+    let testFunctionWithOr x y =
+        x || y
+
+    let testFunctionWithMultipleAnd x y z =
+        x && y && z
+
+    let testFunctionWithMultipleOr x y z =
+        x || y || z
+
+    let testFunctionWithIfOfAnd x y =
+        if x && y then
+            1
+        else
+            2
+
+    let testFunctionWithIfOfOr x y =
+        if x || y then
+            1
+        else
+            2
+
+    testFunctionWithAnd true false
+    testFunctionWithMultipleAnd true true false
+    testFunctionWithMultipleOr false false true
+    testFunctionWithOr true false
+    testFunctionWithIfOfAnd true false
+    testFunctionWithIfOfOr false false
+
+// See https://github.com/dotnet/fsharp/issues/11977
+module FalseSteppingBug =
+    type U = 
+       | A1 of int
+       | A2 of int
+       | A3 of int
+       | A4 of int
+
+    let testFunc f u = 
+        match u with 
+        | A1 n -> f n
+        | A2 n when n > 4 -> f n // this was falsely hit
+        | A2 n -> f n
+        | A3 n -> f n
+        | A4 n -> f n
+
+    testFunc id (A3 4)
+
+
+
+// https://github.com/dotnet/fsharp/pull/11981
+module MissingFirstTry =
+    let TestFunction3() =
+        try 
+           let x = 1+1
+           System.Console.WriteLine "Hello";
+        with _ -> 
+           System.Console.WriteLine "World"      
+
+    TestFunction3()
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhen1 =
+
+    let TestMatchWithWhen x y =
+        match x with
+        | [_] when y > 4 -> 5
+        | [_] when y < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [1] 4
+    TestMatchWithWhen [1] 5
+    TestMatchWithWhen [1] 6
+
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithVariableBinding =
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [x] when x > 4 -> 5
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4]
+    TestMatchWithWhen [5]
+    TestMatchWithWhen [6]
+
+// https://github.com/dotnet/fsharp/issues/11979
+//
+// Check debug points exist for 'when'
+module DebuggingSteppingForMatchWithWhenWithUnionClauses=
+
+    let TestMatchWithWhen x  =
+        match x with
+        | [_;x] 
+        | [x] when x < 4 -> -5
+        | _ -> 2
+
+
+    TestMatchWithWhen [4;5]
+    TestMatchWithWhen [5;4]
+    TestMatchWithWhen [6]
+
+module NestedScopesWithShadowing =
+
+    let f2 (a, b) =
+        let v1 = 1
+        if a then
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+        else
+            let v2 = 1.4
+            if b then
+               let v1 = "3"
+               let v2 = 5
+               v1
+            else
+               let v1 = "3"
+               let v2 = 5
+               v1
+
+
+    f2 (true, true)
+    f2 (true, false)
+    f2 (false, true)
+    f2 (false, false)

@@ -5,10 +5,13 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 open System
 open System.IO
 open System.Reflection
-open Microsoft.Win32
 open Microsoft.Build.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.IO
+
+#if !FX_NO_WIN_REGISTRY
+open Microsoft.Win32
+#endif
 
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks
@@ -51,7 +54,7 @@ let private SimulatedMSBuildResolver =
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies v =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -72,7 +75,7 @@ let private SimulatedMSBuildResolver =
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssemblies(version) =
+    let GetPathToDotNetFrameworkReferenceAssemblies version =
 #if NETSTANDARD
         ignore version
         let r : string list = []
@@ -87,13 +90,13 @@ let private SimulatedMSBuildResolver =
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> FileSystem.DirectoryExistsShim(Path.Combine(root, fw) ))
             match fwOpt with
             | Some fw -> fw
             | None -> "v4.5"
 
         member _.DotNetFrameworkReferenceAssembliesRootDirectory =
-            if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
+            if Environment.OSVersion.Platform = PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
                     | null -> Environment.GetEnvironmentVariable("ProgramFiles")  // if PFx86 is null, then we are 32-bit and just get PF
@@ -148,7 +151,7 @@ let private SimulatedMSBuildResolver =
                 yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
               ]
 
-            for (r, baggage) in references do
+            for r, baggage in references do
                 //printfn "resolving %s" r
                 let mutable found = false
                 let success path =
@@ -201,7 +204,7 @@ let private SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with
                         | null, _ | _, null ->
                             let options =
-                                [ if Directory.Exists gac then
+                                [ if FileSystem.DirectoryExistsShim gac then
                                     for gacDir in FileSystem.EnumerateDirectoriesShim gac do
                                         let assemblyDir = Path.Combine(gacDir, n.Name)
                                         if FileSystem.DirectoryExistsShim assemblyDir then
@@ -216,7 +219,7 @@ let private SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v, tok ->
-                            if Directory.Exists gac then
+                            if FileSystem.DirectoryExistsShim gac then
                                 for gacDir in Directory.EnumerateDirectories gac do
                                     //printfn "searching GAC directory: %s" gacDir
                                     let assemblyDir = Path.Combine(gacDir, n.Name)

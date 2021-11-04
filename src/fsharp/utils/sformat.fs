@@ -89,7 +89,7 @@ type Joint =
 [<NoEquality; NoComparison>]
 type Layout =
     | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
-    | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+    | Leaf of juxtLeft: bool * text: TaggedText * juxtRight: bool
     | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
     | Attr of text: string * attributes: (string * string) list * layout: Layout
 
@@ -226,6 +226,7 @@ module TaggedText =
     let keywordStruct = tagKeyword "struct"
     let keywordInherit = tagKeyword "inherit"
     let keywordEnd = tagKeyword "end"
+    let keywordBegin = tagKeyword "begin"
     let keywordNested = tagKeyword "nested"
     let keywordType = tagKeyword "type"
     let keywordDelegate = tagKeyword "delegate"
@@ -269,6 +270,15 @@ module Layout =
         | Leaf(true, s, true) -> s.Text = ""
         | _ -> false
 
+#if COMPILER
+    let rec endsWithL (text: string) layout = 
+        match layout with 
+        | Leaf(_, s, _) -> s.Text.EndsWith(text)
+        | Node(_, r, _) -> endsWithL text r
+        | Attr(_, _, l) -> endsWithL text l
+        | ObjLeaf _ -> false
+#endif
+
     let mkNode l r joint =
         if isEmptyL l then r else
         if isEmptyL r then l else
@@ -283,7 +293,7 @@ module Layout =
         elif isEmptyL r then l 
         else f l r
 
-    let (^^)  layout1 layout2 = mkNode layout1 layout2 (Unbreakable)
+    let (^^)  layout1 layout2 = mkNode layout1 layout2 Unbreakable
 
     let (++)  layout1 layout2 = mkNode layout1 layout2 (Breakable 0)
 
@@ -320,7 +330,7 @@ module Layout =
 
     let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL semicolon) layouts
 
-    let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+    let spaceListL layouts = tagListL id layouts
 
     let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
 
@@ -370,7 +380,7 @@ module Layout =
 [<NoEquality; NoComparison>]
 type FormatOptions =
     { FloatingPointFormat: string
-      AttributeProcessor: (string -> (string * string) list -> bool -> unit)
+      AttributeProcessor: string -> (string * string) list -> bool -> unit
 #if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
       PrintIntercepts: (IEnvironment -> obj -> Layout option) list
       StringLimit: int
@@ -424,16 +434,16 @@ module ReflectUtils =
 
     let option = typedefof<obj option>
 
-    let func = typedefof<(obj -> obj)>
+    let func = typedefof<obj -> obj>
 
-    let isOptionTy ty = equivHeadTypes ty (typeof<int option>)
+    let isOptionTy ty = equivHeadTypes ty typeof<int option>
 
-    let isUnitType ty = equivHeadTypes ty (typeof<unit>)
+    let isUnitType ty = equivHeadTypes ty typeof<unit>
 
     let isListType ty = 
         FSharpType.IsUnion ty && 
         (let cases = FSharpType.GetUnionCases ty 
-         cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
+         cases.Length > 0 && equivHeadTypes typedefof<list<_>> cases.[0].DeclaringType)
 
     [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
     type TupleType =
@@ -518,17 +528,17 @@ module ReflectUtils =
                 elif isUnitType ty then UnitValue
                 else NullValue
             | _ -> 
-                GetValueInfoOfObject bindingFlags (obj) 
+                GetValueInfoOfObject bindingFlags obj 
 
 module Display = 
     open ReflectUtils
     
     let string_of_int (i:int) = i.ToString()
 
-    let typeUsesSystemObjectToString (ty:System.Type) =
+    let typeUsesSystemObjectToString (ty:Type) =
         try
             let methInfo = ty.GetMethod("ToString", BindingFlags.Public ||| BindingFlags.Instance, null, [| |], null)
-            methInfo.DeclaringType = typeof<System.Object>
+            methInfo.DeclaringType = typeof<Object>
         with _e -> false
 
     let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
@@ -673,7 +683,7 @@ module Display =
         let index   (_, i)          = i
         let extract rstrs = combine(List.rev rstrs) 
         let newLine (rstrs, _) n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             let rstrs = push "\n"   rstrs
             let rstrs = push indent rstrs
             rstrs, n
@@ -718,7 +728,7 @@ module Display =
         let index i = i
         let addText z text = write text;  (z + length text)
         let newLine _ n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             chan.WriteLine();
             write (tagText indent);
             n
@@ -816,7 +826,7 @@ module Display =
         | '\"' when not isChar -> "\\\""
         | '\\' -> "\\\\"
         | '\b' -> "\\b"
-        | _ when System.Char.IsControl(c) -> 
+        | _ when Char.IsControl(c) -> 
                 let d1 = (int c / 100) % 10 
                 let d2 = (int c / 10) % 10 
                 let d3 = int c % 10 
@@ -824,7 +834,7 @@ module Display =
         | _ -> c.ToString()
             
     let formatString (s:string) =
-        let rec check i = i < s.Length && not (System.Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
+        let rec check i = i < s.Length && not (Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
         let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
         "\"" + s + "\""
 
@@ -953,7 +963,7 @@ module Display =
                     let illFormedMatch = System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
                     if illFormedMatch then 
                         None // there are mismatched brackets, bail out
-                    elif layouts.Length > 1 then Some (spaceListL (List.rev ((wordL (tagText(replaceEscapedBrackets(txt))) :: layouts))))
+                    elif layouts.Length > 1 then Some (spaceListL (List.rev (wordL (tagText(replaceEscapedBrackets(txt))) :: layouts)))
                     else Some (wordL (tagText(replaceEscapedBrackets(txt))))
                 else
                     // we have a hit on a property reference
@@ -1047,7 +1057,7 @@ module Display =
         and listValueL depthLim constr recd =
             match constr with 
             | "Cons" -> 
-                let (x,xs) = unpackCons recd
+                let x,xs = unpackCons recd
                 let project xs = getListValueInfo bindingFlags xs
                 let itemLs = nestedObjL depthLim Precedence.BracketIfTuple x :: boundedUnfoldL (nestedObjL depthLim Precedence.BracketIfTuple) project stopShort xs (opts.PrintLength - 1)
                 makeListL itemLs
@@ -1137,7 +1147,7 @@ module Display =
                 (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
             finally 
                 match it with 
-                | :? System.IDisposable as e -> e.Dispose()
+                | :? IDisposable as e -> e.Dispose()
                 | _ -> ()
 
         and sequenceValueL showMode depthLim prec (ie: System.Collections.IEnumerable) =
@@ -1155,7 +1165,7 @@ module Display =
                     (wordL (tagClass word) --- makeListL itemLs) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
                 finally 
                     match it with 
-                    | :? System.IDisposable as e -> e.Dispose()
+                    | :? IDisposable as e -> e.Dispose()
                     | _ -> ()
                              
             else
@@ -1184,7 +1194,7 @@ module Display =
             // massively reign in deep printing of properties 
             let nDepth = depthLim/10
 #if NETSTANDARD
-            Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } )
+            Array.Sort(propsAndFields,{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare p1.Name p2.Name } )
 #else
             Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } )
 #endif
@@ -1252,6 +1262,10 @@ module Display =
                 | _ when showMode = ShowTopLevelBinding && typeUsesSystemObjectToString ty ->
                     emptyL 
 
+                | :? Enum ->
+                    countNodes 1
+                    Layout.objL obj
+
                 | _ when opts.ShowProperties -> 
                     countNodes 1
                     objectValueWithPropertiesL depthLim (ty: Type) (obj: obj)
@@ -1270,23 +1284,23 @@ module Display =
         | :? double as d -> 
             let s = d.ToString(opts.FloatingPointFormat,opts.FormatProvider)
             let t = 
-                if System.Double.IsNaN(d) then "nan"
-                elif System.Double.IsNegativeInfinity(d) then "-infinity"
-                elif System.Double.IsPositiveInfinity(d) then "infinity"
-                elif opts.FloatingPointFormat.[0] = 'g'  && String.forall(fun c -> System.Char.IsDigit(c) || c = '-')  s
+                if Double.IsNaN(d) then "nan"
+                elif Double.IsNegativeInfinity(d) then "-infinity"
+                elif Double.IsPositiveInfinity(d) then "infinity"
+                elif opts.FloatingPointFormat.[0] = 'g'  && String.forall(fun c -> Char.IsDigit(c) || c = '-')  s
                 then s + ".0" 
                 else s
             tagNumericLiteral t
 
         | :? single as d -> 
             let t =
-                (if System.Single.IsNaN(d) then "nan"
-                    elif System.Single.IsNegativeInfinity(d) then "-infinity"
-                    elif System.Single.IsPositiveInfinity(d) then "infinity"
+                (if Single.IsNaN(d) then "nan"
+                    elif Single.IsNegativeInfinity(d) then "-infinity"
+                    elif Single.IsPositiveInfinity(d) then "infinity"
                     elif opts.FloatingPointFormat.Length >= 1 && opts.FloatingPointFormat.[0] = 'g' 
-                    && float32(System.Int32.MinValue) < d && d < float32(System.Int32.MaxValue) 
+                    && float32(Int32.MinValue) < d && d < float32(Int32.MaxValue) 
                     && float32(int32(d)) = d 
-                    then (System.Convert.ToInt32 d).ToString(opts.FormatProvider) + ".0"
+                    then (Convert.ToInt32 d).ToString(opts.FormatProvider) + ".0"
                     else d.ToString(opts.FloatingPointFormat,opts.FormatProvider)) 
                 + "f"
             tagNumericLiteral t

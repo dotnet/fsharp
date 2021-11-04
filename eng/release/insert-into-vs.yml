@@ -9,7 +9,7 @@ parameters:
 
 stages:
 - stage: insert
-  dependsOn: build
+  dependsOn: publish_using_darc
   displayName: Insert into VS
   jobs:
   - job: Insert_VS
@@ -63,8 +63,8 @@ stages:
           $completeInsertion = '${{ parameters.completeInsertion }}'
           $autoComplete = ($completeInsertion -Eq 'true') -Or (($completeInsertion -Eq 'auto') -And (-Not ($env:INSERTTARGETBRANCH.Contains('rel/'))))
           $autoCompleteStr = if ($autoComplete) { 'true' } else { 'false' }
-          Write-Host "Setting AutoCompletePR to '$autoCompleteStr'"
-          Write-Host "##vso[task.setvariable variable=AutoCompletePR]$autoCompleteStr"
+          Write-Host "Setting InsertAutoComplete to '$autoCompleteStr'"
+          Write-Host "##vso[task.setvariable variable=InsertAutoComplete]$autoCompleteStr"
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:

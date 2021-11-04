@@ -8,6 +8,7 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -49,7 +50,7 @@ module internal PervasiveAutoOpens =
         // See http://www.mono-project.com/FAQ:_Technical
         // "How can I detect if am running in Mono?" section
         try
-            System.Type.GetType ("Mono.Runtime") <> null
+            Type.GetType "Mono.Runtime" <> null
         with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
@@ -86,8 +87,21 @@ module internal PervasiveAutoOpens =
 
     let notFound() = raise (KeyNotFoundException())
 
-[<Struct>]
+    type Async with
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
+
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+[<Struct>]
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
@@ -311,7 +325,7 @@ module List =
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
-        assert not (typeof<'T>.IsValueType) 
+        assert not typeof<'T>.IsValueType 
         match inp with
         | [] -> inp
         | [h1a] -> 
@@ -381,17 +395,17 @@ module List =
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
 
-    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r) :: t) -> if x = h then r else assoc x t
+        | (h, r) :: t -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _) :: t) -> x = h || memAssoc x t
+        | (h, _) :: t -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
@@ -490,8 +504,8 @@ module ResizeArray =
         // rounding down here is good because it ensures we don't go over
         let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
+        // chunk the provided input into arrays that are smaller than the LOH limit
+        // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
@@ -501,7 +515,7 @@ module ValueOptionInternal =
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String =
-    let make (n: int) (c: char) : string = new String(c, n)
+    let make (n: int) (c: char) : string = String(c, n)
 
     let get (str: string) i = str.[i]
 
@@ -605,6 +619,12 @@ module String =
 
 module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_, _>(size, HashIdentity.Structural)
+
+    let inline ofList (xs: ('Key * 'Value) list) = 
+        let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
+        for k,v in xs do
+           t.Add(k,v)
+        t
 
 [<Extension>]
 type DictionaryExtensions() =
@@ -831,192 +851,10 @@ type CancellableBuilder() =
 module CancellableAutoOpens =
     let cancellable = CancellableBuilder()
 
-/// Computations that can cooperatively yield
-///
-///    - You can take an Eventually value and run it with Eventually.forceForTimeSlice
-type Eventually<'T> = 
-    | Done of 'T 
-    | NotYetDone of (CancellationToken -> (Stopwatch * int64) option -> ValueOrCancelled<Eventually<'T>>)
-    // Indicates an IDisposable should be created and disposed on each step(s)
-    | Delimited of (unit -> IDisposable) * Eventually<'T>
-
-module Eventually = 
-
-    let inline ret x = Done x
-
-    // Convert to a Cancellable which, when run, takes all steps in the computation,
-    // installing Delimited resource handlers if needed.
-    //
-    // Inlined for better stack traces, because inlining erases library ranges and replaces them
-    // with ranges in user code.
-    let inline toCancellable e =
-        Cancellable (fun ct -> 
-           let rec toCancellableAux e = 
-               match e with
-               | Done x -> ValueOrCancelled.Value x
-               | Delimited (resourcef, ev2) ->
-                   use _resource = resourcef()
-                   toCancellableAux ev2
-               | NotYetDone work -> 
-                   if ct.IsCancellationRequested then 
-                      ValueOrCancelled.Cancelled (OperationCanceledException ct)
-                   else 
-                       match work ct None with
-                       | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-                       | ValueOrCancelled.Value e2 -> toCancellableAux e2
-           toCancellableAux e) 
-
-    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
-    // with ranges in user code.
-    let inline ofCancellable (Cancellable f) =
-        NotYetDone (fun ct _ -> 
-            match f ct with
-            | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-            | ValueOrCancelled.Value v -> ValueOrCancelled.Value (Done v)
-        )
-
-    let token () = NotYetDone (fun ct _ -> ValueOrCancelled.Value (Done ct))
-
-    let canceled () = NotYetDone (fun ct _ -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
-
-    // Take all steps in the computation, installing Delimited resource handlers if needed
-    let force ct e = Cancellable.run ct (toCancellable e)
-
-    let stepCheck (ct: CancellationToken) (swinfo: (Stopwatch * int64) option) e = 
-        if ct.IsCancellationRequested then
-            match swinfo with Some (sw, _) -> sw.Stop() | _ -> ()
-            ValueSome (ValueOrCancelled.Cancelled (OperationCanceledException(ct)))
-        else
-            match swinfo with
-            | Some (sw, timeShareInMilliseconds) when sw.ElapsedMilliseconds > timeShareInMilliseconds ->
-                sw.Stop()
-                ValueSome (ValueOrCancelled.Value e)
-            | _ -> 
-                ValueNone
-
-    // Take multiple steps in the computation, installing Delimited resource handlers if needed,
-    // until the stopwatch times out if present.
-    [<System.Diagnostics.DebuggerHidden>]
-    let rec steps (ct: CancellationToken) (swinfo: (Stopwatch * int64) option) e = 
-        match stepCheck ct swinfo e with
-        | ValueSome res -> res
-        | ValueNone ->
-            match e with 
-            | Done _ -> ValueOrCancelled.Value e 
-            | Delimited (resourcef, inner) ->
-                use _resource = resourcef()
-                match steps ct swinfo inner with
-                | ValueOrCancelled.Value (Done _ as res) -> ValueOrCancelled.Value res
-                | ValueOrCancelled.Value inner2 -> ValueOrCancelled.Value (Delimited (resourcef, inner2)) // maintain the Delimited until Done
-                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-            | NotYetDone work ->
-                match work ct swinfo with
-                | ValueOrCancelled.Value e2 -> steps ct swinfo e2
-                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce 
-
-    // Take multiple steps in the computation, installing Delimited resource handlers if needed
-    let forceForTimeSlice (sw: Stopwatch) timeShareInMilliseconds (ct: CancellationToken) e = 
-        sw.Restart()
-        let swinfo = Some (sw, timeShareInMilliseconds)
-        steps ct swinfo e
-
-    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
-    // with ranges in user code.
-    let inline bind k e = 
-        let rec bindAux e =
-            NotYetDone (fun ct swinfo -> 
-                let v = steps ct swinfo e
-                match v with 
-                | ValueOrCancelled.Value (Done v) -> ValueOrCancelled.Value (k v)
-                | ValueOrCancelled.Value e2 -> ValueOrCancelled.Value (bindAux e2)
-                | ValueOrCancelled.Cancelled ce -> ValueOrCancelled.Cancelled ce)
-        bindAux e
-
-    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
-    // with ranges in user code.
-    let inline map f e = bind (f >> ret) e
-    
-    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
-    // with ranges in user code.
-    let inline fold f acc seq = 
-        (Done acc, seq) ||> Seq.fold (fun acc x -> acc |> bind (fun acc -> f acc x))
-        
-    // Inlined for better stack traces, because inlining replaces ranges of the "runtime" code in the lambda
-    // with ranges in user code.
-    let inline each f seq =
-        fold (fun acc x -> f x |> map (fun y -> y :: acc)) [] seq |> map List.rev
-        
-    // Catch by pushing exception handlers around all the work
-    let inline catch e = 
-        let rec catchAux e =
-            match e with 
-            | Done x -> Done(Result x)
-            | Delimited (resourcef, ev2) ->  Delimited (resourcef, catchAux ev2)
-            | NotYetDone work -> 
-                NotYetDone (fun ct swinfo -> 
-                    let res = try Result(work ct swinfo) with exn -> Exception exn 
-                    match res with 
-                    | Result (ValueOrCancelled.Value cont) -> ValueOrCancelled.Value (catchAux cont)
-                    | Result (ValueOrCancelled.Cancelled ce) -> ValueOrCancelled.Cancelled ce
-                    | Exception exn -> ValueOrCancelled.Value (Done(Exception exn)))
-        catchAux e
-    
-    let inline delay f = NotYetDone (fun _ct _swinfo -> ValueOrCancelled.Value (f ()))
-
-    let inline tryFinally e compensation =
-        catch e 
-        |> bind (fun res -> 
-            compensation()
-            match res with 
-            | Result v -> Eventually.Done v
-            | Exception e -> raise e)
-
-    let inline tryWith e handler =
-        catch e 
-        |> bind (function Result v -> Done v | Exception e -> handler e)
-    
-    let box e = map Operators.box e
-
-    let reusing resourcef e = Eventually.Delimited(resourcef, e)
-
-   
-type EventuallyBuilder() = 
-
-    member inline _.BindReturn(e, k) = Eventually.map k e
-
-    member inline _.Bind(e, k) = Eventually.bind k e
-
-    member inline _.Return v = Eventually.Done v
-
-    member inline _.ReturnFrom v = v
-
-    member inline _.Combine(e1, e2) = e1 |> Eventually.bind (fun () -> e2)
-
-    member inline _.TryWith(e, handler) = Eventually.tryWith e handler
-
-    member inline _.TryFinally(e, compensation) = Eventually.tryFinally e compensation
-
-    member inline _.Delay f = Eventually.delay f
-
-    member inline _.Zero() = Eventually.Done ()
-
-[<AutoOpen>]
-module internal EventuallyAutoOpens =
-
-    let eventually = new EventuallyBuilder()
-
-(*
-let _ = eventually { return 1 }
-let _ = eventually { let x = 1 in return 1 }
-let _ = eventually { let! x = eventually { return 1 } in return 1 }
-let _ = eventually { try return (failwith "") with _ -> return 1 }
-let _ = eventually { use x = null in return 1 }
-*)
-
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let gate = obj ()
-    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
+    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
@@ -1056,7 +894,7 @@ exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =
 
-    static let undefined = new LazyWithContextFailure(UndefinedException)
+    static let undefined = LazyWithContextFailure(UndefinedException)
 
     member _.Exception = exn
 
@@ -1077,7 +915,7 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
@@ -1116,7 +954,7 @@ type LazyWithContext<'T, 'ctxt> =
                   x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e))
+                  x.funcOrException <- box(LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -1124,7 +962,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
+        let t = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res
@@ -1289,10 +1127,12 @@ type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 [<AutoOpen>]
 module MapAutoOpens =
     type Map<'Key, 'Value when 'Key : comparison> with
-
+        
         static member Empty : Map<'Key, 'Value> = Map.empty
-
-        member x.Values = [ for (KeyValue(_, v)) in x -> v ]
+    
+#if USE_SHIPPED_FSCORE        
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
+#endif
 
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 

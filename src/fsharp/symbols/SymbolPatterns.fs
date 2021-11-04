@@ -29,12 +29,8 @@ module FSharpSymbolPatterns =
                     res)))
             |> Option.isSome
 
-    let isOperator (name: string) = PrettyNaming.IsOperatorName name
-
     let UnnamedUnionFieldRegex = Regex("^Item(\d+)?$", RegexOptions.Compiled)
     
-    let isUnnamedUnionCaseField (field: FSharpField) = UnnamedUnionFieldRegex.IsMatch(field.Name)
-
     let (|AbbreviatedType|_|) (entity: FSharpEntity) =
         if entity.IsFSharpAbbreviation then Some entity.AbbreviatedType
         else None
@@ -204,7 +200,7 @@ module FSharpSymbolPatterns =
                && not func.IsPropertyGetterMethod 
                && not func.IsPropertySetterMethod
                && not excluded
-               && not (isOperator func.DisplayName) then Some()
+               && not (PrettyNaming.IsOperatorDisplayName func.DisplayName) then Some()
             else None
         with _ -> None
 

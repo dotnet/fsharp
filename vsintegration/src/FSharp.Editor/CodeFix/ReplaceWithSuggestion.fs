@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
@@ -17,15 +18,11 @@ open FSharp.Compiler.Tokenization
 type internal FSharpReplaceWithSuggestionCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "ReplaceWithSuggestionCodeFix"
     let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
-    let checker = checkerProvider.Checker
         
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -34,8 +31,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             do! Option.guard settings.CodeFixes.SuggestNamesForErrors
 
             let document = context.Document
-            let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpReplaceWithSuggestionCodeFixProvider)) |> liftAsync
 
             // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)
@@ -58,7 +54,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.toImmutableArray
 
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = FSharpKeywords.QuoteIdentifierIfNeeded suggestion
+                let replacement = PrettyNaming.AddBackticksToIdentifierIfNeeded suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
                         CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),

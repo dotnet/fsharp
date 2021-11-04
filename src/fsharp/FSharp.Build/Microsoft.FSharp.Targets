@@ -232,7 +232,7 @@ this file.
                  @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
-        Returns=""
+        Returns="@(FscCommandLineArgs)"
         DependsOnTargets="$(CoreCompileDependsOn)"
     >
 
@@ -329,7 +329,7 @@ this file.
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)"
               WarnOn="$(WarnOn)"
-              Win32IconFile ="$(ApplicationIcon)"
+              Win32IconFile="$(ApplicationIcon)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)">
           <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
@@ -339,6 +339,7 @@ this file.
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
         </ItemGroup>
 
+       <CallTarget Targets="$(TargetsTriggeredByCompilation)" Condition="'$(TargetsTriggeredByCompilation)' != ''" />
     </Target>
 
     <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />

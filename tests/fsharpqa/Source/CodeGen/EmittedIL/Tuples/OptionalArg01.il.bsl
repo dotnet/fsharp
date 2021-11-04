@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:6:0:0
+  .ver 5:0:0:0
 }
 .assembly OptionalArg01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.OptionalArg01
 {
-  // Offset: 0x00000000 Length: 0x00000466
+  // Offset: 0x00000000 Length: 0x0000045A
 }
 .mresource public FSharpOptimizationData.OptionalArg01
 {
-  // Offset: 0x00000470 Length: 0x00000445
+  // Offset: 0x00000460 Length: 0x00000445
 }
 .module OptionalArg01.exe
-// MVID: {5CB489E1-4F48-B5AF-A745-0383E189B45C}
+// MVID: {6124063B-4F48-B5AF-A745-03833B062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067B0000
+// Image base: 0x04EE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +61,7 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\OptionalArg01.fs'
+      .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\OptionalArg01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -98,94 +98,110 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.OptionalArgumentAttribute::.ctor() = ( 01 00 00 00 ) 
       .param [2]
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.OptionalArgumentAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       83 (0x53)
+      // Code size       93 (0x5d)
       .maxstack  4
-      .locals init ([0] int32 count,
-               [1] int32 V_1,
+      .locals init ([0] int32 'count (shadowed)',
+               [1] int32 count,
                [2] class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A> attribs,
                [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A> V_3,
                [4] class OptionalArg01/A v2)
       .line 10,10 : 9,44 ''
-      IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_0007
-
-      .line 8,8 : 61,70 ''
-      IL_0003:  ldc.i4.1
+      IL_0000:  nop
       .line 16707566,16707566 : 0,0 ''
-      IL_0004:  nop
-      IL_0005:  br.s       IL_0009
+      IL_0001:  ldarg.0
+      IL_0002:  brfalse.s  IL_0006
+
+      IL_0004:  br.s       IL_000a
 
       .line 8,8 : 43,48 ''
-      IL_0007:  ldc.i4.0
+      IL_0006:  ldc.i4.0
       .line 16707566,16707566 : 0,0 ''
-      IL_0008:  nop
-      .line 16707566,16707566 : 0,0 ''
-      IL_0009:  stloc.0
-      .line 10,10 : 9,44 ''
-      IL_000a:  ldarg.1
-      IL_000b:  brfalse.s  IL_0013
+      IL_0007:  nop
+      IL_0008:  br.s       IL_000c
 
-      .line 9,9 : 61,70 ''
-      IL_000d:  ldloc.0
-      IL_000e:  ldc.i4.1
-      IL_000f:  add
+      .line 8,8 : 61,70 ''
+      IL_000a:  ldc.i4.1
       .line 16707566,16707566 : 0,0 ''
-      IL_0010:  nop
-      IL_0011:  br.s       IL_0015
+      IL_000b:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_000c:  stloc.0
+      .line 10,10 : 9,44 ''
+      IL_000d:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_000e:  ldarg.1
+      IL_000f:  brfalse.s  IL_0013
+
+      IL_0011:  br.s       IL_0017
 
       .line 9,9 : 43,48 ''
       IL_0013:  ldloc.0
       .line 16707566,16707566 : 0,0 ''
       IL_0014:  nop
-      .line 16707566,16707566 : 0,0 ''
-      IL_0015:  stloc.1
-      .line 10,10 : 9,44 ''
-      IL_0016:  ldloc.1
-      IL_0017:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
-      IL_001c:  stloc.2
-      IL_001d:  ldarg.0
-      IL_001e:  brfalse.s  IL_0035
+      IL_0015:  br.s       IL_001b
 
-      IL_0020:  ldarg.0
-      IL_0021:  stloc.3
-      IL_0022:  ldloc.3
-      IL_0023:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A>::get_Value()
-      IL_0028:  stloc.s    v2
-      .line 11,11 : 47,62 ''
-      IL_002a:  ldloc.2
-      IL_002b:  ldloc.s    v2
-      IL_002d:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+      .line 9,9 : 61,70 ''
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.1
+      IL_0019:  add
       .line 16707566,16707566 : 0,0 ''
-      IL_0032:  nop
-      IL_0033:  br.s       IL_0037
+      IL_001a:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_001b:  stloc.1
+      .line 10,10 : 9,44 ''
+      IL_001c:  ldloc.1
+      IL_001d:  newobj     instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::.ctor(int32)
+      IL_0022:  stloc.2
+      .line 16707566,16707566 : 0,0 ''
+      IL_0023:  ldarg.0
+      IL_0024:  brfalse.s  IL_0028
+
+      IL_0026:  br.s       IL_002c
 
       .line 11,11 : 31,33 ''
-      IL_0035:  nop
+      IL_0028:  nop
       .line 16707566,16707566 : 0,0 ''
-      IL_0036:  nop
-      IL_0037:  ldarg.1
-      IL_0038:  brfalse.s  IL_004f
+      IL_0029:  nop
+      IL_002a:  br.s       IL_003f
 
-      IL_003a:  ldarg.1
-      IL_003b:  stloc.3
-      IL_003c:  ldloc.3
-      IL_003d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A>::get_Value()
-      IL_0042:  stloc.s    v2
-      .line 12,12 : 47,62 ''
-      IL_0044:  ldloc.2
-      IL_0045:  ldloc.s    v2
-      IL_0047:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
       .line 16707566,16707566 : 0,0 ''
-      IL_004c:  nop
-      IL_004d:  br.s       IL_0051
+      IL_002c:  ldarg.0
+      IL_002d:  stloc.3
+      IL_002e:  ldloc.3
+      IL_002f:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A>::get_Value()
+      IL_0034:  stloc.s    v2
+      .line 11,11 : 47,62 ''
+      IL_0036:  ldloc.2
+      IL_0037:  ldloc.s    v2
+      IL_0039:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+      .line 16707566,16707566 : 0,0 ''
+      IL_003e:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_003f:  ldarg.1
+      IL_0040:  brfalse.s  IL_0044
+
+      IL_0042:  br.s       IL_0048
 
       .line 12,12 : 31,33 ''
-      IL_004f:  nop
+      IL_0044:  nop
       .line 16707566,16707566 : 0,0 ''
-      IL_0050:  nop
+      IL_0045:  nop
+      IL_0046:  br.s       IL_005b
+
+      .line 16707566,16707566 : 0,0 ''
+      IL_0048:  ldarg.1
+      IL_0049:  stloc.3
+      IL_004a:  ldloc.3
+      IL_004b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class OptionalArg01/A>::get_Value()
+      IL_0050:  stloc.s    v2
+      .line 12,12 : 47,62 ''
+      IL_0052:  ldloc.2
+      IL_0053:  ldloc.s    v2
+      IL_0055:  callvirt   instance void class [mscorlib]System.Collections.Generic.List`1<class OptionalArg01/A>::Add(!0)
+      .line 16707566,16707566 : 0,0 ''
+      IL_005a:  nop
       .line 13,13 : 9,16 ''
-      IL_0051:  ldloc.2
-      IL_0052:  ret
+      IL_005b:  ldloc.2
+      IL_005c:  ret
     } // end of method C::F
 
   } // end of class C

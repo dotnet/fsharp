@@ -6,6 +6,7 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
+open FSharp.Compiler
 
 type ISourceText =
 
@@ -174,11 +175,11 @@ namespace Internal.Utilities.Text.Lexing
                       0,
                       0)
 
-    type internal LexBufferFiller<'Char> = (LexBuffer<'Char> -> unit)
+    type internal LexBufferFiller<'Char> = LexBuffer<'Char> -> unit
 
     and [<Sealed>]
-        internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, supportsFeature:LanguageFeature -> bool) =
-        let context = new Dictionary<string,obj>(1)
+        internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportLibraryOnlyFeatures: bool, langVersion:LanguageVersion) =
+        let context = Dictionary<string,obj>(1)
         let mutable buffer = [||]
         /// number of valid characters beyond bufferScanStart.
         let mutable bufferMaxScanLength = 0
@@ -231,11 +232,11 @@ namespace Internal.Utilities.Text.Lexing
         member lexbuf.BufferAcceptAction  with get() = bufferAcceptAction  and set v = bufferAcceptAction <- v
         member lexbuf.RefillBuffer () = filler lexbuf
         static member LexemeString(lexbuf:LexBuffer<char>) = 
-            new System.String(lexbuf.Buffer,lexbuf.BufferScanStart,lexbuf.LexemeLength)
+            System.String(lexbuf.Buffer,lexbuf.BufferScanStart,lexbuf.LexemeLength)
 
         member lexbuf.IsPastEndOfStream 
            with get() = eof
-           and  set(b) =  eof <- b
+           and  set b =  eof <- b
 
         member lexbuf.DiscardInput () = discardInput ()
 
@@ -247,35 +248,43 @@ namespace Internal.Utilities.Text.Lexing
                 Array.blit buffer bufferScanStart repl bufferScanStart bufferScanLength
                 buffer <- repl
 
-        member _.SupportsFeature featureId = supportsFeature featureId
+        member _.ReportLibraryOnlyFeatures = reportLibraryOnlyFeatures
 
-        static member FromFunction (supportsFeature:LanguageFeature -> bool, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
+        member _.LanguageVersion = langVersion
+
+        member _.SupportsFeature featureId = langVersion.SupportsFeature featureId
+
+        member _.CheckLanguageFeatureErrorRecover featureId range = 
+            FSharp.Compiler.ErrorLogger.checkLanguageFeatureErrorRecover langVersion featureId range
+
+        static member FromFunction (reportLibraryOnlyFeatures, langVersion, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
             let extension= Array.zeroCreate 4096
             let filler (lexBuffer: LexBuffer<'Char>) =
                  let n = f (extension,0,extension.Length)
                  lexBuffer.EnsureBufferSize n
                  Array.blit extension 0 lexBuffer.Buffer lexBuffer.BufferScanPos n
                  lexBuffer.BufferMaxScanLength <- lexBuffer.BufferScanLength + n
-            new LexBuffer<'Char>(filler, supportsFeature)
+            new LexBuffer<'Char>(filler, reportLibraryOnlyFeatures, langVersion)
 
         // Important: This method takes ownership of the array
-        static member FromArrayNoCopy (supportsFeature:LanguageFeature -> bool, buffer: 'Char[]) : LexBuffer<'Char> =
-            let lexBuffer = new LexBuffer<'Char>((fun _ -> ()), supportsFeature)
+        static member FromArrayNoCopy (reportLibraryOnlyFeatures, langVersion, buffer: 'Char[]) : LexBuffer<'Char> =
+            let lexBuffer = new LexBuffer<'Char>((fun _ -> ()), reportLibraryOnlyFeatures, langVersion)
             lexBuffer.Buffer <- buffer
             lexBuffer.BufferMaxScanLength <- buffer.Length
             lexBuffer
 
         // Important: this method does copy the array
-        static member FromArray (supportsFeature: LanguageFeature -> bool, s: 'Char[]) : LexBuffer<'Char> = 
+        static member FromArray (reportLibraryOnlyFeatures, langVersion, s: 'Char[]) : LexBuffer<'Char> = 
             let buffer = Array.copy s 
-            LexBuffer<'Char>.FromArrayNoCopy(supportsFeature, buffer)
+            LexBuffer<'Char>.FromArrayNoCopy(reportLibraryOnlyFeatures, langVersion, buffer)
 
         // Important: This method takes ownership of the array
-        static member FromChars (supportsFeature:LanguageFeature -> bool, arr:char[]) = LexBuffer.FromArrayNoCopy (supportsFeature, arr)
+        static member FromChars (reportLibraryOnlyFeatures, langVersion,  arr:char[]) =
+            LexBuffer.FromArrayNoCopy (reportLibraryOnlyFeatures, langVersion, arr)
 
-        static member FromSourceText (supportsFeature: LanguageFeature -> bool, sourceText: ISourceText) =
+        static member FromSourceText (reportLibraryOnlyFeatures, langVersion, sourceText: ISourceText) =
             let mutable currentSourceIndex = 0
-            LexBuffer<char>.FromFunction(supportsFeature, fun (chars, start, length) ->
+            LexBuffer<char>.FromFunction(reportLibraryOnlyFeatures, langVersion, fun (chars, start, length) ->
                 let lengthToCopy = 
                     if currentSourceIndex + length <= sourceText.Length then
                         length
@@ -387,4 +396,4 @@ namespace Internal.Utilities.Text.Lexing
             startInterpret(lexBuffer)
             scanUntilSentinel lexBuffer initialState
 
-        static member Create(trans,accept) = new UnicodeTables(trans,accept)
+        static member Create(trans,accept) = UnicodeTables(trans,accept)

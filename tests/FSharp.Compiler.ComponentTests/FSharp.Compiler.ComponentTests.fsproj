@@ -10,7 +10,7 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104;FS0988</NoWarn>
+    <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,8 +21,12 @@
   <ItemGroup>
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\Misc.fs" />
+    <Compile Include="EmittedIL\SkipLocalsInit.fs" />
+    <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
+    <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
@@ -34,7 +38,7 @@
     <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />    
     <Compile Include="ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
-    <Compile Include="ErrorMessages\ModuleAbbreviationTests.fs" />
+    <Compile Include="ErrorMessages\ModuleTests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />
@@ -43,6 +47,7 @@
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
+    <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
@@ -64,6 +69,7 @@
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\RecordTypes.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\UnionTypes.fs" />
     <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions.fs" />
+    <Compile Include="Conformance\DeclarationElements\LetBindings\UseBindings.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration.fs" />

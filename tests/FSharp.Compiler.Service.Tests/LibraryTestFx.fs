@@ -3,7 +3,6 @@
 module Tests.Service.SurfaceArea.LibraryTestFx
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
@@ -26,7 +25,7 @@ module SurfaceArea =
 
         // get local FSharp.CompilerService
         let path = Path.Combine(Path.GetDirectoryName(typeof<int list>.Assembly.Location), "FSharp.Compiler.Service.dll")
-        let name = AssemblyName.GetAssemblyName (path)
+        let name = AssemblyName.GetAssemblyName path
         let asm = Assembly.Load(name)
 
         // public types only
@@ -47,84 +46,32 @@ module SurfaceArea =
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
-            [| for (ty,m) in getMembers t do
+            [| for ty,m in getMembers t do
                   yield sprintf "%s: %s" (ty.ToString()) (m.ToString())
                if not t.IsNested then
                    yield t.ToString()
             |]
 
         let actual =
-            types |> Array.collect getTypeMemberStrings
-
+            types 
+            |> Array.collect getTypeMemberStrings
+            |> Array.sort
+            |> String.concat Environment.NewLine
         asm, actual
 
     // verify public surface area matches expected
-    let verify expected platform (baseline: string) =
-        printfn "Verify"
-        let normalize (s:string) =
-            Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
+    let verify expectedFile actualFile =
+      let normalize text = Regex.Replace(text, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
+      let _asm, actual = getActual ()
+      let actual = normalize actual
+      let expected = normalize (System.IO.File.ReadAllText expectedFile)
+      match Tests.TestHelpers.assembleDiffMessage actual expected with
+      | None -> ()
+      | Some diff ->
+          FileSystem
+            .OpenFileForWriteShim(actualFile)
+            .WriteAllText(actual)
 
-        let asm, actualNotNormalized = getActual ()
-        let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-
-        let expected =
-            // Split the "expected" string into individual lines, then normalize it.
-            (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
-            |> set
-
-        //
-        // Find types/members which exist in exactly one of the expected or actual surface areas.
-        //
-
-        /// Surface area types/members which were expected to be found but missing from the actual surface area.
-        let unexpectedlyMissing = Set.difference expected actual
-
-        /// Surface area types/members present in the actual surface area but weren't expected to be.
-        let unexpectedlyPresent = Set.difference actual expected
-
-        // If both sets are empty, the surface areas match so allow the test to pass.
-        if Set.isEmpty unexpectedlyMissing
-          && Set.isEmpty unexpectedlyPresent then
-            // pass
-            ()
-        else
-
-            let logFile =
-                let workDir = TestContext.CurrentContext.WorkDirectory
-                sprintf "%s\\FSharp.CompilerService.SurfaceArea.%s.txt" workDir platform
-
-            FileSystem.OpenFileForWriteShim(logFile).Write(String.Join("\r\n", actual))
-
-            // The surface areas don't match; prepare an easily-readable output message.
-            let msg =
-                let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
-                let sb = System.Text.StringBuilder ()
-                Printf.bprintf sb "Assembly: %A" asm
-                newLine sb
-                sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
-                Printf.bprintf sb "    windiff %s %s" baseline logFile
-                newLine sb
-                newLine sb
-                sb.AppendLine "To update the baseline copy the contents of this:" |> ignore
-                Printf.bprintf sb "    %s" logFile
-                newLine sb
-                sb.AppendLine "into this:" |> ignore
-                Printf.bprintf sb "    %s" baseline
-                newLine sb
-                newLine sb
-                sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
-                for s in unexpectedlyMissing do
-                    newLine sb
-                    sb.Append "    " |> ignore
-                    sb.Append s |> ignore
-                newLine sb
-                newLine sb
-                sb.Append "Unexpectedly present (actual, not expected):" |> ignore
-                for s in unexpectedlyPresent do
-                    newLine sb
-                    sb.Append "    " |> ignore
-                    sb.Append s |> ignore
-                newLine sb
-                sb.ToString ()
-
-            failwith msg
+          failwith
+            $"surface area defined in\n\n{expectedFile}\n\ndoesn't match actual in\n\n{actualFile}\n\nCompare the files and adjust accordingly.
+            {diff}"
