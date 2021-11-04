@@ -815,7 +815,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsImplicitOpenDeclarations = openDecls0
     }
 
-/// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
+/// Dummy typed impl file that contains no definitions and is not used for emitting any kind of assembly.
 let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
     let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range0)
     TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
