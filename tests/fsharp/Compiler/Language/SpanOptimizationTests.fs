@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 
 #if NETCOREAPP
 [<TestFixture>]
@@ -158,60 +158,54 @@ module Test =
             (fun verifier ->
                 verifier.VerifyIL
                             [
-                            """.method public static void  test() cil managed
-  {
-
-    .maxstack  3
-    .locals init (valuetype System.Span`1<object> V_0,
-             class [System.Runtime]System.Collections.IEnumerator V_1,
-             class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
-             class [System.Runtime]System.IDisposable V_3)
-    IL_0000:  ldc.i4.0
-    IL_0001:  newarr     [System.Runtime]System.Object
-    IL_0006:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
-    IL_000b:  stloc.0
-    IL_000c:  ldloc.0
-    IL_000d:  box        valuetype System.Span`1<object>
-    IL_0012:  unbox.any  [System.Runtime]System.Collections.IEnumerable
-    IL_0017:  callvirt   instance class [System.Runtime]System.Collections.IEnumerator [System.Runtime]System.Collections.IEnumerable::GetEnumerator()
-    IL_001c:  stloc.1
-    .try
-    {
-      IL_001d:  ldloc.1
-      IL_001e:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0023:  brfalse.s  IL_0032
-
-      IL_0025:  ldloc.1
-      IL_0026:  callvirt   instance object [System.Runtime]System.Collections.IEnumerator::get_Current()
-      IL_002b:  call       void [System.Console]System.Console::WriteLine(object)
-      IL_0030:  br.s       IL_001d
-
-      IL_0032:  ldnull
-      IL_0033:  stloc.2
-      IL_0034:  leave.s    IL_004c
-
+                            """
+      .method public static void  test() cil managed
+      {
+        
+        .maxstack  3
+        .locals init (valuetype System.Span`1<object> V_0,
+                 class [runtime]System.Collections.IEnumerator V_1,
+                 class [runtime]System.IDisposable V_2)
+        IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
+        IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
+        IL_000a:  stloc.0
+        IL_000b:  ldloc.0
+        IL_000c:  box        valuetype System.Span`1<object>
+        IL_0011:  unbox.any  [runtime]System.Collections.IEnumerable
+        IL_0016:  callvirt   instance class [runtime]System.Collections.IEnumerator [runtime]System.Collections.IEnumerable::GetEnumerator()
+        IL_001b:  stloc.1
+        .try
+        {
+          IL_001c:  ldloc.1
+          IL_001d:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+          IL_0022:  brfalse.s  IL_0031
+    
+          IL_0024:  ldloc.1
+          IL_0025:  callvirt   instance object [runtime]System.Collections.IEnumerator::get_Current()
+          IL_002a:  call       void [runtime]System.Console::WriteLine(object)
+          IL_002f:  br.s       IL_001c
+    
+          IL_0031:  leave.s    IL_0045
+    
+        }  
+        finally
+        {
+          IL_0033:  ldloc.1
+          IL_0034:  isinst     [runtime]System.IDisposable
+          IL_0039:  stloc.2
+          IL_003a:  ldloc.2
+          IL_003b:  brfalse.s  IL_0044
+    
+          IL_003d:  ldloc.2
+          IL_003e:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+          IL_0043:  endfinally
+          IL_0044:  endfinally
+        }  
+        IL_0045:  ret
+      } 
+    
     }
-    finally
-    {
-      IL_0036:  ldloc.1
-      IL_0037:  isinst     [System.Runtime]System.IDisposable
-      IL_003c:  stloc.3
-      IL_003d:  ldloc.3
-      IL_003e:  brfalse.s  IL_0049
-
-      IL_0040:  ldloc.3
-      IL_0041:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
-      IL_0046:  ldnull
-      IL_0047:  pop
-      IL_0048:  endfinally
-      IL_0049:  ldnull
-      IL_004a:  pop
-      IL_004b:  endfinally
-    }
-    IL_004c:  ldloc.2
-    IL_004d:  pop
-    IL_004e:  ret
-  }"""
+"""
                         ])
 
     [<Test>]

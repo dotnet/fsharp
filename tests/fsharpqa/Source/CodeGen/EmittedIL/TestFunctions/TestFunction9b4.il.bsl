@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction9b4
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction9b4
 {
-  // Offset: 0x00000000 Length: 0x0000024C
+  // Offset: 0x00000000 Length: 0x00000240
 }
 .mresource public FSharpOptimizationData.TestFunction9b4
 {
-  // Offset: 0x00000250 Length: 0x00000085
+  // Offset: 0x00000248 Length: 0x00000085
 }
 .module TestFunction9b4.exe
-// MVID: {5B17FC67-A091-56C1-A745-038367FC175B}
+// MVID: {611C4D9E-A091-56C1-A745-03839E4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026C0000
+// Image base: 0x07100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,7 +58,7 @@
     .maxstack  3
     .locals init ([0] !!a V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 8,8 : 12,16 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9b4.fs'
+    .line 8,8 : 12,16 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9b4.fs'
     IL_0000:  ldloc.0
     IL_0001:  ret
   } // end of method TestFunction9b4::Null
@@ -90,33 +90,35 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       42 (0x2a)
+    // Code size       43 (0x2b)
     .maxstack  3
     .locals init ([0] int32 x)
     .line 10,10 : 1,10 ''
     IL_0000:  call       int32 TestFunction9b4::get_x()
     IL_0005:  stloc.0
     .line 12,12 : 1,17 ''
-    IL_0006:  call       int32 TestFunction9b4::get_x()
-    IL_000b:  box        [mscorlib]System.Int32
-    IL_0010:  brfalse.s  IL_0014
+    IL_0006:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0007:  call       int32 TestFunction9b4::get_x()
+    IL_000c:  box        [mscorlib]System.Int32
+    IL_0011:  brfalse.s  IL_0015
 
-    IL_0012:  br.s       IL_0027
+    IL_0013:  br.s       IL_0028
 
     .line 13,13 : 13,30 ''
-    IL_0014:  ldstr      "Is null"
-    IL_0019:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_001e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0023:  pop
+    IL_0015:  ldstr      "Is null"
+    IL_001a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_001f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0024:  pop
     .line 100001,100001 : 0,0 ''
-    IL_0024:  nop
-    IL_0025:  br.s       IL_0029
+    IL_0025:  nop
+    IL_0026:  br.s       IL_002a
 
     .line 14,14 : 10,12 ''
-    IL_0027:  nop
-    .line 100001,100001 : 0,0 ''
     IL_0028:  nop
-    IL_0029:  ret
+    .line 100001,100001 : 0,0 ''
+    IL_0029:  nop
+    IL_002a:  ret
   } // end of method $TestFunction9b4::main@
 
 } // end of class '<StartupCode$TestFunction9b4>'.$TestFunction9b4

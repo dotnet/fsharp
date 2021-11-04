@@ -53,12 +53,9 @@ type SignatureHelpData =
 type internal FSharpSignatureHelpProvider 
     [<ImportingConstructor>]
     (
-        serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        serviceProvider: SVsServiceProvider
     ) =
 
-    static let userOpName = "SignatureHelpProvider"
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
@@ -262,7 +259,7 @@ type internal FSharpSignatureHelpProvider
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
-                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                not (PrettyNaming.IsOperatorDisplayName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
 
@@ -500,24 +497,22 @@ type internal FSharpSignatureHelpProvider
         (
             document: Document,
             defines: string list,
-            checker: FSharpChecker,
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
-            options: FSharpProjectOptions,
             triggerTypedChar: char option,
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 
             let textLines = sourceText.Lines
-            let perfOptions = document.FSharpOptions.LanguageServicePerformance
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
 
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, perfOptions, userOpName = userOpName)
-
             let adjustedColumnInSource =
+
                 let rec loop ch pos =
                     if Char.IsWhiteSpace(ch) then
                         loop sourceText.[pos - 1] (pos - 1)
@@ -575,9 +570,7 @@ type internal FSharpSignatureHelpProvider
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
-                let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-                let checker = checkerProvider.Checker
+                let defines = document.GetFSharpQuickDefines()
 
                 let triggerTypedChar = 
                     if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
@@ -590,10 +583,8 @@ type internal FSharpSignatureHelpProvider
                             FSharpSignatureHelpProvider.ProvideSignatureHelp(
                                 document,
                                 defines,
-                                checker,
                                 documentationBuilder,
                                 position,
-                                projectOptions,
                                 triggerTypedChar,
                                 possibleCurrentSignatureHelpSessionKind)
                         match signatureHelpDataOpt with

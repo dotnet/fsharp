@@ -46,22 +46,35 @@ type internal FSharpAnalysisSaveFileCommandHandler
                         let document = solution.GetDocument(documentId)
                         async {
                             try
-                                if document.Project.Language = LanguageNames.FSharp && not document.IsFSharpScript then
+                                if document.Project.Language = LanguageNames.FSharp then
                                     let openDocIds = workspace.GetOpenDocumentIds()
-                                    let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
 
                                     let docIdsToReanalyze =
-                                        openDocIds
-                                        |> Seq.filter (fun x ->
-                                            depProjIds.Contains(x.ProjectId) && x <> document.Id &&
-                                            (
-                                                let doc = solution.GetDocument(x)
-                                                match box doc with
-                                                | null -> false
-                                                | _ -> doc.Project.Language = LanguageNames.FSharp
+                                        if document.IsFSharpScript then
+                                            openDocIds
+                                            |> Seq.filter (fun x -> 
+                                                x <> document.Id &&
+                                                (
+                                                    let doc = solution.GetDocument(x)
+                                                    match doc with
+                                                    | null -> false
+                                                    | _ -> doc.IsFSharpScript
+                                                )
                                             )
-                                        )
-                                        |> Array.ofSeq
+                                            |> Array.ofSeq
+                                        else
+                                            let depProjIds = document.Project.GetDependentProjectIds().Add(document.Project.Id)
+                                            openDocIds
+                                            |> Seq.filter (fun x ->
+                                                depProjIds.Contains(x.ProjectId) && x <> document.Id &&
+                                                (
+                                                    let doc = solution.GetDocument(x)
+                                                    match box doc with
+                                                    | null -> false
+                                                    | _ -> doc.Project.Language = LanguageNames.FSharp
+                                                )
+                                            )
+                                            |> Array.ofSeq
 
                                     if docIdsToReanalyze.Length > 0 then
                                         analyzerService.Reanalyze(workspace, documentIds=docIdsToReanalyze)

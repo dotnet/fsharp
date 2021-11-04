@@ -5,11 +5,11 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Control
 
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    [<RequireQualifiedAccess>]
     /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Control.IEvent`1"/>.</summary>
     ///
     /// <category index="3">Events and Observables</category>
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    [<RequireQualifiedAccess>]
     module Event = 
 
         /// <summary>Fires the output event when either of the input events fire.</summary>
@@ -73,11 +73,10 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
 
-        [<CompiledName("Scan")>]
         /// <summary>Returns a new event consisting of the results of applying the given accumulating function
         /// to successive values triggered on the input event.  An item of internal state
         /// records the current value of the state parameter.  The internal state is not locked during the
-        /// execution of the accumulation function, so care should be taken that the 
+        /// execution of the accumulation function, so care should be taken that the
         /// input IEvent not triggered by multiple threads simultaneously.</summary>
         ///
         /// <param name="collector">The function to update the state with each event value.</param>
@@ -85,6 +84,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="sourceEvent">The input event.</param>
         ///
         /// <returns>An event that fires on the updated state values.</returns>
+        [<CompiledName("Scan")>]
         val scan: collector:('U -> 'T -> 'U) -> state:'U -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U> 
 
         /// <summary>Runs the given function each time the given event is triggered.</summary>

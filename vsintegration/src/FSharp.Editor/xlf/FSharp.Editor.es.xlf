@@ -12,6 +12,11 @@
         <target state="translated">Agregar la palabra clave "fun" que falta</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">Agregar parámetro de miembro de instancia que falta</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Agregar "nueva" palabra clave</target>
@@ -48,8 +53,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
-        <target state="translated">Valores descartables de F # (nivel superior)</target>
+        <source>F# Disposable Values (top-level)</source>
+        <target state="translated">Valores desechables en F# (nivel superior)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -99,7 +104,7 @@
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
-        <target state="new">Remove unused binding</target>
+        <target state="translated">Quitar el enlace no usado</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -252,6 +257,11 @@
         <target state="translated">Usar "&lt;-" para mutar el valor</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">Usar 'nameof'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">Usar "upcast"</target>
@@ -269,7 +279,7 @@
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
-        <target state="new">Use '.Value' to dereference expression</target>
+        <target state="translated">Usar ".Value" para desreferenciar la expresión</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

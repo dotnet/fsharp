@@ -333,23 +333,21 @@ type FSharpSourceTokenizer =
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
 module internal TestExpose =     
-    val TokenInfo : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass)
+    val TokenInfo : Parser.token -> FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass
 
 module FSharpKeywords =
     /// Checks if adding backticks to identifier is needed.
-    val DoesIdentifierNeedQuotation : string -> bool
+    val DoesIdentifierNeedBackticks : string -> bool
 
     /// Add backticks if the identifier is a keyword.
-    val QuoteIdentifierIfNeeded : string -> string
+    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
+    val AddBackticksToIdentifierIfNeeded : string -> string
 
     /// Remove backticks if present.
     val NormalizeIdentifierBackticks : string -> string
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
-
-    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
-    val QuoteIdentifierIfNeeded: string -> string
 
     /// All the keywords in the F# language
     val KeywordNames: string list
@@ -581,4 +579,3 @@ type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
     static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
-

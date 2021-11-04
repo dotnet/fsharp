@@ -17,7 +17,6 @@ open FSharp.Compiler
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Xml
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -63,7 +62,12 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = if severity=FSharpDiagnosticSeverity.Warning then "warning" else "error"
+        let severity = 
+            match severity with
+            | FSharpDiagnosticSeverity.Warning -> "warning"
+            | FSharpDiagnosticSeverity.Error -> "error"
+            | FSharpDiagnosticSeverity.Info -> "info"
+            | FSharpDiagnosticSeverity.Hidden -> "hidden"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
@@ -86,9 +90,9 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
             let r = if schange then r.WithStart(mkPos startline lastLength) else r
             if echange then r.WithEnd(mkPos endline (1 + lastLength)) else r
 
-    static member NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString(message)
+    static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
 
-    static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
+    static member NormalizeErrorString(text) = NormalizeErrorString(text)
     
     static member Create(severity: FSharpDiagnosticSeverity, message: string, number: int, range: range, ?numberPrefix: string, ?subcategory: string) =
         let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
@@ -98,7 +102,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 /// Use to reset error and warning handlers            
 [<Sealed>]
 type ErrorScope()  = 
-    let mutable errors = [] 
+    let mutable diags = [] 
     let mutable firstError = None
     let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let unwindEL =        
@@ -106,16 +110,14 @@ type ErrorScope()  =
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, severity) = 
                       let err = FSharpDiagnostic.CreateFromException(exn, severity, range.Zero, false)
-                      errors <- err :: errors
+                      diags <- err :: diags
                       if severity = FSharpDiagnosticSeverity.Error && firstError.IsNone then 
                           firstError <- Some err.Message
-                member x.ErrorCount = errors.Length })
+                member x.ErrorCount = diags.Length })
         
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+    member x.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
-
-    member x.Diagnostics = errors
+    member x.Diagnostics = diags
 
     member x.TryGetFirstErrorText() =
         match x.Errors with 
@@ -164,40 +166,27 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
-    let diagnostics = new ResizeArray<_>()
+    let diagnostics = ResizeArray<_>()
 
-    override x.DiagnosticSink(exn, severity) = 
-        if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
+    override x.DiagnosticSink(err, severity) = 
+        if ReportDiagnosticAsError options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportWarning options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Warning)
-
+        elif ReportDiagnosticAsWarning options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Warning)
+        elif ReportDiagnosticAsInfo options (err, severity) then
+            diagnostics.Add(err, severity)
     override x.ErrorCount = errorCount
 
     member x.GetDiagnostics() = diagnostics.ToArray()
-
-
-/// This represents the thread-local state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
-    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind phase
-    // Return the disposable object that cleans up
-    interface IDisposable with
-        member d.Dispose() =
-            unwindBP.Dispose()         
-            unwindEL.Dispose()
 
 module DiagnosticHelpers =                            
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 
         [ let severity = 
-               if (severity = FSharpDiagnosticSeverity.Error) then severity 
-               elif ReportWarningAsError options exn then FSharpDiagnosticSeverity.Error
+               if ReportDiagnosticAsError options (exn, severity) then FSharpDiagnosticSeverity.Error
                else severity
-          if (severity = FSharpDiagnosticSeverity.Error || ReportWarning options exn) then 
+          if (severity = FSharpDiagnosticSeverity.Error || ReportDiagnosticAsWarning options (exn, severity)  || ReportDiagnosticAsInfo options (exn, severity)) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
@@ -214,13 +203,12 @@ module DiagnosticHelpers =
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, errors, suggestNames) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
-        [| for (exn, severity) in errors do 
+        [| for exn, severity in errors do 
               yield! ReportDiagnostic (options, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) |]
                             
 
 namespace FSharp.Compiler.Symbols
 
-open System
 open System.IO
 
 open Internal.Utilities.Library  
@@ -412,7 +400,7 @@ module internal SymbolHelpers =
             let argInfos = ArgInfosOfMember g vref |> List.concat 
             // Drop the first 'seq<T>' argument representing the computation space
             let argInfos = if argInfos.IsEmpty then [] else argInfos.Tail
-            [ for (ty, argInfo) in argInfos do
+            [ for ty, argInfo in argInfos do
                   let isPP = HasFSharpAttribute g g.attrib_ProjectionParameterAttribute argInfo.Attribs
                   // Strip the tuple space type of the type of projection parameters
                   let ty = if isPP && isFunTy g ty then rangeOfFunTy g ty else ty
@@ -437,7 +425,7 @@ module internal SymbolHelpers =
     let GetXmlDocHelpSigOfItemForLookup (infoReader: InfoReader) m d = 
         let g = infoReader.g
         match d with
-        | Item.ActivePatternCase (APElemRef(_, vref, _))        
+        | Item.ActivePatternCase (APElemRef(_, vref, _, _))        
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             mkXmlComment (GetXmlDocSigOfValRef g vref)
         | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
@@ -445,12 +433,12 @@ module internal SymbolHelpers =
         | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
         | Item.NewDef _ -> FSharpXmlDoc.None
         | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
-        | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.Types(_, TType_app(tcref, _) :: _) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
         | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
         | Item.TypeVar _  -> FSharpXmlDoc.None
         | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
 
-        | Item.Property(_, (pinfo :: _)) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
+        | Item.Property(_, pinfo :: _) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
         | Item.Event einfo -> mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
 
         | Item.MethodGroup(_, minfo :: _, _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
@@ -478,7 +466,7 @@ module internal SymbolHelpers =
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
 
     let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
-        [ for (tp, ty) in prettyTyparInst -> 
+        [ for tp, ty in prettyTyparInst -> 
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
 
     let (|ItemWhereTypIsPreferred|_|) item = 
@@ -554,7 +542,7 @@ module internal SymbolHelpers =
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
               | (Item.Value vref1 | Item.CustomBuilder (_, vref1)), (Item.Value vref2 | Item.CustomBuilder (_, vref2)) -> 
                   valRefEq g vref1 vref2
-              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2)) ->
+              | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1, _)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2, _)) ->
                   idx1 = idx2 && valRefEq g vref1 vref2
               | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
                   g.unionCaseRefEq ur1 ur2
@@ -594,8 +582,8 @@ module internal SymbolHelpers =
               | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
-              | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName
-              | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx)) -> hash (vref.LogicalName, idx)
+              | Item.Value vref | Item.CustomBuilder (_, vref) -> hash vref.LogicalName
+              | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx, _)) -> hash (vref.LogicalName, idx)
               | Item.ExnCase tcref -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
@@ -664,7 +652,7 @@ module internal SymbolHelpers =
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> bufs (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
-        | Item.Property(_, (pinfo :: _)) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
+        | Item.Property(_, pinfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
         | Item.CtorGroup(_, minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
         | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
@@ -676,14 +664,14 @@ module internal SymbolHelpers =
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
-        | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
+        | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
-            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName
+            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
         | Item.TypeVar (id, _) -> id
         | Item.ArgName (id, _, _) -> id.idText
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
-        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).Name
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
         // unreachable 
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
@@ -735,10 +723,10 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, minfo :: _, _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
-        | Item.Types(_, ((TType_app(tcref, _)) :: _)) -> 
+        | Item.Types(_, TType_app(tcref, _) :: _) -> 
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
 
-        | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
+        | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if not definiteNamespace then
                 GetXmlCommentForItemAux (if entityRefInThisAssembly g.compilingFslib modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None) infoReader m item 
@@ -779,10 +767,10 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, ((TType_app(tcref, _)) :: _))
+            | Item.Types(_, TType_app(tcref, _) :: _)
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
-                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+                ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
 
@@ -810,7 +798,7 @@ module internal SymbolHelpers =
                 if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
                     let typeBeforeArguments = 
                         match tyconRef.TypeReprInfo with 
-                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                        | TProvidedTypeRepr info -> info.ProvidedType
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
                     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
@@ -883,10 +871,10 @@ module internal SymbolHelpers =
             GetF1Keyword g (Item.Value apref.ActivePatternVal)
 
         | Item.UnionCase(ucinfo, _) ->
-            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.Name |> Some
+            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.DisplayName |> Some
 
         | Item.RecdField rfi ->
-            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.Name |> Some
+            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.DisplayName |> Some
         
         | Item.AnonRecdField _ -> None
         
@@ -897,7 +885,7 @@ module internal SymbolHelpers =
 #if !NO_EXTENSIONTYPING
              | ProvidedField _ -> None
 #endif
-        | Item.Types(_, ((AppTy g (tcref, _)) :: _)) 
+        | Item.Types(_, AppTy g (tcref, _) :: _) 
         | Item.DelegateCtor(AppTy g (tcref, _))
         | Item.FakeInterfaceCtor(AppTy g (tcref, _))
         | Item.UnqualifiedType (tcref :: _)
@@ -921,7 +909,7 @@ module internal SymbolHelpers =
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
 #if !NO_EXTENSIONTYPING                
-                | TProvidedNamespaceExtensionPoint _ -> 
+                | TProvidedNamespaceRepr _ -> 
                     modref.CompilationPathOpt
                     |> Option.bind (fun path ->
                         // works similar to generation of xml-docs at tastops.fs, probably too similar
@@ -934,7 +922,7 @@ module internal SymbolHelpers =
                 | _ -> modref.Deref.CompiledRepresentationForNamedType.FullName |> Some
             | [] ->  None // Pathological case of the above
 
-        | Item.Property(_, (pinfo :: _)) -> 
+        | Item.Property(_, pinfo :: _) -> 
             match pinfo with 
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
@@ -997,11 +985,13 @@ module internal SymbolHelpers =
             ->  None
 
     /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g (m: range) item =
+    let FlattenItems g (m: range) (item: ItemWithInst) : ItemWithInst list =
         ignore m
-        match item with 
-        | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig))  
-        | Item.CtorGroup(nm, cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) 
+        match item.Item with 
+        | Item.MethodGroup(nm, minfos, orig) ->
+            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInst = item.TyparInst })
+        | Item.CtorGroup(nm, cinfos) ->
+            cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInst = item.TyparInst }) 
         | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 

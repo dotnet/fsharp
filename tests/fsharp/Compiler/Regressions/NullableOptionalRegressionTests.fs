@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 [<TestFixture()>]
 module NullableOptionalRegressionTests =

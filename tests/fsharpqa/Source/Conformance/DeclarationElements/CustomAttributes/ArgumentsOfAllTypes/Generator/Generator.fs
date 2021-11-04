@@ -5,7 +5,7 @@
 //    type T1() = class end
 //    let t1 = (typeof<T1>.GetCustomAttributes(false) |> Array.map (fun x -> x :?> System.Attribute)).[0]
 //    t1  
-//    // val it : System.Attribute =
+//    // val it: System.Attribute =
 //    //  CSAttributes.A1Attribute {PositionalString = "X";
 //    //                            TypeId = CSAttributes.A1Attribute;
 //    //                            pa_int = 1;}  
@@ -15,7 +15,7 @@
 //    type T1() = class end
 //    let t1 = (typeof<T1>.GetCustomAttributes(false) |> Array.map (fun x -> x :?> System.Attribute)).[0]
 //    t1  
-//    // val it : System.Attribute =
+//    // val it: System.Attribute =
 //    //  CSAttributes.A1Attribute {PositionalString = "A";
 //    //                            TypeId = CSAttributes.A1Attribute;
 //    //                            pa_int = 2;}  

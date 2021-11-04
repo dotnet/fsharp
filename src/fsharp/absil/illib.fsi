@@ -5,7 +5,6 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 open System.Collections.Generic
-open System.Diagnostics
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -47,11 +46,15 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinal: value:string -> bool
 
+    type Async with
+        /// Runs the computation synchronously, always starting on the current thread.
+        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+
     val foldOn: p:('a -> 'b) -> f:('c -> 'b -> 'd) -> z:'c -> x:'a -> 'd
 
     val notFound: unit -> 'a
 
-[<StructAttribute>]
+[<Struct>]
 type internal InlineDelayInit<'T when 'T: not struct> =
 
     new: f:(unit -> 'T) -> InlineDelayInit<'T>
@@ -253,6 +256,7 @@ module internal String =
 
 module internal Dictionary =
     val inline newWithSize : size:int -> Dictionary<'a,'b> when 'a: equality
+    val inline ofList : xs: ('Key * 'Value) list -> Dictionary<'Key,'Value> when 'Key: equality
 
 [<Extension; Class>]
 type internal DictionaryExtensions =
@@ -340,7 +344,7 @@ module internal ResultOrException =
 
     val otherwise : f:(unit -> ResultOrException<'a>) -> x:ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccessAttribute; Struct>]
+[<RequireQualifiedAccess; Struct>]
 type internal ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
@@ -419,111 +423,13 @@ type internal CancellableBuilder =
 
     member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> System.IDisposable
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
   
 [<AutoOpen>]
 module internal CancellableAutoOpens =
     val cancellable: CancellableBuilder
-
-/// Cancellable computations that can cooperatively yield 
-///
-///    - You can take an Eventually value and run it with Eventually.forceForTimeSlice
-type internal Eventually<'T> = 
-    | Done of 'T 
-    | NotYetDone of (CancellationToken -> (Stopwatch * int64) option -> ValueOrCancelled<Eventually<'T>>)
-    | Delimited of (unit -> IDisposable) * Eventually<'T>
-
-module internal Eventually =
-
-    /// Return a simple value as the result of an eventually computation
-    val inline ret: x:'a -> Eventually<'a>
-
-    val box: e:Eventually<'a> -> Eventually<obj>
-
-    // Throws away time-slicing but retains cancellation
-    val inline toCancellable: e:Eventually<'T> -> Cancellable<'T>
-
-    val inline ofCancellable: Cancellable<'T> -> Eventually<'T>
-
-    val force: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
-
-    /// Run for at most the given time slice, returning the residue computation, which may be complete.
-    /// If cancellation is requested then just return the computation at the point where cancellation
-    /// was detected.
-    val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'a> -> ValueOrCancelled<Eventually<'a>>
-
-    /// Check if cancellation or time limit has been reached.  Needed for inlined combinators
-    val stepCheck: ct: CancellationToken -> swinfo: (Stopwatch * int64) option -> e:'T -> ValueOrCancelled<'T> voption
-
-    /// Take steps in the computation. Needed for inlined combinators.
-    [<System.Diagnostics.DebuggerHidden>]
-    val steps: ct: CancellationToken -> swinfo: (Stopwatch * int64) option -> e:Eventually<'T> -> ValueOrCancelled<Eventually<'T>>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline map: f:('a -> 'b) -> e:Eventually<'a> -> Eventually<'b>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
-
-    /// Fold a computation over a collection
-    //
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
-
-    /// Map a computation over a collection
-    //
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline each : f:('a -> Eventually<'b>) -> seq:seq<'a> -> Eventually<'b list>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
-
-    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-    val inline tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
-
-    /// Bind the cancellation token associated with the computation
-    val token: unit -> Eventually<CancellationToken>
-
-    /// Represents a canceled computation
-    val canceled: unit -> Eventually<'a>
-
-    /// Create the resource and install it on the stack each time the Eventually is restarted
-    val reusing: resourcef: (unit -> IDisposable) -> e:Eventually<'T> -> Eventually<'T>
-
-[<Class>]
-// Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
-type internal EventuallyBuilder =
-
-    member inline BindReturn: e:Eventually<'g> * k:('g -> 'h) -> Eventually<'h>
-
-    member inline Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
-
-    member inline Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
-
-    member inline Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
-
-    member inline Return: v:'f -> Eventually<'f>
-
-    member inline ReturnFrom: v:'e -> 'e
-
-    member inline TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
-
-    member inline TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
-
-    member inline Zero: unit -> Eventually<unit>
-  
-[<AutoOpen>]
-module internal EventuallyAutoOpens =
-
-    val eventually: EventuallyBuilder
 
 /// Generates unique stamps
 type internal UniqueStampGenerator<'T when 'T: equality> =
@@ -569,7 +475,7 @@ module internal Tables =
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
     inherit IEqualityComparer<'T>
-    abstract member InEqualityRelation: 'T -> bool
+    abstract InEqualityRelation: 'T -> bool
   
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
@@ -688,10 +594,12 @@ type internal LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
 [<AutoOpen>]
 module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
-
+        
         static member Empty: Map<'Key,'Value> when 'Key: comparison
 
+#if USE_SHIPPED_FSCORE        
         member Values: 'Value list
+#endif
 
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
@@ -701,7 +609,7 @@ module internal MapAutoOpens =
         member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
-[<SealedAttribute>]
+[<Sealed>]
 type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     new: contents:LayeredMap<'Key,'Value list> -> LayeredMultiMap<'Key,'Value>

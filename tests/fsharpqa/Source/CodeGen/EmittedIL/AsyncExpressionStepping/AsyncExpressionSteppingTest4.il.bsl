@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly AsyncExpressionSteppingTest4
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AsyncExpressionSteppingTest4
 {
-  // Offset: 0x00000000 Length: 0x00000277
+  // Offset: 0x00000000 Length: 0x0000026B
 }
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest4
 {
-  // Offset: 0x00000280 Length: 0x000000B1
+  // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest4.dll
-// MVID: {5AF5DDAE-6394-6D4B-A745-0383AEDDF55A}
+// MVID: {611C52A3-6394-6D4B-A745-0383A3521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x028F0000
+// Image base: 0x06B50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,15 +80,17 @@
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       14 (0xe)
+        // Code size       15 (0xf)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 10,10 : 21,29 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest4.fs'
-        IL_0000:  ldarga.s   ctxt
-        IL_0002:  ldarg.0
-        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-2'::'value'
-        IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
-        IL_000d:  ret
+        .line 10,10 : 21,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest4.fs'
+        IL_0000:  ldarg.1
+        IL_0001:  ldarg.0
+        IL_0002:  ldfld      int32 AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@10-2'::'value'
+        IL_0007:  tail.
+        IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::Success(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!0>,
+                                                                                                                                                                       !0)
+        IL_000e:  ret
       } // end of method 'f4@10-2'::Invoke
 
     } // end of class 'f4@10-2'
@@ -344,11 +346,12 @@
   {
     // Code size       18 (0x12)
     .maxstack  5
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_0,
+    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 'Pipe #1 input at line 15',
              [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_1)
-    .line 15,15 : 13,43 ''
+    .line 15,15 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4::f4()
     IL_0005:  stloc.0
+    .line 15,15 : 21,43 ''
     IL_0006:  ldloc.0
     IL_0007:  stloc.1
     IL_0008:  ldloc.1

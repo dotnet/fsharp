@@ -3,17 +3,17 @@
 // Covering the blit between zero-based and non-zero based Array2D
 // The rest of the tests are Unittests.
 //
-//<Expects status="success">val it : bool = true</Expects>
+//<Expects status="success">val it: bool = true</Expects>
 
-//val a : string [,] = [bound1=1
-//                      bound2=2
-//                      ["a12"; "a13"]
-//                      ["a22"; "a23"]
-//                      ["a32"; "a33"]]
+//val a: string[,] = [bound1=1
+//                    bound2=2
+//                    ["a12"; "a13"]
+//                    ["a22"; "a23"]
+//                    ["a32"; "a33"]]
 //
-//val b : string [,] = [["b00"; "b01"]
-//                      ["b10"; "b11"]
-//                      ["b20"; "b21"]]
+//val b: string[,] = [["b00"; "b01"]
+//                    ["b10"; "b11"]
+//                    ["b20"; "b21"]]
                       
 let a = Array2D.initBased 1 2 3 2 (fun a b -> "a" + string a + string b)
 

@@ -23,76 +23,41 @@ let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn' exist
 
 #nowarn "57"
 
-type internal MyFileSystem(defaultFileSystem:IFileSystem) =
-    let file1 = """
+let file1 = """
 module File1
 
 let A = 1"""
-    let file2 = """
+
+let file2 = """
 module File2
 let B = File1.A + File1.A"""
-    let files = dict [(fileName1, file1); (fileName2, file2)]
 
-    interface IFileSystem with
-
-        member _.AssemblyLoader = DefaultAssemblyLoader() :> IAssemblyLoader
+type internal MyFileSystem() =
+    inherit DefaultFileSystem()
+        static member FilesCache = dict [(fileName1, file1); (fileName2, file2)]
         // Implement the service to open files for reading and writing
-        member _.OpenFileForReadShim(filePath, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
+        override _.OpenFileForReadShim(filePath, ?useMemoryMappedFile: bool, ?shouldShadowCopy: bool) =
             let shouldShadowCopy = defaultArg shouldShadowCopy false
             let useMemoryMappedFile = defaultArg useMemoryMappedFile false
-            match files.TryGetValue filePath with
+            match MyFileSystem.FilesCache.TryGetValue filePath with
             | true, text ->
-                let bytes = Encoding.UTF8.GetBytes(text)
-                ByteArrayMemory(bytes, 0, bytes.Length) :> ByteMemory
-            | _ -> defaultFileSystem.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
-
-        member _.OpenFileForWriteShim(filePath, ?fileMode: FileMode, ?fileAccess: FileAccess, ?fileShare: FileShare) =
-            let fileMode = defaultArg fileMode FileMode.OpenOrCreate
-            let fileAccess = defaultArg fileAccess FileAccess.ReadWrite
-            let fileShare = defaultArg fileShare FileShare.Read
-            defaultFileSystem.OpenFileForWriteShim(filePath, fileMode, fileAccess, fileShare)
-
-        member _.IsStableFileHeuristic(fileName) =
-            defaultFileSystem.IsStableFileHeuristic(fileName)
-
-
-        // Implement the service related to temporary paths and file time stamps
-        member _.GetTempPathShim() = defaultFileSystem.GetTempPathShim()
-        member _.GetLastWriteTimeShim(fileName) = defaultFileSystem.GetLastWriteTimeShim(fileName)
-        member _.GetFullPathShim(fileName) = defaultFileSystem.GetFullPathShim(fileName)
-        member _.IsInvalidPathShim(fileName) = defaultFileSystem.IsInvalidPathShim(fileName)
-        member _.IsPathRootedShim(fileName) = defaultFileSystem.IsPathRootedShim(fileName)
-
-        member _.CopyShim(src, dest, overwrite) = defaultFileSystem.CopyShim(src, dest, overwrite)
-        member _.DirectoryCreateShim(path) = defaultFileSystem.DirectoryCreateShim(path)
-        member _.DirectoryDeleteShim(path) = defaultFileSystem.DirectoryDeleteShim(path)
-        member _.DirectoryExistsShim(path) = defaultFileSystem.DirectoryExistsShim(path)
-        member _.EnumerateDirectoriesShim(path) = defaultFileSystem.EnumerateDirectoriesShim(path)
-        member _.EnumerateFilesShim(path, pattern) = defaultFileSystem.EnumerateFilesShim(path, pattern)
-        member _.FileDeleteShim(fileName) = defaultFileSystem.FileDeleteShim(fileName)
-        member _.FileExistsShim(fileName) = files.ContainsKey(fileName) || defaultFileSystem.FileExistsShim(fileName)
-        member _.GetCreationTimeShim(path) = defaultFileSystem.GetCreationTimeShim(path)
-        member _.GetDirectoryNameShim(path) = defaultFileSystem.GetDirectoryNameShim(path)
-        member _.GetFullFilePathInDirectoryShim(dir) (fileName) = defaultFileSystem.GetFullFilePathInDirectoryShim dir fileName
-        member _.NormalizePathShim(path) = defaultFileSystem.NormalizePathShim(path)
-
-
-
+                new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
+            | _ -> base.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
+        override _.FileExistsShim(fileName) = MyFileSystem.FilesCache.ContainsKey(fileName) || base.FileExistsShim(fileName)
 
 let UseMyFileSystem() =
-    let myFileSystem = MyFileSystem(FileSystemAutoOpens.FileSystem)
+    let myFileSystem = MyFileSystem()
     FileSystemAutoOpens.FileSystem <- myFileSystem
     { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
-
 
 [<Test>]
 #if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``FileSystem compilation test``() =
-  if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows
+  if Environment.OSVersion.Platform = PlatformID.Win32NT then // file references only valid on Windows
     use myFileSystem =  UseMyFileSystem()
-    let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
+    let programFilesx86Folder = Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
 
     let projectOptions =
         let allFlags =
@@ -116,12 +81,12 @@ let ``FileSystem compilation test``() =
           ReferencedProjects = [| |];
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = true
-          LoadTime = System.DateTime.Now // Not 'now', we don't want to force reloading
+          LoadTime = DateTime.Now // Not 'now', we don't want to force reloading
           UnresolvedReferences = None
           OriginalLoadReferences = []
           Stamp = None }
 
-    let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
+    let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunImmediate
 
     results.Diagnostics.Length |> shouldEqual 0
     results.AssemblySignature.Entities.Count |> shouldEqual 2

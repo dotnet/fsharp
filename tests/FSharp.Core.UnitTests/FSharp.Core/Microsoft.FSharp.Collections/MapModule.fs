@@ -644,3 +644,39 @@ type MapModule() =
         Assert.AreEqual(resultEpt,None)
                
         ()  
+
+    [<Fact>]
+    member this.Keys() =
+        // reference keys
+        let m = Map.ofArray [| ("1", "1"); ("2", "4"); ("3", "9") |]
+        Assert.AreEqual(["1"; "2"; "3"], Map.keys m |> Seq.toList)
+    
+        // value keys
+        let m = Map.ofArray [| (1, 1); (2, 4); (3, 9) |]
+        Assert.AreEqual([1; 2; 3], Map.keys m |> Seq.toList)
+    
+        // one element  
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], Map.keys m |> Seq.toList)
+        
+        // empty
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], Map.keys m |> Seq.toList)
+        
+    [<Fact>]
+    member this.Values() =
+        // reference keys
+        let m = Map.ofArray [| ("1", "2"); ("3", "4"); ("5", "6") |]
+        Assert.AreEqual(["2"; "4"; "6"], Map.values m |> Seq.toList)
+    
+        // value keys, out of order, including duplicates
+        let m = Map.ofArray [| (1, 2); (5, 6); (3, 4); (1, 2) |]
+        Assert.AreEqual([2; 4; 6], Map.values m |> Seq.toList)
+    
+        // one element  
+        let m = Map.ofArray [| (1, 1); |]
+        Assert.AreEqual([1], Map.values m |> Seq.toList)
+        
+        // empty
+        let m = Map.ofArray [| |]
+        Assert.AreEqual([], Map.values m |> Seq.toList)

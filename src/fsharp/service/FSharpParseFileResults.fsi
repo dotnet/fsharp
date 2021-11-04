@@ -7,8 +7,8 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
-[<Sealed>]
 /// Represents the results of parsing an F# file and a set of analysis operations based on the parse tree alone.
+[<Sealed>]
 type public FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse

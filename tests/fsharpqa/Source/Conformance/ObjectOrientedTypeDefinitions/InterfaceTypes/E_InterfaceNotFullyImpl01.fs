@@ -3,7 +3,7 @@
 // This code used to compile and then throw at runtime
 // Now we emit an error.
 
-//<Expects id="FS0366" span="(31,19-31,45)" status="error">No implementation was given for 'abstract member INodeWrapper\.Node : Node'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'</Expects>
+//<Expects id="FS0366" span="(31,19-31,45)" status="error">No implementation was given for 'abstract INodeWrapper\.Node: Node'\. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e\.g\. 'interface \.\.\. with member \.\.\.'</Expects>
 
 namespace Foo
 

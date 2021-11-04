@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Globalization
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 
 module ByteMemoryTests =
     open FSharp.Compiler.IO

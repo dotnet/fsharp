@@ -3,6 +3,7 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
+open System.IO
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -34,9 +35,9 @@ val ParseInput: (Lexbuf -> Parser.token) * ErrorLogger * Lexbuf * string option 
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * 
-     ('T -> range * string * Directive -> 'T) *
-     ('T -> range * string -> unit))
+    ('T -> range * string -> 'T) * 
+    ('T -> range * string * Directive -> 'T) *
+    ('T -> range * string -> unit)
       -> TcConfigBuilder * ParsedInput * string * 'T 
       -> 'T
 
@@ -46,6 +47,12 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 /// Process the #nowarn in an input and integrate them into the TcConfig
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
+/// Parse one input stream
+val ParseOneInputStream: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool * stream: Stream -> ParsedInput
+
+/// Parse one input source text
+val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * sourceText: ISourceText -> ParsedInput
+
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool -> ParsedInput
 
@@ -54,10 +61,10 @@ val ParseInputFiles: TcConfig * Lexhelp.LexResourceManager * conditionalCompilat
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv
+val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv * OpenDeclaration list
                 
-[<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
+[<Sealed>]
 type TcState =
     member NiceNameGenerator: NiceNameGenerator
 
@@ -82,10 +89,18 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
+    range *
+    string *
+    TcConfig *
+    TcGlobals *
+    TcImports *
+    NiceNameGenerator *
+    TcEnv *
+    OpenDeclaration list
+        -> TcState
 
 /// Check one input, returned as an Eventually computation
-val TypeCheckOneInputEventually :
+val TypeCheckOneInput:
     checkForErrors:(unit -> bool) *
     TcConfig *
     TcImports *
@@ -95,7 +110,7 @@ val TypeCheckOneInputEventually :
     TcState *
     ParsedInput *
     skipImplIfSigExists: bool
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
+      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
 val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
@@ -104,7 +119,7 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish:
     TypedImplFile list *
     TcState
-      -> TcState * TypedImplFile list
+      -> TcState * TypedImplFile list * ModuleOrNamespace
 
 /// Check a closed set of inputs 
 val TypeCheckClosedInputSet:
@@ -114,11 +129,12 @@ val TypeCheckClosedInputSet:
     TcImports *
     TcGlobals *
     LongIdent option *
-    TcState * ParsedInput list
+    TcState *
+    ParsedInput list
       -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
-val TypeCheckOneInputAndFinishEventually :
+val TypeCheckOneInputAndFinish :
     checkForErrors: (unit -> bool) *
     TcConfig *
     TcImports *
@@ -127,7 +143,7 @@ val TypeCheckOneInputAndFinishEventually :
     NameResolution.TcResultsSink *
     TcState *
     ParsedInput 
-      -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+      -> Cancellable<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
 
