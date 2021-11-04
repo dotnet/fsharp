@@ -788,33 +788,24 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
              | _ -> ""
         
     let optimizedImpls, optDataResources =
-        match tcConfig.emitMetadataAssembly with
-        | MetadataAssemblyGeneration.MetadataOnly
-        | MetadataAssemblyGeneration.TestSigOfImpl ->
-            let optimizedImpls =
-                typedImplFiles
-                |> List.map (fun x -> { ImplFile = x; OptimizeDuringCodeGen = (fun _ expr -> expr) })
-                |> TypedAssemblyAfterOptimization
-            optimizedImpls, []
-        | _ ->
-            // Perform optimization
-            use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
+        // Perform optimization
+        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
     
-            let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
+        let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
-            let importMap = tcImports.GetImportMap()
+        let importMap = tcImports.GetImportMap()
 
-            let optimizedImpls, optimizationData, _ = 
-                ApplyAllOptimizations 
-                    (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
-                     importMap, false, optEnv0, generatedCcu, typedImplFiles)
+        let optimizedImpls, optimizationData, _ = 
+            ApplyAllOptimizations 
+                (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
+                    importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
-            AbortOnError(errorLogger, exiter)
+        AbortOnError(errorLogger, exiter)
         
-            // Encode the optimization data
-            ReportTime tcConfig ("Encoding OptData")
+        // Encode the optimization data
+        ReportTime tcConfig ("Encoding OptData")
 
-            optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+        optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger,
@@ -964,8 +955,6 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                     error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
 
             match tcConfig.emitMetadataAssembly with
-            | MetadataAssemblyGeneration.MetadataOnly
-            | MetadataAssemblyGeneration.TestSigOfImpl
             | MetadataAssemblyGeneration.ReferenceOnly -> ()
             | _ ->
                 try

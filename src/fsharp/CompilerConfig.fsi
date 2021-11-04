@@ -152,12 +152,6 @@ type MetadataAssemblyGeneration =
     /// Includes F# signature and optimization metadata as resources in the emitting assembly.
     /// Only emits the assembly as a reference assembly.
     | ReferenceOnly
-    /// Do not include F# optimization metadata as a resource in the emitting assembly.
-    /// Means we do not necessarily need to type-check implementation files if they have a backing signature file.
-    ///     Instead, a dummy implementation file will be created.
-    | MetadataOnly
-    /// This is only for used for testing.
-    | TestSigOfImpl
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

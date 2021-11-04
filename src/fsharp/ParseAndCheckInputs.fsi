@@ -90,12 +90,6 @@ val GetInitialTcState:
     OpenDeclaration list
         -> TcState
 
-/// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it.
-/// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
-///     for tooling, IDEs, etc - without having to actually check an implementation file.
-/// An example of this use would be for other .NET languages wanting cross-project referencing with F# as they require an assembly.
-val CreateDummyTypedImplFile: g: TcGlobals -> qualNameOfFile: QualifiedNameOfFile -> sigTy: ModuleOrNamespaceType -> TypedImplFile
-
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInput:
     checkForErrors:(unit -> bool) *

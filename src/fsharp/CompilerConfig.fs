@@ -330,8 +330,6 @@ type MetadataAssemblyGeneration =
     | None
     | ReferenceOut of outputPath: string
     | ReferenceOnly
-    | MetadataOnly
-    | TestSigOfImpl
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

@@ -180,10 +180,7 @@ let GenerateIlxCode
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt
-          metadataOnly =
-            match tcConfig.emitMetadataAssembly with
-            | MetadataAssemblyGeneration.MetadataOnly -> true
-            | _ -> false }
+          metadataOnly = false }
 
     ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs)
 
