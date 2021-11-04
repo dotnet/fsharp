@@ -761,8 +761,6 @@ val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
 type FreeVarOptions
 
-val CollectAnonRecdTypeInfosNoCaching: FreeVarOptions
-
 val CollectLocalsNoCaching: FreeVarOptions
 
 val CollectTyparsNoCaching: FreeVarOptions
@@ -799,8 +797,6 @@ val freeInTypesLeftToRight: TcGlobals -> bool -> TType list -> Typars
 val freeInTypesLeftToRightSkippingConstraints: TcGlobals -> TType list -> Typars
 
 val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
-
-val freeAnonRecdTypeInfosInModuleTy: ModuleOrNamespaceType -> FreeAnonRecdTypeInfos
 
 val isDimensionless: TcGlobals -> TType -> bool
 
