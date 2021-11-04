@@ -949,7 +949,7 @@ let TypeCheckOneInput(checkForErrors,
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp skipImplIfSigExists =
+let TypeCheckOneInputEntryAux (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp skipImplIfSigExists =
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
@@ -959,12 +959,12 @@ let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals
         |> Cancellable.runWithoutCancellation
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
-    TypeCheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp false
+let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+    TypeCheckOneInputEntryAux(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp false
 
 /// Typecheck a single file but skip it if the file is an impl and has a backing sig
-let TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
-    TypeCheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp true
+let TypeCheckOneInputEntrySkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+    TypeCheckOneInputEntryAux(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp true
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
@@ -999,7 +999,7 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
     let results, tcState =
         if tcConfig.concurrentBuild then
-            let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+            let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputEntrySkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
 
             let inputs = Array.ofList inputs
             let newResults = Array.ofList results
@@ -1020,13 +1020,13 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports
             |> Array.choose id
             |> ArrayParallel.iter (fun (i, input, qualifiedNameOfFile) ->
                 let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
-                let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
+                let result, _ = TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
                 newResults.[i] <- result
             )
 
             newResults |> List.ofArray, tcState
         else
-            (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+            (tcState, inputs) ||> List.mapFold (TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls, ccuContents = TypeCheckClosedInputSetFinish (implFiles, tcState)
