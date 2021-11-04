@@ -475,7 +475,7 @@ module internal Tables =
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
     inherit IEqualityComparer<'T>
-    abstract member InEqualityRelation: 'T -> bool
+    abstract InEqualityRelation: 'T -> bool
   
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
@@ -596,7 +596,11 @@ module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
         
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-        
+
+#if USE_SHIPPED_FSCORE        
+        member Values: 'Value list
+#endif
+
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
         member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison

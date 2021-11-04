@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">A extensão do arquivo '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx ou .fsscript. Para ativar o uso preterido das extensões .ml ou .mli, use '--langversion:5.0' e '--mlcompatibility'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="translated">A extensão do arquivo de '{0}' não foi reconhecida. Os arquivos de origem devem ter a extensão .fs, .fsi, .fsx or .fsscript</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">O recurso '{0}' não está disponível no F# {1}. Use a versão da linguagem {2} ou superior.</target>
@@ -19,22 +29,22 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="new">The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</target>
+        <target state="translated">O uso de ':=' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere 'cell := expr' para 'cell.Value &lt;- expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="new">The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</target>
+        <target state="translated">O uso de 'decr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'decr célula' para 'cell.Value &lt;- cell.Value - 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
         <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
-        <target state="new">The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</target>
+        <target state="translated">O uso de '!' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere '!cell' para 'cell.Value'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="new">The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</target>
+        <target state="translated">O uso de 'incr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'incr célula' para 'cell.Value &lt;- cell.Value + 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -109,7 +119,7 @@
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
-        <target state="new">additional type-directed conversions</target>
+        <target state="translated">conversões direcionadas por tipos adicionais</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -159,12 +169,17 @@
       </trans-unit>
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
-        <target state="new">expr[idx] notation for indexing and slicing</target>
+        <target state="translated">notação expr[idx] para indexação e fatia</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">interfaces com várias instanciações genéricas</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="translated">Revisões de compatibilidade de ML</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -204,7 +219,7 @@
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
-        <target state="new">informational messages related to reference cells</target>
+        <target state="translated">mensagens informativas relacionadas a células de referência</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -292,6 +307,11 @@
         <target state="translated">O atributo 'InlineIfLambda' está presente na assinatura, mas não na implementação.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">O comentário XML não está inserido em um elemento de linguagem válido.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Palavra-chave para especificar um literal constante como um argumento de parâmetro de tipo nos Provedores de Tipo.</target>
@@ -300,6 +320,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">uma cadeia de caracteres de byte não pode ser interpolada</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="translated">As regiões IF-FSHARP/IF-CAML não são mais suportadas</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -317,6 +342,41 @@
         <target state="translated">Cadeia de caracteres interpolada inválida. Literais de cadeia de caracteres de aspas triplas não podem ser usados em expressões interpoladas. Considere usar uma associação 'let' explícita para a expressão de interpolação.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">Esta construção foi preterida. {0} Você pode habilitar este recurso usando '--langversion:5.0' e '--mlcompatibility'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="translated">Nas versões anteriores de F# '{0}' era uma palavra-chave reservada, mas o uso desta palavra-chave agora foi preterida</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">O uso de '#light \"off\"' ou '#indent \"off\"' foi preterido em F# 2.0 e não é mais suportado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">O uso de múltiplos parâmetros do tipo entre parênteses antes de um nome genérico do tipo como '(int, int) Map' foi preterido em F# 2.0 e não é mais suportado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">O uso do 'módulo M: sig ... end ' foi preterido em F# 2.0 e não é mais suportado. Mude o ':' para um '=' e remova o 'sig' e o 'end' e use o recuo em seu lugar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">O uso do 'módulo M = sig ... end' foi preterido em F# 2.0 e não é mais suportado. Remova o 'sig' e o 'end' e use o recuo em seu lugar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="translated">O uso do 'módulo M = struct ... end' foi preterido em F# 2.0 e não é mais suportado. Remova o 'struct' e 'end' e use o recuo em seu lugar</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Stream não começa com um recurso nulo e não está no formato '.RES'.</target>
@@ -329,12 +389,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</target>
+        <target state="translated">Essa expressão não é uma função e não pode ser aplicada. Você pretendia acessar o indexador por meio do 'expr[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName2">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</target>
+        <target state="translated">Esse valor não é uma função e não pode ser aplicado. Você pretendia acessar o indexador por meio do '{0}[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -425,6 +485,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Token inesperado na definição de tipo. Esperava-se '=' após o tipo '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Este acesso de membro é ambíguo. Use parênteses em torno da criação do objeto, por exemplo, '(new SomeType(args)).MemberName''.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -519,7 +584,7 @@
       </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
-        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <target state="translated">Essa expressão possui o tipo '{0}' e só é compatível com o tipo '{1}' por uma conversão implícita ambígua. Considere usar uma chamada explícita para 'op_Implicit'. As conversões implícitas aplicáveis são:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -554,12 +619,12 @@
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</target>
+        <target state="translated">A sintaxe 'expr1[expr2]' é usada para indexação. Considere adicionar uma anotação de tipo para habilitar a indexação ou, se chamar uma função, adicione um espaço, por exemplo, 'expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</target>
+        <target state="translated">A sintaxe ' expr1[expr2] ' agora está reservada para indexação. Consulte https://aka.ms/fsharp-index-notation. Se estiver chamando uma função, adicione um espaço entre a função e o argumento, por exemplo, 'someFunction [expr]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
@@ -569,22 +634,22 @@
       </trans-unit>
       <trans-unit id="tcIndexNotationDeprecated">
         <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
-        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</target>
+        <target state="translated">A sintaxe 'arr. [idx]' agora é revisada para 'arr[idx]'. Atualize seu código.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBuiltInImplicitConversionUsed">
         <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Essa expressão usa uma conversão implícita interna para converter o tipo '{0}' ao tipo '{1}'. Consulte https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</target>
+        <target state="translated">Essa expressão usa a conversão implícita '{0}' para converter o tipo '{1}' ao tipo '{2}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
         <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
-        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</target>
+        <target state="translated">Essa expressão usa a conversão implícita '{0}' para converter o tipo '{1}' ao tipo '{2}'. Consulte https://aka.ms/fsharp-implicit-convs. Este aviso pode ser desabilitado usando '#nowarn\"3391\".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -619,17 +684,17 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfReverseIndex">
         <source>Invalid use of reverse index in list expression.</source>
-        <target state="new">Invalid use of reverse index in list expression.</target>
+        <target state="translated">Uso inválido de índice reverso na expressão da lista.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">A sintaxe ' [expr1][expr2] ' é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. se você pretende indexar ou colocar em fatias e, em seguida, deve usar '(expr1). [expr2]' na posição do argumento. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcListThenAdjacentListArgumentReserved">
         <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
-        <target state="new">The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</target>
+        <target state="translated">A sintaxe 'expr1[expr2]' agora está reservada para indexação e é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -647,44 +712,49 @@
         <target state="translated">Não é possível atribuir '{0}' a um valor marcado como literal</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">Utilizando métodos com 'NoEagerConstraintApplicationAttribute' exige /langversion:pré-visualização ou posterior</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">Essa expressão oferece suporte à indexação, por exemplo, 'expr. [index]'. A sintaxe 'expr[index]' requer /langversion:preview. Consulte https://aka.ms/fsharp-index-notation.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
         <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
-        <target state="new">This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</target>
+        <target state="translated">Esse valor dá suporte à indexação, por exemplo, '{0}.[index]'. A sintaxe '{1}[index]' requer /langversion:preview. Consulte https://aka.ms/fsharp-index-notation.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
         <source>This expression is not a function and does not support index notation.</source>
-        <target state="new">This expression is not a function and does not support index notation.</target>
+        <target state="translated">Essa expressão não é uma função e não dá suporte à notação de índice.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
         <source>The value '{0}' is not a function and does not support index notation.</source>
-        <target state="new">The value '{0}' is not a function and does not support index notation.</target>
+        <target state="translated">O valor '{0}' não é uma função e não dá suporte à notação de índice.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">A sintaxe '[expr1][expr2]' é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se você pretende indexar ou colocar em fatias, deve usar '(expr1).[expr2]' na posição do argumento. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
         <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
-        <target state="new">The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</target>
+        <target state="translated">A sintaxe 'expr1[expr2]' agora está reservada para indexação e é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">A sintaxe '[expr1][expr2]' é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se você pretende indexar ou colocar em fatias, deve usar '(expr1).[expr2]' na posição do argumento. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction [expr1] [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParenThenAdjacentListArgumentReserved">
         <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
-        <target state="new">The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</target>
+        <target state="translated">A sintaxe 'expr1[expr2]' agora está reservada para indexação e é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction expr1 [expr2]'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -724,7 +794,7 @@
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
-        <target state="new">This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</target>
+        <target state="translated">Essa expressão converte implicitamente o tipo '{0}' ao tipo '{1}'. Consulte https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -834,12 +904,12 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Todos os elementos de uma matriz devem ser implicitamente conversíveis ao tipo do primeiro elemento, que aqui é '{0}'. Esse elemento possui o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</target>
+        <target state="translated">Todos os elementos de uma matriz devem ser implicitamente conversíveis ao tipo do primeiro elemento, que aqui é '{0}'. Esse elemento tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -854,12 +924,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas as ramificações de uma expressão 'se' devem retornar valores implicitamente conversíveis ao tipo da primeira ramificação, que aqui é '{0}'. Essa ramificação retorna um valor do tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas as ramificações de uma expressão de correspondência de padrão devem retornar valores implicitamente conversíveis ao tipo da primeira ramificação, que aqui é '{0}'. Essa ramificação retorna um valor do tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3659,7 +3729,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
         <source>Incomplete expression or invalid use of indexer syntax</source>
-        <target state="new">Incomplete expression or invalid use of indexer syntax</target>
+        <target state="translated">Expressão incompleta ou uso inválido da sintaxe do indexador</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -4268,8 +4338,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Uma declaração só pode ser o atributo [&lt;Literal&gt;] se um valor constante também é dado, ex.:' val x: int = 1'</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="translated">Uma declaração só pode ser o atributo [&lt;Literal&gt;] se um valor constante também for fornecido, ex.: 'val x: int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -7699,12 +7769,12 @@
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
         <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="new">This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</target>
+        <target state="translated">Esse valor não é uma função e não pode ser aplicado. Você pretendia acessar o indexador por meio do '{0}.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
         <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="new">This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</target>
+        <target state="translated">Essa expressão não é uma função e não pode ser aplicada. Você pretendia acessar o indexador por meio do 'expr.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

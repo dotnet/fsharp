@@ -832,8 +832,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -853,8 +853,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val _field1 : int"
-                "   val _field2 : string"
+                "   val _field1: int"
+                "   val _field2: string"
             ]
 
         let useCases = 
@@ -939,8 +939,8 @@ for i in 0..a."]
                 "type A = class end"
                 "type B = "
                 "   inherit A"
-                "   val f1 : int"
-                "   val f2 : int"
+                "   val f1: int"
+                "   val f2: int"
             ]
         
         let useCases = 
@@ -1027,8 +1027,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -4277,7 +4277,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``InDeclaration.Bug3176c``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type C =";
-                      "  val aaaa : int" ]
+            "  val aaaa: int" ]
           "aa"        // move to marker
           ["aaaa"] [] // should contain 'aaaa'
 
@@ -6239,7 +6239,7 @@ let rec f l =
             marker = "(*MarkerMethodInType*)",
             list = ["PrivateMethod"])       
 
-    [<Test>]
+//    [<Test>]
     member this.``VariableIdentifier.AsParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6966,7 +6966,7 @@ let rec f l =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
                 type f1(*MarkerType*) = 
-                    val field : int""",
+                    val field: int""",
             marker = "(*MarkerType*)")
 
     [<Test>]

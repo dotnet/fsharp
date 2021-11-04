@@ -61,8 +61,11 @@ module Modules =
         FSharp """module [<Experimental "Hello">] L1 = List"""
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
-                                 "Ignoring attributes on module abbreviation")
+        |> withDiagnostics [
+            Error 3350, Line 1, Col 33, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+            Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
+        ]
+
     [<Fact>]
     let ``Right Attribute Module Abbreviation without preview (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
@@ -188,8 +191,11 @@ AutoOpen>] L1 = do ()
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 10, Line 3, Col 1, Line 3, Col 9,
-                                 "Unexpected start of structured construct in attribute list")
+        |> withDiagnostics [
+            Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
+            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+        ]
+
     [<Fact>]
     let ``Offside rule works for attributes inside module declarations without preview``() =
         Fsx """

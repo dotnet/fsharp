@@ -21,6 +21,7 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.NameResolution
@@ -270,17 +271,26 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
     try
         let input =
             if mlCompatSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
-                mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
+                if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+                    errorR(Error(FSComp.SR.buildInvalidSourceFileExtensionML filename, rangeStartup))
+                else
+                    mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup
 
             // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let impl = Parser.implementationFile lexer lexbuf
+                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix lower) then
                 let intfs = Parser.signatureFile lexer lexbuf
+                LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else
-                delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))
+                if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+                    error(Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated filename, rangeStartup))
+                else
+                    error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, rangeStartup))
+
 
         scopedPragmas <- GetScopedPragmasForInput input
         input
@@ -313,9 +323,9 @@ let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>)
 // Report the statistics for testing purposes
 let ReportParsingStatistics res =
     let rec flattenSpecs specs =
-            specs |> List.collect (function SynModuleSigDecl.NestedModule (_, _, subDecls, _) -> flattenSpecs subDecls | spec -> [spec])
+            specs |> List.collect (function SynModuleSigDecl.NestedModule (moduleDecls=subDecls) -> flattenSpecs subDecls | spec -> [spec])
     let rec flattenDefns specs =
-            specs |> List.collect (function SynModuleDecl.NestedModule (_, _, subDecls, _, _) -> flattenDefns subDecls | defn -> [defn])
+            specs |> List.collect (function SynModuleDecl.NestedModule (decls=subDecls) -> flattenDefns subDecls | defn -> [defn])
 
     let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
     let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
@@ -411,17 +421,48 @@ let checkInputFile (tcConfig: TcConfig) filename =
     else
         error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
 
+let parseInputStreamAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked, stream: Stream) =
+    use reader = stream.GetReader(tcConfig.inputCodePage, retryLocked)
+
+    // Set up the LexBuffer for the file
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion, reader)
+
+    // Parse the file drawing tokens from the lexbuf
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+
+let parseInputSourceTextAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, sourceText: ISourceText) =
+    // Set up the LexBuffer for the file
+    let lexbuf = UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion, sourceText)
+
+    // Parse the file drawing tokens from the lexbuf
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+
 let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     // Get a stream reader for the file
     use fileStream = FileSystem.OpenFileForReadShim(filename)
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
-    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
-    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, checkLanguageFeatureErrorRecover, reader)
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+
+/// Parse an input from stream
+let ParseOneInputStream (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked, stream: Stream) =
+    try
+       parseInputStreamAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked, stream)
+    with e ->
+        errorRecovery e rangeStartup
+        EmptyParsedInput(filename, isLastCompiland)
+
+/// Parse an input from source text
+let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, sourceText: ISourceText) =
+    try
+       parseInputSourceTextAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, sourceText)
+    with e ->
+        errorRecovery e rangeStartup
+        EmptyParsedInput(filename, isLastCompiland)
 
 /// Parse an input from disk
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
@@ -576,21 +617,21 @@ let ProcessMetaCommandsFromInput
         decls |> List.iter (fun d ->
             match d with
             | SynModuleSigDecl.HashDirective (_, m) -> warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(), m))
-            | SynModuleSigDecl.NestedModule (_, _, subDecls, _) -> WarnOnIgnoredSpecDecls subDecls
+            | SynModuleSigDecl.NestedModule (moduleDecls=subDecls) -> WarnOnIgnoredSpecDecls subDecls
             | _ -> ())
 
     let rec WarnOnIgnoredImplDecls decls =
         decls |> List.iter (fun d ->
             match d with
             | SynModuleDecl.HashDirective (_, m) -> warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(), m))
-            | SynModuleDecl.NestedModule (_, _, subDecls, _, _) -> WarnOnIgnoredImplDecls subDecls
+            | SynModuleDecl.NestedModule (decls=subDecls) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())
 
     let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) =
         List.fold (fun s d ->
             match d with
             | SynModuleSigDecl.HashDirective (h, _) -> ProcessMetaCommand s h
-            | SynModuleSigDecl.NestedModule (_, _, subDecls, _) -> WarnOnIgnoredSpecDecls subDecls; s
+            | SynModuleSigDecl.NestedModule (moduleDecls=subDecls) -> WarnOnIgnoredSpecDecls subDecls; s
             | _ -> s)
          state
          decls
@@ -599,7 +640,7 @@ let ProcessMetaCommandsFromInput
         List.fold (fun s d ->
             match d with
             | SynModuleDecl.HashDirective (h, _) -> ProcessMetaCommand s h
-            | SynModuleDecl.NestedModule (_, _, subDecls, _, _) -> WarnOnIgnoredImplDecls subDecls; s
+            | SynModuleDecl.NestedModule (decls=subDecls) -> WarnOnIgnoredImplDecls subDecls; s
             | _ -> s)
          state
          decls

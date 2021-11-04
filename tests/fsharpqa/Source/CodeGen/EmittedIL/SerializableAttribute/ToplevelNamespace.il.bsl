@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {611C4D8C-218B-729A-A745-03838C4D1C61}
+// MVID: {61259040-218B-729A-A745-038340902561}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x072C0000
+// Image base: 0x073B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

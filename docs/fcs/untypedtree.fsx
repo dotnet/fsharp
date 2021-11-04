@@ -68,10 +68,8 @@ let getUntypedTree (file, input) =
       checker.ParseFile(file, input, parsingOptions) 
       |> Async.RunSynchronously
 
-  match parseFileResults.ParseTree with
-  | Some tree -> tree
-  | None -> failwith "Something went wrong during parsing!"
-
+  parseFileResults.ParseTree
+  
 (**
 
 Walking over the AST
@@ -107,8 +105,7 @@ used more often):
 let rec visitPattern = function
   | SynPat.Wild(_) -> 
       printfn "  .. underscore pattern"
-  | SynPat.Named(pat, name, _, _, _) ->
-      visitPattern pat
+  | SynPat.Named(name, _, _, _) ->
       printfn "  .. named as '%s'" name.idText
   | SynPat.LongIdent(LongIdentWithDots(ident, _), _, _, _, _, _) ->
       let names = String.concat "." [ for i in ident -> i.idText ]
@@ -128,7 +125,7 @@ options). In the following, we only show how to handle `if .. then ..` and `let 
 /// contains pattern and two sub-expressions
 let rec visitExpression e = 
   match e with
-  | SynExpr.IfThenElse(cond, trueBranch, falseBranchOpt, _, _, _, _) ->
+  | SynExpr.IfThenElse(ifExpr=cond; thenExpr=trueBranch; elseExpr=falseBranchOpt) ->
       // Visit all sub-expressions
       printfn "Conditional:"
       visitExpression cond

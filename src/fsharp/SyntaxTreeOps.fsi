@@ -48,9 +48,9 @@ val (|SingleIdent|_|): inp:SynExpr -> Ident option
 /// This affects placement of sequence points
 val IsControlFlowExpression: e:SynExpr -> bool
 
-val mkSynAnonField: ty:SynType -> SynField
+val mkSynAnonField: ty:SynType * xmlDoc:PreXmlDoc -> SynField
 
-val mkSynNamedField: ident:Ident * ty:SynType * m:range -> SynField
+val mkSynNamedField: ident:Ident * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
 
 val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
@@ -240,7 +240,7 @@ val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list *
 val mkSynBinding:
     xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * mEquals: Range option * origRhsExpr:SynExpr * mRhs:range *
       staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option 
         -> SynBinding
 

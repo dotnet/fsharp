@@ -239,7 +239,10 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
     member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
     member internal _.SymbolEnv = cenv
+
     member internal _.Item = item()
+
+    member _.DisplayNameCore = item().DisplayNameCore
 
     member _.DisplayName = item().DisplayName
 
@@ -253,7 +256,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
 
     override x.GetHashCode() = hash x.ImplementationLocation  
 
-    override x.ToString() = "symbol " + (try item().DisplayName with _ -> "?")
+    override x.ToString() = "symbol " + (try item().DisplayNameCore with _ -> "?")
 
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
@@ -384,10 +387,13 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         checkIsResolved()
         entity.CompiledName 
 
+    member _.DisplayNameCore = 
+        checkIsResolved()
+        entity.DisplayNameCore
+
     member _.DisplayName = 
         checkIsResolved()
-        if entity.IsModuleOrNamespace then entity.DemangledModuleOrNamespaceName
-        else entity.DisplayName 
+        entity.DisplayName
 
     member _.AccessPath  = 
         checkIsResolved()
@@ -483,7 +489,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member _.ArrayRank  = 
         checkIsResolved()
-        rankOfArrayTyconRef cenv.g entity
+        if isArrayTyconRef cenv.g entity then
+            rankOfArrayTyconRef cenv.g entity
+        else
+            0
 
 #if !NO_EXTENSIONTYPING
     member _.IsProvided  = 
@@ -562,10 +571,9 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.TypeReprInfo with 
         | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
-            | TTyconDelegate ss -> FSharpDelegateSignature(cenv, ss)
+            | TFSharpDelegate ss -> FSharpDelegateSignature(cenv, ss)
             | _ -> invalidOp "not a delegate type"
         | _ -> invalidOp "not a delegate type"
-      
 
     override _.Accessibility = 
         if isUnresolved() then FSharpAccessibility taccessPublic else
@@ -673,7 +681,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
             let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
@@ -712,7 +720,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
         else
             entity.AllFieldsAsList
-            |> List.map (fun x -> FSharpField(cenv, mkRecdFieldRef entity x.Name))
+            |> List.map (fun x -> FSharpField(cenv, mkRecdFieldRef entity x.LogicalName))
             |> makeReadOnlyCollection
 
     member x.AbbreviatedType   = 
@@ -886,7 +894,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 [
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
-                    (NicePrint.layoutEntityRef denv infoReader AccessibleFromSomewhere range0 entity)
+                    (NicePrint.layoutEntityDefn denv infoReader AccessibleFromSomewhere range0 entity)
                 ]
             |> LayoutRender.showL
             |> SourceText.ofString
@@ -930,7 +938,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     member _.Name = 
         checkIsResolved()
-        v.UnionCase.DisplayName
+        v.UnionCase.LogicalName
 
     member _.DeclarationLocation = 
         checkIsResolved()
@@ -948,7 +956,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         FSharpType(cenv, v.ReturnType)
 
-    member _.CompiledName = 
+    member _.CompiledName =
         checkIsResolved()
         v.UnionCase.CompiledName
 
@@ -1176,7 +1184,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
     member _.Name = 
         checkIsResolved()
         match d.TryRecdField with 
-        | Choice1Of3 r -> r.Name
+        | Choice1Of3 r -> r.LogicalName
         | Choice2Of3 f -> f.FieldName
         | Choice3Of3 (anonInfo, _tinst, n, _) -> anonInfo.SortedNames.[n]
 
@@ -1324,12 +1332,12 @@ type FSharpGenericParameter(cenv, v:Typar) =
          v.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
     member _.Constraints = v.Constraints |> List.map (fun a -> FSharpGenericParameterConstraint(cenv, a)) |> makeReadOnlyCollection
     
-    member internal x.V = v
+    member internal x.TypeParameter = v
 
     override x.Equals(other: obj) =
         box x === other ||
         match other with
-        |   :? FSharpGenericParameter as p -> typarRefEq v p.V
+        |   :? FSharpGenericParameter as p -> typarRefEq v p.TypeParameter
         |   _ -> false
 
     override x.GetHashCode() = (hash v.Stamp)
@@ -1928,7 +1936,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsActivePattern =  
         if isUnresolved() then false else 
         match fsharpInfo() with 
-        | Some v -> ActivePatternInfoOfValName v.CoreDisplayName v.Range |> Option.isSome
+        | Some v -> ActivePatternInfoOfValName v.DisplayNameCoreMangled v.Range |> Option.isSome
         | None -> false
 
     member x.CompiledName = 
@@ -2103,21 +2111,21 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = BaseVal
+        | V v -> v.IsBaseVal
 
     /// Is this the "x" in "type C() as x = ..."
     member _.IsConstructorThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _| P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = CtorThisVal
+        | V v -> v.IsCtorThisVal
 
     /// Is this the "x" in "member x.M = ..."
     member _.IsMemberThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = MemberThisVal
+        | V v -> v.IsMemberThisVal
 
     /// Is this a [<Literal>] value, and if so what value? (may be null)
     member _.LiteralValue =
@@ -2275,7 +2283,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.TryGetFullCompiledOperatorNameIdents() : string[] option =
         // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
-        if IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
+        if IsOperatorDisplayName x.DisplayName && x.DisplayName <> x.CompiledName then
             x.DeclaringEntity
             |> Option.bind (fun e -> e.TryGetFullName())
             |> Option.map (fun enclosingEntityFullName -> 
@@ -2405,10 +2413,10 @@ type FSharpType(cenv, ty:TType) =
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
 
     member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
-        let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.V, ty.V)) ty
+        let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty
         FSharpType(cenv, typI)
 
-    member private x.V = ty
+    member x.Type = ty
     member private x.cenv = cenv
 
     member private ty.AdjustType t = 
@@ -2418,7 +2426,7 @@ type FSharpType(cenv, ty:TType) =
     override x.Equals(other: obj) =
         box x === other ||
         match other with
-        |   :? FSharpType as t -> typeEquiv cenv.g ty t.V
+        |   :? FSharpType as t -> typeEquiv cenv.g ty t.Type
         |   _ -> false
 
     // Note: This equivalence relation is modulo type abbreviations. The hash is less than perfect.
@@ -2459,7 +2467,7 @@ type FSharpType(cenv, ty:TType) =
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) ty 
 
     static member Prettify(ty: FSharpType) = 
-        let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.V  |> fst
+        let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.Type  |> fst
         ty.AdjustType prettyTy
 
     static member Prettify(types: IList<FSharpType>) = 
@@ -2468,7 +2476,7 @@ type FSharpType(cenv, ty:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTys = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> fst
+            let prettyTys = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.Type ] |> fst
             (xs, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType pty)
         |> makeReadOnlyCollection
 

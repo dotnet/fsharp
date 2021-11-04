@@ -36,9 +36,11 @@ type PrintfFormat<'Printer,'State,'Residue,'Result> =
     /// <summary>The raw text of the format string.</summary>
     member Value : string
 
+    /// <summary>The captures associated with an interpolated string.</summary>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member Captures: obj[]
     
+    /// <summary>The capture types associated with an interpolated string.</summary>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member CaptureTypes: System.Type[]
     
@@ -63,9 +65,11 @@ type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple> =
     new: value:string -> PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
 
     /// <summary>Construct a format string</summary>
+    /// 
     /// <param name="value">The input string.</param>
     /// <param name="captures">The captured expressions in an interpolated string.</param>
     /// <param name="captureTys">The types of expressions for %A holes in interpolated string.</param>
+    /// 
     /// <returns>The created format string.</returns>
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     new: value:string * captures: obj[] * captureTys: Type[] -> PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
@@ -125,9 +129,35 @@ module Printf =
     /// <summary>Print to a <see cref="T:System.Text.StringBuilder"/></summary>
     ///
     /// <param name="builder">The StringBuilder to print to.</param>
-    /// <param name="format">The input formatter.</param>
+    /// <param name="format">The input format or interpolated string.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="bprintf-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.Text
+    ///
+    /// let buffer = new StringBuilder()
+    ///
+    /// bprintf buffer $"Write three = {1+2}" 
+    /// buffer.ToString()
+    /// </code>
+    /// Evaluates to <c>"Write three = 3"</c>.
+    /// </example>
+    /// 
+    /// <example id="bprintf-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.Text
+    ///
+    /// let buffer = new StringBuilder()
+    ///
+    /// bprintf buffer "Write five = %d" (3+2)
+    /// buffer.ToString()
+    /// </code>
+    /// Evaluates to <c>"Write five = 5"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToStringBuilder")>]
     val bprintf: builder:StringBuilder -> format:BuilderFormat<'T> -> 'T
 
@@ -137,6 +167,32 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="fprintf-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.IO
+    ///
+    /// let file = File.CreateText("out.txt")
+    ///
+    /// fprintf file $"Write three = {1+2}" 
+    /// file.Close()
+    /// </code>
+    /// After evaluation the file contains the text <c>"Write three = 3"</c>.
+    /// </example>
+    /// 
+    /// <example id="fprintf-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.IO
+    ///
+    /// let file = File.CreateText("out.txt")
+    ///
+    /// fprintf file "Write five = %d" (3+2)
+    /// file.Close()
+    /// </code>
+    /// After evaluation the file contains the text <c>"Write five = 5"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToTextWriter")>]
     val fprintf: textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
 
@@ -146,6 +202,35 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// 
+    /// <example id="fprintfn-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.IO
+    ///
+    /// let file = File.CreateText("out.txt")
+    ///
+    /// fprintfn file $"Write three = {1+2}" 
+    /// fprintfn file $"Write four = {2+2}" 
+    /// file.Close()
+    /// </code>
+    /// After evaluation the file contains two lines.
+    /// </example>
+    /// 
+    /// <example id="fprintfn-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.IO
+    ///
+    /// let file = File.CreateText("out.txt")
+    ///
+    /// fprintfn file "Write five = %d" (3+2)
+    /// fprintfn file "Write six = %d" (3+3)
+    /// file.Close()
+    /// </code>
+    /// After evaluation the file contains two lines.
+    /// </example>
     [<CompiledName("PrintFormatLineToTextWriter")>]
     val fprintfn: textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
 
@@ -154,6 +239,20 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="eprintf-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// eprintf $"Write three = {1+2}" 
+    /// </code>
+    /// After evaluation the text <c>"Write three = 3"</c> is written to <c>stderr</c>.
+    /// </example>
+    /// 
+    /// <example id="eprintf-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// eprintf "Write five = %d" (3+2)
+    /// </code>
+    /// After evaluation the text <c>"Write five = 5"</c> is written to <c>stderr</c>.
+    /// </example>
     [<CompiledName("PrintFormatToError")>]
     val eprintf: format:TextWriterFormat<'T> -> 'T
 
@@ -162,6 +261,22 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="eprintfn-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// eprintfn $"Write three = {1+2}" 
+    /// eprintfn $"Write four = {2+2}" 
+    /// </code>
+    /// After evaluation two lines are written to <c>stderr</c>.
+    /// </example>
+    /// 
+    /// <example id="eprintf-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// eprintfn "Write five = %d" (3+2)
+    /// eprintfn "Write six = %d" (3+3)
+    /// </code>
+    /// After evaluation two lines are written to <c>stderr</c>.
+    /// </example>
     [<CompiledName("PrintFormatLineToError")>]
     val eprintfn: format:TextWriterFormat<'T> -> 'T
 
@@ -170,6 +285,20 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="printf-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// printf $"Write three = {1+2}" 
+    /// </code>
+    /// After evaluation the text <c>"Write three = 3"</c> is written to <c>stdout</c>.
+    /// </example>
+    /// 
+    /// <example id="printf-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// printf "Write five = %d" (3+2)
+    /// </code>
+    /// After evaluation the text <c>"Write five = 5"</c> is written to <c>stdout</c>.
+    /// </example>
     [<CompiledName("PrintFormat")>]
     val printf: format:TextWriterFormat<'T> -> 'T
 
@@ -178,6 +307,22 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The return type and arguments of the formatter.</returns>
+    /// 
+    /// <example id="printfn-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// printfn $"Write three = {1+2}" 
+    /// printfn $"Write four = {2+2}" 
+    /// </code>
+    /// After evaluation the two lines are written to <c>stdout</c>.
+    /// </example>
+    /// 
+    /// <example id="printfn-2">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// printfn "Write five = %d" (3+2)
+    /// printfn "Write six = %d" (3+3)
+    /// </code>
+    /// After evaluation the two lines are written to <c>stdout</c>.
+    /// </example>
     [<CompiledName("PrintFormatLine")>]
     val printfn: format:TextWriterFormat<'T> -> 'T
 
@@ -187,6 +332,13 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The formatted string.</returns>
+    /// 
+    /// <example id="sprintf-1">
+    /// <code lang="fsharp">
+    /// sprintf "Write five = %d and six = %d" (3+2) (3+3)
+    /// </code>
+    /// Evaluates to <c>"Write five = 5 and six = 6"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToStringThen")>]
     val sprintf: format:StringFormat<'T> -> 'T
 
@@ -198,6 +350,18 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The arguments of the formatter.</returns>
+    /// 
+    /// <example id="kbprintf-1">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.Text
+    ///
+    /// let buffer = new StringBuilder()
+    ///
+    /// kbprintf (fun () -> buffer.ToString()) buffer "Write five = %d" (3+2)
+    /// </code>
+    /// Evaluates to <c>"Write five = 5"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToStringBuilderThen")>]
     val kbprintf: continuation:(unit -> 'Result) -> builder:StringBuilder -> format:BuilderFormat<'T,'Result> -> 'T
 
@@ -209,6 +373,18 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The arguments of the formatter.</returns>
+    /// 
+    /// <example id="kfprintf-1">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    /// open System.IO
+    ///
+    /// let file = File.CreateText("out.txt")
+    ///
+    /// kfprintf (fun () -> file.Close()) $"Write three = {1+2}" 
+    /// </code>
+    /// Writes <c>"Write five = 5"</c> to <c>out.txt</c>.
+    /// </example>
     [<CompiledName("PrintFormatToTextWriterThen")>]
     val kfprintf: continuation:(unit -> 'Result) -> textWriter:TextWriter -> format:TextWriterFormat<'T,'Result> -> 'T
 
@@ -220,6 +396,15 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The arguments of the formatter.</returns>
+    /// 
+    /// <example id="kprintf-1">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    ///
+    /// kprintf (fun s -> s + ", done!") $"Write three = {1+2}" 
+    /// </code>
+    /// Evaluates to <c>"Write five = 5, done!"</c>.
+    /// </example>
     [<CompiledName("PrintFormatThen")>]
     val kprintf: continuation:(string -> 'Result) -> format:StringFormat<'T,'Result> -> 'T
 
@@ -230,6 +415,15 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The arguments of the formatter.</returns>
+    /// 
+    /// <example id="ksprintf-1">Using <c>%</c> format patterns:
+    /// <code lang="fsharp">
+    /// open Printf
+    ///
+    /// ksprintf (fun s -> s + ", done!") $"Write three = {1+2}" 
+    /// </code>
+    /// Evaluates to <c>"Write five = 5, done!"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToStringThen")>]
     val ksprintf: continuation:(string -> 'Result) -> format:StringFormat<'T,'Result>  -> 'T
 
@@ -239,5 +433,12 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     ///
     /// <returns>The arguments of the formatter.</returns>
+    /// 
+    /// <example id="failwithff-1">
+    /// <code lang="fsharp">
+    /// failwithf "That's wrong. Five = %d and six = %d" (3+2) (3+3)
+    /// </code>
+    /// Throws <c>Exception</c> with message <c>"That's wrong. Five = 5 and six = 6"</c>.
+    /// </example>
     [<CompiledName("PrintFormatToStringThenFail")>]
     val failwithf: format:StringFormat<'T,'Result> -> 'T

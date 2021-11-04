@@ -232,6 +232,9 @@ module rec Compiler =
     let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:5.0" ] "withLangVersion50 is only supported on F#" cUnit
 
+    let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -412,7 +415,8 @@ module rec Compiler =
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
-        let parseResults = CompilerAssert.Parse source
+        let fileName = if fsSource.SourceKind = SourceKind.Fsx then "test.fsx" else "test.fs"
+        let parseResults = CompilerAssert.Parse(source, fileName = fileName)
         let failed = parseResults.ParseHadErrors
 
         let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic

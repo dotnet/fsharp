@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
-        <target state="new">One or more informational messages in loaded file.\n</target>
+        <target state="translated">로드된 파일에 하나 이상의 정보 메시지가 있습니다.\n</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">

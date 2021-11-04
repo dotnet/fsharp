@@ -43,13 +43,13 @@
   // Offset: 0x00000620 Length: 0x000000F3
 }
 .module cas.exe
-// MVID: {60B68B7F-35EA-18E3-A745-03837F8BB660}
+// MVID: {6124062D-35EA-18E3-A745-03832D062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05250000
+// Image base: 0x05010000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -92,11 +92,15 @@
                    = {class 'System.Security.Permissions.PrincipalPermissionAttribute, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' = {property string 'Role' = string('test')}}
         .permissionset assert
                    = {[cas]CustomSecAttr.CustomPermission2Attribute = {property enum class 'CustomSecAttr.SecurityArgType, cas, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' 'SecurityArg' = int32(2)}}
-        // Code size       6 (0x6)
-        .maxstack  8
+        // Code size       8 (0x8)
+        .maxstack  3
+        .locals init ([0] class Cas/AttrTest/Foo x)
+        .line 100001,100001 : 0,0 ''
+        IL_0000:  ldarg.0
+        IL_0001:  stloc.0
         .line 14,14 : 33,37 ''
-        IL_0000:  ldc.i4     0x18c0
-        IL_0005:  ret
+        IL_0002:  ldc.i4     0x18c0
+        IL_0007:  ret
       } // end of method Foo::someMethod
 
     } // end of class Foo

@@ -720,7 +720,7 @@ let reduceTyconMeasureableOrProvided (g: TcGlobals) (tycon: Tycon) tyargs =
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
 #if !NO_EXTENSIONTYPING
-    | TProvidedTypeExtensionPoint info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
+    | TProvidedTypeRepr info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
 
@@ -1720,7 +1720,7 @@ type TypeDefMetadata =
 let metadataOfTycon (tycon: Tycon) = 
 #if !NO_EXTENSIONTYPING
     match tycon.TypeReprInfo with 
-    | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
+    | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
 #endif
     if tycon.IsILTycon then 
@@ -1732,7 +1732,7 @@ let metadataOfTycon (tycon: Tycon) =
 let metadataOfTy g ty = 
 #if !NO_EXTENSIONTYPING
     match extensionInfoOfTy g ty with 
-    | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
+    | TProvidedTypeRepr info -> ProvidedTypeMetadata info
     | _ -> 
 #endif
     if isILAppTy g ty then 
@@ -1764,8 +1764,8 @@ let isFSharpObjModelRefTy g ty =
     isFSharpObjModelTy g ty && 
     let tcref = tcrefOfAppTy g ty
     match tcref.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-    | TTyconClass | TTyconInterface | TTyconDelegate _ -> true
-    | TTyconStruct | TTyconEnum -> false
+    | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> true
+    | TFSharpStruct | TFSharpEnum -> false
 
 let isFSharpClassTy g ty =
     match tryTcrefOfAppTy g ty with
@@ -1986,7 +1986,7 @@ let unionFreeAnonRecdTypeInfos s1 s2 =
 
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
-      /// The summary of values used as trait solutions
+      // The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars
       FreeAnonRecdTypeInfos = emptyFreeAnonRecdTypeInfos }
@@ -3357,10 +3357,20 @@ let tryDestOptionTy g ty =
     | [ty1] when isOptionTy g ty -> ValueSome ty1
     | _ -> ValueNone
 
+let tryDestValueOptionTy g ty = 
+    match argsOfAppTy g ty with 
+    | [ty1] when isValueOptionTy g ty -> ValueSome ty1
+    | _ -> ValueNone
+
 let destOptionTy g ty = 
     match tryDestOptionTy g ty with 
     | ValueSome ty -> ty
     | ValueNone -> failwith "destOptionTy: not an option type"
+
+let destValueOptionTy g ty = 
+    match tryDestValueOptionTy g ty with 
+    | ValueSome ty -> ty
+    | ValueNone -> failwith "destValueOptionTy: not a value option type"
 
 let isNullableTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
@@ -3857,10 +3867,10 @@ module DebugPrint =
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TFSharpInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
-            // if TTyconInterface, the iimpls should be printed as inherited interfaces 
+            // if TFSharpInterface, the iimpls should be printed as inherited interfaces 
             if isNil adhoc && isNil iimpls then 
                 emptyL 
             else 
@@ -3871,7 +3881,7 @@ module DebugPrint =
         let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
 
         let ucaseL prefixL (ucase: UnionCase) =
-            let nmL = wordL (tagText (DemangleOperatorName ucase.Id.idText))
+            let nmL = wordL (tagText ucase.DisplayName)
             match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
             | [] -> (prefixL ^^ nmL)
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
@@ -3881,30 +3891,30 @@ module DebugPrint =
             List.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld: RecdField) =
-            let lhs = wordL (tagText fld.Name)
+            let lhs = wordL (tagText fld.LogicalName)
             let lhs = if fld.IsMutable then wordL(tagText "mutable") --- lhs else lhs
             (lhs ^^ rightL(tagText ":")) --- typeL fld.FormalType
 
         let tyconReprL (repr, tycon: Tycon) = 
             match repr with 
-            | TRecdRepr _ ->
+            | TFSharpRecdRepr _ ->
                 tycon.TrueFieldsAsList |> List.map (fun fld -> layoutRecdField fld ^^ rightL(tagText ";")) |> aboveListL
             | TFSharpObjectRepr r -> 
                 match r.fsobjmodel_kind with 
-                | TTyconDelegate _ ->
+                | TFSharpDelegate _ ->
                     wordL(tagText "delegate ...")
                 | _ ->
                     let start = 
                         match r.fsobjmodel_kind with
-                        | TTyconClass -> "class" 
-                        | TTyconInterface -> "interface" 
-                        | TTyconStruct -> "struct" 
-                        | TTyconEnum -> "enum" 
+                        | TFSharpClass -> "class" 
+                        | TFSharpInterface -> "interface" 
+                        | TFSharpStruct -> "struct" 
+                        | TFSharpEnum -> "enum" 
                         | _ -> failwith "???"
                     let inherits = 
                        match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                       | TTyconClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
-                       | TTyconInterface, _ -> 
+                       | TFSharpClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
+                       | TFSharpInterface, _ -> 
                          tycon.ImmediateInterfacesOfFSharpTycon
                            |> List.filter (fun (_, compgen, _) -> not compgen)
                            |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
@@ -3917,7 +3927,7 @@ module DebugPrint =
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-            | TUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TFSharpUnionRepr _ -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
             | TAsmRepr _ -> wordL(tagText "(# ... #)")
             | TMeasureableRepr ty -> typeL ty
             | TILObjectRepr (TILObjectReprData(_, _, td)) -> wordL (tagText td.Name)
@@ -3926,8 +3936,8 @@ module DebugPrint =
         let reprL = 
             match tycon.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
-            | TProvidedTypeExtensionPoint _
-            | TProvidedNamespaceExtensionPoint _
+            | TProvidedTypeRepr _
+            | TProvidedNamespaceRepr _
 #endif
             | TNoRepr -> 
                 match tycon.TypeAbbrev with
@@ -4278,7 +4288,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                 // Find the fields that have been hidden or which were non-public anyway. 
                 let mhi = 
                     (entity.AllFieldsArray, mhi) ||> Array.foldBack (fun rfield mhi ->
-                        match sigtycon.GetFieldByName(rfield.Name) with 
+                        match sigtycon.GetFieldByName(rfield.LogicalName) with 
                         | Some _ -> 
                             // The field is in the signature. Hence it is not hidden. 
                             mhi
@@ -4289,7 +4299,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                         
                 let mhi = 
                     (entity.UnionCasesAsList, mhi) ||> List.foldBack (fun ucase mhi ->
-                        match sigtycon.GetUnionCaseByName ucase.DisplayName with 
+                        match sigtycon.GetUnionCaseByName ucase.LogicalName with 
                         | Some _ -> 
                             // The constructor is in the signature. Hence it is not hidden. 
                             mhi
@@ -4691,7 +4701,7 @@ and accLocalTyconRepr opts b fvs =
     else { fvs with FreeLocalTyconReprs = Zset.add b fvs.FreeLocalTyconReprs } 
 
 and accUsedRecdOrUnionTyconRepr opts (tc: Tycon) fvs = 
-    if match tc.TypeReprInfo with TFSharpObjectRepr _ | TRecdRepr _ | TUnionRepr _ -> true | _ -> false
+    if match tc.TypeReprInfo with TFSharpObjectRepr _ | TFSharpRecdRepr _ | TFSharpUnionRepr _ -> true | _ -> false
     then accLocalTyconRepr opts tc fvs
     else fvs
 
@@ -5553,8 +5563,8 @@ and remapFsObjData g tmenv x =
     { x with 
           fsobjmodel_kind = 
              (match x.fsobjmodel_kind with 
-              | TTyconDelegate slotsig -> TTyconDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
-              | TTyconClass | TTyconInterface | TTyconStruct | TTyconEnum -> x.fsobjmodel_kind)
+              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
+              | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind)
           fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
           fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields g tmenv } 
 
@@ -5562,13 +5572,13 @@ and remapFsObjData g tmenv x =
 and remapTyconRepr g tmenv repr = 
     match repr with 
     | TFSharpObjectRepr x -> TFSharpObjectRepr (remapFsObjData g tmenv x)
-    | TRecdRepr x -> TRecdRepr (remapRecdFields g tmenv x)
-    | TUnionRepr x -> TUnionRepr (remapUnionCases g tmenv x)
+    | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields g tmenv x)
+    | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases g tmenv x)
     | TILObjectRepr _ -> failwith "cannot remap IL type definitions"
 #if !NO_EXTENSIONTYPING
-    | TProvidedNamespaceExtensionPoint _ -> repr
-    | TProvidedTypeExtensionPoint info -> 
-       TProvidedTypeExtensionPoint 
+    | TProvidedNamespaceRepr _ -> repr
+    | TProvidedTypeRepr info -> 
+       TProvidedTypeRepr 
             { info with 
                  LazyBaseType = info.LazyBaseType.Force (range0, g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
                  // The load context for the provided type contains TyconRef objects. We must remap these.
@@ -8250,36 +8260,34 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_forall _ -> 
         "Microsoft.FSharp.Core.FSharpTypeFunc"
 
+    | _ when isByrefTy g ty -> 
+        let ety = destByrefTy g ty
+        typeEnc g (gtpsType, gtpsMethod) ety + "@"
+
+    | _ when isNativePtrTy g ty -> 
+        let ety = destNativePtrTy g ty
+        typeEnc g (gtpsType, gtpsMethod) ety + "*"
+
     | _ when isArrayTy g ty -> 
         let tcref, tinst = destAppTy g ty
-        let arraySuffix = 
-            match rankOfArrayTyconRef g tcref with
-            | 1 -> "[]"
-            | 2 -> "[0:, 0:]"
-            | 3 -> "[0:, 0:, 0:]"
-            | 4 -> "[0:, 0:, 0:, 0:]"
-            | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
+        let rank = rankOfArrayTyconRef g tcref
+        let arraySuffix = "[" + String.concat ", " (List.replicate (rank-1) "0:") + "]"
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
-    | TType_ucase (UnionCaseRef(tcref, _), tinst)   
-    | TType_app (tcref, tinst) -> 
-        if tyconRefEq g g.byref_tcr tcref then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "@"
-        elif tyconRefEq g tcref g.nativeptr_tcr then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "*"
-        else
-            let tyName = 
-                let ty = stripTyEqnsAndMeasureEqns g ty
-                match ty with
-                | TType_app (tcref, _tinst) -> 
-                    // Generic type names are (name + "`" + digits) where name does not contain "`".
-                    // In XML doc, when used in type instances, these do not use the ticks.
-                    let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
-                    textOfPath (List.map DemangleGenericTypeName path)
-                | _ ->
-                    assert false
-                    failwith "impossible"
-            tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
+    | TType_ucase (_, tinst)   
+    | TType_app (_, tinst) -> 
+        let tyName = 
+            let ty = stripTyEqnsAndMeasureEqns g ty
+            match ty with
+            | TType_app (tcref, _tinst) -> 
+                // Generic type names are (name + "`" + digits) where name does not contain "`".
+                // In XML doc, when used in type instances, these do not use the ticks.
+                let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
+                textOfPath (List.map DemangleGenericTypeName path)
+            | _ ->
+                assert false
+                failwith "impossible"
+        tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
 
     | TType_anon (anonInfo, tinst) -> 
         sprintf "%s%s" anonInfo.ILTypeRef.FullName (tyargsEnc g (gtpsType, gtpsMethod) tinst)
@@ -8691,14 +8699,13 @@ let GetMemberCallInfo g (vref: ValRef, vFlags) =
 // Active pattern name helpers
 //---------------------------------------------------------------------------
 
-
 let TryGetActivePatternInfo (vref: ValRef) =  
-    // First is an optimization to prevent calls to CoreDisplayName, which calls DemangleOperatorName
+    // First is an optimization to prevent calls to string routines
     let logicalName = vref.LogicalName
     if logicalName.Length = 0 || logicalName.[0] <> '|' then 
        None 
     else 
-       ActivePatternInfoOfValName vref.CoreDisplayName vref.Range
+       ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
 
 type ActivePatternElemRef with 
     member x.Name = 

@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr05.exe
-// MVID: {611C4D7F-3687-E566-A745-03837F4D1C61}
+// MVID: {6124062C-3687-E566-A745-03832C062461}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05380000
+// Image base: 0x07110000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -76,11 +76,15 @@
             instance void  System.IDisposable.Dispose() cil managed
     {
       .override [mscorlib]System.IDisposable::Dispose
-      // Code size       1 (0x1)
-      .maxstack  8
+      // Code size       3 (0x3)
+      .maxstack  4
+      .locals init ([0] class [mscorlib]System.IDisposable x)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 9,9 : 68,70 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
-      IL_0000:  ret
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
+      IL_0000:  ldarg.0
+      IL_0001:  stloc.0
+      .line 9,9 : 68,70 ''
+      IL_0002:  ret
     } // end of method 'res5@9-1'::System.IDisposable.Dispose
 
   } // end of class 'res5@9-1'
@@ -112,8 +116,8 @@
     {
       // Code size       45 (0x2d)
       .maxstack  6
-      .locals init ([0] class [mscorlib]System.IDisposable x,
-               [1] int32 V_1)
+      .locals init ([0] class [mscorlib]System.IDisposable 'x (shadowed)',
+               [1] int32 x)
       .line 10,10 : 9,50 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0

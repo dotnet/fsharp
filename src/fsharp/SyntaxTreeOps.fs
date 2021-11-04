@@ -89,9 +89,9 @@ let rec IsControlFlowExpression e =
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
 
-let mkSynAnonField (ty: SynType) = SynField([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
+let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, xmlDoc, None, ty.Range)
 
-let mkSynNamedField (ident, ty: SynType, m) = SynField([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
+let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
 let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
@@ -566,10 +566,10 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
-let mkSynBinding (xmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
+let mkSynBinding (xmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, mEquals, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
     let info = SynInfo.InferSynValData (memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
-    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind)
+    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, mEquals, rhsExpr, mBind, spBind)
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     { MemberKind=k
@@ -618,7 +618,7 @@ let inferredTyparDecls = SynValTyparDecls(None, true)
 let noInferredTypars = SynValTyparDecls(None, false)
 
 let rec synExprContainsError inpExpr =
-    let rec walkBind (SynBinding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr
+    let rec walkBind (SynBinding(expr=synExpr)) = walkExpr synExpr
 
     and walkExprs es = es |> List.exists walkExpr
 
@@ -684,11 +684,11 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.AnonRecd (_, origExpr, flds, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              walkExprs (List.map snd flds)
+              walkExprs (List.map (fun (_, _, e) -> e) flds)
 
           | SynExpr.Record (_, origExpr, fs, _) ->
               (match origExpr with Some (e, _) -> walkExpr e | None -> false) ||
-              let flds = fs |> List.choose (fun (_, v, _) -> v)
+              let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
               walkExprs flds
 
           | SynExpr.ObjExpr (_, _, bs, is, _, _) ->
@@ -698,7 +698,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.While (_, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.For (_, _, e1, _, e2, e3, _) ->
+          | SynExpr.For (identBody=e1; toBody=e2; doBody=e3) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
           | SynExpr.MatchLambda (_, _, cl, _, _) ->
@@ -748,7 +748,7 @@ let rec synExprContainsError inpExpr =
               walkExpr e || walkMatchClauses cl
 
           | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
-              walkExpr e1 || walkExprs [ for _,_,_,_,e,_ in es do yield e ] || walkExpr e2
+              walkExpr e1 || walkExprs [ for SynExprAndBang(body=e) in es do yield e ] || walkExpr e2
 
           | SynExpr.InterpolatedString (parts, _, _m) ->
               walkExprs 

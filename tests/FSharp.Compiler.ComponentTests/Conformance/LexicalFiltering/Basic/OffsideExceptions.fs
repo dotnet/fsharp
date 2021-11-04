@@ -25,6 +25,7 @@ module OffsideExceptions =
     let RelaxWhitespace2 compilation =
         compilation
         |> asFsx
+        |> withLangVersionPreview
         |> withOptions ["--nowarn:25"] // Incomplete pattern matches on this expression.
         |> typecheck
         |> shouldSucceed
@@ -34,9 +35,10 @@ module OffsideExceptions =
     let RelaxWhitespace2_Warning25 compilation =
         compilation
         |> asFsx
+        |> withLangVersionPreview
         |> verifyBaseline
         |> ignore
-        
+
     [<Fact>]
     let RelaxWhitespace2_Indentation() =
         Fsx """
@@ -56,6 +58,7 @@ while (
 true
 ) do ()
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResults [
@@ -225,6 +228,7 @@ module [<
                    Experimental "c"
                    >] c = 1
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -272,6 +276,7 @@ module A
     y = 1
 |}
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -323,6 +328,7 @@ module A
     1
 |}
         """
+        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withResult {
@@ -412,7 +418,7 @@ function
                         EndLine = 3
                         EndColumn = 9 }
               Message =
-               "Incomplete pattern matches on this expression. For example, the value '{x=0}' may indicate a case not covered by the pattern(s)." };
+               "Incomplete pattern matches on this expression. For example, the value '{ x=0 }' may indicate a case not covered by the pattern(s)." };
             { Error = Warning 193
               Range = { StartLine = 3
                         StartColumn = 1
@@ -5161,3 +5167,36 @@ exit 1
           Message =
            "Possible incorrect indentation: this token is offside of context started at position (3901:16). Try indenting this token further or using standard formatting conventions." }
         |]
+
+    [<Fact>]
+    let ``RelaxedWhitespaces2 - match expression regression (https://github.com/dotnet/fsharp/issues/12011)`` () =
+        Fsx """
+match
+    match "" with
+    | null -> ""
+    | s -> s
+    with
+| "" -> ""
+| _ -> failwith ""
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:20"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``RelaxedWhitespaces2 - try expression regression (https://github.com/dotnet/fsharp/issues/12011)`` () =
+        Fsx """
+try
+    match true with
+    | true -> "true"
+    | false -> "false"
+    with
+    | ex -> ex.Message
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:20"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

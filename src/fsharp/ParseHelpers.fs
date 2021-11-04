@@ -5,6 +5,7 @@ module FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Text
@@ -91,20 +92,43 @@ module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
 
+    let private getCollector (lexbuf: Lexbuf) =
+        match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
+        | true, collector -> collector
+        | _ ->
+            let collector = box (XmlDocCollector())
+            lexbuf.BufferLocalStore.[xmlDocKey] <- collector
+            collector
+
+        |> unbox<XmlDocCollector>
+
     let ClearXmlDoc (lexbuf: Lexbuf) =
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
     let SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
-        let collector =
-            match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
-            | true, collector -> collector
-            | _ ->
-                let collector = box (XmlDocCollector())
-                lexbuf.BufferLocalStore.[xmlDocKey] <- collector
-                collector
-        let collector = unbox<XmlDocCollector>(collector)
+        let collector = getCollector lexbuf
         collector.AddXmlDocLine(lineText, range)
+
+    let AddGrabPoint (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        let startPos = lexbuf.StartPos
+        collector.AddGrabPoint(mkPos startPos.Line startPos.Column)
+
+    /// Allowed cases when there are comments after XmlDoc
+    ///
+    ///    /// X xmlDoc
+    ///    // comment
+    ///    //// comment
+    ///    (* multiline comment *)
+    ///    let x = ...        // X xmlDoc
+    ///
+    /// Remember the first position when a comment (//, (* *), ////) is encountered after the XmlDoc block
+    /// then add a grab point if a new XmlDoc block follows the comments
+    let AddGrabPointDelayed (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        let startPos = lexbuf.StartPos
+        collector.AddGrabPointDelayed(mkPos startPos.Line startPos.Column)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
@@ -112,10 +136,13 @@ module LexbufLocalXmlDocStore =
         match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
         | true, collector ->
             let collector = unbox<XmlDocCollector>(collector)
-            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.End)
+            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.Start)
         | _ ->
             PreXmlDoc.Empty
 
+    let ReportInvalidXmlDocPositions (lexbuf: Lexbuf) =
+        let collector = getCollector lexbuf
+        collector.CheckInvalidXmlDocPositions()
 
 //------------------------------------------------------------------------
 // Parsing/lexing: status of #if/#endif processing in lexing, used for continutations
@@ -220,7 +247,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) checkLanguageFeatureErrorRecover m : IL.ILInstr[] = 
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures langVersion m : IL.ILInstr[] = 
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -231,28 +258,33 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupporte
     try
         AsciiParser.ilInstrs
            AsciiLexer.token
-           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) (checkLanguageFeatureErrorRecover: LanguageFeature -> range -> unit) m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures langVersion m =
     ignore s
-    ignore isFeatureSupported
-    ignore checkLanguageFeatureErrorRecover
 
 #if NO_INLINE_IL_PARSER
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
-    let isFeatureSupported (_featureId:LanguageFeature) = true
-    let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     try
         AsciiParser.ilType
            AsciiLexer.token
-           (StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
+           (StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.PrimaryAssemblyILGlobals.typ_Object
 #endif
 
+let grabXmlDocAtRangeStart(parseState: IParseState, optAttributes: SynAttributeList list, range: range) =
+    let grabPoint =
+        match optAttributes with
+        | [] -> range
+        | h :: _ -> h.Range
+    LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer, grabPoint)
+
+let grabXmlDoc(parseState: IParseState, optAttributes: SynAttributeList list, elemIdx) =
+    grabXmlDocAtRangeStart(parseState, optAttributes, rhs parseState elemIdx)

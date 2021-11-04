@@ -483,7 +483,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * SynExpr) list *
+        recordFields:(Ident * Range option * SynExpr) list *
         range: range
 
     | ArrayOrList of
@@ -494,7 +494,7 @@ type SynExpr =
     | Record of
         baseInfo:(SynType * SynExpr * range * BlockSeparator option * range) option *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(RecordFieldName * SynExpr option * BlockSeparator option) list *
+        recordFields: SynExprRecordField list *
         range: range
 
     | New of
@@ -520,6 +520,7 @@ type SynExpr =
     | For of
         forDebugPoint: DebugPointAtFor *
         ident: Ident *
+        equalsRange: Range option *
         identBody: SynExpr *
         direction: bool *
         toBody: SynExpr *
@@ -777,8 +778,9 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
+        equalsRange: Range option *
         rhs: SynExpr *
-        andBangs:(DebugPointAtBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs: SynExprAndBang list *
         body:SynExpr *
         range: range 
 
@@ -940,6 +942,25 @@ type SynExpr =
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
 
+[<NoEquality; NoComparison>]
+type SynExprAndBang =
+    | SynExprAndBang of
+        debugPoint: DebugPointAtBinding *
+        isUse: bool *
+        isFromSource: bool *
+        pat: SynPat *
+        equalsRange: Range *
+        body: SynExpr *
+        range: Range
+
+[<NoEquality; NoComparison>]
+type SynExprRecordField =
+    | SynExprRecordField of
+        fieldName: RecordFieldName *
+        equalsRange: Range option *
+        expr: SynExpr option *
+        blockSeparator: BlockSeparator option
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
     | String of value: string * range: range
@@ -1012,8 +1033,13 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * SynPat) list *
+        pats: (Ident * Range * SynPat) list *
         range: range
+
+    member x.Patterns =
+        match x with
+        | Pats pats -> pats
+        | NamePatPairs (pats, _) -> pats |> List.map (fun (_,_, pat) -> pat)
 
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynPat =
@@ -1078,7 +1104,7 @@ type SynPat =
         range: range
 
     | Record of
-        fieldPats: ((LongIdent * Ident) * SynPat) list *
+        fieldPats: ((LongIdent * Ident) * Range * SynPat) list *
         range: range
 
     | Null of
@@ -1207,6 +1233,7 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
+        equalsRange: Range option *
         expr: SynExpr  *
         range: range *
         debugPoint: DebugPointAtBinding
@@ -1361,7 +1388,8 @@ type SynEnumCase =
 
     | SynEnumCase of
         attributes: SynAttributes *
-        ident: Ident * 
+        ident: Ident *
+        equalsRange: Range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1422,6 +1450,7 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
+        equalsRange: Range option *
         typeRepr: SynTypeDefnSigRepr *
         members: SynMemberSig list *
         range: range
@@ -1565,6 +1594,7 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
+        equalsRange: Range option *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
@@ -1638,6 +1668,7 @@ type SynMemberDefn =
         memberFlags:(SynMemberKind -> SynMemberFlags) *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
+        equalsRange: Range *
         synExpr: SynExpr *
         getSetRange: range option *
         range: range
@@ -1669,6 +1700,7 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
+        equalsRange: Range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
         range: range
@@ -1749,6 +1781,7 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
+        equalsRange: Range option *
         moduleDecls: SynModuleSigDecl list *
         range: range
 

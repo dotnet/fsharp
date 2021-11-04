@@ -171,6 +171,13 @@ let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
 //---------------------------------------------------------------------
 // Portable PDB Writer
 //---------------------------------------------------------------------
+
+let b0 n = (n &&& 0xFF)
+let b1 n = ((n >>> 8) &&& 0xFF)
+let b2 n = ((n >>> 16) &&& 0xFF)
+let b3 n = ((n >>> 24) &&& 0xFF)
+let i32AsBytes i = [| byte (b0 i); byte (b1 i); byte (b2 i); byte (b3 i) |]
+
 let cvMagicNumber = 0x53445352L
 let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) =
     let iddCvBuffer =
@@ -178,11 +185,11 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
         let path = (Encoding.UTF8.GetBytes filepath)
         let buffer = Array.zeroCreate (sizeof<int32> + mvid.Length + sizeof<int32> + path.Length + 1)
         let offset, size = (0, sizeof<int32>)                    // Magic Number RSDS dword: 0x53445352L
-        Buffer.BlockCopy(BitConverter.GetBytes cvMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int cvMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, mvid.Length)         // mvid Guid
         Buffer.BlockCopy(mvid, 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)       // # of pdb files generated (1)
-        Buffer.BlockCopy(BitConverter.GetBytes 1, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes 1, 0, buffer, offset, size)
         let offset, size = (offset + size, path.Length)         // Path to pdb string
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
@@ -200,9 +207,9 @@ let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLeng
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let offset, size = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
-        Buffer.BlockCopy(BitConverter.GetBytes pdbMagicNumber, 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)        // Uncompressed size
-        Buffer.BlockCopy(BitConverter.GetBytes (int uncompressedLength), 0, buffer, offset, size)
+        Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
         let offset, size = (offset + size, int(stream.Length))   // Uncompressed size
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
@@ -292,20 +299,6 @@ let scopeSorter (scope1: PdbMethodScope) (scope2: PdbMethodScope) =
     elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
     elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
     else 0
-
-let collectScopes scope =
-    let list = List<PdbMethodScope>()
-    let rec toList scope parent =
-        let nested =
-            match parent with
-            | Some p -> scope.StartOffset <> p.StartOffset || scope.EndOffset <> p.EndOffset
-            | None -> true
-
-        if nested then list.Add scope
-        scope.Children |> Seq.iter(fun s -> toList s (if nested then Some scope else parent))
-
-    toList scope None
-    list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
 type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, sourceLink: string, checksumAlgorithm, showTimes, info: PdbData, pathMap: PathMap) =
 
@@ -527,20 +520,40 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         importScopesTable.Add(imports, result)
         result
 
-    let writeMethodScopes methToken scope =
-        for s in collectScopes scope do
+    let flattenScopes rootScope = 
+        let list = List<PdbMethodScope>()
+        let rec flattenScopes scope parent =
+
+            list.Add scope
+            for nestedScope in scope.Children do
+                let isNested =
+                    match parent with
+                    | Some p -> nestedScope.StartOffset >= p.StartOffset && nestedScope.EndOffset <= p.EndOffset
+                    | None -> true
+
+                flattenScopes nestedScope (if isNested then Some scope else parent)
+
+        flattenScopes rootScope None
+
+        list.ToArray() 
+        |> Array.sortWith<PdbMethodScope> scopeSorter
+
+    let writeMethodScopes methToken rootScope =
+
+        let flattenedScopes = flattenScopes rootScope
             
-            // Get or create the import scope for this method
-            let importScopeHandle =
+        // Get or create the import scope for this method
+        let importScopeHandle =
 #if EMIT_IMPORT_SCOPES
-                match s.Imports with 
-                | None -> Unchecked.defaultof<_>
-                | Some imports -> getImportScopeIndex imports
+            match s.Imports with 
+            | None -> Unchecked.defaultof<_>
+            | Some imports -> getImportScopeIndex imports
 #else
-                getImportScopeIndex |> ignore // make sure this code counts as used
-                Unchecked.defaultof<_>
+            getImportScopeIndex |> ignore // make sure this code counts as used
+            Unchecked.defaultof<_>
 #endif
 
+        for scope in flattenedScopes do
             let lastRowNumber = MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit lastLocalVariableHandle)
             let nextHandle = MetadataTokens.LocalVariableHandle(lastRowNumber + 1)
 
@@ -548,9 +561,9 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                 importScopeHandle,
                 nextHandle,
                 Unchecked.defaultof<LocalConstantHandle>,
-                s.StartOffset, s.EndOffset - s.StartOffset ) |>ignore
+                scope.StartOffset, scope.EndOffset - scope.StartOffset ) |>ignore
 
-            for localVariable in s.Locals do
+            for localVariable in scope.Locals do
                 lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
 
     let emitMethod minfo =
@@ -745,17 +758,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     try FileSystem.FileDeleteShim fpdb with _ -> ()
 
-    let pdbw = ref Unchecked.defaultof<PdbWriter>
-
-    try
-        pdbw := pdbInitialize f fpdb
-    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
+    let pdbw =
+        try
+            pdbInitialize f fpdb
+        with _ -> 
+            error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
 
     match info.EntryPoint with
     | None -> ()
-    | Some x -> pdbSetUserEntryPoint !pdbw x
+    | Some x -> pdbSetUserEntryPoint pdbw x
 
-    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument !pdbw doc.File)
+    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument pdbw doc.File)
     let getDocument i =
       if i < 0 || i > docs.Length then failwith "getDocument: bad doc number"
       docs.[i]
@@ -766,17 +779,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
     let spCounts = info.Methods |> Array.map (fun x -> x.DebugPoints.Length)
     let allSps = Array.collect (fun x -> x.DebugPoints) info.Methods |> Array.indexed
 
-    let spOffset = ref 0
+    let mutable spOffset = 0
     info.Methods |> Array.iteri (fun i minfo ->
 
-          let sps = Array.sub allSps !spOffset spCounts.[i]
-          spOffset := !spOffset + spCounts.[i]
+          let sps = Array.sub allSps spOffset spCounts.[i]
+          spOffset <- spOffset + spCounts.[i]
           begin match minfo.Range with
           | None -> ()
           | Some (a,b) ->
-              pdbOpenMethod !pdbw minfo.MethToken
+              pdbOpenMethod pdbw minfo.MethToken
 
-              pdbSetMethodRange !pdbw
+              pdbSetMethodRange pdbw
                 (getDocument a.Document) a.Line a.Column
                 (getDocument b.Document) b.Line b.Column
 
@@ -785,17 +798,17 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                   let res = Dictionary<int,PdbDebugPoint list ref>()
                   for (_,sp) in sps do
                       let k = sp.Document
-                      let mutable xsR = Unchecked.defaultof<_>
-                      if res.TryGetValue(k,&xsR) then
-                          xsR := sp :: !xsR
-                      else
+                      match res.TryGetValue(k) with
+                      | true, xsR ->
+                          xsR.Value <- sp :: xsR.Value
+                      | _ ->
                           res.[k] <- ref [sp]
 
                   res
 
               spsets
-              |> Seq.iter (fun kv ->
-                  let spset = !kv.Value
+              |> Seq.iter (fun (KeyValue(_, vref)) ->
+                  let spset = vref.Value
                   if not spset.IsEmpty then
                     let spset = Array.ofList spset
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
@@ -805,7 +818,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                             (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn))
                     // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here
                     if sps.Length < 5000 then
-                        pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps)
+                        pdbDefineSequencePoints pdbw (getDocument spset.[0].Document) sps)
 
               // Write the scopes
               let rec writePdbScope parent sco =
@@ -815,21 +828,21 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                           match parent with
                           | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                           | None -> true
-                      if nested then pdbOpenScope !pdbw sco.StartOffset
-                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
+                      if nested then pdbOpenScope pdbw sco.StartOffset
+                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable pdbw v.Name v.Signature v.Index)
                       sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
-                      if nested then pdbCloseScope !pdbw sco.EndOffset
+                      if nested then pdbCloseScope pdbw sco.EndOffset
 
               match minfo.RootScope with
               | None -> ()
               | Some rootscope -> writePdbScope None rootscope
-              pdbCloseMethod !pdbw
+              pdbCloseMethod pdbw
           end)
     reportTime showTimes "PDB: Wrote methods"
 
-    let res = pdbWriteDebugInfo !pdbw
+    let res = pdbWriteDebugInfo pdbw
     for pdbDoc in docs do pdbCloseDocument pdbDoc
-    pdbClose !pdbw f fpdb
+    pdbClose pdbw f fpdb
 
     reportTime showTimes "PDB: Closed"
     [| { iddCharacteristics = res.iddCharacteristics
@@ -957,7 +970,8 @@ let logDebugInfo (outfile: string) (info: PdbData) =
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
     fprintfn sw "DOCUMENTS"
     for i, doc in Seq.zip [0 .. info.Documents.Length-1] info.Documents do
-      fprintfn sw " [%d] %s" i doc.File
+      // File names elided because they are ephemeral during testing
+      fprintfn sw " [%d] <elided-for-testing>"  i // doc.File
       fprintfn sw "     Type: %A" doc.DocumentType
       fprintfn sw "     Language: %A" doc.Language
       fprintfn sw "     Vendor: %A" doc.Vendor
@@ -987,3 +1001,62 @@ let logDebugInfo (outfile: string) (info: PdbData) =
       | None -> ()
       | Some rootscope -> writeScope "" rootscope
       fprintfn sw ""
+
+let rec allNamesOfScope acc (scope: PdbMethodScope) =
+    let acc = (acc, scope.Locals) ||> Array.fold (fun z l -> Set.add l.Name z)
+    let acc = (acc, scope.Children) ||> allNamesOfScopes
+    acc
+and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
+    (acc, scopes) ||> Array.fold allNamesOfScope
+
+let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
+    // Check if child scopes are properly nested
+    if scope.Children |> Array.forall (fun child ->
+            child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+
+        let children = scope.Children |> Array.sortWith scopeSorter
+
+        // Find all the names defined in this scope
+        let scopeNames = set [| for n in scope.Locals -> n.Name |]
+
+        // Rename if necessary as we push
+        let rename, unprocessed = localsToPush |> Array.partition (fun l -> scopeNames.Contains l.Name)
+        let renamed = [| for l in rename -> { l with Name = l.Name + " (shadowed)" } |]
+
+        let localsToPush2 = [| yield! renamed; yield! unprocessed; yield! scope.Locals |]
+        let newChildren, splits = children |> Array.map (pushShadowedLocals localsToPush2) |> Array.unzip
+        
+        // Check if a rename in any of the children forces a split
+        if splits |> Array.exists id then
+            let results =
+                [| 
+                    // First fill in the gaps between the children with an adjusted version of this scope.
+                    let gaps = 
+                        [| yield (scope.StartOffset, scope.StartOffset) 
+                           for newChild in children do   
+                                yield (newChild.StartOffset, newChild.EndOffset)
+                           yield (scope.EndOffset, scope.EndOffset)  |]
+
+                    for ((_,a),(b,_)) in Array.pairwise gaps do 
+                        if a < b then
+                            yield { scope with Locals=localsToPush2; Children = [| |]; StartOffset = a; EndOffset = b}
+                       
+                    yield! Array.concat newChildren
+                |]
+            let results2 = results |> Array.sortWith scopeSorter
+            results2, true
+        else 
+            let splitsParent = renamed.Length > 0
+            [| { scope with Locals=localsToPush2 } |], splitsParent
+    else
+        [| scope |], false
+
+// Check to see if a scope has a local with the same name as any of its children
+// 
+// If so, do not emit 'scope' itself. Instead, 
+//  1. Emit a copy of 'scope' in each true gap, with all locals
+//  2. Adjust each child scope to also contain the locals from 'scope', 
+//     adding the text " (shadowed)" to the names of those with name conflicts.
+let unshadowScopes rootScope =
+   let result, _ = pushShadowedLocals [| |] rootScope
+   result

@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
@@ -53,7 +54,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.toImmutableArray
 
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = FSharpKeywords.QuoteIdentifierIfNeeded suggestion
+                let replacement = PrettyNaming.AddBackticksToIdentifierIfNeeded suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
                         CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),
