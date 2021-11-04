@@ -1,3 +1,9 @@
+---
+title: Overview
+category: Compiler Service
+categoryindex: 2
+index: 1
+---
 # FSharp.Compiler.Service
 
 The [FSharp.Compiler.Service](https://www.nuget.org/packages/FSharp.Compiler.Service) package is a component derived from the F# compiler source code that

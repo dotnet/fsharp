@@ -1,3 +1,11 @@
+(**
+---
+title: Hosted execution
+category: Compiler Service
+categoryindex: 2
+index: 7
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
