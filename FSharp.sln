@@ -84,11 +84,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}"
 	ProjectSection(SolutionItems) = preProject
 		docs\coding-standards.md = docs\coding-standards.md
+		docs\compiler-startup-performance.md = docs\compiler-startup-performance.md
+		docs\diagnostics.md = docs\diagnostics.md
 		docs\fsharp-core-notes.md = docs\fsharp-core-notes.md
 		docs\index.md = docs\index.md
 		docs\large-inputs-and-stack-overflows.md = docs\large-inputs-and-stack-overflows.md
 		docs\memory-usage.md = docs\memory-usage.md
 		docs\optimizations.md = docs\optimizations.md
+		docs\overview.md = docs\overview.md
+		docs\public-fcs-api.md = docs\public-fcs-api.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78}"
