@@ -38,7 +38,7 @@ See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building t
 
 See [TESTGUIDE.md](TESTGUIDE.md) for information about the various test suites in this codebase and how to run them individually.
 
-See the [Compiler Guide](docs/compiler-guide.md) for an in-depth guide to the F# compiler. It is essential reading for any larger contributions to the F# compiler codebase.
+See the [Compiler Guide](docs/index.md) for an in-depth guide to the F# compiler. It is essential reading for any larger contributions to the F# compiler codebase. This and all related docs content is hosted by the F# community at [fsharp.github.io/fsharp-compiler-docs/](https://fsharp.github.io/fsharp-compiler-docs).
 
 See [the F# Language Specification](https://fsharp.org/specs/language-spec/) for an in-depth description of the F# language. This is essential for understanding some behaviors of the F# compiler and some of the rules within the compiler codebase. For example, the order and way name resolution happens is specified here, which greatly impacts how the code in Name Resolutions works and why certain decisions are made.
 

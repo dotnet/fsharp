@@ -6,11 +6,11 @@ This guide discusses the F# compiler source code and implementation from a techn
 
 There are several artifacts involved in the development of F#:
 
-* The [F# compiler library](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.Compiler.Service), called `FSharp.Compiler.Service`. Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
+* FSharp.Compiler.Service ([docs](fcs/), [source](https://github.com/dotnet/fsharp/tree/main/src/fsharp)). Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
 
 * The [F# compiler executable](https://github.com/dotnet/fsharp/tree/main/src/fsharp/fsc), called `fsc`, which is called as a console app. It sets the .NET GC into batch mode and then invokes `FSharp.Compiler.Service` with command-line arguments.
 
-* The [F# Core Library](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.Core), called `FSharp.Core`. Contains all primitive F# types and logic for how they interact, core data structures and library functions for operating on them, structured printing logic, units of measure for scientific programming, core numeric functionality, F# quotations, F# type reflection logic, and asynchronous programming types and logic.
+* The [FSharp.Core Library](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.Core), called `FSharp.Core`. Contains all primitive F# types and logic for how they interact, core data structures and library functions for operating on them, structured printing logic, units of measure for scientific programming, core numeric functionality, F# quotations, F# type reflection logic, and asynchronous programming types and logic.
 
 * The [F# Interactive tool](https://github.com/dotnet/fsharp/tree/main/src/fsharp/fsi), called `fsi`. A REPL for F# that supports execution and pretty-printing of F# code and results, loading F# script files, referencing assemblies, and referencing packages from NuGet.
 
