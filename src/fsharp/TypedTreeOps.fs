@@ -2060,16 +2060,6 @@ let CollectTyparsAndLocals = // CollectAll
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false }
-
-let CollectAnonRecdTypeInfosNoCaching =
-    { canCache = false
-      collectInTypes = true
-      includeTypars = true
-      includeLocals = true
-      includeLocalTycons = false
-      includeLocalTyconReprs = false
-      includeRecdFields = false
-      includeUnionCases = false }
   
 let CollectTypars = CollectTyparsAndLocals
 
