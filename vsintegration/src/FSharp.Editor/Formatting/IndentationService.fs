@@ -19,7 +19,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
 open Microsoft.CodeAnalysis.Host
 
-[<Export(typeof<IFSharpSynchronousIndentationService>)>]
+[<Export(typeof<IFSharpIndentationService>)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
     () =
