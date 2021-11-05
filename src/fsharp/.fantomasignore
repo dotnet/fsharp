@@ -1,0 +1,5 @@
+*.fs
+*.fsx
+PrettyNaming.fsi
+ErrorLogger.fsi
+lib.fsi
