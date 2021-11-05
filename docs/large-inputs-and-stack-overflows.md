@@ -1,8 +1,8 @@
 ---
 title: Large inputs and stack overflows
-category: Compiler
-categoryindex: 1
-index: 5
+category: Compiler Internals
+categoryindex: 200
+index: 500
 ---
 # Processing large inputs
 

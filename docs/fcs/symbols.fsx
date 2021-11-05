@@ -1,9 +1,9 @@
 (**
 ---
-title: Symbols
-category: Compiler Service
-categoryindex: 2
-index: 4
+title: Tutorial: Symbols
+category: Compiler Service API
+categoryindex: 300
+index: 400
 ---
 *)
 (*** hide ***)

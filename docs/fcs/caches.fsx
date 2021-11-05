@@ -1,9 +1,9 @@
 (**
 ---
 title: FSharpChecker caches
-category: Compiler Service
-categoryindex: 2
-index: 10
+category: Language Service
+categoryindex: 300
+index: 1000
 ---
 *)
 (*** hide ***)

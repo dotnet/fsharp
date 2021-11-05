@@ -1,9 +1,9 @@
 (**
 ---
-title: Tokenizing
-category: Compiler Service
-categoryindex: 2
-index: 2
+title: Tutorial: Tokenizing
+category: Compiler Service API
+categoryindex: 300
+index: 200
 ---
 *)
 (*** hide ***)

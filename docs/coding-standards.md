@@ -1,8 +1,8 @@
 ---
 title: Coding standards
-category: Compiler
-categoryindex: 1
-index: 2
+category: General
+categoryindex: 100
+index: 200
 ---
 # Coding standards and idioms
 

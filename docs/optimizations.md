@@ -1,8 +1,8 @@
 ---
 title: Optimizations
-category: Compiler
-categoryindex: 1
-index: 4
+category: Compiler Internals
+categoryindex: 200
+index: 400
 ---
 # Code Optimizations
 

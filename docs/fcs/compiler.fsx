@@ -1,9 +1,9 @@
 (**
 ---
-title: Hosting the compiler
-category: Compiler Service
-categoryindex: 2
-index: 9
+title: Tutorial: Hosting the compiler
+category: Compiler Service API
+categoryindex: 300
+index: 900
 ---
 *)
 (*** hide ***)

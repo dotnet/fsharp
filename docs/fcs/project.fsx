@@ -1,9 +1,9 @@
 (**
 ---
-title: Project analysis
-category: Compiler Service
-categoryindex: 2
-index: 6
+title: Tutorial: Project analysis
+category: Compiler Service API
+categoryindex: 300
+index: 600
 ---
 *)
 (*** hide ***)

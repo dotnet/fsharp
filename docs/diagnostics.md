@@ -1,13 +1,31 @@
 ---
 title: Diagnostics
-category: Compiler
-categoryindex: 1
-index: 3
+category: General
+categoryindex: 100
+index: 300
 ---
+# Diagnostics
 
-## Adding Error Messages
+The key types are 
 
-Adding or adjusting errors emitted by the compiler is usually straightforward (though it can sometimes imply deeper compiler work). Here's the general process:
+* `ErrorLogger`
+* `FSharpDiagnosticSeverity`
+* `FSharpDiagnostic`
+
+and functions
+
+* `warning` - emit a warning
+* `errorR` - emit an error and continue
+* `error` - emit an error and throw an exception
+* `errorRecovery` - recover from an exception
+
+## Diagnostic messages
+
+For the compiler, a key file is `FSComp.txt` olding most of the messages. There are also a few other similar files including some old error messages in `FSStrings.resx`.
+
+## Adding Diagnostics
+
+Adding or adjusting diagnostics emitted by the compiler is usually straightforward (though it can sometimes imply deeper compiler work). Here's the general process:
 
 1. Reproduce the compiler error or warning with the latest F# compiler built from the [F# compiler repository](https://github.com/dotnet/fsharp).
 2. Find the error code (such as `FS0020`) in the message.
@@ -19,23 +37,23 @@ From here, you can either simply update the error test, or you can use some of t
 
 If you're including data from user code in an error message, it's important to also write a test that verifies the exact error message for a given string of F# code.
 
-## Formatting User Text from Typed Tree items
+## Formatting Typed Tree items in Diagnostics
 
-When formatting Typed Tree objects such as `TyconRef`s as text, you normally use either
+Diagnostics must often format TAST items as user text. When formatting these, you normally use either
 
 * The functions in the `NicePrint` module such as `NicePrint.outputTyconRef`. These take a `DisplayEnv` that records the context in which a type was referenced, for example, the open namespaces. Opened namespaces are not shown in the displayed output.
 
 * The `DisplayName` properties on the relevant object. This drops the `'n` text that .NET adds to the compiled name of a type, and uses the F#-facing name for a type rather than the compiled name for a type (for example, the name given in a `CompiledName` attribute).
 
-* The functions such as `Tastops.fullTextOfTyconRef`, used to show the full, qualified name of an item.
-
 When formatting "info" objects, see the functions in the `NicePrint` module.
 
 ## Notes on displaying types
 
-When displaying a type, you will normally want to "prettify" the type first. This converts any remaining type inference variables to new, better user-friendly type variables with names like `'a`. Various functions prettify types prior to display, for example, `NicePrint.layoutPrettifiedTypes` and others.
+Diagnostics must often format types.
 
-When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of infomation to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
+* When displaying a type, you will normally want to "prettify" the type first. This converts any remaining type inference variables to new, better user-friendly type variables with names like `'a`. Various functions prettify types prior to display, for example, `NicePrint.layoutPrettifiedTypes` and others.
 
-When displaying a type, you have the option of displaying the constraints implied by any type variables mentioned in the types, appended as `when ...`. For example, `NicePrint.layoutPrettifiedTypeAndConstraints`.
+* When displaying multiple types in a comparative way, for example, two types that didn't match, you will want to display the minimal amount of infomation to convey the fact that the two types are different, for example, `NicePrint.minimalStringsOfTwoTypes`.
+
+* When displaying a type, you have the option of displaying the constraints implied by any type variables mentioned in the types, appended as `when ...`. For example, `NicePrint.layoutPrettifiedTypeAndConstraints`.
 

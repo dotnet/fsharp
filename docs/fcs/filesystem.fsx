@@ -1,9 +1,9 @@
 (**
 ---
 title: IFileSystem
-category: Compiler Service
-categoryindex: 2
-index: 12
+category: Compiler Service API
+categoryindex: 300
+index: 1200
 ---
 *)
 (*** hide ***)
