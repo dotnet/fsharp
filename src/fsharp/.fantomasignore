@@ -9,13 +9,16 @@ lib.fsi
 CompilerDiagnostics.fsi
 CompilerOptions.fsi
 
-# absil
+# absil  (to investigate)
 **/ilread.fsi
 
-# utils
+# utils  (to investigate)
 **/prim-parsing.fsi
+**/TaggedCollections.fsi
+# https://github.com/fsprojects/fantomas/issues/1954
+**/FileSystem.fsi
 
-# service
+# service  (to investigate)
 **/ServiceDeclarationLists.fsi
 
 # FSharp.Core (to investigate)
