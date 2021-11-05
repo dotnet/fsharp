@@ -17,6 +17,7 @@ open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
+open Microsoft.CodeAnalysis.Host
 
 [<Export(typeof<IFSharpSynchronousIndentationService>)>]
 type internal FSharpIndentationService
@@ -93,18 +94,11 @@ type internal FSharpIndentationService
                     lastIndent
         }
 
-    interface IFSharpSynchronousIndentationService with
-        member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<FSharpIndentationResult> =
-            async {
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
-                let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-                let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-                let parsingOptions = document.GetFSharpQuickParsingOptions()
-                let indent = FSharpIndentationService.GetDesiredIndentation(document.Id, sourceText, document.FilePath, lineNumber, tabSize, indentStyle, parsingOptions)
-                return
-                    match indent with
-                    | None -> Nullable()
-                    | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
-            } |> (fun c -> Async.RunImmediateExceptOnUI(c,cancellationToken=cancellationToken))
+    interface IFSharpIndentationService with
+        member this.GetDesiredIndentation(services: HostLanguageServices, text: SourceText, documentId: DocumentId, path: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle): Nullable<FSharpIndentationResult> =
+            let workspaceService = services.WorkspaceServices.GetRequiredService<IFSharpWorkspaceService>()
+            let parsingOptions = workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId, path)
+            let indent = FSharpIndentationService.GetDesiredIndentation(documentId, text, path, lineNumber, tabSize, indentStyle, parsingOptions)
+            match indent with
+            | None -> Nullable()
+            | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))

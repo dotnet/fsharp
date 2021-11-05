@@ -532,10 +532,10 @@ type internal FSharpProjectOptionsManager
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker it doesn't need to recompute the exact project options for a script.
-    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
-        match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId: DocumentId, path: string) = 
+        match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
         | Some (_, parsingOptions, _) -> parsingOptions
-        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile path }
 
     member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
         reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
