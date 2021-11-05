@@ -1,6 +1,29 @@
 *.fs
 *.fsx
+# https://github.com/fsprojects/fantomas/issues/1953
 PrettyNaming.fsi
 ErrorLogger.fsi
 lib.fsi
+
+# https://github.com/fsprojects/fantomas/issues/1954
 CompilerDiagnostics.fsi
+CompilerOptions.fsi
+
+# absil
+**/ilread.fsi
+
+# utils
+**/prim-parsing.fsi
+
+# service
+**/ServiceDeclarationLists.fsi
+
+# FSharp.Core (to investigate)
+**/fslib-extra-pervasives.fsi
+**/Nullable.fsi
+**/prim-types-prelude.fsi
+**/prim-types.fsi
+**/list.fsi
+**/Query.fsi
+**/resumable.fsi
+**/async.fsi
