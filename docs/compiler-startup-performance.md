@@ -1,11 +1,9 @@
-(**
 ---
 title: Compiler Startup Performance
 category: Compiler
 categoryindex: 1
 index: 7
 ---
-*)
 # Compiler Startup Performance
 
 Compiler startup performance is a key factor affecting happiness of F# users. If the compiler took 10sec to start up, then far fewer people would use F#.

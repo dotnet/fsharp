@@ -63,7 +63,7 @@ let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
 let projOptions, _diagnostics =
-    checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+    checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
     |> Async.RunSynchronously
 
 let parsingOptions, _diagnostics2 =

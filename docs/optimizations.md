@@ -1,11 +1,9 @@
-(**
 ---
 title: Optimizations
 category: Compiler
 categoryindex: 1
 index: 4
 ---
-*)
 # Code Optimizations
 
 Code optimizations are performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs), [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/DetupleArgs.fs), [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs).

@@ -1,11 +1,9 @@
-(**
 ---
 title: Memory usage
 category: Compiler
 categoryindex: 1
 index: 6
 ---
-*)
 # Compiler Memory Usage
 
 Overall memory usage is a primary determinant of the usability of the F# compiler and instances of the F# compiler service. Overly high memory usage results in poor throughput (particularly due to increased GC times) and low user interface responsivity in tools such as Visual Studio or other editing environments. In some extreme cases, it can lead to Visual Studio crashing or another IDE becoming unusable due to constant paging from absurdly high memory usage. Luckily, these extreme cases are very rare.
