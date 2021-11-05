@@ -95,10 +95,10 @@ type internal FSharpIndentationService
         }
 
     interface IFSharpIndentationService with
-        member this.GetDesiredIndentation(services: HostLanguageServices, text: SourceText, documentId: DocumentId, path: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle): Nullable<FSharpIndentationResult> =
+        member this.GetDesiredIndentation(services: HostLanguageServices, text: SourceText, documentId: DocumentId, path: string, lineNumber: int, options: FSharpIndentationOptions): Nullable<FSharpIndentationResult> =
             let workspaceService = services.WorkspaceServices.GetRequiredService<IFSharpWorkspaceService>()
             let parsingOptions = workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId, path)
-            let indent = FSharpIndentationService.GetDesiredIndentation(documentId, text, path, lineNumber, tabSize, indentStyle, parsingOptions)
+            let indent = FSharpIndentationService.GetDesiredIndentation(documentId, text, path, lineNumber, options.TabSize, options.IndentStyle, parsingOptions)
             match indent with
             | None -> Nullable()
             | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(text.Lines.[lineNumber].Start, indentation))
