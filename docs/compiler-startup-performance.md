@@ -1,8 +1,8 @@
 ---
 title: Compiler Startup Performance
-category: Compiler
-categoryindex: 1
-index: 7
+category: Compiler Internals
+categoryindex: 200
+index: 700
 ---
 # Compiler Startup Performance
 

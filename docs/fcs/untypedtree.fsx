@@ -1,9 +1,9 @@
 (**
 ---
-title: Expressions
-category: Compiler Service
-categoryindex: 2
-index: 3
+title: Tutorial: Expressions
+category: Compiler Service API
+categoryindex: 300
+index: 300
 ---
 *)
 (*** hide ***)
@@ -65,7 +65,7 @@ return the `ParseTree` property:
 /// Get untyped tree for a specified input
 let getUntypedTree (file, input) = 
   // Get compiler options for the 'project' implied by a single script file
-  let projOptions, errors = 
+  let projOptions, diagnostics = 
       checker.GetProjectOptionsFromScript(file, input, assumeDotNetFramework=false)
       |> Async.RunSynchronously
 

@@ -1,9 +1,9 @@
 (**
 ---
-title: Hosted execution
-category: Compiler Service
-categoryindex: 2
-index: 7
+title: Tutorial: Hosted execution
+category: Compiler Service API
+categoryindex: 300
+index: 700
 ---
 *)
 (*** hide ***)

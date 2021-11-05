@@ -1,11 +1,9 @@
-(**
 ---
 title: Guidance
 category: FSharp.Core
-categoryindex: 3
-index: 1
+categoryindex: 300
+index: 100
 ---
-*)
 # Notes and Guidance on FSharp.Core
 
 This technical guide discusses the FSharp.Core library.

@@ -1,9 +1,9 @@
 (**
 ---
-title: Editor services
-category: Compiler Service
-categoryindex: 2
-index: 5
+title: Tutorial: Editor services
+category: Compiler Service API
+categoryindex: 300
+index: 500
 ---
 *)
 (*** hide ***)

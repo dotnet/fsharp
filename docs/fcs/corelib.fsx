@@ -1,9 +1,9 @@
 (**
 ---
 title: Notes on FSharp.Core
-category: Compiler Service
-categoryindex: 2
-index: 11
+category: Compiler Service API
+categoryindex: 300
+index: 1100
 ---
 *)
 (*** hide ***)
