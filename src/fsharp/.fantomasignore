@@ -3,3 +3,4 @@
 PrettyNaming.fsi
 ErrorLogger.fsi
 lib.fsi
+CompilerDiagnostics.fsi
