@@ -1,7 +1,7 @@
 (**
 ---
 title: Incrementality
-category: Language Service
+category: Language Service Internals
 categoryindex: 300
 index: 1400
 ---
