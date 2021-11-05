@@ -2,6 +2,8 @@
 
 Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsharp)! This guide discusses the F# compiler source code and implementation from a technical point of view.
 
+This site also hosts [the documentation for FSharp.Compiler.Service]
+
 See the table of contents on the left. To edit these docs view and edit them here https://github.com/dotnet/fsharp/tree/main/docs. The public docs will be update automatically.
 
 ## Resources for learning
