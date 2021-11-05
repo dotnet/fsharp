@@ -66,7 +66,7 @@ return the `ParseTree` property:
 let getUntypedTree (file, input) = 
   // Get compiler options for the 'project' implied by a single script file
   let projOptions, errors = 
-      checker.GetProjectOptionsFromScript(file, input)
+      checker.GetProjectOptionsFromScript(file, input, assumeDotNetFramework=false)
       |> Async.RunSynchronously
 
   let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
@@ -145,9 +145,8 @@ let rec visitExpression e =
       // for 'let .. = .. and .. = .. in ...'
       printfn "LetOrUse with the following bindings:"
       for binding in bindings do
-        let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                        data, pat, retInfo, init, m, sp)) = binding
-        visitPattern pat 
+        let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, data, headPat, retInfo, equalsRange, init, m, debugPoint)) = binding
+        visitPattern headPat
         visitExpression init
       // Visit the body expression
       printfn "And the following body:"
@@ -176,8 +175,8 @@ let visitDeclarations decls =
         // Let binding as a declaration is similar to let binding
         // as an expression (in visitExpression), but has no body
         for binding in bindings do
-          let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                          data, pat, retInfo, body, m, sp)) = binding
+          let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, 
+                          valData, pat, retInfo, equalsRange, body, m, sp)) = binding
           visitPattern pat 
           visitExpression body         
     | _ -> printfn " - not supported declaration: %A" declaration

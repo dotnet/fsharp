@@ -1,11 +1,9 @@
-(**
 ---
 title: Public Surface Area
 category: Compiler
 categoryindex: 1
 index: 8
 ---
-*)
 # The F# Compiler Service Public Surface Area
 
 The "intended" FCS API is the parts under the namespaces

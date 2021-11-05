@@ -1,11 +1,9 @@
-(**
 ---
 title: Coding standards
 category: Compiler
 categoryindex: 1
 index: 2
 ---
-*)
 # Coding standards and idioms
 
 The F# compiler code base is slowly being updated to better coding standards. There is a long way to go.
@@ -56,8 +54,8 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `tcref`              | Type constructor  reference (an `EntityRef`) |
 | `tinst`              | Type instantiation |
 | `tpenv`              | Type parameter environment, tracks the type parameters in scope during type checking |
-| `ty`, `typ`                 |  Type, usually a Typed Tree type |
-| `tys`, `typs`                 |  List of types, usually Typed Tree types |
+| `ty` (not: `typ`)                 |  Type, usually a Typed Tree type |
+| `tys` (not: `typs`)                 |  List of types, usually Typed Tree types |
 | `typar`                 |  Type Parameter |
 | `tyvar`                | Type Variable, usually referring to an IL type variable, the compiled form of an F# type parameter |
 | `ucref`              | Union case reference, a reference to a Typed Tree node for a union case |
@@ -68,5 +66,5 @@ The compiler codebase uses various abbreviations. Here are some of the most comm
 | `Syn`                  | Abstract Syntax Tree |
 | `Tc`                  | Type-checker |
 | `IL`                 | Abstract  IL = F# representation of .NET IL |
-| `Ilx`                 | Extended Abstract IL = .NET IL plus a coulpe of contructs that get erased |
+| `Ilx`                 | Extended Abstract IL = .NET IL plus a couple of contructs that get erased |
 

@@ -53,7 +53,7 @@ let parseAndCheckSingleFile (input) =
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
     let projOptions, _errors = 
-        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 
