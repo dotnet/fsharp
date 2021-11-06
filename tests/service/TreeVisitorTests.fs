@@ -57,5 +57,5 @@ let ``Visit enum definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynEnumCase (_, id1, _, _, _, _); SynEnumCase (_, id2, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynEnumCase (_, id1, _, _, _, _, _); SynEnumCase (_, id2, _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit enum definition"
