@@ -19,6 +19,7 @@ type public RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
+    | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
 type public CompletionContext = 
@@ -43,6 +44,9 @@ type public CompletionContext =
 
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
+    /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
+    | UnionCaseFieldsDeclaration
 
 type public ModuleKind =
     { IsAutoOpen: bool

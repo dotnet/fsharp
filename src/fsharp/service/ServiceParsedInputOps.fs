@@ -44,6 +44,7 @@ type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
+    | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
 type CompletionContext = 
@@ -68,6 +69,9 @@ type CompletionContext =
 
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
+    /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
+    | UnionCaseFieldsDeclaration
 
 type ShortIdent = string
 
@@ -1077,6 +1081,29 @@ module ParsedInput =
                         | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType
                         | _ -> defaultTraverse ty
+
+                    member _.VisitRecordDefn(_path, fields, _range) =
+                        fields |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
+                            match idOpt with
+                            | Some id when rangeContainsPos id.idRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration true))
+                            | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                            | _ -> None)
+
+                    member _.VisitUnionDefn(_path, cases, _range) =
+                        cases |> List.tryPick (fun (SynUnionCase (ident = id; caseType = caseType)) ->
+                            if rangeContainsPos id.idRange pos then
+                                Some CompletionContext.Invalid
+                            else
+                                match caseType with
+                                | SynUnionCaseKind.Fields fieldCases ->
+                                    fieldCases |> List.tryPick (fun (SynField (idOpt = fieldIdOpt; range = fieldRange)) ->
+                                        match fieldIdOpt with
+                                        | Some id when rangeContainsPos id.idRange pos -> Some CompletionContext.Invalid
+                                        | _ -> if rangeContainsPos fieldRange pos then Some CompletionContext.UnionCaseFieldsDeclaration else None)
+                                | _ -> None)
+
+                    member _.VisitEnumDefn(_path, _, range) =
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid else None
             }
 
         SyntaxTraversal.Traverse(pos, parsedInput, walker)
