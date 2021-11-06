@@ -1227,6 +1227,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attribs_Unsupported = [
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+        tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
                                    ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
