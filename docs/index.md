@@ -1,10 +1,12 @@
 # F# compiler guide
 
-Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsharp)! This guide discusses the F# compiler source code and implementation from a technical point of view.
+Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsharp)! This guide discusses the F# compiler source code and implementation from a technical point of view. 
 
-This site also hosts [the documentation for FSharp.Compiler.Service]
+See the table of contents on the left. 
 
-See the table of contents on the left. To edit these docs view and edit them here https://github.com/dotnet/fsharp/tree/main/docs. The public docs will be update automatically.
+This site also hosts [the documentation for FSharp.Compiler.Service](https://fsharp.github.io/fsharp-compiler-docs/fcs/)
+
+[Edit the source for these docs](https://github.com/dotnet/fsharp/tree/main/docs). The docs are published automatically daily by [this repo](https://github.com/fsharp/fsharp-compiler-docs).
 
 ## Resources for learning
 
