@@ -2369,6 +2369,26 @@ module List =
     [<CompiledName("TryFindIndex")>]
     val tryFindIndex: predicate:('T -> bool) -> list:'T list -> int option
 
+    /// <summary>Removes the first element equal to the specified value.
+    /// Returns the original list if not found.</summary>
+    ///
+    /// <param name="element">The value to be removed from the list.</param>
+    /// <param name="list">The input list.</param>
+    ///
+    /// <returns>The list with the first instance of the specified element removed,
+    /// or the original list if no such element exists.</returns>
+    ///
+    /// <example id="tryremove-1">Try to remove the first instance of 4.
+    /// <code lang="fsharp">
+    /// let inputs = [1; 2; 3; 4; 5]
+    ///
+    /// inputs |> List.tryRemove 4
+    /// </code>
+    /// Evaluates to <c>[1; 2; 3; 5]</c>
+    /// </example>
+    [<CompiledName("TryRemove")>]
+    val tryRemove: element:'T -> list:'T list -> 'T list
+
     /// <summary>Tries to find the nth element in the list.
     /// Returns <c>None</c> if index is negative or the list does not contain enough elements.</summary>
     ///
