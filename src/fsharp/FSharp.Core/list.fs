@@ -394,6 +394,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.tryFindBack predicate
+        
+        [<CompiledName("TryRemove")>]
+        let rec tryRemove element list =
+            match list with
+            | [] -> []
+            | h :: t -> if h = element then t else h :: tryRemove element t
 
         [<CompiledName("TryPick")>]
         let rec tryPick chooser list =
