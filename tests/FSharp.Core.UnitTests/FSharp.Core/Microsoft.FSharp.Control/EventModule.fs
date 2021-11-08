@@ -45,21 +45,21 @@ type EventModule() =
                         elif amtOverflowing < 10.0<ml> then Some("Medium")
                         else Some("Large"))
 
-        let lastCleanup = ref ""
-        needToCleanupEvent.Add(fun amount -> lastCleanup := amount)
+        let mutable lastCleanup = ""
+        needToCleanupEvent.Add(fun amount -> lastCleanup <- amount)
         
         // Refil the cup, Overflow event will fire, will fire our 'needToCleanupEvent'
         coffeeCup.Refil(20.0<ml>)
-        Assert.AreEqual("Large", !lastCleanup)
+        Assert.AreEqual("Large", lastCleanup)
         
         // Refil the cup, Overflow event will fire, will fire our 'needToCleanupEvent'
         coffeeCup.Refil(8.0<ml>)
-        Assert.AreEqual("Medium", !lastCleanup)
+        Assert.AreEqual("Medium", lastCleanup)
     
         // Refil the cup, Overflow event will fire, will NOT fire our 'needToCleanupEvent'
-        lastCleanup := "NA"
+        lastCleanup <- "NA"
         coffeeCup.Refil(2.5<ml>)
-        Assert.AreEqual("NA", !lastCleanup)
+        Assert.AreEqual("NA", lastCleanup)
         
         ()
 
@@ -204,17 +204,17 @@ type EventModule() =
             numEvent.Publish 
             |> Event.scan(fun acc i -> acc + i) 0
             
-        let lastSum = ref 0
-        sumEvent.Add(fun sum -> lastSum := sum)
+        let mutable lastSum = 0
+        sumEvent.Add(fun sum -> lastSum <- sum)
         
         numEvent.Trigger(1)
-        Assert.AreEqual(!lastSum, 1)
+        Assert.AreEqual(lastSum, 1)
         
         numEvent.Trigger(10)
-        Assert.AreEqual(!lastSum, 11)
+        Assert.AreEqual(lastSum, 11)
         
         numEvent.Trigger(100)
-        Assert.AreEqual(!lastSum, 111)
+        Assert.AreEqual(lastSum, 111)
         
         ()
         

@@ -1198,10 +1198,10 @@ let ``tryPick is consistent`` () =
 
 let unfold<'a,'b when 'b : equality> f (start:'a) =
     let f() =
-        let c = ref 0
+        let mutable c = 0
         fun x -> 
-            if !c > 100 then None else // prevent infinity seqs
-            c := !c + 1
+            if c > 100 then None else // prevent infinity seqs
+            c <- c + 1
             f x
     let s : 'b [] = Seq.unfold (f()) start |> Seq.toArray
     let l = List.unfold (f()) start |> List.toArray

@@ -29,12 +29,12 @@ type CancellationType() =
     member this.CancellationRegistration() =
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        let called = ref false
-        let r = token.Register(Action<obj>(fun _ -> called := true), null)
-        Assert.False(!called)
+        let mutable called = false
+        let r = token.Register(Action<obj>(fun _ -> called <- true), null)
+        Assert.False(called)
         r.Dispose()
         cts.Cancel()
-        Assert.False(!called)
+        Assert.False(called)
         
     [<Fact>]
     member this.CancellationWithCallbacks() =
@@ -43,12 +43,12 @@ type CancellationType() =
         let is1Called = ref false
         let is2Called = ref false
         let is3Called = ref false
-        let assertAndOff (expected:bool) (r:bool ref) = Assert.AreEqual(expected,!r); r := false
-        let r1 = cts1.Token.Register(Action<obj>(fun _ -> is1Called := true), null)
-        let r2 = cts1.Token.Register(Action<obj>(fun _ -> is2Called := true), null)
-        let r3 = cts2.Token.Register(Action<obj>(fun _ -> is3Called := true), null) 
-        Assert.False(!is1Called)
-        Assert.False(!is2Called)
+        let assertAndOff (expected:bool) (r:bool ref) = Assert.AreEqual(expected,r.Value); r.Value <- false
+        let r1 = cts1.Token.Register(Action<obj>(fun _ -> is1Called.Value <- true), null)
+        let r2 = cts1.Token.Register(Action<obj>(fun _ -> is2Called.Value <- true), null)
+        let r3 = cts2.Token.Register(Action<obj>(fun _ -> is3Called.Value <- true), null) 
+        Assert.False(is1Called.Value)
+        Assert.False(is2Called.Value)
         r2.Dispose()
         
         // Cancelling cts1: r2 is disposed and r3 is for cts2, only r1 should be called
@@ -59,7 +59,7 @@ type CancellationType() =
         Assert.True(cts1.Token.IsCancellationRequested)
         
         let isAnotherOneCalled = ref false
-        let _ = cts1.Token.Register(Action<obj>(fun _ -> isAnotherOneCalled := true), null)
+        let _ = cts1.Token.Register(Action<obj>(fun _ -> isAnotherOneCalled.Value <- true), null)
         assertAndOff true isAnotherOneCalled
         
         // Cancelling cts2: only r3 should be called

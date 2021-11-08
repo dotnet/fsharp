@@ -343,7 +343,7 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         for cx in tp.Constraints do
             match cx with 
             | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, soln), _) -> 
-                 match visitTraitSolutionOpt, !soln with 
+                 match visitTraitSolutionOpt, soln.Value with 
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
             | _ -> ()
@@ -423,7 +423,7 @@ and CheckTraitInfoDeep cenv (_, _, _, visitTraitSolutionOpt, _ as f) g env (TTra
     CheckTypesDeep cenv f g env tys 
     CheckTypesDeep cenv f g env argtys 
     Option.iter (CheckTypeDeep cenv f g env true ) rty
-    match visitTraitSolutionOpt, !soln with 
+    match visitTraitSolutionOpt, soln.Value with 
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
@@ -1144,8 +1144,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 let data1 = doData true
                 let data2 = doData false
                 match savedConv.Value with 
-                | None -> savedConv:= Some (data1, data2)
-                | Some _ -> ()
+                | None ->
+                    savedConv.Value <- Some (data1, data2)
+                | Some _ ->
+                    ()
             with QuotationTranslator.InvalidQuotedTerm e -> 
                 errorRecovery e m
                 
