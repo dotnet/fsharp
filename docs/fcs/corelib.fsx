@@ -1,7 +1,7 @@
 (**
 ---
 title: Notes on FSharp.Core
-category: Compiler Service API
+category: FSharp.Compiler.Service
 categoryindex: 300
 index: 1100
 ---

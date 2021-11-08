@@ -1,7 +1,7 @@
 (**
 ---
 title: Tutorial: Project analysis
-category: Compiler Service API
+category: FSharp.Compiler.Service
 categoryindex: 300
 index: 600
 ---

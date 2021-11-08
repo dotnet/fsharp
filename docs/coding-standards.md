@@ -1,7 +1,7 @@
 ---
 title: Coding standards
-category: General
-categoryindex: 100
+category: Compiler Internals
+categoryindex: 200
 index: 200
 ---
 # Coding standards and idioms
