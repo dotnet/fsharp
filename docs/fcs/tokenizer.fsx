@@ -1,7 +1,7 @@
 (**
 ---
 title: Tutorial: Tokenizing
-category: Compiler Service API
+category: FSharp.Compiler.Service
 categoryindex: 300
 index: 200
 ---

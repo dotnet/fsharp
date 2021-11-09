@@ -1,7 +1,7 @@
 ---
 title: Diagnostics
-category: General
-categoryindex: 100
+category: Compiler Internals
+categoryindex: 200
 index: 300
 ---
 # Diagnostics

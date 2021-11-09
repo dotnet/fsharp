@@ -1,5 +1,5 @@
 ---
-title: Compiler Startup Performance
+title: Startup Performance
 category: Compiler Internals
 categoryindex: 200
 index: 700

@@ -1,10 +1,10 @@
 ---
-title: Large inputs and stack overflows
+title: Large inputs
 category: Compiler Internals
 categoryindex: 200
 index: 500
 ---
-# Processing large inputs
+# Processing large inputs without stack overflows
 
 The compiler accepts large inputs such as:
 
