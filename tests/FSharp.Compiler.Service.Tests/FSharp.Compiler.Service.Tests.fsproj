@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateProgramFile>false</GenerateProgramFile>
@@ -11,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
     <Compile Include="..\service\FsUnit.fs">
@@ -78,6 +80,8 @@
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
 </Project>

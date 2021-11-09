@@ -12,9 +12,9 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open FSharp.Compiler
 open System.Text.RegularExpressions 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open Microsoft.VisualStudio.FSharp
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
@@ -159,7 +159,7 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
     static member StartNew(vs) =
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()
-        new GlobalParseAndTypeCheckCounter(FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic, n, vs)
+        new GlobalParseAndTypeCheckCounter(FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount, n, vs)
     member private this.GetEvents() = 
         TakeCoffeeBreak(vs)
         let n = IncrementalBuilderEventTesting.GetCurrentIncrementalBuildEventNum()

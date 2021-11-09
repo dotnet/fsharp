@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
-open FSharp.Compiler
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 module public Structure =
@@ -26,7 +25,7 @@ module public Structure =
         | Member
         | LetOrUse
         | Val
-        | CompExpr
+        | ComputationExpr
         | IfThenElse
         | ThenInIfThenElse
         | ElseInIfThenElse
@@ -45,7 +44,6 @@ module public Structure =
         | MatchLambda
         | MatchClause
         | Lambda
-        | CompExprInternal
         | Quote
         | Record
         | SpecialFunc

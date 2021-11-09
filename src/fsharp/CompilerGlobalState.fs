@@ -5,7 +5,7 @@
 module FSharp.Compiler.CompilerGlobalState
 
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
@@ -18,7 +18,7 @@ open FSharp.Compiler.Text
 type NiceNameGenerator() =
 
     let lockObj = obj()
-    let basicNameCounts = new Dictionary<string, int>(100)
+    let basicNameCounts = Dictionary<string, int>(100)
 
     member x.FreshCompilerGeneratedName (name, m: range) =
       lock lockObj (fun () ->
@@ -46,8 +46,8 @@ type StableNiceNameGenerator() =
 
     let lockObj = obj()
 
-    let names = new Dictionary<(string * int64), string>(100)
-    let basicNameCounts = new Dictionary<string, int>(100)
+    let names = Dictionary<string * int64, string>(100)
+    let basicNameCounts = Dictionary<string, int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         lock lockObj (fun () ->

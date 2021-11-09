@@ -1,17 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.AbstractIL.Internal
+namespace Internal.Utilities.Collections
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Collections.Generic
 
 /// Sets with a specific comparison function
 type internal Zset<'T> = Internal.Utilities.Collections.Tagged.Set<'T>
 
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Zset = 
 
     val empty     : IComparer<'T> -> Zset<'T>

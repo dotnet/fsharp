@@ -5,13 +5,14 @@ module internal FSharp.Compiler.ScriptClosure
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open Microsoft.DotNet.DependencyManager
 
 [<RequireQualifiedAccess>]
 type CodeContext =
@@ -21,10 +22,15 @@ type CodeContext =
 
 [<RequireQualifiedAccess>]
 type LoadClosureInput = 
-    { FileName: string
+    {
+      FileName: string
+      
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedDiagnostic * bool) list 
-      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
+      
+      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
+      
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list 
+    }
 
 [<RequireQualifiedAccess>]
 type LoadClosure = 
@@ -56,13 +62,13 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics: (PhasedDiagnostic * bool)  list
+      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)  list
 
       /// Diagnostics to show for root of closure (used by fsc.fs)
-      AllRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list }   
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }   
 
     /// Analyze a script text and find the closure of its references. 
     /// Used from FCS, when editing a script file.  
@@ -70,7 +76,6 @@ type LoadClosure =
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText:
-        CompilationThreadToken * 
         legacyReferenceResolver: LegacyReferenceResolver * 
         defaultFSharpBinariesDir: string * 
         filename: string * 
@@ -91,7 +96,6 @@ type LoadClosure =
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 
     static member ComputeClosureOfScriptFiles: 
-        CompilationThreadToken * 
         tcConfig:TcConfig * 
         (string * range) list * 
         implicitDefines:CodeContext * 

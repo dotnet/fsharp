@@ -216,7 +216,7 @@ if "!BIN_AVAILABLE!" == "true" (
     CALL :backupAndOrCopy fsc.exe "!COMPILERSDKPATH!"
     CALL :backupAndOrCopy fsc.exe.config "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy FSharp.Build.dll "%COMPILERSDKPATH%"
-    CALL :backupAndOrCopy FSharp.Compiler.Private.dll "%COMPILERSDKPATH%"
+    CALL :backupAndOrCopy FSharp.Compiler.Service.dll "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy FSharp.Compiler.Interactive.Settings.dll "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy fsi.exe "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy fsi.exe.config "%COMPILERSDKPATH%"

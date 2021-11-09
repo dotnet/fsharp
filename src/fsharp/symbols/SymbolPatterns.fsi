@@ -1,97 +1,85 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Symbols
 
 /// Patterns over FSharpSymbol and derivatives.
-[<RequireQualifiedAccess>]
-module public Symbol =
+[<Experimental("This module is subject to future redesign. Consider using patterns checking for properties of symbols directly, e.g. entity.IsFSharpRecord or entity.IsFSharpUnion")>]
+module public FSharpSymbolPatterns =
 
-    val isAttribute<'T> : FSharpAttribute -> bool
+    val (|AbbreviatedType|_|): FSharpEntity -> FSharpType option
 
-    val tryGetAttribute<'T> : seq<FSharpAttribute> -> FSharpAttribute option
+    val (|TypeWithDefinition|_|): FSharpType -> FSharpEntity option
 
-    val hasModuleSuffixAttribute : FSharpEntity -> bool
+    val (|Attribute|_|): FSharpEntity -> unit option
 
-    val isOperator : name: string -> bool
+    val (|ValueType|_|): FSharpEntity -> unit option
 
-    val isUnnamedUnionCaseField : FSharpField -> bool
+    val (|Class|_|): original: FSharpEntity * abbreviated: FSharpEntity * 'a -> unit option 
 
-    val (|AbbreviatedType|_|) : FSharpEntity -> FSharpType option
+    val (|Record|_|): FSharpEntity -> unit option
 
-    val (|TypeWithDefinition|_|) : FSharpType -> FSharpEntity option
+    val (|UnionType|_|): FSharpEntity -> unit option
 
-    val getEntityAbbreviatedType : FSharpEntity -> (FSharpEntity * FSharpType option)
+    val (|Delegate|_|): FSharpEntity -> unit option
 
-    val getAbbreviatedType : FSharpType -> FSharpType
+    val (|FSharpException|_|): FSharpEntity -> unit option
 
-    val (|Attribute|_|) : FSharpEntity -> unit option
+    val (|Interface|_|): FSharpEntity -> unit option
 
-    val hasAttribute<'T> : seq<FSharpAttribute> -> bool
+    val (|AbstractClass|_|): FSharpEntity -> unit option
 
-    val (|ValueType|_|) : FSharpEntity -> unit option
-
-    val (|Class|_|) : original: FSharpEntity * abbreviated: FSharpEntity * 'a -> unit option 
-
-    val (|Record|_|) : FSharpEntity -> unit option
-
-    val (|UnionType|_|) : FSharpEntity -> unit option
-
-    val (|Delegate|_|) : FSharpEntity -> unit option
-
-    val (|FSharpException|_|) : FSharpEntity -> unit option
-
-    val (|Interface|_|) : FSharpEntity -> unit option
-
-    val (|AbstractClass|_|) : FSharpEntity -> unit option
-
-    val (|FSharpType|_|) : FSharpEntity -> unit option
+    val (|FSharpType|_|): FSharpEntity -> unit option
 
 #if !NO_EXTENSIONTYPING    
-    val (|ProvidedType|_|) : FSharpEntity -> unit option
+    val (|ProvidedType|_|): FSharpEntity -> unit option
 #endif    
 
-    val (|ByRef|_|) : FSharpEntity -> unit option
+    val (|ByRef|_|): FSharpEntity -> unit option
 
-    val (|Array|_|) : FSharpEntity -> unit option
+    val (|Array|_|): FSharpEntity -> unit option
 
-    val (|FSharpModule|_|) : FSharpEntity -> unit option
+    val (|FSharpModule|_|): FSharpEntity -> unit option
 
-    val (|Namespace|_|) : FSharpEntity -> unit option
+    val (|Namespace|_|): FSharpEntity -> unit option
 
 #if !NO_EXTENSIONTYPING    
-    val (|ProvidedAndErasedType|_|) : FSharpEntity -> unit option
+    val (|ProvidedAndErasedType|_|): FSharpEntity -> unit option
 #endif
 
-    val (|Enum|_|) : FSharpEntity -> unit option
+    val (|Enum|_|): FSharpEntity -> unit option
 
-    val (|Tuple|_|) : FSharpType -> unit option
+    val (|Tuple|_|): FSharpType -> unit option
 
-    val (|RefCell|_|) : FSharpType -> unit option
+    val (|RefCell|_|): FSharpType -> unit option
 
-    val (|FunctionType|_|) : FSharpType -> unit option
+    val (|FunctionType|_|): FSharpType -> unit option
 
-    val (|Pattern|_|) : FSharpSymbol -> unit option
+    val (|Pattern|_|): FSharpSymbol -> unit option
 
-    val (|Field|_|) : FSharpSymbol -> (FSharpField * FSharpType) option
+    val (|Field|_|): FSharpSymbol -> (FSharpField * FSharpType) option
 
-    val (|MutableVar|_|) : FSharpSymbol -> unit option
+    val (|MutableVar|_|): FSharpSymbol -> unit option
 
-    val (|FSharpEntity|_|) : FSharpSymbol -> (FSharpEntity * FSharpEntity * FSharpType option) option
+    /// Returns (originalEntity, abbreviatedEntity, abbreviatedType)
+    val (|FSharpEntity|_|): FSharpSymbol -> (FSharpEntity * FSharpEntity * FSharpType option) option
 
-    val (|Parameter|_|) : FSharpSymbol -> unit option
+    val (|Parameter|_|): FSharpSymbol -> unit option
 
-    val (|UnionCase|_|) : FSharpSymbol -> FSharpUnionCase option
+    val (|UnionCase|_|): FSharpSymbol -> FSharpUnionCase option
 
-    val (|RecordField|_|) : FSharpSymbol -> FSharpField option
+    val (|RecordField|_|): FSharpSymbol -> FSharpField option
 
-    val (|ActivePatternCase|_|) : FSharpSymbol -> FSharpActivePatternCase option
+    val (|ActivePatternCase|_|): FSharpSymbol -> FSharpActivePatternCase option
 
-    val (|MemberFunctionOrValue|_|) : FSharpSymbol -> FSharpMemberOrFunctionOrValue option
+    val (|MemberFunctionOrValue|_|): FSharpSymbol -> FSharpMemberOrFunctionOrValue option
 
-    val (|Constructor|_|) : FSharpMemberOrFunctionOrValue -> FSharpEntity option
+    val (|Constructor|_|): FSharpMemberOrFunctionOrValue -> FSharpEntity option
 
-    val (|Function|_|) : excluded: bool -> FSharpMemberOrFunctionOrValue -> unit option
+    val (|Function|_|): excluded: bool -> FSharpMemberOrFunctionOrValue -> unit option
 
-    val (|ExtensionMember|_|) : FSharpMemberOrFunctionOrValue -> unit option
+    val (|ExtensionMember|_|): FSharpMemberOrFunctionOrValue -> unit option
 
-    val (|Event|_|) : FSharpMemberOrFunctionOrValue -> unit option
+    val (|Event|_|): FSharpMemberOrFunctionOrValue -> unit option
+
+    val internal hasModuleSuffixAttribute: FSharpEntity -> bool
+

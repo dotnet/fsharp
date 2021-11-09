@@ -60,9 +60,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System
     open System.Collections
     open System.Collections.Generic
+    open System.Runtime.CompilerServices
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-        
+
     [<RequireQualifiedAccess>]
     /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
     module RuntimeHelpers = 
@@ -128,20 +129,25 @@ namespace Microsoft.FSharp.Core.CompilerServices
         ///
         /// <returns>A new sequence generator for the expression.</returns>
         new : unit -> GeneratedSequenceBase<'T>
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <returns>A new enumerator for the sequence.</returns>
         abstract GetFreshEnumerator : unit -> IEnumerator<'T>
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <param name="result">A reference to the sequence.</param>
         ///
         /// <returns>A 0, 1, and 2 respectively indicate Stop, Yield, and Goto conditions for the sequence generator.</returns>
         abstract GenerateNext : result:byref<IEnumerable<'T>> -> int
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract Close: unit -> unit
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract CheckClose: bool
+
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         abstract LastGenerated : 'T
         interface IEnumerable<'T> 
@@ -149,3 +155,49 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator<'T> 
         interface IEnumerator 
         interface IDisposable 
+
+    /// Collects elements and builds a list
+    [<Struct; NoEquality; NoComparison>]
+    type ListCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal Result: 'T list
+
+        [<DefaultValue(false)>]
+        val mutable internal LastCons: 'T list
+
+        /// Add an element to the collector
+        member Add: value: 'T -> unit
+
+        /// Add multiple elements to the collector
+        member AddMany: values: seq<'T> -> unit
+
+        /// Add multiple elements to the collector and return the resulting list
+        member AddManyAndClose: values: seq<'T> -> 'T list
+
+        /// Return the resulting list
+        member Close: unit -> 'T list
+
+    /// Collects elements and builds an array
+    [<Struct; NoEquality; NoComparison>]
+    type ArrayCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal ResizeArray: ResizeArray<'T>
+        [<DefaultValue(false)>]
+        val mutable internal First: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Second: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Count: int
+
+        /// Add an element to the collector
+        member Add: value: 'T -> unit
+
+        /// Add multiple elements to the collector
+        member AddMany: values: seq<'T> -> unit
+
+        /// Add multiple elements to the collector and return the resulting array
+        member AddManyAndClose: values: seq<'T> -> 'T[]
+
+        /// Return the resulting list
+        member Close: unit -> 'T[]
+

@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSStrings.resx">
     <body>
+      <trans-unit id="HashLoadedSourceHasIssues0">
+        <source>One or more informational messages in loaded file.\n</source>
+        <target state="translated">Jeden lub więcej komunikatów informacyjnych w załadowanym pliku.\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">symbol „..^”</target>

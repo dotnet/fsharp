@@ -1,14 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
 open System.Collections.Generic
 open System.Runtime.CompilerServices
-
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open Internal.Utilities.Library
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 module UnusedOpens =
 
@@ -28,16 +29,16 @@ module UnusedOpens =
                           for rf in ent.FSharpFields do
                               yield rf  :> FSharpSymbol
                       
-                      if ent.IsFSharpUnion && not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
+                      if ent.IsFSharpUnion && not (ent.HasAttribute<RequireQualifiedAccessAttribute>()) then
                           for unionCase in ent.UnionCases do
                               yield unionCase :> FSharpSymbol
 
-                      if Symbol.hasAttribute<ExtensionAttribute> ent.Attributes then
+                      if ent.HasAttribute<ExtensionAttribute>() then
                           for fv in ent.MembersFunctionsAndValues do
                               // fv.IsExtensionMember is always false for C# extension methods returning by `MembersFunctionsAndValues`,
                               // so we have to check Extension attribute instead. 
                               // (note: fv.IsExtensionMember has proper value for symbols returning by GetAllUsesOfAllSymbolsInFile though)
-                              if Symbol.hasAttribute<ExtensionAttribute> fv.Attributes then
+                              if fv.HasAttribute<ExtensionAttribute>() then
                                   yield fv :> FSharpSymbol
                       
                   for apCase in entity.ActivePatternCases do
@@ -62,7 +63,7 @@ module UnusedOpens =
                 [|
                     yield OpenedModule (modul, isNestedAutoOpen)
                     for ent in modul.NestedEntities do
-                        if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
+                        if ent.IsFSharpModule && ent.HasAttribute<AutoOpenAttribute>() then
                             yield! getModuleAndItsAutoOpens true ent |]
             { OpenedModules = getModuleAndItsAutoOpens false modul }
 
@@ -131,7 +132,7 @@ module UnusedOpens =
                 // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
                 // it's `open System` which really brings it into scope.
-                let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
+                let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.Range.StartLine, su.Range.EndColumn - 1)
                 List.isEmpty partialName.QualifyingIdents)
         |> Array.ofSeq
 
@@ -172,11 +173,11 @@ module UnusedOpens =
                 openedGroup.OpenedModules |> Array.exists (fun openedEntity ->
                     symbolUsesRangesByDeclaringEntity.BagExistsValueForKey(openedEntity.Entity, fun symbolUseRange ->
                         rangeContainsRange openStatement.AppliedScope symbolUseRange &&
-                        Pos.posGt symbolUseRange.Start openStatement.Range.End) || 
+                        Position.posGt symbolUseRange.Start openStatement.Range.End) || 
                     
                     symbolUses2 |> Array.exists (fun symbolUse ->
-                        rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
-                        Pos.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
+                        rangeContainsRange openStatement.AppliedScope symbolUse.Range &&
+                        Position.posGt symbolUse.Range.Start openStatement.Range.End &&
                         openedEntity.RevealedSymbolsContains symbolUse.Symbol)))
 
         // Return them as interim used entities
@@ -187,7 +188,7 @@ module UnusedOpens =
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
             usedModules.[openedModule.Entity] <- scopes
-        not (newlyOpenedModules.IsEmpty)
+        not newlyOpenedModules.IsEmpty
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
@@ -218,7 +219,7 @@ module UnusedOpens =
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
                     | Some entity when entity.IsNamespace || entity.IsFSharpModule -> 
-                        symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
+                        symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.Range)
                     | _ -> ()
                 | _ -> ()
 
@@ -257,23 +258,23 @@ module SimplifyNames =
                     if symbolUse.IsFromOpenStatement || symbolUse.IsFromDefinition then
                         None
                     else
-                        let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
+                        let lineStr = getSourceLineStr symbolUse.Range.StartLine
                         // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
-                        let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
-                        // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
+                        let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.Range.EndColumn - 1)
+                        // `symbolUse.Range.Start` does not point to the start of plid, it points to start of `name`,
                         // so we have to calculate plid's start ourselves.
-                        let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
+                        let plidStartCol = symbolUse.Range.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
                         if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
                             None
                         else
                             Some (symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
-                |> Seq.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
-                |> Seq.map (fun (_, xs) -> xs |> Seq.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
+                |> Seq.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.Range.StartLine, plidStartCol)
+                |> Seq.map (fun (_, xs) -> xs |> Seq.maxBy (fun (symbolUse, _, _, _) -> symbolUse.Range.EndColumn))
 
             for symbolUse, plid, plidStartCol, name in symbolUses do
                 let posAtStartOfName =
-                    let r = symbolUse.RangeAlternate
-                    if r.StartLine = r.EndLine then Pos.mkPos r.StartLine (r.EndColumn - name.Length)
+                    let r = symbolUse.Range
+                    if r.StartLine = r.EndLine then Position.mkPos r.StartLine (r.EndColumn - name.Length)
                     else r.Start   
 
                 let getNecessaryPlid (plid: string list) : string list =
@@ -291,11 +292,11 @@ module SimplifyNames =
                 match necessaryPlid with
                 | necessaryPlid when necessaryPlid = plid -> ()
                 | necessaryPlid ->
-                    let r = symbolUse.RangeAlternate
+                    let r = symbolUse.Range
                     let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
                     
                     let unnecessaryRange = 
-                        Range.mkRange r.FileName (Pos.mkPos r.StartLine plidStartCol) (Pos.mkPos r.EndLine necessaryPlidStartCol)
+                        mkRange r.FileName (Position.mkPos r.StartLine plidStartCol) (Position.mkPos r.EndLine necessaryPlidStartCol)
                     
                     let relativeName = (String.concat "." plid) + "." + name
                     result.Add({Range = unnecessaryRange; RelativeName = relativeName})
@@ -329,7 +330,7 @@ module UnusedDeclarations =
             HashSet(usages)
 
         symbolsUses
-        |> Seq.distinctBy (fun su -> su.RangeAlternate) // Account for "hidden" uses, like a val in a member val definition. These aren't relevant
+        |> Seq.distinctBy (fun su -> su.Range) // Account for "hidden" uses, like a val in a member val definition. These aren't relevant
         |> Seq.choose(fun (su: FSharpSymbolUse) ->
             if su.IsFromDefinition && 
                 su.Symbol.DeclarationLocation.IsSome && 
@@ -340,7 +341,7 @@ module UnusedDeclarations =
                 Some (su, usages.Contains su.Symbol.DeclarationLocation.Value)
             else
                 None)
-        |> Seq.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
+        |> Seq.groupBy (fun (defSu, _) -> defSu.Range)
         |> Seq.filter (fun (_, defSus) -> defSus |> Seq.forall (fun (_, isUsed) -> not isUsed))
         |> Seq.map (fun (m, _) -> m)
     

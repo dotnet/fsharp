@@ -3,21 +3,20 @@
 module internal FSharp.Compiler.Infos
 
 open System
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -106,6 +105,30 @@ type SkipUnrefInterfaces = Yes | No
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
+
+    let getInterfaces ty (tcref:TyconRef) tinst =
+        match metadataOfTy g ty with
+#if !NO_EXTENSIONTYPING
+        | ProvidedTypeMetadata info ->
+            [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
+                yield Import.ImportProvidedType amap m ity ]
+#endif
+        | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+            // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
+            // comes from another assembly. In this case we simply skip the interface:
+            // if we don't skip it, then compilation will just fail here, and if type checking
+            // succeeds with fewer non-dereferencable interfaces reported then it would have
+            // succeeded with more reported. There are pathological corner cases where this
+            // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
+            // assume those are present.
+            tdef.Implements |> List.choose (fun ity ->
+                if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
+                    Some (ImportILType scoref amap m tinst ity)
+                else
+                    None)
+        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+            tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
+
     let itys =
         match tryAppTy g ty with
         | ValueSome(tcref, tinst) ->
@@ -123,31 +146,17 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                   yield mkAppTy g.system_GenericIComparable_tcref [ty]
                   yield mkAppTy g.system_GenericIEquatable_tcref [ty]]
             else
-                match metadataOfTy g ty with
-#if !NO_EXTENSIONTYPING
-                | ProvidedTypeMetadata info ->
-                    [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
-                          yield Import.ImportProvidedType amap m ity ]
-#endif
-                | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
+                getInterfaces ty tcref tinst
+        | _ ->
+            let tyWithMetadata = convertToTypeWithMetadataIfPossible g ty
+            match tryAppTy g tyWithMetadata with
+            | ValueSome (tcref, tinst) ->
+                if isAnyTupleTy g ty then
+                    getInterfaces tyWithMetadata tcref tinst
+                else
+                    []
+            | _ -> []
 
-                    // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
-                    // comes from another assembly. In this case we simply skip the interface:
-                    // if we don't skip it, then compilation will just fail here, and if type checking
-                    // succeeds with fewer non-dereferencable interfaces reported then it would have
-                    // succeeded with more reported. There are pathological corner cases where this
-                    // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always
-                    // assume those are present.
-                    tdef.Implements |> List.choose (fun ity ->
-                         if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then
-                             Some (ImportILType scoref amap m tinst ity)
-                         else None)
-
-                | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-                    tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
-        | _ -> []
-
-    
     // NOTE: Anonymous record types are not directly considered to implement IComparable,
     // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
     // consitutent types, which may not yet be known in type inference.
@@ -172,7 +181,7 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)).
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
-    let rec loop ndeep ty ((visitedTycon, visited: TyconRefMultiMap<_>, acc) as state) =
+    let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
         let seenThisTycon = 
             match tryTcrefOfAppTy g ty with
@@ -515,7 +524,7 @@ type ExtensionMethodPriority = uint64
 
 /// The caller-side value for the optional arg, if any
 type OptionalArgCallerSideValue =
-    | Constant of IL.ILFieldInit
+    | Constant of ILFieldInit
     | DefaultValue
     | MissingValue
     | WrapperForIDispatch
@@ -567,7 +576,7 @@ type OptionalArgInfo =
     static member ValueOfDefaultParameterValueAttrib (Attrib (_, _, exprs, _, _, _, _)) =
         let (AttribExpr (_, defaultValueExpr)) = List.head exprs
         match defaultValueExpr with
-        | Expr.Const (_, _, _) -> Some defaultValueExpr
+        | Expr.Const _ -> Some defaultValueExpr
         | _ -> None
     static member FieldInitForDefaultParameterValueAttrib attrib =
         match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
@@ -890,7 +899,7 @@ type ILMethInfo =
 
 
 /// Describes an F# use of a method
-[<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
+[<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
 [<NoComparison; NoEquality>]
 type MethInfo =
     /// Describes a use of a method declared in F# code and backed by F# metadata.
@@ -965,7 +974,7 @@ type MethInfo =
     /// Get the extension method priority of the method. If it is not an extension method
     /// then use the highest possible value since non-extension methods always take priority
     /// over extension members.
-    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue
+    member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption UInt64.MaxValue
 
     /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =
@@ -991,7 +1000,13 @@ type MethInfo =
     member x.DisplayName =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayName
-        | _ -> x.LogicalName
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValNameToDisplayName false
+
+     /// Get the method name in DisplayName form
+    member x.DisplayNameCore =
+        match x with
+        | FSMeth(_, _, vref, _) -> vref.DisplayNameCore
+        | _ -> x.LogicalName |> PrettyNaming.DecompileOpName
 
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
@@ -1043,7 +1058,7 @@ type MethInfo =
     /// Get the XML documentation associated with the method
     member x.XmlDoc =
         match x with
-        | ILMeth(_, _, _) -> XmlDoc.Empty
+        | ILMeth _ -> XmlDoc.Empty
         | FSMeth(_, _, vref, _) -> vref.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
 #if !NO_EXTENSIONTYPING
@@ -1107,7 +1122,7 @@ type MethInfo =
     member x.IsConstructor =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsConstructor
-        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = MemberKind.Constructor)
+        | FSMeth(_g, _, vref, _) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = SynMemberKind.Constructor)
         | DefaultStructCtor _ -> true
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)
@@ -1165,7 +1180,7 @@ type MethInfo =
     member x.IsNewSlot =
         (x.IsVirtual &&
           (match x with
-           | ILMeth(_, x, _) -> x.IsNewSlot
+           | ILMeth(_, x, _) -> x.IsNewSlot || (isInterfaceTy x.TcGlobals x.ApparentEnclosingType && not x.IsFinal)
            | FSMeth(_, _, vref, _) -> vref.IsDispatchSlotMember
 #if !NO_EXTENSIONTYPING
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
@@ -1399,7 +1414,7 @@ type MethInfo =
             [ [ for p in ilMethInfo.ParamMetadata do
                  let isParamArrayArg = TryFindILAttribute g.attrib_ParamArrayAttribute p.CustomAttrs
                  let reflArgInfo =
-                     match TryDecodeILAttribute g g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
+                     match TryDecodeILAttribute g.attrib_ReflectedDefinitionAttribute.TypeRef p.CustomAttrs with
                      | Some ([ILAttribElem.Bool b ], _) ->  ReflectedArgInfo.Quote b
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
@@ -1456,7 +1471,7 @@ type MethInfo =
                                 // Emit a warning, and ignore the DefaultParameterValue argument altogether.
                                 warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
                                 NotOptional
-                            | Some (Expr.Const ((ConstToILFieldInit fi), _, _)) ->
+                            | Some (Expr.Const (ConstToILFieldInit fi, _, _)) ->
                                 // Good case - all is well.
                                 CallerSide (Constant fi)
                             | _ ->
@@ -1798,21 +1813,25 @@ type RecdFieldInfo =
     /// Get the F# metadata for the F#-declared record, class or struct type
     member x.Tycon = x.RecdFieldRef.Tycon
 
-    /// Get the name of the field in an F#-declared record, class or struct type
-    member x.Name = x.RecdField.Name
+    /// Get the logical name of the field in an F#-declared record, class or struct type
+    member x.LogicalName = x.RecdField.LogicalName
+
+    member x.DisplayNameCore = x.RecdField.DisplayNameCore
+
+    member x.DisplayName = x.RecdField.DisplayName
 
     /// Get the (instantiated) type of the field in an F#-declared record, class or struct type
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
     /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type
     member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst)
-    override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
 
+    override x.ToString() = x.TyconRef.ToString() + "::" + x.LogicalName
 
 /// Describes an F# use of a union case
 [<NoComparison; NoEquality>]
 type UnionCaseInfo =
-    | UnionCaseInfo of TypeInst * UnionCaseRef
+    | UnionCaseInfo of typeInst: TypeInst * unionCaseRef: UnionCaseRef
 
     /// Get the list of types for the instantiation of the type parameters of the declaring type of the union case
     member x.TypeInst = let (UnionCaseInfo(tinst, _)) = x in tinst
@@ -1829,13 +1848,27 @@ type UnionCaseInfo =
     /// Get the F# metadata for the declaring union type
     member x.Tycon = x.UnionCaseRef.Tycon
 
-    /// Get the name of the union case
-    member x.Name = x.UnionCase.DisplayName
+    /// Get the logical name of the union case. 
+    member x.LogicalName = x.UnionCase.LogicalName
+
+    /// Get the core of the display name of the union case
+    ///
+    /// Backticks and parens are not added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    member x.DisplayNameCore = x.UnionCase.DisplayNameCore
+
+    /// Get the display name of the union case
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
     member x.GetTyparInst m =  mkTyparInst (x.TyconRef.Typars m) x.TypeInst
 
-    override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
+    override x.ToString() = x.TyconRef.ToString() + "::" + x.DisplayNameCore
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -2046,7 +2079,7 @@ type PropInfo =
         | ILProp ilpinfo -> ilpinfo.IsVirtual
         | FSProp(g, ty, Some vref, _)
         | FSProp(g, ty, _, Some vref) ->
-            isInterfaceTy g ty  || (vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
+            isInterfaceTy g ty  || vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | FSProp _ -> failwith "unreachable"
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->
@@ -2292,11 +2325,12 @@ type ILEventInfo =
     member x.TypeRef = x.ILTypeInfo.ILTypeRef
 
     /// Get the name of the event
-    member x.Name = x.RawMetadata.Name
+    member x.EventName = x.RawMetadata.Name
 
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.Name
+
+    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo
@@ -2395,7 +2429,7 @@ type EventInfo =
     /// Get the logical name of the event.
     member x.EventName =
         match x with
-        | ILEvent ileinfo -> ileinfo.Name
+        | ILEvent ileinfo -> ileinfo.EventName
         | FSEvent (_, p, _, _) -> p.PropertyName
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, m) -> ei.PUntaint((fun ei -> ei.Name), m)

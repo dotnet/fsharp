@@ -40,17 +40,12 @@ open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
 
 open Microsoft.CodeAnalysis
-open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open VSLangProj
-open System.ComponentModel.Composition.Primitives
-open Microsoft.VisualStudio.Shell
-open System.Collections.Immutable
-
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -262,29 +257,16 @@ type internal ProjectSitesAndFiles() =
             | _ -> None
         | Some _ -> None
 
-    static let rec referencedProvideProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider, extraProjectInfo:obj option, projectOptionsTable:FSharpProjectOptionsTable option) =
+    static let rec referencedProvideProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
         let getReferencesForSolutionService (solutionService:IVsSolution) =
             [|
-                match referencedProjects projectSite, extraProjectInfo with
-                | None, Some (:? VisualStudioWorkspaceImpl as workspace) when not (isNull workspace.CurrentSolution)->
-                    let path = projectSite.ProjectFileName
-                    if not (String.IsNullOrWhiteSpace(path)) then
-                        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
-                        let project = workspace.CurrentSolution.GetProject(projectId)
-                        if not (isNull project) then
-                            for reference in project.ProjectReferences do
-                                let project = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                                if not (isNull project) && project.Language = LanguageServiceConstants.FSharpLanguageName then
-                                    let siteProvider = provideProjectSiteProvider (workspace, project, serviceProvider, projectOptionsTable)
-                                    let referenceProject = workspace.ProjectTracker.GetProject(reference.ProjectId)
-                                    let outputPath = referenceProject.BinOutputPath
-                                    yield Some projectId, project.FilePath, outputPath, siteProvider
+                match referencedProjects projectSite, None with
 
                 | (Some references), _ ->
                     for p in references do
                         match solutionService.GetProjectOfUniqueName(p.UniqueName) with
                         | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
-                            yield None, p.FileName,  (fullOutputAssemblyPath p) |> Option.defaultValue "", ps
+                            yield p.FileName,  (fullOutputAssemblyPath p) |> Option.defaultValue "", ps
                         | _ -> ()
                 | None, _ -> ()
             |]
@@ -296,62 +278,48 @@ type internal ProjectSitesAndFiles() =
               | None -> ()
             }
 
-    static let rec referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable, useUniqueStamp) =
-        [| for (projectId, projectFileName, outputPath, projectSiteProvider) in referencedProvideProjectSites (projectSite, serviceProvider, extraProjectInfo, projectOptionsTable) do
+    static let rec referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, useUniqueStamp) =
+        [| for (projectFileName, outputPath, projectSiteProvider) in referencedProvideProjectSites (projectSite, serviceProvider) do
                let referencedProjectOptions =
                    // Lookup may not succeed if the project has not been established yet
                    // In this case we go and compute the options recursively.
                    match tryGetOptionsForReferencedProject projectFileName with 
-                   | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider,  projectId, projectFileName, extraProjectInfo, projectOptionsTable, useUniqueStamp) |> snd
+                   | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider, projectFileName, useUniqueStamp) |> snd
                    | Some options -> options
-               yield projectFileName, (outputPath, referencedProjectOptions) |]
+               yield projectFileName, FSharpReferencedProject.CreateFSharp(outputPath, referencedProjectOptions) |]
 
-    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, fileName, extraProjectInfo, projectOptionsTable,  useUniqueStamp) =
+    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, fileName, useUniqueStamp) =
         let referencedProjectFileNames, referencedProjectOptions = 
             if enableInMemoryCrossProjectReferences then
-                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable, useUniqueStamp)
+                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, useUniqueStamp)
                 |> Array.unzip
             else [| |], [| |]
         let option =
-            let newOption () = {
+            {
                 ProjectFileName = projectSite.ProjectFileName
                 ProjectId = None
                 SourceFiles = projectSite.CompilationSourceFiles
                 OtherOptions = projectSite.CompilationOptions
                 ReferencedProjects = referencedProjectOptions
                 IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-                UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+                UseScriptResolutionRules = CompilerEnvironment.MustBeSingleFileProject fileName
                 LoadTime = projectSite.LoadTime
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
-                ExtraProjectInfo=extraProjectInfo 
                 Stamp = if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None 
             }
-            match projectId, projectOptionsTable with
-            | Some id, Some optionsTable ->
-                // Get options from cache
-                match optionsTable.TryGetOptionsForProject(id) with
-                | Some (_parsingOptions, _site, projectOptions) ->
-                    if projectSite.CompilationSourceFiles <> projectOptions.SourceFiles ||
-                       projectSite.CompilationOptions <> projectOptions.OtherOptions ||
-                       referencedProjectOptions <> projectOptions.ReferencedProjects then
-                            newOption()
-                    else
-                            projectOptions
-                | _ ->  newOption()
-            | _ -> newOption()
         referencedProjectFileNames, option
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
-        if SourceFile.MustBeSingleFileProject(filename) then 
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
 
-    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider, extraProjectInfo, projectOptions) =
-        referencedProvideProjectSites (projectSite, serviceProvider, extraProjectInfo, projectOptions)
-        |> Seq.map (fun (_, _, _, ps) -> ps.GetProjectSite())
+    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        referencedProvideProjectSites (projectSite, serviceProvider)
+        |> Seq.map (fun (_, _, ps) -> ps.GetProjectSite())
         |> Seq.toArray
 
     member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
@@ -359,10 +327,10 @@ type internal ProjectSitesAndFiles() =
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable, useUniqueStamp) =
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, filename, useUniqueStamp) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable, useUniqueStamp)
+        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, filename, useUniqueStamp)
 
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
@@ -386,7 +354,7 @@ type internal ProjectSitesAndFiles() =
 
     member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string, checker:FSharpChecker) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
-        if SourceFile.MustBeSingleFileProject(filename) then
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then
             let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
             CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
         else 
@@ -404,7 +372,7 @@ type internal ProjectSitesAndFiles() =
             CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
-        if SourceFile.MustBeSingleFileProject(filename) then None
+        if CompilerEnvironment.MustBeSingleFileProject(filename) then None
         else
             match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
             | Some(hier, _textLines) ->

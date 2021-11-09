@@ -7,32 +7,32 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.DependencyManager
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
+open FSharp.Compiler.IO
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
-open Microsoft.DotNet.DependencyManager
-
 [<RequireQualifiedAccess>]
-type LoadClosureInput = 
+type LoadClosureInput =
     { FileName: string
       SyntaxTree: ParsedInput option
-      ParseDiagnostics: (PhasedDiagnostic * bool) list 
-      MetaCommandDiagnostics: (PhasedDiagnostic * bool) list }
+      ParseDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+      MetaCommandDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list }
 
 [<RequireQualifiedAccess>]
-type LoadClosure = 
+type LoadClosure =
     { /// The source files along with the ranges of the #load positions in each file.
       SourceFiles: (string * range list) list
 
@@ -61,14 +61,14 @@ type LoadClosure =
       NoWarns: (string * range list) list
 
       /// Diagnostics seen while processing resolutions
-      ResolutionDiagnostics: (PhasedDiagnostic * bool) list
+      ResolutionDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while parsing root of closure
-      AllRootFileDiagnostics: (PhasedDiagnostic * bool) list
+      AllRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list
-    }   
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
+    }
 
 
 [<RequireQualifiedAccess>]
@@ -77,23 +77,23 @@ type CodeContext =
     | Compilation  // in fsc.exe
     | Editing // in VS
 
-module ScriptPreprocessClosure = 
-    
+module ScriptPreprocessClosure =
+
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
-        
+    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool
+
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (PhasedDiagnostic * FSharpDiagnosticSeverity) list * (string * range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
-        let seen = System.Collections.Generic.Dictionary<_, bool>()
-        member ob.SetSeen check = 
-            if not(seen.ContainsKey check) then 
+        let seen = Dictionary<_, bool>()
+        member ob.SetSeen check =
+            if not(seen.ContainsKey check) then
                 seen.Add(check, true)
-        
+
         member ob.HaveSeen check =
             seen.ContainsKey check
-    
+
     /// Parse a script from source.
     let ParseScriptText
            (filename: string, sourceText: ISourceText, tcConfig: TcConfig, codeContext,
@@ -103,25 +103,24 @@ module ScriptPreprocessClosure =
         // fsi.exe -- !COMPILED\INTERACTIVE
         // Language service
         //     .fs -- EDITING + COMPILED\!INTERACTIVE
-        //     .fsx -- EDITING + !COMPILED\INTERACTIVE    
+        //     .fsx -- EDITING + !COMPILED\INTERACTIVE
         let defines =
-            match codeContext with 
+            match codeContext with
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
 
-        let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText) 
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, tcConfig.langVersion, sourceText)
 
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
-        ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
+        ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger)
 
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptTextTcConfig 
-           (legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename: string, codeContext, 
-            useSimpleResolution, useFsiAuxLib, 
-            basicReferences, applyCommandLineArgs, 
+    let CreateScriptTextTcConfig
+           (legacyReferenceResolver, defaultFSharpBinariesDir,
+            filename: string, codeContext,
+            useSimpleResolution, useFsiAuxLib,
+            basicReferences, applyCommandLineArgs,
             assumeDotNetFramework, useSdkRefs, sdkDirOverride,
             tryGetMetadataSnapshot, reduceMemoryUsage) =
 
@@ -131,92 +130,98 @@ module ScriptPreprocessClosure =
 
         let rangeForErrors = mkFirstLineOfFile filename
         let tcConfigB =
-            let tcb =
-                TcConfigBuilder.CreateNew(legacyReferenceResolver,
-                                          defaultFSharpBinariesDir,
-                                          reduceMemoryUsage,
-                                          projectDir,
-                                          isInteractive,
-                                          isInvalidationSupported,
-                                          CopyFSharpCoreFlag.No,
-                                          tryGetMetadataSnapshot,
-                                          sdkDirOverride,
-                                          rangeForErrors)
-            tcb.useSdkRefs <- useSdkRefs
-            tcb
+            TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                defaultFSharpBinariesDir,
+                reduceMemoryUsage,
+                projectDir,
+                isInteractive,
+                isInvalidationSupported,
+                CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot,
+                sdkDirOverride,
+                rangeForErrors)
+        tcConfigB.SetPrimaryAssembly (if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+        tcConfigB.SetUseSdkRefs useSdkRefs
 
         applyCommandLineArgs tcConfigB
 
         // Work out the references for the script in its location. This may produce diagnostics.
-        let assumeDotNetFramework, scriptDefaultReferencesDiagnostics =
+        let scriptDefaultReferencesDiagnostics =
 
-            match basicReferences with 
+            match basicReferences with
             | None ->
-                let errorLogger = CapturingErrorLogger("ScriptDefaultReferences") 
+                let errorLogger = CapturingErrorLogger("ScriptDefaultReferences")
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, assumeDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
+                let references, useDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences useFsiAuxLib
+
+                // If the user requested .NET Core scripting but something went wrong and we reverted to
+                // .NET Framework scripting then we must adjust both the primaryAssembly and fxResolver
+                if useDotNetFramework <> assumeDotNetFramework then
+                    tcConfigB.SetPrimaryAssembly (if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+
                 // Add script references
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)
-                assumeDotNetFramework , errorLogger.Diagnostics
+
+                errorLogger.Diagnostics
+
             | Some (rs, diagnostics) ->
                 for m, reference in rs do
                     tcConfigB.AddReferencedAssemblyByPath(m, reference)
-                assumeDotNetFramework, diagnostics
+                diagnostics
 
         tcConfigB.resolutionEnvironment <-
-            match codeContext with 
+            match codeContext with
             | CodeContext.Editing -> LegacyResolutionEnvironment.EditingOrCompilation true
             | CodeContext.Compilation -> LegacyResolutionEnvironment.EditingOrCompilation false
             | CodeContext.CompilationAndEvaluation -> LegacyResolutionEnvironment.CompilationAndEvaluation
-        tcConfigB.framework <- false 
+        tcConfigB.framework <- false
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
-        tcConfigB.useSdkRefs <- useSdkRefs
-        tcConfigB.primaryAssembly <- if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+        tcConfigB.SetUseSdkRefs useSdkRefs
 
         TcConfig.Create(tcConfigB, validate=true), scriptDefaultReferencesDiagnostics
 
-    let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) = 
+    let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) =
         try
             let filename = FileSystem.GetFullPathShim filename
-            use stream = FileSystem.FileStreamReadShim filename
-            use reader = 
-                match inputCodePage with 
+            use stream = FileSystem.OpenFileForReadShim(filename)
+            use reader =
+                match inputCodePage with
                 | None -> new StreamReader(stream, true)
-                | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
+                | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n)
             let source = reader.ReadToEnd()
             [ClosureSource(filename, m, SourceText.ofString source, parseRequired)]
-        with e -> 
-            errorRecovery e m 
+        with e ->
+            errorRecovery e m
             []
-            
+
     let ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn
            (tcConfig: TcConfig, inp: ParsedInput,
-            pathOfMetaCommandSource, dependencyProvider) = 
+            pathOfMetaCommandSource, dependencyProvider) =
 
-        let tcConfigB = tcConfig.CloneToBuilder() 
-        let mutable nowarns = [] 
+        let tcConfigB = tcConfig.CloneToBuilder()
+        let mutable nowarns = []
         let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
-        try 
+        try
             ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
-            
+
         try
             TcConfig.Create(tcConfigB, validate=false), nowarns
         with ReportedError _ ->
             // Recover by using a default TcConfig.
-            let tcConfigB = tcConfig.CloneToBuilder() 
+            let tcConfigB = tcConfig.CloneToBuilder()
             TcConfig.Create(tcConfigB, validate=false), nowarns
 
     let FindClosureFiles
-        (mainFile, _m, closureSources, origTcConfig:TcConfig, 
+        (mainFile, _m, closureSources, origTcConfig:TcConfig,
          codeContext, lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider: DependencyProvider) =
 
         let mutable tcConfig = origTcConfig
@@ -260,14 +265,14 @@ module ScriptPreprocessClosure =
                                 if result.Success then
                                     // Resolution produced no errors
                                     //Write outputs in F# Interactive and compiler
-                                    if codeContext <> CodeContext.Editing then 
+                                    if codeContext <> CodeContext.Editing then
                                         for line in result.StdOut do Console.Out.WriteLine(line)
                                         for line in result.StdError do Console.Error.WriteLine(line)
 
-                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! File.ReadAllLines script ]
+                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! FileSystem.OpenFileForReadShim(script).ReadLines() ]
                                     if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneToBuilder()
-                                        for folder in result.Roots do 
+                                        for folder in result.Roots do
                                             tcConfigB.AddIncludePath(m, folder, "")
                                         tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                                         tcConfig <- TcConfig.Create(tcConfigB, validate=false)
@@ -279,7 +284,8 @@ module ScriptPreprocessClosure =
                                         tcConfig <- TcConfig.Create(tcConfigB, validate = false)
 
                                     for script in result.SourceFiles do
-                                        let scriptText = File.ReadAllText script
+                                        use stream = FileSystem.OpenFileForReadShim(script)
+                                        let scriptText = stream.ReadAllText()
                                         loadScripts.Add script |> ignore
                                         let iSourceText = SourceText.ofString scriptText
                                         yield! loop (ClosureSource(script, m, iSourceText, true))
@@ -292,49 +298,44 @@ module ScriptPreprocessClosure =
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
                                     let tcConfigB = tcConfig.CloneToBuilder()
-                                    tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines 
+                                    tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 
-        and loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
+        and loop (ClosureSource(filename, m, sourceText, parseRequired)) =
             [   if not (observedSources.HaveSeen(filename)) then
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
-                    if IsScript filename || parseRequired then 
+                    if IsScript filename || parseRequired then
                         let parseResult, parseDiagnostics =
                             let errorLogger = CapturingErrorLogger("FindClosureParse")
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptText (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger) 
+                            let result = ParseScriptText (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger)
                             result, errorLogger.Diagnostics
 
-                        match parseResult with 
-                        | Some parsedScriptAst ->
-                            let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
-                            use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                            let preSources = tcConfig.GetAvailableLoadedSources()
+                        let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")
+                        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+                        let pathOfMetaCommandSource = Path.GetDirectoryName filename
+                        let preSources = tcConfig.GetAvailableLoadedSources()
 
-                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parsedScriptAst, pathOfMetaCommandSource, dependencyProvider)
-                            tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
+                        let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parseResult, pathOfMetaCommandSource, dependencyProvider)
+                        tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
 
-                            yield! resolveDependencyManagerSources filename
+                        yield! resolveDependencyManagerSources filename
 
-                            let postSources = tcConfig.GetAvailableLoadedSources()
-                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+                        let postSources = tcConfig.GetAvailableLoadedSources()
+                        let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
-                            yield! resolveDependencyManagerSources filename
-                            for (m, subFile) in sources do
-                                if IsScript subFile then 
-                                    for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
-                                        yield! loop subSource
-                                else
-                                    yield ClosureFile(subFile, m, None, [], [], []) 
-                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
+                        yield! resolveDependencyManagerSources filename
+                        for m, subFile in sources do
+                            if IsScript subFile then
+                                for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
+                                    yield! loop subSource
+                            else
+                                yield ClosureFile(subFile, m, None, [], [], [])
+                        yield ClosureFile(filename, m, Some parseResult, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
-                        | None -> 
-                            printfn "yielding source %s (failed parse)" filename
-                            yield ClosureFile(filename, m, None, parseDiagnostics, [], [])
-                    else 
+                    else
                         // Don't traverse into .fs leafs.
                         printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
@@ -342,34 +343,34 @@ module ScriptPreprocessClosure =
         let sources = closureSources |> List.collect loop
         let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
         sources, tcConfig, packageReferences
-        
+
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences, earlierDiagnostics) = 
-    
-        // Mark the last file as isLastCompiland. 
+    let GetLoadClosure(rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences, earlierDiagnostics) =
+
+        // Mark the last file as isLastCompiland.
         let closureFiles =
-            if isNil closureFiles then  
-                closureFiles 
-            else 
+            if isNil closureFiles then
+                closureFiles
+            else
                 match List.frontAndBack closureFiles with
                 | rest, ClosureFile
-                           (filename, m, 
-                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))), 
-                            parseDiagnostics, metaDiagnostics, nowarns) -> 
+                           (filename, m,
+                            Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _))),
+                            parseDiagnostics, metaDiagnostics, nowarns) ->
 
                     let isLastCompiland = (true, tcConfig.target.IsExe)
                     rest @ [ClosureFile
-                                (filename, m, 
-                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))), 
+                                (filename, m,
+                                 Some(ParsedInput.ImplFile (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland))),
                                  parseDiagnostics, metaDiagnostics, nowarns)]
 
                 | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = [ for (ClosureFile(filename, m, _, _, _, _)) in closureFiles -> (filename, m) ]
+        let sourceFiles = [ for ClosureFile(filename, m, _, _, _, _) in closureFiles -> (filename, m) ]
 
-        let sourceInputs = 
-            [  for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles ->
+        let sourceInputs =
+            [  for ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns) in closureFiles ->
                    ({ FileName=filename
                       SyntaxTree=input
                       ParseDiagnostics=parseDiagnostics
@@ -378,34 +379,34 @@ module ScriptPreprocessClosure =
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_, _, _, _, _, noWarns)) -> noWarns)
 
         // Resolve all references.
-        let references, unresolvedReferences, resolutionDiagnostics = 
-            let errorLogger = CapturingErrorLogger("GetLoadClosure") 
-        
+        let references, unresolvedReferences, resolutionDiagnostics =
+            let errorLogger = CapturingErrorLogger("GetLoadClosure")
+
             use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-            let references, unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctok, tcConfig)
+            let references, unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
             let references = references |> List.map (fun ar -> ar.resolvedPath, ar)
             references, unresolvedReferences, errorLogger.Diagnostics
 
         // Root errors and warnings - look at the last item in the closureFiles list
-        let loadClosureRootDiagnostics, allRootDiagnostics = 
+        let loadClosureRootDiagnostics, allRootDiagnostics =
             match List.rev closureFiles with
-            | ClosureFile(_, _, _, parseDiagnostics, metaDiagnostics, _) :: _ -> 
-                (earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics), 
+            | ClosureFile(_, _, _, parseDiagnostics, metaDiagnostics, _) :: _ ->
+                (earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics),
                 (parseDiagnostics @ earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics)
             | _ -> [], [] // When no file existed.
-        
+
         let isRootRange exn =
             match GetRangeOfDiagnostic exn with
-            | Some m -> 
+            | Some m ->
                 // Return true if the error was *not* from a #load-ed file.
-                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (Range.equals m range0 || Range.equals m rangeStartup || Range.equals m rangeCmdArgs)
+                let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (equals m range0 || equals m rangeStartup || equals m rangeCmdArgs)
                 let isThisFileName = (0 = String.Compare(rootFilename, m.FileName, StringComparison.OrdinalIgnoreCase))
                 isArgParameterWhileNotEditing || isThisFileName
             | None -> true
 
         // Filter out non-root errors and warnings
         let allRootDiagnostics = allRootDiagnostics |> List.filter (fst >> isRootRange)
-        
+
         let result: LoadClosure =
             { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
@@ -424,10 +425,10 @@ module ScriptPreprocessClosure =
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
-           (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename, sourceText, codeContext, 
+           (legacyReferenceResolver, defaultFSharpBinariesDir,
+            filename, sourceText, codeContext,
             useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride,
-            lexResourceManager: Lexhelp.LexResourceManager, 
+            lexResourceManager: Lexhelp.LexResourceManager,
             applyCommandLineArgs, assumeDotNetFramework,
             tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider) =
 
@@ -435,61 +436,61 @@ module ScriptPreprocessClosure =
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
-        let references0, assumeDotNetFramework, scriptDefaultReferencesDiagnostics = 
-            let tcConfig, scriptDefaultReferencesDiagnostics = 
-                CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
-                    filename, codeContext, useSimpleResolution, 
-                    useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework, 
+        let references0, assumeDotNetFramework, scriptDefaultReferencesDiagnostics =
+            let tcConfig, scriptDefaultReferencesDiagnostics =
+                CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir,
+                    filename, codeContext, useSimpleResolution,
+                    useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework,
                     useSdkRefs, sdkDirOverride, tryGetMetadataSnapshot, reduceMemoryUsage)
 
-            let resolutions0, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctok, tcConfig)
+            let resolutions0, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
             let references0 = resolutions0 |> List.map (fun r->r.originalReference.Range, r.resolvedPath) |> Seq.distinct |> List.ofSeq
             references0, tcConfig.assumeDotNetFramework, scriptDefaultReferencesDiagnostics
 
-        let tcConfig, scriptDefaultReferencesDiagnostics = 
-            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, 
-                 codeContext, useSimpleResolution, useFsiAuxLib, Some (references0, scriptDefaultReferencesDiagnostics), 
+        let tcConfig, scriptDefaultReferencesDiagnostics =
+            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename,
+                 codeContext, useSimpleResolution, useFsiAuxLib, Some (references0, scriptDefaultReferencesDiagnostics),
                  applyCommandLineArgs, assumeDotNetFramework, useSdkRefs, sdkDirOverride,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(filename, range0, sourceText, true)]
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
+        GetLoadClosure(filename, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
 
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles
-            (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, 
+            (tcConfig:TcConfig, files:(string*range) list, codeContext,
              lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext, packageReferences, [])        
+        GetLoadClosure(mainFile, closureFiles, tcConfig, codeContext, packageReferences, [])
 
 type LoadClosure with
-    /// Analyze a script text and find the closure of its references. 
-    /// Used from FCS, when editing a script file.  
+    /// Analyze a script text and find the closure of its references.
+    /// Used from FCS, when editing a script file.
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText
-                     (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                      filename: string, sourceText: ISourceText, implicitDefines, useSimpleResolution: bool, 
-                      useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager: Lexhelp.LexResourceManager, 
+                     (legacyReferenceResolver, defaultFSharpBinariesDir,
+                      filename: string, sourceText: ISourceText, implicitDefines, useSimpleResolution: bool,
+                      useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager: Lexhelp.LexResourceManager,
                       applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot,
-                      reduceMemoryUsage, dependencyProvider) = 
+                      reduceMemoryUsage, dependencyProvider) =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
-            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
-             implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager, 
+            (legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText,
+             implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDir, lexResourceManager,
              applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 
     /// Analyze a set of script files and find the closure of their references.
     static member ComputeClosureOfScriptFiles
-                     (ctok, tcConfig: TcConfig, files:(string*range) list, implicitDefines,
+                     (tcConfig: TcConfig, files:(string*range) list, implicitDefines,
                       lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, implicitDefines, lexResourceManager, dependencyProvider)
+        ScriptPreprocessClosure.GetFullClosureOfScriptFiles (tcConfig, files, implicitDefines, lexResourceManager, dependencyProvider)

@@ -1,18 +1,14 @@
-﻿namespace FSharp.Test.Utilities.Xunit.Attributes
+﻿namespace FSharp.Test.Xunit.Attributes
 
 open System
-open System.Collections.Generic
-open System.Diagnostics.CodeAnalysis
 open System.IO
 open System.Reflection
-open Xunit
-open Xunit.Extensions
 open Xunit.Sdk
 
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Assert
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Utilities
+open FSharp.Compiler.IO
+
+open FSharp.Test
+open FSharp.Test.Compiler
 
 /// Attribute to use with Xunit's TheoryAttribute.
 /// Takes a directory, relative to current test suite's root.
@@ -28,24 +24,25 @@ type DirectoryAttribute(dir: string) =
     let directory = dir
 
     let mutable includes = Array.empty<string>
-        
+
     let readFileOrDefault (path: string) : string option =
-        match File.Exists(path) with
+        match FileSystem.FileExistsShim(path) with
             | true -> Some <| File.ReadAllText path
             | _ -> None
 
     let createCompilationUnit path fs =
-        let fsSource = (path ++ fs) |> File.ReadAllText
-        let bslFilePath = path ++ (fs + ".bsl")
-        let ilFilePath  = path ++ (fs + ".il")
+        let filePath = path ++ fs
+        let fsSource = File.ReadAllText filePath
+        let bslFilePath = filePath + ".bsl"
+        let ilFilePath  = filePath + ".il"
         let bslSource = readFileOrDefault bslFilePath
         let ilSource = readFileOrDefault ilFilePath
 
         { Source         = Text fsSource
           Baseline       =
-                Some { SourceFilename = Some (path ++ fs)
-                       OutputBaseline = bslSource
-                       ILBaseline     = ilSource }
+                Some { SourceFilename = Some filePath
+                       OutputBaseline = { FilePath = bslFilePath; Content = bslSource }
+                       ILBaseline     = { FilePath = ilFilePath;  Content = ilSource  } }
           Options        = []
           OutputType     = Library
           SourceKind     = SourceKind.Fsx
@@ -53,8 +50,8 @@ type DirectoryAttribute(dir: string) =
           IgnoreWarnings = false
           References     = [] } |> FS
 
-    member x.Includes with get() = includes and set v = includes <- v
-    
+    member _.Includes with get() = includes and set v = includes <- v
+
     override _.GetData(_: MethodInfo) =
         let absolutePath = Path.GetFullPath(directory)
 
@@ -65,19 +62,18 @@ type DirectoryAttribute(dir: string) =
 
         let filteredFiles =
             match (includes |> Array.map (fun f -> absolutePath ++ f)) with
-                | [||] -> allFiles 
+                | [||] -> allFiles
                 | incl -> incl
-                
+
         let fsFiles = filteredFiles |> Array.map Path.GetFileName
 
         if fsFiles |> Array.length < 1 then
             failwith (sprintf "No required files found in \"%s\".\nAll files: %A.\nIncludes:%A." absolutePath allFiles includes)
 
         for f in filteredFiles do
-            if not <| File.Exists(f) then
+            if not <| FileSystem.FileExistsShim(f) then
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
-            
+
         fsFiles
         |> Array.map (fun fs -> createCompilationUnit absolutePath fs)
         |> Seq.map (fun c -> [| c |])
-

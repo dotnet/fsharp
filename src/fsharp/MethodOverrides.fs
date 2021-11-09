@@ -3,21 +3,20 @@
 /// Primary logic related to method overrides.
 module internal FSharp.Compiler.MethodOverrides
 
+open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Text.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -334,13 +333,13 @@ module DispatchSlotChecking =
                         checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
-                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
 
                     // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() = 
-                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo amap m denv dispatchSlot))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo infoReader m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -370,7 +369,7 @@ module DispatchSlotChecking =
                             elif not (IsTyparKindMatch compiledSig overrideBy) then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             else 
-                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo infoReader m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
 
@@ -538,10 +537,12 @@ module DispatchSlotChecking =
             [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
 
     /// Check all implementations implement some dispatch slot.
-    let CheckOverridesAreAllUsedOnce(denv, g, amap, isObjExpr, reqdTy,
+    let CheckOverridesAreAllUsedOnce(denv, g, infoReader: InfoReader, isObjExpr, reqdTy,
                                      dispatchSlotsKeyed: NameMultiMap<RequiredSlot>,
                                      availPriorOverrides: OverrideInfo list,
                                      overrides: OverrideInfo list) = 
+        let amap = infoReader.amap
+
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         for overrideBy in overrides do 
           if not overrideBy.IsFakeEventProperty then
@@ -572,18 +573,18 @@ module DispatchSlotChecking =
 
             | [dispatchSlot] -> 
                 if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
-                    errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+                    errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo infoReader m denv dispatchSlot), m))
             | dispatchSlots -> 
                 match dispatchSlots |> List.filter (fun dispatchSlot -> 
                               isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
                 | h1 :: h2 :: _ -> 
-                    errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.stringOfMethInfo amap m denv h1), (NicePrint.stringOfMethInfo amap m denv h2)), m))
+                    errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.stringOfMethInfo infoReader m denv h1), (NicePrint.stringOfMethInfo infoReader m denv h2)), m))
                 | _ -> 
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
+                    | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod (sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) meth.LogicalName), m))
                     | _ -> ()
 
 
@@ -601,7 +602,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
         
         let availImpliedInterfaces : TType list = 
-            [ for (reqdTy, m) in allReqdTys do
+            [ for reqdTy, m in allReqdTys do
                 if not (isInterfaceTy g reqdTy) then 
                     let baseTyOpt = if isObjExpr then Some reqdTy else GetSuperTypeOfType g amap m reqdTy 
                     match baseTyOpt with 
@@ -635,7 +636,7 @@ module DispatchSlotChecking =
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
-        [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+        [ for i, reqdTy, reqdTyRange, impliedTys in reqdTyInfos do
 
             // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
             // duplicates.
@@ -682,9 +683,9 @@ module DispatchSlotChecking =
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
 
             /// Check that no interface type is implied twice
-            for (j, _, _, impliedTys2) in reqdTyInfos do
+            for j, _, _, impliedTys2 in reqdTyInfos do
                 if i > j then
-                    for (ty, dispatchSlots) in dispatchSlotSet do
+                    for ty, dispatchSlots in dispatchSlotSet do
                         if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
                             if  dispatchSlots 
                                 |> List.exists (fun reqdSlot ->
@@ -757,7 +758,7 @@ module DispatchSlotChecking =
         
 
         // We check all the abstracts related to the class hierarchy and then check each interface implementation
-        for ((reqdTy, m), slotImplSet) in allImpls do
+        for (reqdTy, m), slotImplSet in allImpls do
             let (SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, _)) = slotImplSet
             try 
 
@@ -782,7 +783,7 @@ module DispatchSlotChecking =
                            |> List.filter (fst >> mustOverrideSomething reqdTy)
                            |> List.map snd
 
-                    CheckOverridesAreAllUsedOnce (denv, g, amap, false, reqdTy, dispatchSlotsKeyed, availPriorOverrides, overridesToCheck)
+                    CheckOverridesAreAllUsedOnce (denv, g, infoReader, false, reqdTy, dispatchSlotsKeyed, availPriorOverrides, overridesToCheck)
 
             with e -> errorRecovery e m
 
@@ -796,7 +797,7 @@ module DispatchSlotChecking =
                     let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
                     slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
                 else
-                    [ for ((reqdTy, m), (SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _))) in allImpls do
+                    [ for (reqdTy, m), SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overridenForThisSlotImplSet = 
                               [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do

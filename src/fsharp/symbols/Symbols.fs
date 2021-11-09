@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec FSharp.Compiler.SourceCodeServices
+namespace rec FSharp.Compiler.Symbols
 
 open System
 open System.Collections.Generic
-
+open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.AccessibilityLogic
@@ -15,17 +15,16 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.XmlDoc
-
-open Internal.Utilities
+open FSharp.Compiler.Syntax.PrettyNaming
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
@@ -84,7 +83,7 @@ module Impl =
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
         
     let makeXmlDoc (doc: XmlDoc) =
-        makeReadOnlyCollection doc.UnprocessedLines
+        FSharpXmlDoc.FromXmlText doc
     
     let makeElaboratedXmlDoc (doc: XmlDoc) =
         makeReadOnlyCollection (doc.GetElaboratedXmlLines())
@@ -197,7 +196,7 @@ module Impl =
             
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
-        match SymbolHelpers.GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -216,7 +215,7 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
 // delay the realization of 'item' in case it is unresolved
-type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -> CcuThunk -> AccessorDomain -> bool)) =
+type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> CcuThunk -> AccessorDomain -> bool) =
 
     member x.Assembly = 
         let ccu = defaultArg (SymbolHelpers.ccuOfItem cenv.g x.Item) cenv.thisCcu 
@@ -239,9 +238,13 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
-    member internal x.Item = item()
+    member internal _.SymbolEnv = cenv
 
-    member x.DisplayName = item().DisplayName
+    member internal _.Item = item()
+
+    member _.DisplayNameCore = item().DisplayNameCore
+
+    member _.DisplayName = item().DisplayName
 
     // This is actually overridden in all cases below. However some symbols are still just of type FSharpSymbol, 
     // see 'FSharpSymbol.Create' further below.
@@ -253,7 +256,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     override x.GetHashCode() = hash x.ImplementationLocation  
 
-    override x.ToString() = "symbol " + (try item().DisplayName with _ -> "?")
+    override x.ToString() = "symbol " + (try item().DisplayNameCore with _ -> "?")
 
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
@@ -334,14 +337,18 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         | Item.Types _
         | Item.DelegateCtor _  -> dflt()
 
-    static member GetAccessibility (symbol: FSharpSymbol) =
-        match symbol with
-        | :? FSharpEntity as x -> Some x.Accessibility
-        | :? FSharpField as x -> Some x.Accessibility
-        | :? FSharpUnionCase as x -> Some x.Accessibility
-        | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
-        | _ -> None
+    abstract Accessibility: FSharpAccessibility
+    default _.Accessibility = FSharpAccessibility(taccessPublic)
         
+    abstract Attributes: IList<FSharpAttribute>
+    default _.Attributes = makeReadOnlyCollection []
+
+    member sym.HasAttribute<'T> () =
+        sym.Attributes |> Seq.exists (fun attr -> attr.IsAttribute<'T>())
+
+    member sym.TryGetAttribute<'T>() =
+        sym.Attributes |> Seq.tryFind (fun attr -> attr.IsAttribute<'T>())
+
 type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
@@ -380,10 +387,13 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         checkIsResolved()
         entity.CompiledName 
 
+    member _.DisplayNameCore = 
+        checkIsResolved()
+        entity.DisplayNameCore
+
     member _.DisplayName = 
         checkIsResolved()
-        if entity.IsModuleOrNamespace then entity.DemangledModuleOrNamespaceName
-        else entity.DisplayName 
+        entity.DisplayName
 
     member _.AccessPath  = 
         checkIsResolved()
@@ -412,7 +422,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.CompilationPathOpt with 
         | None -> None
         | Some (CompPath(_, [])) -> None
-        | Some cp when cp.AccessPath |> List.forall (function (_, ModuleOrNamespaceKind.Namespace) -> true | _  -> false) -> 
+        | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace -> true | _  -> false) -> 
             Some (buildAccessPath (Some cp))
         | Some _ -> None
 
@@ -479,7 +489,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member _.ArrayRank  = 
         checkIsResolved()
-        rankOfArrayTyconRef cenv.g entity
+        if isArrayTyconRef cenv.g entity then
+            rankOfArrayTyconRef cenv.g entity
+        else
+            0
 
 #if !NO_EXTENSIONTYPING
     member _.IsProvided  = 
@@ -558,12 +571,11 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.TypeReprInfo with 
         | TFSharpObjectRepr r when entity.IsFSharpDelegateTycon -> 
             match r.fsobjmodel_kind with 
-            | TTyconDelegate ss -> FSharpDelegateSignature(cenv, ss)
+            | TFSharpDelegate ss -> FSharpDelegateSignature(cenv, ss)
             | _ -> invalidOp "not a delegate type"
         | _ -> invalidOp "not a delegate type"
-      
 
-    member _.Accessibility = 
+    override _.Accessibility = 
         if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(getApproxFSharpAccessibilityOfEntity entity) 
 
@@ -589,13 +601,13 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
-        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
+        ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
     member x.IsDisposableType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
-        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+        ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
     member x.BaseType = 
         checkIsResolved()        
@@ -608,10 +620,8 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.IsNamespace =  entity.IsNamespace
 
-    member x.MembersOrValues =  x.MembersFunctionsAndValues
-
     member x.MembersFunctionsAndValues = 
-      if isUnresolved() then makeReadOnlyCollection[] else
+      if isUnresolved() then makeReadOnlyCollection [] else
       protect <| fun () -> 
         ([ let _, entityTy = generalizeTyconRef entity
            let createMember (minfo: MethInfo) =
@@ -643,10 +653,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                    let vref = mkNestedValRef entity v
                    yield FSharpMemberOrFunctionOrValue(cenv, V vref, Item.Value vref) 
                    match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentEnclosingEntity with
-                   | MemberKind.PropertyGet, Parent p -> 
+                   | SynMemberKind.PropertyGet, Parent p -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef p, Some vref, None)
                         yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
-                   | MemberKind.PropertySet, Parent p -> 
+                   | SynMemberKind.PropertySet, Parent p -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef p, None, Some vref)
                         yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
                    | _ -> ()
@@ -671,7 +681,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
             let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
@@ -682,22 +692,20 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
       |> makeReadOnlyCollection
 
     member _.NestedEntities = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
         entity.ModuleOrNamespaceType.AllEntities 
         |> QueueList.toList
         |> List.map (fun x -> FSharpEntity(cenv, entity.NestedTyconRef x))
         |> makeReadOnlyCollection
 
     member x.UnionCases = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
         entity.UnionCasesAsRefList
         |> List.map (fun x -> FSharpUnionCase(cenv, x)) 
         |> makeReadOnlyCollection
 
-    member x.RecordFields = x.FSharpFields
-
     member x.FSharpFields =
-        if isUnresolved() then makeReadOnlyCollection[] else
+        if isUnresolved() then makeReadOnlyCollection [] else
     
         if entity.IsILEnumTycon then
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
@@ -712,7 +720,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
         else
             entity.AllFieldsAsList
-            |> List.map (fun x -> FSharpField(cenv, mkRecdFieldRef entity x.Name))
+            |> List.map (fun x -> FSharpField(cenv, mkRecdFieldRef entity x.LogicalName))
             |> makeReadOnlyCollection
 
     member x.AbbreviatedType   = 
@@ -722,8 +730,8 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         | None -> invalidOp "not a type abbreviation"
         | Some ty -> FSharpType(cenv, ty)
 
-    member _.Attributes = 
-        if isUnresolved() then makeReadOnlyCollection[] else
+    override _.Attributes = 
+        if isUnresolved() then makeReadOnlyCollection [] else
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv, a))
         |> makeReadOnlyCollection
@@ -750,7 +758,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                     match kind with
                     | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
                         [ yield! loop (mapEachCurrentPath currentPaths name) rest
-                          yield! loop (mapEachCurrentPath currentPaths (name.[..name.Length - 7])) rest ]
+                          yield! loop (mapEachCurrentPath currentPaths name.[..name.Length - 7]) rest ]
                     | _ -> 
                        loop (mapEachCurrentPath currentPaths name) rest
             loop [] parts |> List.map (List.rev >> String.concat ".")
@@ -762,7 +770,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.ActivePatternCases =
         protect <| fun () -> 
-            ActivePatternElemsOfModuleOrNamespace x.Entity
+            ActivePatternElemsOfModuleOrNamespace cenv.g x.Entity
             |> Map.toList
             |> List.map (fun (_, apref) ->
                 let item = Item.ActivePatternCase apref
@@ -808,6 +816,92 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.TryGetMembersFunctionsAndValues() = 
         try x.MembersFunctionsAndValues with _ -> [||] :> _
 
+    member this.TryGetMetadataText() =
+        match entity.TryDeref with
+        | ValueSome _ ->
+            if entity.IsNamespace then None
+            else
+
+            let denv = DisplayEnv.InitialForSigFileGeneration cenv.g
+
+            let extraOpenPath =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    let rec getOpenPath accessPath acc =
+                        match accessPath with
+                        | [] -> acc
+                        | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.Namespace) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+                        | (name, ModuleOrNamespaceKind.FSharpModuleWithSuffix) :: accessPath ->
+                            getOpenPath accessPath (name :: acc)
+
+                    getOpenPath cpath.AccessPath []
+                | _ -> 
+                    []
+                |> List.rev
+
+            let needOpenType =
+                match entity.CompilationPathOpt with
+                | Some cpath ->
+                    match cpath.AccessPath with
+                    | (_, ModuleOrNamespaceKind.ModuleOrType) :: _ ->
+                        match this.DeclaringEntity with
+                        | Some (declaringEntity: FSharpEntity) -> not declaringEntity.IsFSharpModule
+                        | _ -> false
+                    | _ -> false
+                | _ ->
+                    false
+
+            let denv = denv.AddOpenPath extraOpenPath
+
+            let infoReader = cenv.infoReader
+
+            let openPathL =
+                extraOpenPath
+                |> List.map (fun x -> Layout.wordL (TaggedText.tagUnknownEntity x))
+
+            let pathL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.sepListL (Layout.sepL TaggedText.dot) openPathL
+                    
+            let headerL =
+                if List.isEmpty extraOpenPath then
+                    Layout.emptyL
+                else
+                    Layout.(^^)
+                        (Layout.wordL (TaggedText.tagKeyword "namespace"))
+                        pathL
+
+            let openL = 
+                if List.isEmpty openPathL then Layout.emptyL
+                else
+                    let openKeywordL =
+                        if needOpenType then
+                            Layout.(^^)
+                                (Layout.wordL (TaggedText.tagKeyword "open"))
+                                (Layout.wordL TaggedText.keywordType)
+                        else
+                            Layout.wordL (TaggedText.tagKeyword "open")                            
+                    Layout.(^^)
+                        openKeywordL
+                        pathL
+
+            Layout.aboveListL
+                [
+                    (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
+                    (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
+                    (NicePrint.layoutEntityDefn denv infoReader AccessibleFromSomewhere range0 entity)
+                ]
+            |> LayoutRender.showL
+            |> SourceText.ofString
+            |> Some
+        | _ ->
+            None
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -844,7 +938,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     member _.Name = 
         checkIsResolved()
-        v.UnionCase.DisplayName
+        v.UnionCase.LogicalName
 
     member _.DeclarationLocation = 
         checkIsResolved()
@@ -854,7 +948,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         if isUnresolved() then false else
         v.UnionCase.RecdFieldsArray.Length <> 0
 
-    member _.UnionCaseFields = 
+    member _.Fields = 
         if isUnresolved() then makeReadOnlyCollection [] else
         v.UnionCase.RecdFieldsArray |> Array.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
@@ -862,14 +956,14 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         FSharpType(cenv, v.ReturnType)
 
-    member _.CompiledName = 
+    member _.CompiledName =
         checkIsResolved()
         v.UnionCase.CompiledName
 
     member _.XmlDocSig = 
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-        match SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase with
+        match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -881,11 +975,11 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
         if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
         v.UnionCase.XmlDoc |> makeElaboratedXmlDoc
 
-    member _.Attributes = 
+    override _.Attributes = 
         if isUnresolved() then makeReadOnlyCollection [] else
         v.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
-    member _.Accessibility =  
+    override _.Accessibility =  
         if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(v.UnionCase.Accessibility)
 
@@ -1044,12 +1138,12 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d with 
             | RecdOrClass v -> 
                 let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfRecdFieldInfo recd
+                GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
+                GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
-                SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1090,7 +1184,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
     member _.Name = 
         checkIsResolved()
         match d.TryRecdField with 
-        | Choice1Of3 r -> r.Name
+        | Choice1Of3 r -> r.LogicalName
         | Choice2Of3 f -> f.FieldName
         | Choice3Of3 (anonInfo, _tinst, n, _) -> anonInfo.SortedNames.[n]
 
@@ -1130,7 +1224,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         | Choice3Of3 _ -> []
         |> makeReadOnlyCollection
 
-    member _.Accessibility: FSharpAccessibility =  
+    override _.Accessibility: FSharpAccessibility =  
         if isUnresolved() then FSharpAccessibility taccessPublic else 
         let access = 
             match d.TryRecdField with 
@@ -1156,14 +1250,12 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
 
     override x.ToString() = "field " + x.Name
 
-type [<System.Obsolete("Renamed to FSharpField")>] FSharpRecordField = FSharpField
-
 type [<Class>] FSharpAccessibilityRights(thisCcu: CcuThunk, ad:AccessorDomain) =
     member internal _.ThisCcu = thisCcu
 
     member internal _.Contents = ad
 
-type FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, ty, n, valOpt: ValRef option, item) = 
+type FSharpActivePatternCase(cenv, apinfo: ActivePatternInfo, ty, n, valOpt: ValRef option, item) = 
 
     inherit FSharpSymbol (cenv, 
                           (fun () -> item), 
@@ -1188,13 +1280,13 @@ type FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, ty, n
     member _.XmlDocSig = 
         let xmlsig = 
             match valOpt with
-            | Some valref -> SymbolHelpers.GetXmlDocSigOfValRef cenv.g valref
+            | Some valref -> GetXmlDocSigOfValRef cenv.g valref
             | None -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
-type FSharpActivePatternGroup(cenv, apinfo:PrettyNaming.ActivePatternInfo, ty, valOpt) =
+type FSharpActivePatternGroup(cenv, apinfo:ActivePatternInfo, ty, valOpt) =
 
     member _.Name = valOpt |> Option.map (fun vref -> vref.LogicalName)
 
@@ -1231,9 +1323,9 @@ type FSharpGenericParameter(cenv, v:Typar) =
 
     member _.ElaboratedXmlDoc = v.XmlDoc |> makeElaboratedXmlDoc
 
-    member _.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
+    member _.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadType)
 
-    member _.Attributes = 
+    override _.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter
          // has been lost (it is not accessible via Typar).  So we can't easily report the attributes in this 
          // case.
@@ -1442,7 +1534,6 @@ type FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
     override x.ToString() = "<type constraint>"
 
 type FSharpInlineAnnotation = 
-   | PseudoValue
    | AlwaysInline 
    | OptionalInline 
    | NeverInline 
@@ -1516,7 +1607,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | Some v -> Some v.Range
         | None -> base.DeclarationLocation 
 
-    member x.Overloads matchParameterNumber =
+    member x.GetOverloads matchParameterNumber =
         checkIsResolved()
         match d with
         | M m | C m ->
@@ -1662,7 +1753,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | None -> FSharpInlineAnnotation.OptionalInline
         | Some v -> 
         match v.InlineInfo with 
-        | ValInline.PseudoVal -> FSharpInlineAnnotation.PseudoValue
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
         | ValInline.Never -> FSharpInlineAnnotation.NeverInline
@@ -1719,8 +1809,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventAddMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("add_") -> 
-            let eventName = m.LogicalName.[4..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("add_") &&
+
+            let eventName = logicalName.[4..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
@@ -1733,8 +1826,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsEventRemoveMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("remove_") -> 
-            let eventName = m.LogicalName.[7..]
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("remove_") &&
+
+            let eventName = logicalName.[7..]
             let entityTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
@@ -1743,25 +1839,14 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | _ -> false
         | _ -> false
 
-    member x.IsGetterMethod =  
-        if isUnresolved() then false else 
-        x.IsPropertyGetterMethod ||
-        match fsharpInfo() with 
-        | None -> false
-        | Some v -> v.IsPropertyGetterMethod
-
-    member x.IsSetterMethod =  
-        if isUnresolved() then false else 
-        x.IsPropertySetterMethod ||
-        match fsharpInfo() with 
-        | None -> false
-        | Some v -> v.IsPropertySetterMethod
-
     member _.IsPropertyGetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        | M m when m.LogicalName.StartsWithOrdinal("get_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("get_") &&
+
+            let propName = ChopPropertyName(logicalName)
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertyGetterMethod
@@ -1770,9 +1855,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsPropertySetterMethod = 
         if isUnresolved() then false else 
         match d with 
-        // Look for a matching property with the right name. 
-        | M m when m.LogicalName.StartsWithOrdinal("set_") -> 
-            let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
+        | M m ->
+            let logicalName = m.LogicalName
+            logicalName.Length > 4 && logicalName.StartsWithOrdinal("set_") &&
+
+            let propName = ChopPropertyName(logicalName) 
             let declaringTy = generalizedTyconRef m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
@@ -1803,8 +1890,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m -> m.IsExtensionMember
         | V v -> v.IsExtensionMember
         | C _ -> false
-
-    member x.IsOverrideOrExplicitMember = x.IsOverrideOrExplicitInterfaceImplementation
 
     member _.IsOverrideOrExplicitInterfaceImplementation =
         if isUnresolved() then false else 
@@ -1851,7 +1936,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member _.IsActivePattern =  
         if isUnresolved() then false else 
         match fsharpInfo() with 
-        | Some v -> PrettyNaming.ActivePatternInfoOfValName v.CoreDisplayName v.Range |> Option.isSome
+        | Some v -> ActivePatternInfoOfValName v.DisplayNameCoreMangled v.Range |> Option.isSome
         | None -> false
 
     member x.CompiledName = 
@@ -1882,23 +1967,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfEvent cenv.infoReader range e with
+            match GetXmlDocSigOfEvent cenv.infoReader range e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfProp cenv.infoReader range p with
+            match GetXmlDocSigOfProp cenv.infoReader range p with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfMethInfo cenv.infoReader range m with
+            match GetXmlDocSigOfMethInfo cenv.infoReader range m with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
             match v.DeclaringEntity with 
             | Parent entityRef -> 
-                match SymbolHelpers.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
+                match GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig
                 | _ -> ""
             | ParentNone -> "" 
@@ -1923,19 +2008,19 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         checkIsResolved()
         match d with 
         | P p -> 
-            [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
-                // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
-                // either .NET or F# parameters
-                let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
-                yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
-               |> makeReadOnlyCollection  ]
+            [ [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in p.GetParamDatas(cenv.amap, range0) do 
+                    // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
+                    // either .NET or F# parameters
+                    let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
+                    yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
+              |> makeReadOnlyCollection  ]
            |> makeReadOnlyCollection
 
         | E _ ->  []  |> makeReadOnlyCollection
         | M m | C m -> 
             [ for argtys in m.GetParamDatas(cenv.amap, range0, m.FormalMethodInst) do 
                  yield
-                   [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in argtys do 
+                   [ for ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) in argtys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
                         let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
@@ -2007,7 +2092,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             FSharpParameter(cenv, rty, retInfo, x.DeclarationLocationOpt) 
 
 
-    member _.Attributes = 
+    override _.Attributes = 
         if isUnresolved() then makeReadOnlyCollection [] else 
         let m = range0
         match d with 
@@ -2026,21 +2111,21 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = BaseVal
+        | V v -> v.IsBaseVal
 
     /// Is this the "x" in "type C() as x = ..."
     member _.IsConstructorThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _| P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = CtorThisVal
+        | V v -> v.IsCtorThisVal
 
     /// Is this the "x" in "member x.M = ..."
     member _.IsMemberThisValue =
         if isUnresolved() then false else
         match d with
         | M _ | C _ | P _ | E _ -> false
-        | V v -> v.BaseOrThisInfo = MemberThisVal
+        | V v -> v.IsMemberThisVal
 
     /// Is this a [<Literal>] value, and if so what value? (may be null)
     member _.LiteralValue =
@@ -2050,7 +2135,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V v -> getLiteralValue v.LiteralValue
 
       /// How visible is this? 
-    member this.Accessibility: FSharpAccessibility  = 
+    override this.Accessibility: FSharpAccessibility  = 
         if isUnresolved() then FSharpAccessibility taccessPublic else 
         match fsharpInfo() with 
         | Some v -> FSharpAccessibility(v.Accessibility)
@@ -2063,7 +2148,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let access = 
                 match e with 
                 | ILEvent ileinfo -> 
-                    let ilAccess = AccessibilityLogic.GetILAccessOfILEventInfo ileinfo
+                    let ilAccess = GetILAccessOfILEventInfo ileinfo
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity ilAccess
                 | _ -> taccessPublic
 
@@ -2074,7 +2159,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let access = 
                 match p with 
                 | ILProp ilpinfo -> 
-                    let ilAccess = AccessibilityLogic.GetILAccessOfILPropInfo ilpinfo
+                    let ilAccess = GetILAccessOfILPropInfo ilpinfo
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
@@ -2110,6 +2195,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
         | _ -> false
 
+    member x.IsFunction =
+        match d with
+        | V valRef -> isForallFunctionTy cenv.g valRef.Type
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -2134,6 +2224,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match x.IsMember, d with
         | true, V v ->
             NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
+            |> LayoutRender.toArray
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2146,6 +2237,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
@@ -2172,7 +2264,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let p = FSharpParameter(cenv, paramTy, argReprInfo, None, None, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
-        let witnessMethName = PrettyNaming.ExtraWitnessMethodName x.CompiledName
+        let witnessMethName = ExtraWitnessMethodName x.CompiledName
         Some (witnessMethName, makeReadOnlyCollection witnessParams)
 
     // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
@@ -2191,7 +2283,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.TryGetFullCompiledOperatorNameIdents() : string[] option =
         // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
-        if PrettyNaming.IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
+        if IsOperatorDisplayName x.DisplayName && x.DisplayName <> x.CompiledName then
             x.DeclaringEntity
             |> Option.bind (fun e -> e.TryGetFullName())
             |> Option.map (fun enclosingEntityFullName -> 
@@ -2236,9 +2328,6 @@ type FSharpType(cenv, ty:TType) =
         match stripTyparEqns ty with 
         | TType_tuple (tupInfo, _) -> evalTupInfoIsStruct tupInfo
         | _ -> false
-
-    member x.IsNamedType = x.HasTypeDefinition
-    member x.NamedEntity = x.TypeDefinition
 
     member _.TypeDefinition = 
        protect <| fun () -> 
@@ -2313,17 +2402,17 @@ type FSharpType(cenv, ty:TType) =
             FSharpGenericParameter (cenv, tp)
         | _ -> invalidOp "not a generic parameter type"
 
-    member x.AllInterfaces = 
+    member _.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes ty do 
              yield FSharpType(cenv, ty) ]
         |> makeReadOnlyCollection
 
-    member x.BaseType = 
+    member _.BaseType = 
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
 
-    member x.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
+    member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
         let typI = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.V, ty.V)) ty
         FSharpType(cenv, typI)
 
@@ -2341,7 +2430,7 @@ type FSharpType(cenv, ty:TType) =
         |   _ -> false
 
     // Note: This equivalence relation is modulo type abbreviations. The hash is less than perfect.
-    override x.GetHashCode() = 
+    override _.GetHashCode() = 
         let rec hashType ty = 
             let ty = stripTyEqnsWrtErasure EraseNone cenv.g ty
             match ty with
@@ -2355,15 +2444,25 @@ type FSharpType(cenv, ty:TType) =
             | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
         hashType ty
 
-    member x.Format(context: FSharpDisplayContext) = 
+    member _.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
+            NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
 
-    member x.FormatLayout(context: FSharpDisplayContext) =
+    member _.FormatWithConstraints(context: FSharpDisplayContext) = 
+        protect <| fun () -> 
+            NicePrint.prettyStringOfTy (context.Contents cenv.g) ty 
+
+    member _.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
 
-    override x.ToString() = 
+    member _.FormatLayoutWithConstraints(context: FSharpDisplayContext) =
+        protect <| fun () -> 
+            NicePrint.prettyLayoutOfType (context.Contents cenv.g) ty
+            |> LayoutRender.toArray
+
+    override _.ToString() = 
        protect <| fun () -> 
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) ty 
 
@@ -2413,6 +2512,11 @@ type FSharpType(cenv, ty:TType) =
         let ps = (xs, prettyTys) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType pty)) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
         ps, returnParameter.AdjustType prettyRetTy
 
+    member x.StripAbbreviations() =
+        if x.IsAbbreviation then
+            x.AbbreviatedType.StripAbbreviations()
+        else x
+
 type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) = 
 
     let rec resolveArgObj (arg: obj) =
@@ -2442,13 +2546,17 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
             | AttribInfo.FSAttribInfo(g, attrib) ->
                 NicePrint.stringOfFSAttrib (context.Contents g) attrib
             | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
-                let parms, _args = decodeILAttribData g.ilg cattr 
+                let parms, _args = decodeILAttribData cattr 
                 NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, parms)
 
     member _.Range = attrib.Range
 
     override _.ToString() = 
         if entityIsUnresolved attrib.TyconRef then "attribute ???" else "attribute " + attrib.TyconRef.CompiledName + "(...)" 
+
+    member attr.IsAttribute<'T> () =
+        // CompiledName throws exception on DataContractAttribute generated by SQLProvider
+        try attr.AttributeType.CompiledName = typeof<'T>.Name with _ -> false
 
 #if !NO_EXTENSIONTYPING    
 type FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
@@ -2485,7 +2593,7 @@ type FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterI
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpStaticParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
+        |   :? FSharpStaticParameter as p -> x.Name = p.Name && equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash x.Name
@@ -2532,7 +2640,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, ow
         | Some (ArgumentContainer.Method minfo) -> Some (FSharpMemberOrFunctionOrValue (cenv, minfo) :> FSharpSymbol)
         | _ -> None
 
-    member _.Attributes = 
+    override _.Attributes = 
         topArgInfo.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
     member _.IsParamArrayArg = isParamArrayArg
@@ -2550,7 +2658,7 @@ type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, ow
     override x.Equals(other: obj) =
         box x === other || 
         match other with
-        |   :? FSharpParameter as p -> x.Name = p.Name && Range.equals x.DeclarationLocation p.DeclarationLocation
+        |   :? FSharpParameter as p -> x.Name = p.Name && equals x.DeclarationLocation p.DeclarationLocation
         |   _ -> false
 
     override x.GetHashCode() = hash (box topArgInfo)
@@ -2628,8 +2736,6 @@ type FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member _.QualifiedName = match ccu.QualifiedName with None -> "" | Some s -> s
 
-    member _.CodeLocation = ccu.SourceCodeDirectory
-
     member _.FileName = ccu.FileName
 
     member _.SimpleName = ccu.AssemblyName 
@@ -2676,64 +2782,3 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
 
     member _.IsOwnNamespace = isOwnNamespace
 
-[<Sealed>]
-type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
-
-    member _.Symbol  = symbol
-
-    member _.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
-
-    member x.IsDefinition = x.IsFromDefinition
-
-    member _.IsFromDefinition = itemOcc = ItemOccurence.Binding
-
-    member _.IsFromPattern = itemOcc = ItemOccurence.Pattern
-
-    member _.IsFromType = itemOcc = ItemOccurence.UseInType
-
-    member _.IsFromAttribute = itemOcc = ItemOccurence.UseInAttribute
-
-    member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
-
-    member _.IsFromComputationExpression = 
-        match symbol.Item, itemOcc with 
-        // 'seq' in 'seq { ... }' gets colored as keywords
-        | (Item.Value vref), ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
-        // custom builders, custom operations get colored as keywords
-        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
-        | _ -> false
-
-    member _.IsFromOpenStatement = itemOcc = ItemOccurence.Open
-
-    member _.FileName = range.FileName
-
-    member _.Range = Range.toZ range
-
-    member _.RangeAlternate = range
-     
-    member this.IsPrivateToFile = 
-        let isPrivate =
-            match this.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
-            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
-            | :? FSharpGenericParameter -> true
-            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
-            | :? FSharpField as m -> m.Accessibility.IsPrivate
-            | _ -> false
-            
-        let declarationLocation =
-            match this.Symbol.SignatureLocation with
-            | Some x -> Some x
-            | _ ->
-                match this.Symbol.DeclarationLocation with
-                | Some x -> Some x
-                | _ -> this.Symbol.ImplementationLocation
-            
-        let declaredInTheFile = 
-            match declarationLocation with
-            | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
-            | _ -> false
-            
-        isPrivate && declaredInTheFile   
-
-    override _.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 

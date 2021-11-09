@@ -100,7 +100,7 @@ type Tables<'tok> =
 
     /// Interpret the parser table taking input from the given lexer, using the given lex buffer, and the given start state.
     /// Returns an object indicating the final synthesized value for the parse.
-    member Interpret :  lexer:(LexBuffer<'char> -> 'tok) * lexbuf:LexBuffer<'char> * startState:int -> obj 
+    member Interpret :  lexer:(LexBuffer<'char> -> 'tok) * lexbuf:LexBuffer<'char> * initialState:int -> obj 
 
 #if INTERNALIZED_FSLEXYACC_RUNTIME
 exception internal Accept of obj

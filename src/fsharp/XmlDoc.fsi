@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.XmlDoc
+namespace FSharp.Compiler.Xml
 
 open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<Class>]
-type XmlDoc =
+type public XmlDoc =
 
     new: unprocessedLines:string [] * range:range -> XmlDoc
 
@@ -57,3 +58,14 @@ type public PreXmlDoc =
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 
     static member Empty: PreXmlDoc
+
+[<Sealed>]
+type internal XmlDocumentationInfo =
+
+    member TryGetXmlDocBySig : xmlDocSig: string -> XmlDoc option
+
+    static member TryCreateFromFile : xmlFileName: string -> XmlDocumentationInfo option
+
+type internal IXmlDocumentationInfoLoader =
+
+    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option

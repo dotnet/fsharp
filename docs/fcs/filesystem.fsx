@@ -21,7 +21,8 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 
 let defaultFileSystem = FileSystem
@@ -143,7 +144,6 @@ let projectOptions =
       ProjectId = None
       SourceFiles = [| fileName1; fileName2 |]
       OriginalLoadReferences = []
-      ExtraProjectInfo=None
       Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects = [| |]
@@ -154,7 +154,7 @@ let projectOptions =
 
 let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
 
-results.Errors
+results.Diagnostics
 results.AssemblySignature.Entities.Count //2
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count //1
 results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName // "B"

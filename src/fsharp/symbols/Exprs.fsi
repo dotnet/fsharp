@@ -1,10 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec FSharp.Compiler.SourceCodeServices
+namespace rec FSharp.Compiler.Symbols
 
-open FSharp.Compiler
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -37,7 +36,8 @@ type public FSharpImplementationFileContents =
     member HasExplicitEntryPoint:  bool
 
 /// Represents a declaration in an implementation file, as seen by the F# language
-and public FSharpImplementationFileDeclaration = 
+[<RequireQualifiedAccess>]
+type public FSharpImplementationFileDeclaration = 
 
     /// Represents the declaration of a type
     | Entity of entity: FSharpEntity * declarations: FSharpImplementationFileDeclaration list
@@ -65,7 +65,8 @@ type public FSharpExpr =
     member ImmediateSubExpressions: FSharpExpr list
 
 /// Represents a checked method in an object expression, as seen by the F# language.  
-and [<Sealed>] public FSharpObjectExprOverride = 
+[<Sealed>]
+type public FSharpObjectExprOverride = 
     /// The signature of the implemented abstract slot
     member Signature: FSharpAbstractSignature
 
@@ -79,7 +80,7 @@ and [<Sealed>] public FSharpObjectExprOverride =
     member Body: FSharpExpr
 
 /// A collection of active patterns to analyze expressions
-module public BasicPatterns =
+module public FSharpExprPatterns =
 
     /// Matches expressions which are uses of values 
     val (|Value|_|): FSharpExpr -> FSharpMemberOrFunctionOrValue option 
@@ -221,7 +222,7 @@ module public BasicPatterns =
     val (|ObjectExpr|_|): FSharpExpr -> (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) option
 
     /// Matches expressions for an unresolved call to a trait 
-    val (|TraitCall|_|): FSharpExpr -> (FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
+    val (|TraitCall|_|): FSharpExpr -> (FSharpType list * string * SynMemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
 
     /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
     val (|WitnessArg|_|): FSharpExpr -> int option

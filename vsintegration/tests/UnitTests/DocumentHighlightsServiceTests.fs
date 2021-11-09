@@ -11,12 +11,12 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
     .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 [<NUnit.Framework.Category "Roslyn Services">]
@@ -31,7 +31,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
@@ -48,18 +48,17 @@ let internal projectOptions = {
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
     OriginalLoadReferences = []
-    ExtraProjectInfo = None
     Stamp = None
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], projectOptions, 0, LanguageServicePerformanceOptions.Default)
+    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
-    let range = Range.mkRange filePath (Pos.mkPos startLine startCol) (Pos.mkPos endLine endCol)
+    let range = Range.mkRange filePath (Position.mkPos startLine startCol) (Position.mkPos endLine endCol)
     { IsDefinition = isDefinition
       TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 

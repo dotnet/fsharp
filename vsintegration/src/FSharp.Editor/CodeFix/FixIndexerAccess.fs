@@ -8,7 +8,7 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
 type internal FSharpFixIndexerAccessCodeFixProvider() =
@@ -34,9 +34,8 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                             let mutable span = context.Span
 
                             let notStartOfBracket (span: TextSpan) =
-                                let t = TextSpan(span.Start, span.Length + 1)
-                                let s = sourceText.GetSubText(t).ToString()
-                                s.[s.Length-1] <> '['
+                                let t = sourceText.GetSubText(TextSpan(span.Start, span.Length + 1))
+                                t.[t.Length-1] <> '['
 
                             // skip all braces and blanks until we find [
                             while span.End < sourceText.Length && notStartOfBracket span do
@@ -48,7 +47,7 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
 
                     let codefix = 
                         CodeFixHelpers.createTextChangeCodeFix(
-                            CompilerDiagnostics.getErrorMessage AddIndexerDot, 
+                            CompilerDiagnostics.GetErrorMessage FSharpDiagnosticKind.AddIndexerDot, 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
 

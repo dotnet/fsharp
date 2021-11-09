@@ -6,16 +6,17 @@ open System
 open System.Text
 
 open Internal.Utilities
+open Internal.Utilities.Library
 open Internal.Utilities.Text.Lexing
 
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.IO
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
@@ -37,7 +38,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
-    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, Parser.token>(Environment.ProcessorCount, defaultArg capacity 1024)
+    let strings = System.Collections.Concurrent.ConcurrentDictionary<string, token>(Environment.ProcessorCount, defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -87,11 +88,11 @@ let reusingLexbufForParsing lexbuf f =
     with e ->
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
-let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) = 
+let resetLexbufPos filename (lexbuf: Lexbuf) = 
     lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
+let usingLexbufForParsing (lexbuf:Lexbuf, filename) f =
     resetLexbufPos filename lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
@@ -100,15 +101,15 @@ let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
 //-----------------------------------------------------------------------
 
 let stringBufferAsString (buf: ByteBuffer) =
-    let buf = buf.Close()
+    let buf = buf.AsMemory()
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
-        let hi = buf.[i*2+1]
-        let lo = buf.[i*2]
+        let hi = buf.Span.[i*2+1]
+        let lo = buf.Span.[i*2]
         let c = char (((int hi) * 256) + (int lo))
         chars.[i] <- c
-    System.String(chars)
+    String(chars)
 
 /// When lexing bytearrays we don't expect to see any unicode stuff. 
 /// Likewise when lexing string constants we shouldn't see any trigraphs > 127 
@@ -116,34 +117,59 @@ let stringBufferAsString (buf: ByteBuffer) =
 /// we just take every second byte we stored.  Note all bytes > 127 should have been 
 /// stored using addIntChar 
 let stringBufferAsBytes (buf: ByteBuffer) = 
-    let bytes = buf.Close()
-    Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
+    let bytes = buf.AsMemory()
+    Array.init (bytes.Length / 2) (fun i -> bytes.Span.[i*2]) 
+
+[<Flags>]
+type LexerStringFinisherContext = 
+    | InterpolatedPart = 1
+    | Verbatim = 2
+    | TripleQuote = 4
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
+    member fin.Finish (buf: ByteBuffer) kind context cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isInterpolatedStringPart cont
+        f buf kind context cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind isPart cont ->
+        LexerStringFinisher (fun buf kind context cont ->
+            let isPart = context.HasFlag(LexerStringFinisherContext.InterpolatedPart)
+            let isVerbatim = context.HasFlag(LexerStringFinisherContext.Verbatim)
+            let isTripleQuote = context.HasFlag(LexerStringFinisherContext.TripleQuote)
+
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
-                if kind.IsInterpolatedFirst then 
+                if kind.IsInterpolatedFirst then
+                    let synStringKind =
+                        if isTripleQuote then
+                            SynStringKind.TripleQuote
+                        elif isVerbatim then
+                            SynStringKind.Verbatim
+                        else
+                            SynStringKind.Regular
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART (s, cont)
+                        INTERP_STRING_BEGIN_PART (s, synStringKind, cont)
                     else
-                        INTERP_STRING_BEGIN_END (s, cont)
+                        INTERP_STRING_BEGIN_END (s, synStringKind, cont)
                 else
                     if isPart then
                         INTERP_STRING_PART (s, cont)
                     else
                         INTERP_STRING_END (s, cont)
-            elif kind.IsByteString then 
-                BYTEARRAY (stringBufferAsBytes buf, cont)
+            elif kind.IsByteString then
+                let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
+                BYTEARRAY (stringBufferAsBytes buf, synByteStringKind, cont)
             else
-                STRING (stringBufferAsString buf, cont)
+                let synStringKind =
+                    if isVerbatim then
+                        SynStringKind.Verbatim
+                    elif isTripleQuote then
+                        SynStringKind.TripleQuote
+                    else
+                        SynStringKind.Regular
+                STRING (stringBufferAsString buf, synStringKind, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =
@@ -159,10 +185,10 @@ let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127 
 let stringBufferIsBytes (buf: ByteBuffer) = 
-    let bytes = buf.Close()
+    let bytes = buf.AsMemory()
     let mutable ok = true 
     for i = 0 to bytes.Length / 2-1 do
-        if bytes.[i*2+1] <> 0uy then ok <- false
+        if bytes.Span.[i*2+1] <> 0uy then ok <- false
     ok
 
 let newline (lexbuf:LexBuffer<_>) = 
@@ -341,19 +367,26 @@ module Keywords =
         
     let KeywordToken s = keywordTable.[s]
 
-    let IdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) (s:string) =
+    let IdentifierToken args (lexbuf:Lexbuf) (s:string) =
         if IsCompilerGeneratedName s then 
             warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), lexbuf.LexemeRange))
         args.resourceManager.InternIdentifierToken s
 
-    let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
+    let KeywordOrIdentifierToken args (lexbuf:Lexbuf) s =
         match keywordTable.TryGetValue s with
         | true, v ->
             match v with 
             | RESERVED ->
                 warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange))
                 IdentifierToken args lexbuf s
-            | _ -> v
+            | _ ->
+                match s with 
+                | "land" |  "lor" | "lxor"
+                | "lsl" | "lsr" | "asr" ->
+                    if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+                        mlCompatWarning (FSComp.SR.mlCompatKeyword(s)) lexbuf.LexemeRange
+                | _ -> ()
+                v
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
@@ -370,109 +403,11 @@ module Keywords =
 
                 if String.IsNullOrEmpty dirname then dirname
                 else PathMap.applyDir args.pathMap dirname
-                |> KEYWORD_STRING
+                |> fun dir -> KEYWORD_STRING(s, dir)
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (s, System.IO.Path.GetFileName (FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex)) 
             | "__LINE__" -> 
-                KEYWORD_STRING (string lexbuf.StartPos.Line)
+                KEYWORD_STRING (s, string lexbuf.StartPos.Line)
             | _ -> 
                 IdentifierToken args lexbuf s
-
-    let DoesIdentifierNeedQuotation (s : string) : bool =
-        not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
-        || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
-        || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
-
-    /// A utility to help determine if an identifier needs to be quoted 
-    let QuoteIdentifierIfNeeded (s : string) : string =
-        if DoesIdentifierNeedQuotation s then "``" + s + "``" else s
-
-    /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
-    let NormalizeIdentifierBackticks (s : string) : string =
-        let s =
-            if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") then
-                s.[2..s.Length - 3]
-            else s
-        QuoteIdentifierIfNeeded s
-
-    /// Keywords paired with their descriptions. Used in completion and quick info.
-    let keywordsWithDescription : (string * string) list =
-        [ "abstract",  FSComp.SR.keywordDescriptionAbstract()
-          "and",       FSComp.SR.keyworkDescriptionAnd()
-          "as",        FSComp.SR.keywordDescriptionAs()
-          "assert",    FSComp.SR.keywordDescriptionAssert()
-          "base",      FSComp.SR.keywordDescriptionBase()
-          "begin",     FSComp.SR.keywordDescriptionBegin()
-          "class",     FSComp.SR.keywordDescriptionClass()
-          "const",     FSComp.SR.keywordDescriptionConst()
-          "default",   FSComp.SR.keywordDescriptionDefault()
-          "delegate",  FSComp.SR.keywordDescriptionDelegate()
-          "do",        FSComp.SR.keywordDescriptionDo()
-          "done",      FSComp.SR.keywordDescriptionDone()
-          "downcast",  FSComp.SR.keywordDescriptionDowncast()
-          "downto",    FSComp.SR.keywordDescriptionDownto()
-          "elif",      FSComp.SR.keywordDescriptionElif()
-          "else",      FSComp.SR.keywordDescriptionElse()
-          "end",       FSComp.SR.keywordDescriptionEnd()
-          "exception", FSComp.SR.keywordDescriptionException()
-          "extern",    FSComp.SR.keywordDescriptionExtern()
-          "false",     FSComp.SR.keywordDescriptionTrueFalse()
-          "finally",   FSComp.SR.keywordDescriptionFinally()
-          "for",       FSComp.SR.keywordDescriptionFor()
-          "fun",       FSComp.SR.keywordDescriptionFun()
-          "function",  FSComp.SR.keywordDescriptionFunction()
-          "global",    FSComp.SR.keywordDescriptionGlobal()
-          "if",        FSComp.SR.keywordDescriptionIf()
-          "in",        FSComp.SR.keywordDescriptionIn()
-          "inherit",   FSComp.SR.keywordDescriptionInherit()
-          "inline",    FSComp.SR.keywordDescriptionInline()
-          "interface", FSComp.SR.keywordDescriptionInterface()
-          "internal",  FSComp.SR.keywordDescriptionInternal()
-          "lazy",      FSComp.SR.keywordDescriptionLazy()
-          "let",       FSComp.SR.keywordDescriptionLet()
-          "let!",      FSComp.SR.keywordDescriptionLetBang()
-          "match",     FSComp.SR.keywordDescriptionMatch()
-          "match!",    FSComp.SR.keywordDescriptionMatchBang()
-          "member",    FSComp.SR.keywordDescriptionMember()
-          "module",    FSComp.SR.keywordDescriptionModule()
-          "mutable",   FSComp.SR.keywordDescriptionMutable()
-          "namespace", FSComp.SR.keywordDescriptionNamespace()
-          "new",       FSComp.SR.keywordDescriptionNew()
-          "not",       FSComp.SR.keywordDescriptionNot()
-          "null",      FSComp.SR.keywordDescriptionNull()
-          "of",        FSComp.SR.keywordDescriptionOf()
-          "open",      FSComp.SR.keywordDescriptionOpen()
-          "or",        FSComp.SR.keywordDescriptionOr()
-          "override",  FSComp.SR.keywordDescriptionOverride()
-          "private",   FSComp.SR.keywordDescriptionPrivate()
-          "public",    FSComp.SR.keywordDescriptionPublic()
-          "rec",       FSComp.SR.keywordDescriptionRec()
-          "return",    FSComp.SR.keywordDescriptionReturn()
-          "return!",   FSComp.SR.keywordDescriptionReturnBang()
-          "select",    FSComp.SR.keywordDescriptionSelect()
-          "static",    FSComp.SR.keywordDescriptionStatic()
-          "struct",    FSComp.SR.keywordDescriptionStruct()
-          "then",      FSComp.SR.keywordDescriptionThen()
-          "to",        FSComp.SR.keywordDescriptionTo()
-          "true",      FSComp.SR.keywordDescriptionTrueFalse()
-          "try",       FSComp.SR.keywordDescriptionTry()
-          "type",      FSComp.SR.keywordDescriptionType()
-          "upcast",    FSComp.SR.keywordDescriptionUpcast()
-          "use",       FSComp.SR.keywordDescriptionUse()
-          "use!",      FSComp.SR.keywordDescriptionUseBang()
-          "val",       FSComp.SR.keywordDescriptionVal()
-          "void",      FSComp.SR.keywordDescriptionVoid()
-          "when",      FSComp.SR.keywordDescriptionWhen()
-          "while",     FSComp.SR.keywordDescriptionWhile()
-          "with",      FSComp.SR.keywordDescriptionWith()
-          "yield",     FSComp.SR.keywordDescriptionYield()
-          "yield!",    FSComp.SR.keywordDescriptionYieldBang()
-          "->",        FSComp.SR.keywordDescriptionRightArrow()
-          "<-",        FSComp.SR.keywordDescriptionLeftArrow()
-          ":>",        FSComp.SR.keywordDescriptionCast()
-          ":?>",       FSComp.SR.keywordDescriptionDynamicCast()
-          "<@",        FSComp.SR.keywordDescriptionTypedQuotation()
-          "@>",        FSComp.SR.keywordDescriptionTypedQuotation()
-          "<@@",       FSComp.SR.keywordDescriptionUntypedQuotation()
-          "@@>",       FSComp.SR.keywordDescriptionUntypedQuotation() ]
 

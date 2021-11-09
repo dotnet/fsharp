@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.CodeAnalysis
+
+open System
 
 exception internal LegacyResolutionFailure
 
@@ -24,7 +26,7 @@ type internal LegacyResolvedFile =
         baggage:string
     }
   
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type internal ILegacyReferenceResolver =
     /// Get the "v4.5.1"-style moniker for the highest installed .NET Framework version.
     /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
@@ -32,10 +34,10 @@ type internal ILegacyReferenceResolver =
     /// Note: If an explicit "mscorlib" is given, then --noframework is being used, and the whole ReferenceResolver logic is essentially
     /// unused.  However in the future an option may be added to allow an explicit specification of
     /// a .NET Framework version to use for scripts.
-    abstract member HighestInstalledNetFrameworkVersion: unit -> string
+    abstract HighestInstalledNetFrameworkVersion: unit -> string
 
     /// Perform assembly resolution on the given references under the given conditions
-    abstract member Resolve: 
+    abstract Resolve: 
             resolutionEnvironment: LegacyResolutionEnvironment *
             references:(string * string) [] *
             targetFrameworkVersion:string *
@@ -51,11 +53,11 @@ type internal ILegacyReferenceResolver =
     /// Get the Reference Assemblies directory for the .NET Framework (on Windows)
     /// This is added to the default resolution path for 
     /// design-time compilations.
-    abstract member DotNetFrameworkReferenceAssembliesRootDirectory: string
+    abstract DotNetFrameworkReferenceAssembliesRootDirectory: string
   
 // Note, two implementations of this are provided, and no further implementations can be added from
 // outside FSharp.Compiler.Service
-[<Class; AllowNullLiteralAttribute>]
+[<Class; AllowNullLiteral; Obsolete("This API is obsolete and not for external use")>]
 type LegacyReferenceResolver =
     internal new: impl: ILegacyReferenceResolver -> LegacyReferenceResolver
     member internal Impl: ILegacyReferenceResolver

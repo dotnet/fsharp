@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.CodeAnalysis
 
 exception internal LegacyResolutionFailure
 
@@ -57,7 +57,7 @@ type internal ILegacyReferenceResolver =
         logDiagnostic:(bool -> string -> string -> unit)
             -> LegacyResolvedFile[]
 
-[<AllowNullLiteralAttribute>]
+[<AllowNullLiteral>]
 type LegacyReferenceResolver(impl:ILegacyReferenceResolver)  = 
     member internal _.Impl = impl
 

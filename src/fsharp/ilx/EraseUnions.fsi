@@ -4,10 +4,10 @@
 // Compiler use only.  Erase discriminated unions.
 // -------------------------------------------------------------------- 
 
-module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
+module internal FSharp.Compiler.AbstractIL.ILX.EraseUnions
 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+open FSharp.Compiler.AbstractIL.ILX.Types
 
 /// Make the instruction sequence for a "newdata" operation
 val mkNewData : ILGlobals -> IlxUnionSpec * int -> ILInstr list

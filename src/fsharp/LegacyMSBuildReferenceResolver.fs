@@ -1,19 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.LegacyMSBuildReferenceResolver
+module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
 
     open System
     open System.IO
     open System.Reflection
-    open FSharp.Compiler.AbstractIL.Internal.Library 
+    open Internal.Utilities.Library 
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
-    open FSharp.Compiler
-    open FSharp.Compiler.SourceCodeServices
+    open FSharp.Compiler.IO
 
     // Reflection wrapper for properties
-    type System.Object with
+    type Object with
         member this.GetPropertyValue(propName) =
             this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
@@ -72,7 +71,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies v =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -93,7 +92,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
+    let GetPathToDotNetFrameworkReferenceAssemblies version = 
 #if NETSTANDARD
         ignore version
         let r : string list = []
@@ -128,9 +127,9 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
             if not (String.IsNullOrEmpty(dotNetVersion)) then
                 try
                     let v = if dotNetVersion.StartsWith("v") then dotNetVersion.Substring(1) else dotNetVersion
-                    let frameworkName = new System.Runtime.Versioning.FrameworkName(".NETFramework", new Version(v))
+                    let frameworkName = System.Runtime.Versioning.FrameworkName(".NETFramework", Version(v))
                     match ToolLocationHelper.GetPathToReferenceAssemblies(frameworkName) |> Seq.tryHead with
-                    | Some p -> if Directory.Exists(p) then true else false
+                    | Some p -> FileSystem.DirectoryExistsShim(p)
                     | None -> false
                 with _ -> false
             else false
@@ -234,8 +233,8 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
                     explicitIncludeDirs: string list,
                     implicitIncludeDir: string,
                     allowRawFileName: bool,
-                    logMessage: (string -> unit), 
-                    logDiagnostic: (bool -> string -> string -> unit)) =
+                    logMessage: string -> unit, 
+                    logDiagnostic: bool -> string -> string -> unit) =
                       
         let frameworkRegistryBase, assemblyFoldersSuffix, assemblyFoldersConditions = 
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
@@ -303,8 +302,8 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
              |]    
             
         let assemblies = 
-            [| for (referenceName,baggage) in references -> 
-               let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
+            [| for referenceName,baggage in references -> 
+               let item = TaskItem(referenceName) :> ITaskItem
                item.SetMetadata("Baggage", baggage)
                item |]
         let rar = 
@@ -318,7 +317,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
 #if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not FSharp.Compiler.AbstractIL.Internal.Utils.runningOnMono then
+        if not runningOnMono then
             typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else
@@ -357,7 +356,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
                 // unrooted may still find 'local' assemblies by virtue of the fact that "implicitIncludeDir" is one of the places searched during 
                 // assembly resolution.
                 let references = 
-                    [| for ((file,baggage) as data) in references -> 
+                    [| for file,baggage as data in references -> 
                             // However, MSBuild will not resolve 'relative' paths, even when e.g. implicitIncludeDir is part of the search.  As a result,
                             // if we have an unrooted path+filename, we'll assume this is relative to the project directory and root it.
                             if FileSystem.IsPathRootedShim(file) then

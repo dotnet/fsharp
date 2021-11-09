@@ -2,12 +2,12 @@
 
 namespace Internal.Utilities.Collections
   
-  /// Simple aging lookup table. When a member is accessed it's
-  /// moved to the top of the list and when there are too many elements
-  /// the least-recently-accessed element falls of the end.  
-  ///
-  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
-  type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct> = 
+/// Simple aging lookup table. When a member is accessed it's
+/// moved to the top of the list and when there are too many elements
+/// the least-recently-accessed element falls of the end.  
+///
+///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
+type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct> = 
     new : keepStrongly:int
             * areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
@@ -39,16 +39,16 @@ namespace Internal.Utilities.Collections
     /// Resize
     member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
     
-  /// Simple priority caching for a small number of key/value associations.
-  /// This cache may age-out results that have been Set by the caller.
-  /// Because of this, the caller must be able to tolerate values 
-  /// that aren't what was originally passed to the Set function.     
-  ///
-  /// Concurrency: This collection is thread-safe, though concurrent use may result in different
-  /// threads seeing different live sets of cached items. 
-  ///
-  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
-  type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
+/// Simple priority caching for a small number of key/value associations.
+/// This cache may age-out results that have been Set by the caller.
+/// Because of this, the caller must be able to tolerate values 
+/// that aren't what was originally passed to the Set function.     
+///
+/// Concurrency: This collection is thread-safe, though concurrent use may result in different
+/// threads seeing different live sets of cached items. 
+///
+///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
+type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
     new : keepStrongly:int 
             * areSame:('Key * 'Key -> bool) 
             * ?isStillValid:('Key * 'Value -> bool)

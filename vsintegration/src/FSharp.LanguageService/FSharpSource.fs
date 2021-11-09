@@ -20,7 +20,9 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.OLE.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
@@ -339,7 +341,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()
-            match UntypedParseImpl.TryFindExpressionIslandInPosition(Pos.fromZ line col, upi.ParseTree) with
+            match ParsedInput.TryFindExpressionIslandInPosition(Position.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
             | None -> null
 
@@ -353,6 +355,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                         yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
+                    yield "--define:COMPILED"
 
                 |]
             // get a sync parse of the file
@@ -367,11 +370,10 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
                   UnresolvedReferences = None
                   OriginalLoadReferences = []
-                  ExtraProjectInfo=None 
                   Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunImmediate
 
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()
@@ -445,7 +447,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 if reason = BackgroundRequestReason.CompleteWord then
                     let upi = source.GetParseTree()
                     let isBetweenDotAndIdent =
-                        match FSharp.Compiler.SourceCodeServices.UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(Pos.fromZ !line !idx, upi.ParseTree) with
+                        match ParsedInput.TryFindExpressionASTLeftOfDotLeftOfCursor(Position.fromZ !line !idx, upi.ParseTree) with
                         | Some(_,isBetweenDotAndIdent) -> isBetweenDotAndIdent
                         | None -> false
                     if isBetweenDotAndIdent then

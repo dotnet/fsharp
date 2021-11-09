@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.TextLayout
+namespace FSharp.Compiler.Text
 
 open System
 open System.IO
 open FSharp.Compiler.Text
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text.Layout
 open FSharp.Core.Printf
 
 #nowarn "62" // This construct is for ML compatibility.
@@ -47,6 +46,7 @@ module WordL =
     let bar = wordL TaggedText.bar
     let keywordStruct = wordL TaggedText.keywordStruct
     let keywordInherit = wordL TaggedText.keywordInherit
+    let keywordBegin = wordL TaggedText.keywordBegin
     let keywordEnd = wordL TaggedText.keywordEnd
     let keywordNested = wordL TaggedText.keywordNested
     let keywordType = wordL TaggedText.keywordType
@@ -90,7 +90,7 @@ type NoResult = NoResult
 module LayoutRender =
     let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
-    let spaces n = new String(' ', n)
+    let spaces n = String(' ', n)
       
     let renderL (rr: LayoutRenderer<_, _>) layout =
         let rec addL z pos i layout k = 
@@ -165,4 +165,8 @@ module LayoutRender =
     let bufferL os layout = renderL (bufferR os) layout |> ignore
 
     let emitL f layout = renderL (taggedTextListR f) layout |> ignore
-    
+
+    let toArray layout = 
+        let output = ResizeArray()
+        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        output.ToArray()

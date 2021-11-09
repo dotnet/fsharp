@@ -1,4 +1,0 @@
-# Microsoft.DotNet.DependencyManager resource strings 
-3400,packageManagerUnknown,"Package manager key '%s' was not registered in %s. Currently registered: %s"
-3401,packageManagerError,"%s"
-3402,couldNotLoadDependencyManagerExtension,"The dependency manager extension %s could not be loaded. Message: %s"

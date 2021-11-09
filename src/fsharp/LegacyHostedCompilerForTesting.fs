@@ -3,17 +3,18 @@
 // This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
 // proper compiler service API used instead.
 
-namespace Legacy.FSharp.Compiler.Hosted
+namespace FSharp.Compiler.CodeAnalysis.Hosted
 
 open System
 open System.IO
 open System.Text.RegularExpressions
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 
 /// build issue location
 type internal Location =
@@ -90,16 +91,16 @@ type internal FscCompiler(legacyReferenceResolver) =
     /// converts short and long issue types to the same CompilationIssue representation
     let convert issue : CompilationIssue = 
         match issue with
-        | Diagnostic.Short(isError, text) -> 
+        | Diagnostic.Short(severity, text) -> 
             {
                 Location = emptyLocation
                 Code = ""
                 Subcategory = ""
                 File = ""
                 Text = text
-                Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
             }
-        | Diagnostic.Long(isError, details) ->
+        | Diagnostic.Long(severity, details) ->
             let loc, file = 
                 match details.Location with
                 | Some l when not l.IsEmpty -> 
@@ -116,7 +117,7 @@ type internal FscCompiler(legacyReferenceResolver) =
                 Subcategory = details.Canonical.Subcategory
                 File = file
                 Text = details.Message
-                Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
+                Type = if (severity = FSharpDiagnosticSeverity.Error) then CompilationIssueType.Error else CompilationIssueType.Warning
             }
 
     /// test if --test:ErrorRanges flag is set
@@ -147,7 +148,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         let errorRanges = args |> Seq.exists errorRangesArg
         let vsErrors = args |> Seq.exists vsErrorsArg
 
-        let (ok, result) = compiler.Compile(args)
+        let ok, result = compiler.Compile(args)
         let exitCode = if ok then 0 else 1
         
         let lines =
@@ -179,9 +180,9 @@ module internal CompilerHelpers =
     let parseCommandLine (commandLine : string) =
         let folder (inQuote : bool, currArg : string, argLst : string list) ch =
             match (ch, inQuote) with
-            | ('"', _) ->
+            | '"', _ ->
                 (not inQuote, currArg, argLst)
-            | (' ', false) ->
+            | ' ', false ->
                 if currArg.Length > 0 then (inQuote, "", currArg :: argLst)
                 else (inQuote, "", argLst)
             | _ ->
@@ -205,7 +206,7 @@ module internal CompilerHelpers =
         try
             try
                 Directory.SetCurrentDirectory directory
-                let (exitCode, output) = FscCompiler(legacyReferenceResolver).Compile(args)
+                let exitCode, output = FscCompiler(legacyReferenceResolver).Compile(args)
                 let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 let consoleError = ew.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 exitCode, [| yield! consoleOut; yield! output |], consoleError

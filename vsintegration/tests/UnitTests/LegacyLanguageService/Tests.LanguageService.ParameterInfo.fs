@@ -302,7 +302,7 @@ type UsingMSBuild()  =
 
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark1*)",[["int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark2*)",[["V1: int"; "string"; "V3: bool"]])
-        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string"]])
+        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark4*)",[["int"]])
         
     [<Test>]
@@ -319,7 +319,7 @@ type UsingMSBuild()  =
 
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark1*)",[["int"; "string"]])
         this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark2*)",[["V1: int"; "string"; "V3: bool" ]])
-        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["Long Name: int"; "string" ]])
+        this.VerifyParameterInfoAtStartOfMarker(fileContent,"(*Mark3*)",[["``Long Name`` : int"; "string" ]])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -903,7 +903,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetParameterLocations())
 
     [<Test>]
     [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
@@ -926,7 +926,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetParameterLocations())
 
 
 (*
@@ -953,7 +953,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file // this will fall back to using the name environment, which is stale, but sufficient to look up the call to 'f1'
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,21);(1,21);(4,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,21);(1,21);(4,0)|], info.GetParameterLocations())
 *)
 
     [<Test>]
@@ -1003,7 +1003,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
         let info = GetParameterInfoAtCursor file
         Assert.IsTrue(info.IsSome, "expected parameter info")
         let info = info.Value
-        AssertEqual(expectedLocs, info.GetNoteworthyParamInfoLocations()) 
+        AssertEqual(expectedLocs, info.GetParameterLocations()) 
 
     // These pin down known failing cases
     member public this.TestNoParameterInfo (testLine, ?additionalReferenceAssemblies) =
@@ -1942,7 +1942,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             
             let a1 = System.Reflection.Assembly.Load("mscorlib")
             let m = a1.GetType("System.Decimal").GetConstructor((*Mark*)null)"""
-        this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type []"])
+        this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type[]"])
 
     [<Test>]   
     member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case2``() = 
@@ -1953,8 +1953,8 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let m = a1.GetType("System.Decimal").GetConstructor((*Mark*)null)"""
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",1,["System.Reflection.BindingFlags";
                                                                                 "System.Reflection.Binder";
-                                                                                "System.Type []";
-                                                                                "System.Reflection.ParameterModifier []"])
+                                                                                "System.Type[]";
+                                                                                "System.Reflection.ParameterModifier[]"])
 
     [<Test>]   
     [<Ignore("Bug 95862")>]
@@ -1981,7 +1981,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]   
     member public this.``BasicBehavior.DotNet.Static``() = 
         let fileContents = """System.String.Format((*Mark*)"""
-        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj []"])
+        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj[]"])
 
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
     [<Test>]   
@@ -2002,7 +2002,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                                  select r })
                 }"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker1*)",["obj"],queryAssemblyRefs)
-        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",["string";"obj []"],queryAssemblyRefs)
+        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",["string";"obj[]"],queryAssemblyRefs)
 
     [<Test>]   
     [<Category("Query")>]

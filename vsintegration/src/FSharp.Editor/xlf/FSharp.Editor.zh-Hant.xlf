@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSharp.Editor.resx">
     <body>
@@ -12,14 +12,29 @@
         <target state="translated">新增缺少的 'fun' 關鍵字</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingInstanceMemberParameter">
+        <source>Add missing instance member parameter</source>
+        <target state="translated">新增缺少的執行個體成員參數</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">新增 'new' 關鍵字</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddTypeAnnotation">
+        <source>Add type annotation</source>
+        <target state="translated">新增型別註解</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">轉換為匿名記錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToNotEqualsEqualityExpression">
+        <source>Use '&lt;&gt;' for inequality check</source>
+        <target state="translated">使用 '&lt;&gt;' 進行不等式檢查</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
@@ -38,7 +53,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
-        <source>F# Dispostable Values (top-level)</source>
+        <source>F# Disposable Values (top-level)</source>
         <target state="translated">F# 可處置的值 (最上層)</target>
         <note />
       </trans-unit>
@@ -85,6 +100,11 @@
       <trans-unit id="RemoveReturnBang">
         <source>Remove 'return!'</source>
         <target state="translated">移除 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveUnusedBinding">
+        <source>Remove unused binding</source>
+        <target state="translated">移除未使用的繫結</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -237,6 +257,11 @@
         <target state="translated">使用 '&lt;-' 來變動值</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNameof">
+        <source>Use 'nameof'</source>
+        <target state="translated">使用 'nameof'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">使用「向上轉型」</target>
@@ -250,6 +275,11 @@
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="translated">使用 'not' 來否定運算式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueInsteadOfDeref">
+        <source>Use '.Value' to dereference expression</source>
+        <target state="translated">使用 '.Value' 擷取運算式的值</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

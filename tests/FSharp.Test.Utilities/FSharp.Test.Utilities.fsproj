@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -22,6 +22,7 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="Assert.fs" />
+    <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="Xunit\Attributes\DirectoryAttribute.fs" />
   </ItemGroup>
@@ -31,8 +32,7 @@
          Make sure they are getting built with the Utilities. -->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
@@ -52,29 +52,29 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
         <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
-        <PackageReference Include="Microsoft.NETCore.App.Ref" Version="3.1.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+        <PackageReference Include="Microsoft.NETCore.App.Ref" Version="5.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\mscorlib.dll" LogicalName="netcoreapp31.mscorlib.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\mscorlib.dll" LogicalName="net5.01.mscorlib.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.dll" LogicalName="netcoreapp31.System.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.dll" LogicalName="net5.01.System.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Core.dll" LogicalName="netcoreapp31.System.Core.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Core.dll" LogicalName="net5.01.System.Core.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Console.dll" LogicalName="netcoreapp31.System.Console.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Console.dll" LogicalName="net5.01.System.Console.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Runtime.dll" LogicalName="netcoreapp31.System.Runtime.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Runtime.dll" LogicalName="net5.01.System.Runtime.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Dynamic.Runtime.dll" LogicalName="netcoreapp31.System.Runtime.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\System.Dynamic.Runtime.dll" LogicalName="net5.01.System.Runtime.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
-        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\netstandard.dll" LogicalName="netcoreapp31.netstandard.dll">
+        <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net5.0\netstandard.dll" LogicalName="net5.01.netstandard.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
   </ItemGroup>

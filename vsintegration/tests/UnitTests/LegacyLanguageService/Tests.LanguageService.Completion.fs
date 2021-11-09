@@ -832,8 +832,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -853,8 +853,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val _field1 : int"
-                "   val _field2 : string"
+                "   val _field1: int"
+                "   val _field2: string"
             ]
 
         let useCases = 
@@ -939,8 +939,8 @@ for i in 0..a."]
                 "type A = class end"
                 "type B = "
                 "   inherit A"
-                "   val f1 : int"
-                "   val f2 : int"
+                "   val f1: int"
+                "   val f2: int"
             ]
         
         let useCases = 
@@ -1027,8 +1027,8 @@ for i in 0..a."]
         let prologue = 
             [
                 "type X ="
-                "   val field1 : int"
-                "   val field2 : string"
+                "   val field1: int"
+                "   val field2: string"
             ]
 
         let useCases = 
@@ -1472,25 +1472,6 @@ let x = new MyClass2(0)
           [ "BackgroundColor" ] // should contain (from prior System.Console)
           [ "abs" ] // should not contain (top-level autocomplete on empty identifier)
 
-    [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.Popup``() =
-        // Salsa is no yet capable of determining whether there would be a popup, it can only test what would appear if there were.
-        // So can't do test below.
-//        AssertAutoCompleteContainsNoCoffeeBreak 
-//          [ "System.Console..BackgroundColor" ]
-//          "System.Console.."
-//          [ ] // should be empty - in fact, there is no popup here
-//          [ "abs"; "BackgroundColor" ] // should not contain anything
-        ()
-
-    [<Test>]
-    member public this.``PopupsVersusCtrlSpaceOnDotDot.SecondDot.CtrlSpace``() =
-        AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
-          [ "System.Console..BackgroundColor" ]
-          "System.Console.."
-          [ ] // should contain nothing - .. is not properly used range operator
-          [ "abs" ] // should not contain (from prior System.Console)
-    
     [<Test>]
     member public this.``DotCompletionInPatternsPartOfLambda``() = 
         let content = ["let _ = fun x . -> x + 1"]
@@ -3131,6 +3112,38 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ "abs" ] // should contain (top level)
           [ "CompareTo" ] // should not contain (from Int32)
 
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B2``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue.. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_B3``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. 42]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_C``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue..]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
+    [<Test>]
+    member public this.``Array.AfterOperator...Bug65732_D``() =        
+        AssertCtrlSpaceCompleteContains 
+          [ "let r = [System.Int32.MaxValue .. ]" ]
+          ".."       // marker
+          [ "abs" ] // should contain (top level)
+          [ "CompareTo" ] // should not contain (from Int32)
+
     // Verify the auto completion after the close-parentheses,
     // there should be auto completion
     [<Test>]
@@ -4264,7 +4277,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``InDeclaration.Bug3176c``() =        
         AssertCtrlSpaceCompleteContains 
           [ "type C =";
-                      "  val aaaa : int" ]
+            "  val aaaa: int" ]
           "aa"        // move to marker
           ["aaaa"] [] // should contain 'aaaa'
 
@@ -4526,7 +4539,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         // Save file2
         ReplaceFileInMemory file2 [""]
-        SaveFileToDisk file2      
+        SaveFileToDisk file2    
+        let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
         gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
@@ -5124,6 +5138,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -6224,7 +6239,7 @@ let rec f l =
             marker = "(*MarkerMethodInType*)",
             list = ["PrivateMethod"])       
 
-    [<Test>]
+//    [<Test>]
     member this.``VariableIdentifier.AsParameter``() =
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
@@ -6951,7 +6966,7 @@ let rec f l =
         this.VerifyDotCompListIsEmptyAtStartOfMarker(
             fileContents = """
                 type f1(*MarkerType*) = 
-                    val field : int""",
+                    val field: int""",
             marker = "(*MarkerType*)")
 
     [<Test>]
@@ -7148,7 +7163,6 @@ let rec f l =
         let (_, _, file) = this.CreateSingleFileProject(code)
 
         TakeCoffeeBreak(this.VS)
-        let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
 
         // In this case, we quickly type "." and then get dot-completions
         // For "level <- Module" this shows completions from the "Module" (e.g. "Module.Other")
@@ -7161,7 +7175,6 @@ let rec f l =
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Length"])
         AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
-        gpatcc.AssertExactly(0,0)
 
     [<Test>]
     member this.``SelfParameter.InDoKeywordScope``() =

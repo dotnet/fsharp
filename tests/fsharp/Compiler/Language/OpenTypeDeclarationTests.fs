@@ -2,12 +2,11 @@
 
 namespace FSharp.Compiler.UnitTests
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 
 [<TestFixture>]
 module OpenTypeDeclarationTests =
@@ -1038,7 +1037,6 @@ module Test2 =
         match x with
         | UCase1 x -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1122,7 +1120,6 @@ module Test3 =
         match x with
         | { X = x } -> x
         """
-        |> withLangVersionPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -2257,7 +2254,7 @@ let main _ =
 
     [<Test>]
     let ``Opening type providers with abbreviation result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2299,7 +2296,7 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening type providers result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
@@ -2339,25 +2336,21 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening type providers with nested result in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2376,25 +2369,21 @@ if StaticProperty1 <> "You got a static property" then
 
     [<Test>]
     let ``Opening generative type providers in unqualified access to types and members`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2414,25 +2403,21 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 
     [<Test>]
     let ``Opening generative type providers directly in unqualified access to types and members - Errors`` () =
-        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+        let dir = getTestsDirectory __SOURCE_DIRECTORY__ "../../typeProviders/helloWorld"
 
         let provider =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersion50
             |> ignoreWarnings
-            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2441,7 +2426,6 @@ open type FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersion50
             |> withReferences [provider;provided]
             |> ignoreWarnings
 

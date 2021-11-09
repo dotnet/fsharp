@@ -15,19 +15,19 @@ module internal Com =
         ErrorHandler.ThrowOnFailure(hr)  |> ignore
         
     let ThrowOnFailure1(hr,res) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res
         
     let ThrowOnFailure2(hr,res1,res2) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2
         
     let ThrowOnFailure3(hr,res1,res2,res3) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2,res3
 
     let ThrowOnFailure4(hr,res1,res2,res3,res4) = 
-        ErrorHandler.ThrowOnFailure(hr) |> ignore; 
+        ErrorHandler.ThrowOnFailure(hr) |> ignore
         res1,res2,res3,res4
         
     let Succeeded hr = 

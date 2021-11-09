@@ -4,8 +4,7 @@ namespace Tests.LanguageService
 
 open System
 open NUnit.Framework
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.EditorServices
 
 [<TestFixture>]
 [<Category "LanguageService">] 

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Rational arithmetic, used for exponents on units-of-measure
-module internal FSharp.Compiler.Rational
+module internal Internal.Utilities.Rational
 
 open System.Numerics
 

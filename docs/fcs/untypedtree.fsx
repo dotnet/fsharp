@@ -30,7 +30,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 *)
 #r "FSharp.Compiler.Service.dll"
 open System
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
 (**
 
@@ -84,7 +84,7 @@ code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
 
 The relevant parts are in the following namespace:
 *)
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 (**
 
 When processing the AST, you will typically write a number of mutually recursive functions
@@ -140,8 +140,8 @@ let rec visitExpression e =
       // for 'let .. = .. and .. = .. in ...'
       printfn "LetOrUse with the following bindings:"
       for binding in bindings do
-        let (Binding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                     data, pat, retInfo, init, m, sp)) = binding
+        let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
+                        data, pat, retInfo, init, m, sp)) = binding
         visitPattern pat 
         visitExpression init
       // Visit the body expression
@@ -171,8 +171,8 @@ let visitDeclarations decls =
         // Let binding as a declaration is similar to let binding
         // as an expression (in visitExpression), but has no body
         for binding in bindings do
-          let (Binding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                       data, pat, retInfo, body, m, sp)) = binding
+          let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
+                          data, pat, retInfo, body, m, sp)) = binding
           visitPattern pat 
           visitExpression body         
     | _ -> printfn " - not supported declaration: %A" declaration

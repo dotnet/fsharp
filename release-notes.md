@@ -14,15 +14,36 @@ This document contains current and historical release notes information. They ar
 
 These release notes track our current efforts to document changes to the F# project over time. They are split into the language, core library, compiler/tools, and compiler service.
 
-### F# 5 / Visual Studio 16.9
+### F# 6.0 / Visual Studio 17.0
+
+
+### FSharp.Core 6.0.0
+
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
+
+### FSharp.Core 5.0.2
+
+* [Fix #11143 - FSharp.Core 5.0.1 should not have FSharp.Core.xml in contentFiles #11160](https://github.com/dotnet/fsharp/pull/11160)
 
 ### FSharp.Core 5.0.1
 
-TBD
+* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Map by [Victor Baybekov](https://github.com/buybackoff)
+
+
+### FSharp tools 12.0.0
+
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
 
 ### FSharp tools 11.0.1
 
-* Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
+* Significant improvements to the performance of code making heavy use of closures at runtime
+* Warnings for mismatched parameter names between signature and implementation files
+* Warnings for incorrect XML documentation files are turned on by default
+* Big performance gains in tools for codebases with F# signature files
+* Improved responsiveness for most IDE features
+* Signature Help for F# function calls
+* .NET 5 scripting for Visual Studio
+* Add ConvertToAnonymousRecord quick fix [#10493](https://github.com/dotnet/fsharp/pull/10493)
 * Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
 * Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
 * Add ChangeToUpcast code fix [#10463](https://github.com/dotnet/fsharp/pull/10463)
@@ -43,6 +64,262 @@ TBD
 * Disable partial type checking when getting full results for a file [#10448](https://github.com/dotnet/fsharp/pull/10448)
 * Fix unused open type declaration detection [#10510](https://github.com/dotnet/fsharp/pull/10510), by [André Slupik](https://github.com/asik)
 
+### FSharp Compiler Service 41.0.0
+* [Update F# Tooling, Language and F# Core version numbers](https://github.com/dotnet/fsharp/issues/11877)
+
+### FSharp Compiler Service 40.0.0
+
+This is a second big update to FCS. There are significant trimmings and renamings of the API and gets
+it close to a more permanent form:
+
+The primary namespaces are now:
+
+```
+FSharp.Compiler.IO                // FileSystem
+FSharp.Compiler.CodeAnalysis      // FSharpChecker, FSharpCheckFileResults, FSharpChecProjectResults and friends
+FSharp.Compiler.Diagnostics       // FSharpDiagnostic and friends
+FSharp.Compiler.EditorServices    // Misc functionality for editors, e.g. interface stub generation
+FSharp.Compiler.Interactive.Shell // F# Interactive
+FSharp.Compiler.Symbols           // FSharpEntity etc
+FSharp.Compiler.Syntax            // SyntaxTree, XmlDoc, PrettyNaming
+FSharp.Compiler.Text              // ISourceFile, Range, TaggedText and other things
+FSharp.Compiler.Tokenization      // FSharpLineTokenizer etc.
+```
+
+##### Changes in `FSharp.Compiler.Diagnostics`
+
+* `ErrorHelpers` --> `DiagnosticHelpers`
+
+* `ErrorResolutionHints.getSuggestedNames` --> `ErrorResolutionHints.GetSuggestedNames`
+
+##### Changes in `FSharp.Compiler.SourceCodeServices`
+
+* Everything is moved to one of the other namespaces
+
+* The `FSharp` prefix is used for things in `FSharp.Compiler.Symbols` but not `FSharp.Compiler.EditorServices`
+
+* `AssemblyContentProvider` --> `AssemblyContent` in EditorServices
+
+* `AstVisitorBase` --> moved to `SyntaxVisitorBase` in FSharp.Compiler.Syntax
+
+* `AstVisitorBase.*` --> `SyntaxVisitorBase.*` and methods now all take `path` parameters consistently
+
+* `AstTraversal.Traverse` --> `SyntaxTraversal.Traverse`
+
+* `BasicPatterns` --> `FSharpExprPatterns` in FSharp.Compiler.Symbols
+
+* `DebuggerEnvironment.*` merged into `CompilerEnvironment` in FSharp.Compiler
+
+* `ExternalType` --> `FindDeclExternalType` in EditorServices
+
+* `FSharpChecker.ParseFileNoCache` --> removed in favour of optional `cache=false` argument on `FSharpChecker.ParseFile`
+
+* `FSharpChecker.BeforeBackgroundFileCheck` event now takes FSharpProjectOptions arg
+
+* `FSharpChecker.FileChecked` event now takes FSharpProjectOptions arg
+
+* `FSharpChecker.FileParsed` event now takes FSharpProjectOptions arg
+
+* `FSharpChecker.ProjectChecked` event now takes FSharpProjectOptions arg
+
+* `FSharpCheckFileResults.Errors` --> `FSharpCheckFileResults.Diagnostics`
+
+* `FSharpCheckProjectResults.Errors` --> `FSharpCheckProjectResults.Diagnostics`
+
+* `FSharpDeclarationListInfo` --> `DeclarationListInfo` in EditorServices
+
+* `FSharpEnclosingEntityKind` --> `NavigationEntityKind` in EditorServices
+
+* `FSharpExternalSymbol` --> `FindDeclExternalSymbol` in EditorServices
+
+* `FSharpFileUtilities.*` merged into `CompilerEnvironment` in FSharp.Compiler
+
+* `FSharpFindDeclResult` --> `FindDeclResult`  in EditorServices
+
+* `FSharpLexer.Lex` --> `FSharpLexer.Tokenize` in FSharp.Compiler.Tokenization
+
+* `FSharpMethodGroup` --> `MethodGroup` in EditorServices
+
+* `FSharpMethodGroupItem` --> `MethodGroupItem` in EditorServices
+
+* `FSharpMethodGroupItemParameter` --> `MethodGroupItemParameter` in EditorServices
+
+* `FSharpMethodGroupItemParameter.StructuredDisplay` ---> `MethodGroupItemParameter.Display`
+
+* `FSharpMethodGroupItemParameter.StructuredReturnTypeText` ---> `MethodGroupItemParameter.ReturnTypeText`
+
+* `FSharpNavigationDeclarationItem` --> `NavigationItem` in EditorServices
+
+* `FSharpNavigationTopLevelDeclaration` --> `NavigationTopLevelDeclaration` in EditorServices
+
+* `FSharpNavigationItems` --> `NavigationItems` in EditorServices
+
+* `FSharpNavigation` --> `Navigation` in EditorServices
+
+* `FSharpNavigationDeclarationItemKind` --> `NavigationItemKind` in EditorServices
+
+* `FSharpNoteworthyParamInfoLocations` --> `ParameterLocations`
+
+* `FSharpProjectOptions.ExtraProjectInfo` is removed
+
+* `FSharpSemanticClassificationItem` --> `SemanticClassificationItem` in EditorServices
+
+* `FSharpSemanticClassificationView ` --> `SemanticClassificationView` in EditorServices
+
+* `FSharpStructuredToolTipText` --> `ToolTipText` in EditorServices
+
+* `FSharpStructuredToolTipElementData` --> `ToolTipElementData` in EditorServices
+
+* `FSharpStructuredToolTipElement` --> `ToolTipElement` in EditorServices
+
+* `FSharpSymbol.Accessibility` is now non-optional.  Will return "public" in cases it previously returned "None"
+
+* `FSharpSymbol.XmlDoc` now returns `FSharpXmlDoc` with cases for internal and external XML doc. Use `match symbol.XmlDoc with FSharpXmlDoc.FromText doc -> doc.UnprocessedLines` to get unprocessed XML lines
+
+* `FSharpSymbol.ElaboratedXmlDoc` now removed. Use `match symbol.XmlDoc with FSharpXmlDoc.FromText doc -> doc.GetElaboratedLine()`
+
+* `FSharpToolTipText` --> `ToolTipText` in EditorServices
+
+* `FSharpToolTipElementData` --> `ToolTipElementData` in EditorServices
+
+* `FSharpToolTipElement` --> `ToolTipElement` in EditorServices
+
+* `FSharpType.FormatLayout` now returns `TaggedText[]`
+
+* `FSharpType.FormatLayout` now returns `TaggedText[]`
+
+* `FSharpUnresolvedSymbol` --> `UnresolvedSymbol` in EditorServices
+
+* `InterfaceStubGenerator.*` are all capitalized
+
+* `Idents` --> `ShortIdents` in EditorServices
+
+* `LongIdent` abbreviation removed and replaced by `string`
+
+* `NavigateTo.NavigableItemKind ` --> now directly in EditorServices
+
+* `NavigateTo.ContainerType` --> `NavigableContainerType` now directly in EditorServices
+
+* `NavigateTo.NavigableItem` --> `NavigableItem` now directly in EditorServices
+
+* `NavigateTo.getNavigableItems` --> NavigateTo.GetNavigableItems in EditorServices
+
+* `ParamTypeSymbol` --> `FindDeclExternalParam in EditorServices`
+
+* `ParsedInput.tryFindInsertionContext` --> `ParsedInput.TryFindInsertionContext`
+
+* `ParsedInput.findNearestPointToInsertOpenDeclaration ` --> `ParsedInput.FindNearestPointToInsertOpenDeclaration `
+
+* `ParsedInput.getLongIdentAt` --> `ParsedInput.GetLongIdentAt`
+
+* `ParsedInput.adjustInsertionPoint` --> `ParsedInput.AdjustInsertionPoint`
+
+* `Symbol` --> `FSharpSymbolPatterns` in FSharp.Compiler.Symbols and marked experimental
+
+* `Symbol.isAttribute` --> now `attrib.IsAttribute<'T>()`
+
+* `Symbol.getAbbreviatedType` --> now `symbol.StripAbbreviations()`
+
+* `Symbol.hasAttribute` --> now `symbol.HasAttribute<'T>()`
+
+* `Symbol.tryGetAttribute` --> now `symbol.TryGetAttribute<'T>()`
+
+* `TraverseStep` --> `SyntaxNode` in FSharp.Compiler.Syntax
+
+* ToolTips now only return the structured (TaggedText) tooltips. You can iterate to get the text tooltips
+
+##### Changes in `FSharp.Compiler.Text`
+
+* `Pos` --> `Position`
+
+##### Changes in `FSharp.Compiler.TextLayout` 
+
+* Everything moves to `FSharp.Compiler.Text` 
+
+* `LayoutTag` --> `TextTag`
+
+* `Layout` is now internal and replaced by `TaggedText[]`
+
+* `LayoutOps` is now internal
+
+##### Changes in `FSharp.Compiler.SyntaxTree`
+
+* Everything moves to namespace `FSharp.Compiler.Syntax`
+
+* `DebugPointAtBinding` is now RequireQualifiedAccess
+
+* `NoDebugPointAtStickyBinding` --> `DebugPointAtBinding.NoneAtSticky`
+
+* `Clause` --> `SynMatchClause`
+
+* `NormalBinding` -> `SynBindingKind.Normal`
+
+* `Binding` --> `SynBinding`
+
+* `Field` --> `SynField`
+
+* `UnionCase` --> `SynUnionCase`
+
+* `UnionCaseFullType` --> `SynUnionCaseKind.FullType`
+
+* `UnionCaseFields` --> `SynUnionCaseKind.Fields`
+
+* `MemberKind` --> `SynMemberKind`
+
+* `MemberFlags` --> `SynMemberFlags`
+
+* `TyconUnspecified` --> `SynTypeDefnKind.Unspecified`
+
+* `TyconClass` --> `SynTypeDefnKind.Class`
+
+* `TyconInterface` --> `SynTypeDefnKind.Interface`
+
+* `TyconStruct` --> `SynTypeDefnKind.Struct`
+
+* `TyconHiddenRepr` --> `SynTypeDefnKind.Opaque`
+
+* `TyconUnion` --> `SynTypeDefnKind.Union`
+
+* `TyconDelegate ` --> `SynTypeDefnKind.Delegate`
+
+* `ComponentInfo` --> `SynComponentInfo`
+
+* `TyconAugmentation` --> `SynTypeDefnKind.Augmentation`
+
+* `TypeDefnSig` --> `SynTypeDefnSig`
+
+* `HeadTypeStaticReq` --> `TyparStaticReq.HeadType`
+
+* `NoStaticReq` --> `TyparStaticReq.None`
+
+* `SynTypeConstraint` is now RequiresQualifiedAccess
+
+* `ValSpfn` --> `SynValSpfn`
+
+* `TyparDecl` --> `SynTyparDecl`
+
+* `Typar` --> `SynTypar`
+
+* `SynSimplePatAlternativeIdInfo` is now RequiresQualifiedAccess
+
+* `InterfaceImpl` --> `SynInterfaceImpl`
+
+* `SynBindingKind` is now RequiresQualifiedAccess
+
+* `DoBinding` --> `SynBindingKind.Do`
+
+* `StandaloneExpression` --> `SynBindingKind.StandaloneExpression`
+
+* `SynModuleOrNamespaceKind` is now RequiresQualifiedAccess
+
+* `IDefns` --> `ParsedScriptInteraction.Definitions`
+
+* `IHash ` --> `ParsedScriptInteraction.HashDirective`
+
+##### Other changes
+
+* `LegacyReferenceResolver` now marked obsolete
+
 ### FSharp Compiler Service 39.0.0
 
 This is a big update to FCS. There are significant trimmings and renamings of the API as a first step towards getting it under control with aims to eventually have a stable, sane public API surface area.
@@ -56,7 +333,7 @@ Renamings:
 -module FSharp.Compiler.AbstractIL.Internal.Library.Shim
 +FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
 
--type FSharp.Compiler.AbstractIL.Internal.Layout
+-type FSharp.Compiler.AbstractIL.Layout
 +type FSharp.Compiler.TextLayout.Layout
 
 -type FSharp.Compiler.AbstractIL.Internal.TaggedText
@@ -136,11 +413,11 @@ Renamings in `FSharp.Compiler.SourceCodeServices`:
 -module Keywords 
 +module FSharpKeywords
 
--module Tooltips
-+module FSharpTooltip
 ```
 
 * Extension methods in `ServiceAssemblyContent.fsi` are now now intrinsic methods on the symbol types themselves.
+* `SemanticClassificationType` is now an enum instead of a discriminated union.
+* `GetBackgroundSemanticClassificationForFile` now returns `Async<SemanticClassificationView option>` instead of `Async<struct(range * SemanticClassificationType) []>`. The `SemanticClassificationView` provides a read-only view over the semantic classification contents via the `ForEach (FSharpSemanticClassificationItem -> unit) -> unit` function.
 
 The following namespaces have been made internal
 
@@ -170,7 +447,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 ### FSharp Core 5.0.0
 
-* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Set and Map by [Victor Baybekov](https://github.com/buybackoff) 
+
 * Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
 * Support for fixed-index slices in 3D and 4D arrays
 * Support for negative indexes (in preview)

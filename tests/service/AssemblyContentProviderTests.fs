@@ -11,7 +11,9 @@ open System
 open System.IO
 open System.Text
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Service.Tests.Common
 
 let private filePath = "C:\\test.fs"
 
@@ -26,7 +28,6 @@ let private projectOptions : FSharpProjectOptions =
       LoadTime = DateTime.MaxValue
       OriginalLoadReferences = []
       UnresolvedReferences = None
-      ExtraProjectInfo = None
       Stamp = None }
 
 let private checker = FSharpChecker.Create()
@@ -43,7 +44,7 @@ let (=>) (source: string) (expected: string list) =
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                yield "" |]
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunImmediate
     
     let checkFileResults =
         match checkFileAnswer with
@@ -51,7 +52,7 @@ let (=>) (source: string) (expected: string list) =
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
     let actual = 
-        AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
+        AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
         |> List.map (fun x -> x.CleanedIdents |> String.concat ".") 
         |> List.sort
 

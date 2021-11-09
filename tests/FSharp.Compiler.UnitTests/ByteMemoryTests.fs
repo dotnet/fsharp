@@ -4,11 +4,10 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Globalization
 open Xunit
-open FSharp.Test.Utilities
-
+open FSharp.Test
 
 module ByteMemoryTests =
-    open FSharp.Compiler.AbstractIL.Internal
+    open FSharp.Compiler.IO
 
     [<Fact>]
     let ``ByteMemory.CreateMemoryMappedFile succeeds with byte length of zero``() =

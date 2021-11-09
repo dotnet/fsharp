@@ -2,9 +2,8 @@
 
 module internal FSharp.Compiler.Detuple 
 
-open FSharp.Compiler.AbstractIL.Internal 
+open Internal.Utilities.Collections
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
@@ -14,9 +13,6 @@ module GlobalUsageAnalysis =
 
     type accessor 
 
-    /// Results is "expr information".
-    /// This could extend to be a full graph view of the expr.
-    /// Later could support "safe" change operations, and optimisations could be in terms of those.
     type Results =
        {
          /// v -> context / APP inst args 
@@ -29,7 +25,7 @@ module GlobalUsageAnalysis =
          DecisionTreeBindings: Zset<Val>
 
          /// v -> recursive? * v list   -- the others in the mutual binding 
-         RecursiveBindings: Zmap<Val,(bool * Vals)>
+         RecursiveBindings: Zmap<Val,bool * Vals>
 
          /// val not defined under lambdas 
          TopLevelBindings: Zset<Val>

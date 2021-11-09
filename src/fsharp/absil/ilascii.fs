@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.AsciiConstants
+module internal FSharp.Compiler.AbstractIL.AsciiConstants
 
 open Internal.Utilities.Collections
-
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 
 /// Table of parsing and pretty printing data for instructions.
@@ -146,18 +145,18 @@ let wordsOfNoArgInstr, isNoArgInstr =
 let mk_stind (nm, dt) =  (nm, (fun () -> I_stind(Aligned, Nonvolatile, dt)))
 let mk_ldind (nm, dt) =  (nm, (fun () -> I_ldind(Aligned, Nonvolatile, dt)))
 
-type NoArgInstr = (unit -> ILInstr)
-type Int32Instr = (int32 ->  ILInstr)
-type Int32Int32Instr = (int32 * int32 ->  ILInstr)
-type Int64Instr = (int64 ->  ILInstr)
-type DoubleInstr = (ILConst ->  ILInstr)
-type MethodSpecInstr = (ILMethodSpec * ILVarArgs ->  ILInstr)
-type TypeInstr = (ILType ->  ILInstr)
-type IntTypeInstr = (int * ILType ->  ILInstr)
-type ValueTypeInstr = (ILType ->  ILInstr)  (* nb. diff. interp of types to TypeInstr *)
-type StringInstr = (string ->  ILInstr)
-type TokenInstr = (ILToken ->  ILInstr)
-type SwitchInstr = (ILCodeLabel list * ILCodeLabel ->  ILInstr)
+type NoArgInstr = unit -> ILInstr
+type Int32Instr = int32 ->  ILInstr
+type Int32Int32Instr = int32 * int32 ->  ILInstr
+type Int64Instr = int64 ->  ILInstr
+type DoubleInstr = ILConst ->  ILInstr
+type MethodSpecInstr = ILMethodSpec * ILVarArgs ->  ILInstr
+type TypeInstr = ILType ->  ILInstr
+type IntTypeInstr = int * ILType ->  ILInstr
+type ValueTypeInstr = ILType ->  ILInstr  (* nb. diff. interp of types to TypeInstr *)
+type StringInstr = string ->  ILInstr
+type TokenInstr = ILToken ->  ILInstr
+type SwitchInstr = ILCodeLabel list * ILCodeLabel ->  ILInstr
 
 type InstrTable<'T> = (string list * 'T) list
 type LazyInstrTable<'T> = Lazy<InstrTable<'T>>
@@ -165,7 +164,7 @@ type LazyInstrTable<'T> = Lazy<InstrTable<'T>>
 /// Table of parsing and pretty printing data for instructions.
 let NoArgInstrs : Lazy<InstrTable<NoArgInstr>> =
     lazy [ 
-        for (nm, i) in noArgInstrs.Force() do  
+        for nm, i in noArgInstrs.Force() do  
              yield (nm, (fun () -> i))
         yield mk_stind (["stind";"u"], DT_I)
         yield mk_stind (["stind";"i"], DT_I)

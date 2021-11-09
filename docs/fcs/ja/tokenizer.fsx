@@ -18,11 +18,10 @@ F#のソースコードに対して、トークナイザは
 ------------------
 
 トークナイザを使用するには、 `FSharp.Compiler.Service.dll` への参照を追加した後に
-`SourceCodeServices` 名前空間をオープンします：
+`Tokenization` 名前空間をオープンします：
 *)
 #r "FSharp.Compiler.Service.dll"
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 (**
 すると `FSharpSourceTokenizer` のインスタンスを作成できるようになります。
 このクラスには2つの引数を指定します。

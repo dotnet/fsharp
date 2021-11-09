@@ -12,7 +12,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <PackageOutputPath>$(ArtifactsPackagesDir)\$(Configuration)</PackageOutputPath>

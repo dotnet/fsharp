@@ -3,13 +3,13 @@
 /// Primary logic related to method overrides.
 module internal FSharp.Compiler.MethodOverrides
 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Library 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -72,7 +72,7 @@ module DispatchSlotChecking =
     val FormatMethInfoSig: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    val GetObjectExprOverrideInfo: g:TcGlobals -> amap:ImportMap -> implty:TType * id:Ident * memberFlags:MemberFlags * ty:TType * arityInfo:ValReprInfo * bindingAttribs:Attribs * rhsExpr:Expr -> OverrideInfo * (Val option * Val * Val list list * Attribs * Expr)
+    val GetObjectExprOverrideInfo: g:TcGlobals -> amap:ImportMap -> implty:TType * id:Ident * memberFlags:SynMemberFlags * ty:TType * arityInfo:ValReprInfo * bindingAttribs:Attribs * rhsExpr:Expr -> OverrideInfo * (Val option * Val * Val list list * Attribs * Expr)
 
     /// Check if an override exactly matches the requirements for a dispatch slot.
     val IsExactMatch: g:TcGlobals -> amap:ImportMap -> m:range -> dispatchSlot:MethInfo -> overrideBy:OverrideInfo -> bool
@@ -81,7 +81,7 @@ module DispatchSlotChecking =
     val CheckDispatchSlotsAreImplemented: denv:DisplayEnv * infoReader:InfoReader * m:range * nenv:NameResolutionEnv * sink:TcResultsSink * isOverallTyAbstract:bool * reqdTy:TType * dispatchSlots:RequiredSlot list * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> bool
 
     /// Check all implementations implement some dispatch slot.
-    val CheckOverridesAreAllUsedOnce: denv:DisplayEnv * g:TcGlobals * amap:ImportMap * isObjExpr:bool * reqdTy:TType * dispatchSlotsKeyed:NameMultiMap<RequiredSlot> * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> unit
+    val CheckOverridesAreAllUsedOnce: denv:DisplayEnv * g:TcGlobals * infoReader:InfoReader * isObjExpr:bool * reqdTy:TType * dispatchSlotsKeyed:NameMultiMap<RequiredSlot> * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> unit
 
     /// Get the slots of a type that can or must be implemented. 
     val GetSlotImplSets: infoReader:InfoReader -> denv:DisplayEnv -> ad:AccessorDomain -> isObjExpr:bool -> allReqdTys:(TType * range) list -> SlotImplSet list

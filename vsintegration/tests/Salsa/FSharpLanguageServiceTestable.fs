@@ -15,7 +15,9 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Tokenization
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
@@ -99,7 +101,6 @@ type internal FSharpLanguageServiceTestable() as this =
             match checkerContainerOpt with
             | Some container -> 
                 let checker = container
-                checker.StopBackgroundCompile()
                 checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             | None -> ()
             
@@ -127,8 +128,8 @@ type internal FSharpLanguageServiceTestable() as this =
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
-        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*), "" ,None, None, false)
-        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
+        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
+        this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunImmediate
 
     member this.OnActiveViewChanged(textView) =
         bgRequests.OnActiveViewChanged(textView)
@@ -170,7 +171,7 @@ type internal FSharpLanguageServiceTestable() as this =
         member this.DependencyFileCreated projectSite = 
             let enableInMemoryCrossProjectReferences = true
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*),"" ,None, None, false)
+            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" , false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 
@@ -223,4 +224,4 @@ type internal FSharpLanguageServiceTestable() as this =
     //
     // This is for unit testing only
     member this.WaitForBackgroundCompile() =
-        this.FSharpChecker.WaitForBackgroundCompile()
+        ()

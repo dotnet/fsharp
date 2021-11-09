@@ -5,19 +5,22 @@ module internal FSharp.Compiler.QuotationPickler
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 type TypeData 
-type TypeVarData =  { tvName: string }
+
+type TypeVarData = { tvName: string }
 
 type NamedTypeData = 
     /// Indicates an F# 4.0+ reference into the supplied table of type definition references, ultimately resolved by TypeRef/TypeDef data 
     | Idx of int
     /// Indicates an F# 3.0+ reference to a named type in an assembly loaded by name
-    | Named of (* tcName: *) string *  (* tcAssembly:  *) string 
-
+    | Named of tcName: string *  tcAssembly:  string 
 
 val mkVarTy : int -> TypeData 
-val mkFunTy : (TypeData * TypeData) -> TypeData
-val mkArrayTy : (int * TypeData ) -> TypeData 
-val mkILNamedTy : (NamedTypeData * TypeData list) -> TypeData 
+
+val mkFunTy : TypeData * TypeData -> TypeData
+
+val mkArrayTy : int * TypeData -> TypeData 
+
+val mkILNamedTy : NamedTypeData * TypeData list -> TypeData 
 
 type ExprData
 

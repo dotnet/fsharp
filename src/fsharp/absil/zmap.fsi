@@ -1,16 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.AbstractIL.Internal
+namespace Internal.Utilities.Collections
 
-open Internal.Utilities
-open Internal.Utilities.Collections.Tagged
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
 type internal Zmap<'Key,'T> = Internal.Utilities.Collections.Tagged.Map<'Key,'T> 
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Zmap = 
 
     val empty    : IComparer<'Key> -> Zmap<'Key,'T>

@@ -1,33 +1,28 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// ILX extensions to Abstract IL types and instructions F# 
-module internal FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+module internal FSharp.Compiler.AbstractIL.ILX.Types
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.IL 
 
-// -------------------------------------------------------------------- 
-// Union references 
-// -------------------------------------------------------------------- 
-
+/// Union case field
 [<Sealed>]
-type IlxUnionField = 
-    new: ILFieldDef -> IlxUnionField
+type IlxUnionCaseField = 
+    new: ILFieldDef -> IlxUnionCaseField
     member Type: ILType
     member Name: string
     /// The name used for the field in parameter or IL field position.
     member LowerName: string 
     member ILField: ILFieldDef
     
-type IlxUnionAlternative = 
+/// Union alternative
+type IlxUnionCase = 
     { altName: string
-      altFields: IlxUnionField[]
+      altFields: IlxUnionCaseField[]
       altCustomAttrs: ILAttributes }
 
-    member FieldDefs: IlxUnionField[]
-    member FieldDef:  int -> IlxUnionField
+    member FieldDefs: IlxUnionCaseField[]
+    member FieldDef:  int -> IlxUnionCaseField
     member Name:  string
     member IsNullary :  bool
     member FieldTypes:  ILType[]
@@ -39,8 +34,9 @@ type IlxUnionHasHelpers =
    | SpecialFSharpListHelpers 
    | SpecialFSharpOptionHelpers 
    
+/// Union references 
 type IlxUnionRef = 
-    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionAlternative[] * bool (* cudNullPermitted *)  * IlxUnionHasHelpers (* cudHasHelpers *)
+    | IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* IsNullPermitted *)  * IlxUnionHasHelpers (* HasHelpers *)
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -49,9 +45,9 @@ type IlxUnionSpec =
 
     member GenericArgs:  ILGenericArgs
 
-    member Alternatives:  IlxUnionAlternative list
+    member Alternatives:  IlxUnionCase list
 
-    member AlternativesArray:  IlxUnionAlternative[]
+    member AlternativesArray:  IlxUnionCase[]
 
     member Boxity:  ILBoxity
 
@@ -61,9 +57,9 @@ type IlxUnionSpec =
 
     member HasHelpers:  IlxUnionHasHelpers
 
-    member Alternative:  int -> IlxUnionAlternative
+    member Alternative:  int -> IlxUnionCase
 
-    member FieldDef: int -> int -> IlxUnionField
+    member FieldDef: int -> int -> IlxUnionCaseField
 
 // -------------------------------------------------------------------- 
 // Closure references 
@@ -129,24 +125,27 @@ type IlxClosureInfo =
 type IlxUnionInfo = 
     { 
       /// Is the representation public? 
-      cudReprAccess: ILMemberAccess 
+      UnionCasesAccessibility: ILMemberAccess 
 
       /// Are the representation helpers public? 
-      cudHelpersAccess: ILMemberAccess 
+      HelpersAccessibility: ILMemberAccess 
 
       /// Generate the helpers? 
-      cudHasHelpers: IlxUnionHasHelpers 
+      HasHelpers: IlxUnionHasHelpers 
 
-      cudDebugProxies: bool 
+      GenerateDebugProxies: bool 
 
-      cudDebugDisplayAttributes: ILAttribute list
+      DebugDisplayAttributes: ILAttribute list
 
-      cudAlternatives: IlxUnionAlternative[]
+      UnionCases: IlxUnionCase[]
 
-      cudNullPermitted: bool
+      IsNullPermitted: bool
 
       /// Debug info for generated code for classunions.
-      cudWhere: ILSourceMarker option  
+      DebugPoint: ILDebugPoint option  
+
+      /// Debug info for generated code for classunions 
+      DebugImports: ILDebugImports option
     }
 
 // -------------------------------------------------------------------- 

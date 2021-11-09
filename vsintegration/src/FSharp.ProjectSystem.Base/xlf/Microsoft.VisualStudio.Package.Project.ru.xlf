@@ -1,0 +1,820 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ru" original="../Microsoft.VisualStudio.Package.Project.resx">
+    <body>
+      <trans-unit id="AddToNullProjectError">
+        <source>Failed to add file '{0}' to project as project is null.</source>
+        <target state="translated">Невозможно добавить в проект файл "{0}", так как проект указан как null.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Advanced">
+        <source>Advanced</source>
+        <target state="translated">Дополнительный</target>
+        <note>Project Property Page Caption</note>
+      </trans-unit>
+      <trans-unit id="ReferenceCouldNotBeAdded">
+        <source>A reference to '{0}' could not be added.</source>
+        <target state="translated">Не удалось добавить ссылку на "{0}".</target>
+        <note>ReferenceCouldNotBeAdded error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceAlreadyExists">
+        <source>A reference to '{0}' could not be added. A reference to the component '{1}' already exists in the project.</source>
+        <target state="translated">Не удается добавить ссылку на "{0}". Ссылка на компонент "{1}" уже присутствует в данном проекте.</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="ReferenceWithAssemblyNameAlreadyExists">
+        <source>A reference to '{0}' (with assembly name '{1}') could not be added. A reference to the component '{2}' with the same assembly name already exists in the project.</source>
+        <target state="translated">Не удалось добавить ссылку на "{0}" (с именем сборки "{1}"). Ссылка на компонент "{2}" с таким именем сборки уже существует в данном проекте.</target>
+        <note>ReferenceAlreadyExists error message</note>
+      </trans-unit>
+      <trans-unit id="AttributeLoad">
+        <source>Could not load attribute '{0}' from project file '{1}'.</source>
+        <target state="translated">Не удалось загрузить атрибут "{0}" из файла проекта "{1}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildAction">
+        <source>Build Action</source>
+        <target state="translated">Действие сборки</target>
+        <note>Project Build Property Name</note>
+      </trans-unit>
+      <trans-unit id="BuildActionDescription">
+        <source>How the file relates to the build and deployment process</source>
+        <target state="translated">Роль этого файла в процессе построения и развертывания</target>
+        <note>Project Build Property Description</note>
+      </trans-unit>
+      <trans-unit id="BuildVerbosity">
+        <source>Verbosity</source>
+        <target state="translated">Уровень детализации</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildVerbosityDescription">
+        <source>Specify how much information is included in the build output</source>
+        <target state="translated">Объем сведений, включаемых в выходные данные сборки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cli1">
+        <source>ECMA-335 CLI compatible framework (location must be provided)</source>
+        <target state="translated">ECMA-335 CLI-совместимая инфраструктура (следует указать расположение)</target>
+        <note>Target platform drop down option</note>
+      </trans-unit>
+      <trans-unit id="Compile">
+        <source>Compile</source>
+        <target state="translated">Компиляция</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="ConfirmExtensionChange">
+        <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
+        <target state="translated">Смена расширения имени файла может помешать дальнейшей работе с ним. Изменить расширение?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddFileThatIsOpenInEditor">
+        <source>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</source>
+        <target state="translated">Файл с именем "{0}" уже существует и открыт в редакторе. Присвойте добавляемому элементу уникальное имя или сначала удалите существующий элемент.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CanNotSaveFileNotOpeneInEditor">
+        <source>Cannot save '{0}' as it is not open in the editor.</source>
+        <target state="translated">Не удается сохранить "{0}": файл не открыт в редакторе.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Content">
+        <source>Content</source>
+        <target state="translated">Содержимое</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocal">
+        <source>Copy Local</source>
+        <target state="translated">Копировать локально</target>
+        <note>File property</note>
+      </trans-unit>
+      <trans-unit id="CopyToLocalDescription">
+        <source>Indicates whether the reference will be copied to the output directory.</source>
+        <target state="translated">Указывает, что ссылка будет скопирована в папку вывода.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Detailed">
+        <source>Detailed</source>
+        <target state="translated">Подробные</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostic">
+        <source>Diagnostic</source>
+        <target state="translated">Диагностика</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DirectoryExistError">
+        <source>Directory already exists</source>
+        <target state="translated">Каталог с таким именем уже существует</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EditorViewError">
+        <source>Error opening specified view '{0}' using editor '{1}'</source>
+        <target state="translated">Обнаружена ошибка при открытии указанного представления "{0}" в редакторе "{1}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EmbeddedResource">
+        <source>Embedded Resource</source>
+        <target state="translated">Внедренный ресурс</target>
+        <note>Build Action - drop down option</note>
+      </trans-unit>
+      <trans-unit id="Error">
+        <source>error</source>
+        <target state="translated">Ошибка</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidFileName">
+        <source>Files and folders cannot be:
+- Empty strings 
+- System reserved names, including 'CON', 'AUX', PRN', 'COM1' or 'LPT2' 
+- contain only '.'
+- have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
+        <target state="translated">Файлы и папки не могут:
+– быть пустыми строками; 
+– совпадать с именами, зарезервированными системой, например CON, AUX, PRN, COM1 или LPT2; 
+– содержать только "."; 
+– содержать символы / ? : &amp; \ * " &lt; &gt; | # %.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorInvalidProjectName">
+        <source>The name you provided is not a valid project name.</source>
+        <target state="translated">Указанное имя не является допустимым именем проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMsBuildRegistration">
+        <source>MSBuild path not found in registry. Please reinstall to fix the problem.</source>
+        <target state="translated">Путь к MSBuild не найден в реестре. Чтобы устранить эту неполадку, повторите установку.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorSaving">
+        <source>Error Saving File</source>
+        <target state="translated">Ошибка при сохранении файла</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Exe">
+        <source>Console Application</source>
+        <target state="translated">Консольное приложение</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExpectedObjectOfType">
+        <source>Expecting object of type {0}.</source>
+        <target state="translated">Требуется объект типа {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FailedToRetrieveProperties">
+        <source>Failed to retrieve msbuild property {0} from the project file.</source>
+        <target state="translated">Не удается загрузить свойство msbuild {0} из файла проекта.</target>
+        <note>The exception message thrown when getting a property from msbuild fails.</note>
+      </trans-unit>
+      <trans-unit id="FileAlreadyExists">
+        <source>A file with the same name '{0}' already exists. Do you want to overwrite it?</source>
+        <target state="translated">Файл с именем "{0}" уже существует в проекте. Заменить этот файл?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsAndCannotBeRenamed">
+        <source>A file with the same name '{0}' already exists.</source>
+        <target state="translated">Файл с именем "{0}" уже существует в проекте.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyExistsCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">Конечный файл существует</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProject">
+        <source>A file of this name is already part of the project. Do you want to overwrite it?</source>
+        <target state="translated">Файл с таким именем уже существует в проекте. Заменить этот файл?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileAlreadyInProjectCaption">
+        <source>Destination File Exists</source>
+        <target state="translated">Конечный файл существует</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCannotBeRenamedToAnExistingFile">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">Файл или папка с именем "{0}" уже существует в данном расположении. Выберите другое имя.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileCopyError">
+        <source>Error Copying File</source>
+        <target state="translated">Ошибка при копировании файла</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileName">
+        <source>File Name</source>
+        <target state="translated">Имя файла</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameCannotContainALeadingPeriod">
+        <source>File and folder names cannot contain a leading period.</source>
+        <target state="translated">Имена файлов и папок не могут начинаться с точки.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileNameDescription">
+        <source>The name of the file or folder</source>
+        <target state="translated">Имя файла или папки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderName">
+        <source>Folder Name</source>
+        <target state="translated">Имя папки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderNameDescription">
+        <source>Name of this folder</source>
+        <target state="translated">Имя этой папки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPath">
+        <source>Full Path</source>
+        <target state="translated">Полный путь</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullPathDescription">
+        <source>Location of the file</source>
+        <target state="translated">Расположение файла</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ItemDoesNotExistInProjectDirectory">
+        <source>The item '{0}' does not exist in the project directory. It may have been moved, renamed or deleted.</source>
+        <target state="translated">Элемент "{0}" не существует в каталоге проекта. Возможно, он был перемещен, переименован или удален.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LinkedItemsAreNotSupported">
+        <source>Cannot save '{0}' outside the project directory. Linked items are not supported.</source>
+        <target state="translated">Невозможно сохранить "{0}" вне каталога проекта. Связанные элементы не поддерживаются.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Library">
+        <source>Class Library</source>
+        <target state="translated">Библиотека классов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Minimal">
+        <source>Minimal</source>
+        <target state="translated">minimal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Misc">
+        <source>Misc</source>
+        <target state="translated">Прочее</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="None">
+        <source>None</source>
+        <target state="translated">NONE</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Normal">
+        <source>Normal</source>
+        <target state="translated">NORMAL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PasteFailed">
+        <source>Item is not available or corrupted and thus cannot be pasted.</source>
+        <target state="translated">Элемент не может быть вставлен, так как недоступен или поврежден.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Program">
+        <source>Program</source>
+        <target state="translated">Программа</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project">
+        <source>Project</source>
+        <target state="translated">Проект</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsCircularReferences">
+        <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
+        <target state="translated">Невозможно добавить ссылку на библиотеку "{0}". Добавление этого проекта в виде ссылки может образовать циклическую зависимость. </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFile">
+        <source>Project File</source>
+        <target state="translated">Файл проекта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFileDescription">
+        <source>The name of the file containing build, configuration, and other information about the project.</source>
+        <target state="translated">Имя файла, содержащего сведения о сборке и конфигурации, а также другую информацию о проекте.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolder">
+        <source>Project Folder</source>
+        <target state="translated">Папка проекта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectFolderDescription">
+        <source>The absolute location of the project.</source>
+        <target state="translated">Абсолютный путь к расположению проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Quiet">
+        <source>Quiet</source>
+        <target state="translated">Тихий</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefName">
+        <source>(Name)</source>
+        <target state="translated">(Имя)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferencesNodeName">
+        <source>References</source>
+        <target state="translated">Ссылки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RefNameDescription">
+        <source>Display name of the reference</source>
+        <target state="translated">Отобразить имя ссылки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RenameFolder">
+        <source>Rename directory failed. {0}</source>
+        <target state="translated">Не удалось переименовать каталог. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RTL">
+        <source>RTL_False</source>
+        <target state="translated">RTL_False</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveCaption">
+        <source>Save?</source>
+        <target state="translated">Сохранить?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveModifiedDocuments">
+        <source>Do you want to save modified documents?</source>
+        <target state="translated">Сохранить измененные документы?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SaveOfProjectFileOutsideCurrentDirectory">
+        <source>The project file can only be saved into the project location '{0}'.</source>
+        <target state="translated">Файл проекта можно сохранить только в его папку "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StandardEditorViewError">
+        <source>Error opening specified view '{0}' using standard editor.</source>
+        <target state="translated">Обнаружена ошибка при открытии указанного представления "{0}" в стандартном редакторе.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="URL">
+        <source>URL</source>
+        <target state="translated">URL-адрес</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseOfDeletedItemError">
+        <source>You are trying to use an item that has already been deleted or that does not exist.</source>
+        <target state="translated">Этот элемент удален или не существует и поэтому недоступен.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v1">
+        <source>Microsoft .Net Framework v1.0</source>
+        <target state="translated">Microsoft .Net Framework, версия 1.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v11">
+        <source>Microsoft .Net Framework v1.1</source>
+        <target state="translated">Microsoft .Net Framework, версия 1.1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="v2">
+        <source>Microsoft .Net Framework v2.0</source>
+        <target state="translated">Microsoft .Net Framework, версия 2.0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Warning">
+        <source>warning</source>
+        <target state="translated">Предупреждение</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WinExe">
+        <source>Windows Application</source>
+        <target state="translated">Приложение Windows</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidAutomationObject">
+        <source>Automation object invalid.</source>
+        <target state="translated">Недопустимый объект автоматизации.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CancelQueryEdit">
+        <source>The command you are attempting cannot be completed because the file '{0}' that must be modified cannot be changed. If the file is under source control, you may want to check it out; if the file is read-only on disk, you may want to change its attributes.</source>
+        <target state="translated">Выполнение данной команды невозможно, поскольку изменение файла "{0}", который необходимо изменить, невозможно. Если этот файл находится в системе управления версиями, его можно извлечь; если файл доступен на диске только для чтения, может потребоваться изменение его атрибутов.</target>
+        <note>MsgBox</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidGuid">
+        <source>Parameter must be a valid guid.</source>
+        <target state="translated">Значение параметра должно быть допустимым идентификатором GUID.</target>
+        <note>Error message in the ArgumentException for a  parameter that is not a valid guid.</note>
+      </trans-unit>
+      <trans-unit id="InvalidLoggerType">
+        <source>Invalid logger type\nExpected: {0}\nReceived: {1}</source>
+        <target state="translated">Недопустимый тип средства ведения журнала\nОжидается: {0}\nПолучено: {1}</target>
+        <note>Error message thrown for when an  invalid logger type is set.</note>
+      </trans-unit>
+      <trans-unit id="InvalidParameter">
+        <source>InvalidParameter</source>
+        <target state="translated">InvalidParameter</target>
+        <note>Generic error message for invalid parameters.</note>
+      </trans-unit>
+      <trans-unit id="ParameterCannotBeNullOrEmpty">
+        <source>ParameterCannotBeNullOEmpty</source>
+        <target state="translated">ParameterCannotBeNullOrEmpty</target>
+        <note>Error message for string parameters that cannot be null or empty.</note>
+      </trans-unit>
+      <trans-unit id="ParameterMustBeAValidItemId">
+        <source>Parameter must be a valid item identifier.</source>
+        <target state="translated">Значение параметра должно быть допустимым идентификатором элемента.</target>
+        <note>Error message thrown when an invalid item id is retrieved.</note>
+      </trans-unit>
+      <trans-unit id="FileProperties">
+        <source>File Properties</source>
+        <target state="translated">Свойства файла</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderProperties">
+        <source>Folder Properties</source>
+        <target state="translated">Свойства папки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectProperties">
+        <source>Project Properties</source>
+        <target state="translated">Свойства проекта</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceProperties">
+        <source>Reference Properties</source>
+        <target state="translated">Свойства ссылки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderAlreadyExists">
+        <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
+        <target state="translated">Файл или папка с именем "{0}" уже существует в данном расположении. Выберите другое имя.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderCannotBeRenamed">
+        <source>This folder cannot be renamed to '{0}' as it already exists on disk.\n\nOnly empty folders can be renamed to existing folders. This folder contains files within it on disk.</source>
+        <target state="translated">Эту папку невозможно переименовать в "{0}", так как она уже существует на диске.\n\nВ существующие папки можно переименовать только пустые папки. Эта папка содержит файлы на диске.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildCaption">
+        <source>Build</source>
+        <target state="translated">Сборка</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPath">
+        <source>Output Path</source>
+        <target state="translated">Путь для создаваемых файлов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputPathDescription">
+        <source>The path to the primary output</source>
+        <target state="translated">Путь к основному выходному файлу</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathTooLong">
+        <source>The complete path to '{0}' exceeds the maximum number of characters permitted by the file system.</source>
+        <target state="translated">Длина полного пути к файлу "{0}" превышает максимальное количество символов, разрешенное в файловой системе.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomTool">
+        <source>Custom Tool</source>
+        <target state="translated">Пользовательский инструмент</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolDescription">
+        <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
+        <target state="translated">Указывает инструмент, который преобразует файл во время разработки и помещает выходные данные этого преобразования в другой файл. Например, файл набора данных (XSD) поставляется с пользовательским инструментом по умолчанию.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespace">
+        <source>Custom Tool Namespace</source>
+        <target state="translated">Пространство имен пользовательского инструмента</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CustomToolNamespaceDescription">
+        <source>The namespace into which the output of the custom tool is placed.</source>
+        <target state="translated">Пространство имен, в которое помещаются выходные данные пользовательского инструмента.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuilt">
+        <source>Primary Output</source>
+        <target state="translated">Основные выходные файлы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFiles">
+        <source>Content Files</source>
+        <target state="translated">Файлы содержимого</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentation">
+        <source>Documentation Files</source>
+        <target state="translated">Файлы документации</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDlls">
+        <source>Localized Resources</source>
+        <target state="translated">Локализованные ресурсы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFiles">
+        <source>Source Files</source>
+        <target state="translated">Исходные файлы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbols">
+        <source>Debug Symbols</source>
+        <target state="translated">Отладочные символы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializer">
+        <source>XML Serialization Assemblies</source>
+        <target state="translated">Сборки XML-сериализации</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputBuiltDescription">
+        <source>Contains the DLL or EXE built by the project.</source>
+        <target state="translated">DLL- или EXE-файлы, результат сборки проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputContentFilesDescription">
+        <source>Contains all content files in the project.</source>
+        <target state="translated">Все файлы проекта, содержащие информацию.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputDocumentationDescription">
+        <source>Contains the XML Documentation files for the project.</source>
+        <target state="translated">Содержит файлы XML-документации для проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputLocalizedResourceDllsDescription">
+        <source>Contains the satellite assemblies for each culture's resources.</source>
+        <target state="translated">Вспомогательные сборки для ресурсов каждого языка и региональных параметров.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSourceFilesDescription">
+        <source>Contains all source files in the project.</source>
+        <target state="translated">Содержит все исходные файлы проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputSymbolsDescription">
+        <source>Contains the debugging files for the project.</source>
+        <target state="translated">Файлы для отладки проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OutputXmlSerializerDescription">
+        <source>Contains the XML serialization assemblies for the project.</source>
+        <target state="translated">Содержит сборки XML-сериализации для проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QueryReloadNestedProject">
+        <source>The project file '{0}' has been modified outside of Visual Studio.  Do you want to reload the project?</source>
+        <target state="translated">Файл проекта "{0}" изменен вне среды разработки Visual Studio.  Перезагрузить проект?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NestedProjectFailedToReload">
+        <source>The nested project has failed to reload.</source>
+        <target state="translated">Не удалось перезагрузить вложенный проект.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FileOrFolderCannotBeFound">
+        <source>The item '{0}' cannot be found on disk, either because it has been renamed, deleted, or moved to a new location.</source>
+        <target state="translated">Элемент "{0}" не удается найти на диске, поскольку элемент был переименован, удален или перемещен в новое место.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorReferenceCouldNotBeAdded">
+        <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
+        <target state="translated">Не удалось добавить ссылку на {0}. Убедитесь в том, что файл доступен и является допустимой сборкой или COM-компонентом.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsImport">
+        <source>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</source>
+        <target state="translated">В файле проекта "{1}" найден импорт файла "{0}". Этот файл не зарегистрирован как безопасный для импорта и может содержать уязвимые места или злонамеренные задачи.  Если этот файл в самом деле безопасен, его можно зарегистрировать при помощи записи в раздел реестра {2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUserImport">
+        <source>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</source>
+        <target state="translated">В файле проекта пользователя "{0}" найден импорт файла "{1}".  Весь импорт в пользовательских файлах проекта считается небезопасным.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItem">
+        <source>One or more items named '{1}' were found in the project file '{0}'. These items normally should not be specified in the project file. They can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">В файле проекта "{0}" найден один или более элементов "{1}". Обычно эти элементы не определяются в файле проекта. Они позволяют изменять способ выполнения целей и задач во время загрузки проекта, что может иметь не желательные эффекты.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsProperty">
+        <source>A property named '{1}' was found in the project file '{0}'.  This property normally should not be specified in the project file.  Its value can change the way targets and tasks are executed during project load, and this could have harmful effects.</source>
+        <target state="translated">В файле проекта "{0}" было обнаружено свойство с именем "{1}".  Обычно это свойство не определяется в файле проекта.  Его значение позволяет изменять способ выполнения целей и задач во время загрузки проекта, что может иметь не желательные эффекты.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsUsingTask">
+        <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
+        <target state="translated">В файле проекта "{0}" обнаружен тег "UsingTask", регистрирующий задачу "{1}".  Теги "UsingTask" в файле проекта имеют превосходство перед импортированными .TARGETS-файлами, и поэтому могут быть использованы для выполнения произвольного кода во время не изменяемого другими средствами процесса сборки.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsTarget">
+        <source>A 'Target' named '{1}' was found in the project file '{0}'.  The tasks within this target could contain arbitrary code and may get executed as soon as the project is loaded in the IDE.</source>
+        <target state="translated">В файле проекта "{0}" был обнаружен объект "цель" с именем "{1}".  Задачи в этом элементе могут содержать произвольный код, который может быть выполнен как только проект загрузится в среду разработки.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DetailsItemLocation">
+        <source>An item referring to the file '{1}' was found in the project file '{0}'.  Since this file is located within a system directory, root directory, or network share, it could be harmful to write to this file.</source>
+        <target state="translated">В файле проекта "{0}" найден элемент, ссылающийся на файл "{1}".  Так как это файл находится в системном каталоге, корневом каталоге или в общем сетевом каталоге, запись в данный файл может быть опасной.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectLocationNotTrusted">
+        <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
+        <target state="translated">Расположение проекта не является доверенным:{0}{0}{1}{0}{0}Выполнение приложения может привести к исключениям безопасности при попытке выполнить действия, требующие полного доверия.{0}{0}Нажмите кнопку "ОК", чтобы игнорировать ошибку и продолжить.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BuildEventError">
+        <source>Exception was thrown during BuildBegin event\n{0}</source>
+        <target state="translated">Возникло исключение во время события BuildBegin\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyAlways">
+        <source>Copy always</source>
+        <target state="translated">Всегда копировать</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectory">
+        <source>Copy to Output Directory</source>
+        <target state="translated">Копировать в выходной каталог</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyToOutputDirectoryDescription">
+        <source>Specifies the source file will be copied to the output directory</source>
+        <target state="translated">Указывает, что исходный файл будет скопирован в указанный каталог</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyIfNewer">
+        <source>Copy if newer</source>
+        <target state="translated">Копировать более позднюю версию</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="DoNotCopy">
+        <source>Do not copy</source>
+        <target state="translated">Не копировать</target>
+        <note>CopyToOutputDirectory - drop down option</note>
+      </trans-unit>
+      <trans-unit id="SpecificVersion">
+        <source>Specific Version</source>
+        <target state="translated">Конкретная версия</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SpecificVersionDescription">
+        <source>Indicates whether this reference is to a specific version of an assembly.</source>
+        <target state="translated">Показывает, является ли эта ссылка ссылкой на конкретную версию сборки.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoZeroImpactProjects">
+        <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
+        <target state="translated">Microsoft Visual F# не поддерживает проекты с нулевым влиянием. Чтобы создать проект F# из этого шаблона проекта, последовательно выберите в меню Visual Studio "Сервис" команды "Параметры", "Проекты и решения", "Общие", а затем установите флажок "Сохранять новые проекты в момент создания" либо укажите &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; в разделе &lt;TemplateData&gt; файла .vstemplate этого шаблона, а затем повторите операцию.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NoWildcardsInProject">
+        <source>"Cannot open F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"Не удается открыть проект F# "{0}". \nЭтот проект использует подстановочные знаки в спецификации элемента: \n"{2}" для элемента типа "{1}"\n\nВ проектах F# подстановочные знаки сейчас не поддерживаются.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotAddItemToProjectWithWildcards">
+        <source>"Cannot add file {3} to F# project '{0}'. \nThis project uses wildcards in item specification: \n'{2}' for item type '{1}'\n\nWildcards in F# projects are not currently supported.</source>
+        <target state="translated">"Не удается добавить файл {3} в проект F# "{0}". \nЭтот проект использует подстановочные знаки в спецификации элемента: \n"{2}" для элемента типа "{1}"\n\nВ проектах F# подстановочные знаки сейчас не поддерживаются.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeCannotOpenProjectFileForEdit">
+        <source>Cannot open project file for edit.</source>
+        <target state="translated">Не удается открыть файл проекта для редактирования.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpgradeNoNeedToUpgradeAfterCheckout">
+        <source>Project file was checked out and is already upgraded.</source>
+        <target state="translated">Файл проекта был извлечен и уже обновлен.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotStartLibraries">
+        <source>A project with an Output Type of Class Library cannot be started directly.\n\nIn order to debug this project, add an executable project to this solution which references the library project. Set the executable project as the startup project.</source>
+        <target state="translated">Проект, создающий библиотеку классов, не может быть непосредственно запущен.\n\nДля отладки данного проекта добавьте к решению проект, создающий приложение и ссылающийся на эту библиотеку, и сделайте его запускаемым.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidOutputPath">
+        <source>The entered path is not a valid output path</source>
+        <target state="translated">Введенный путь не является допустимым путем вывода</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectRefOnlyExeOrDll">
+        <source>The project {0} cannot be referenced. An assembly must have a 'dll' or 'exe' extension in order to be referenced.</source>
+        <target state="translated">Невозможно задать ссылку на проект {0}. Сборка должна иметь расширение DLL или EXE для того, чтобы на нее можно было ссылаться.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotBuildWhenBuildInProgress">
+        <source>Cannot start a build, because another build is already in progress.</source>
+        <target state="translated">Не удается начать сборку, поскольку уже выполняется другая сборка.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirectoryNotExists">
+        <source>The working directory does not exist:\n'{0}'.</source>
+        <target state="translated">Рабочий каталог не существует:\n'{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesDifferentFramework">
+        <source>A reference to library '{0}' cannot be added. This project targets a different framework ({2}) from the current project ({1}).</source>
+        <target state="translated">Не удается добавить ссылку на библиотеку "{0}". Этот проект предназначен для платформы ({2}), отличной от платформы текущего проекта ({1}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CannotLoadUnknownTargetFrameworkProject">
+        <source>The project '{0}' is targeting '{1}'; however, the target framework is not installed on the machine.</source>
+        <target state="translated">Проект "{0}" предназначен для "{1}"; однако на этом компьютере не установлена целевая версия платформы.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProductName">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectReferencesHigherVersionWarning">
+        <source>The referenced project '{0}' is targeting a higher framework version ({1}) than this project’s current target framework version ({2}). This may lead to build failures if types from assemblies outside this project’s target framework are used by any project in the dependency chain.</source>
+        <target state="translated">Ссылочный проект "{0}" предназначен для более высокой версии платформы ({1}), чем текущая требуемая версия платформы ({2}) этого проекта. Это может привести к ошибкам сборки, если в каких-либо проектах из цепочки зависимостей будут использоваться типы из сборок, не принадлежащих требуемой версии платформы данного проекта.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectConversionNotRequired">
+        <source>The project file does not require conversion.</source>
+        <target state="translated">Файл проекта не нуждается в преобразовании.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConversionNotRequired">
+        <source>No Conversion Required</source>
+        <target state="translated">Преобразование не требуется</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingProjectBackup">
+        <source>Error creating backup of project file: {0}</source>
+        <target state="translated">Ошибка при создании резервной копии файла проекта: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectBackupSuccessful">
+        <source>Project file successfully backed up as {0}</source>
+        <target state="translated">Резервная копия файла проекта успешно сохранена под именем {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupNameConflict">
+        <source>Backup file name conflict. Renaming file to: {0}</source>
+        <target state="translated">Конфликт имени файла резервной копии. Файл будет переименован в: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ProjectContainsLinkedFile">
+        <source>Backed up project may not build. Project contains linked file: {0}</source>
+        <target state="translated">Возможны ошибки при сборке восстановленного проекта. Проект содержит скомпонованный файл: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorMakingBackup">
+        <source>Failed to backup file as {0}</source>
+        <target state="translated">Не удалось создать резервную копию файла под именем {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="BackupSuccessful">
+        <source>File successfully backed up as {0}</source>
+        <target state="translated">Резервная копия файла успешно сохранена под именем {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identity">
+        <source>Identity</source>
+        <target state="translated">Идентификатор</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IdentityDescription">
+        <source>Security identity of the referenced assembly.</source>
+        <target state="translated">Идентификатор безопасности сборки, на которую указывает ссылка.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Path">
+        <source>Path</source>
+        <target state="translated">Путь</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PathDescription">
+        <source>Location of file being referenced.</source>
+        <target state="translated">Расположение адресуемого файла.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Version">
+        <source>Version</source>
+        <target state="translated">Версия</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf">
+        <source>Copy of {0}</source>
+        <target state="translated">Копия {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CopyOf2">
+        <source>Copy ({0}) of {1}</source>
+        <target state="translated">Копия ({0}) {1}</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

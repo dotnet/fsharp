@@ -4,8 +4,8 @@
 /// constraint solving and method overload resolution.
 module internal FSharp.Compiler.TypeRelations
 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open Internal.Utilities.Collections
+open Internal.Utilities.Library 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -231,7 +231,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
     let rec stripLambdaUpto n (e, ty) = 
         match e with 
         | Expr.Lambda (_, None, None, v, b, _, retTy) when n > 0 -> 
-            let (vs', b', retTy') = stripLambdaUpto (n-1) (b, retTy)
+            let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (v :: vs', b', retTy') 
         | _ -> 
             ([], e, ty)
@@ -239,7 +239,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
     let rec startStripLambdaUpto n (e, ty) = 
         match e with 
         | Expr.Lambda (_, ctorThisValOpt, baseValOpt, v, b, _, retTy) when n > 0 -> 
-            let (vs', b', retTy') = stripLambdaUpto (n-1) (b, retTy)
+            let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (ctorThisValOpt, baseValOpt, (v :: vs'), b', retTy') 
         | Expr.TyChoose (_tps, _b, _) -> 
             startStripLambdaUpto n (ChooseTyparSolutionsForFreeChoiceTypars g amap e, ty)

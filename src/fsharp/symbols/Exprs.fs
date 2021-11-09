@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Symbols
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -110,7 +109,7 @@ type E =
     | UnionCaseSet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField  * FSharpExpr
     | UnionCaseTag of FSharpExpr * FSharpType 
     | UnionCaseTest of FSharpExpr  * FSharpType * FSharpUnionCase 
-    | TraitCall of FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list
+    | TraitCall of FSharpType list * string * SynMemberFlags * FSharpType list * FSharpType list * FSharpExpr list
     | NewTuple of FSharpType * FSharpExpr list  
     | TupleGet of FSharpType * int * FSharpExpr 
     | Coerce of FSharpType * FSharpExpr  
@@ -147,7 +146,7 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
     member x.Range = m
     member x.Type = FSharpType(cenv, ty)
     member x.cenv = cenv
-    member x.E = match box e with null -> (e <- f.Value().E); e | _ -> e
+    member x.E = match box e with null -> e <- f.Value().E; e | _ -> e
     override x.ToString() = sprintf "%+A" x.E
 
     member x.ImmediateSubExpressions = 
@@ -195,10 +194,10 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.ObjectExpr (_ty, basecall, overrides, interfaceImpls) -> 
              [ yield basecall
                for m in overrides do yield m.Body
-               for (_, ms) in interfaceImpls do for m in ms do yield m.Body ]
+               for _, ms in interfaceImpls do for m in ms do yield m.Body ]
         | E.DecisionTree (inputExpr, targetCases) -> 
             [ yield inputExpr
-              for (_targetVars, targetExpr) in targetCases do yield targetExpr ]
+              for _targetVars, targetExpr in targetCases do yield targetExpr ]
         | E.DecisionTreeSuccess (_targetNumber, targetArgs) -> targetArgs
         | E.UnionCaseSet (obj, _unionType, _unionCase, _unionField, valueExpr) -> [ yield obj; yield valueExpr ]
         | E.TraitCall (_sourceTypes, _traitName, _memberFlags, _paramTypes, _retTypes, args) -> args
@@ -212,12 +211,12 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWithOrdinal("init") 
+        rfref.RecdField.LogicalName.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | Expr.Match (_, _, TDSwitch(_, Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
         // Match "init@41 <- 6"
@@ -341,7 +340,7 @@ module FSharpExprConvert =
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm ([ I_ldflda fspec ], retTypes), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], retTypes, m)
             | TOp.ILAsm ([ I_ldsflda fspec ], retTypes), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, retTypes, m)
-            | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  -> 
+            | TOp.ILAsm ([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ], _), arr :: idxs, [elemty]  -> 
                 match shape.Rank, idxs with 
                 | 1, [idx1] -> mkCallArrayGet cenv.g m elemty arr idx1
                 | 2, [idx1; idx2] -> mkCallArray2DGet cenv.g m elemty arr idx1 idx2
@@ -402,7 +401,8 @@ module FSharpExprConvert =
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
-        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->  E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) 
+        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->
+            E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) |> contF
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
             ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contF
@@ -426,7 +426,7 @@ module FSharpExprConvert =
     and ConvModuleValueOrMemberUseLinear (cenv: SymbolEnv) env (expr: Expr, vref, vFlags, tyargs, curriedArgs) contF =
         let m = expr.Range 
 
-        let (numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet) = 
+        let numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet = 
             GetMemberCallInfo cenv.g (vref, vFlags)
 
         let isMember, tps, curriedArgInfos = 
@@ -448,7 +448,7 @@ module FSharpExprConvert =
         let objArgs, curriedArgs = 
             match takesInstanceArg, curriedArgs with 
             | false, curriedArgs -> [], curriedArgs
-            | true, (objArg :: curriedArgs) -> [objArg], curriedArgs
+            | true, objArg :: curriedArgs -> [objArg], curriedArgs
             | true, [] -> failwith ("warning: unexpected missing object argument when generating quotation for call to F# object member "+vref.LogicalName)
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
@@ -540,11 +540,11 @@ module FSharpExprConvert =
         | Expr.Let _   // big linear sequences of 'let'
         | Expr.Match _   // big linear sequences of 'match ... -> ....' 
         | Expr.Sequential _ ->
-            ConvExprPrimLinear cenv env expr (fun e -> e)
+            ConvExprPrimLinear cenv env expr id
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (* (nonNil tyargs || nonNil curriedArgs) && *) vref.IsMemberOrModuleBinding ->
             // Process applications of top-level values in a tail-recursive way
-            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) (fun e -> e)
+            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) id
 
         | Expr.Val (vref, _vFlags, m) -> 
             ConvValRef cenv env m vref 
@@ -593,7 +593,7 @@ module FSharpExprConvert =
         | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _m)      -> 
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
-                [ for (TObjExprMethod(slotsig, _, tps, tmvs, body, _)) in methods -> 
+                [ for TObjExprMethod(slotsig, _, tps, tmvs, body, _) in methods -> 
                     let vslR = List.map (List.map (ConvVal cenv)) tmvs 
                     let sgn = FSharpAbstractSignature(cenv, slotsig)
                     let tpsR = [ for tp in tps -> FSharpGenericParameter(cenv, tp) ]
@@ -726,12 +726,14 @@ module FSharpExprConvert =
                 let elemTy = tyOfExpr cenv.g arg
                 let nullVal = mkNull m elemTy
                 let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
+                let env = { env with suppressWitnesses=true }
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] -> 
                 let arrayTy = tyOfExpr cenv.g arr
                 let elemTy = destArrayTy cenv.g arrayTy
                 let op = mkCallArrayLength cenv.g m elemTy arr
+                let env = { env with suppressWitnesses=true }
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_newarr (ILArrayShape [(Some 0, None)], _)], _), [elemTy], xa ->
@@ -778,8 +780,8 @@ module FSharpExprConvert =
             | TOp.ILAsm ([ ILConvertOp convertOp ], [TType_app (tcref,_)]), _, [arg] -> 
                 let ty = tyOfExpr cenv.g arg
                 let op =
-                    if tyconRefEq cenv.g tcref cenv.g.char_tcr
-                    then mkCallToCharOperator cenv.g m ty arg
+                    if tyconRefEq cenv.g tcref cenv.g.char_tcr then
+                        mkCallToCharOperator cenv.g m ty arg
                     else convertOp cenv.g m ty arg
                 ConvExprPrim cenv env op
 
@@ -809,7 +811,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldGet (tcref, i), [], [obj] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, cenv.g.exn_ty))
                 E.FSharpFieldGet(Some objR, typR, ConvRecdFieldRef cenv fref) 
@@ -817,7 +819,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldSet (tcref, i), [], [obj;e2] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, cenv.g.exn_ty))
                 E.FSharpFieldSet(Some objR, typR, ConvRecdFieldRef cenv fref, ConvExpr cenv env e2) 
@@ -989,7 +991,7 @@ module FSharpExprConvert =
                 try
                     nlr.EnclosingEntity.Deref 
                 with _ ->
-                    failwithf "Failed to resolve type '%s'" (nlr.EnclosingEntity.CompiledName)
+                    failwithf "Failed to resolve type '%s'" nlr.EnclosingEntity.CompiledName
             let ccu = nlr.EnclosingEntity.nlr.Ccu
             let vName = nlr.ItemKey.PartialKey.LogicalName // this is actually compiled name
             let findByName =
@@ -1185,7 +1187,7 @@ module FSharpExprConvert =
     and ConvTargetsLinear cenv env tgs contF = 
         match tgs with 
         | [] -> contF []
-        | TTarget(vars, rhs, _) :: rest -> 
+        | TTarget(vars, rhs, _, _) :: rest -> 
             let varsR = (List.rev vars) |> List.map (ConvVal cenv)
             ConvExprLinear cenv env rhs (fun targetR -> 
             ConvTargetsLinear cenv env rest (fun restR -> 
@@ -1194,14 +1196,14 @@ module FSharpExprConvert =
     and ConvValRef cenv env m (vref: ValRef) =
         let v = vref.Deref
         if env.isinstVals.ContainsVal v then 
-            let (ty, e) = env.isinstVals.[v]
+            let ty, e = env.isinstVals.[v]
             ConvExprPrim cenv env (mkCallUnbox cenv.g m ty e)
         elif env.substVals.ContainsVal v then 
             let e = env.substVals.[v]
             ConvExprPrim cenv env e
-        elif v.BaseOrThisInfo = CtorThisVal then 
+        elif v.IsCtorThisVal then 
             E.ThisValue(ConvType cenv v.Type) 
-        elif v.BaseOrThisInfo = BaseVal then 
+        elif v.IsBaseVal then 
             E.BaseValue(ConvType cenv v.Type) 
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 
@@ -1240,7 +1242,7 @@ module FSharpExprConvert =
 
     and ConvDecisionTreePrim cenv env dtreeRetTy x = 
         match x with 
-        | TDSwitch(e1, csl, dfltOpt, m) -> 
+        | TDSwitch(_, e1, csl, dfltOpt, m) -> 
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
@@ -1269,15 +1271,17 @@ module FSharpExprConvert =
                         // Decompile cached isinst tests
                         match e1 with 
                         | Expr.Val (vref, _, _) when env.isinstVals.ContainsVal vref.Deref  ->
-                            let (ty, e) =  env.isinstVals.[vref.Deref]
+                            let ty, e =  env.isinstVals.[vref.Deref]
                             let tyR = ConvType cenv ty
                             let eR = ConvExpr cenv env e
                             // note: reverse the branches - a null test is a failure of an isinst test
                             E.IfThenElse (E.TypeTest (tyR, eR) |> Mk cenv m cenv.g.bool_ty, acc, ConvDecisionTree cenv env dtreeRetTy dtree m) 
                         | _ -> 
                             let ty = tyOfExpr cenv.g e1
-                            let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
-                            let eqR = ConvExpr cenv env eq 
+                            let eqR =
+                                let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
+                                let env = { env with suppressWitnesses = true }
+                                ConvExpr cenv env eq 
                             E.IfThenElse (eqR, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
                     | DecisionTreeTest.IsInst (_srcty, tgty) -> 
                         let e1R = ConvExpr cenv env e1
@@ -1337,7 +1341,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
     and getDecls mdef = 
         match mdef with 
-        | TMDefRec(_isRec, tycons, mbinds, _m) ->
+        | TMDefRec(_isRec, _opens, tycons, mbinds, _m) ->
             [ for tycon in tycons do 
                   let entity = FSharpEntity(cenv, mkLocalEntityRef tycon)
                   yield FSharpImplementationFileDeclaration.Entity(entity, []) 
@@ -1351,6 +1355,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMAbstract mexpr -> getDecls2 mexpr
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
+        | TMDefOpens _ ->
+            [ ]
         | TMDefDo(expr, _m)  ->
             [ let expr = FSharpExprConvert.ConvExprOnDemand cenv (ExprTranslationEnv.Empty(cenv.g)) expr
               yield FSharpImplementationFileDeclaration.InitAction expr  ]
@@ -1364,52 +1370,98 @@ and FSharpImplementationFileContents(cenv, mimpl) =
     member _.IsScript = isScript
 
 
-module BasicPatterns = 
+module FSharpExprPatterns = 
     let (|Value|_|) (e: FSharpExpr) = match e.E with E.Value v -> Some v | _ -> None
+
     let (|Const|_|) (e: FSharpExpr) = match e.E with E.Const (v, ty) -> Some (v, ty) | _ -> None
+
     let (|TypeLambda|_|) (e: FSharpExpr) = match e.E with E.TypeLambda (v, e) -> Some (v, e) | _ -> None
+
     let (|Lambda|_|) (e: FSharpExpr) = match e.E with E.Lambda (v, e) -> Some (v, e) | _ -> None
+
     let (|Application|_|) (e: FSharpExpr) = match e.E with E.Application (f, tys, e) -> Some (f, tys, e) | _ -> None
+
     let (|IfThenElse|_|) (e: FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> Some (e1, e2, e3) | _ -> None
+
     let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((v, e), b) -> Some ((v, e), b) | _ -> None
+
     let (|LetRec|_|) (e: FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
+
     let (|NewRecord|_|) (e: FSharpExpr) = match e.E with E.NewRecord (ty, es) -> Some (ty, es) | _ -> None
+
     let (|NewAnonRecord|_|) (e: FSharpExpr) = match e.E with E.NewAnonRecord (ty, es) -> Some (ty, es) | _ -> None
+
     let (|NewUnionCase|_|) (e: FSharpExpr) = match e.E with E.NewUnionCase (e, tys, es) -> Some (e, tys, es) | _ -> None
+
     let (|NewTuple|_|) (e: FSharpExpr) = match e.E with E.NewTuple (ty, es) -> Some (ty, es) | _ -> None
+
     let (|TupleGet|_|) (e: FSharpExpr) = match e.E with E.TupleGet (ty, n, es) -> Some (ty, n, es) | _ -> None
+
     let (|Call|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, _e, f) -> Some (a, b, c, d, f) | _ -> None
+
     let (|CallWithWitnesses|_|) (e: FSharpExpr) = match e.E with E.Call (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
+
     let (|NewObject|_|) (e: FSharpExpr) = match e.E with E.NewObject (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|FSharpFieldGet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|AnonRecordGet|_|) (e: FSharpExpr) = match e.E with E.AnonRecordGet (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|FSharpFieldSet|_|) (e: FSharpExpr) = match e.E with E.FSharpFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+
     let (|UnionCaseGet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseGet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+
     let (|UnionCaseTag|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTag (a, b) -> Some (a, b) | _ -> None
+
     let (|UnionCaseTest|_|) (e: FSharpExpr) = match e.E with E.UnionCaseTest (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|NewArray|_|) (e: FSharpExpr) = match e.E with E.NewArray (a, b) -> Some (a, b) | _ -> None
+
     let (|Coerce|_|) (e: FSharpExpr) = match e.E with E.Coerce (a, b) -> Some (a, b) | _ -> None
+
     let (|Quote|_|) (e: FSharpExpr) = match e.E with E.Quote a -> Some a | _ -> None
+
     let (|TypeTest|_|) (e: FSharpExpr) = match e.E with E.TypeTest (a, b) -> Some (a, b) | _ -> None
+
     let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (a, b) -> Some (a, b) | _ -> None
+
     let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.FastIntegerForLoop (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+
     let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (a, b) -> Some (a, b) | _ -> None
+
     let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (a, b) -> Some (a, b) | _ -> None
+
     let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+
     let (|NewDelegate|_|) (e: FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> Some (ty, e) | _ -> None
+
     let (|DefaultValue|_|) (e: FSharpExpr) = match e.E with E.DefaultValue ty -> Some ty | _ -> None
+
     let (|AddressSet|_|) (e: FSharpExpr) = match e.E with E.AddressSet (a, b) -> Some (a, b) | _ -> None
+
     let (|ValueSet|_|) (e: FSharpExpr) = match e.E with E.ValueSet (a, b) -> Some (a, b) | _ -> None
+
     let (|AddressOf|_|) (e: FSharpExpr) = match e.E with E.AddressOf a -> Some a | _ -> None
+
     let (|ThisValue|_|) (e: FSharpExpr) = match e.E with E.ThisValue a -> Some a | _ -> None
+
     let (|BaseValue|_|) (e: FSharpExpr) = match e.E with E.BaseValue a -> Some a | _ -> None
+
     let (|ILAsm|_|) (e: FSharpExpr) = match e.E with E.ILAsm (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|ILFieldGet|_|) (e: FSharpExpr) = match e.E with E.ILFieldGet (a, b, c) -> Some (a, b, c) | _ -> None
+
     let (|ILFieldSet|_|) (e: FSharpExpr) = match e.E with E.ILFieldSet (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+
     let (|ObjectExpr|_|) (e: FSharpExpr) = match e.E with E.ObjectExpr (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+
     let (|DecisionTree|_|) (e: FSharpExpr) = match e.E with E.DecisionTree (a, b) -> Some (a, b) | _ -> None
+
     let (|DecisionTreeSuccess|_|) (e: FSharpExpr) = match e.E with E.DecisionTreeSuccess (a, b) -> Some (a, b) | _ -> None
+
     let (|UnionCaseSet|_|) (e: FSharpExpr) = match e.E with E.UnionCaseSet (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+
     let (|TraitCall|_|) (e: FSharpExpr) = match e.E with E.TraitCall (a, b, c, d, e, f) -> Some (a, b, c, d, e, f) | _ -> None
+
     let (|WitnessArg|_|) (e: FSharpExpr) = match e.E with E.WitnessArg n -> Some n | _ -> None
 

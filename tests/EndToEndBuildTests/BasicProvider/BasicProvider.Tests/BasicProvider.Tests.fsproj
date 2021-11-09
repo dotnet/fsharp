@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp3.1</TargetFramework>
+    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">net5.0</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
-    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

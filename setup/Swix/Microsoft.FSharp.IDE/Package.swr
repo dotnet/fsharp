@@ -2,9 +2,14 @@ use vs
 
 package name=Microsoft.FSharp.IDE
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 vs.dependencies
   vs.dependency id=Microsoft.FSharp.Dependencies
+                version=$(VsixVersion)
+                type=Required
+
+  vs.dependency id=Microsoft.FSharp.Compiler
                 version=$(VsixVersion)
                 type=Required
 

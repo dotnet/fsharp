@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net472;net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
@@ -11,9 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="ConsoleHelpers.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\utils\RidHelpers.fs" />
-    <Compile Include="TestHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />
     <Compile Include="DependencyManagerLineParserTests.fs" />
     <Compile Include="FSharpScriptTests.fs" />
@@ -26,10 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+    <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
 </Project>

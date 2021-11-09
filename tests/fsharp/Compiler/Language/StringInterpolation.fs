@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Test.Utilities
+open FSharp.Compiler.Diagnostics
+open FSharp.Test
 
 [<TestFixture>]
 module StringInterpolationTests =
@@ -325,16 +325,16 @@ check "fwejwflpej2" (fmt $"abc") "abc"
 check "fwejwflpej3" (fmt $"abc{1}") "abc1"
 check "fwejwflpej6" (fmt_us $"abc {30000} def") "abc 30000 def"
 check "fwejwflpej7" (fmt_de $"abc {30000} def") "abc 30000 def"
-check "fwejwflpej8" (fmt_us $"abc {30000:N} def") "abc 30,000.00 def"
-check "fwejwflpej9" (fmt_de $"abc {30000:N} def") "abc 30.000,00 def"
+check "fwejwflpej8" (fmt_us $"abc {30000:N2} def") "abc 30,000.00 def"
+check "fwejwflpej9" (fmt_de $"abc {30000:N2} def") "abc 30.000,00 def"
 check "fwejwflpej10" (fmt_us $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
 check "fwejwflpej11" (fmt_us $"abc {30000,-10} def {40000} hij") "abc 30000      def 40000 hij"
 check "fwejwflpej12" (fmt_us $"abc {30000,10} def {40000} hij") "abc      30000 def 40000 hij"
 check "fwejwflpej13" (fmt_de $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
-check "fwejwflpej14" (fmt_us $"abc {30000:N} def {40000:N} hij") "abc 30,000.00 def 40,000.00 hij"
-check "fwejwflpej15" (fmt_de $"abc {30000:N} def {40000:N} hij") "abc 30.000,00 def 40.000,00 hij"
-check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N} hij") "abc  30.000,00 def 40.000,00 hij"
-check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000,00  def 40.000,00 hij"
+check "fwejwflpej14" (fmt_us $"abc {30000:N2} def {40000:N2} hij") "abc 30,000.00 def 40,000.00 hij"
+check "fwejwflpej15" (fmt_de $"abc {30000:N2} def {40000:N2} hij") "abc 30.000,00 def 40.000,00 hij"
+check "fwejwflpej16" (fmt_de $"abc {30000,10:N2} def {40000:N2} hij") "abc  30.000,00 def 40.000,00 hij"
+check "fwejwflpej17" (fmt_de $"abc {30000,-10:N2} def {40000:N2} hij") "abc 30.000,00  def 40.000,00 hij"
 
             """
 
@@ -354,16 +354,16 @@ check "fwejwflpej2" (fmt $"abc") "abc"
 check "fwejwflpej3" (fmt $"abc{1}") "abc1"
 check "fwejwflpej6" (fmt_us $"abc {30000} def") "abc 30000 def"
 check "fwejwflpej7" (fmt_de $"abc {30000} def") "abc 30000 def"
-check "fwejwflpej8" (fmt_us $"abc {30000:N} def") "abc 30,000.00 def"
-check "fwejwflpej9" (fmt_de $"abc {30000:N} def") "abc 30.000,00 def"
+check "fwejwflpej8" (fmt_us $"abc {30000:N2} def") "abc 30,000.00 def"
+check "fwejwflpej9" (fmt_de $"abc {30000:N2} def") "abc 30.000,00 def"
 check "fwejwflpej10" (fmt_us $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
 check "fwejwflpej11" (fmt_us $"abc {30000,-10} def {40000} hij") "abc 30000      def 40000 hij"
 check "fwejwflpej12" (fmt_us $"abc {30000,10} def {40000} hij") "abc      30000 def 40000 hij"
 check "fwejwflpej13" (fmt_de $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
-check "fwejwflpej14" (fmt_us $"abc {30000:N} def {40000:N} hij") "abc 30,000.00 def 40,000.00 hij"
-check "fwejwflpej15" (fmt_de $"abc {30000:N} def {40000:N} hij") "abc 30.000,00 def 40.000,00 hij"
-check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N} hij") "abc  30.000,00 def 40.000,00 hij"
-check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000,00  def 40.000,00 hij"
+check "fwejwflpej14" (fmt_us $"abc {30000:N2} def {40000:N2} hij") "abc 30,000.00 def 40,000.00 hij"
+check "fwejwflpej15" (fmt_de $"abc {30000:N2} def {40000:N2} hij") "abc 30.000,00 def 40.000,00 hij"
+check "fwejwflpej16" (fmt_de $"abc {30000,10:N2} def {40000:N2} hij") "abc  30.000,00 def 40.000,00 hij"
+check "fwejwflpej17" (fmt_de $"abc {30000,-10:N2} def {40000:N2} hij") "abc 30.000,00  def 40.000,00 hij"
 
             """
 
@@ -536,7 +536,19 @@ check "vcewweh22g" $"x = %A{s}" "x = \"sixsix\""
 check "vcewweh20" $"x = %A{1}" "x = 1"
 
             """
-
+    [<Test>]
+    let ``%B fails for langVersion 5.0`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
+            """printf "%B" 10"""
+            [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
+                   "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
+    [<Test>]
+    let ``%B succeeds for langVersion preview`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """
+let check msg a b = 
+    if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
+check "vcewweh22a" $"x = %B{19}" "x = 10011"
+        """
 
     [<Test>]
     let ``String interpolation using list and array data`` () =

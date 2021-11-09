@@ -1,7 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">La característica "{0}" no está disponible en F# {1}. Use la versión {2} del lenguaje o una posterior.</target>
@@ -15,6 +25,36 @@
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
         <target state="translated">La característica "{0}" requiere la biblioteca de F# para la versión de lenguaje {1} o superior.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellAssign">
+        <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
+        <target state="translated">El uso de ":=" de la biblioteca de F# está en desuso. Vea https://aka.ms/fsharp-refcell-ops. Por ejemplo, cambie "cell := expr" a "cell.Value &lt;- expr".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDecr">
+        <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
+        <target state="translated">El uso de "decr" de la biblioteca de F# está en desuso. Vea https://aka.ms/fsharp-refcell-ops. Por ejemplo, cambie "decr cell" a "cell.Value &lt;- cell.Value - 1".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDeref">
+        <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
+        <target state="translated">El uso de "!" de la biblioteca de F# está en desuso. Vea https://aka.ms/fsharp-refcell-ops. Por ejemplo, cambie "!cell" a "cell.Value".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellIncr">
+        <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
+        <target state="translated">El uso de "incr" de la biblioteca de F# está en desuso. Vea https://aka.ms/fsharp-refcell-ops. Por ejemplo, cambie "incr cell" a "cell.Value &lt;- cell.Value + 1".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerDeprecated">
+        <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
+        <target state="translated">El elemento "AssemblyKeyNameAttribute" está en desuso. Use "AssemblyKeyFileAttribute" en su lugar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="containerSigningUnsupportedOnThisPlatform">
+        <source>Key container signing is not supported on this platform.</source>
+        <target state="translated">La firma del contenedor de claves no se admite en esta plataforma.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -77,14 +117,29 @@
         <target state="translated">El atributo de ensamblado "{0}" hace referencia a un ensamblado de diseñador "{1}" que no se puede cargar o no existe. Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>additional type-directed conversions</source>
+        <target state="translated">conversiones adicionales dirigidas a tipos</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">expresiones de cálculo aplicativas</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">atributos a la derecha de la palabra clave “módulo”</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">consumo de miembros de interfaz predeterminados</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="translated">descartar enlace de patrón en uso</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -112,14 +167,29 @@
         <target state="translated">elemento yield implícito</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureIndexerNotationWithoutDot">
+        <source>expr[idx] notation for indexing and slicing</source>
+        <target state="translated">Notación para indexación y segmentación expr[idx]</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">interfaces con creación de instancias genéricas múltiples</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="new">ML compatibility revisions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">patrones no variables a la derecha de los patrones "as"</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -142,9 +212,29 @@
         <target state="translated">administración de paquetes</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="translated">formato binario para enteros</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRefCellNotationInformationals">
+        <source>informational messages related to reference cells</source>
+        <target state="translated">mensajes informativos relacionados con las celdas de referencia</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">relajación de espacio en blanco</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="translated">relajación de espacios en blanco v2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureResumableStateMachines">
+        <source>resumable state machines</source>
+        <target state="translated">máquinas de estado reanudables</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -155,6 +245,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="translated">representación de struct para modelos activos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -202,6 +297,16 @@
         <target state="translated">Directiva '#{0} {1}' no válida.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
+        <target state="translated">La construcción de código reanudable "{0}" solo se puede usar en el código insertado protegido por "if __useResumableCode then ..." y la composición general debe formar un código reanudable válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingInlineIfLambda">
+        <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
+        <target state="translated">El atributo "InlineIfLambda" está presente en la firma, pero no en la implementación.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Palabra clave para especificar un literal de constante como argumento de parámetro de tipo en los proveedores de tipo.</target>
@@ -210,6 +315,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">no se puede interpolar una cadena de bytes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -227,6 +337,41 @@
         <target state="translated">Cadena interpolada no válida. No se pueden usar literales de cadena de comillas triples en las expresiones interpoladas. Puede usar un enlace "let" explícito para la expresión de interpolación.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">El flujo no comienza con un recurso nulo ni está en formato ".RES".</target>
@@ -235,6 +380,26 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">El encabezado de los recursos que comienza en el desplazamiento {0} está mal formado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexer2">
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
+        <target state="translated">Esta expresión no es una función y no se puede aplicar. ¿Quería acceder al indexador a través de "expr[index]"?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexerWithName2">
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
+        <target state="translated">Este valor no es una función y no se puede aplicar. ¿Quería acceder al indexador a través de "{0}[index]"?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optFailedToInlineSuggestedValue">
+        <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
+        <target state="translated">El valor "{0}" estaba marcado como "InlineIfLambda", pero no se ha determinado que tenga un valor lambda. Esta advertencia solo tiene fines informativos.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="translated">Imprimir las interfaces deducidas de todos los archivos de compilación en los archivos de signatura asociados</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -255,6 +420,11 @@
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
         <target state="translated">Mostrar el banner de versión del compilador y salir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsWin32icon">
+        <source>Specify a Win32 icon file (.ico)</source>
+        <target state="translated">Especificar un archivo de icono Win32 (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -307,14 +477,84 @@
         <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
+        <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="translated">No se determinó estáticamente una etiqueta de destino para __resumeAt. Si __resumeAt tiene una etiqueta de destino no estática, solo podrá aparecer al principio de un método de código reanudable</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
+        <source>A fast integer for loop may not contain resumption points</source>
+        <target state="translated">Un bucle for con enteros rápidos no puede contener puntos de reanudación</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsLetRec">
+        <source>A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">Se ha producido "let rec" en la especificación de código reanudable</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
+        <source>The 'with' block of a try/with may not contain resumption points</source>
+        <target state="translated">El bloque "with" de try/with no puede contener puntos de reanudación</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
+        <source>A try/finally may not contain resumption points</source>
+        <target state="translated">Try/finally puede no contener puntos de reanudación</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeDefinitionWasGeneric">
+        <source>A delegate or function producing resumable code in a state machine has type parameters</source>
+        <target state="translated">Un delegado o una función que produce código reanudable en un equipo de estado tiene parámetros de tipo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeInvokeNotReduced">
+        <source>A resumable code invocation at '{0}' could not be reduced</source>
+        <target state="translated">No se pudo reducir una invocación de código reanudable en "{0}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeValueHasNoDefinition">
+        <source>The resumable code value(s) '{0}' does not have a definition</source>
+        <target state="translated">Los valores de código reanudables "{0}" no tienen una definición</target>
+        <note />
+      </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">Los elementos PackageManager registrados no admiten #i</target>
         <note />
       </trans-unit>
+      <trans-unit id="reprStateMachineInvalidForm">
+        <source>The state machine has an unexpected form</source>
+        <target state="translated">El equipo de estado tiene un formato inesperado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilable">
+        <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
+        <target state="translated">Esta máquina de estado no se compila estáticamente. {0}. Se usará una implementación dinámica alternativa, que puede ser más lenta. Considere la posibilidad de ajustar el código para asegurarse de que esta máquina de estado se pueda compilar estáticamente, o bien suprima esta advertencia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilableNoAlternative">
+        <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
+        <target state="translated">Esta máquina de estado no se puede compilar estáticamente y no hay ninguna alternativa disponible. {0}. Utilice "if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;" para dar una alternativa.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. La salida de "{0} --version" en el directorio "{1}" era "{2}", con el código de salida "{3}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="translated">No se pudo determinar el SDK de .NET para este script. No se encontró dotnet.exe. Asegúrese de tener instalado un SDK de .NET.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedUnexpected">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
+        <target state="translated">No se pudo determinar el SDK de .NET para este script. Si el script está en un directorio que usa una instancia de "global.json", asegúrese de que el SDK de .NET pertinente esté instalado. Error inesperado: "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="translated">Esta expresión tiene el tipo "{0}" y solo se hace compatible con el tipo "{1}" mediante una conversión implícita ambigua. Considere la posibilidad de usar una llamada explícita a 'op_Implicit'. Las conversiones implícitas aplicables son:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -347,9 +587,44 @@
         <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
+        <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
+        <target state="translated">La sintaxis "expr1[expr2]" se usa para la indexación. Considere la posibilidad de agregar una anotación de tipo para habilitar la indexación, si se llama a una función, agregue un espacio, por ejemplo, "expr1 [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
+        <target state="translated">La sintaxis "expr1[expr2]" está ahora reservada para la indexación. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función, agregue un espacio entre la función y el argumento; por ejemplo, "unaFunción [expr]".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">No se permiten tipos byref en una declaración de tipo abierto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
+        <target state="translated">La sintaxis "arr.[idx]" se ha revisado y ahora es "arr[idx]". Actualice el código.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcBuiltInImplicitConversionUsed">
+        <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Esta expresión usa una conversión implícita integrada para convertir el tipo '{0}' al tipo '{1}'. Vea https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
+        <target state="translated">Esta expresión usa la conversión implícita '{0}' para convertir el tipo '{1}' al tipo '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
+        <target state="translated">Esta expresión usa la conversión implícita '{0}' para convertir el tipo '{1}' al tipo '{2}'. Consulte https://aka.ms/fsharp-implicit-convs. Esta advertencia se puede deshabilitar mediante '#nowarn \"3391\".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
+        <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
+        <target state="translated">El atributo "InlineIfLambda" solo se puede usar en los parámetros de funciones insertadas de métodos cuyo tipo es una función o un tipo de delegado F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -362,9 +637,34 @@
         <target state="translated">Alineación no válida en la cadena interpolada</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidResumableConstruct">
+        <source>The construct '{0}' may only be used in valid resumable code.</source>
+        <target state="translated">La construcción "{0}" solo se puede usar en un código reanudable válido.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">El uso de «[&lt;Struct&gt;]» en valores, funciones y métodos solo se permite en definiciones de modelos activos parciales.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">No se puede combinar use! con and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="translated">Uso no válido de índice inverso en la expresión de lista.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">La sintaxis "[expr1][expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "(expr1).[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción [expr1] [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentReserved">
+        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">La sintaxis "[expr1][expr2]" está reservada ahora para la indexación y es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función con varios argumentos currificados, agregue un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -382,9 +682,89 @@
         <target state="translated">No se puede asignar "{0}" a un valor marcado como literal</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="new">Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
+        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">Esta expresión admite indexación, por ejemplo "expr.[index]". La sintaxis "expr[index]" requiere /langversion:preview. Ver https://aka.ms/fsharp-index-notation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
+        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">Este valor admite indexación, por ejemplo "{0}.[index]". La sintaxis "{1}[index]" requiere /langversion:preview. Ver https://aka.ms/fsharp-index-notation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
+        <source>This expression is not a function and does not support index notation.</source>
+        <target state="translated">Esta expresión no es una función y no admite la notación de índices.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
+        <source>The value '{0}' is not a function and does not support index notation.</source>
+        <target state="translated">El valor "{0}" no es una función y no admite la notación de índices.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">La sintaxis "expr1[expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "expr1.[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">La sintaxis "expr1[expr2]" está reservada ahora para la indexación y es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función con varios argumentos currificados, agregue un espacio entre ellos, por ejemplo, "unaFunción expr1 [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">La sintaxis "(expr1)[expr2]" es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si piensa indexar o segmentar, debe usar "(expr1).[expr2]" en la posición del argumento. Si se llama a una función con varios argumentos currificados, se agregará un espacio entre ellos, por ejemplo, "unaFunción (expr1) [expr2]".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
+        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">La sintaxis "(expr1)[expr2]" está reservada ahora para la indexación y es ambigua cuando se usa como argumento. Vea https://aka.ms/fsharp-index-notation. Si se llama a una función con varios argumentos currificados, agregue un espacio entre ellos, por ejemplo, "unaFunción (expr1) [expr2]".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">La construcción "let! ... and! ..." solo se puede usar si el generador de expresiones de cálculo define un método "{0}" o bien los métodos "MergeSource" y "Bind" adecuados.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightKind">
+        <source>Invalid resumable code. A resumable code parameter must be of delegate or function type</source>
+        <target state="translated">Código reanudable no válido. Un parámetro de código reanudable debe ser un delegado o un tipo de función</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightName">
+        <source>Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</source>
+        <target state="translated">Código reanudable no válido. El parámetro de código reanudable debe tener un nombre que comience por "__expand"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeContainsLetRec">
+        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">Código reanudable no válido. Se ha producido "let rec" en la especificación de código reanudable</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeFunctionMustBeInline">
+        <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
+        <target state="translated">Código reanudable no válido. Cualquier método de la función que acepte o devuelva código reanudable debe marcarse como "inline".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeInvocation">
+        <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
+        <target state="translated">Invocación de código reanudable. Suprima esta advertencia si va a definir un nuevo código reanudable de bajo nivel en términos del código reanudable existente.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeNotSupported">
+        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
+        <target state="translated">El uso de código reanudable o de máquinas de estado reanudables requiere /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSubsumptionImplicitConversionUsed">
+        <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Esta expresión convierte implícitamente el tipo '{0}' al tipo '{1}'. Consulte https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -493,13 +873,13 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de constructor de lista deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Todos los elementos de una lista deben poder convertirse implícitamente al tipo del primer elemento, que aquí es '{0}'. Este elemento tiene el tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Todos los elementos de una expresión de constructor de matriz deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Todos los elementos de una matriz deben poder convertirse implícitamente al tipo del primer elemento, que aquí es '{0}'. Este elemento tiene el tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -513,13 +893,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión "if" deben devolver el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Todas las ramas de una expresión "IF" deben devolver valores implícitamente convertibles al mismo tipo de la primera rama, el cual es "{0}" aquí. Esta rama devuelve el valor de tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "{1}".</target>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores implícitamente convertibles al mismo tipo de la primera rama, el cual es "{0}" aquí. Esta rama devolvió un valor de tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -545,6 +925,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Considere la posibilidad de usar "return!" en lugar de "return".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">Este atributo no es compatible actualmente con el compilador de F#. Si se aplica, no se obtendrá el efecto deseado.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
@@ -2758,8 +3143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcMemberKindPropertyGetSetNotExpected">
-        <source>MemberKind.PropertyGetSet only expected in parse trees</source>
-        <target state="translated">MemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
+        <source>SynMemberKind.PropertyGetSet only expected in parse trees</source>
+        <target state="translated">SynMemberKind.PropertyGetSet se espera solo en árboles de análisis.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">
@@ -3313,8 +3698,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">Expresión de indizador no válido.</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="translated">Expresión incompleta o uso no válido de la sintaxis de indexador</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -3923,8 +4308,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Una declaración solo puede ser el atributo [&lt;Literal&gt;] si también se proporciona un valor constante, por ejemplo, "val x: int = 1"</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -7353,13 +7738,13 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via {0}.[index] instead?</source>
-        <target state="translated">Este valor no es una función y no se puede aplicar. ¿Pretendía tener acceso al indexador a través de {0}.[index] en su lugar?</target>
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
+        <target state="translated">Este valor no es una función y no se puede aplicar. ¿Quería tener acceso al indexador a través de "{0}.[index]"?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?</source>
-        <target state="translated">Esta expresión no es una función y no se puede aplicar. ¿Pretendía tener acceso al indexador a través de expr.[index] en su lugar?</target>
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
+        <target state="translated">Esta expresión no es una función y no se puede aplicar. ¿Quería acceder al indexador a través de "expr.[index]"?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

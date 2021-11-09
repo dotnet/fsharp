@@ -22,9 +22,9 @@
 // F#コンパイラAPIへの参照
 #r "FSharp.Compiler.Service.dll"
 
-open System
 open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 // インタラクティブチェッカーのインスタンスを作成
@@ -110,13 +110,13 @@ let wholeProjectResults = checker.ParseAndCheckProject(projectOptions) |> Async.
 (**
 発生したエラーと警告は以下のようにしてチェックできます:
 *)
-wholeProjectResults.Errors.Length // 1
-wholeProjectResults.Errors.[0].Message.Contains("Incomplete pattern matches on this expression") // true
+wholeProjectResults.Diagnostics.Length // 1
+wholeProjectResults.Diagnostics.[0].Message.Contains("Incomplete pattern matches on this expression") // true
 
-wholeProjectResults.Errors.[0].StartLineAlternate // 13
-wholeProjectResults.Errors.[0].EndLineAlternate // 13
-wholeProjectResults.Errors.[0].StartColumn // 15
-wholeProjectResults.Errors.[0].EndColumn // 16
+wholeProjectResults.Diagnostics.[0].StartLine // 13
+wholeProjectResults.Diagnostics.[0].EndLine // 13
+wholeProjectResults.Diagnostics.[0].StartColumn // 15
+wholeProjectResults.Diagnostics.[0].EndColumn // 16
 
 (**
 推測されたプロジェクトのシグネチャをチェックします:

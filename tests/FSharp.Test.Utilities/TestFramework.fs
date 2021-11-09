@@ -2,16 +2,35 @@
 
 module TestFramework
 
-open Microsoft.Win32
 open System
 open System.IO
-open System.Text.RegularExpressions
+open System.Reflection
 open System.Diagnostics
 open Scripting
 open NUnit.Framework
+open FSharp.Compiler.IO
+
+let inline getTestsDirectory src dir = src ++ dir
+
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
+// Throws exception if it Fails
+let tryCreateTemporaryDirectory () =
+    let path = Path.GetTempPath()
+    let now = DateTime.Now.ToString("yyyy-MM-dd")
+    let directory = Path.Combine(path, "FSharp.Test.Utilities", now)
+    Directory.CreateDirectory(directory).FullName
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileName () =
+    let directory = tryCreateTemporaryDirectory ()
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
 
 [<RequireQualifiedAccess>]
 module Commands =
+
+    let gate = obj()
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
@@ -37,6 +56,9 @@ module Commands =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            // When running tests, we want to roll forward to minor versions (including previews).
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -55,8 +77,19 @@ module Commands =
                 else
                     p.WaitForExit()
     #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
+            let workingDir' =
+                if workingDir = ""
+                then
+                    // Assign working dir to prevent default to C:\Windows\System32
+                    let executionLocation = Assembly.GetExecutingAssembly().Location
+                    Path.GetDirectoryName executionLocation
+                else
+                    workingDir
+
+            lock gate (fun () ->
+                File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+                File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+            )
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty
@@ -68,7 +101,7 @@ module Commands =
         rooted |> Path.GetFullPath
 
     let fileExists workDir path =
-        if path |> getfullpath workDir |> File.Exists then Some path else None
+        if path |> getfullpath workDir |> FileSystem.FileExistsShim then Some path else None
 
     let directoryExists workDir path =
         if path |> getfullpath workDir |> Directory.Exists then Some path else None
@@ -84,7 +117,7 @@ module Commands =
 
     let rm dir path =
         let p = path |> getfullpath dir
-        if File.Exists(p) then
+        if FileSystem.FileExistsShim(p) then
             (log "rm %s" p) |> ignore
             File.Delete(p)
         else
@@ -165,11 +198,10 @@ module Commands =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
     let createTempDir () =
-        let path = Path.GetTempFileName ()
+        let path = tryCreateTemporaryFileName  ()
         File.Delete path
         Directory.CreateDirectory path |> ignore
         path
-
 
 type TestConfig =
     { EnvironmentVariables : Map<string, string>
@@ -194,6 +226,8 @@ type TestConfig =
       PEVERIFY : string
       Directory: string
       DotNetExe: string
+      DotNetMultiLevelLookup: string
+      DotNetRoot: string
       DefaultPlatform: string}
 
 #if NETCOREAPP
@@ -256,9 +290,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "netcoreapp3.1"
-    let fsiArchitecture = "netcoreapp3.1"
-    let peverifyArchitecture = "netcoreapp3.1"
+    let fscArchitecture = "net5.0"
+    let fsiArchitecture = "net5.0"
+    let peverifyArchitecture = "net5.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -290,7 +324,7 @@ let config configurationName envVars =
         // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
         let DOTNET_EXE = if operatingSystem = "win" then "dotnet.exe" else "dotnet"
         let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ DOTNET_EXE
-        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
+        if FileSystem.FileExistsShim(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
 
 #if !NETCOREAPP
@@ -337,28 +371,33 @@ let config configurationName envVars =
       vbc_flags = vbc_flags
       Directory=""
       DotNetExe = dotNetExe
+      DotNetMultiLevelLookup = System.Environment.GetEnvironmentVariable "DOTNET_MULTILEVEL_LOOKUP"
+      DotNetRoot = System.Environment.GetEnvironmentVariable "DOTNET_ROOT"
       DefaultPlatform = defaultPlatform }
 
 let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
     log "Executables"
     log ""
-    log "CSC                 =%s" cfg.CSC
-    log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
-    log "csc_flags           =%s" cfg.csc_flags
-    log "FSC                 =%s" cfg.FSC
-    log "fsc_flags           =%s" cfg.fsc_flags
-    log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
-    log "FSI                 =%s" cfg.FSI
-#if !NETCOREAPP
-    log "FSIANYCPU           =%s" cfg.FSIANYCPU
+    log "CSC                      = %s" cfg.CSC
+    log "BUILD_CONFIG             = %s" cfg.BUILD_CONFIG
+    log "csc_flags                = %s" cfg.csc_flags
+    log "FSC                      = %s" cfg.FSC
+    log "fsc_flags                = %s" cfg.fsc_flags
+    log "FSCOREDLLPATH            = %s" cfg.FSCOREDLLPATH
+    log "FSI                      = %s" cfg.FSI
+#if NETCOREAPP
+    log "DotNetExe                =%s" cfg.DotNetExe
+    log "DOTNET_MULTILEVEL_LOOKUP = %s" cfg.DotNetMultiLevelLookup
+    log "DOTNET_ROOT              = %s" cfg.DotNetRoot
+#else
+    log "FSIANYCPU                = %s" cfg.FSIANYCPU
 #endif
-    log "FSI_FOR_SCRIPTS     =%s" cfg.FSI_FOR_SCRIPTS
-    log "fsi_flags           =%s" cfg.fsi_flags
-    log "ILDASM              =%s" cfg.ILDASM
-    log "PEVERIFY            =%s" cfg.PEVERIFY
+    log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
+    log "fsi_flags                = %s" cfg.fsi_flags
+    log "ILDASM                   = %s" cfg.ILDASM
+    log "PEVERIFY                 = %s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
-
 
 let checkResult result =
     match result with
@@ -412,27 +451,22 @@ type public InitializeSuiteAttribute () =
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
-
-[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
-[<assembly:InitializeSuite()>]
-()
-
-let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
-
-let testConfig testDir =
+let testConfig (testDir: string) =
     let cfg = suiteHelpers.Value
-    let dir = Path.GetFullPath(fsharpSuiteDirectory ++ testDir)
-    log "------------------ %s ---------------" dir
-    log "cd %s" dir
-    { cfg with Directory =  dir}
+    if not (Path.IsPathRooted testDir) then
+      failwith $"path is not rooted: {testDir}"
+    let testDir = Path.GetFullPath testDir // mostly used to normalize / and \
+    log "------------------ %s ---------------" testDir
+    log "cd %s" testDir
+    { cfg with Directory = testDir }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =
-    let remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
+    let remove path = if FileSystem.FileExistsShim(path) then Commands.rm (Path.GetTempPath()) path
     do if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
     do remove path
     member x.Path = path
-    member x.Exists = x.Path |> File.Exists
+    member x.Exists = x.Path |> FileSystem.FileExistsShim
     member x.CheckExists() =
         if not x.Exists then
              failwith (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
@@ -590,10 +624,10 @@ let diff normalize path1 path2 =
     let append s = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
-    if not <| File.Exists(path1) then
+    if not <| FileSystem.FileExistsShim(path1) then
         // creating empty baseline file as this is likely someone initializing a new test
         File.WriteAllText(path1, String.Empty)
-    if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
+    if not <| FileSystem.FileExistsShim(path2) then failwithf "Invalid path %s" path2
 
     let lines1 = File.ReadAllLines(path1)
     let lines2 = File.ReadAllLines(path2)

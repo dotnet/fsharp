@@ -4,13 +4,16 @@
 module internal FSharp.Compiler.ErrorResolutionHints
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.Internal.Library
+open Internal.Utilities.Library
 open System.Collections
 open System.Collections.Generic
 
 let maxSuggestions = 5
+
 let minThresholdForSuggestions = 0.7
+
 let highConfidenceThreshold = 0.85
+
 let minStringLengthForSuggestion = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
@@ -39,7 +42,7 @@ type SuggestionBufferEnumerator(tail: int, data: KeyValuePair<float,string> []) 
             with get () = 
                 let kvpr = &data.[current]
                 kvpr.Value
-    interface System.Collections.IEnumerator with
+    interface IEnumerator with
         member _.Current with get () = box data.[current].Value
         member _.MoveNext() =
             current <- current - 1
@@ -85,7 +88,7 @@ type SuggestionBuffer(idText: string) =
                     suggestion.EndsWithOrdinal dotIdText ||
                     (similarity >= minThresholdForSuggestions && IsInEditDistanceProximity uppercaseText suggestedText)
                 then
-                    insert(similarity, suggestion) |> ignore
+                    insert(similarity, suggestion)
     
     member _.Disabled with get () = disableSuggestions
 

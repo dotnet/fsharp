@@ -2,9 +2,9 @@
 
 module internal FSharp.Compiler.CreateILModule 
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+open FSharp.Compiler.AbstractIL.StrongNameSign
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
@@ -21,6 +21,7 @@ val ValidateKeySigningAttributes: tcConfig:TcConfig * tcGlobals:TcGlobals * TopA
 /// Get the object used to perform strong-name signing
 val GetStrongNameSigner: signingInfo: StrongNameSigningInfo -> ILStrongNameSigner option
 
+/// Helpers for finding attributes
 module AttributeHelpers =
     val TryFindStringAttribute: g: TcGlobals -> attrib: string -> attribs: Attribs -> string option
 

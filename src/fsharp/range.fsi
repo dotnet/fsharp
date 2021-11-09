@@ -6,11 +6,20 @@ namespace FSharp.Compiler.Text
 open System.Collections.Generic
 
 /// An index into a global tables of filenames
-type FileIndex = int32 
+type internal FileIndex = int32 
+
+[<RequireQualifiedAccess>]
+type internal RangeDebugPointKind =
+    | None
+    | While
+    | For
+    | Try
+    | Binding
+    | Finally
 
 /// Represents a position in a file
 [<Struct; CustomEquality; NoComparison>]
-type Pos =
+type Position =
 
     /// The line number for the position
     member Line: int
@@ -19,16 +28,19 @@ type Pos =
     member Column: int
 
     /// The encoding of the position as a 64-bit integer
-    member Encoding: int64
+    member internal Encoding: int64
+
+    /// Check if the position is adjacent to another postition
+    member internal IsAdjacentTo: otherPos: Position -> bool
 
     /// Decode a position fro a 64-bit integer
-    static member Decode: int64 -> pos
+    static member internal Decode: int64 -> pos
 
     /// The maximum number of bits needed to store an encoded position 
-    static member EncodingSize: int
+    static member internal EncodingSize: int
 
 /// Represents a position in a file
-and pos = Pos
+and pos = Position
 
 /// Represents a range within a file
 [<Struct; CustomEquality; NoComparison>]
@@ -59,7 +71,7 @@ type Range =
     member EndRange: range
 
     /// The file index for the range
-    member FileIndex: int
+    member internal FileIndex: int
 
     /// The file name for the file of the range
     member FileName: string
@@ -69,11 +81,21 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
+    /// When de-sugaring computation expressions we convert a debug point into a plain range, and then later
+    /// recover that the range definitely indicates a debug point.
+    member internal DebugPointKind: RangeDebugPointKind
+
     /// Convert a range to be synthetic
-    member MakeSynthetic: unit -> range
+    member internal MakeSynthetic: unit -> range
+
+    /// Note that a range indicates a debug point
+    member internal NoteDebugPoint: kind: RangeDebugPointKind -> range
+
+    /// Check if the range is adjacent to another range
+    member internal IsAdjacentTo: otherRange: Range -> bool
 
     /// Convert a range to string
-    member ToShortString: unit -> string
+    member internal ToShortString: unit -> string
 
     /// The range where all values are zero
     static member Zero: range
@@ -92,12 +114,12 @@ type Line0 = int
 #endif
 
 /// Represents a position using zero-based line counting (used by Visual Studio)
-type Pos01 = Line0 * int
+type Position01 = Line0 * int
 
 /// Represents a range using zero-based line counting (used by Visual Studio)
-type Range01 = Pos01 * Pos01
+type Range01 = Position01 * Position01
 
-module Pos =
+module Position =
     /// Create a position for the given line and column
     val mkPos: line:int -> column:int -> pos
 
@@ -117,7 +139,7 @@ module Pos =
     val fromZ: line:Line0 -> column:int -> pos
 
     /// Convert a position from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
-    val toZ: pos -> Pos01
+    val toZ: pos -> Position01
 
     /// Output a position
     val outputPos: System.IO.TextWriter -> pos -> unit
@@ -200,6 +222,7 @@ module Range =
     /// Equality comparer for range.
     val comparer: IEqualityComparer<range>
 
+/// Functions related to converting between lines indexed at 0 and 1
 module Line =
 
     /// Convert a line number from zero-based line counting (used by Visual Studio) to one-based line counting (used internally in the F# compiler and in F# error messages) 

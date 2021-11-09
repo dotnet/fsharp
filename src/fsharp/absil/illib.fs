@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Library 
-#nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
-
+namespace Internal.Utilities.Library 
 
 open System
 open System.Collections.Generic
@@ -10,56 +8,97 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.CompilerServices
 
-/// Logical shift right treating int32 as unsigned integer.
-/// Code that uses this should probably be adjusted to use unsigned integer types.
-let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
+[<AutoOpen>]
+module internal PervasiveAutoOpens =
+    /// Logical shift right treating int32 as unsigned integer.
+    /// Code that uses this should probably be adjusted to use unsigned integer types.
+    let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
-let notlazy v = Lazy<_>.CreateFromValue v
+    let notlazy v = Lazy<_>.CreateFromValue v
 
-let inline isNil l = List.isEmpty l
+    let inline isNil l = List.isEmpty l
 
-/// Returns true if the list has less than 2 elements. Otherwise false.
-let inline isNilOrSingleton l =
-    match l with
-    | [] 
-    | [_] -> true
-    | _ -> false
+    /// Returns true if the list has less than 2 elements. Otherwise false.
+    let inline isNilOrSingleton l =
+        match l with
+        | [] 
+        | [_] -> true
+        | _ -> false
 
-/// Returns true if the list contains exactly 1 element. Otherwise false.
-let inline isSingleton l =
-    match l with
-    | [_] -> true
-    | _ -> false
+    /// Returns true if the list contains exactly 1 element. Otherwise false.
+    let inline isSingleton l =
+        match l with
+        | [_] -> true
+        | _ -> false
 
-let inline isNonNull x = not (isNull x)
+    let inline isNonNull x = not (isNull x)
 
-let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 
-let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
+    let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
-/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
-let LOH_SIZE_THRESHOLD_BYTES = 80_000
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
+    let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
-//---------------------------------------------------------------------
-// Library: ReportTime
-//---------------------------------------------------------------------
-let reportTime =
-    let mutable tFirst =None
-    let mutable tPrev = None
-    fun showTimes descr ->
-        if showTimes then 
-            let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-            let prev = match tPrev with None -> 0.0 | Some t -> t
-            let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
-            printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
-            tPrev <- Some t
+    let runningOnMono =
+#if ENABLE_MONO_SUPPORT
+        // Officially supported way to detect if we are running on Mono.
+        // See http://www.mono-project.com/FAQ:_Technical
+        // "How can I detect if am running in Mono?" section
+        try
+            Type.GetType "Mono.Runtime" <> null
+        with _ ->
+            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
+            // that is not reliable.
+            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
+            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
+            // their issue fixed but we need to be robust here anyway.
+            false
+#else
+        false
+#endif
 
-//-------------------------------------------------------------------------
-// Library: projections
-//------------------------------------------------------------------------
+    type String with
+        member inline x.StartsWithOrdinal value =
+            x.StartsWith(value, StringComparison.Ordinal)
+
+        member inline x.EndsWithOrdinal value =
+            x.EndsWith(value, StringComparison.Ordinal)
+
+    /// Get an initialization hole 
+    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+
+    let reportTime =
+        let mutable tFirst =None
+        let mutable tPrev = None
+        fun showTimes descr ->
+            if showTimes then 
+                let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+                let prev = match tPrev with None -> 0.0 | Some t -> t
+                let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
+                printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+                tPrev <- Some t
+
+    let foldOn p f z x = f z (p x)
+
+    let notFound() = raise (KeyNotFoundException())
+
+    type Async with
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
 
 [<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
@@ -79,10 +118,6 @@ type InlineDelayInit<'T when 'T : not struct> =
 //-------------------------------------------------------------------------
 // Library: projections
 //------------------------------------------------------------------------
-
-let foldOn p f z x = f z (p x)
-
-let notFound() = raise (KeyNotFoundException())
 
 module Order = 
     let orderBy (p : 'T -> 'U) = 
@@ -290,7 +325,7 @@ module List =
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
-        assert not (typeof<'T>.IsValueType) 
+        assert not typeof<'T>.IsValueType 
         match inp with
         | [] -> inp
         | [h1a] -> 
@@ -360,17 +395,17 @@ module List =
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
 
-    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r) :: t) -> if x = h then r else assoc x t
+        | (h, r) :: t -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _) :: t) -> x = h || memAssoc x t
+        | (h, _) :: t -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
@@ -479,15 +514,8 @@ module ValueOptionInternal =
 
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
-type String with
-    member inline x.StartsWithOrdinal value =
-        x.StartsWith(value, StringComparison.Ordinal)
-
-    member inline x.EndsWithOrdinal value =
-        x.EndsWith(value, StringComparison.Ordinal)
-
 module String =
-    let make (n: int) (c: char) : string = new String(c, n)
+    let make (n: int) (c: char) : string = String(c, n)
 
     let get (str: string) i = str.[i]
 
@@ -592,6 +620,12 @@ module String =
 module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_, _>(size, HashIdentity.Structural)
 
+    let inline ofList (xs: ('Key * 'Value) list) = 
+        let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
+        for k,v in xs do
+           t.Add(k,v)
+        t
+
 [<Extension>]
 type DictionaryExtensions() =
 
@@ -623,27 +657,33 @@ type ExecutionToken = interface end
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
 /// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
+[<Sealed>]
 type CompilationThreadToken() = interface ExecutionToken
-
-/// Represents a place where we are stating that execution on the compilation thread is required. The
-/// reason why will be documented in a comment in the code at the callsite.
-let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
-
-/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
-/// This represents code that may potentially not need to be executed on the compilation thread.
-let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
-
-/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
-let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
-
-/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
-type AnyCallerThreadToken() = interface ExecutionToken
-let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
 
 /// A base type for various types of tokens that must be passed when a lock is taken.
 /// Each different static lock should declare a new subtype of this type.
 type LockToken = inherit ExecutionToken
-let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
+
+/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
+[<Sealed>]
+type AnyCallerThreadToken() = interface ExecutionToken
+
+[<AutoOpen>]
+module internal LockAutoOpens =
+    /// Represents a place where we are stating that execution on the compilation thread is required. The
+    /// reason why will be documented in a comment in the code at the callsite.
+    let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
+
+    /// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+    /// This represents code that may potentially not need to be executed on the compilation thread.
+    let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: CompilationThreadToken) = ()
+
+    /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
+    let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
+
+    let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
+
+    let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> () = Unchecked.defaultof<'LockTokenType>
 
 /// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
 type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
@@ -653,15 +693,13 @@ type Lock<'LockTokenType when 'LockTokenType :> LockToken>() =
 //---------------------------------------------------
 // Misc
 
-/// Get an initialization hole 
-let getHole r = match !r with None -> failwith "getHole" | Some x -> x
-
 module Map = 
     let tryFindMulti k map = match Map.tryFind k map with Some res -> res | None -> []
 
+[<Struct>]
 type ResultOrException<'TResult> =
-    | Result of 'TResult
-    | Exception of Exception
+    | Result of result: 'TResult
+    | Exception of ``exception``: Exception
                      
 module ResultOrException = 
 
@@ -685,10 +723,10 @@ module ResultOrException =
         | Result x -> success x
         | Exception _err -> f()
 
-[<RequireQualifiedAccess>] 
+[<RequireQualifiedAccess; Struct>] 
 type ValueOrCancelled<'TResult> =
-    | Value of 'TResult
-    | Cancelled of OperationCanceledException
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
 
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
@@ -707,21 +745,21 @@ module Cancellable =
             oper ct 
 
     /// Bind the result of a cancellable computation
-    let bind f comp1 = 
+    let inline bind f comp1 = 
        Cancellable (fun ct -> 
             match run ct comp1 with 
             | ValueOrCancelled.Value v1 -> run ct (f v1) 
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
     /// Map the result of a cancellable computation
-    let map f oper = 
+    let inline map f oper = 
        Cancellable (fun ct -> 
            match run ct oper with 
            | ValueOrCancelled.Value res -> ValueOrCancelled.Value (f res)
            | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
                     
     /// Return a simple value as the result of a cancellable computation
-    let ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
+    let inline ret x = Cancellable (fun _ -> ValueOrCancelled.Value x)
 
     /// Fold a cancellable computation along a sequence of inputs
     let fold f acc seq = 
@@ -733,22 +771,11 @@ module Cancellable =
                | res -> res))
     
     /// Iterate a cancellable computation over a collection
-    let each f seq = 
-        Cancellable (fun ct -> 
-           (ValueOrCancelled.Value [], seq) 
-           ||> Seq.fold (fun acc x -> 
-               match acc with 
-               | ValueOrCancelled.Value acc -> 
-                   match run ct (f x) with 
-                   | ValueOrCancelled.Value x2 -> ValueOrCancelled.Value (x2 :: acc)
-                   | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1
-               | canc -> canc)
-           |> function 
-               | ValueOrCancelled.Value acc -> ValueOrCancelled.Value (List.rev acc)
-               | canc -> canc)
+    let inline each f seq =
+        fold (fun acc x -> f x |> map (fun y -> (y :: acc))) [] seq |> map List.rev
     
     /// Delay a cancellable computation
-    let delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
+    let inline delay (f: unit -> Cancellable<'T>) = Cancellable (fun ct -> let (Cancellable g) = f() in g ct)
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
@@ -758,6 +785,16 @@ module Cancellable =
         | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
         | ValueOrCancelled.Value r -> r
 
+    let toAsync c =
+        async {
+            let! ct = Async.CancellationToken
+            let res = run ct c
+            return! Async.FromContinuations (fun (cont, _econt, ccont) -> 
+                match res with 
+                | ValueOrCancelled.Value v -> cont v
+                | ValueOrCancelled.Cancelled ce -> ccont ce)
+            }
+
     /// Bind the cancellation token associated with the computation
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
@@ -765,202 +802,59 @@ module Cancellable =
     let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
-    let private catch (Cancellable e) = 
+    let inline catch e = 
+        let (Cancellable f) = e
         Cancellable (fun ct -> 
             try 
-                match e ct with 
+                match f ct with 
                 | ValueOrCancelled.Value r -> ValueOrCancelled.Value (Choice1Of2 r) 
                 | ValueOrCancelled.Cancelled e -> ValueOrCancelled.Cancelled e 
             with err -> 
                 ValueOrCancelled.Value (Choice2Of2 err))
 
     /// Implement try/finally for a cancellable computation
-    let tryFinally e compensation =
+    let inline tryFinally e compensation =
         catch e |> bind (fun res ->
             compensation()
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> raise err)
 
     /// Implement try/with for a cancellable computation
-    let tryWith e handler = 
+    let inline tryWith e handler = 
         catch e |> bind (fun res ->
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    // Run the cancellable computation within an Async computation. This isn't actually used in the codebase, but left
-    // here in case we need it in the future 
-    //
-    // let toAsync e = 
-    //     async { 
-    //       let! ct = Async.CancellationToken
-    //       return! 
-    //          Async.FromContinuations(fun (cont, econt, ccont) -> 
-    //            // Run the computation synchronously using the given cancellation token
-    //            let res = try Choice1Of2 (run ct e) with err -> Choice2Of2 err
-    //            match res with 
-    //            | Choice1Of2 (ValueOrCancelled.Value v) -> cont v
-    //            | Choice1Of2 (ValueOrCancelled.Cancelled err) -> ccont err
-    //            | Choice2Of2 err -> econt err) 
-    //     }
-    
 type CancellableBuilder() = 
 
-    member x.Bind(e, k) = Cancellable.bind k e
+    member inline _.BindReturn(e, k) = Cancellable.map k e
 
-    member x.Return v = Cancellable.ret v
+    member inline _.Bind(e, k) = Cancellable.bind k e
 
-    member x.ReturnFrom v = v
+    member inline _.Return v = Cancellable.ret v
 
-    member x.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
+    member inline _.ReturnFrom (v: Cancellable<'T>) = v
 
-    member x.For(es, f) = es |> Cancellable.each f 
+    member inline _.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
 
-    member x.TryWith(e, handler) = Cancellable.tryWith e handler
+    member inline _.For(es, f) = es |> Cancellable.each f 
 
-    member x.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+    member inline _.TryWith(e, handler) = Cancellable.tryWith e handler
 
-    member x.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
+    member inline _.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
 
-    member x.Delay f = Cancellable.delay f
+    member inline _.TryFinally(e, compensation) =  Cancellable.tryFinally e compensation
 
-    member x.Zero() = Cancellable.ret ()
+    member inline _.Delay f = Cancellable.delay f
 
-let cancellable = CancellableBuilder()
+    member inline _.Zero() = Cancellable.ret ()
 
-/// Computations that can cooperatively yield by returning a continuation
-///
-///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
-///      will be called when the computation is abandoned.
-///
-///    - Computations suspend via a NotYetDone may use local state (mutables), where these are
-///      captured by the NotYetDone closure. Computations do not need to be restartable.
-///
-///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-///
-///    - Cancellation results in a suspended computation rather than complete abandonment
-type Eventually<'T> = 
-    | Done of 'T 
-    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
-
-module Eventually = 
-
-    let rec box e = 
-        match e with 
-        | Done x -> Done (Operators.box x) 
-        | NotYetDone work -> NotYetDone (fun ctok -> box (work ctok))
-
-    let rec forceWhile ctok check e = 
-        match e with 
-        | Done x -> Some x
-        | NotYetDone work -> 
-            if not(check()) 
-            then None
-            else forceWhile ctok check (work ctok) 
-
-    let force ctok e = Option.get (forceWhile ctok (fun () -> true) e)
-        
-    /// Keep running the computation bit by bit until a time limit is reached.
-    /// The runner gets called each time the computation is restarted
-    ///
-    /// If cancellation happens, the operation is left half-complete, ready to resume.
-    let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
-        let sw = new Stopwatch() 
-        let rec runTimeShare ctok e = 
-          runner ctok (fun ctok -> 
-            sw.Reset()
-            sw.Start()
-            let rec loop ctok ev2 = 
-                match ev2 with 
-                | Done _ -> ev2
-                | NotYetDone work ->
-                    if ct.IsCancellationRequested || sw.ElapsedMilliseconds > timeShareInMilliseconds then 
-                        sw.Stop()
-                        NotYetDone(fun ctok -> runTimeShare ctok ev2) 
-                    else 
-                        loop ctok (work ctok)
-            loop ctok e)
-        NotYetDone (fun ctok -> runTimeShare ctok e)
-    
-    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way.
-    let forceAsync (runner: (CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) (e: Eventually<'T>) : Async<'T option> =
-        let rec loop (e: Eventually<'T>) =
-            async {
-                match e with 
-                | Done x -> return Some x
-                | NotYetDone work ->
-                    let! r = runner work
-                    return! loop r
-            }
-        loop e
-
-    let rec bind k e = 
-        match e with 
-        | Done x -> k x 
-        | NotYetDone work -> NotYetDone (fun ctok -> bind k (work ctok))
-
-    let fold f acc seq = 
-        (Done acc, seq) ||> Seq.fold (fun acc x -> acc |> bind (fun acc -> f acc x))
-        
-    let rec catch e = 
-        match e with 
-        | Done x -> Done(Result x)
-        | NotYetDone work -> 
-            NotYetDone (fun ctok -> 
-                let res = try Result(work ctok) with | e -> Exception e 
-                match res with 
-                | Result cont -> catch cont
-                | Exception e -> Done(Exception e))
-    
-    let delay (f: unit -> Eventually<'T>) = NotYetDone (fun _ctok -> f())
-
-    let tryFinally e compensation =
-        catch e 
-        |> bind (fun res -> 
-            compensation()
-            match res with 
-            | Result v -> Eventually.Done v
-            | Exception e -> raise e)
-
-    let tryWith e handler =
-        catch e 
-        |> bind (function Result v -> Done v | Exception e -> handler e)
-    
-    // All eventually computations carry a CompilationThreadToken
-    let token =    
-        NotYetDone (fun ctok -> Done ctok)
-    
-type EventuallyBuilder() = 
-
-    member x.Bind(e, k) = Eventually.bind k e
-
-    member x.Return v = Eventually.Done v
-
-    member x.ReturnFrom v = v
-
-    member x.Combine(e1, e2) = e1 |> Eventually.bind (fun () -> e2)
-
-    member x.TryWith(e, handler) = Eventually.tryWith e handler
-
-    member x.TryFinally(e, compensation) = Eventually.tryFinally e compensation
-
-    member x.Delay f = Eventually.delay f
-
-    member x.Zero() = Eventually.Done ()
-
-let eventually = new EventuallyBuilder()
-
-(*
-let _ = eventually { return 1 }
-let _ = eventually { let x = 1 in return 1 }
-let _ = eventually { let! x = eventually { return 1 } in return 1 }
-let _ = eventually { try return (failwith "") with _ -> return 1 }
-let _ = eventually { use x = null in return 1 }
-*)
+[<AutoOpen>]
+module CancellableAutoOpens =
+    let cancellable = CancellableBuilder()
 
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let gate = obj ()
-    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
+    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
@@ -1000,9 +894,9 @@ exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =
 
-    static let undefined = new LazyWithContextFailure(UndefinedException)
+    static let undefined = LazyWithContextFailure(UndefinedException)
 
-    member x.Exception = exn
+    member _.Exception = exn
 
     static member Undefined = undefined
         
@@ -1021,7 +915,7 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
@@ -1060,7 +954,7 @@ type LazyWithContext<'T, 'ctxt> =
                   x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e))
+                  x.funcOrException <- box(LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -1068,7 +962,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
+        let t = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res
@@ -1230,17 +1124,17 @@ module MultiMap =
 
 type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 
-type Map<'Key, 'Value when 'Key : comparison> with
+[<AutoOpen>]
+module MapAutoOpens =
+    type Map<'Key, 'Value when 'Key : comparison> with
+        
+        static member Empty : Map<'Key, 'Value> = Map.empty
+    
+        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-    static member Empty : Map<'Key, 'Value> = Map.empty
+        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
-    member x.Values = [ for (KeyValue(_, v)) in x -> v ]
-
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-
-    member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
-
-    member x.MarkAsCollapsible () = x
+        member x.MarkAsCollapsible () = x
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]

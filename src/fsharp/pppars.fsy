@@ -3,7 +3,7 @@
 %{
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 
 let dummy       = IfdefId("DUMMY")
 

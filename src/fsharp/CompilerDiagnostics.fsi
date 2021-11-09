@@ -4,9 +4,9 @@
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 #if DEBUG
@@ -24,7 +24,7 @@ exception HashIncludeNotAllowedInNonScript of range
 exception HashReferenceNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
+exception HashLoadedSourceHasIssues of informationals: exn list * warnings: exn list * errors: exn list * range
 
 /// This exception is an old-style way of reporting a diagnostic
 exception HashLoadedScriptConsideredSource of range
@@ -60,7 +60,7 @@ val SplitRelatedDiagnostics: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagno
 val OutputPhasedDiagnostic: StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
 
 /// Output an error or warning to a buffer
-val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
+val OutputDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity -> StringBuilder -> PhasedDiagnostic -> unit
 
 /// Output extra context information for an error or warning to a buffer
 val OutputDiagnosticContext: prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
@@ -90,21 +90,24 @@ type DiagnosticDetailedInfo =
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
 type Diagnostic = 
-    | Short of bool * string
-    | Long of bool * DiagnosticDetailedInfo
+    | Short of FSharpDiagnosticSeverity * string
+    | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
 /// Part of LegacyHostedCompilerForTesting
-val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
+val CollectDiagnostic: implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool -> seq<Diagnostic>
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
-/// Indicates if we should report a warning
-val ReportWarning: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
+/// Indicates if we should report a diagnostic as a warning
+val ReportDiagnosticAsInfo: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
+
+/// Indicates if we should report a diagnostic as a warning
+val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError: FSharpDiagnosticOptions -> PhasedDiagnostic -> bool
+val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
 
 

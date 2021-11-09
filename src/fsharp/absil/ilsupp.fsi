@@ -5,30 +5,23 @@
 /// Runtime, e.g. between the SSCLI, Mono and the Microsoft CLR.
 ///
 /// The implementation of the functions can be found in ilsupp-*.fs
-module internal FSharp.Compiler.AbstractIL.Internal.Support
+module internal FSharp.Compiler.AbstractIL.Support
+
+#if !FX_NO_SYMBOLSTORE
+open System.Diagnostics.SymbolStore
+#endif
 
 #if !FX_NO_PDB_WRITER
 type PdbWriter
 val pdbInitialize : string -> string -> PdbWriter
 #endif
+
 #if !FX_NO_PDB_READER
 type PdbReader
 val pdbReadClose: PdbReader -> unit
 #endif
 
 val absilWriteGetTimeStamp: unit -> int32
-
-open System
-open System.Runtime.InteropServices
-#if FX_NO_SYMBOLSTORE
-#else
-open System.Diagnostics.SymbolStore
-#endif
-
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.IL 
 
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 
@@ -46,7 +39,7 @@ type PdbMethod
 type PdbVariable
 type PdbMethodScope
 
-type PdbSequencePoint = 
+type PdbDebugPoint = 
     { pdbSeqPointOffset: int;
       pdbSeqPointDocument: PdbDocument;
       pdbSeqPointLine: int;
@@ -68,7 +61,7 @@ val pdbDocumentGetLanguageVendor: PdbDocument -> byte[] (* guid *)
 val pdbDocumentFindClosestLine: PdbDocument -> int -> int
 
 val pdbMethodGetToken: PdbMethod -> int32
-val pdbMethodGetSequencePoints: PdbMethod -> PdbSequencePoint array
+val pdbMethodGetDebugPoints: PdbMethod -> PdbDebugPoint array
 
 val pdbScopeGetChildren: PdbMethodScope -> PdbMethodScope array
 val pdbScopeGetOffsets: PdbMethodScope -> int * int

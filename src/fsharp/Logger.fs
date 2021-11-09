@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.Diagnostics
 
 open System.Diagnostics.Tracing
 open System
@@ -56,16 +56,16 @@ type FSharpCompilerEventSource() =
 [<RequireQualifiedAccess>]
 module Logger =
 
-    let Log(functionId) = 
+    let Log functionId = 
         FSharpCompilerEventSource.Instance.Log(functionId)
 
     let LogMessage message functionId = 
         FSharpCompilerEventSource.Instance.LogMessage(message, functionId)
 
-    let LogBlockStart(functionId) = 
+    let LogBlockStart functionId = 
         FSharpCompilerEventSource.Instance.BlockStart(functionId)
 
-    let LogBlockStop(functionId) = 
+    let LogBlockStop functionId = 
         FSharpCompilerEventSource.Instance.BlockStop(functionId)
 
     let LogBlockMessageStart message functionId =
@@ -74,7 +74,7 @@ module Logger =
     let LogBlockMessageStop message functionId =
         FSharpCompilerEventSource.Instance.BlockMessageStop(message, functionId)
 
-    let LogBlock(functionId) =
+    let LogBlock functionId =
         FSharpCompilerEventSource.Instance.BlockStart(functionId)
         { new IDisposable with
             member _.Dispose() =

@@ -4,8 +4,9 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Text
 open Xunit
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Syntax
 
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
     

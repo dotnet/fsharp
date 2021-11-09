@@ -1,34 +1,40 @@
-﻿<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;NU5125</NoWarn>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);44;45;54;55;57;61;62;69;65;75;1204;2003;NU5125</NoWarn>
+    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --times</OtherFlags>
-    <Tailcalls>true</Tailcalls>
-    <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <NGenBinary>true</NGenBinary>
-
+    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --maxerrors:20 --extraoptimizationloops:1 --times</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+  </PropertyGroup>
 
+  <PropertyGroup>
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
-    <PackageDescription>The F# Compiler Services package For F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
-    <PackageReleaseNotes>https://github.com/dotnet/fsharp/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
+    <PackageDescription>The F# Compiler Services package for F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
     <PackageIconFullPath>$(MSBuildThisFileDirectory)logo.png</PackageIconFullPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersion)" Condition="'$(VersionSuffix)'==''" />
-    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersion)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FSharpCorePackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
     <NuspecProperty Include="MicrosoftBuildFrameworkPackageVersion=$(MicrosoftBuildFrameworkVersion)" />
     <NuspecProperty Include="MicrosoftBuildTasksCorePackageVersion=$(MicrosoftBuildTasksCoreVersion)" />
     <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
@@ -53,10 +59,14 @@
     <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
     <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
+    <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="fscAnyCpu" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -65,15 +75,12 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
-    </EmbeddedText>
-    <EmbeddedText Include="..\Microsoft.DotNet.DependencyManager\DependencyManager.txt">
-      <Link>DependencyManager.txt</Link>
     </EmbeddedText>
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -106,18 +113,6 @@
     <Compile Include="..\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
-    </Compile>
     <Compile Include="..\utils\ResizeArray.fsi">
       <Link>Utilities\ResizeArray.fsi</Link>
     </Compile>
@@ -142,6 +137,12 @@
     <Compile Include="..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
+    <Compile Include="..\absil\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
+    </Compile>
+    <Compile Include="..\absil\illib.fs">
+      <Link>Utilities\illib.fs</Link>
+    </Compile>
     <Compile Include="..\utils\FileSystem.fsi">
       <Link>Utilities\FileSystem.fsi</Link>
     </Compile>
@@ -154,18 +155,6 @@
     <Compile Include="..\absil\ildiag.fs">
       <Link>Utilities\ildiag.fs</Link>
     </Compile>
-    <Compile Include="..\absil\illib.fsi">
-      <Link>Utilities\illib.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\illib.fs">
-      <Link>Utilities\illib.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fsi">
-      <Link>Utilities\filename.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\filename.fs">
-      <Link>Utilities\filename.fs</Link>
-    </Compile>
     <Compile Include="..\absil\zmap.fsi">
       <Link>Utilities\zmap.fsi</Link>
     </Compile>
@@ -177,12 +166,6 @@
     </Compile>
     <Compile Include="..\absil\zset.fs">
       <Link>Utilities\zset.fs</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fsi">
-      <Link>Utilities\bytes.fsi</Link>
-    </Compile>
-    <Compile Include="..\absil\bytes.fs">
-      <Link>Utilities\bytes.fs</Link>
     </Compile>
     <Compile Include="..\XmlAdapters.fsi">
       <Link>Utilities\XmlAdapters.fsi</Link>
@@ -207,6 +190,12 @@
     </Compile>
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
+    </Compile>
+    <Compile Include="..\block.fsi">
+      <Link>Utilities\block.fsi</Link>
+    </Compile>
+    <Compile Include="..\block.fs">
+      <Link>Utilities\block.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
@@ -253,14 +242,32 @@
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
+    <Compile Include="..\utils\prim-lexing.fsi">
+      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fs">
+      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fsi">
+      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fs">
+      <Link>LexYaccRuntime\prim-parsing.fs</Link>
+    </Compile>
     <FsLex Include="..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
     </FsLex>
+    <None Include="..\absil\illex.fsl">
+      <Link>AbsIL\illex.fsl</Link>
+    </None>
     <FsYacc Include="..\absil\ilpars.fsy">
-      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
+    <None Include="..\absil\ilpars.fsy">
+      <Link>AbsIL\FsYacc\ilpars.fsy</Link>
+    </None>
     <Compile Include="..\absil\il.fsi">
       <Link>AbsIL\il.fsi</Link>
     </Compile>
@@ -278,6 +285,12 @@
     </Compile>
     <Compile Include="..\absil\ilascii.fs">
       <Link>AbsIL\ilascii.fs</Link>
+    </Compile>
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
+      <Link>AbsIL\FsYaccOut\ilpars.fs</Link>
+    </Compile>
+    <Compile Include="$(FsLexOutputFolder)illex.fs">
+      <Link>AbsIL\FsLexOut\illex.fs</Link>
     </Compile>
     <Compile Include="..\absil\ilprint.fsi">
       <Link>AbsIL\ilprint.fsi</Link>
@@ -308,12 +321,6 @@
     </Compile>
     <Compile Include="..\absil\ilsupp.fs">
       <Link>AbsIL\ilsupp.fs</Link>
-    </Compile>
-    <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
-      <Link>AbsIL\FsYaccOut\ilpars.fs</Link>
-    </Compile>
-    <Compile Include="$(FsLexOutputFolder)illex.fs">
-      <Link>AbsIL\FsLexOut\illex.fs</Link>
     </Compile>
     <Compile Include="..\absil\ilbinary.fsi">
       <Link>AbsIL\ilbinary.fsi</Link>
@@ -351,6 +358,13 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
+    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
+    </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fsi">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fsi</Link>
     </Compile>
@@ -370,9 +384,6 @@
     <Compile Include="..\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
     </Compile>
-    <Compile Include="..\ilx\ilxsettings.fs">
-      <Link>ILXErase\ilxsettings.fs</Link>
-    </Compile>
     <Compile Include="..\ilx\EraseClosures.fsi">
       <Link>ILXErase\EraseClosures.fsi</Link>
     </Compile>
@@ -390,7 +401,7 @@
       <Link>ParserAndUntypedAST\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pppars.fsy">
-      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="..\lex.fsl">
@@ -398,9 +409,21 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
+    <None Include="..\pplex.fsl">
+      <Link>ParserAndUntypedAST\FsLex\pplex.fsl</Link>
+    </None>
+    <None Include="..\lex.fsl">
+      <Link>ParserAndUntypedAST\FsLex\lex.fsl</Link>
+    </None>
+    <None Include="..\pppars.fsy">
+      <Link>ParserAndUntypedAST\FsYacc\pppars.fsy</Link>
+    </None>
+    <None Include="..\pars.fsy">
+      <Link>ParserAndUntypedAST\FsYacc\pars.fsy</Link>
+    </None>
     <Compile Include="..\UnicodeLexing.fsi">
       <Link>ParserAndUntypedAST\UnicodeLexing.fsi</Link>
     </Compile>
@@ -412,6 +435,9 @@
     </Compile>
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTree.fsi</Link>
     </Compile>
     <Compile Include="..\SyntaxTree.fs">
       <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
@@ -441,9 +467,9 @@
       <Link>ParserAndUntypedAST\lexhelp.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
-      <Link>ParserAndUntypedAST\FsLexOutput\pplex.fsl</Link>
+      <Link>ParserAndUntypedAST\FsLexOutput\pplex.fs</Link>
     </Compile>
-    <Compile Include="$(FsYaccOutputFolder)lex.fs">
+    <Compile Include="$(FsYaccOutputFolder)\lex.fs">
       <Link>ParserAndUntypedAST\FsLexOutput\lex.fs</Link>
     </Compile>
     <Compile Include="..\LexFilter.fsi">
@@ -650,6 +676,12 @@
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerStateMachines.fsi">
+      <Link>Optimize\LowerStateMachines.fsi</Link>
+    </Compile>
+    <Compile Include="..\LowerStateMachines.fs">
+      <Link>Optimize\LowerStateMachines.fs</Link>
+    </Compile>
     <Compile Include="..\autobox.fsi">
       <Link>Optimize\autobox.fsi</Link>
     </Compile>
@@ -665,23 +697,29 @@
     <Compile Include="..\FxResolver.fs">
       <Link>Driver\FxResolver.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
+    <Compile Include="..\DependencyManager/AssemblyResolveHandler.fsi">
       <Link>Driver\AssemblyResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
+    <Compile Include="..\DependencyManager/AssemblyResolveHandler.fs">
       <Link>Driver\AssemblyResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
+    <Compile Include="..\DependencyManager/NativeDllResolveHandler.fsi">
       <Link>Driver\NativeDllResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
+    <Compile Include="..\DependencyManager/NativeDllResolveHandler.fs">
       <Link>Driver\NativeDllResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
+    <Compile Include="..\DependencyManager/DependencyProvider.fsi">
       <Link>Driver\DependencyProvider.fsi</Link>
     </Compile>
-    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fs">
+    <Compile Include="..\DependencyManager/DependencyProvider.fs">
       <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fsi">
+      <Link>Driver\BuildGraph.fsi</Link>
+    </Compile>
+    <Compile Include="..\BuildGraph.fs">
+      <Link>Driver\BuildGraph.fs</Link>
     </Compile>
     <Compile Include="..\CompilerConfig.fsi">
       <Link>Driver\CompilerConfig.fsi</Link>
@@ -781,12 +819,6 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
-    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\SemanticClassification.fsi">
@@ -801,6 +833,12 @@
     <Compile Include="..\service\ItemKey.fs">
       <Link>Service/ItemKey.fs</Link>
     </Compile>
+	<Compile Include="..\service\SemanticClassificationKey.fsi">
+		<Link>Service/SemanticClassificationKey.fsi</Link>
+	</Compile>
+	<Compile Include="..\service\SemanticClassificationKey.fs">
+		<Link>Service/SemanticClassificationKey.fs</Link>
+	</Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -846,11 +884,17 @@
     <Compile Include="..\service\ServiceParamInfoLocations.fs">
       <Link>Service/ServiceParamInfoLocations.fs</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fsi">
-      <Link>Service/ServiceUntypedParse.fsi</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fsi">
+      <Link>Service/FSharpParseFileResults.fsi</Link>
     </Compile>
-    <Compile Include="..\service\ServiceUntypedParse.fs">
-      <Link>Service/ServiceUntypedParse.fs</Link>
+    <Compile Include="..\service\FSharpParseFileResults.fs">
+      <Link>Service/FSharpParseFileResults.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fsi">
+      <Link>Service/ServiceParsedInputOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fs">
+      <Link>Service/ServiceParsedInputOps.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
@@ -888,12 +932,6 @@
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
-      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
-      <Link>Service/ServiceErrorResolutionHints.fs</Link>
-    </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
@@ -917,6 +955,11 @@
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
+    </Compile>
+
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
 
@@ -958,5 +1001,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
+
 </Project>

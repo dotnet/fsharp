@@ -1,42 +1,43 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-        
-#if !FX_NO_INDENTED_TEXT_WRITER
+
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type InterfaceData =
-    | Interface of SynType * SynMemberDefns option
-    | ObjExpr of SynType * SynBinding list
-    member Range : range
-    member TypeParameters : string[]
+    | Interface of interfaceType: SynType * memberDefns: SynMemberDefns option
+    | ObjExpr of objType: SynType * bindings: SynBinding list
+
+    member Range: range
+
+    member TypeParameters: string[]
 
 module InterfaceStubGenerator =
 
     /// Get members in the decreasing order of inheritance chain
-    val getInterfaceMembers : FSharpEntity -> seq<FSharpMemberOrFunctionOrValue * seq<FSharpGenericParameter * FSharpType>>
+    val GetInterfaceMembers: entity: FSharpEntity -> seq<FSharpMemberOrFunctionOrValue * seq<FSharpGenericParameter * FSharpType>>
 
     /// Check whether an interface is empty
-    val hasNoInterfaceMember : FSharpEntity -> bool
+    val HasNoInterfaceMember: entity: FSharpEntity -> bool
 
-    /// Get associated member names and ranges
+    /// Get associated member names and ranges.
     /// In case of properties, intrinsic ranges might not be correct for the purpose of getting
     /// positions of 'member', which indicate the indentation for generating new members
-    val getMemberNameAndRanges : InterfaceData -> (string * range) list
+    val GetMemberNameAndRanges: interfaceData: InterfaceData -> (string * range) list
 
-    val getImplementedMemberSignatures : getMemberByLocation: (string * range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
+    /// Get interface member signatures 
+    val GetImplementedMemberSignatures: getMemberByLocation: (string * range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
 
     /// Check whether an entity is an interface or type abbreviation of an interface
-    val isInterface : FSharpEntity -> bool
+    val IsInterface: entity: FSharpEntity -> bool
 
     /// Generate stub implementation of an interface at a start column
-    val formatInterface : startColumn: int  -> indentation: int -> typeInstances: string [] ->  objectIdent: string -> methodBody: string -> displayContext: FSharpDisplayContext ->  excludedMemberSignatures : Set<string> -> FSharpEntity -> verboseMode : bool -> string
+    val FormatInterface: startColumn: int  -> indentation: int -> typeInstances: string [] ->  objectIdent: string -> methodBody: string -> displayContext: FSharpDisplayContext ->  excludedMemberSignatures: Set<string> -> FSharpEntity -> verboseMode: bool -> string
 
     /// Find corresponding interface declaration at a given position
-    val tryFindInterfaceDeclaration: pos -> parsedInput: ParsedInput -> InterfaceData option
-#endif
+    val TryFindInterfaceDeclaration: pos: pos -> parsedInput: ParsedInput -> InterfaceData option

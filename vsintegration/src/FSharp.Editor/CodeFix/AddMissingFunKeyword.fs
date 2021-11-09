@@ -8,17 +8,15 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.CodeAnalysis
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddMissingFunKeyword"); Shared>]
 type internal FSharpAddMissingFunKeywordCodeFixProvider
     [<ImportingConstructor>]
     (
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "AddMissingFunKeyword"
 
     let fixableDiagnosticIds = set ["FS0010"]
 
@@ -33,17 +31,16 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider
             // Only trigger when failing to parse `->`, which arises when `fun` is missing
             do! Option.guard (textOfError = "->")
 
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let! defines = document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingFunKeywordCodeFixProvider)) |> liftAsync
 
             let adjustedPosition =
-                let rec loop str pos =
-                    if not (String.IsNullOrWhiteSpace(str)) then
+                let rec loop ch pos =
+                    if not (Char.IsWhiteSpace(ch)) then
                         pos
                     else
-                        loop (sourceText.GetSubText(TextSpan(pos - 1, 1)).ToString()) (pos - 1)
+                        loop sourceText.[pos] (pos - 1)
 
-                loop (sourceText.GetSubText(TextSpan(context.Span.Start - 1, 1)).ToString()) context.Span.Start
+                loop sourceText.[context.Span.Start - 1] context.Span.Start
 
             let! intendedArgLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! intendedArgSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, intendedArgLexerSymbol.Range)

@@ -3,8 +3,8 @@
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
 module internal FSharp.Compiler.StaticLinking
 
+open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 

@@ -8,16 +8,15 @@
 /// the ILMethodDef (if any) where the item occurs. etc.
 module internal FSharp.Compiler.AbstractIL.Morphs 
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Morph each scope reference inside a type signature.
 val morphILScopeRefsInILTypeRef: (ILScopeRef -> ILScopeRef) -> ILTypeRef -> ILTypeRef 
 
 /// Morph all type references throughout an entire module.
-val morphILTypeRefsInILModuleMemoized:  ILGlobals -> (ILTypeRef -> ILTypeRef) ->  ILModuleDef ->  ILModuleDef
+val morphILTypeRefsInILModuleMemoized: (ILTypeRef -> ILTypeRef) ->  ILModuleDef ->  ILModuleDef
 
-val morphILScopeRefsInILModuleMemoized: ILGlobals -> (ILScopeRef -> ILScopeRef) ->  ILModuleDef ->  ILModuleDef
+val morphILScopeRefsInILModuleMemoized: (ILScopeRef -> ILScopeRef) ->  ILModuleDef ->  ILModuleDef
 
 val morphILInstrsInILCode: (ILInstr -> ILInstr list) -> ILCode -> ILCode
 

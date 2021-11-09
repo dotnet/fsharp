@@ -25,13 +25,14 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Interactive.Shell.Settings
+open FSharp.Compiler.CodeAnalysis
 
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
 
 // Hardbinding dependencies should we NGEN fsi.exe
-[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]

@@ -3,7 +3,6 @@
 namespace Internal.Utilities.Collections
 
 open System.Collections.Generic
-open Microsoft.FSharp.Collections
                                  
 // Each entry in the HashMultiMap dictionary has at least one entry. Under normal usage each entry has _only_
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
@@ -97,7 +96,7 @@ type internal HashMultiMap<'Key,'Value>(size: int, comparer: IEqualityComparer<'
                 | [h] -> 
                     firstEntries.[y] <- h; 
                     rest.Remove(y) |> ignore
-                | (h :: t) -> 
+                | h :: t -> 
                     firstEntries.[y] <- h
                     rest.[y] <- t
                 | _ -> 

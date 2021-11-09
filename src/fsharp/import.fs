@@ -5,20 +5,19 @@ module internal FSharp.Compiler.Import
 
 open System.Collections.Concurrent
 open System.Collections.Generic
-
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -30,6 +29,9 @@ type AssemblyLoader =
 
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
+
+    abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
+
 #if !NO_EXTENSIONTYPING
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
@@ -110,9 +112,9 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
 #if !NO_EXTENSIONTYPING
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
             //printfn "ImportTypeRefData: validating type: typeLogicalName = %A" typeName
-            ExtensionTyping.ValidateProvidedTypeAfterStaticInstantiation(m, info.ProvidedType, path, typeName)
+            ValidateProvidedTypeAfterStaticInstantiation(m, info.ProvidedType, path, typeName)
     | _ -> 
             ()
 #endif
@@ -210,7 +212,7 @@ let ImportProvidedNamedType (env: ImportMap) (m: range) (st: Tainted<ProvidedTyp
     match st.PUntaint((fun st -> st.TryGetTyconRef()), m) with 
     | Some x -> (x :?> TyconRef)
     | None ->         
-        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st, m)
+        let tref = GetILTypeRefOfProvidedType (st, m)
         ImportILTypeRef env m tref
 
 /// Import a provided type as an AbstractIL type
@@ -235,7 +237,7 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<Prov
                 gst, args
             else   
                 st, []
-        let tref = ExtensionTyping.GetILTypeRefOfProvidedType (gst, m)
+        let tref = GetILTypeRefOfProvidedType (gst, m)
         let tcref = ImportProvidedNamedType env m gst
         let tps = tcref.Typars m
         if tps.Length <> genericArgs.Length then 
@@ -341,7 +343,7 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
 
 /// Import a provided method reference as an Abstract IL method reference
 let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
-     let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
+     let tref = GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
 
      let mbase = 
          // Find the formal member corresponding to the called member
@@ -362,7 +364,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   None -> 
                         let methodName = minfo.PUntaint((fun minfo -> minfo.Name), m)
                         let typeName = declaringGenericTypeDefn.PUntaint((fun declaringGenericTypeDefn -> declaringGenericTypeDefn.FullName), m)
-                        error(NumberedError(FSComp.SR.etIncorrectProvidedMethod(ExtensionTyping.DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
+                        error(Error(FSComp.SR.etIncorrectProvidedMethod(DisplayNameOfTypeProvider(minfo.TypeProvider, m), methodName, metadataToken, typeName), m))
          | _ -> 
          match mbase.OfType<ProvidedConstructorInfo>() with 
          | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType), m) -> 
@@ -388,7 +390,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Ta
                 |   Some found -> found.Coerce(m)
                 |   None -> 
                     let typeName = declaringGenericTypeDefn.PUntaint((fun x -> x.FullName), m)
-                    error(NumberedError(FSComp.SR.etIncorrectProvidedConstructor(ExtensionTyping.DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
+                    error(Error(FSComp.SR.etIncorrectProvidedConstructor(DisplayNameOfTypeProvider(cinfo.TypeProvider, m), typeName), m))
          | _ -> mbase
 
      let rty = 
@@ -444,7 +446,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
 let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) = 
     // Find all the items with an empty key list and call 'tipf' 
     let tips = 
-        [ for (keylist, v) in items do 
+        [ for keylist, v in items do 
              match keylist with 
              | [] -> yield tipf v
              | _ -> () ]
@@ -452,8 +454,8 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
     // Find all the items with a non-empty key list. Bucket them together by
     // the first key. For each bucket, call 'nodef' on that head key and the bucket.
     let nodes = 
-        let buckets = new Dictionary<_, _>(10)
-        for (keylist, v) in items do
+        let buckets = Dictionary<_, _>(10)
+        for keylist, v in items do
             match keylist with 
             | [] -> ()
             | key :: rest ->
@@ -462,7 +464,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []
 
-        [ for (KeyValue(key, items)) in buckets -> nodef key items ]
+        [ for KeyValue(key, items) in buckets -> nodef key items ]
 
     tips @ nodes
 
@@ -478,7 +480,7 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
         (nm, m) 
         // The read of the type parameters may fail to resolve types. We pick up a new range from the point where that read is forced
         // Make sure we reraise the original exception one occurs - see findOriginalException.
-        (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] tdef.GenericParams), ErrorLogger.findOriginalException))
+        (LazyWithContext.Create((fun m -> ImportILGenericParameters amap m scoref [] tdef.GenericParams), findOriginalException))
         (scoref, enc, tdef) 
         (MaybeLazy.Lazy lazyModuleOrNamespaceTypeForNestedTypes)
        
@@ -580,7 +582,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     ] |> Map.ofList
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
+let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoader: IXmlDocumentationInfoLoader option, ilScopeRef, sourceDir, filename, ilModule: ILModuleDef, invalidateCcu: IEvent<string>) = 
     invalidateCcu |> ignore
     let aref =   
         match ilScopeRef with 
@@ -609,6 +611,11 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, 
           FileName = filename
           MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
-          TypeForwarders = forwarders }
+          TypeForwarders = forwarders
+          XmlDocumentationInfo = 
+            match xmlDocInfoLoader, filename with
+            | Some xmlDocInfoLoader, Some filename -> xmlDocInfoLoader.TryLoad(filename, ilModule)
+            | _ -> None
+        }
                 
     CcuThunk.Create(nm, ccuData)

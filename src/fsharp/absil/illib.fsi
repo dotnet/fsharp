@@ -1,51 +1,68 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.AbstractIL.Internal.Library 
+namespace Internal.Utilities.Library 
 
 open System
 open System.Threading
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
-/// Logical shift right treating int32 as unsigned integer.
-/// Code that uses this should probably be adjusted to use unsigned integer types.
-val ( >>>& ): x:int32 -> n:int32 -> int32
+[<AutoOpen>]
+module internal PervasiveAutoOpens =
+    /// Logical shift right treating int32 as unsigned integer.
+    /// Code that uses this should probably be adjusted to use unsigned integer types.
+    val ( >>>& ): x:int32 -> n:int32 -> int32
 
-val notlazy: v:'a -> Lazy<'a>
+    val notlazy: v:'a -> Lazy<'a>
 
-val inline isNil: l:'a list -> bool
+    val inline isNil: l:'a list -> bool
 
-/// Returns true if the list has less than 2 elements. Otherwise false.
-val inline isNilOrSingleton: l:'a list -> bool
+    /// Returns true if the list has less than 2 elements. Otherwise false.
+    val inline isNilOrSingleton: l:'a list -> bool
 
-/// Returns true if the list contains exactly 1 element. Otherwise false.
-val inline isSingleton: l:'a list -> bool
+    /// Returns true if the list contains exactly 1 element. Otherwise false.
+    val inline isSingleton: l:'a list -> bool
 
-val inline isNonNull: x:'a -> bool when 'a: null
+    val inline isNonNull: x:'a -> bool when 'a: null
 
-val inline nonNull: msg:string -> x:'a -> 'a when 'a: null
+    val inline nonNull: msg:string -> x:'a -> 'a when 'a: null
 
-val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
+    val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
 
-/// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
-val LOH_SIZE_THRESHOLD_BYTES: int
+    /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
+    /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
+    val LOH_SIZE_THRESHOLD_BYTES: int
 
-val reportTime: (bool -> string -> unit)
+    val reportTime: (bool -> string -> unit)
 
-[<StructAttribute>]
-type InlineDelayInit<'T when 'T: not struct> =
+    val runningOnMono: bool
+
+    /// Get an initialization hole 
+    val getHole: r:'a option ref -> 'a
+
+    type String with
+
+        member inline StartsWithOrdinal: value:string -> bool
+
+        member inline EndsWithOrdinal: value:string -> bool
+
+    type Async with
+        /// Runs the computation synchronously, always starting on the current thread.
+        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+
+    val foldOn: p:('a -> 'b) -> f:('c -> 'b -> 'd) -> z:'c -> x:'a -> 'd
+
+    val notFound: unit -> 'a
+
+[<Struct>]
+type internal InlineDelayInit<'T when 'T: not struct> =
 
     new: f:(unit -> 'T) -> InlineDelayInit<'T>
     val mutable store: 'T
     val mutable func: Func<'T>
     member Value: 'T
   
-val foldOn: p:('a -> 'b) -> f:('c -> 'b -> 'd) -> z:'c -> x:'a -> 'd
-
-val notFound: unit -> 'a
-
-module Order =
+module internal Order =
 
     val orderBy: p:('T -> 'U) -> IComparer<'T> when 'U: comparison
 
@@ -53,7 +70,7 @@ module Order =
 
     val toFunction: pxOrder:IComparer<'U> -> x:'U -> y:'U -> int
 
-module Array =
+module internal Array =
 
     val mapq: f:('a -> 'a) -> inp:'a [] -> 'a [] when 'a: not struct
 
@@ -93,13 +110,13 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     val endsWith: suffix:'a [] -> whole:'a [] -> bool when 'a: equality
 
-module Option =
+module internal Option =
 
     val mapFold: f:('a -> 'b -> 'c * 'a) -> s:'a -> opt:'b option -> 'c option * 'a
 
     val attempt: f:(unit -> 'T) -> 'T option
 
-module List =
+module internal List =
 
     val sortWithOrder : c:IComparer<'T> -> elements:'T list -> 'T list
 
@@ -174,7 +191,7 @@ module List =
 
     val internal allEqual: xs:'T list -> bool when 'T: equality
 
-module ResizeArray =
+module internal ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
@@ -186,19 +203,14 @@ module ResizeArray =
     /// probability of smaller collections. Stop-the-world is still possible, just less likely.
     val mapToSmallArrayChunks : f:('t -> 'a) -> inp:ResizeArray<'t> -> 'a [] []
 
-module ValueOptionInternal =
+module internal ValueOptionInternal =
 
     val inline ofOption: x:'a option -> 'a voption
 
     val inline bind: f:('a -> 'b voption) -> x:'a voption -> 'b voption
 
-type String with
 
-    member inline StartsWithOrdinal: value:string -> bool
-
-    member inline EndsWithOrdinal: value:string -> bool
-
-module String =
+module internal String =
 
     val make: n:int -> c:char -> string
 
@@ -242,11 +254,12 @@ module String =
 
     val getLines: str:string -> string []
 
-module Dictionary =
+module internal Dictionary =
     val inline newWithSize : size:int -> Dictionary<'a,'b> when 'a: equality
+    val inline ofList : xs: ('Key * 'Value) list -> Dictionary<'Key,'Value> when 'Key: equality
 
 [<Extension; Class>]
-type DictionaryExtensions =
+type internal DictionaryExtensions =
 
     [<Extension>]
     static member inline BagAdd: dic:Dictionary<'key,'value list> * key:'key * value:'value -> unit
@@ -254,11 +267,11 @@ type DictionaryExtensions =
     [<Extension>]
     static member inline BagExistsValueForKey: dic:Dictionary<'key,'value list> * key:'key * f:('value -> bool) -> bool
   
-module Lazy =
+module internal Lazy =
     val force: x:Lazy<'T> -> 'T
 
 /// Represents a permission active at this point in execution
-type ExecutionToken = interface end
+type internal ExecutionToken = interface end
 
 /// Represents a token that indicates execution on the compilation thread, i.e. 
 ///   - we have full access to the (partially mutable) TAST and TcImports data structures
@@ -267,98 +280,105 @@ type ExecutionToken = interface end
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
 /// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
-type CompilationThreadToken =
+[<Sealed>]
+type internal CompilationThreadToken =
 
     interface ExecutionToken
     new: unit -> CompilationThreadToken
   
-/// Represents a place where we are stating that execution on the compilation thread is required. The
-/// reason why will be documented in a comment in the code at the callsite.
-val RequireCompilationThread: _ctok:CompilationThreadToken -> unit
-
-/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
-/// This represents code that may potentially not need to be executed on the compilation thread.
-val DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent : _ctok:CompilationThreadToken -> unit
-
-/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
-val AssumeCompilationThreadWithoutEvidence: unit -> CompilationThreadToken
-
 /// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
-type AnyCallerThreadToken =
+[<Sealed>]
+type internal AnyCallerThreadToken =
 
     interface ExecutionToken
     new: unit -> AnyCallerThreadToken
   
-val AnyCallerThread: AnyCallerThreadToken
-
 /// A base type for various types of tokens that must be passed when a lock is taken.
 /// Each different static lock should declare a new subtype of this type.
-type LockToken = 
+type internal LockToken = 
     interface 
         inherit ExecutionToken
     end
   
-val AssumeLockWithoutEvidence: unit -> #LockToken
-
 /// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
-type Lock<'LockTokenType when 'LockTokenType :> LockToken> =
+type internal Lock<'LockTokenType when 'LockTokenType :> LockToken> =
 
     new: unit -> Lock<'LockTokenType>
     member AcquireLock: f:('LockTokenType -> 'a) -> 'a
   
-/// Get an initialization hole 
-val getHole: r:'a option ref -> 'a
+[<AutoOpen>]
+module internal LockAutoOpens =
+    /// Represents a place where we are stating that execution on the compilation thread is required. The
+    /// reason why will be documented in a comment in the code at the callsite.
+    val RequireCompilationThread: _ctok:CompilationThreadToken -> unit
 
-module Map =
+    /// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+    /// This represents code that may potentially not need to be executed on the compilation thread.
+    val DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent : _ctok:CompilationThreadToken -> unit
+
+    /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
+    val AssumeCompilationThreadWithoutEvidence: unit -> CompilationThreadToken
+
+    val AnyCallerThread: AnyCallerThreadToken
+
+    val AssumeLockWithoutEvidence: unit -> #LockToken
+
+module internal Map =
     val tryFindMulti :
         k:'a -> map:Map<'a,'b list> -> 'b list when 'a: comparison
 
-type ResultOrException<'TResult> =
-    | Result of 'TResult
-    | Exception of Exception
+[<Struct>]
+type internal ResultOrException<'TResult> =
+    | Result of result: 'TResult
+    | Exception of ``exception``: Exception
 
-module ResultOrException =
+module internal ResultOrException =
+
     val success: a:'a -> ResultOrException<'a>
+
     val raze: b:exn -> ResultOrException<'a>
+
     val ( |?> ) : res:ResultOrException<'a> -> f:('a -> 'b) -> ResultOrException<'b>
+
     val ForceRaise: res:ResultOrException<'a> -> 'a
+
     val otherwise : f:(unit -> ResultOrException<'a>) -> x:ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccessAttribute>]
-type ValueOrCancelled<'TResult> =
-    | Value of 'TResult
-    | Cancelled of OperationCanceledException
+[<RequireQualifiedAccess; Struct>]
+type internal ValueOrCancelled<'TResult> =
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
 
 /// Represents a synchronous cancellable computation with explicit representation of a cancelled result.
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
 [<Struct>]
-type Cancellable<'TResult> =
+type internal Cancellable<'TResult> =
     | Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
 
-module Cancellable =
+module internal Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
     val run : ct:CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
 
     /// Bind the result of a cancellable computation
-    val bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
+    val inline bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
 
     /// Map the result of a cancellable computation
-    val map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
+    val inline map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
 
     /// Return a simple value as the result of a cancellable computation
-    val ret: x:'a -> Cancellable<'a>
+    val inline ret: x:'a -> Cancellable<'a>
 
     /// Fold a cancellable computation along a sequence of inputs
     val fold : f:('a -> 'b -> Cancellable<'a>) -> acc:'a -> seq:seq<'b> -> Cancellable<'a>
 
     /// Iterate a cancellable computation over a collection
-    val each : f:('a -> Cancellable<'b>) -> seq:seq<'a> -> Cancellable<'b list>
+    val inline each : f:('a -> Cancellable<'b>) -> seq:seq<'a> -> Cancellable<'b list>
 
     /// Delay a cancellable computation
-    val delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
+    val inline delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
@@ -371,113 +391,76 @@ module Cancellable =
     val canceled: unit -> Cancellable<'a>
 
     /// Implement try/finally for a cancellable computation
-    val tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
+    val inline catch : e:Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
+
+    /// Implement try/finally for a cancellable computation
+    val inline tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
 
     /// Implement try/with for a cancellable computation
-    val tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+    val inline tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
 
-type CancellableBuilder =
+    val toAsync: Cancellable<'a> -> Async<'a>
+
+type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
-    member Bind: e:Cancellable<'k> * k:('k -> Cancellable<'l>) -> Cancellable<'l>
-    member Combine: e1:Cancellable<unit> * e2:Cancellable<'h> -> Cancellable<'h>
-    member Delay: f:(unit -> Cancellable<'a>) -> Cancellable<'a>
-    member For: es:seq<'f> * f:('f -> Cancellable<'g>) -> Cancellable<'g list>
-    member Return: v:'j -> Cancellable<'j>
-    member ReturnFrom: v:'i -> 'i
-    member TryFinally: e:Cancellable<'b> * compensation:(unit -> unit) -> Cancellable<'b>
-    member TryWith: e:Cancellable<'e> * handler:(exn -> Cancellable<'e>) -> Cancellable<'e>
-    member Using: resource:'c * e:('c -> Cancellable<'d>) -> Cancellable<'d> when 'c :> System.IDisposable
-    member Zero: unit -> Cancellable<unit>
+
+    member inline BindReturn: e:Cancellable<'T> * k:('T -> 'U) -> Cancellable<'U>
+
+    member inline Bind: e:Cancellable<'T> * k:('T -> Cancellable<'U>) -> Cancellable<'U>
+
+    member inline Combine: e1:Cancellable<unit> * e2:Cancellable<'T> -> Cancellable<'T>
+
+    member inline Delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
+
+    member inline For: es:seq<'T> * f:('T -> Cancellable<'U>) -> Cancellable<'U list>
+
+    member inline Return: v:'T -> Cancellable<'T>
+
+    member inline ReturnFrom: v:Cancellable<'T> -> Cancellable<'T>
+
+    member inline TryFinally: e:Cancellable<'T> * compensation:(unit -> unit) -> Cancellable<'T>
+
+    member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
+
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
+
+    member inline Zero: unit -> Cancellable<unit>
   
-val cancellable: CancellableBuilder
-
-/// Computations that can cooperatively yield by returning a continuation
-///
-///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
-///      will be called when the computation is abandoned.
-///
-///    - Computations suspend via a NotYetDone may use local state (mutables), where these are
-///      captured by the NotYetDone closure. Computations do not need to be restartable.
-///
-///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-///
-///    - Cancellation results in a suspended computation rather than complete abandonment
-type Eventually<'T> =
-    | Done of 'T
-    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
-
-module Eventually =
-    val box: e:Eventually<'a> -> Eventually<obj>
-    val forceWhile : ctok:CompilationThreadToken -> check:(unit -> bool) -> e:Eventually<'a> -> 'a option
-    val force: ctok:CompilationThreadToken -> e:Eventually<'a> -> 'a
-
-/// Keep running the computation bit by bit until a time limit is reached.
-/// The runner gets called each time the computation is restarted
-///
-/// If cancellation happens, the operation is left half-complete, ready to resume.
-    val repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled :
-        timeShareInMilliseconds:int64 ->
-        ct:CancellationToken ->
-        runner:(CompilationThreadToken -> (#CompilationThreadToken -> Eventually<'b>) -> Eventually<'b>) -> 
-        e:Eventually<'b> 
-            -> Eventually<'b>
-
-    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way.
-    val forceAsync : runner:((CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) -> e:Eventually<'T> -> Async<'T option>
-
-    val bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
-
-    val fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
-
-    val catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
-
-    val delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
-
-    val tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
-
-    val tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
-
-    // All eventually computations carry a CompilationThreadToken
-    val token: Eventually<CompilationThreadToken>
-
-[<Class>]
-type EventuallyBuilder =
-    member Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
-    member Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
-    member Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
-    member Return: v:'f -> Eventually<'f>
-    member ReturnFrom: v:'e -> 'e
-    member TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
-    member TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
-    member Zero: unit -> Eventually<unit>
-  
-val eventually: EventuallyBuilder
+[<AutoOpen>]
+module internal CancellableAutoOpens =
+    val cancellable: CancellableBuilder
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality> =
+type internal UniqueStampGenerator<'T when 'T: equality> =
+
     new: unit -> UniqueStampGenerator<'T>
+
     member Encode: str:'T -> int
+
     member Table: ICollection<'T>
   
 /// Memoize tables (all entries cached, never collected unless whole table is collected)
-type MemoizationTable<'T,'U> =
+type internal MemoizationTable<'T,'U> =
+
     new: compute:('T -> 'U) * keyComparer:IEqualityComparer<'T> * ?canMemoize:('T -> bool) -> MemoizationTable<'T,'U>
+
     member Apply: x:'T -> 'U
   
-exception UndefinedException
+exception internal UndefinedException
 
-type LazyWithContextFailure =
+type internal LazyWithContextFailure =
+
     new: exn:exn -> LazyWithContextFailure
+
     member Exception: exn
+
     static member Undefined: LazyWithContextFailure
   
 /// Just like "Lazy" but EVERY forcer must provide an instance of "ctxt", e.g. to help track errors
 /// on forcing back to at least one sensible user location
 [<Sealed>]
-type LazyWithContext<'T,'ctxt> =
+type internal LazyWithContext<'T,'ctxt> =
     static member Create: f:('ctxt -> 'T) * findOriginalException:(exn -> exn) -> LazyWithContext<'T,'ctxt>
     static member NotLazy: x:'T -> LazyWithContext<'T,'ctxt>
     member Force: ctxt:'ctxt -> 'T
@@ -486,28 +469,28 @@ type LazyWithContext<'T,'ctxt> =
     member IsForced: bool
   
 /// Intern tables to save space.
-module Tables =
+module internal Tables =
     val memoize: f:('a -> 'b) -> ('a -> 'b) when 'a: equality
 
 /// Interface that defines methods for comparing objects using partial equality relation
-type IPartialEqualityComparer<'T> =
+type internal IPartialEqualityComparer<'T> =
     inherit IEqualityComparer<'T>
-    abstract member InEqualityRelation: 'T -> bool
+    abstract InEqualityRelation: 'T -> bool
   
 /// Interface that defines methods for comparing objects using partial equality relation
-module IPartialEqualityComparer =
+module internal IPartialEqualityComparer =
     val On : f:('a -> 'b) -> c:IPartialEqualityComparer<'b> -> IPartialEqualityComparer<'a>
 
     /// Like Seq.distinctBy but only filters out duplicates for some of the elements
     val partialDistinctBy : per:IPartialEqualityComparer<'T> -> seq:'T list -> 'T list
 
-type NameMap<'T> = Map<string,'T>
+type internal NameMap<'T> = Map<string,'T>
 
-type NameMultiMap<'T> = NameMap<'T list>
+type internal NameMultiMap<'T> = NameMap<'T list>
 
-type MultiMap<'T,'U when 'T: comparison> = Map<'T,'U list>
+type internal MultiMap<'T,'U when 'T: comparison> = Map<'T,'U list>
 
-module NameMap =
+module internal NameMap =
 
     val empty: Map<'a,'b> when 'a: comparison
 
@@ -569,7 +552,7 @@ module NameMap =
 
     val tryFindInRange : p:('a -> bool) -> m:Map<'b,'a> -> 'a option when 'b: comparison
 
-module NameMultiMap =
+module internal NameMultiMap =
 
     val existsInRange: f:('T -> bool) -> m:NameMultiMap<'T> -> bool
 
@@ -591,7 +574,7 @@ module NameMultiMap =
 
     val ofList: xs:(string * 'T) list -> NameMultiMap<'T>
 
-module MultiMap =
+module internal MultiMap =
 
     val existsInRange : f:('a -> bool) -> m:MultiMap<'b,'a> -> bool when 'b: comparison
 
@@ -605,32 +588,41 @@ module MultiMap =
 
     val initBy : f:('a -> 'b) -> xs:seq<'a> -> MultiMap<'b,'a> when 'b: comparison
 
-type LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
+type internal LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
 
-type Map<'Key,'Value when 'Key: comparison> with
 
-    static member Empty: Map<'Key,'Value> when 'Key: comparison
+[<AutoOpen>]
+module internal MapAutoOpens =
+    type internal Map<'Key,'Value when 'Key: comparison> with
+        
+        static member Empty: Map<'Key,'Value> when 'Key: comparison
+        
+        member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
-    member Values: 'Value list
+        member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
 
-    member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
-
-    member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
-
-type Map<'Key,'Value when 'Key: comparison> with
-    member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
+    type internal Map<'Key,'Value when 'Key: comparison> with
+        member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
-[<SealedAttribute>]
-type LayeredMultiMap<'Key,'Value when 'Key: comparison> =
+[<Sealed>]
+type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     new: contents:LayeredMap<'Key,'Value list> -> LayeredMultiMap<'Key,'Value>
+
     member Add: k:'Key * v:'Value -> LayeredMultiMap<'Key,'Value>
+
     member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
+
     member MarkAsCollapsible: unit -> LayeredMultiMap<'Key,'Value>
+
     member TryFind: k:'Key -> 'Value list option
+
     member TryGetValue: k:'Key -> bool * 'Value list
+
     member Item: k:'Key -> 'Value list with get
+
     member Values: 'Value list
+
     static member Empty: LayeredMultiMap<'Key,'Value>
   

@@ -11,11 +11,14 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Tokenization
 
 type SignatureHelpParameterInfo =
     { ParameterName: string
@@ -50,12 +53,9 @@ type SignatureHelpData =
 type internal FSharpSignatureHelpProvider 
     [<ImportingConstructor>]
     (
-        serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        serviceProvider: SVsServiceProvider
     ) =
 
-    static let userOpName = "SignatureHelpProvider"
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
@@ -67,7 +67,7 @@ type internal FSharpSignatureHelpProvider
         (
             caretLinePos: LinePosition,
             caretLineColumn: int,
-            paramLocations: FSharpNoteworthyParamInfoLocations,
+            paramLocations: ParameterLocations,
             checkFileResults: FSharpCheckFileResults,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
@@ -86,9 +86,9 @@ type internal FSharpSignatureHelpProvider
             do! Option.guard (methods.Length > 0 && not(methodGroup.MethodName.EndsWith("> )")))
 
             let isStaticArgTip =
-                let parenLine, parenCol = Pos.toZ paramLocations.OpenParenLocation 
+                let parenLine, parenCol = Position.toZ paramLocations.OpenParenLocation 
                 assert (parenLine < textLines.Count)
-                let parenLineText = textLines.[parenLine].ToString()
+                let parenLineText = sourceText.GetSubText(textLines.[parenLine].Span)
                 parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
 
             let filteredMethods =
@@ -102,7 +102,7 @@ type internal FSharpSignatureHelpProvider
             do! Option.guard (filteredMethods.Length > 0)
 
             let posToLinePosition pos = 
-                let (l,c) = Pos.toZ  pos
+                let (l,c) = Position.toZ  pos
                 let result = LinePosition(l,c)
                 let lastPosInDocument = textLines.GetLinePosition(textLines.[textLines.Count-1].End)
                 if lastPosInDocument.CompareTo(result) > 0 then result else lastPosInDocument
@@ -166,7 +166,7 @@ type internal FSharpSignatureHelpProvider
                     | n -> n
 
                 // Compute the current argument name if it is named.
-                let argumentName = 
+                let namedArgumentName = 
                     if argumentIndex < paramLocations.NamedParamNames.Length then 
                         paramLocations.NamedParamNames.[argumentIndex] 
                     else 
@@ -181,7 +181,7 @@ type internal FSharpSignatureHelpProvider
                                 documentationBuilder,
                                 RoslynHelpers.CollectTaggedText mainDescription,
                                 RoslynHelpers.CollectTaggedText documentation,
-                                method.StructuredDescription, false)
+                                method.Description, false)
 
                             let parameters = 
                                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
@@ -190,7 +190,7 @@ type internal FSharpSignatureHelpProvider
                                         let doc = ResizeArray()
                                         let parts = ResizeArray()
                                         XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName)
-                                        LayoutRender.emitL (RoslynHelpers.CollectTaggedText parts) p.StructuredDisplay |> ignore
+                                        p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
                                         { ParameterName = p.ParameterName
                                           IsOptional = p.IsOptional
                                           CanonicalTypeTextForSorting = p.CanonicalTypeTextForSorting
@@ -219,7 +219,7 @@ type internal FSharpSignatureHelpProvider
                       ApplicableSpan = applicableSpan
                       ArgumentIndex = argumentIndex
                       ArgumentCount = argumentCount
-                      ArgumentName = argumentName
+                      ArgumentName = namedArgumentName
                       CurrentSignatureHelpSessionKind = MethodCall }
 
                 return! Some data
@@ -240,6 +240,7 @@ type internal FSharpSignatureHelpProvider
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
+            let textLineText = textLine.ToString()
             let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -255,32 +256,32 @@ type internal FSharpSignatureHelpProvider
                 }
 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
-                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                not (PrettyNaming.IsOperatorDisplayName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
-                let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                let tooltip = checkFileResults.GetToolTip(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
-                | FSharpToolTipText []
-                | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
+                | ToolTipText []
+                | ToolTipText [ToolTipElement.None] -> return! None
                 | _ ->                    
-                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.RangeAlternate.Start
+                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.Range.Start
                     let numArgsAlreadyApplied =
                         match possiblePipelineIdent with
                         | None -> 0
                         | Some (_, numArgsApplied) -> numArgsApplied
 
-                    let definedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Array.ofSeq
+                    let definedArgs = mfv.CurriedParameterGroups |> Array.ofSeq
                         
                     let numDefinedArgs = definedArgs.Length
 
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.RangeAlternate.Start
+                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.Range.Start
                         |> Option.defaultValue []
                         |> Array.ofList
 
@@ -320,7 +321,7 @@ type internal FSharpSignatureHelpProvider
                         | None ->
                             let possibleNextIndex =
                                 curriedArgsInSource
-                                |> Array.tryFindIndex(fun argRange -> Pos.posGeq argRange.Start caretPos)
+                                |> Array.tryFindIndex(fun argRange -> Position.posGeq argRange.Start caretPos)
 
                             match possibleNextIndex with
                             | Some index -> Some index
@@ -345,55 +346,107 @@ type internal FSharpSignatureHelpProvider
                     let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                                        
                     let docs = ResizeArray()
-                    for fsharpDoc in fsharpDocs do
-                        RoslynHelpers.CollectTaggedText docs fsharpDoc
+                    fsharpDocs |> Seq.iter (RoslynHelpers.CollectTaggedText docs)
 
                     let parts = ResizeArray()
-                    for part in mainDescription do
-                        RoslynHelpers.CollectTaggedText parts part
+                    mainDescription |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
 
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
                     definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
-                        let taggedText = ResizeArray()
                         let tt = ResizeArray()
-                        let layout = argument.Type.FormatLayout symbolUse.DisplayContext
-                        LayoutRender.emitL taggedText.Add layout |> ignore
-                        for part in taggedText do
-                            RoslynHelpers.CollectTaggedText tt part
+
+                        if argument.Count = 1 then
+                            let argument = argument.[0]
+                            let taggedText = argument.Type.FormatLayout symbolUse.DisplayContext
+                            taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
                             
-                        let name =
-                            if String.IsNullOrWhiteSpace(argument.DisplayName) then
-                                "arg" + string index
-                            else
-                                argument.DisplayName
+                            let name =
+                                if String.IsNullOrWhiteSpace(argument.DisplayName) then
+                                    "arg" + string index
+                                else
+                                    argument.DisplayName
 
-                        let display =
-                            [|
-                                RoslynTaggedText(TextTags.Local, name)
-                                RoslynTaggedText(TextTags.Punctuation, ":")
-                                RoslynTaggedText(TextTags.Space, " ")
-                            |]
-                            |> ResizeArray
+                            let display =
+                                [|
+                                    RoslynTaggedText(TextTags.Local, name)
+                                    RoslynTaggedText(TextTags.Punctuation, ":")
+                                    RoslynTaggedText(TextTags.Space, " ")
+                                |]
+                                |> ResizeArray
 
-                        if argument.Type.IsFunctionType then
+                            if argument.Type.IsFunctionType then
+                                display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
+
+                            display.AddRange(tt)
+
+                            if argument.Type.IsFunctionType then
+                                display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
+
+                            let info =
+                                { ParameterName = name
+                                  IsOptional = false
+                                  CanonicalTypeTextForSorting = name
+                                  Documentation = ResizeArray()
+                                  DisplayParts = display }
+
+                            displayArgs.Add(info)
+                        else
+                            let display = ResizeArray()
                             display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
 
-                        display.AddRange(tt)
+                            let separatorParts =
+                                [|
+                                    RoslynTaggedText(TextTags.Space, " ")
+                                    RoslynTaggedText(TextTags.Operator, "*")
+                                    RoslynTaggedText(TextTags.Space, " ")
+                                |]
 
-                        if argument.Type.IsFunctionType then
+                            let mutable first = true
+                            argument |> Seq.iteri (fun index arg ->
+                                if first then
+                                    first <- false
+                                else
+                                    display.AddRange(separatorParts)
+                                let tt = ResizeArray()
+
+                                let taggedText = arg.Type.FormatLayout symbolUse.DisplayContext
+                                taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
+                                
+                                let name =
+                                    if String.IsNullOrWhiteSpace(arg.DisplayName) then
+                                        "arg" + string index
+                                    else
+                                        arg.DisplayName   
+                                        
+                                let namePart =
+                                    [|
+                                        RoslynTaggedText(TextTags.Local, name)
+                                        RoslynTaggedText(TextTags.Punctuation, ":")
+                                        RoslynTaggedText(TextTags.Space, " ")
+                                    |]
+
+                                display.AddRange(namePart)
+                                    
+                                if arg.Type.IsFunctionType then
+                                    display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
+                                    
+                                display.AddRange(tt)
+                                    
+                                if arg.Type.IsFunctionType then
+                                    display.Add(RoslynTaggedText(TextTags.Punctuation, ")")))
+                            
                             display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
+                            
+                            let info =
+                                { ParameterName = "" // No name here, since it's a tuple of arguments has no name in the F# symbol info
+                                  IsOptional = false
+                                  CanonicalTypeTextForSorting = ""
+                                  Documentation = ResizeArray()
+                                  DisplayParts = display }
 
-                        let info =
-                            { ParameterName = name
-                              IsOptional = false
-                              // No need to do anything different here, as this field is only relevant for overloaded parameter names in methods.
-                              CanonicalTypeTextForSorting = name
-                              Documentation = ResizeArray()
-                              DisplayParts = display }
-
-                        displayArgs.Add(info))
+                            displayArgs.Add(info))
 
                     do! Option.guard (displayArgs.Count > 0)
 
@@ -425,7 +478,7 @@ type internal FSharpSignatureHelpProvider
                           Parameters = displayArgs.ToArray()
                           MainDescription = ResizeArray() }
 
-                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
 
                     let data =
                         { SignatureHelpItems = [| sigHelpItem |]
@@ -444,45 +497,36 @@ type internal FSharpSignatureHelpProvider
         (
             document: Document,
             defines: string list,
-            checker: FSharpChecker,
             documentationBuilder: IDocumentationBuilder,
-            sourceText: SourceText,
             caretPosition: int,
-            options: FSharpProjectOptions,
-            filePath: string,
-            textVersionHash: int,
             triggerTypedChar: char option,
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideSignatureHelp") |> liftAsync
+
+            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
-            let perfOptions = document.FSharpOptions.LanguageServicePerformance
-
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
 
             let adjustedColumnInSource =
-                let rec loop s c =
-                    if String.IsNullOrWhiteSpace(s.ToString()) then
-                        loop (sourceText.GetSubText(c - 1)) (c - 1)
-                    else
-                        c
-                let startText =
-                    if caretPosition = sourceText.Length then
-                        sourceText.GetSubText(caretPosition)
-                    else
-                        sourceText.GetSubText(TextSpan(caretPosition, 1))
-                
-                loop startText caretPosition
 
-            let adjustedColumnString = sourceText.GetSubText(TextSpan(adjustedColumnInSource, 1)).ToString()
+                let rec loop ch pos =
+                    if Char.IsWhiteSpace(ch) then
+                        loop sourceText.[pos - 1] (pos - 1)
+                    else
+                        pos
+                loop sourceText.[caretPosition - 1] (caretPosition - 1)
+
+            let adjustedColumnChar = sourceText.[adjustedColumnInSource]
 
             match triggerTypedChar, possibleCurrentSignatureHelpSessionKind with
             // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
-            // This means that the adjusted position relative to the caret could be a ',' or a ')' or '>',
+            // This means that the adjusted position relative to the caret could be a ',' or a '(' or '<',
             // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
-            | Some ' ', None when adjustedColumnString <> "," && adjustedColumnString <> "(" && adjustedColumnString <> "<" ->
+            | Some ' ', _ when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
@@ -493,8 +537,8 @@ type internal FSharpSignatureHelpProvider
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        filePath)
-            | _, Some FunctionApplication when adjustedColumnString <> "," && adjustedColumnString <> "(" && adjustedColumnString <> "<" ->
+                        document.FilePath)
+            | _, Some FunctionApplication when adjustedColumnChar <> ',' && adjustedColumnChar <> '(' && adjustedColumnChar <> '<' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
@@ -505,9 +549,9 @@ type internal FSharpSignatureHelpProvider
                         sourceText,
                         caretPosition,
                         adjustedColumnInSource,
-                        filePath)
+                        document.FilePath)
             | _ ->
-                let! paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
+                let! paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
                 return!
                     FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
                         caretLinePos,
@@ -526,11 +570,7 @@ type internal FSharpSignatureHelpProvider
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
-                let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let checker = checkerProvider.Checker
+                let defines = document.GetFSharpQuickDefines()
 
                 let triggerTypedChar = 
                     if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
@@ -543,13 +583,8 @@ type internal FSharpSignatureHelpProvider
                             FSharpSignatureHelpProvider.ProvideSignatureHelp(
                                 document,
                                 defines,
-                                checker,
                                 documentationBuilder,
-                                sourceText,
                                 position,
-                                projectOptions,
-                                document.FilePath,
-                                textVersion.GetHashCode(),
                                 triggerTypedChar,
                                 possibleCurrentSignatureHelpSessionKind)
                         match signatureHelpDataOpt with

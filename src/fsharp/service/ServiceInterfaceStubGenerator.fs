@@ -1,19 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.EditorServices
 
 open System
 open System.Diagnostics
-
-open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
+open Internal.Utilities.Library 
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-        
-#if !FX_NO_INDENTED_TEXT_WRITER
+open FSharp.Compiler.Tokenization
+
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -53,13 +52,6 @@ module internal CodeGenerationUtils =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
-    let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, _, e2, _, _, _) -> [e1; e2]
-        | SynIndexerArg.One (e, _, _) -> [e]
-
-    let (|IndexerArgList|) xs =
-        List.collect (|IndexerArg|) xs
-        
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential (_, _, e, Sequentials es, _) ->
@@ -104,14 +96,16 @@ module internal CodeGenerationUtils =
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type InterfaceData =
-    | Interface of SynType * SynMemberDefns option
-    | ObjExpr of SynType * SynBinding list
+    | Interface of interfaceType: SynType * memberDefns: SynMemberDefns option
+    | ObjExpr of objType: SynType * bindings: SynBinding list
+
     member x.Range =
         match x with
         | InterfaceData.Interface(ty, _) -> 
             ty.Range
         | InterfaceData.ObjExpr(ty, _) -> 
             ty.Range
+
     member x.TypeParameters = 
         match x with
         | InterfaceData.Interface(StripParenTypes ty, _)
@@ -125,11 +119,11 @@ type InterfaceData =
                     sprintf "- %s" s
 
             let rec (|TypeIdent|_|) = function
-                | SynType.Var(SynTypar.Typar(s, req, _), _) ->
+                | SynType.Var(SynTypar(s, req, _), _) ->
                     match req with
-                    | NoStaticReq -> 
+                    | TyparStaticReq.None -> 
                         Some ("'" + s.idText)
-                    | HeadTypeStaticReq -> 
+                    | TyparStaticReq.HeadType -> 
                         Some ("^" + s.idText)
                 | SynType.LongIdent(LongIdentWithDots(xs, _)) ->
                     xs |> Seq.map (fun x -> x.idText) |> String.concat "." |> Some
@@ -155,7 +149,7 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _)  -> 
                     Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
-                    Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
+                    Some (sprintf "%s [%s]" typeName (String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
                     Some (sprintf "%s^%s" typeName power)
                 | SynType.MeasureDivide(TypeIdent numerator, TypeIdent denominator, _) ->
@@ -176,18 +170,25 @@ module InterfaceStubGenerator =
     type internal Context =
         {
             Writer: ColumnIndentedTextWriter
+
             /// Map generic types to specific instances for specialized interface implementation
             TypeInstantations: Map<string, string>
+
             /// Data for interface instantiation
             ArgInstantiations: (FSharpGenericParameter * FSharpType) seq
+
             /// Indentation inside method bodies
             Indentation: int
+
             /// Object identifier of the interface e.g. 'x', 'this', '__', etc.
             ObjectIdent: string
+
             /// A list of lines represents skeleton of each member
             MethodBody: string []
+
             /// Context in order to display types in the short form
             DisplayContext: FSharpDisplayContext
+
         }
 
     // Adapt from MetadataFormat module in FSharp.Formatting 
@@ -223,7 +224,7 @@ module InterfaceStubGenerator =
         let nm, namesWithIndices = normalizeArgName namesWithIndices nm
         
         // Detect an optional argument
-        let isOptionalArg = Symbol.hasAttribute<OptionalArgumentAttribute> arg.Attributes
+        let isOptionalArg = arg.HasAttribute<OptionalArgumentAttribute>()
         let argName = if isOptionalArg then "?" + nm else nm
         (if hasTypeAnnotation && argName <> "()" then 
             argName + ": " + formatType ctx arg.Type
@@ -300,7 +301,7 @@ module InterfaceStubGenerator =
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
-        m.IsEvent || Symbol.hasAttribute<CLIEventAttribute> m.Attributes
+        m.IsEvent || m.HasAttribute<CLIEventAttribute>()
     
     let internal formatMember (ctx: Context) m verboseMode = 
         let getParamArgs (argInfos: FSharpParameter list list) (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
@@ -332,7 +333,7 @@ module InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.ApparentEnclosingEntity.Attributes) -> 
+                    not (v.ApparentEnclosingEntity.HasAttribute<RequireQualifiedAccessAttribute>()) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -361,10 +362,10 @@ module InterfaceStubGenerator =
 
         match m with
         | MemberInfo.PropertyGetSet(getter, setter) ->
-            let (usage, modifiers, getterArgInfos, retType) = preprocess ctx getter
+            let usage, modifiers, getterArgInfos, retType = preprocess ctx getter
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
-            let (_, _, setterArgInfos, _) = preprocess ctx setter
+            let _, _, setterArgInfos, _ = preprocess ctx setter
             let writer = ctx.Writer
             writer.Write("member ")
             for modifier in modifiers do
@@ -391,7 +392,7 @@ module InterfaceStubGenerator =
             writer.Unindent ctx.Indentation
 
         | MemberInfo.Member v ->
-            let (usage, modifiers, argInfos, retType) = preprocess ctx v
+            let usage, modifiers, argInfos, retType = preprocess ctx v
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
             let writer = ctx.Writer
@@ -486,9 +487,9 @@ module InterfaceStubGenerator =
         |> Seq.distinct
 
     /// Get members in the decreasing order of inheritance chain
-    let getInterfaceMembers (e: FSharpEntity) = 
+    let GetInterfaceMembers (entity: FSharpEntity) = 
         seq {
-            for (iface, instantiations) in getInterfaces e do
+            for iface, instantiations in getInterfaces entity do
                 yield! iface.TryGetMembersFunctionsAndValues()
                        |> Seq.choose (fun m -> 
                            // Use this hack when FCS doesn't return enough information on .NET properties and events
@@ -498,8 +499,8 @@ module InterfaceStubGenerator =
          }
 
     /// Check whether an interface is empty
-    let hasNoInterfaceMember e =
-        getInterfaceMembers e |> Seq.isEmpty
+    let HasNoInterfaceMember entity =
+        GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
         | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
@@ -513,14 +514,14 @@ module InterfaceStubGenerator =
     // On merged properties (consisting both getters and setters), they have the same range values,
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) = function
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertyGet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertyGet ->
             if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = MemberKind.PropertySet ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertySet ->
             if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
-        | Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
-                    _retTy, _expr, _bindingRange, _seqPoint) ->
+        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
+                     _retTy, _expr, _bindingRange, _seqPoint) ->
             Some(name, range)
         | _ ->
             None
@@ -528,12 +529,13 @@ module InterfaceStubGenerator =
     /// Get associated member names and ranges
     /// In case of properties, intrinsic ranges might not be correct for the purpose of getting
     /// positions of 'member', which indicate the indentation for generating new members
-    let getMemberNameAndRanges = function
+    let GetMemberNameAndRanges interfaceData = 
+        match interfaceData with
         | InterfaceData.Interface(_, None) -> 
             []
         | InterfaceData.Interface(_, Some memberDefns) -> 
             memberDefns
-            |> Seq.choose (function (SynMemberDefn.Member(binding, _)) -> Some binding | _ -> None)
+            |> Seq.choose (function SynMemberDefn.Member(binding, _) -> Some binding | _ -> None)
             |> Seq.choose (|MemberNameAndRange|_|)
             |> Seq.toList
         | InterfaceData.ObjExpr(_, bindings) -> 
@@ -550,7 +552,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
+    let GetImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -569,7 +571,7 @@ module InterfaceStubGenerator =
                 None
         async {
             let symbolUses = 
-                getMemberNameAndRanges interfaceData
+                GetMemberNameAndRanges interfaceData
                 |> List.toArray
                 |> Array.map getMemberByLocation
             return symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
@@ -577,14 +579,14 @@ module InterfaceStubGenerator =
         }
 
     /// Check whether an entity is an interface or type abbreviation of an interface
-    let rec isInterface (e: FSharpEntity) =
-        e.IsInterface || (e.IsFSharpAbbreviation && isInterface e.AbbreviatedType.TypeDefinition)
+    let rec IsInterface (entity: FSharpEntity) =
+        entity.IsInterface || (entity.IsFSharpAbbreviation && IsInterface entity.AbbreviatedType.TypeDefinition)
 
     /// Generate stub implementation of an interface at a start column
-    let formatInterface startColumn indentation (typeInstances: string []) objectIdent
+    let FormatInterface startColumn indentation (typeInstances: string []) objectIdent
             (methodBody: string) (displayContext: FSharpDisplayContext) excludedMemberSignatures
             (e: FSharpEntity) verboseMode =
-        Debug.Assert(isInterface e, "The entity should be an interface.")
+        Debug.Assert(IsInterface e, "The entity should be an interface.")
         let lines = String.getLines methodBody
         use writer = new ColumnIndentedTextWriter()
         let typeParams = Seq.map getTypeParameterName e.GenericParameters
@@ -605,7 +607,7 @@ module InterfaceStubGenerator =
         let ctx = { Writer = writer; TypeInstantations = instantiations; ArgInstantiations = Seq.empty;
                     Indentation = indentation; ObjectIdent = objectIdent; MethodBody = lines; DisplayContext = displayContext }
         let missingMembers =
-            getInterfaceMembers e
+            GetInterfaceMembers e
             |> Seq.groupBy (fun (m, insts) ->               
                 match m with
                 | _ when isEventMember m  ->
@@ -669,7 +671,7 @@ module InterfaceStubGenerator =
             writer.Dump()
 
     /// Find corresponding interface declaration at a given position
-    let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
+    let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 
@@ -703,7 +705,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(TypeDefn(_componentInfo, representation, members, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -748,7 +750,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Inherit _ -> None
                 | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (Binding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
+        and walkBinding (SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
             walkExpr expr
 
         and walkExpr expr =
@@ -783,7 +785,7 @@ module InterfaceStubGenerator =
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (InterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)
@@ -799,18 +801,18 @@ module InterfaceStubGenerator =
                 | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr1, _, synExpr2, synExpr3, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
 
-                | SynExpr.ArrayOrListOfSeqExpr (_, synExpr, _range) ->
+                | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.CompExpr (_, _, synExpr, _range) ->
+                | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, synExpr, _, _range) ->
+                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
-                    synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e)
+                    synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
                 | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
                     walkExpr synExpr
-                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (Clause(_, _, e, _, _)) -> walkExpr e))
+                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
@@ -837,14 +839,14 @@ module InterfaceStubGenerator =
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (synExpr1, synExpr2, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
                     | None ->
                         List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.Ident (_ident) ->
+                | SynExpr.Ident _ident ->
                     None
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> 
@@ -862,13 +864,11 @@ module InterfaceStubGenerator =
                 | SynExpr.Set (synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.DotIndexedGet (synExpr, IndexerArgList synExprList, _range, _range2) -> 
-                    Option.orElse (walkExpr synExpr) (List.tryPick walkExpr synExprList) 
+                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> 
+                    Option.orElse (walkExpr synExpr) (walkExpr indexArgs)
 
-                | SynExpr.DotIndexedSet (synExpr1, IndexerArgList synExprList, synExpr2, _, _range, _range2) -> 
-                    [ yield synExpr1
-                      yield! synExprList
-                      yield synExpr2 ]
+                | SynExpr.DotIndexedSet (synExpr1, indexArgs, synExpr2, _, _range, _range2) -> 
+                    [ synExpr1; indexArgs; synExpr2 ]
                     |> List.tryPick walkExpr
 
                 | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) ->
@@ -891,8 +891,8 @@ module InterfaceStubGenerator =
                 | SynExpr.TraitCall (_synTyparList, _synMemberSig, synExpr, _range) ->
                     walkExpr synExpr
 
-                | SynExpr.Null (_range)
-                | SynExpr.ImplicitZero (_range) -> 
+                | SynExpr.Null _range
+                | SynExpr.ImplicitZero _range -> 
                     None
 
                 | SynExpr.YieldOrReturn (_, synExpr, _range)
@@ -903,7 +903,7 @@ module InterfaceStubGenerator =
                 | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
                     [
                         yield synExpr1
-                        for (_,_,_,_,eAndBang,_) in synExprAndBangs do
+                        for _,_,_,_,eAndBang,_ in synExprAndBangs do
                             yield eAndBang
                         yield synExpr2
                     ]
@@ -928,4 +928,3 @@ module InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
-#endif

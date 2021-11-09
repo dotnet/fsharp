@@ -1,14 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Diagnostics
 
-type DiagnosticKind =
+open FSharp.Compiler.ErrorResolutionHints
+
+[<RequireQualifiedAccess>]
+type FSharpDiagnosticKind =
     | AddIndexerDot
     | ReplaceWithSuggestion of suggestion:string
 
 [<RequireQualifiedAccess>]
 module CompilerDiagnostics =
-    let getErrorMessage diagnosticKind =
+
+    let GetErrorMessage diagnosticKind =
         match diagnosticKind with
-        | AddIndexerDot -> FSComp.SR.addIndexerDot()
-        | ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
+        | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot()
+        | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion(s)
+
+    let GetSuggestedNames (suggestionsF: FSharp.Compiler.ErrorLogger.Suggestions) (unresolvedIdentifier: string) =
+        let buffer = SuggestionBuffer(unresolvedIdentifier)
+        if buffer.Disabled then
+            Seq.empty
+        else
+            suggestionsF buffer.Add
+            buffer :> seq<string>

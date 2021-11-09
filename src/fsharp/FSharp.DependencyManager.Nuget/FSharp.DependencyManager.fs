@@ -13,7 +13,7 @@ open FSDependencyManager
 
 module FSharpDependencyManager =
     
-    [<assembly: DependencyManagerAttribute()>]
+    [<assembly: DependencyManager>]
     do ()
 
     let private concat (s:string) (v:string) : string =
@@ -26,7 +26,7 @@ module FSharpDependencyManager =
     let validateAndFormatRestoreSources (sources:string) = [|
             let items = sources.Split(';')
             for item in items do
-                let uri = new Uri(item)
+                let uri = Uri(item)
                 if uri.IsFile then
                     let directoryName = uri.LocalPath
                     if Directory.Exists(directoryName) then
@@ -94,7 +94,7 @@ module FSharpDependencyManager =
                     match value with
                     | Some v when v.ToLowerInvariant() = "true" -> setBinLogPath (Some None)      // auto-generated logging location
                     | Some v when v.ToLowerInvariant() = "false" -> setBinLogPath None          // no logging
-                    | Some path -> setBinLogPath (Some (Some (path))) // explicit logging location
+                    | Some path -> setBinLogPath (Some (Some path)) // explicit logging location
                     | None ->
                         // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
                         // this is fine
@@ -171,24 +171,24 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member _.Roots = roots
 
-[<DependencyManagerAttribute>] 
-type FSharpDependencyManager (outputDir:string option) =
+[<DependencyManager>] 
+type FSharpDependencyManager (outputDirectory:string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
-    let scriptsPath =
+    let workingDirectory =
         let path = Path.Combine(Path.GetTempPath(), key, Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
-        match outputDir with
+        match outputDirectory with
         | None -> path
         | Some v -> Path.Combine(path, v)
 
-    let generatedScripts = new ConcurrentDictionary<string,string>()
+    let generatedScripts = ConcurrentDictionary<string,string>()
 
     let deleteScripts () =
         try
 #if !Debug
-            if Directory.Exists(scriptsPath) then
-                Directory.Delete(scriptsPath, true)
+            if Directory.Exists(workingDirectory) then
+                Directory.Delete(workingDirectory, true)
 #else
             ()
 #endif
@@ -196,8 +196,8 @@ type FSharpDependencyManager (outputDir:string option) =
 
     let deleteAtExit =
         try
-            if not (File.Exists(scriptsPath)) then
-                Directory.CreateDirectory(scriptsPath) |> ignore
+            if not (Directory.Exists(workingDirectory)) then
+                Directory.CreateDirectory(workingDirectory) |> ignore
             true
         with | _ -> false
 
@@ -208,14 +208,14 @@ type FSharpDependencyManager (outputDir:string option) =
             sw.WriteLine(body)
         with | _ -> ()
 
-    let prepareDependencyResolutionFiles (scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int): PackageBuildResolutionResult =
+    let prepareDependencyResolutionFiles (scriptExt: string, directiveLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int): PackageBuildResolutionResult =
         let scriptExt =
             match scriptExt with
             | ".csx" -> csxExt
             | _ -> fsxExt
 
         let packageReferences, binLogPath, package_timeout =
-            packageManagerTextLines
+            directiveLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageDirective scriptExt
 
@@ -226,7 +226,7 @@ type FSharpDependencyManager (outputDir:string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
+        let projectPath = Path.Combine(workingDirectory, "Project.fsproj")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
@@ -260,24 +260,27 @@ type FSharpDependencyManager (outputDir:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int) : obj =
+    member this.ResolveDependencies(scriptDirectory: string, scriptName: string, scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string, timeout: int) : obj =
+        ignore scriptName
         let poundRprefix  =
             match scriptExt with
             | ".csx" -> "#r \""
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, packageManagerTextLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
+            let configIncludes = generateSourcesFromNugetConfigs scriptDirectory workingDirectory timeout
+            let directiveLines = Seq.append packageManagerTextLines configIncludes
+            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
             match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
-                    let scriptPath = resolutionResult.projectPath + scriptExt
-                    let scriptBody =  makeScriptFromReferences references poundRprefix
-                    emitFile scriptPath scriptBody
+                    let generatedScriptPath = resolutionResult.projectPath + scriptExt
+                    let generatedScriptBody =  makeScriptFromReferences references poundRprefix
+                    emitFile generatedScriptPath generatedScriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
-                    List.concat [ [scriptPath]; loads] |> List.toSeq
+                    List.concat [ [generatedScriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
                 ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, references, scripts, includes)

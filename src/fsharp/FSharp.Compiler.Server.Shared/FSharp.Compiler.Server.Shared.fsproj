@@ -3,7 +3,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <NGenBinary>true</NGenBinary>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>

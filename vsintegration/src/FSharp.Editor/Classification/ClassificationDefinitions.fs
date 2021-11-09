@@ -17,7 +17,8 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis.Classification
 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.EditorServices
 
 [<RequireQualifiedAccess>]
 module internal FSharpClassificationTypes =
@@ -61,11 +62,12 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.NamedArgument -> ClassificationTypeNames.LabelName
         | SemanticClassificationType.Event -> ClassificationTypeNames.EventName
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
-        | SemanticClassificationType.DisposableTopLevelValue
+        | SemanticClassificationType.DisposableTopLevelValue -> DisposableTopLevelValue
         | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
-        | SemanticClassificationType.DisposableLocalValue
+        | SemanticClassificationType.DisposableLocalValue -> DisposableLocalValue
         | SemanticClassificationType.LocalValue -> ClassificationTypeNames.LocalName
         | SemanticClassificationType.Plaintext -> ClassificationTypeNames.Text
+        | _ -> failwith "Compiler Bug: Unknown classification type"
 
 module internal ClassificationDefinitions =
 

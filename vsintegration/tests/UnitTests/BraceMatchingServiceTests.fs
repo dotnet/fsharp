@@ -9,7 +9,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.LanguageService
@@ -28,7 +28,6 @@ type BraceMatchingServiceTests()  =
         LoadTime = DateTime.MaxValue
         OriginalLoadReferences = []
         UnresolvedReferences = None
-        ExtraProjectInfo = None
         Stamp = None
     }
 
@@ -38,7 +37,7 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunImmediate with
         | None -> ()
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
@@ -51,7 +50,7 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunImmediate with
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 

@@ -6,17 +6,15 @@ This guide discusses the F# compiler source code and implementation from a techn
 
 There are several artifacts involved in the development of F#:
 
-* The [F# compiler library](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Compiler.Private), called `FSharp.Compiler.Private`. Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
+* The [F# compiler library](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.Compiler.Service), called `FSharp.Compiler.Service`. Contains all logic for F# compilation - including parsing, syntax tree processing, typechecking, constraint solving, optimizations, IL importing, IL writing, pretty printing of F# constructs, and F# metadata format processing - and the F# compiler APIs for tooling.
 
-* The [F# compiler executable](https://github.com/dotnet/fsharp/tree/master/src/fsharp/fsc), called `fsc`, which is called as a console app. It sets the .NET GC into batch mode and then invokes `FSharp.Compiler.Private` with command-line arguments.
+* The [F# compiler executable](https://github.com/dotnet/fsharp/tree/main/src/fsharp/fsc), called `fsc`, which is called as a console app. It sets the .NET GC into batch mode and then invokes `FSharp.Compiler.Service` with command-line arguments.
 
-* The [F# Core Library](https://github.com/dotnet/fsharp/tree/master/src/fsharp/FSharp.Core), called `FSharp.Core`. Contains all primitive F# types and logic for how they interact, core data structures and library functions for operating on them, structured printing logic, units of measure for scientific programming, core numeric functionality, F# quotations, F# type reflection logic, and asynchronous programming types and logic.
+* The [F# Core Library](https://github.com/dotnet/fsharp/tree/main/src/fsharp/FSharp.Core), called `FSharp.Core`. Contains all primitive F# types and logic for how they interact, core data structures and library functions for operating on them, structured printing logic, units of measure for scientific programming, core numeric functionality, F# quotations, F# type reflection logic, and asynchronous programming types and logic.
 
-* The [F# Interactive tool](https://github.com/dotnet/fsharp/tree/master/src/fsharp/fsi), called `fsi`. A REPL for F# that supports execution and pretty-printing of F# code and results, loading F# script files, referencing assemblies, and referencing packages from NuGet.
+* The [F# Interactive tool](https://github.com/dotnet/fsharp/tree/main/src/fsharp/fsi), called `fsi`. A REPL for F# that supports execution and pretty-printing of F# code and results, loading F# script files, referencing assemblies, and referencing packages from NuGet.
 
-* The [F# Compiler Service](https://github.com/dotnet/fsharp/tree/master/fcs), called `FSharp.Compiler.Service` or abbreviated to FCS. It is mostly identical to `FSharp.Compiler.Private`, but critically contains the "Expression API" that allows other environments to inspect and operate on type-checked F# expressions (such as transpiling F# code to a different runtime target).
-
-The `FSharp.Compiler.Private` is by far the largest of these components and contains nearly all logic that `fsc` and `fsi` use. It is the primary subject of this guide.
+The `FSharp.Compiler.Service` is by far the largest of these components and contains nearly all logic that `fsc` and `fsi` use. It is the primary subject of this guide.
 
 ## Resources for learning
 
@@ -30,21 +28,21 @@ The following are the key data formats and internal data representations of the 
 
 * _Input source files_  Read as Unicode text, or binary for referenced assemblies.
 
-* _Input command-line arguments_  See [CompileOptions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CompileOptions.fs) for the full code implementing the arguments table. Command-line arguments are also accepted by the F# Compiler Service API in project specifications, and as optional input to F# Interactive.
+* _Input command-line arguments_  See [CompilerOptions.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CompilerOptions.fs) for the full code implementing the arguments table. Command-line arguments are also accepted by the F# Compiler Service API in project specifications, and as optional input to F# Interactive.
 
-* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/master/src/fsharp/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/master/src/fsharp/lex.fsl), [lexhelp.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/lexhelp.fs) and related files.
+* _Tokens_, see [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/fsharp/pars.fsy), [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/fsharp/lex.fsl), [lexhelp.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/lexhelp.fs) and related files.
 
-* _Abstract Syntax Tree (AST)_, see [SyntaxTree.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/SyntaxTree.fs), the untyped syntax tree resulting from parsing.
+* _Abstract Syntax Tree (AST)_, see [SyntaxTree.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/SyntaxTree.fs), the untyped syntax tree resulting from parsing.
 
-* _Typed Abstract Syntax Tree (Typed Tree)_, see [TypedTree.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTree.fs), [TypedTreeBasics.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTree.fs), [TypedTreeOps.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreeOps.fs), and related files. The typed, bound syntax tree including both type/module definitions and their backing expressions, resulting from type checking and the subject of successive phases of optimization and representation change.
+* _Typed Abstract Syntax Tree (Typed Tree)_, see [TypedTree.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTree.fs), [TypedTreeBasics.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTree.fs), [TypedTreeOps.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTreeOps.fs), and related files. The typed, bound syntax tree including both type/module definitions and their backing expressions, resulting from type checking and the subject of successive phases of optimization and representation change.
 
-* _Type checking context/state_, see for example [`TcState` in CompileOps.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CompileOps.fsi) and its constituent parts, particularly `TcEnv` in [CheckExpressions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckExpressions.fsi) and `NameResolutionEnv` in [NameResolution.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/NameResolution.fsi). A set of tables representing the available names, assemblies etc. in scope during type checking, plus associated information.
+* _Type checking context/state_, see for example [`TcState` in ParseAndCheckInputs.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ParseAndCheckInputs.fsi) and its constituent parts, particularly `TcEnv` in [CheckExpressions.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CheckExpressions.fsi) and `NameResolutionEnv` in [NameResolution.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/NameResolution.fsi). A set of tables representing the available names, assemblies etc. in scope during type checking, plus associated information.
 
-* _Abstract IL_, the output of code generation, then used for binary generation, and the input format when reading .NET assemblies, see [`ILModuleDef` in il.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/il.fsi).
+* _Abstract IL_, the output of code generation, then used for binary generation, and the input format when reading .NET assemblies, see [`ILModuleDef` in il.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/il.fsi).
 
-* _The .NET Binary format_ (with added "pickled" F# Metadata resource), the final output of fsc.exe, see the ECMA 335 specification and the [ilread.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilread.fs) and [ilwrite.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilwrite.fs) binary reader/generator implementations. The added F# metadata is stored in a binary resource, see [TypedTreePickle.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreePickle.fs).
+* _The .NET Binary format_ (with added "pickled" F# Metadata resource), the final output of fsc.exe, see the ECMA 335 specification and the [ilread.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilread.fs) and [ilwrite.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilwrite.fs) binary reader/generator implementations. The added F# metadata is stored in a binary resource, see [TypedTreePickle.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTreePickle.fs).
 
-* _The incrementally emitted .NET reflection assembly,_ the incremental output of fsi.exe. See [ilreflect.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilreflect.fs).
+* _The incrementally emitted .NET reflection assembly,_ the incremental output of fsi.exe. See [ilreflect.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilreflect.fs).
 
 ## Key constructs and APIs for F# tooling
 
@@ -52,11 +50,11 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 * The incremental project build engine state in [IncrementalBuild.fsi](https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src/fsharp/service/IncrementalBuild.fsi)/[IncrementalBuild.fs](https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src/fsharp/service/IncrementalBuild.fs), a part of the F# Compiler Service API.
 
-* The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/master/src/fsharp/service) and [Symbol API](https://github.com/dotnet/fsharp/tree/master/src/fsharp/symbols).
+* The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service) and [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/symbols).
 
-* The [F# Compiler Service Operations Queue](fsharp-compiler-service-queue.md), the mechanism used to sequentially process requests that require semantic information.
+* The [F# Compiler Service Operations Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html), the mechanism used to sequentially process requests that require semantic information.
 
-* The [F# Compiler Service Caches](fsharp-compiler-service-caches.md), the various caches maintained by an instance of an `FSharpChecker`.
+* The [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Service/caches.html), the various caches maintained by an instance of an `FSharpChecker`.
 
 ## Key compiler phases
 
@@ -72,46 +70,46 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Parsing_. Accepts a token stream and produces an AST per the grammar in the F# Language Specification.
 
-* _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling. 
+* _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for
-   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. 
-   See [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/master/src/fsharp/Microsoft.DotNet.DependencyManager) for reference resolution and package management used in `fsi`.
+   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. 
+   See [DependencyManager](https://github.com/dotnet/fsharp/tree/main/src/fsharp/DependencyManager) for reference resolution and package management used in `fsi`.
 
-* _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
+* _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
 
-* _Importing referenced F# binaries and optimization information as Typed Tree data structures_, see [TypedTreePickle.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreePickle.fs). Accepts binary data and produces  Typed Tree nodes for each referenced assembly, including information about its type/module/function/member definitions.
+* _Importing referenced F# binaries and optimization information as Typed Tree data structures_, see [TypedTreePickle.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTreePickle.fs). Accepts binary data and produces  Typed Tree nodes for each referenced assembly, including information about its type/module/function/member definitions.
 
-* _Sequentially type checking files_, see [CheckDeclarations.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fsi)/[CheckDeclarations.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fs). Accepts an AST plus a type checking context/state and produces new Typed Tree nodes
+* _Sequentially type checking files_, see [CheckDeclarations.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CheckDeclarations.fsi)/[CheckDeclarations.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CheckDeclarations.fs). Accepts an AST plus a type checking context/state and produces new Typed Tree nodes
   incorporated into an updated type checking state, plus additional Typed Tree Expression nodes used during code generation.  A key part of this is
-  checking syntactic types and expressions, see [CheckExpressions.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fsi)/[CheckExpressions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fs) including the state held across the checking of a file (see `TcFileState`) and the
+  checking syntactic types and expressions, see [CheckExpressions.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CheckDeclarations.fsi)/[CheckExpressions.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CheckDeclarations.fs) including the state held across the checking of a file (see `TcFileState`) and the
   environment active as we traverse declarations and expressions (see `TcEnv`).
 
-* _Pattern match compilation_, see [PatternMatchCompilation.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PatternMatchCompilation.fsi)/[PatternMatchCompilation.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PatternMatchCompilation.fs). Accepts a subset of checked Typed Tree nodes representing F# pattern matching and produces Typed Tree expressions implementing the pattern matching. Called during type checking as each construct involving pattern matching is processed.
+* _Pattern match compilation_, see [PatternMatchCompilation.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fsi)/[PatternMatchCompilation.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PatternMatchCompilation.fs). Accepts a subset of checked Typed Tree nodes representing F# pattern matching and produces Typed Tree expressions implementing the pattern matching. Called during type checking as each construct involving pattern matching is processed.
 
-* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ConstraintSolver.fs).A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
+* _Constraint solving_, see [ConstraintSolver.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fsi)/[ConstraintSolver.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ConstraintSolver.fs).A constraint solver state is maintained during type checking of a single file, and constraints are progressively asserted (i.e. added to this state). Fresh inference variables are generated and variables are eliminated (solved). Variables are also generalized at various language constructs, or explicitly declared, making them "rigid". Called during type checking as each construct is processed.
 
-* _Post-inference type checks_, see [PostInferenceChecks.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PostInferenceChecks.fsi)/[PostInferenceChecks.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PostInferenceChecks.fs). Called at the end of type checking/inference for each file. A range of checks that can only be enforced after type checking on a file is complete, such as analysis when using `byref<'T>` or other `IsByRefLike` structs.
+* _Post-inference type checks_, see [PostInferenceChecks.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fsi)/[PostInferenceChecks.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/PostInferenceChecks.fs). Called at the end of type checking/inference for each file. A range of checks that can only be enforced after type checking on a file is complete, such as analysis when using `byref<'T>` or other `IsByRefLike` structs.
 
-* _Quotation translation_, see [QuotationTranslator.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/QuotationTranslator.fsi)/[QuotationTranslator.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/QuotationTranslator.fs)/[QuotationPickler.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/QuotationPickler.fsi)/[QuotationPickler.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/QuotationPickler.fs). Generates the stored information for F# quotation nodes, generated from the Typed Tree expression structures of the F# compiler. Quotations are ultimately stored as binary data plus some added type references. "ReflectedDefinition" quotations are collected and stored in a single blob.
+* _Quotation translation_, see [QuotationTranslator.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/QuotationTranslator.fsi)/[QuotationTranslator.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/QuotationTranslator.fs)/[QuotationPickler.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/QuotationPickler.fsi)/[QuotationPickler.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/QuotationPickler.fs). Generates the stored information for F# quotation nodes, generated from the Typed Tree expression structures of the F# compiler. Quotations are ultimately stored as binary data plus some added type references. "ReflectedDefinition" quotations are collected and stored in a single blob.
 
-* _Optimization phases_, primarily the "Optimize" (peephole/inlining) and "Top Level Representation" (lambda lifting) phases, see [Optimizer.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/Optimizer.fsi)/[Optimizer.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/Optimizer.fs) and [InnerLambdasToTopLevelFuncs.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/InnerLambdasToTopLevelFuncs.fsi)/[InnerLambdasToTopLevelFuncs.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [LowerCallsAndSeqs.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LowerCallsAndSeqs.fs). Each of these takes Typed Tree nodes for types and expressions and either modifies the nodes in place or produces new Typed Tree nodes. These phases are orchestrated in [CompileOptions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CompileOptions.fs)
+* _Optimization phases_, primarily the "Optimize" (peephole/inlining) and "Top Level Representation" (lambda lifting) phases, see [Optimizer.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fsi)/[Optimizer.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs) and [InnerLambdasToTopLevelFuncs.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fsi)/[InnerLambdasToTopLevelFuncs.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [LowerCallsAndSeqs.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs). Each of these takes Typed Tree nodes for types and expressions and either modifies the nodes in place or produces new Typed Tree nodes. These phases are orchestrated in [CompilerOptions.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/CompilerOptions.fs)
 
-* _Code generation_, see [IlxGen.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/IlxGen.fsi)/[IlxGen.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/IlxGen.fs). Accepts Typed Tree nodes and produces Abstract IL nodes, sometimes applying optimizations.
+* _Code generation_, see [IlxGen.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fsi)/[IlxGen.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs). Accepts Typed Tree nodes and produces Abstract IL nodes, sometimes applying optimizations.
 
-* _Abstract IL code rewriting_, see [EraseClosures.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ilx/EraseClosures.fs) and
-  [EraseUnions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ilx/EraseUnions.fs). Eliminates some constructs by rewriting Abstract IL nodes.
+* _Abstract IL code rewriting_, see [EraseClosures.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ilx/EraseClosures.fs) and
+  [EraseUnions.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/ilx/EraseUnions.fs). Eliminates some constructs by rewriting Abstract IL nodes.
   
-* _Binary emit_, see [ilwrite.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/absil/ilwrite.fsi)/[ilwrite.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilwrite.fs).
+* _Binary emit_, see [ilwrite.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilwrite.fsi)/[ilwrite.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilwrite.fs).
 
-* _Reflection-Emit_, see [ilreflect.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/absil/ilreflect.fs).
+* _Reflection-Emit_, see [ilreflect.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/absil/ilreflect.fs).
 
 These and transformations used to build the following:
 
-* _The F# Compiler Service API_, see the [Symbol API](https://github.com/dotnet/fsharp/tree/master/src/fsharp/symbols) and [Service API](https://github.com/dotnet/fsharp/tree/master/src/fsharp/service)
+* _The F# Compiler Service API_, see the [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/symbols) and [Service API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service)
 
-* _The F# Interactive Shell_, see [fsi.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/fsi/fsi.fs).
+* _The F# Interactive Shell_, see [fsi.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/fsi/fsi.fs).
 
-* _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/fsc.fs) and [fscmain.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/fscmain.fs).
+* _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/fsc.fs) and [fscmain.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/fscmain.fs).
 
 ## Tools to help work with the compiler
 
@@ -284,9 +282,9 @@ The previous example is considered incomplete, because arbitrary _combinations_ 
 
 ## Code Optimizations
 
-Code optimizations are performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/Optimizer.fs), [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/DetupleArgs.fs), [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LowerCallsAndSeqs.fs).
+Code optimizations are performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs), [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/DetupleArgs.fs), [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs) and [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs).
 
-Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/Optimizer.fs) are:
+Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/Optimizer.fs) are:
 
 * Propagation of known values (constants, x = y, lambdas, tuples/records/union-cases of known values)
 * Inlining of known lambda values
@@ -298,7 +296,7 @@ Some of the optimizations performed in [`Optimizer.fs`](https://github.com/dotne
 * Splitting large functions into multiple methods, especially at match cases, to avoid massive methods that take a long time to JIT
 * Removing tailcalls when it is determined that no code in the transitive closure does a tailcall nor recurses
 
-In [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/DetupleArgs.fs), tuples at call sites are eliminated if possible. Concretely, functions that accept a tuple at all call sites are replaced by functions that accept each of the tuple's arguments individually. This may require inlining to activate.
+In [`DetupleArgs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/DetupleArgs.fs), tuples at call sites are eliminated if possible. Concretely, functions that accept a tuple at all call sites are replaced by functions that accept each of the tuple's arguments individually. This may require inlining to activate.
 
 Considering the following example:
 
@@ -330,7 +328,7 @@ The inner function `offsetValues` will allocate a new tuple when called. However
 
 Currently, these optimizations are not applied to `struct` tuples or explicit `ValueTuple`s passed to a function. In most cases, this doesn't matter because the handling of `ValueTuple` is well-optimized and may be erased at runtime. However, in the previous `runWithTuple` function, the overhead of allocating a `ValueTuple` each call ends up being higher than the previous example with `inline` applied to `offsetValues`. This may be addressed in the future.
 
-In [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/InnerLambdasToTopLevelFuncs.fs), inner functions and lambdas are analyzed and, if possible, rewritten into separate methods that do not require an `FSharpFunc` allocation.
+In [`InnerLambdasToTopLevelFuncs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/InnerLambdasToTopLevelFuncs.fs), inner functions and lambdas are analyzed and, if possible, rewritten into separate methods that do not require an `FSharpFunc` allocation.
 
 Consider the following implementation of `sumBy` on an F# list:
 
@@ -345,7 +343,7 @@ let sumBy f xs =
 
 The inner `loop` function is emitted as a separate static method named `loop@2` and incurs no overhead involved with allocatin an `FSharpFunc` at runtime.
 
-In [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LowerCallsAndSeqs.fs), a few optimizations are performed:
+In [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs), a few optimizations are performed:
 
 * Performs eta-expansion on under-applied values applied to lambda expressions and does a beta-reduction to bind any known arguments
 * Analyzes a sequence expression and translates it into a state machine so that operating on sequences doesn't incur significant closure overhead
@@ -475,7 +473,7 @@ For example, commands like Find All References and Rename can be cheap if a code
 
 In contrast, actions like highlighting all symbols in a document aren't terribly expensive even for very large file files. That's because the symbols to be inspected are ultimately only in a single document.
 
-Operations that use typecheck data execute on a single background thread (see [Reactor.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/service/Reactor.fsi)/[Reactor.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/service/Reactor.fs)). Each operation is cancellable - for example, if you run an expensive Find All References but decide to do something else, the next action you take that requires semantic data will cancel the Find All References operation and start the one you requested.
+Operations that use typecheck data execute on a single background thread (see [Reactor.fsi](https://github.com/dotnet/fsharp/blob/main/src/fsharp/service/Reactor.fsi)/[Reactor.fs](https://github.com/dotnet/fsharp/blob/main/src/fsharp/service/Reactor.fs)). Each operation is cancellable - for example, if you run an expensive Find All References but decide to do something else, the next action you take that requires semantic data will cancel the Find All References operation and start the one you requested.
 
 TODO for don --> why single-threaded? why no priority queue if can't be multithreaded?
 
@@ -530,7 +528,7 @@ Some key things to understand are:
 
 The biggest question is: could the compiler share this data across projects? In theory, yes. In practice, it's very tricky business.
 
-From a correctness point of view: the process of generating this blob (TypedTreePickle `p_XYZ`) and resurrecting it (TypedTreePickle `u_*`) does some transformations to the Typed Tree that are necessary for correctness of compilation, for example, [in `TypedTreePickle`](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreePickle.fs#L737). Basically, the Typed Tree nodes from the compilation of one assembly are _not_ valid when compiling a different assembly.
+From a correctness point of view: the process of generating this blob (TypedTreePickle `p_XYZ`) and resurrecting it (TypedTreePickle `u_*`) does some transformations to the Typed Tree that are necessary for correctness of compilation, for example, [in `TypedTreePickle`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/TypedTreePickle.fs#L738). Basically, the Typed Tree nodes from the compilation of one assembly are _not_ valid when compiling a different assembly.
 
 The Typed Tree nodes include `CcuData` nodes, which have access to a number of callbacks into the `TcImports` compilation context for the assembly being compiled. TypedTree nodes are effectively tied to a particular compilation of a particular assembly due to this.
 
@@ -542,7 +540,7 @@ From a lifetime point of view: the Typed Tree nodes are tied together in a graph
 
 Some parts of the F# codebase (specifically, the type checker) are written using `eventually` computation expressions. These define resumption-like computations which can be  time-sliced, suspended or discarded at "bind" points.
 
-This is done to ensure that long-running type-checking and other computations in the F# Compiler Service can be interrupted and cancelled. The documentation of the [F# Compiler Service Operations Queue](fsharp-compiler-service-queue.md) covers some aspects of this.
+This is done to ensure that long-running type-checking and other computations in the F# Compiler Service can be interrupted and cancelled. The documentation of the [F# Compiler Service Operations Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html) covers some aspects of this.
 
 When compiling code with `fsc` or executing code with `fsi`, these computations are not time-sliced and simply run synchronously and without interruption (unless the user requests it).
 
@@ -566,28 +564,28 @@ The "intended" FCS API is the parts under the namespaces
 * FSharp.Compiler.SourceCodeServices.* (analysis, compilation, tooling, lexing)
 * FSharp.Compiler.Interactive.Shell.*  (scripting support)
 * FSharp.Compiler.AbstractIL.*  (for ILAssemblyReader hook for Rider)
-* FSharp.Compiler.SyntaxTree.*  (direct access to full untyped tree)
+* FSharp.Compiler.Syntax.*  (direct access to full untyped tree)
 
 These sections are generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.)
 and we will continue to iterate to make this so.
 
 In contrast, the public parts of the compiler directly under `FSharp.Compiler.*` and `FSharp.AbstractIL.*` are
-"incidental" and not really designed for public use apart from the hook for Jet Brains Rider
-(Aside: In theory all these other parts could be renamed to FSharp.Compiler.Internal though there's no need to do that right now).  
+"incidental" and not really designed for public use apart from the hook for JetBrains Rider
+(Aside: In theory all these other parts could be renamed to FSharp.Compiler though there's no need to do that right now).  
 These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
 
 
 ### The F# Compiler Service Operations Queue
 
-See [F# Compiler Service Queue](fsharp-compiler-service-queue.md).
+See [F# Compiler Service Queue](https://fsharp.github.io/FSharp.Compiler.Service/queue.html).
 
 ### The F# Compiler Service Caches
 
-See [F# Compiler Service Caches](fsharp-compiler-service-caches.md).
+See [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Service/caches.html).
 
 ## Bootstrapping
 
-The F# compiler is boostrapped. That is, an existing F# compiler is used to build a "proto" compiler from the current source code. That "proto" compiler is then used to compile itself, producing a "final" compiler. This ensures the final compiler is compiled with all relevant optimizations and fixes.
+The F# compiler is bootstrapped. That is, an existing F# compiler is used to build a "proto" compiler from the current source code. That "proto" compiler is then used to compile itself, producing a "final" compiler. This ensures the final compiler is compiled with all relevant optimizations and fixes.
 
 ## FSharp.Build
 
@@ -595,4 +593,4 @@ The F# compiler is boostrapped. That is, an existing F# compiler is used to buil
 
 ### Attribution
 
-This document is based heavily on an [original document](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) published in 2015 by the [F# Software Foundation](http://fsharp.org).
+This document is based on an original document published in 2015 by the [F# Software Foundation](http://fsharp.org). It has since been updated substantially.

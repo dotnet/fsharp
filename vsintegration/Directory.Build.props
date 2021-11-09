@@ -5,6 +5,8 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <SetupProductArch>Neutral</SetupProductArch>
+    <BypassVsixValidation>true</BypassVsixValidation>
   </PropertyGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
