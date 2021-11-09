@@ -136,8 +136,8 @@ let (|SeqWhile|_|) g expr =
          when not (isVarFreeInExpr dummyv gd) ->
         
         // The debug point for 'while' is attached to the second argument, see TcSequenceExpression
-        let dpWhile = arg2.Range
-        Some (gd, arg2, dpWhile, m)
+        let mWhile = arg2.Range
+        Some (gd, arg2, mWhile, m)
 
     | _ ->
         None
@@ -351,7 +351,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | _ ->
                 None
 
-        | SeqWhile g (guardExpr, bodyExpr, dpWhile, m) ->
+        | SeqWhile g (guardExpr, bodyExpr, mWhile, m) ->
             // printfn "found Seq.while"
             let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
             match resBody with
@@ -364,7 +364,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
                 Some { phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (DebugPointAtWhile.Yes dpWhile, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
+                            let generate = mkWhile g (DebugPointAtWhile.Yes mWhile, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose)

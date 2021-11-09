@@ -5,7 +5,6 @@
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net5.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
-	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
