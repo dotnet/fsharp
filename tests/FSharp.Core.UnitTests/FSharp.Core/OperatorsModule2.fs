@@ -14,6 +14,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 
 open Xunit
 
+#nowarn "3370"
 
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.

@@ -323,7 +323,7 @@ type AsyncModule() =
             let cts = new System.Threading.CancellationTokenSource()
             let go e (flag : bool ref) = async {
                 let! _ = Async.AwaitWaitHandle e
-                use! _holder = Async.OnCancel(fun () -> flag := true)
+                use! _holder = Async.OnCancel(fun () -> flag.Value <- true)
                 while true do
                     do! Async.Sleep 100
                 }
@@ -337,7 +337,7 @@ type AsyncModule() =
 
             let ok = wait finish 3000
             Assert.True(ok, "Computation should be completed")
-            Assert.False(!cancelledWasCalled, "Cancellation handler should not be called")
+            Assert.False(cancelledWasCalled.Value, "Cancellation handler should not be called")
 
         for _i = 1 to 3 do test()
 
@@ -412,14 +412,14 @@ type AsyncModule() =
             let old = System.Threading.SynchronizationContext.Current
             System.Threading.SynchronizationContext.SetSynchronizationContext(syncContext)
             let longRunningTask = async { sleep(5000) }
-            let failed = ref false
+            let mutable failed = false
             try
                 Async.RunSynchronously(longRunningTask, timeout = 500)
-                failed := true
+                failed <- true
             with
                 :? System.TimeoutException -> ()
             System.Threading.SynchronizationContext.SetSynchronizationContext(old)
-            if !failed then Assert.Fail("TimeoutException expected")
+            if failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
 
@@ -458,17 +458,17 @@ type AsyncModule() =
     member _.``error on one workflow should cancel all others``() =
         let counter = 
             async {
-                let counter = ref 0
+                let mutable counter = 0
                 let job i = async { 
                     if i = 55 then failwith "boom" 
                     else 
                         do! Async.Sleep 1000 
-                        incr counter 
+                        counter <- counter + 1
                 }
 
                 let! _ = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch
                 do! Async.Sleep 5000
-                return !counter
+                return counter
             } |> Async.RunSynchronously
 
         Assert.AreEqual(0, counter)
@@ -489,24 +489,24 @@ type AsyncModule() =
         
     [<Fact>]
     member _.``FromContinuationsCanTailCallCurrentThread``() = 
-        let cnt = ref 0
+        let mutable cnt = 0
         let origTid = System.Threading.Thread.CurrentThread.ManagedThreadId 
-        let finalTid = ref -1
+        let mutable finalTid = -1
         let rec f n =
             if n = 0 then
                 async { 
-                    finalTid := System.Threading.Thread.CurrentThread.ManagedThreadId
+                    finalTid <- System.Threading.Thread.CurrentThread.ManagedThreadId
                     return () }
             else
                 async {
-                    incr cnt
+                    cnt <- cnt + 1
                     do! Async.FromContinuations(fun (k,_,_) -> k())
                     do! f (n-1) 
                 }
         // 5000 is big enough that does-not-stackoverflow means we are tailcalling thru FromContinuations
         f 5000 |> Async.StartImmediate 
-        Assert.AreEqual(origTid, !finalTid)
-        Assert.AreEqual(5000, !cnt)
+        Assert.AreEqual(origTid, finalTid)
+        Assert.AreEqual(5000, cnt)
 
     [<Fact>]
     member _.``AwaitWaitHandle With Cancellation``() = 
@@ -537,26 +537,26 @@ type AsyncModule() =
     member _.``StartWithContinuationsVersusDoBang``() = 
         // worthwhile to note these three
         // case 1
-        let r = ref ""
+        let mutable r = ""
         async {
             try
                 do! Async.FromContinuations(fun (s, _, _) -> s())
                 return failwith "boom"
             with
-                e-> r := e.Message 
+                e-> r <- e.Message 
             } |> Async.RunSynchronously 
-        Assert.AreEqual("boom", !r)
+        Assert.AreEqual("boom", r)
         // case 2
-        r := ""
+        r <- ""
         try
-            Async.StartWithContinuations(Async.FromContinuations(fun (s, _, _) -> s()), (fun () -> failwith "boom"), (fun e -> r := e.Message), (fun oce -> ()))
+            Async.StartWithContinuations(Async.FromContinuations(fun (s, _, _) -> s()), (fun () -> failwith "boom"), (fun e -> r <- e.Message), (fun oce -> ()))
         with
-            e -> r := "EX: " + e.Message
-        Assert.AreEqual("EX: boom", !r)
+            e -> r <- "EX: " + e.Message
+        Assert.AreEqual("EX: boom", r)
         // case 3
-        r := ""
-        Async.StartWithContinuations(async { return! failwith "boom" }, (fun x -> ()), (fun e -> r := e.Message), (fun oce -> ()))
-        Assert.AreEqual("boom", !r)
+        r <- ""
+        Async.StartWithContinuations(async { return! failwith "boom" }, (fun x -> ()), (fun e -> r <- e.Message), (fun oce -> ()))
+        Assert.AreEqual("boom", r)
 
 
 #if IGNORED
@@ -679,15 +679,15 @@ type AsyncModule() =
     member _.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
         let counter =
             async {
-                let counter = ref 0
+                let mutable counter = 0
                 let job i = async {
                     if i = 55 then failwith "boom"
                     else
-                        incr counter
+                        counter <- counter + 1
                 }
 
                 let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 1) |> Async.Catch
-                return !counter
+                return counter
             } |> Async.RunSynchronously
 
         Assert.AreEqual(54, counter)

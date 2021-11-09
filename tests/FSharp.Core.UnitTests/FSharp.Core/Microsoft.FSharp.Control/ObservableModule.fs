@@ -119,8 +119,9 @@ type ObservableModule() =
             kexp.BroadcastSignal
             |> Observable.filter(fun broadEventArgs -> broadEventArgs.Message.Contains("Flight of the Penguins"))
         
-        let songsHeard = ref []
-        fotpSongs.Add(fun rbEventArgs -> songsHeard := rbEventArgs.Message :: !songsHeard)
+        let mutable songsHeard = []
+        fotpSongs.Add(fun rbEventArgs -> 
+            songsHeard <- rbEventArgs.Message :: songsHeard)
         
         // Firing the main event, we should only listen in on those we want to hear
         kexp.BeginBroadcasting(
@@ -131,8 +132,8 @@ type ObservableModule() =
                 "Flight of the Penguins - song 2"
             ])
 
-        Assert.AreEqual(!songsHeard, ["Flight of the Penguins - song 2"; 
-                                      "Flight of the Penguins - song 1"])
+        Assert.AreEqual(songsHeard, ["Flight of the Penguins - song 2"; 
+                                     "Flight of the Penguins - song 1"])
         ()
 
     [<Fact>]
@@ -141,9 +142,10 @@ type ObservableModule() =
         let kqfc = new RadioStation(90.3, "KEXP")
         
 
-        let timesListened = ref 0
+        let mutable timesListened = 0
         kqfc.BroadcastSignal
-        |> Observable.add(fun rbEventArgs -> incr timesListened)
+        |> Observable.add(fun rbEventArgs -> 
+            timesListened <- timesListened + 1)
 
         kqfc.BeginBroadcasting(
             [
@@ -153,7 +155,7 @@ type ObservableModule() =
             ])
             
         // The broadcast event should have fired 3 times
-        Assert.AreEqual(!timesListened, 3)
+        Assert.AreEqual(timesListened, 3)
     
         ()
 
@@ -185,15 +187,16 @@ type ObservableModule() =
         
         let numberEvent = Observable.merge evensEvent.Publish oddsEvent.Publish
         
-        let lastResult = ref 0
-        numberEvent.Add(fun i -> lastResult := i)
+        let mutable lastResult = 0
+        numberEvent.Add(fun i -> 
+            lastResult <- i)
         
         // Verify triggering either the evens or oddsEvent fires the 'numberEvent'
         evensEvent.Trigger(2)
-        Assert.AreEqual(!lastResult, 2)
+        Assert.AreEqual(lastResult, 2)
 
         oddsEvent.Trigger(3)
-        Assert.AreEqual(!lastResult, 3)
+        Assert.AreEqual(lastResult, 3)
         
         ()
 
@@ -204,18 +207,19 @@ type ObservableModule() =
         
         let pairwiseEvent = Observable.pairwise numEvent.Publish
         
-        let lastResult = ref (-1, -1)
-        pairwiseEvent.Add(fun (x, y) -> lastResult := (x, y))
+        let mutable lastResult = (-1, -1)
+        pairwiseEvent.Add(fun (x, y) -> 
+            lastResult <- (x, y))
 
         // Verify not fired until second call        
         numEvent.Trigger(1)
-        Assert.AreEqual(!lastResult, (-1, -1))
+        Assert.AreEqual(lastResult, (-1, -1))
         
         numEvent.Trigger(2)
-        Assert.AreEqual(!lastResult, (1, 2))
+        Assert.AreEqual(lastResult, (1, 2))
         
         numEvent.Trigger(3)
-        Assert.AreEqual(!lastResult, (2, 3))
+        Assert.AreEqual(lastResult, (2, 3))
         
         ()
         

@@ -33,7 +33,7 @@ type MultiArgDelegate6 = delegate of obj * int * string * bool * int * string * 
 type EventModule() =
     
     [<Fact>]
-    member this.Choose() = 
+    member _.Choose() = 
         
         let coffeeCup = new EventfulCoffeeCup(10.0<ml>, 10.0<ml>)
         
@@ -64,7 +64,7 @@ type EventModule() =
         ()
 
     [<Fact>]
-    member this.Filter() = 
+    member _.Filter() = 
     
         let kexp = new RadioStation(90.3, "KEXP")
         
@@ -72,8 +72,8 @@ type EventModule() =
             kexp.BroadcastSignal
             |> Event.filter(fun broadEventArgs -> broadEventArgs.Message.Contains("Flight of the Penguins"))
         
-        let songsHeard = ref []
-        fotpSongs.Add(fun rbEventArgs -> songsHeard := rbEventArgs.Message :: !songsHeard)
+        let mutable songsHeard = []
+        fotpSongs.Add(fun rbEventArgs -> songsHeard <- rbEventArgs.Message :: songsHeard)
         
         // Firing the main event, we should only listen in on those we want to hear
         kexp.BeginBroadcasting(
@@ -84,19 +84,20 @@ type EventModule() =
                 "Flight of the Penguins - song 2"
             ])
 
-        Assert.AreEqual(!songsHeard, ["Flight of the Penguins - song 2"; 
-                                      "Flight of the Penguins - song 1"])
+        Assert.AreEqual(songsHeard, ["Flight of the Penguins - song 2"; 
+                                     "Flight of the Penguins - song 1"])
         ()
 
     [<Fact>]
-    member this.Listen() = 
+    member _.Listen() = 
     
         let kqfc = new RadioStation(90.3, "KEXP")
         
 
-        let timesListened = ref 0
+        let mutable timesListened = 0
         kqfc.BroadcastSignal
-        |> Event.add(fun rbEventArgs -> incr timesListened)
+        |> Event.add(fun rbEventArgs -> 
+            timesListened <- timesListened + 1)
 
         kqfc.BeginBroadcasting(
             [
@@ -106,12 +107,12 @@ type EventModule() =
             ])
             
         // The broadcast event should have fired 3 times
-        Assert.AreEqual(!timesListened, 3)
+        Assert.AreEqual(timesListened, 3)
     
         ()
 
     [<Fact>]
-    member this.Map() = 
+    member _.Map() = 
     
         let numEvent = new Event<int>()
         
@@ -119,84 +120,85 @@ type EventModule() =
             numEvent.Publish
             |> Event.map(fun i -> i.ToString())
         
-        let results = ref ""
+        let mutable results = ""
         
-        getStr |> Event.add(fun msg -> results := msg + !results)
+        getStr |> Event.add(fun msg -> 
+            results <- msg + results)
         
         numEvent.Trigger(1)
         numEvent.Trigger(22)
         numEvent.Trigger(333)
         
-        Assert.AreEqual(!results, "333221")
+        Assert.AreEqual(results, "333221")
         ()
 
     [<Fact>]
-    member this.Merge() =
+    member _.Merge() =
         
         let evensEvent = new Event<int>()
         let oddsEvent  = new Event<int>()
         
         let numberEvent = Event.merge evensEvent.Publish oddsEvent.Publish
         
-        let lastResult = ref 0
-        numberEvent.Add(fun i -> lastResult := i)
+        let mutable lastResult = 0
+        numberEvent.Add(fun i -> lastResult <- i)
         
         // Verify triggering either the evens or oddsEvent fires the 'numberEvent'
         evensEvent.Trigger(2)
-        Assert.AreEqual(!lastResult, 2)
+        Assert.AreEqual(lastResult, 2)
 
         oddsEvent.Trigger(3)
-        Assert.AreEqual(!lastResult, 3)
+        Assert.AreEqual(lastResult, 3)
         
         ()
 
     [<Fact>]
-    member this.Pairwise() = 
+    member _.Pairwise() = 
     
         let numEvent = new Event<int>()
         
         let pairwiseEvent = Event.pairwise numEvent.Publish
         
-        let lastResult = ref (-1, -1)
-        pairwiseEvent.Add(fun (x, y) -> lastResult := (x, y))
+        let mutable lastResult = (-1, -1)
+        pairwiseEvent.Add(fun (x, y) -> lastResult <- (x, y))
 
         // Verify not fired until second call        
         numEvent.Trigger(1)
-        Assert.AreEqual(!lastResult, (-1, -1))
+        Assert.AreEqual(lastResult, (-1, -1))
         
         numEvent.Trigger(2)
-        Assert.AreEqual(!lastResult, (1, 2))
+        Assert.AreEqual(lastResult, (1, 2))
         
         numEvent.Trigger(3)
-        Assert.AreEqual(!lastResult, (2, 3))
+        Assert.AreEqual(lastResult, (2, 3))
         
         ()
         
     [<Fact>]
-    member this.Partition() = 
+    member _.Partition() = 
     
         let numEvent = new Event<int>()
         
         let oddsEvent, evensEvent = Event.partition (fun i -> (i % 2 = 1)) numEvent.Publish
         
-        let lastOdd = ref 0
-        oddsEvent.Add(fun i -> lastOdd := i)
+        let mutable lastOdd = 0
+        oddsEvent.Add(fun i -> lastOdd <- i)
         
-        let lastEven = ref 0
-        evensEvent.Add(fun i -> lastEven := i)
+        let mutable lastEven = 0
+        evensEvent.Add(fun i -> lastEven <- i)
         
         numEvent.Trigger(1)
-        Assert.AreEqual(1, !lastOdd)
-        Assert.AreEqual(0,!lastEven)
+        Assert.AreEqual(1, lastOdd)
+        Assert.AreEqual(0, lastEven)
         
         numEvent.Trigger(2)
-        Assert.AreEqual(1, !lastOdd) // Not updated
-        Assert.AreEqual(2, !lastEven)
+        Assert.AreEqual(1, lastOdd) // Not updated
+        Assert.AreEqual(2, lastEven)
 
         ()
  
     [<Fact>]
-    member this.Scan() = 
+    member _.Scan() = 
     
         let numEvent = new Event<int>()
         
@@ -219,7 +221,7 @@ type EventModule() =
         ()
         
     [<Fact>]
-    member this.Split() = 
+    member _.Split() = 
     
         let numEvent = new Event<int>()
         
@@ -228,31 +230,33 @@ type EventModule() =
             numEvent.Publish |> Event.split(fun i -> if i > 0 then Choice1Of2(i.ToString(), i)
                                                           else          Choice2Of2(i.ToString(), i.ToString()))
                  
-        let lastResult = ref ""
-        positiveEvent.Add(fun (msg, i)    -> lastResult := sprintf "Positive [%s][%d]" msg i)
-        negativeEvent.Add(fun (msg, msg2) -> lastResult := sprintf "Negative [%s][%s]" msg msg2)
+        let mutable lastResult = ""
+        positiveEvent.Add(fun (msg, i)    -> lastResult <- sprintf "Positive [%s][%d]" msg i)
+        negativeEvent.Add(fun (msg, msg2) -> lastResult <- sprintf "Negative [%s][%s]" msg msg2)
         
         numEvent.Trigger(10)
-        Assert.AreEqual("Positive [10][10]", !lastResult)
+        Assert.AreEqual("Positive [10][10]", lastResult)
         
         numEvent.Trigger(-3)
-        Assert.AreEqual("Negative [-3][-3]", !lastResult)
+        Assert.AreEqual("Negative [-3][-3]", lastResult)
         
         ()
 
     [<Fact>]
-    member this.InternalDelegate() = 
+    member _.InternalDelegate() = 
         let event = new Event<InternalDelegate, unit>()
         let p = event.Publish
         use s = p.Subscribe(fun _ -> ())
         event.Trigger(null, ())
 
     [<Fact>]
-    member this.MultipleArguments() =  
-        let count = ref 0
+    member _.MultipleArguments() =  
+        let mutable count = 0
         let test (evt : Event<_, _>) arg = 
             let p = evt.Publish
-            use s = p.Subscribe(fun _ -> incr count)
+            use s = 
+                p.Subscribe(fun _ -> 
+                   count <- count + 1)
             evt.Trigger(null, arg)
 
         test (new Event<MultiArgDelegate2, _>()) (1, "")
@@ -261,6 +265,6 @@ type EventModule() =
         test (new Event<MultiArgDelegate5, _>()) (1, "", true, 1, "")
         test (new Event<MultiArgDelegate6, _>()) (1, "", true, 1, "", true)
 
-        Assert.AreEqual(5, !count)
+        Assert.AreEqual(5, count)
 
         

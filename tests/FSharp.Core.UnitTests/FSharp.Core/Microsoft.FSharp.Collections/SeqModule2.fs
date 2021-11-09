@@ -379,23 +379,22 @@ type SeqModule2() =
     
         //seq int
         let seqint =  seq [ 1..3]
-        let cacheint = ref 0
+        let mutable cacheint = 0
        
-        let funcint x y = cacheint := !cacheint + x+y
+        let funcint x y = cacheint <- cacheint + x+y
         Seq.iter2 funcint seqint seqint
-        Assert.AreEqual(12,!cacheint)
+        Assert.AreEqual(12, cacheint)
               
         //seq str
         let seqStr = seq ["first";"second"]
-        let cachestr =ref ""
-        let funcstr x y = cachestr := !cachestr+x+y
+        let mutable cachestr = ""
+        let funcstr x y = cachestr <- cachestr+x+y
         Seq.iter2 funcstr seqStr seqStr
          
-        Assert.AreEqual("firstfirstsecondsecond",!cachestr)
+        Assert.AreEqual("firstfirstsecondsecond",cachestr)
         
          // empty array    
         let emptyseq = Seq.empty
-        let resultEpt = ref 0
         Seq.iter2 (fun x y-> Assert.Fail()) emptyseq  emptyseq 
 
         // null seqay
@@ -409,25 +408,25 @@ type SeqModule2() =
     
         // seq int
         let seqint =  seq [ 1..10]
-        let cacheint = ref 0
+        let mutable cacheint = 0
        
-        let funcint x y = cacheint := !cacheint + x+y
+        let funcint x y = cacheint <- cacheint + x+y
         Seq.iteri funcint seqint
-        Assert.AreEqual(100,!cacheint)
+        Assert.AreEqual(100, cacheint)
               
         // seq str
         let seqStr = seq ["first";"second"]
-        let cachestr =ref 0
-        let funcstr (x:int) (y:string) = cachestr := !cachestr+ x + y.Length
+        let mutable cachestr = 0
+        let funcstr (x:int) (y:string) = cachestr <- cachestr+ x + y.Length
         Seq.iteri funcstr seqStr
          
-        Assert.AreEqual(12,!cachestr)
+        Assert.AreEqual(12, cachestr)
         
          // empty array    
         let emptyseq = Seq.empty
-        let resultEpt = ref 0
+        let mutable resultEpt = 0
         Seq.iteri funcint emptyseq
-        Assert.AreEqual(0,!resultEpt)
+        Assert.AreEqual(0, resultEpt)
 
         // null seqay
         let nullseq:seq<'a> =  null
@@ -439,23 +438,22 @@ type SeqModule2() =
 
         //seq int
         let seqint = seq [ 1..3]
-        let cacheint = ref 0
+        let mutable cacheint = 0
        
-        let funcint x y z = cacheint := !cacheint + x + y + z
+        let funcint x y z = cacheint <- cacheint + x + y + z
         Seq.iteri2 funcint seqint seqint
-        Assert.AreEqual(15,!cacheint)
+        Assert.AreEqual(15, cacheint)
               
         //seq str
         let seqStr = seq ["first";"second"]
-        let cachestr = ref 0
-        let funcstr (x:int) (y:string) (z:string) = cachestr := !cachestr + x + y.Length + z.Length
+        let mutable cachestr = 0
+        let funcstr (x:int) (y:string) (z:string) = cachestr <- cachestr + x + y.Length + z.Length
         Seq.iteri2 funcstr seqStr seqStr
          
-        Assert.AreEqual(23,!cachestr)
+        Assert.AreEqual(23, cachestr)
         
         // empty seq
         let emptyseq = Seq.empty
-        let resultEpt = ref 0
         Seq.iteri2 (fun x y z -> Assert.Fail()) emptyseq emptyseq 
 
         // null seq
@@ -467,10 +465,10 @@ type SeqModule2() =
         let longerSeq = seq { 2..2..100 }
 
         let testSeqLengths seq1 seq2 =
-            let cache = ref 0
-            let f x y z = cache := !cache + x + y + z
+            let mutable cache = 0
+            let f x y z = cache <- cache + x + y + z
             Seq.iteri2 f seq1 seq2
-            !cache
+            cache
 
         Assert.AreEqual(21, testSeqLengths shorterSeq longerSeq)
         Assert.AreEqual(21, testSeqLengths longerSeq shorterSeq)
@@ -503,9 +501,9 @@ type SeqModule2() =
 
          // integer Seq
         let funcInt x = 
-                match x with
-                | _ when x % 2 = 0 -> 10*x            
-                | _ -> x
+            match x with
+            | _ when x % 2 = 0 -> 10*x            
+            | _ -> x
        
         let resultInt = Seq.map funcInt { 1..10 }
         let expectedint = seq [1;20;3;40;5;60;7;80;9;100]
@@ -639,40 +637,40 @@ type SeqModule2() =
         ()
 
     member private this.MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
-        let i = ref 0
-        let f x = i := !i + 1; x*x
+        let mutable i = 0
+        let f x = i <- i + 1; x*x
         let e = ([1;2] |> map f).GetEnumerator()
         
         if expectExceptions then
             CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-            Assert.AreEqual(0, !i)
+            Assert.AreEqual(0, i)
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
 
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         if expectExceptions then
             CheckThrowsInvalidOperationExn (fun _ -> e.Current |> ignore)
-            Assert.AreEqual(2, !i)
+            Assert.AreEqual(2, i)
 
         
-        i := 0
+        i <- 0
         let e = ([] |> map f).GetEnumerator()
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
         
         
     member private this.MapWithExceptionTester (map : (int -> int) -> seq<int> -> seq<int>) =
@@ -710,105 +708,105 @@ type SeqModule2() =
         
     [<Fact>]
     member _.MapiWithSideEffects () =
-        let i = ref 0
-        let f _ x = i := !i + 1; x*x
+        let mutable i = 0
+        let f _ x = i <- i + 1; x*x
         let e = ([1;2] |> Seq.mapi f).GetEnumerator()
         
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(0, !i)
+        Assert.AreEqual(0, i)
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         
-        i := 0
+        i <- 0
         let e = ([] |> Seq.mapi f).GetEnumerator()
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0,i)
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0,i)
         
     [<Fact>]
     member _.Map2WithSideEffects () =
-        let i = ref 0
-        let f x y = i := !i + 1; x*x
+        let mutable i = 0
+        let f x y = i <- i + 1; x*x
         let e = (Seq.map2 f [1;2] [1;2]).GetEnumerator()
         
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(0, !i)
+        Assert.AreEqual(0, i)
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
 
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(2,!i)
+        Assert.AreEqual(2, i)
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         
-        i := 0
+        i <- 0
         let e = (Seq.map2 f [] []).GetEnumerator()
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
         
     [<Fact>]
     member _.Mapi2WithSideEffects () =
-        let i = ref 0
-        let f _ x y = i := !i + 1; x*x
+        let mutable i = 0
+        let f _ x y = i <- i + 1; x*x
         let e = (Seq.mapi2 f [1;2] [1;2]).GetEnumerator()
 
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(0, !i)
+        Assert.AreEqual(0, i)
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
         let _ = e.Current
-        Assert.AreEqual(1, !i)
+        Assert.AreEqual(1, i)
 
         if not (e.MoveNext()) then Assert.Fail()
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
         let _ = e.Current
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
 
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(2,!i)
+        Assert.AreEqual(2, i)
         CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
-        Assert.AreEqual(2, !i)
+        Assert.AreEqual(2, i)
 
-        i := 0
+        i <- 0
         let e = (Seq.mapi2 f [] []).GetEnumerator()
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
         if e.MoveNext() then Assert.Fail()
-        Assert.AreEqual(0,!i)
+        Assert.AreEqual(0, i)
 
     [<Fact>]
     member _.Collect() =
@@ -1236,12 +1234,12 @@ type SeqModule2() =
         CheckThrowsFormatException(fun() -> Seq.head resultEx |> ignore)
 
         // Result consumes entire input sequence as soon as it is accesses an element
-        let i = ref 0
-        let funcState x s = (i := !i + x); x+s
+        let mutable i = 0
+        let funcState x s = (i <- i + x); x+s
         let resultState = Seq.scanBack funcState (seq {1..3}) 0
-        Assert.AreEqual(0, !i)
+        Assert.AreEqual(0, i)
         use e = resultState.GetEnumerator()
-        Assert.AreEqual(6, !i)
+        Assert.AreEqual(6, i)
 
         ()
 
