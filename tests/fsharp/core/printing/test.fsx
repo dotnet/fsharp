@@ -1084,6 +1084,8 @@ let SomeLiteralWithASomewhatLongName2 = "SomeVeryLongLiteralValueWithLotsOfChara
 let ShortName = "hi"
 ;;
 
+System.DayOfWeek.Tuesday
+;;
 
 ;; (* ;; needed, to isolate error regressions *)
 

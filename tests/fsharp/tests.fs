@@ -326,6 +326,15 @@ module CoreTests =
     let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
 
     [<Test>]
+    let ``forexpression-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
+    let ``forexpression-FSC_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC
+
+    [<Test>]
+    let ``forexpression-FSI_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSI_BASIC
+
+    [<Test>]
     let ``letrec (mutrec variations part two) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC_OPT_MINUS
 
     [<Test>]
