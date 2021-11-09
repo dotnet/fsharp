@@ -90,11 +90,6 @@ module CoreTests =
         singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
 
     [<Test>]
-    let ``array-no-dot-warnings-langversion-preview`` () =
-        let cfg = testConfig "core/array-no-dot-warnings"
-        singleVersionedNegTest cfg "preview" "test-langversion-preview"
-
-    [<Test>]
     let ``ref-ops-deprecation-langversion-preview`` () =
         let cfg = testConfig "core/ref-ops-deprecation"
         singleVersionedNegTest cfg "preview" "test-langversion-preview"
@@ -2480,7 +2475,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --langversion:preview --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+        fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
 
@@ -2688,9 +2683,6 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
-
-    [<Test>]
-    let ``type check neg22`` () = singleNegTest (testConfig "typecheck/sigs") "neg22"
 
     [<Test>]
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
@@ -2914,9 +2906,6 @@ module TypecheckTests =
     let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
 
     [<Test>]
-    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
-
-    [<Test>]
     let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"
 
     [<Test>]
@@ -3044,12 +3033,6 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
-
-    [<Test>]
-    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
-
-    [<Test>]
-    let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
