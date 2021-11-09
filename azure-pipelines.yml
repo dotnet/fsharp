@@ -11,7 +11,7 @@ trigger:
     - '*'
     exclude:
     - .github/*
-    - docs/compiler-guide.md
+    - docs/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -34,7 +34,7 @@ pr:
     - '*'
     exclude:
     - .github/*
-    - docs/compiler-guide.md
+    - docs/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md

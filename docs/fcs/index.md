@@ -1,24 +1,17 @@
-F# Compiler Services
-====================
+---
+title: FSharp.Compiler.Service
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 100
+---
+# FSharp.Compiler.Service
 
-The F# compiler services package is a component derived from the F# compiler source code that
+The [FSharp.Compiler.Service](https://www.nuget.org/packages/FSharp.Compiler.Service) package is a component derived from the F# compiler source code that
 exposes additional functionality for implementing F# language bindings, additional
-tools based on the compiler or refactoring tools. The package also includes F#
-interactive service that can be used for embedding F# scripting into your applications.
+tools based on the compiler or refactoring tools. The package also includes
+dynamic execution of F# code that can be used for embedding F# scripting into your applications.
 
-<div class="row">
-  <div class="span1"></div>
-  <div class="span6">
-    <div class="well well-small" id="nuget">
-      The F# Compiler Services package can be <a href="https://nuget.org/packages/FSharp.Compiler.Service">installed from NuGet</a>:
-      <pre>PM> Install-Package FSharp.Compiler.Service</pre>
-    </div>
-  </div>
-  <div class="span1"></div>
-</div>
-
-Available services
-------------------
+## Available services
 
 The project currently exposes the following services that are tested & documented on this page.
 The libraries contain additional public API that can be used, but is not documented here.
@@ -27,21 +20,21 @@ The libraries contain additional public API that can be used, but is not documen
   Useful for implementing source code colorization and basic tools. Correctly handle nested
   comments, strings etc.
 
-* [**Processing untyped AST**](untypedtree.html) - allows accessing the untyped abstract syntax tree (AST).
+* [**Processing SyntaxTree**](untypedtree.html) - allows accessing the syntax tree.
   This represents parsed F# syntax without type information and can be used to implement code formatting
   and various simple processing tasks.
 
-* [**Using editor (IDE) services**](editor.html) - expose functionality for auto-completion, tool-tips,
-  parameter information etc. These functions are useful for implementing F# support for editors
-  and for getting some type information for F# code.
-
-* [**Working with signatures, types, and resolved symbols**](symbols.html) - many services related to type checking
+* [**Working with resolved symbols**](symbols.html) - many services related to type checking
   return resolved symbols, representing inferred types, and the signatures of whole assemblies.
 
 * [**Working with resolved expressions**](typedtree.html) - services related to working with
   type-checked expressions and declarations, where names have been resolved to symbols.
 
-* [**Working with projects and project-wide analysis**](project.html) - you can request a check of
+* [**Using editor services**](editor.html) - expose functionality for auto-completion, tool-tips,
+  parameter information etc. These functions are useful for implementing F# support for editors
+  and for getting some type information for F# code.
+
+* [**Working with project-wide analysis**](project.html) - you can request a check of
   an entire project, and ask for the results of whole-project analyses such as find-all-references.
 
 * [**Hosting F# interactive**](interactive.html) - allows calling F# interactive as a .NET library
@@ -55,34 +48,65 @@ The libraries contain additional public API that can be used, but is not documen
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published
 
-Projects using the F# Compiler Services
-------------------
+## The Public Surface Area
+
+We are in the process of cleaning up the surface area of FCS to allow it to be fully binary compatible going forward.
+
+The full current surface area can be seen at: https://fsharp.github.io/fsharp-compiler-docs/reference/index.html
+
+The API is generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.) and we must continue to iterate to make this so.
+
+The parts of the compiler under `FSharp.Compiler.AbstractIL.*` are "incidental" and not really designed for public use apart from the hook for JetBrains Rider (Aside: In theory all these other parts could be renamed to FSharp.Compiler though there's no need to do that right now).   These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
+
+### Basics - Syntax, Text and Diagnostics
+
+* [FSharp.Compiler.Diagnostics](reference/fsharp-compiler-diagnostics.html)
+* [FSharp.Compiler.IO](reference/fsharp-compiler-io.html)
+* [FSharp.Compiler.Syntax](reference/fsharp-compiler-syntax.html)
+* [FSharp.Compiler.Text](reference/fsharp-compiler-text.html)
+
+### Tokenization
+
+* [FSharp.Compiler.Tokenization](reference/fsharp-compiler-tokenization.html)
+
+### Symbols and Code Analysis
+
+* [FSharp.Compiler.Symbols](reference/fsharp-compiler-symbols.html)
+* [FSharp.Compiler.CodeAnalysis](reference/fsharp-compiler-codeanalysis.html)
+
+### Editor Services
+
+* [FSharp.Compiler.EditorServices](reference/fsharp-compiler-editorservices.html)
+
+### Interactive Execution
+
+* [FSharp.Compiler.Interactive.Shell](reference/fsharp-compiler-interactive-shell.html)
+
+### Internal extension points
+
+* [FSharp.Compiler.AbstractIL](reference/fsharp-compiler-abstractil.html)
+
+## Projects using the F# Compiler Services
 
 Some of the projects using the F# Compiler Services are:
 
-* [**The Visual F# Power Tools**](https://fsprojects.github.io/VisualFSharpPowerTools/)
-* [**The Xamarin and MonoDevelop Tools for F#**](https://github.com/mono/monodevelop/tree/master/main/external/fsharpbinding)
-* [**The Emacs Plugin for F#**](https://github.com/fsharp/emacs-fsharp-mode)
-* [**The Vim Plugin for F#**](https://github.com/fsharp/vim-fsharp)
-* [**iFSharp**](https://github.com/BayardRock/IfSharp)  - iPython-style notebook engine for F#
-* [**CloudSharper**](https://cloudsharper.com/) - Online web and mobile programming with big data and charting
-* [**Tsunami**](http://tsunami.io) - Tsunami enhances applications and workflows with the power of Type Safe Scripting
-* [**FQuake3**](https://github.com/TIHan/FQuake3/)  - integrates F# as an interactive game scripting engine
-* [**FCell**](http://fcell.io) - Deliver the power of .NET from within Microsoft Excel
+* [**F# in Visual Studio**](https://github.com/dotnet/fsharp/)
+* [**F# in Visual Studio for Mac**](https://github.com/mono/monodevelop/tree/master/main/external/fsharpbinding)
+* [**FsAutoComplete**](https://github.com/fsharp/FsAutoComplete)
+* [**F# in JetBrains Rider**](https://www.jetbrains.com/help/rider/F_Sharp.html)
+* [**F# in .NET Interactive Notebooks**](https://github.com/dotnet/interactive)
+* [**Fantomas**](https://github.com/fsprojects/fantomas/) - Source code formatting for F#
 * [**FSharpLint**](https://fsprojects.github.io/FSharpLint/) - Lint tool for F#
+* [**Fable**](https://fable.io/) - F# to JavaScript Compiler and more
+* [**WebSharper**](https://websharper.com/) - F# full-stack web framework
+
+Older things:
+
 * [**FsReveal**](https://fsprojects.github.io/FsReveal/) - FsReveal parses markdown and F# script file and generate reveal.js slides
 * [**Elucidate**](https://github.com/rookboom/Elucidate) - Visual Studio extension for rich inlined comments using MarkDown
-* [**Fable**](https://fable-compiler.github.io/) - F# to JavaScript Compiler
-* [**FSharp.Formatting**](http://tpetricek.github.io/FSharp.Formatting/) - F# tools for generating documentation (Markdown processor and F# code formatter)
-* [**FAKE**](https://fsharp.github.io/FAKE/) - "FAKE - F# Make" is a cross platform build automation system
-* [**FsLab Journal**](https://visualstudiogallery.msdn.microsoft.com/45373b36-2a4c-4b6a-b427-93c7a8effddb) - Template that makes it easy to do interactive data analysis using F# Interactive and produce nice HTML reports of your work
+* [**FSharp.Formatting**](http://fsprojects.github.io/FSharp.Formatting/) - F# tools for generating documentation (Markdown processor and F# code formatter)
+* [**FAKE**](https://fsprojects.github.io/FAKE/) - "FAKE - F# Make" is a cross platform build automation system
 
-Contributing and copyright
---------------------------
+## Contributing and copyright
 
-This project is a fork of the [fsharp/fsharp](https://github.com/fsharp/fsharp) which has been
-modified to expose additional internals useful for creating editors and F# tools and also for
-embedding F# interactive.
-
-The F# source code is copyright by Microsoft Corporation and contributors, the extensions have been
-implemented by Dave Thomas, Anh-Dung Phan, Tomas Petricek and other contributors.
+The F# source code is copyright by Microsoft Corporation and contributors.
