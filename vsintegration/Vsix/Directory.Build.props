@@ -24,6 +24,7 @@
     <ExtensionInstallationRoot>CommonExtensions</ExtensionInstallationRoot>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <IsPackage>true</IsPackage>
+    <SetupProductArch>Neutral</SetupProductArch>
   </PropertyGroup>
 
 </Project>
