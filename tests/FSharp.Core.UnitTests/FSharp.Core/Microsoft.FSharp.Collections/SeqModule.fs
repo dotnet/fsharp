@@ -22,7 +22,7 @@ Make sure each method works on:
 type SeqModule() =
 
     [<Fact>]
-    member this.AllPairs() =
+    member _.AllPairs() =
 
         // integer Seq
         let resultInt = Seq.allPairs (seq [1..7]) (seq [11..17])
@@ -49,15 +49,15 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.CachedSeq_Clear() =
+    member _.CachedSeq_Clear() =
         
-        let evaluatedItems : int list ref = ref []
+        let mutable evaluatedItems : int list = []
         let cachedSeq = 
-            Seq.initInfinite (fun i -> evaluatedItems := i :: !evaluatedItems; i)
+            Seq.initInfinite (fun i -> evaluatedItems <- i :: evaluatedItems; i)
             |> Seq.cache
         
         // Verify no items have been evaluated from the Seq yet
-        Assert.AreEqual(List.length !evaluatedItems, 0)
+        Assert.AreEqual(List.length evaluatedItems, 0)
         
         // Force evaluation of 10 elements
         Seq.take 10 cachedSeq
@@ -65,7 +65,7 @@ type SeqModule() =
         |> ignore
         
         // verify ref clear switch length
-        Assert.AreEqual(List.length !evaluatedItems, 10)
+        Assert.AreEqual(List.length evaluatedItems, 10)
 
         // Force evaluation of 10 elements
         Seq.take 10 cachedSeq
@@ -73,7 +73,7 @@ type SeqModule() =
         |> ignore
         
         // Verify ref clear switch length (should be cached)
-        Assert.AreEqual(List.length !evaluatedItems, 10)
+        Assert.AreEqual(List.length evaluatedItems, 10)
 
         
         // Clear
@@ -85,11 +85,11 @@ type SeqModule() =
         |> ignore
         
         // Verify length of evaluatedItemList is 20
-        Assert.AreEqual(List.length !evaluatedItems, 20)
+        Assert.AreEqual(List.length evaluatedItems, 20)
         ()
         
     [<Fact>]
-    member this.Append() =
+    member _.Append() =
 
         // empty Seq 
         let emptySeq1 = Seq.empty
@@ -134,7 +134,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.replicate() =
+    member _.replicate() =
         // replicate should create multiple copies of the given value
         Assert.True(Seq.isEmpty <| Seq.replicate 0 null)
         Assert.True(Seq.isEmpty <| Seq.replicate 0 1)
@@ -145,7 +145,7 @@ type SeqModule() =
         
         
     [<Fact>]
-    member this.Average() =
+    member _.Average() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
         
@@ -181,7 +181,7 @@ type SeqModule() =
         
         
     [<Fact>]
-    member this.AverageBy() =
+    member _.AverageBy() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
         
@@ -215,7 +215,7 @@ type SeqModule() =
         ()
         
     [<Fact>]
-    member this.Cache() =
+    member _.Cache() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
         
@@ -256,7 +256,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.Case() =
+    member _.Case() =
 
         // integer Seq
         let integerArray = [|1;2|]
@@ -303,7 +303,7 @@ type SeqModule() =
         ()
         
     [<Fact>]
-    member this.Choose() =
+    member _.Choose() =
         
         // int Seq
         let intSeq = seq [1..20]    
@@ -342,7 +342,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.ChunkBySize() =
+    member _.ChunkBySize() =
 
         let verify expected actual =
             Seq.zip expected actual
@@ -378,7 +378,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.SplitInto() =
+    member _.SplitInto() =
 
         let verify expected actual =
             Seq.zip expected actual
@@ -409,7 +409,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.Compare() =
+    member _.Compare() =
     
         // int Seq
         let intSeq1 = seq [1;3;7;9]    
@@ -445,7 +445,7 @@ type SeqModule() =
         ()
         
     [<Fact>]
-    member this.Concat() =
+    member _.Concat() =
          // integer Seq
         let seqInt = 
             seq { for i in 0..9 do                
@@ -481,7 +481,7 @@ type SeqModule() =
         () 
         
     [<Fact>]
-    member this.CountBy() =
+    member _.CountBy() =
         // integer Seq
         let funcIntCount_by (x:int) = x%3 
         let seqInt = 
@@ -515,7 +515,7 @@ type SeqModule() =
         () 
     
     [<Fact>]
-    member this.Distinct() =
+    member _.Distinct() =
         
         // integer Seq
         let IntDistinctSeq =  
@@ -549,7 +549,7 @@ type SeqModule() =
         () 
     
     [<Fact>]
-    member this.DistinctBy () =
+    member _.DistinctBy () =
         // integer Seq
         let funcInt x = x % 3 
         let IntDistinct_bySeq =  
@@ -584,7 +584,7 @@ type SeqModule() =
         () 
 
     [<Fact>]
-    member this.Except() =
+    member _.Except() =
         // integer Seq
         let intSeq1 = seq { yield! {1..100}
                             yield! {1..100} }
@@ -623,7 +623,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.Exists() =
+    member _.Exists() =
 
         // Integer Seq
         let funcInt x = (x % 2 = 0) 
@@ -658,7 +658,7 @@ type SeqModule() =
         () 
     
     [<Fact>]
-    member this.Exists2() =
+    member _.Exists2() =
         // Integer Seq
         let funcInt x y = (x+y)%3=0 
         let Intexists2Seq1 =  seq [1;3;7]
@@ -686,7 +686,7 @@ type SeqModule() =
     
     
     [<Fact>]
-    member this.Filter() =
+    member _.Filter() =
         // integer Seq
         let funcInt x = if (x % 5 = 0) then true else false
         let IntSeq =
@@ -725,7 +725,7 @@ type SeqModule() =
         () 
     
     [<Fact>]
-    member this.Find() =
+    member _.Find() =
         
         // integer Seq
         let funcInt x = if (x % 5 = 0) then true else false
@@ -754,7 +754,7 @@ type SeqModule() =
         ()
     
     [<Fact>]
-    member this.FindBack() =
+    member _.FindBack() =
         // integer Seq
         let funcInt x = x % 5 = 0
         Assert.AreEqual(20, Seq.findBack funcInt <| seq { 1..20 })
@@ -781,7 +781,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.FindIndex() =
+    member _.FindIndex() =
         
         // integer Seq
         let digits = [1 .. 100] |> Seq.ofList
@@ -796,7 +796,7 @@ type SeqModule() =
         ()
     
     [<Fact>]
-    member this.Permute() =
+    member _.Permute() =
         let mapIndex i = (i + 1) % 4
 
         // integer seq
@@ -822,7 +822,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.FindIndexBack() =
+    member _.FindIndexBack() =
         // integer Seq
         let digits = seq { 1..100 }
         let idx = digits |> Seq.findIndexBack (fun i -> i.ToString().Length = 1)
@@ -842,7 +842,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.Pick() =
+    member _.Pick() =
     
         let digits = [| 1 .. 10 |] |> Seq.ofArray
         let result = Seq.pick (fun i -> if i > 5 then Some(i.ToString()) else None) digits
@@ -856,7 +856,7 @@ type SeqModule() =
         ()
         
     [<Fact>]
-    member this.Fold() =
+    member _.Fold() =
         let funcInt x y = x+y
              
         let IntSeq =
@@ -888,7 +888,7 @@ type SeqModule() =
 
 
     [<Fact>]
-    member this.Fold2() =
+    member _.Fold2() =
         Assert.AreEqual([(3,5); (2,3); (1,1)],Seq.fold2 (fun acc x y -> (x,y)::acc) [] (seq [ 1..3 ])  (seq [1..2..6]))
 
         // integer List  
@@ -920,7 +920,7 @@ type SeqModule() =
         ()
         
     [<Fact>]
-    member this.FoldBack() =
+    member _.FoldBack() =
         // int Seq
         let funcInt x y = x-y
         let IntSeq = seq { 1..4 }
@@ -956,7 +956,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.foldBack2() =
+    member _.foldBack2() =
         // int Seq
         let funcInt x y z = x + y + z
         let intSeq = seq { 1..10 }
@@ -995,7 +995,7 @@ type SeqModule() =
         ()
 
     [<Fact>]
-    member this.ForAll() =
+    member _.ForAll() =
 
         let funcInt x  = if x%2 = 0 then true else false
         let IntSeq =
@@ -1026,7 +1026,7 @@ type SeqModule() =
         () 
         
     [<Fact>]
-    member this.ForAll2() =
+    member _.ForAll2() =
 
         let funcInt x y = if (x+y)%2 = 0 then true else false
         let IntSeq =
@@ -1057,7 +1057,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.forall2 funcInt  nullSeq nullSeq |> ignore) 
         
     [<Fact>]
-    member this.GroupBy() =
+    member _.GroupBy() =
         
         let funcInt x = x%5
              
@@ -1100,20 +1100,20 @@ type SeqModule() =
         () 
     
     [<Fact>]
-    member this.DisposalOfUnstartedEnumerator() =
-        let run = ref false
+    member _.DisposalOfUnstartedEnumerator() =
+        let mutable run = false
         let f() = seq {                
                 try
                     ()
                 finally 
-                    run := true
+                    run <- true
               }
   
         f().GetEnumerator().Dispose() 
-        Assert.False(!run)
+        Assert.False(run)
 
     [<Fact>]
-    member this.WeirdLocalNames() =
+    member _.WeirdLocalNames() =
        
         let f pc = seq {                
                 yield pc
@@ -1134,7 +1134,7 @@ type SeqModule() =
         Assert.AreEqual([6;7;8], l)
 
     [<Fact>]
-    member this.Contains() =
+    member _.Contains() =
 
         // Integer Seq
         let intSeq = seq { 0..9 }
