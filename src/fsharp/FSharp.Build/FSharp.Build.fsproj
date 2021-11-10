@@ -12,6 +12,7 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,25 +34,17 @@
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
-      <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedPackageVersionProperty)</Replacement1>
-      <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
-      <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
-      <Pattern3>{{FSCorePackageVersion}}</Pattern3>
-      <Replacement3>$(FSCorePackageVersion)</Replacement3>
+      <Pattern1>{{FSharpCoreShippedPackageVersionValue}}</Pattern1>
+      <Replacement1>$(FSharpCoreShippedPackageVersionValue)</Replacement1>
+      <Pattern2>{{FSharpCorePreviewPackageVersionValue}}</Pattern2>
+      <Replacement2>$(FSharpCorePreviewPackageVersionValue)</Replacement2>
+      <Pattern3>{{FSCorePackageVersionValue}}</Pattern3>
+      <Replacement3>$(FSCorePackageVersionValue)</Replacement3>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
-    <!--
-        The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
-        rely on new API's just being added to FSharp.Core.
-    -->
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionProperty)"/>
-  </ItemGroup>
-
-  <ItemGroup  Condition="'$(Configuration)' != 'Proto'">
+  <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 

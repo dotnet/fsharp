@@ -15,9 +15,10 @@ neg67.fsx(42,17,42,34): parse error FS0597: Successive arguments should be separ
 
 neg67.fsx(42,35,42,36): parse error FS0010: Unexpected symbol '}' in definition. Expected incomplete structured construct at or before this point or other token.
 
-neg67.fsx(41,9,41,14): typecheck error FS0001: This expression was expected to have type
-    'unit'    
-but here has type
+neg67.fsx(41,9,41,14): typecheck error FS0193: Type constraint mismatch. The type 
     'Async<unit>'    
+is not compatible with type
+    'unit'    
+
 
 neg67.fsx(30,1,41,37): typecheck error FS0003: This value is not a function and cannot be applied.

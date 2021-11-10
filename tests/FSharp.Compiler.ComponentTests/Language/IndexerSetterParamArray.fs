@@ -27,28 +27,28 @@ type T() =
 let t = T()
 
 // Using an explicit array is allowed
-t.[[| 2 |] ] <- "7" 
-let v2 = t.[[| 2 |]]
+t[ [| 2 |] ] <- "7" 
+let v2 = t[[| 2 |]]
 printfn $"v2 = {v2}"
 if v2 <> "set([|2|], 7); get([|2|])" then failwith "not right value B"
 
 
-t.[1] <- "7" 
-let v3 = t.[1]
+t[1] <- "7" 
+let v3 = t[1]
 printfn $"v3 = {v3}"
 if v3 <> "set([|1|], 7); get([|1|])" then failwith "not right value C"
 
-t.[1, 0] <- "7" 
-let v4 = t.[1, 0]
+t[1, 0] <- "7" 
+let v4 = t[1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
 
 // Inference defaults to the array in absense of other information 
 let f idxs =
-    t.[ idxs ] <- "7" 
+    t[ idxs ] <- "7" 
 
 f ([| 2 |] )
-let v5 = t.[ [| 2 |] ]
+let v5 = t[ [| 2 |] ]
 printfn $"v5 = {v5}"
 if v5 <> "set([|2|], 7); get([|2|])" then failwith "not right value"
 
@@ -82,35 +82,35 @@ type T() =
 
 let t = T()
 
-t.[2] <- "7" 
-let v1 = t.[2]
+t[2] <- "7" 
+let v1 = t[2]
 printfn $"v1 = {v1}"
 if v1 <> "set(2, 7); get(2)" then failwith "not right value A"
 
 
 // Using an explicit array is allowed
-t.[1, [| 2 |] ] <- "7" 
-let v2 = t.[1, [| 2 |]]
+t[1, [| 2 |] ] <- "7" 
+let v2 = t[1, [| 2 |]]
 printfn $"v2 = {v2}"
 if v2 <> "set(1, [|2|], 7); get(1, [|2|])" then failwith "not right value B"
 
 
-t.[2, 1] <- "7" 
-let v3 = t.[2, 1]
+t[2, 1] <- "7" 
+let v3 = t[2, 1]
 printfn $"v3 = {v3}"
 if v3 <> "set(2, [|1|], 7); get(2, [|1|])" then failwith "not right value C"
 
-t.[2, 1, 0] <- "7" 
-let v4 = t.[2, 1, 0]
+t[2, 1, 0] <- "7" 
+let v4 = t[2, 1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set(2, [|1; 0|], 7); get(2, [|1; 0|])" then failwith "not right value D"
 
 // Inference defaults to the array in absense of other information 
 let f idxs =
-    t.[ 1, idxs ] <- "7" 
+    t[ 1, idxs ] <- "7" 
 
 f ([| 2 |] )
-let v5 = t.[ 1, [| 2 |] ]
+let v5 = t[ 1, [| 2 |] ]
 printfn $"v5 = {v5}"
 if v5 <> "set(1, [|2|], 7); get(1, [|2|])" then failwith "not right value"
     """
@@ -140,28 +140,28 @@ module M =
 let t = T()
 
 // Using an explicit array is allowed
-t.[[| 2 |] ] <- "7" 
-let v2 = t.[[| 2 |]]
+t[[| 2 |] ] <- "7" 
+let v2 = t[[| 2 |]]
 printfn $"v2 = {v2}"
 if v2 <> "set([|2|], 7); get([|2|])" then failwith "not right value B"
 
 
-t.[1] <- "7" 
-let v3 = t.[1]
+t[1] <- "7" 
+let v3 = t[1]
 printfn $"v3 = {v3}"
 if v3 <> "set([|1|], 7); get([|1|])" then failwith "not right value C"
 
-t.[1, 0] <- "7" 
-let v4 = t.[1, 0]
+t[1, 0] <- "7" 
+let v4 = t[1, 0]
 printfn $"v4 = {v4}"
 if v4 <> "set([|1; 0|], 7); get([|1; 0|])" then failwith "not right value D"
 
 // Inference defaults to the array in absense of other information 
 let f idxs =
-    t.[ idxs ] <- "7" 
+    t[ idxs ] <- "7" 
 
 f ([| 2 |] )
-let v5 = t.[ [| 2 |] ]
+let v5 = t[ [| 2 |] ]
 printfn $"v5 = {v5}"
 if v5 <> "set([|2|], 7); get([|2|])" then failwith "not right value"
 
