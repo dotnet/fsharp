@@ -273,7 +273,7 @@ and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, mf, argtys, rty)) =
 
 and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
     let slnCell = 
-        match !slnCell with 
+        match slnCell.Value with 
         | None -> None
         | _ when tyenv.removeTraitSolutions -> None
         | Some sln -> 
@@ -1163,7 +1163,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
 /// Look through the Expr.Link nodes arising from type inference
 let rec stripExpr e = 
     match e with 
-    | Expr.Link eref -> stripExpr !eref
+    | Expr.Link eref -> stripExpr eref.Value
     | _ -> e    
 
 let mkCase (a, b) = TCase(a, b)
@@ -1182,7 +1182,7 @@ let rec rangeOfExpr x =
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
     | Expr.WitnessArg (_, m)
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
-    | Expr.Link eref -> rangeOfExpr (!eref)
+    | Expr.Link eref -> rangeOfExpr eref.Value
 
 type Expr with 
     member x.Range = rangeOfExpr x
@@ -3965,7 +3965,7 @@ module DebugPrint =
             | Expr.Let (bind, body, _, _) -> 
                 letL g bind (exprL body) |> wrap
             | Expr.Link rX -> 
-                (wordL(tagText "RecLink") --- atomL (!rX)) |> wrap
+                (wordL(tagText "RecLink") --- atomL rX.Value) |> wrap
             | Expr.Match (_, _, dtree, targets, _, _) -> 
                 leftL(tagText "[") ^^ (decisionTreeL g dtree @@ aboveListL (List.mapi targetL (targets |> Array.toList)) ^^ rightL(tagText "]"))
             | Expr.Op (TOp.UnionCase c, _, args, _) -> 
@@ -4066,9 +4066,10 @@ module DebugPrint =
                    (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
            
         // For tracking ranges through expr rewrites 
-        if !layoutRanges 
-        then leftL(tagText "{") ^^ (rangeL expr.Range ^^ rightL(tagText ":")) ++ lay ^^ rightL(tagText "}")
-        else lay
+        if layoutRanges.Value then
+            leftL(tagText "{") ^^ (rangeL expr.Range ^^ rightL(tagText ":")) ++ lay ^^ rightL(tagText "}")
+        else
+            lay
 
     and implFilesL g implFiles =
         aboveListL (List.map (implFileL g) implFiles)
@@ -4770,7 +4771,8 @@ and accFreeInExprNonLinear opts x acc =
              (accFreeVarsInTys opts tyargs
                 (accFreeInExprs opts args acc)))
 
-    | Expr.Link eref -> accFreeInExpr opts !eref acc
+    | Expr.Link eref ->
+        accFreeInExpr opts eref.Value acc
 
     | Expr.Sequential (expr1, expr2, _, _, _) -> 
         let acc = accFreeInExpr opts expr1 acc
@@ -5318,7 +5320,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         remapAppExpr g compgen tmenv (e1, e1ty, tyargs, args, m) expr
 
     | Expr.Link eref -> 
-        remapExpr g compgen tmenv !eref
+        remapExpr g compgen tmenv eref.Value
 
     | Expr.StaticOptimization (cs, e2, e3, m) -> 
        // note that type instantiation typically resolve the static constraints here 
@@ -5847,7 +5849,7 @@ let rec remarkExpr m x =
 
     | Expr.Link eref -> 
         // Preserve identity of fixup nodes during remarkExpr
-        eref := remarkExpr m !eref
+        eref.Value <- remarkExpr m eref.Value
         x
 
     | Expr.App (e1, e1ty, tyargs, args, _) ->
@@ -6737,7 +6739,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             let z = valBindF false z bind
             exprF z body
                 
-        | Expr.Link rX -> exprF z (!rX)
+        | Expr.Link rX -> exprF z rX.Value
 
         | Expr.Match (_spBind, _exprm, dtree, targets, _m, _ty) -> 
             let z = dtreeF z dtree
@@ -8791,7 +8793,7 @@ and rewriteExprStructure env expr =
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
                   List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
   | Expr.Link eref -> 
-      RewriteExpr env !eref
+      RewriteExpr env eref.Value
 
   | Expr.Op (c, tyargs, args, m) -> 
       let args' = rewriteExprs env args
