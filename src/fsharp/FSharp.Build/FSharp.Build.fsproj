@@ -49,7 +49,7 @@
         The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
         rely on new API's just being added to FSharp.Core.
     -->
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionProperty)"/>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)"/>
   </ItemGroup>
 
   <ItemGroup  Condition="'$(Configuration)' != 'Proto'">
