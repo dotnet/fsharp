@@ -8,6 +8,7 @@
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <UseWpf>true</UseWpf>
+    <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
   </PropertyGroup>
 
   <ItemGroup>
