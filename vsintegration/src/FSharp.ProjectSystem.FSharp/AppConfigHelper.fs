@@ -237,11 +237,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             let APPCFG_VERSION = "version"
             let APPCFG_SKU = "sku"
             
-            let dirty = ref false
+            let mutable dirty = false
             let (startupNode, _) = LangConfigFile.EnsureChildElement(root, APPCFG_STARTUP)
             
             if startupNode <> null then
-                let foundExistingNode = ref false
+                let mutable foundExistingNode = false
                
                 let fixupSku (n : System.Xml.Linq.XElement) =
                     // Figure out what to do with the SKU.  A NULL passed-in SKU parameter
@@ -252,18 +252,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     if sku = null  then
                         if skuAttribute <> null then
                             skuAttribute.Remove()
-                            dirty := true
+                            dirty <- true
                     else
                         // Check if the SKU attribute is the same
                         if skuAttribute <> null  then
                             if String.Compare(skuAttribute.Value, sku, true, CultureInfo.InvariantCulture) <> 0 then
                                 // Ok, set the value
                                 skuAttribute.Value <- sku
-                                dirty := true
+                                dirty <- true
                         else
                             let newAttribute = new System.Xml.Linq.XAttribute(System.Xml.Linq.XName.Get(APPCFG_SKU), sku)
                             n.Add(newAttribute)
-                            dirty := true                
+                            dirty <- true                
                 
                 startupNode.Elements()
                 |> Seq.toList
@@ -272,17 +272,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 let versionAttribute = n.Attribute(System.Xml.Linq.XName.Get(APPCFG_VERSION))
                                 
                                 // Correct node?  If so, then keep it; otherwise, remove it.
-                                if String.Compare(versionAttribute.Value, version, true, CultureInfo.InvariantCulture) = 0  && not !foundExistingNode then
-                                    foundExistingNode := true
+                                if String.Compare(versionAttribute.Value, version, true, CultureInfo.InvariantCulture) = 0  && not foundExistingNode then
+                                    foundExistingNode <- true
                                     fixupSku n
                                 else
                                     n.Remove()
-                                    dirty := true
+                                    dirty <- true
                             )
                 
                 // Did we find a node?  If not, then we need to create one.
                 
-                if not !foundExistingNode then
+                if not foundExistingNode then
                     let (runtimeNode, _) = LangConfigFile.EnsureChildElement(startupNode, APPCFG_SUPPORTED_RUNTIME)
                     
                     // Fix up the version - either add it or update it
@@ -290,16 +290,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     let versionAttribute = runtimeNode.Attribute(System.Xml.Linq.XName.Get(APPCFG_VERSION))
                     if versionAttribute <> null then
                         versionAttribute.Value <- version
-                        dirty := true
+                        dirty <- true
                     else
                         let versionAttribute = new System.Xml.Linq.XAttribute(System.Xml.Linq.XName.Get(APPCFG_VERSION), version)
                         runtimeNode.Add(versionAttribute)
-                        dirty := true
+                        dirty <- true
                         
                     // fix up the sku
                     fixupSku runtimeNode
                 
-            !dirty
+            dirty
 
         member x.EnsureSupportedRuntimeElement(version : string, sku : string) =
 

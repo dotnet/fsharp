@@ -1683,7 +1683,7 @@ let mkSeqAppend (cenv: cenv) env m genTy e1 e2 =
     let e2 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e2) e2
     mkCallSeqAppend cenv.g m genResultTy e1 e2 
 
-let mkSeqFromFunctions (cenv: cenv) env m genTy e1 e2 =
+let mkSeqGenerated (cenv: cenv) env m genTy e1 e2 =
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let e2 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e2) e2
@@ -1787,7 +1787,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 | _ -> guardExprMark
 
             let innerExpr = mkDelayedExpr mWhile innerExpr
-            Some(mkSeqFromFunctions cenv env guardExprMark genOuterTy guardExpr innerExpr, tpenv)
+            Some(mkSeqGenerated cenv env guardExprMark genOuterTy guardExpr innerExpr, tpenv)
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally) ->
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp

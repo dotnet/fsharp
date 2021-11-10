@@ -20,7 +20,7 @@ Make sure each method works on:
 type SetModule() =
 
     [<Fact>]
-    member this.Empty() =
+    member _.Empty() =
         let emptySet = Set.empty
         if Set.count emptySet <> 0 then Assert.Fail()    
         
@@ -29,7 +29,7 @@ type SetModule() =
         ()
 
     [<Fact>]
-    member this.Singleton() =
+    member _.Singleton() =
         let intSingleton = Set.singleton 5
         Assert.True(intSingleton.Count = 1)
         Assert.True(intSingleton.Contains(5))
@@ -38,7 +38,7 @@ type SetModule() =
         Assert.False(stringSingleton.Contains(""))
         
     [<Fact>]
-    member this.Add() =
+    member _.Add() =
         let empty = Set.empty
         let x     = Set.add 'x' empty
         let xy    = Set.add 'y' x
@@ -50,7 +50,7 @@ type SetModule() =
         Assert.True(Set.count wxyz = 4)
         
     [<Fact>]
-    member this.Contains() =
+    member _.Contains() =
         // Empty set searching for null = false
         if Set.contains null (Set.empty) <> false then Assert.Fail()
 
@@ -63,7 +63,7 @@ type SetModule() =
         ()
         
     [<Fact>]
-    member this.Count() = 
+    member _.Count() = 
         let empty = Set.empty
         if Set.count empty <> 0 then Assert.Fail()
         
@@ -75,7 +75,7 @@ type SetModule() =
         ()
         
     [<Fact>]
-    member this.Diff() = 
+    member _.Diff() = 
         // Given a large set and removing 0, 1, x elements...
         let alphabet = new Set<char>([| 'a' .. 'z' |])
         let emptyChar = Set.empty : Set<char>
@@ -108,7 +108,7 @@ type SetModule() =
         ()
 
     [<Fact>]
-    member this.Equal() =
+    member _.Equal() =
         let emptySet1 : Set<string> = Set.empty
         let emptySet2 : Set<string> = Set.empty
         if (emptySet1 = emptySet2) <> true then Assert.Fail()
@@ -123,7 +123,7 @@ type SetModule() =
         ()
         
     [<Fact>]
-    member this.Compare() =
+    member _.Compare() =
         // Comparing empty sets
         let emptyString1 = Set.empty : Set<string>
         let emptyString2 = Set.empty : Set<string>
@@ -151,7 +151,7 @@ type SetModule() =
         ()
 
     [<Fact>]
-    member this.Exists() =
+    member _.Exists() =
         
         let emptyInt = Set.empty : Set<int>
         if Set.exists (fun _ -> true) emptyInt <> false then Assert.Fail()
@@ -166,7 +166,7 @@ type SetModule() =
         ()
         
     [<Fact>]
-    member this.Filter() =
+    member _.Filter() =
         
         let emptyComplex = Set.empty : Set<int * List<string * Set<decimal>> * Set<int * string * (char * char * char)>>
         let fileredEmpty = Set.filter (fun _ -> false) emptyComplex 
@@ -185,7 +185,7 @@ type SetModule() =
         
 
     [<Fact>]
-    member this.Map() =
+    member _.Map() =
         let emptySet : Set<string> = Set.empty
         
         let result = Set.map (fun _ -> Assert.Fail(); "") emptySet
@@ -198,43 +198,43 @@ type SetModule() =
         ()
 
     [<Fact>]
-    member this.Fold() =
+    member _.Fold() =
         
         let emptySet : Set<decimal> = Set.empty
         let result = Set.fold (fun _ _ -> Assert.Fail(); -1I) 0I emptySet
         if result <> 0I then Assert.Fail()
         
-        let callOrder = ref ([] : (int * int) list)
+        let mutable callOrder = ([] : (int * int) list)
         let input = new Set<_>([1; 2; 3; 4; 5])
         
         let result = Set.fold 
-                            (fun acc i -> callOrder := (acc, i) :: !callOrder; acc + i) 
+                            (fun acc i -> callOrder <- (acc, i) :: callOrder; acc + i) 
                             0 
                             input
         if result    <> 15 then Assert.Fail()
-        if !callOrder <> [(10, 5); (6, 4); (3, 3); (1, 2); (0, 1)] then Assert.Fail()
+        if callOrder <> [(10, 5); (6, 4); (3, 3); (1, 2); (0, 1)] then Assert.Fail()
         ()
         
     [<Fact>]
-    member this.FoldBack() =
+    member _.FoldBack() =
         
         let emptySet : Set<decimal> = Set.empty
         let result = Set.foldBack (fun _ _ -> Assert.Fail(); -1I) emptySet 0I
         if result <> 0I then Assert.Fail()
         
-        let callOrder = ref ([] : (int * int) list)
+        let mutable callOrder = ([] : (int * int) list)
         let input = new Set<_>([1; 2; 3; 4; 5])
         
         let result = Set.foldBack
-                            (fun i acc -> callOrder := (acc, i) :: !callOrder; acc + i) 
+                            (fun i acc -> callOrder <- (acc, i) :: callOrder; acc + i) 
                             input
                             0
         if result    <> 15 then Assert.Fail()
-        if !callOrder <> [(14, 1); (12, 2); (9, 3); (5, 4); (0, 5)] then Assert.Fail()
+        if callOrder <> [(14, 1); (12, 2); (9, 3); (5, 4); (0, 5)] then Assert.Fail()
         ()
 
     [<Fact>]
-    member this.ForAll() =
+    member _.ForAll() =
 
         let emptySet : Set<string> = Set.empty
         let result = Set.forall (fun x -> Assert.Fail(); false) emptySet
@@ -250,7 +250,7 @@ type SetModule() =
         ()
 
     [<Fact>]
-    member this.Intersect() =
+    member _.Intersect() =
         
         let emptySet1 : Set<int> = Set.empty
         let emptySet2 : Set<int> = Set.empty
@@ -267,7 +267,7 @@ type SetModule() =
         ()
     
     [<Fact>]
-    member this.Intersect2() =
+    member _.Intersect2() =
         let a = new Set<int>([3; 4; 5; 6])
         let b = new Set<int>([5; 6; 7; 8])
         
@@ -277,7 +277,7 @@ type SetModule() =
 
     
     [<Fact>]
-    member this.IntersectMany() =
+    member _.IntersectMany() =
         (* IntersectAll
             1234567
              234567
@@ -299,7 +299,7 @@ type SetModule() =
         Assert.True(contains 7 result)
                   
     [<Fact>]
-    member this.IntersectMany2() =
+    member _.IntersectMany2() =
         let all   = new Set<_>([1 .. 10])
         let odds  = new Set<_>([1 .. 2 .. 10])
         let evens = new Set<_>([2 .. 2 .. 10])
@@ -308,7 +308,7 @@ type SetModule() =
         Assert.True(Set.count result = 0)
 
     [<Fact>]
-    member this.IntersectMany3() =
+    member _.IntersectMany3() =
         let all   = new Set<_>([1 .. 10])
         let empty = Set.empty : Set<int>
         
@@ -317,12 +317,12 @@ type SetModule() =
         
         
     [<Fact>]
-    member this.IntersectMany4() =
+    member _.IntersectMany4() =
         CheckThrowsArgumentException (fun () -> Set.intersectMany (Seq.empty : seq<Set<int>>) |> ignore)
         ()
 
     [<Fact>]
-    member this.Union() =
+    member _.Union() =
         let emptySet1 : Set<int> = Set.empty
         let emptySet2 : Set<int> = Set.empty
         let four                 = Set.singleton 4
@@ -338,7 +338,7 @@ type SetModule() =
         ()
     
     [<Fact>]
-    member this.Union2() =
+    member _.Union2() =
         let a = new Set<int>([1; 2; 3; 4])
         let b = new Set<int>([5; 6; 7; 8])
         
@@ -347,7 +347,7 @@ type SetModule() =
         Assert.True( (union = expectedResult) )
 
     [<Fact>]
-    member this.Union3() =
+    member _.Union3() =
         let x = 
             Set.singleton 1
             |> Set.union (Set.singleton 1)
@@ -357,7 +357,7 @@ type SetModule() =
         Assert.True(x.Count = 1)
         
     [<Fact>]
-    member this.UnionMany() =
+    member _.UnionMany() =
         let odds  = new Set<int>([1 .. 2 .. 10])
         let evens = new Set<int>([2 .. 2 .. 10])
         let empty = Set.empty : Set<int>
@@ -368,12 +368,12 @@ type SetModule() =
         Assert.True(result.Count = 20)
 
     [<Fact>]
-    member this.UnionMany2() =
+    member _.UnionMany2() =
         let result = Set.unionMany (Seq.empty : seq<Set<string>>)
         Assert.True(result.Count = 0)
         
     [<Fact>]
-    member this.IsEmpty() =
+    member _.IsEmpty() =
         let zero  = Set.empty : Set<decimal>
         let zero2 = new Set<int>([])
         let one   = Set.singleton "foo"
@@ -386,7 +386,7 @@ type SetModule() =
         Assert.False(Set.isEmpty n)
         
     [<Fact>]
-    member this.Iter() =
+    member _.Iter() =
 
         // Empty set
         Set.empty |> Set.iter (fun _ -> Assert.Fail())
@@ -401,7 +401,7 @@ type SetModule() =
         Assert.True (Array.forall ( (=) true ) elements)
 
     [<Fact>]
-    member this.Parition() =
+    member _.Parition() =
         
         // Empty
         let resulta, resultb = Set.partition (fun (x : int) -> Assert.Fail(); false) Set.empty
@@ -425,7 +425,7 @@ type SetModule() =
         Assert.True(resulta.Count = 5 && resultb.Count = 21)
 
     [<Fact>]
-    member this.Remove() =
+    member _.Remove() =
         
         let emptySet : Set<int> = Set.empty
         let result = Set.remove 42 emptySet
@@ -452,7 +452,7 @@ type SetModule() =
         Assert.False(Set.exists ( (=) 3 ) c)
 
     [<Fact>]
-    member this.Of_List() =
+    member _.Of_List() =
         
         // Empty
         let emptySet = Set.ofList ([] : (string * int * Set<int>) list)
@@ -470,7 +470,7 @@ type SetModule() =
         Assert.True( (multi = expected) )
 
     [<Fact>]
-    member this.To_List() =
+    member _.To_List() =
 
         // Empty
         let emptySet : Set<byte> = Set.empty
@@ -485,7 +485,7 @@ type SetModule() =
         Assert.True(Set.toList multi = [1; 2; 3; 4; 5])
 
     [<Fact>]
-    member this.Of_Array() =
+    member _.Of_Array() =
         
         // Empty
         let emptySet = Set.ofArray ([| |] : (string * int * Set<int>) [])
@@ -503,7 +503,7 @@ type SetModule() =
         Assert.True( (multi = expected) )
 
     [<Fact>]
-    member this.To_Array() =
+    member _.To_Array() =
 
         // Empty
         let emptySet : Set<byte> = Set.empty
@@ -519,7 +519,7 @@ type SetModule() =
 
 
     [<Fact>]
-    member this.Of_Seq() =
+    member _.Of_Seq() =
         
         // Empty
         let emptySet = Set.ofSeq ([| |] : (string * int * Set<int>) [])
@@ -537,7 +537,7 @@ type SetModule() =
         Assert.True( (multi = expected) )
 
     [<Fact>]
-    member this.To_Seq() =
+    member _.To_Seq() =
 
         // Empty
         let emptySet : Set<byte> = Set.empty
@@ -556,7 +556,7 @@ type SetModule() =
         
 
     [<Fact>]
-    member this.MinElement() =
+    member _.MinElement() =
         
         // Check for an argument exception "Set contains no members"
         CheckThrowsArgumentException(fun () -> Set.minElement Set.empty |> ignore)
@@ -568,7 +568,7 @@ type SetModule() =
         Assert.AreEqual(Set.minElement set2, "a")
         
     [<Fact>]
-    member this.MaxElement() =
+    member _.MaxElement() =
         
         // Check for an argument exception "Set contains no members"
         CheckThrowsArgumentException(fun () -> Set.maxElement Set.empty |> ignore)
@@ -581,7 +581,7 @@ type SetModule() =
 
 
     [<Fact>]
-    member this.IsProperSubset() =
+    member _.IsProperSubset() =
         
         let set1 = Set.ofList [10; 8; 100]
         let set2 = Set.ofList [100]
@@ -591,7 +591,7 @@ type SetModule() =
         Assert.False(Set.isProperSubset set1 set2)
 
     [<Fact>]
-    member this.IsProperSuperset() =
+    member _.IsProperSuperset() =
         
         let set1 = Set.ofList [10; 8; 100]
         let set2 = Set.ofList [100; 8]
@@ -604,7 +604,7 @@ type SetModule() =
     // ----- Not associated with a module function -----
 
     [<Fact>]
-    member this.GeneralTest1() =
+    member _.GeneralTest1() =
         
         // Returns a random permutation of integers between the two bounds.
         let randomPermutation lowerBound upperBound = 
@@ -623,17 +623,18 @@ type SetModule() =
         for i in 0..50 do
             let permutation = randomPermutation 0 i
             
-            let set : Set<int> ref = ref Set.empty
+            let mutable set : Set<int> = Set.empty
             // Add permutation items to set in order
-            Array.iter (fun i -> set := Set.add i !set) permutation
+            permutation |> Array.iter (fun i -> 
+                set <- Set.add i set) 
             // Check that the set equals the full list
-            Assert.True(Set.toList !set = [0 .. i])
+            Assert.True(Set.toList set = [0 .. i])
             // Remove items in permutation order, ensuring set is delt with correctly
             Array.iteri
-                (fun idx i -> set := Set.remove i !set
+                (fun idx i -> set <- Set.remove i set
                               // Verify all elements have been correctly removed
                               let removedElements = Array.sub permutation 0 (idx + 1) |> Set.ofSeq
-                              let inter = Set.intersect !set removedElements
+                              let inter = Set.intersect set removedElements
                               Assert.True(inter.Count = 0))
                 permutation
         ()
