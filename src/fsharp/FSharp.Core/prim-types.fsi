@@ -1061,46 +1061,52 @@ namespace Microsoft.FSharp.Core
     /// <see cref="T:System.Double"/>.</summary>
     ///
     /// <category index="6">Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type double<[<Measure>] 'Measure> = float<'Measure>
-    
+
     /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Single"/>.</summary>
     ///
     /// <category index="6">Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type single<[<Measure>] 'Measure> = float32<'Measure>
-    
+
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.SByte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int8<[<Measure>] 'Measure> = sbyte<'Measure>
-    
-    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. 
+
+    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Int32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int32<[<Measure>] 'Measure> = int<'Measure>
-    
+
     /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type uint8<[<Measure>] 'Measure> = byte<'Measure>
-    
-    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
@@ -1402,35 +1408,40 @@ namespace Microsoft.FSharp.Core
         /// <param name="input">The input nativeint.</param>
         ///
         /// <returns>The nativeint with units-of-measure.</returns>
-        val inline IntPtrWithMeasure : input: nativeint -> nativeint<'Measure>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline IntPtrWithMeasure: input: nativeint -> nativeint<'Measure>
 
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint.</param>
         ///
         /// <returns>The uint with units-of-measure.</returns>
-        val inline UInt32WithMeasure : input: uint -> uint<'Measure>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline UInt32WithMeasure: input: uint -> uint<'Measure>
         
         /// <summary>Creates a uint64 value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint64.</param>
         ///
         /// <returns>The uint64 with units-of-measure.</returns>
-        val inline UInt64WithMeasure : input: uint64 -> uint64<'Measure>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline UInt64WithMeasure: input: uint64 -> uint64<'Measure>
         
         /// <summary>Creates a uint16 value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint16.</param>
         ///
         /// <returns>The uint16 with units-of-measure.</returns>
-        val inline UInt16WithMeasure : input: uint16 -> uint16<'Measure>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline UInt16WithMeasure: input: uint16 -> uint16<'Measure>
         
         /// <summary>Creates a byte value with units-of-measure</summary>
         ///
         /// <param name="input">The input byte.</param>
         ///
         /// <returns>The byte with units-of-measure.</returns>
-        val inline ByteWithMeasure : input: byte -> byte<'Measure>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val inline ByteWithMeasure: input: byte -> byte<'Measure>
         
         /// <summary>Creates a unativeint value with units-of-measure</summary>
         ///
@@ -4700,7 +4711,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedSingle1 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
+            val inline GetArraySlice3DFixedSingle1: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
             ///
@@ -4712,7 +4723,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedSingle2 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
+            val inline GetArraySlice3DFixedSingle2: source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
             ///
@@ -4724,7 +4735,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedSingle3 : source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
+            val inline GetArraySlice3DFixedSingle3: source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4735,7 +4746,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble1 : source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
+            val inline GetArraySlice3DFixedDouble1: source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4746,7 +4757,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble2 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble2: source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
             ///
@@ -4757,7 +4768,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline GetArraySlice3DFixedDouble3 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
+            val inline GetArraySlice3DFixedDouble3: source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
 
             /// <summary>Sets a slice of an array</summary>
             ///
@@ -4782,7 +4793,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedSingle1 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle1: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
             ///
@@ -4795,7 +4806,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedSingle2 : target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle2: target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
             ///
@@ -4808,7 +4819,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedSingle3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
+            val inline SetArraySlice3DFixedSingle3: target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4820,7 +4831,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble1 : target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble1: target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4832,7 +4843,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble2 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble2: target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
@@ -4844,7 +4855,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            val inline SetArraySlice3DFixedDouble3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
+            val inline SetArraySlice3DFixedDouble3: target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>
             ///
