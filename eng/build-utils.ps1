@@ -1,7 +1,7 @@
 # Collection of powershell build utility functions that we use across our scripts.
 
 Set-StrictMode -version 2.0
-$ErrorActionPreference="Stop"
+$ErrorActionPreference = "Stop"
 
 # Import Arcade functions
 . (Join-Path $PSScriptRoot "common\tools.ps1")
@@ -17,10 +17,10 @@ $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "n
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {
-  $projectName = if ($projectName -ne "") { $projectName } else { [System.IO.Path]::GetFileNameWithoutExtension($fileName) }
-  $publishDir = if ($published) { "publish\" } else { "" }
-  $ridDir = if ($rid -ne "") { "$rid\" } else { "" }
-  return Join-Path $ArtifactsDir "bin\$projectName\$configuration\$tfm\$ridDir$publishDir$fileName"
+    $projectName = if ($projectName -ne "") { $projectName } else { [System.IO.Path]::GetFileNameWithoutExtension($fileName) }
+    $publishDir = if ($published) { "publish\" } else { "" }
+    $ridDir = if ($rid -ne "") { "$rid\" } else { "" }
+    return Join-Path $ArtifactsDir "bin\$projectName\$configuration\$tfm\$ridDir$publishDir$fileName"
 }
 
 # Handy function for executing a command in powershell and throwing if it 
@@ -128,7 +128,7 @@ function Exec-Script([string]$script, [string]$scriptArgs = "") {
 
 # Ensure the proper .NET Core SDK is available. Returns the location to the dotnet.exe.
 function Ensure-DotnetSdk() {
-  return Join-Path (InitializeDotNetCli -install:$true) "dotnet.exe"
+    return Join-Path (InitializeDotNetCli -install:$true) "dotnet.exe"
 }
 
 function Get-VersionCore([string]$name, [string]$versionFile) {
@@ -191,7 +191,8 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 
     if ($summary) {
         $args += " /consoleloggerparameters:Verbosity=minimal;summary"
-    } else {        
+    }
+    else {        
         $args += " /consoleloggerparameters:Verbosity=minimal"
     }
 
@@ -251,9 +252,9 @@ function Make-BootstrapBuild() {
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net5.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net5.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net5.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net6.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net6.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net6.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.proj`""

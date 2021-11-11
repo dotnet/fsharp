@@ -376,10 +376,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd
-            displayName: Initial build
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -388,6 +384,10 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: .\Build.cmd
+            displayName: Initial build
           - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -408,10 +408,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./build.sh
-            displayName: Initial build
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -420,6 +416,10 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: ./build.sh
+            displayName: Initial build
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
@@ -440,10 +440,6 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./build.sh
-            displayName: Initial build
-          - script: dotnet --list-sdks
-            displayName: Report dotnet SDK versions
           - task: UseDotNet@2
             displayName: install SDK
             inputs:
@@ -452,6 +448,10 @@ stages:
               includePreviewVersions: true
               workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: ./build.sh
+            displayName: Initial build
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1

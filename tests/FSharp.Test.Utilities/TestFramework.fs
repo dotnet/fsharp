@@ -290,9 +290,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net5.0"
-    let fsiArchitecture = "net5.0"
-    let peverifyArchitecture = "net5.0"
+    let fscArchitecture = "net6.0"
+    let fsiArchitecture = "net6.0"
+    let peverifyArchitecture = "net6.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -621,7 +621,7 @@ let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s: string) = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
     if not <| FileSystem.FileExistsShim(path1) then
