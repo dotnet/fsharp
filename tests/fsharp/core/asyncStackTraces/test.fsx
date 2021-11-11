@@ -135,6 +135,17 @@ let asyncTop3(f) = async {
     return ()
 }
 
+module TestFailingTaskCodeGen =
+    let zzzzzzzzzzzzzz0 (arr) =
+        task {
+            let w = arr |> Array.map (fun w -> w + 1) |> Array.head
+            do!  System.Threading.Tasks.Task.Yield()
+            return w + 3
+        }
+
+    // Threw an NRE
+    let res = zzzzzzzzzzzzzz0([| 1 |]).Result
+    check "elhwvehl" res 5
 
 
 asyncCheckEnvironmentStackTracesTop() |> Async.RunSynchronously
