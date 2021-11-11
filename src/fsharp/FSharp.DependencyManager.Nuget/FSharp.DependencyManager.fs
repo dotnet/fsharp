@@ -176,30 +176,39 @@ type FSharpDependencyManager (outputDirectory:string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
-    let workingDirectory =
-        let path = Path.Combine(Path.GetTempPath(), key, Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
-        match outputDirectory with
-        | None -> path
-        | Some v -> Path.Combine(path, v)
 
     let generatedScripts = ConcurrentDictionary<string,string>()
 
+    let workingDirectory =
+        // Calculate the working directory for dependency management
+        //   if a path wasn't supplied to the dependency manager then use the temporary directory as the root
+        //   if a path was supplied if it was rooted then use the rooted path as the root
+        //   if the path wasn't supplied or not rooted use the temp directory as the root.
+        let directory =
+            let path = Path.Combine(Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
+            match outputDirectory with
+            | None -> Path.Combine(Path.GetTempPath(), path)
+            | Some v ->
+                if Path.IsPathRooted(v) then Path.Combine(v, path)
+                else Path.Combine(Path.GetTempPath(), path)
+
+        lazy
+            try
+                if not (Directory.Exists(directory)) then
+                    Directory.CreateDirectory(directory) |> ignore
+                directory
+            with | _ -> directory
+
     let deleteScripts () =
         try
-#if !Debug
-            if Directory.Exists(workingDirectory) then
-                Directory.Delete(workingDirectory, true)
+#if !DEBUG
+            if workingDirectory.IsValueCreated then
+                if Directory.Exists(workingDirectory.Value) then
+                    Directory.Delete(workingDirectory.Value, true)
 #else
             ()
 #endif
         with | _ -> ()
-
-    let deleteAtExit =
-        try
-            if not (Directory.Exists(workingDirectory)) then
-                Directory.CreateDirectory(workingDirectory) |> ignore
-            true
-        with | _ -> false
 
     let emitFile filename (body:string) =
         try
@@ -226,7 +235,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        let projectPath = Path.Combine(workingDirectory, "Project.fsproj")
+        let projectPath = Path.Combine(workingDirectory.Value, "Project.fsproj")
 
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
@@ -249,7 +258,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
         generateAndBuildProjectArtifacts
 
 
-    do if deleteAtExit then AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
+    do AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
 
     member _.Name = name
 
@@ -268,7 +277,7 @@ type FSharpDependencyManager (outputDirectory:string option) =
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let configIncludes = generateSourcesFromNugetConfigs scriptDirectory workingDirectory timeout
+            let configIncludes = generateSourcesFromNugetConfigs scriptDirectory workingDirectory.Value timeout
             let directiveLines = Seq.append packageManagerTextLines configIncludes
             let resolutionResult = prepareDependencyResolutionFiles (scriptExt, directiveLines, targetFrameworkMoniker, runtimeIdentifier, timeout)
             match resolutionResult.resolutionsFile with
