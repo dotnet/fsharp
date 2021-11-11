@@ -6394,7 +6394,9 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isSt
 and GetStoreValCtxt cenv cgbuf eenv (vspec: Val) =
     // Emit the ldarg0 if needed
     match StorageForVal cenv.g vspec.Range vspec eenv with
-    | Env (ilCloTy, _, _) -> CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
+    | Env (ilCloTy, _, _) ->
+        let ilCloAddrTy = if ilCloTy.Boxity = ILBoxity.AsValue then ILType.Byref ilCloTy else ilCloTy
+        CG.EmitInstr cgbuf (pop 0) (Push [ilCloAddrTy]) mkLdarg0
     | _ -> ()
 
 //-------------------------------------------------------------------------
