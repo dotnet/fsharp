@@ -44,7 +44,15 @@
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Proto'">
+    <!--
+        The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
+        rely on new API's just being added to FSharp.Core.
+    -->
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)"/>
+  </ItemGroup>
+
+  <ItemGroup  Condition="'$(Configuration)' != 'Proto'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
