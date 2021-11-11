@@ -281,7 +281,7 @@ type internal FSharpPackage() as this =
         upcast task // convert Task<unit> to Task
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
-    override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
+    (*override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>() *)
     override this.CreateLanguageService() = FSharpLanguageService(this)
     override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
     override this.RegisterMiscellaneousFilesWorkspaceInformation(miscFilesWorkspace) =

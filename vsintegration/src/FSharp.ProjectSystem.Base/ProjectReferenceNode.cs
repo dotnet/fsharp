@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.Build.Utilities;
 using VSConstants = Microsoft.VisualStudio.VSConstants;
-using Task = Microsoft.VisualStudio.Shell.Task;
+using Task = Microsoft.VisualStudio.Shell.TaskListItem;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -26,7 +26,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
         /// </summary>
-        private Shell.Task projectRefError;
+        private Task projectRefError;
 
         /// <summary>
         /// The name of the assembly this refernce represents

@@ -615,8 +615,8 @@ Namespace Microsoft.VisualStudio.Editors.Common
 #End If
         End Sub
 
-        <Conditional("DEBUG")> _
-        Public Shared Sub TracePDPerf(ByVal e As Windows.Forms.LayoutEventArgs, ByVal Message As String, ByVal ParamArray FormatArguments() As Object)
+        <Conditional("DEBUG")>
+        Public Shared Sub TracePDPerf(ByVal e As System.Windows.Forms.LayoutEventArgs, ByVal Message As String, ByVal ParamArray FormatArguments() As Object)
 #If DEBUG Then
             TracePDPerf(Message, FormatArguments)
             TraceOnLayout(e)
@@ -624,7 +624,7 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Sub
 
 #If DEBUG Then
-        Private Shared Sub TraceOnLayout(ByVal e As Windows.Forms.LayoutEventArgs)
+        Private Shared Sub TraceOnLayout(ByVal e As System.Windows.Forms.LayoutEventArgs)
             If PDPerf.TraceInfo Then
                 Trace.WriteLine("  AffectedControl=" & DebugToString(e.AffectedControl))
                 Trace.WriteLine("  AffectedComponent=" & DebugToString(e.AffectedComponent))
@@ -659,8 +659,8 @@ Namespace Microsoft.VisualStudio.Editors.Common
         ''' <param name="Message"></param>
         ''' <param name="msg"></param>
         ''' <remarks></remarks>
-        <Conditional("DEBUG")> _
-        Public Shared Sub TracePDMessageRouting(ByVal TraceLevel As TraceLevel, ByVal Message As String, ByVal msg As Windows.Forms.Message)
+        <Conditional("DEBUG")>
+        Public Shared Sub TracePDMessageRouting(ByVal TraceLevel As TraceLevel, ByVal Message As String, ByVal msg As System.Windows.Forms.Message)
 #If DEBUG Then
             If PDMessageRouting.Level >= TraceLevel Then
                 Dim FormattedMessage As String = FormatWin32Message(msg)
@@ -758,8 +758,8 @@ Namespace Microsoft.VisualStudio.Editors.Common
         End Sub
 
 
-        <Conditional("DEBUG")> _
-        Public Shared Sub TracePDPerfBegin(ByVal e As Windows.Forms.LayoutEventArgs, ByVal Message As String, ByVal ParamArray FormatArguments() As Object)
+        <Conditional("DEBUG")>
+        Public Shared Sub TracePDPerfBegin(ByVal e As System.Windows.Forms.LayoutEventArgs, ByVal Message As String, ByVal ParamArray FormatArguments() As Object)
 #If DEBUG Then
             TracePDPerfBegin(Message, FormatArguments)
             TraceOnLayout(e)

@@ -1,0 +1,26 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Initialize Variables -->
+  <PropertyGroup>
+    <FSharpCompilerPath></FSharpCompilerPath>
+  </PropertyGroup>
+
+  <!-- Expected Values -->
+  <PropertyGroup>
+    <ExpectedFSharpShimPresent>true</ExpectedFSharpShimPresent>
+    <ExpectedFSharpCompilerPath>/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFSharpCompilerPath>
+    <ExpectedFscToolExe>fsc.exe</ExpectedFscToolExe>
+    <ExpectedFscToolPath>_VsInstallRoot_/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFscToolPath>
+    <ExpectedDotnetFscCompilerPath></ExpectedDotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <Import Project="ToolsTest.props" />
+
+  <PropertyGroup>
+    <FSharpPreferNetFrameworkTools>true</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>false</FSharpPrefer64BitTools>
+  </PropertyGroup>
+
+  <Import Project="ToolsTest.targets" />
+
+</Project>

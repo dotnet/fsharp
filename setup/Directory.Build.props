@@ -13,6 +13,7 @@
     <VsixBuildLocation>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)</VsixBuildLocation>
     <InsertionDir>$(SetupRootFolder)..\artifacts\VSSetup\$(Configuration)\Insertion</InsertionDir>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <SetupProductArch>Neutral</SetupProductArch>
   </PropertyGroup>
 
 </Project>

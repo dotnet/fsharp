@@ -93,7 +93,7 @@ module Test =
           let start = 0
           let mutable i = start
           while i < length do
-             output.[i] <- input.[i]
+             output[i] <- input[i]
              i <- i + 1 @>
 
     let bar() = 
@@ -104,7 +104,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library)
+            Compilation.Create(source, Fsx, Library, options = [|"--langversion:preview"|])
 
         let module2 =
             let source =
@@ -177,7 +177,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library, [|"--optimize+"|])
+            Compilation.Create(source, Fsx, Library, [|"--optimize+"; "--nowarn:3366"|])
 
         let module2 =
             let source =

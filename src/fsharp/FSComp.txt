@@ -1615,7 +1615,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3501,tcResumableCodeArgMustHaveRightKind,"Invalid resumable code. A resumable code parameter must be of delegate or function type"
 3501,tcResumableCodeContainsLetRec,"Invalid resumable code. A 'let rec' occured in the resumable code specification"
 3510,tcResumableCodeNotSupported,"Using resumable code or resumable state machines requires /langversion:preview"
-3510,tcNoEagerConstraintApplicationAttribute,"Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later"
+3510,tcNoEagerConstraintApplicationAttribute,"Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later"
 3511,reprStateMachineNotCompilable,"This state machine is not statically compilable. %s. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning."
 3512,reprStateMachineNotCompilableNoAlternative,"This state machine is not statically compilable and no alternative is available. %s. Use an 'if __useResumableCode then <state-machine> else <alternative>' to give an alternative."
 3513,tcResumableCodeInvocation,"Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code."

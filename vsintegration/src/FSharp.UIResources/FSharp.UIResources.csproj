@@ -8,6 +8,11 @@
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <UseWpf>true</UseWpf>
+    <!--
+    WPF projects create a `*.wpftmp.csproj` project that can do a duplicate import of `*.props` and `*.targets` files
+    from referenced packages.  The fix is to not reference these files during the temporary project build.
+    -->
+    <IncludePackageReferencesDuringMarkupCompilation>false</IncludePackageReferencesDuringMarkupCompilation>
   </PropertyGroup>
 
   <ItemGroup>
