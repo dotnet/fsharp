@@ -1671,7 +1671,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             IVsEnumHiddenRegions ppenum;
             TextSpan[] aspan = new TextSpan[1];
             aspan[0] = GetDocumentSpan();
-            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (uint)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
+            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (System.IntPtr)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
             uint fetched;
             IVsHiddenRegion[] aregion = new IVsHiddenRegion[1];
             while (ppenum.Next(1, aregion, out fetched) == NativeMethods.S_OK && fetched == 1)
@@ -1687,7 +1687,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             IVsEnumHiddenRegions ppenum;
             TextSpan[] aspan = new TextSpan[1];
             aspan[0] = GetDocumentSpan();
-            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (uint)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
+            NativeMethods.ThrowOnFailure(session.EnumHiddenRegions((uint)FIND_HIDDEN_REGION_FLAGS.FHR_BY_CLIENT_DATA, (System.IntPtr)SourceConstants.HiddenRegionCookie, aspan, out ppenum));
             uint fetched;
             IVsHiddenRegion[] aregion = new IVsHiddenRegion[1];
             using (new CompoundAction(this, "ToggleAllRegions"))

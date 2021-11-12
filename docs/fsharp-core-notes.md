@@ -1,7 +1,7 @@
 ---
 title: Guidance
 category: FSharp.Core
-categoryindex: 300
+categoryindex: 500
 index: 100
 ---
 # Notes and Guidance on FSharp.Core

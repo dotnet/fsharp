@@ -1,6 +1,6 @@
 ---
-title: Overview
-category: Compiler Service API
+title: FSharp.Compiler.Service
+category: FSharp.Compiler.Service
 categoryindex: 300
 index: 100
 ---

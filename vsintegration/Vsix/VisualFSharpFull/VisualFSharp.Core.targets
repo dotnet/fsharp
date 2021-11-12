@@ -94,6 +94,11 @@
       <Private>False</Private>
     </ProjectReference>
 
+    <ProjectReference Include="..\..\..\src\fsharp\fscAnyCpu\fscAnyCpu.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>False</Private>
+    </ProjectReference>
+
     <ProjectReference Include="..\..\..\src\fsharp\fsc\fsc.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>

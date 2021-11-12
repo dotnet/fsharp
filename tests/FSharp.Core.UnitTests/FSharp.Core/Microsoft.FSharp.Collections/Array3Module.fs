@@ -111,20 +111,20 @@ type Array3Module() =
         // integer array  
         let intArr = Array3D.init 2 3 2 (fun i j k -> i*100 + j*10 + k)
         
-        let resultInt = ref 0 
-        let addToTotal x = resultInt := !resultInt + x              
+        let mutable resultInt = 0 
+        let addToTotal x = resultInt <- resultInt + x              
         
         Array3D.iter addToTotal intArr 
-        Assert.True(!resultInt = 726)
+        Assert.True((resultInt = 726))
         
         // string array 
         let strArr = Array3D.init 2 3 2 (fun i j k-> i.ToString() + "-" + j.ToString() + "-" + k.ToString())
         
-        let resultStr = ref ""
-        let addElement (x:string) = resultStr := (!resultStr) + x + ","  
+        let mutable resultStr = ""
+        let addElement (x:string) = resultStr <- resultStr + x + ","  
 
         Array3D.iter addElement strArr  
-        Assert.True(!resultStr = "0-0-0,0-0-1,0-1-0,0-1-1,0-2-0,0-2-1,1-0-0,1-0-1,1-1-0,1-1-1,1-2-0,1-2-1,")
+        Assert.True((resultStr = "0-0-0,0-0-1,0-1-0,0-1-1,0-2-0,0-2-1,1-0-0,1-0-1,1-1-0,1-1-1,1-2-0,1-2-1,"))
         
         // empty array
         let emptyArray = Array3D.create 0 0 0 0
@@ -140,22 +140,22 @@ type Array3Module() =
 
         // integer array  
         let intArr = Array3D.init 2 3 2 (fun i j k -> i*100 + j*10 + k)
-        let resultInt = ref 0 
+        let mutable resultInt = 0 
         let funInt (x:int) (y:int) (z:int) (a:int) =   
-            resultInt := !resultInt + x  + y + z + a         
+            resultInt <- resultInt + x  + y + z + a         
             () 
             
         Array3D.iteri funInt intArr 
-        if !resultInt <> 750 then Assert.Fail()
+        if resultInt <> 750 then Assert.Fail()
         
         // string array 
         let strArr = Array3D.init 2 3 2 (fun i j k-> i.ToString() + "-" + j.ToString() + "-" + k.ToString())
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:int) (y:int) (z:int) (a:string)=
-            resultStr := (!resultStr) + "[" + x.ToString() + "," + y.ToString()+"," + z.ToString() + "]" + "=" + a + "; "  
+            resultStr <- resultStr + "[" + x.ToString() + "," + y.ToString()+"," + z.ToString() + "]" + "=" + a + "; "  
             ()
         Array3D.iteri funStr strArr  
-        if !resultStr <> "[0,0,0]=0-0-0; [0,0,1]=0-0-1; [0,1,0]=0-1-0; [0,1,1]=0-1-1; [0,2,0]=0-2-0; [0,2,1]=0-2-1; [1,0,0]=1-0-0; [1,0,1]=1-0-1; [1,1,0]=1-1-0; [1,1,1]=1-1-1; [1,2,0]=1-2-0; [1,2,1]=1-2-1; " then Assert.Fail()
+        if resultStr <> "[0,0,0]=0-0-0; [0,0,1]=0-0-1; [0,1,0]=0-1-0; [0,1,1]=0-1-1; [0,2,0]=0-2-0; [0,2,1]=0-2-1; [1,0,0]=1-0-0; [1,0,1]=1-0-1; [1,1,0]=1-1-0; [1,1,1]=1-1-1; [1,2,0]=1-2-0; [1,2,1]=1-2-1; " then Assert.Fail()
         
         // empty array    
         let emptyArray = Array3D.create 0 0 0 0

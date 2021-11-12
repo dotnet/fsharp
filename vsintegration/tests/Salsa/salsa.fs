@@ -1364,12 +1364,12 @@ module internal Salsa =
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                 let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
                 file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
-              let keyword = ref None
+              let mutable keyword = None
               let span = new Microsoft.VisualStudio.TextManager.Interop.TextSpan(iStartIndex=col,iStartLine=row,iEndIndex=col,iEndLine=row)
-              let context = Salsa.VsMocks.Vs.VsUserContext (fun (_,key,value) -> (if key = "keyword" then keyword := Some value); VSConstants.S_OK)
+              let context = Salsa.VsMocks.Vs.VsUserContext (fun (_,key,value) -> (if key = "keyword" then keyword <- Some value); VSConstants.S_OK)
                 
               currentAuthoringScope.GetF1KeywordString(span, context) 
-              !keyword
+              keyword
 
             /// grab a particular line from a file
             member file.GetLineNumber n =

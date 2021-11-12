@@ -6,7 +6,7 @@
     <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>
   </PropertyGroup>
 
-  <Import Project="Test.props" />
+  <Import Project="PackageTest.props" />
 
   <PropertyGroup>
     <ExpectsValueTuple>false</ExpectsValueTuple>
@@ -15,6 +15,6 @@
     <ExpectedFSharpCorePackageVersion>$(FSCorePackageVersion)</ExpectedFSharpCorePackageVersion>
   </PropertyGroup>
 
-  <Import Project="Test.targets" />
+  <Import Project="PackageTest.targets" />
 
 </Project>

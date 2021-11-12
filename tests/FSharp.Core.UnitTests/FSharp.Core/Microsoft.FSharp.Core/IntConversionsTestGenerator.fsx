@@ -32,12 +32,12 @@ do
     use file = new StreamWriter("IntConversionsGenerated.fs")
     
     // indentation 'framework'
-    let depth = ref 0
+    let mutable depth = 0
     let indent () =
-        for i = 1 to !depth do
+        for i = 1 to depth do
             file.Write("  ") 
-    let shift () = depth := !depth + 1
-    let unshift () = depth := !depth - 1
+    let shift () = depth <- depth + 1
+    let unshift () = depth <- depth - 1
     let prn (format : Format<'T,TextWriter,unit,unit>) : 'T = 
         indent (); fprintfn<'T> file format 
     

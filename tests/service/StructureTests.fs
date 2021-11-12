@@ -23,10 +23,10 @@ type Range = Line * Col * Line * Col
 let (=>) (source: string) (expectedRanges: (Range * Range) list) =
     let lines =
         use reader = new StringReader(source)
-        [| let line = ref (reader.ReadLine())
-           while not (isNull !line) do
-               yield !line
-               line := reader.ReadLine()
+        [| let mutable line = reader.ReadLine()
+           while not (isNull line) do
+               yield line
+               line <- reader.ReadLine()
            if source.EndsWith "\n" then
                // last trailing space not returned
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak

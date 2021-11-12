@@ -1,7 +1,7 @@
 ---
 title: Memory usage
-category: General
-categoryindex: 100
+category: Compiler Internals
+categoryindex: 200
 index: 600
 ---
 # Compiler Memory Usage
