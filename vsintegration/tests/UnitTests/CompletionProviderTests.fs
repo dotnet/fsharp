@@ -736,6 +736,60 @@ let x = A.``B C`` + D.``E F``
 """
     VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
 
+[<Test>]
+let ``No completion on record field identifier at declaration site``() =
+    let fileContents = """
+type A = { le: string }
+"""
+    VerifyNoCompletionList(fileContents, "le")
+
+[<Test>]
+let ``Completion list on record field type at declaration site contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A = { Field: l }
+"""
+    VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on union case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C of string
+"""
+    VerifyNoCompletionList(fileContents, "| C")
+
+[<Test>]
+let ``No completion on union case field identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | Case of blah: int * str: int
+"""
+    VerifyNoCompletionList(fileContents, "str")
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A =
+    | Case of blah: int * str: l
+"""
+    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions2``() =
+    let fileContents = """
+type A =
+    | Case of l
+"""
+    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on enum case identifier at declaration site``() =
+    let fileContents = """
+type A =
+    | C = 0
+"""
+    VerifyNoCompletionList(fileContents, "| C")
+
 #if EXE
 ShouldDisplaySystemNamespace()
 #endif
