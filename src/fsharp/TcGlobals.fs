@@ -933,7 +933,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             | true, builder -> builder tinst
             | _ -> TType_app (tcref, tinst)
 
-  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelines compute-once "member val" that is too complex for @dsyme
+  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
   let v_attribs_Unsupported = [
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
