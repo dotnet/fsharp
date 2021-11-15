@@ -53,7 +53,7 @@ module internal QuickInfoViewProvider =
             imageId:ImageId option,
             description: seq<TaggedText>,
             documentation: seq<TaggedText>,
-            navigation:QuickInfoNavigation
+            navigation:FSharpNavigation
         ) =
 
         let buildContainerElement (itemGroup: seq<TaggedText>) =
