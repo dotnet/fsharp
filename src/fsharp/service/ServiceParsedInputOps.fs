@@ -513,7 +513,7 @@ module ParsedInput =
                 | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
                 | None -> None)
 
-        and walkInterfaceImpl (SynInterfaceImpl(_, bindings, _)) =
+        and walkInterfaceImpl (SynInterfaceImpl(bindings=bindings)) =
             List.tryPick walkBinding bindings
 
         and walkType = function
@@ -559,7 +559,7 @@ module ParsedInput =
                 ifPosInRange r (fun _ ->
                     fields |> List.tryPick (fun (SynExprRecordField(expr=e)) -> e |> Option.bind (walkExprWithKind parentKind)))
             | SynExpr.New (_, t, e, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
-            | SynExpr.ObjExpr (ty, _, bindings, ifaces, _, _) -> 
+            | SynExpr.ObjExpr (objType=ty; bindings=bindings; extraImpls=ifaces) -> 
                 walkType ty
                 |> Option.orElseWith (fun () -> List.tryPick walkBinding bindings)
                 |> Option.orElseWith (fun () -> List.tryPick walkInterfaceImpl ifaces)
@@ -1231,7 +1231,7 @@ module ParsedInput =
             walkExpr e
             returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
     
-        and walkInterfaceImpl (SynInterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
+        and walkInterfaceImpl (SynInterfaceImpl(bindings=bindings)) = List.iter walkBinding bindings
     
         and walkType = function
             | SynType.Array (_, t, _)
@@ -1292,7 +1292,7 @@ module ParsedInput =
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident
-            | SynExpr.ObjExpr (ty, argOpt, bindings, ifaces, _, _) ->
+            | SynExpr.ObjExpr (objType=ty; argOptions=argOpt; bindings=bindings; extraImpls=ifaces) ->
                 argOpt |> Option.iter (fun (e, ident) ->
                     walkExpr e
                     ident |> Option.iter addIdent)

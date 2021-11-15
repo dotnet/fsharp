@@ -5719,7 +5719,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
       )
 
-    | SynExpr.ObjExpr (synObjTy, argopt, binds, extraImpls, mNewExpr, m) ->
+    | SynExpr.ObjExpr (objType=synObjTy; argOptions=argopt; bindings=binds; extraImpls=extraImpls; newExprRange=mNewExpr; range=m) ->
       TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
@@ -5980,7 +5980,7 @@ and TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImp
 
     // Work out the type of any interfaces to implement
     let extraImpls, tpenv =
-        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
+        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(interfaceTy=synIntfTy; bindings=overrides; range=m)) ->
             let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
             if not (isInterfaceTy cenv.g intfTy) then
                 error(Error(FSComp.SR.tcExpectedInterfaceType(), m))

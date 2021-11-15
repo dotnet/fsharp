@@ -776,13 +776,13 @@ module InterfaceStubGenerator =
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.ObjExpr (ty, baseCallOpt, binds, ifaces, _range1, _range2) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
                     match baseCallOpt with
                     | None -> 
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(interfaceTy=ty; bindings=binds; range=range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)

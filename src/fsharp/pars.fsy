@@ -4746,16 +4746,17 @@ objExpr:
   | objExprBaseCall objExprBindings opt_OBLOCKSEP opt_objExprInterfaces
      { let mNewExpr = rhs parseState 1
        let fullRange = match $4 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 4)
-       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr (a, b, $2, $4, mNewExpr, m)) }
+       let mWithKwd, bindings = $2
+       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr (a, b, Some mWithKwd, bindings, $4, mNewExpr, m)) }
 
   | objExprBaseCall opt_OBLOCKSEP objExprInterfaces
      { let mNewExpr = rhs parseState 1 
        let fullRange = match $3 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 3)
-       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr (a, b, [], $3, mNewExpr, m)) }
+       fullRange, (fun m -> let (a, b) = $1 in SynExpr.ObjExpr (a, b, None, [], $3, mNewExpr, m)) }
 
   | NEW atomTypeNonAtomicDeprecated
      { let mNewExpr = rhs parseState 1 
-       (rhs2 parseState 1 2), (fun m -> let (a, b) = $2, None in SynExpr.ObjExpr (a, b, [], [], mNewExpr, m)) }
+       (rhs2 parseState 1 2), (fun m -> let (a, b) = $2, None in SynExpr.ObjExpr (a, b, None, [], [], mNewExpr, m)) }
 
 objExprBaseCall:
   | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
@@ -4771,28 +4772,31 @@ objExprBaseCall:
 
 opt_objExprBindings: 
   | objExprBindings
-     { $1 }
+     { let mWithKwd, b = $1 in Some mWithKwd, b }
 
   | /* EMPTY */
-     { [] }
+     { None, [] }
 
 objExprBindings: 
   | WITH localBindings 
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
+        mWithKwd, localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
 
   | OWITH localBindings OEND
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
+        mWithKwd, localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd }
 
   | WITH objectImplementationBlock opt_declEnd
-      { $2 |> 
-        (List.choose (function 
-                          | SynMemberDefn.Member(b, m) -> Some b
-                          | SynMemberDefn.AutoProperty(range = m) -> errorR(Error(FSComp.SR.parsIllegalMemberVarInObjectImplementation(), m)); None
-                          | x -> errorR(Error(FSComp.SR.parsMemberIllegalInObjectImplementation(), x.Range)); None)) }
+      { let mWithKwd = rhs parseState 1
+        let bindings =
+            $2 |> 
+            (List.choose (function 
+                              | SynMemberDefn.Member(b, m) -> Some b
+                              | SynMemberDefn.AutoProperty(range = m) -> errorR(Error(FSComp.SR.parsIllegalMemberVarInObjectImplementation(), m)); None
+                              | x -> errorR(Error(FSComp.SR.parsMemberIllegalInObjectImplementation(), x.Range)); None)) 
+        mWithKwd, bindings }
 
 objExprInterfaces:
   | objExprInterface opt_objExprInterfaces { $1 :: $2 }
@@ -4809,7 +4813,8 @@ opt_objExprInterfaces:
 
 objExprInterface:
   | interfaceMember appType opt_objExprBindings opt_declEnd opt_OBLOCKSEP
-    { SynInterfaceImpl($2, $3, lhs parseState) }
+    { let mWithKwd, bindings = $3
+      SynInterfaceImpl($2, mWithKwd, bindings, lhs parseState) }
 
 braceBarExpr:
   | STRUCT braceBarExprCore

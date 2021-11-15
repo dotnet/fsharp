@@ -678,6 +678,30 @@ match! x with
             assertRange (2, 0) (2, 6) mMatch
             assertRange (2, 9) (2, 13) mWith
         | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.ObjExpr contains the range of with keyword`` () =
+        let ast =
+            """
+{ new obj() with
+    member x.ToString() = "INotifyEnumerableInternal"
+  interface INotifyEnumerableInternal<'T>
+  interface IEnumerable<_> with
+    member x.GetEnumerator() = null }
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.ObjExpr(withKeyword=Some mWithObjExpr; extraImpls=[ SynInterfaceImpl(withKeyword=None); SynInterfaceImpl(withKeyword=Some mWithSynInterfaceImpl) ]))
+                    ])
+                ])) ->
+            assertRange (2, 12) (2, 16) mWithObjExpr
+            assertRange (5, 27) (5, 31) mWithSynInterfaceImpl
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

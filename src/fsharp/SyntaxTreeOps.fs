@@ -691,8 +691,8 @@ let rec synExprContainsError inpExpr =
               let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
               walkExprs flds
 
-          | SynExpr.ObjExpr (_, _, bs, is, _, _) ->
-              walkBinds bs || walkBinds [ for SynInterfaceImpl(_, bs, _) in is do yield! bs  ]
+          | SynExpr.ObjExpr (bindings=bs; extraImpls=is) ->
+              walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
 
           | SynExpr.ForEach (_, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->

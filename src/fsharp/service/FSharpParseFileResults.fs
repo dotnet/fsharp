@@ -588,12 +588,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       | None -> ()
                       yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
 
-                  | SynExpr.ObjExpr (_, args, bs, is, _, _) -> 
+                  | SynExpr.ObjExpr (argOptions=args; bindings=bs; extraImpls=is) -> 
                       match args with
                       | None -> ()
                       | Some (arg, _) -> yield! walkExpr false arg
                       yield! walkBinds bs  
-                      for SynInterfaceImpl(_, bs, _) in is do yield! walkBinds bs
+                      for SynInterfaceImpl(bindings=bs) in is do yield! walkBinds bs
 
                   | SynExpr.While (spWhile, e1, e2, _) -> 
                       yield! walkWhileSeqPt spWhile

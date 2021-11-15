@@ -618,6 +618,7 @@ type SynExpr =
     | ObjExpr of
         objType: SynType *
         argOptions:(SynExpr * Ident option) option *
+        withKeyword: Range option *
         bindings: SynBinding list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
@@ -1303,6 +1304,7 @@ type SynPat =
 type SynInterfaceImpl =
     | SynInterfaceImpl of
         interfaceTy: SynType *
+        withKeyword: Range option *
         bindings: SynBinding list *
         range: range
 

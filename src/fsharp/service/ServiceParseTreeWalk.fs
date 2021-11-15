@@ -383,10 +383,10 @@ module SyntaxTraversal =
                     ] |> pick expr
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.ObjExpr (ty,baseCallOpt,binds,ifaces,_range1,_range2) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
                     let result = 
                         ifaces 
-                        |> Seq.map (fun (SynInterfaceImpl(ty, _, _)) -> ty)
+                        |> Seq.map (fun (SynInterfaceImpl(interfaceTy=ty)) -> ty)
                         |> Seq.tryPick (fun ty -> visitor.VisitInterfaceSynMemberDefnType(path, ty))
                     
                     if result.IsSome then 
@@ -401,7 +401,7 @@ module SyntaxTraversal =
                         | _ -> ()
                         for b in binds do
                             yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
-                        for SynInterfaceImpl(_ty, binds, _range) in ifaces do
+                        for SynInterfaceImpl(bindings=binds) in ifaces do
                             for b in binds do
                                 yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                     ] |> pick expr

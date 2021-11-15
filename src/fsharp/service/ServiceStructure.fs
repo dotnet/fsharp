@@ -309,7 +309,7 @@ module Structure =
                 parseExpr e
             | SynExpr.ComputationExpr (_, e, _r) as _c ->
                 parseExpr e
-            | SynExpr.ObjExpr (_, argOpt, bindings, extraImpls, newRange, wholeRange) as _objExpr ->
+            | SynExpr.ObjExpr (argOptions=argOpt; bindings=bindings; extraImpls=extraImpls; newExprRange=newRange; range=wholeRange) as _objExpr ->
                 match argOpt with
                 | Some (args, _) ->
                     let collapse = Range.endToEnd args.Range wholeRange
@@ -456,7 +456,7 @@ module Structure =
 
         and parseBindings sqs = for bind in sqs do parseBinding bind
 
-        and parseExprInterface (SynInterfaceImpl(synType, bindings, range)) =
+        and parseExprInterface (SynInterfaceImpl(interfaceTy=synType; bindings=bindings; range=range)) =
             let collapse = Range.endToEnd synType.Range range |> Range.modEnd -1
             rcheck Scope.Interface Collapse.Below range collapse
             parseBindings bindings
