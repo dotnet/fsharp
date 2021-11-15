@@ -643,6 +643,33 @@ module Test3 =
     test "vwekjwve95" (tag()) 2
     test "vwekjwve96" (tag()) 3
 
+module Test12384 =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let rec one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    and two =
+        {
+            Next = one
+            Value = 2
+        }
+    printfn "%A" one
+    printfn "%A" two
+    test "cweewlwne1" one.Value 1
+    test "cweewlwne2" one.Next.Value 2
+    test "cweewlwne3" one.Next.Next.Value 1
+    test "cweewlwne4" two.Value 2
+    test "cweewlwne5" two.Next.Value 1
+    test "cweewlwne6" two.Next.Next.Value 2
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

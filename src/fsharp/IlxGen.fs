@@ -7552,8 +7552,12 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                 GenExnDef cenv cgbuf.mgbuf eenvinner m tc
             else
                 GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc
-        for mbind in mbinds do
-            GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+        if mbinds |> List.forall (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) then
+            let recBinds = mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding recBind -> Some recBind | _ -> None)
+            GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+        else
+            for mbind in mbinds do
+                GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
         eenvinner
 
     | TMDefLet(bind, _) ->
