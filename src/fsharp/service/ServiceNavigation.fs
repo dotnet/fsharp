@@ -236,7 +236,7 @@ module NavigationImpl =
                          | SynMemberDefn.AbstractSlot(SynValSig(_, id, _, ty, _, _, _, _, access, _, _), _, _) ->
                              [ createMember(id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access) ]
                          | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
-                         | SynMemberDefn.Interface(_, Some(membs), _) ->
+                         | SynMemberDefn.Interface(members=Some(membs)) ->
                              processMembers membs enclosingEntityKind |> snd
                          | _ -> [] 
                      // can happen if one is a getter and one is a setter
@@ -725,7 +725,7 @@ module NavigateTo =
                 addMember synValSig memberFlags false container
             | SynMemberDefn.AutoProperty(ident=id) ->
                 addIdent NavigableItemKind.Property id false container
-            | SynMemberDefn.Interface(_, members, _) ->
+            | SynMemberDefn.Interface(members=members) ->
                 match members with
                 | Some members ->
                     for m in members do

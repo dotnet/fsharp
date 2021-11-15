@@ -766,7 +766,7 @@ module SyntaxTraversal =
                 | Some x -> Some x
                 | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path)) |> pick m
             | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) -> None
-            | SynMemberDefn.Interface(synType, synMemberDefnsOption, _range) -> 
+            | SynMemberDefn.Interface(interfaceType=synType; members=synMemberDefnsOption) -> 
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with
                 | None -> 
                     match synMemberDefnsOption with 

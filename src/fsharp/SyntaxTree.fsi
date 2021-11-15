@@ -1840,6 +1840,7 @@ type SynMemberDefn =
     /// An interface implementation definition within a class
     | Interface of
         interfaceType: SynType *
+        withKeyword: Range option *
         members: SynMemberDefns option *
         range: range
 

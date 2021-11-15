@@ -130,7 +130,7 @@ module XmlDocParsing =
                     let paramNames = synValInfo.ArgNames
                     [XmlDocable(line,indent,paramNames)]
                 else []
-            | SynMemberDefn.Interface(_synType, synMemberDefnsOption, _range) -> 
+            | SynMemberDefn.Interface(members=synMemberDefnsOption) -> 
                 match synMemberDefnsOption with 
                 | None -> [] 
                 | Some(x) -> x |> List.collect getXmlDocablesSynMemberDefn

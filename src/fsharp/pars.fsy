@@ -1703,7 +1703,7 @@ classDefnMembers:
 classDefnMembersAtLeastOne:
   | classDefnMember opt_seps classDefnMembers
      { match $1, $3 with
-       | [ SynMemberDefn.Interface (_, Some [], m) ], nextMember :: _ ->
+       | [ SynMemberDefn.Interface (members=Some []; range=m) ], nextMember :: _ ->
            warning(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
        | _ -> ()
        $1 @ $3 }
@@ -1965,12 +1965,11 @@ classDefnMember:
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsInterfacesHaveSameVisibilityAsEnclosingType(), rhs parseState 3))
-        let members = Option.map fst $5
-        let mWhole =
+        let mWithKwd, members, mWhole =
             match $5 with
-            | None -> rhs2 parseState 1 4
-            | Some (_, m) -> unionRanges (rhs2 parseState 1 4) m
-        [ SynMemberDefn.Interface ($4, members, mWhole) ] }
+            | None -> None, None, rhs2 parseState 1 4
+            | Some (mWithKwd, members, m) -> Some mWithKwd, Some members, unionRanges (rhs2 parseState 1 4) m
+        [ SynMemberDefn.Interface ($4, mWithKwd, members, mWhole) ] }
         
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
@@ -2109,12 +2108,14 @@ opt_declVisibility:
 
 opt_interfaceImplDefn:
   | WITH objectImplementationBlock declEnd
-     { let members = $2
+     { let mWithKwd = rhs parseState 1
+       let members = $2
        let m = (rhs parseState 1, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-       Some (members, m) }
+       Some (mWithKwd, members, m) }
 
   | WITH
-     { Some ([], rhs parseState 1) }
+     { let mWithKwd = rhs parseState 1
+       Some (mWithKwd, [], mWithKwd) }
 
   | /* EMPTY */
      { None }

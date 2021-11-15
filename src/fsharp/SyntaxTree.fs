@@ -1650,6 +1650,7 @@ type SynMemberDefn =
 
     | Interface of
         interfaceType: SynType *
+        withKeyword: Range option *
         members: SynMemberDefns option *
         range: range
 

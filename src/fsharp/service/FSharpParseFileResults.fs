@@ -713,7 +713,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynMemberDefn.AutoProperty(synExpr=synExpr) -> yield! walkExpr true synExpr
                   | SynMemberDefn.ImplicitCtor(_, _, _, _, _, m) -> yield! checkRange m
                   | SynMemberDefn.Member(bind, _) -> yield! walkBind bind
-                  | SynMemberDefn.Interface(_, Some membs, _) -> for m in membs do yield! walkMember m
+                  | SynMemberDefn.Interface(members=Some membs) -> for m in membs do yield! walkMember m
                   | SynMemberDefn.Inherit(_, _, m) -> 
                       // can break on the "inherit" clause
                       yield! checkRange m

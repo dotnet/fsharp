@@ -2383,7 +2383,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
         let overridesOK = DeclKind.CanOverrideOrImplement declKind
         members |> List.collect (function
-            | SynMemberDefn.Interface(ity, defnOpt, _) -> 
+            | SynMemberDefn.Interface(interfaceType=ity; members=defnOpt) -> 
                   let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
                   let m = ity.Range
                   if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveInterfaceDeclaration(), m))
@@ -4669,12 +4669,12 @@ module TcDeclarations =
     /// body = members
     ///        where members contain methods/overrides, also implicit ctor, inheritCall and local definitions.
     let rec private SplitTyconDefn (SynTypeDefn(typeInfo=synTyconInfo;typeRepr=trepr; members=extraMembers)) = 
-        let implements1 = List.choose (function SynMemberDefn.Interface (ty, _, _) -> Some(ty, ty.Range) | _ -> None) extraMembers
+        let implements1 = List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None) extraMembers
         match trepr with
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
             CheckMembersForm cspec
             let fields = cspec |> List.choose (function SynMemberDefn.ValField (f, _) -> Some f | _ -> None)
-            let implements2 = cspec |> List.choose (function SynMemberDefn.Interface (ty, _, _) -> Some(ty, ty.Range) | _ -> None)
+            let implements2 = cspec |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 cspec |> List.choose (function 
                     | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
@@ -4720,7 +4720,7 @@ module TcDeclarations =
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
-                    | SynMemberDefn.Interface (_, Some membs, _) -> membs |> List.collect preAutoProps
+                    | SynMemberDefn.Interface (members=Some membs) -> membs |> List.collect preAutoProps
                     | SynMemberDefn.LetBindings _
                     | SynMemberDefn.ImplicitCtor _ 
                     | SynMemberDefn.Open _
@@ -4768,9 +4768,9 @@ module TcDeclarations =
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
-                    | SynMemberDefn.Interface (ty, Some membs, m) -> 
+                    | SynMemberDefn.Interface (interfaceType=ty; withKeyword=withM; members=Some membs; range=m) -> 
                         let membs' = membs |> List.collect postAutoProps
-                        [SynMemberDefn.Interface (ty, Some membs', m)]
+                        [SynMemberDefn.Interface (ty, withM, Some membs', m)]
                     | SynMemberDefn.LetBindings _
                     | SynMemberDefn.ImplicitCtor _ 
                     | SynMemberDefn.Open _
@@ -4785,7 +4785,7 @@ module TcDeclarations =
             let isConcrete = 
                 members |> List.exists (function 
                     | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), _) -> not memberFlags.IsDispatchSlot 
-                    | SynMemberDefn.Interface (_, defOpt, _) -> Option.isSome defOpt
+                    | SynMemberDefn.Interface (members=defOpt) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
                     | SynMemberDefn.ImplicitCtor _ -> true
                     | SynMemberDefn.ImplicitInherit _ -> true

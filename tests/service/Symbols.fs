@@ -471,6 +471,28 @@ type Int32 with
             assertRange (2, 11) (2, 15) mWithKeyword
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynMemberDefn.Interface contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    interface Bar with
+        member Meh () = ()
+    interface Other
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members=[ SynMemberDefn.ImplicitCtor _
+                                                                                           SynMemberDefn.Interface(withKeyword=Some mWithKeyword)
+                                                                                           SynMemberDefn.Interface(withKeyword=None) ])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 18) (3, 22) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
