@@ -52,7 +52,7 @@ match () with
 | x
 """
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 
@@ -64,7 +64,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -76,7 +76,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _); _ ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -88,7 +88,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -100,8 +100,8 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (_, _, _, SynExpr.ArbitraryAfterError _, _, _)
-                             SynMatchClause (_, _, _, SynExpr.Const _, _, _) ], _) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _)
+                               SynMatchClause (resultExpr=SynExpr.Const _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -113,7 +113,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
         | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _), _), _) -> ()
         | _ -> failwith "Unexpected pattern"
@@ -128,7 +128,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (_, _, [ SynMatchClause (pat = pat) ], _) ->
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
         | SynPat.Or
             (SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _),

@@ -707,8 +707,10 @@ type SynExpr =
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
+        matchKeyword: Range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
+        withKeyword: Range *
         clauses: SynMatchClause list *
         range: range 
 

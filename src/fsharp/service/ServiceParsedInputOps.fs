@@ -571,7 +571,7 @@ module ParsedInput =
             | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
-            | SynExpr.Match (_, e, synMatchClauseList, _) -> 
+            | SynExpr.Match (expr=e; clauses=synMatchClauseList) -> 
                 walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
             | SynExpr.Do (e, _) -> walkExprWithKind parentKind e
             | SynExpr.Assert (e, _) -> walkExprWithKind parentKind e
@@ -603,7 +603,7 @@ module ParsedInput =
             | SynExpr.JoinIn (e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExprWithKind parentKind e
-            | SynExpr.Match (_, e, synMatchClauseList, _)
+            | SynExpr.Match (expr=e; clauses=synMatchClauseList)
             | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(rhs=e1; andBangs=es; body=e2) ->
@@ -1308,7 +1308,7 @@ module ParsedInput =
                 List.iter walkExpr [e1; e2]
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) ->
                 List.iter walkClause synMatchClauseList
-            | SynExpr.Match (_, e, synMatchClauseList, _) ->
+            | SynExpr.Match (expr=e; clauses=synMatchClauseList) ->
                 walkExpr e
                 List.iter walkClause synMatchClauseList
             | SynExpr.TypeApp (e, _, tys, _, _, _, _) ->

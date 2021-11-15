@@ -575,8 +575,10 @@ type SynExpr =
         range: range
 
     | Match of
+        matchKeyword: Range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
+        withKeyword: Range *
         clauses: SynMatchClause list *
         range: range 
 

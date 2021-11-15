@@ -270,8 +270,8 @@ module Structure =
             | SynExpr.LetOrUse (_, _, bindings, body, _) ->
                 parseBindings bindings
                 parseExpr body
-            | SynExpr.Match (seqPointAtBinding, _expr, clauses, r)
-            | SynExpr.MatchBang (seqPointAtBinding, _expr, clauses, r) ->
+            | SynExpr.Match (matchDebugPoint=seqPointAtBinding; clauses=clauses; range=r)
+            | SynExpr.MatchBang (matchDebugPoint=seqPointAtBinding; clauses=clauses; range=r) ->
                 match seqPointAtBinding with
                 | DebugPointAtBinding.Yes sr ->
                     let collapse = Range.endToEnd sr r

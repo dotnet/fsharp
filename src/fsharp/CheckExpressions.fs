@@ -5657,7 +5657,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
-    | SynExpr.Match (spMatch, synInputExpr, synClauses, _m) ->
+    | SynExpr.Match (matchDebugPoint=spMatch; expr=synInputExpr; clauses=synClauses) ->
 
         let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv synInputExpr
         let mInputExpr = inputExpr.Range

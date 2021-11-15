@@ -807,7 +807,7 @@ module InterfaceStubGenerator =
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
                     synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
-                | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
+                | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) ->
                     walkExpr synExpr
                     |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 

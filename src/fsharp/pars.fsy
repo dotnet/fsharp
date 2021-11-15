@@ -3499,7 +3499,7 @@ declExpr:
       { let mMatch = rhs parseState 1
         let mWith, (clauses, mLast) = $3
         let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
-        SynExpr.Match (spBind, $2, clauses, unionRanges mMatch mLast) }
+        SynExpr.Match (mMatch, spBind, $2, mWith, clauses, unionRanges mMatch mLast) }
 
   | MATCH typedSequentialExpr recover %prec expr_match
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())

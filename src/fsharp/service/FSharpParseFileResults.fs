@@ -226,7 +226,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | Some expr ->
                         getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
-            | SynExpr.Match (_, expr, clauses, range) when rangeContainsPos range pos ->
+            | SynExpr.Match (expr=expr; clauses=clauses; range=range) when rangeContainsPos range pos ->
                 if rangeContainsPos expr.Range pos then
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 else
@@ -624,7 +624,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.Lambda (body = bodyExpr) -> 
                       yield! walkExpr true bodyExpr 
 
-                  | SynExpr.Match (spBind, inpExpr, cl, _) ->
+                  | SynExpr.Match (matchDebugPoint=spBind; expr=inpExpr; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false inpExpr 
                       for SynMatchClause(_, whenExpr, _, tgtExpr, _, _) in cl do 
