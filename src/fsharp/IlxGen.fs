@@ -7552,12 +7552,24 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                 GenExnDef cenv cgbuf.mgbuf eenvinner m tc
             else
                 GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc
-        if mbinds |> List.forall (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) then
-            let recBinds = mbinds |> List.choose (function ModuleOrNamespaceBinding.Binding recBind -> Some recBind | _ -> None)
-            GenLetRecBindings cenv cgbuf eenv (recBinds, m)
-        else
-            for mbind in mbinds do
+
+        // Generate chunks of non-nested bindings together to allow recursive fixups.
+        let mutable bindsRemaining = mbinds 
+        while not bindsRemaining.IsEmpty do
+            match bindsRemaining with 
+            | ModuleOrNamespaceBinding.Binding _ :: _ -> 
+                let recBinds =
+                    bindsRemaining
+                    |> List.takeWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false)
+                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "unexpected")
+                let otherBinds = mbinds |> List.skipWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) 
+                GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+                bindsRemaining <- otherBinds
+            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
                 GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+                bindsRemaining <- rest
+            | [] -> failwith "unreachable"
+
         eenvinner
 
     | TMDefLet(bind, _) ->

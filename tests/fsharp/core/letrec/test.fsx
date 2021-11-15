@@ -670,6 +670,68 @@ module Test12384 =
     test "cweewlwne5" two.Next.Value 1
     test "cweewlwne6" two.Next.Next.Value 2
 
+module Test12384b =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let rec one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    and two =
+        {
+            Next = one
+            Value = 2
+        }
+    // Also test the case where the two recursive bindings occur with a nested module after
+    module M =
+        let f x = x + 1
+        
+    printfn "%A" one
+    printfn "%A" two
+    test "cweewlwne1a" one.Value 1
+    test "cweewlwne2a" one.Next.Value 2
+    test "cweewlwne3a" one.Next.Next.Value 1
+    test "cweewlwne4a" two.Value 2
+    test "cweewlwne5a" two.Next.Value 1
+    test "cweewlwne6a" two.Next.Next.Value 2
+
+module rec Test12384c =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    let two =
+        {
+            Next = one
+            Value = 2
+        }
+    // Also test the case where the two recursive bindings occur with a nested module after
+    module M =
+        let f x = x + 1
+        
+    printfn "%A" one
+    printfn "%A" two
+    test "cweewlwne1b" one.Value 1
+    test "cweewlwne2b" one.Next.Value 2
+    test "cweewlwne3b" one.Next.Next.Value 1
+    test "cweewlwne4b" two.Value 2
+    test "cweewlwne5b" two.Next.Value 1
+    test "cweewlwne6b" two.Next.Next.Value 2
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
