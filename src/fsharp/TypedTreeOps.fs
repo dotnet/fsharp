@@ -5906,7 +5906,7 @@ and remarkDecisionTree m x =
         let e1R = remarkExpr m e1
         let casesR = cases |> List.map (fun (TCase(test, y)) -> TCase(test, remarkDecisionTree m y))
         let dfltR = Option.map (remarkDecisionTree m) dflt
-        TDSwitch(sp, e1R, casesR, Option.map (remarkDecisionTree m) dfltR, m)
+        TDSwitch(sp, e1R, casesR, dfltR, m)
     | TDSuccess (es, n) ->
         TDSuccess (remarkFlatExprs m es, n)
     | TDBind (bind, rest) ->
