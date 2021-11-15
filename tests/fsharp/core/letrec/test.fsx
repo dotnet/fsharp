@@ -732,6 +732,81 @@ module rec Test12384c =
     test "cweewlwne5b" two.Next.Value 1
     test "cweewlwne6b" two.Next.Next.Value 2
 
+
+//Note, this case doesn't initialize successfully because of the intervening module. Tracked by #12384
+  
+(*
+module rec Test12384d =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    // An intervening module declaration
+    module M =
+        let x() = one
+        
+    let two =
+        {
+            Next = one
+            Value = 2
+        }
+
+    printfn "%A" one
+    printfn "%A" two
+    test "cweewlwne1b" one.Value 1
+    test "cweewlwne2b" one.Next.Value 2
+    test "cweewlwne3b" one.Next.Next.Value 1
+    test "cweewlwne1b" (M.x()).Value 1
+    test "cweewlwne2b" (M.x()).Next.Value 2
+    test "cweewlwne3b" (M.x()).Next.Next.Value 1
+    test "cweewlwne4b" two.Value 2
+    test "cweewlwne5b" two.Next.Value 1
+    test "cweewlwne6b" two.Next.Next.Value 2
+*)
+
+module rec Test12384e =
+    type Node =
+        {
+            Next: Node
+            Value: int
+        }
+
+    let one =
+        {
+            Next = two
+            Value = 1
+        }
+
+    // An intervening type declaration
+    type M() =
+        static member X() = one
+        
+    let two =
+        {
+            Next = one
+            Value = 2
+        }
+
+    printfn "%A" one
+    printfn "%A" two
+    test "cweewlwne1b" one.Value 1
+    test "cweewlwne2b" one.Next.Value 2
+    test "cweewlwne3b" one.Next.Next.Value 1
+    test "cweewlwne1b" (M.X()).Value 1
+    test "cweewlwne2b" (M.X()).Next.Value 2
+    test "cweewlwne3b" (M.X()).Next.Next.Value 1
+    test "cweewlwne4b" two.Value 2
+    test "cweewlwne5b" two.Next.Value 1
+    test "cweewlwne6b" two.Next.Next.Value 2
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
