@@ -812,22 +812,22 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), equalsRange, typeRepr, members, range)) = $4
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), equalsRange, typeRepr, withKeyword, members, range)) = $4
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let mTc =
             let keywordM = rhs parseState 3
             (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr, members, mTc))
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr, withKeyword, members, mTc))
         let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3
+        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, members, range)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), e, f)
+        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), withKeyword, members, range)
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
   | openDecl
@@ -876,9 +876,9 @@ tyconSpfnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconSpfn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, members, range)) = $2
+           let (SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, withKeyword, members, range)) = $2
            _xmlDoc.MarkAsInvalid()
-           SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, members, range)
+           SynTypeDefnSig(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), equalsRange, typeRepr, withKeyword, members, range)
        tyconSpfn :: $3 }
 
   |
@@ -892,7 +892,8 @@ tyconSpfn:
         let mEquals = rhs parseState 2
         $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
-      { SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), $2, lhs parseState) }
+      { let mWithKwd, members = $2
+        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), mWithKwd, members, lhs parseState) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -908,12 +909,14 @@ tyconSpfnRhsBlock:
   | OBLOCKBEGIN  tyconSpfnRhs opt_OBLOCKSEP classSpfnMembers opt_classSpfn oblockend opt_classSpfn  
      { let m = lhs parseState 
        (fun lhsm nameInfo mEquals -> 
-           $2 lhsm nameInfo mEquals (checkForMultipleAugmentations m ($4 @ $5) $7)) }
+           let members = $4 @ (snd $5)
+           $2 lhsm nameInfo mEquals (checkForMultipleAugmentations m members (snd $7))) }
 
   | tyconSpfnRhs opt_classSpfn
      { let m = lhs parseState 
-       (fun lhsm nameInfo mEquals -> 
-           $1 lhsm nameInfo mEquals $2) }
+       (fun lhsm nameInfo mEquals ->
+           let _, members = $2 
+           $1 lhsm nameInfo mEquals members) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -922,7 +925,7 @@ tyconSpfnRhs:
      { (fun lhsm nameInfo mEquals augmentation -> 
            let declRange = unionRanges lhsm $1.Range
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), None, augmentation, mWhole)) }
 
   | tyconClassSpfn 
      { let objectModelRange = lhs parseState 
@@ -933,7 +936,7 @@ tyconSpfnRhs:
            
            let declRange = unionRanges nameRange objectModelRange
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), None, augmentation, mWhole)) }
 
   | DELEGATE OF topType
      { let m = lhs parseState 
@@ -942,7 +945,7 @@ tyconSpfnRhs:
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole)) }
+           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), None, [], mWhole)) }
 
 
 /* The right-hand-side of an object type definition in a signature */
@@ -1094,16 +1097,18 @@ memberSpecFlags:
 /* Part of an exception definition in a signature file */
 exconSpfn: 
   | exconCore opt_classSpfn 
-     { SynExceptionSig($1, $2, lhs parseState) }
+     { let mWithKwd, members = $2
+       SynExceptionSig($1, mWithKwd, members, lhs parseState) }
   
 
 /* The optional augmentation on a type definition in a signature */
 opt_classSpfn: 
   | WITH classSpfnBlock declEnd 
-     { $2 } 
+     { let mWithKwd = rhs parseState 1
+       (Some mWithKwd), $2 } 
 
   | /* EMPTY */                   
-     { [] }
+     { None, [] }
 
 
 /*--------------------------------------------------------------------------*/

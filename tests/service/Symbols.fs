@@ -1246,6 +1246,47 @@ type Shape =
             assertRange (4, 11) (4, 12) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefnSig should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+type Foo with
+    member Meh : unit -> unit
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules =[ SynModuleOrNamespaceSig(decls =[
+            SynModuleSigDecl.Types(
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.Simple _
+                                       withKeyword=Some mWithKeyword) ]
+            )
+        ]) ])) ->
+            assertRange (4, 9) (4, 13) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExceptionSig should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+exception Foo with
+    member Meh : unit -> unit
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Exception(
+                exnSig=SynExceptionSig(withKeyword = Some mWithKeyword)
+            )
+        ]) ])) ->
+            assertRange (4, 14) (4, 18) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynMatchClause =
     [<Test>]
     let ``Range of single SynMatchClause`` () =

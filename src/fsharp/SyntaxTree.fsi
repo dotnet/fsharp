@@ -1630,6 +1630,7 @@ type SynTypeDefnSig =
         typeInfo: SynComponentInfo *
         equalsRange: Range option *
         typeRepr: SynTypeDefnSigRepr *
+        withKeyword: Range option *
         members: SynMemberSig list *
         range: range
 
@@ -1962,6 +1963,7 @@ type SynOpenDeclTarget =
 type SynExceptionSig =
     | SynExceptionSig of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: Range option *
         members: SynMemberSig list *
         range: range
 

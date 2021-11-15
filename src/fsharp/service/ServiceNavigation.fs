@@ -343,7 +343,7 @@ module NavigationImpl =
             // Exception declaration
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
         
-        and processExnSig baseName (SynExceptionSig(repr, memberSigs, _)) =  
+        and processExnSig baseName (SynExceptionSig(exnRepr=repr; members=memberSigs)) =  
             let nested = processSigMembers memberSigs
             processExnRepr baseName nested repr
 
@@ -607,7 +607,7 @@ module NavigateTo =
             match decl with
             | SynModuleSigDecl.ModuleAbbrev(lhs, _, _range) ->
                 addModuleAbbreviation lhs true container
-            | SynModuleSigDecl.Exception(SynExceptionSig(representation, _, _), _) ->
+            | SynModuleSigDecl.Exception(exnSig=SynExceptionSig(exnRepr=representation)) ->
                 addExceptionRepr representation true container |> ignore
             | SynModuleSigDecl.NamespaceFragment fragment ->
                 walkSynModuleOrNamespaceSig fragment container
