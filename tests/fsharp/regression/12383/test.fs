@@ -2938,3 +2938,8 @@ let inline translate opcode =
 
 // vim: set tw=80 sts=2 sw=2:
 let translate2 opcode = translate opcode
+
+do (System.Console.Out.WriteLine "Test Passed"; 
+    System.IO.File.WriteAllText("test.ok", "ok"); 
+    exit 0)
+
