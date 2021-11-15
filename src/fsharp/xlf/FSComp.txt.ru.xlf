@@ -694,7 +694,7 @@
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
         <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="new">Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</target>
+        <target state="translated">Для использования методов с "NoEagerConstraintApplicationAttribute" требуется /langversion:6.0 или более поздняя версия</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
