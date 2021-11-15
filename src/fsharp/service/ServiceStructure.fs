@@ -539,7 +539,7 @@ module Structure =
            match objectModel with
            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
                match defnKind with
-               | SynTypeDefnKind.Augmentation ->
+               | SynTypeDefnKind.Augmentation _ ->
                    rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                | _ ->
                    rcheck Scope.Type Collapse.Below fullrange collapse
@@ -765,7 +765,7 @@ module Structure =
                     List.iter parseSynMemberDefnSig objMembers
                     let fullrange, collapse = makeRanges objMembers
                     rcheck Scope.Type Collapse.Below fullrange collapse
-            | SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Augmentation, objMembers, _) ->
+            | SynTypeDefnSigRepr.ObjectModel (kind=SynTypeDefnKind.Augmentation _; memberSigs=objMembers) ->
                     let fullrange, collapse = makeRanges objMembers
                     rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                     List.iter parseSynMemberDefnSig objMembers

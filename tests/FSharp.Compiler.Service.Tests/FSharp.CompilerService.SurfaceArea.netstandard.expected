@@ -8549,6 +8549,8 @@ FSharp.Compiler.Syntax.SynTypeDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.
 FSharp.Compiler.Syntax.SynTypeDefn: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.SynTypeDefn: System.String ToString()
 FSharp.Compiler.Syntax.SynTypeDefnKind
+FSharp.Compiler.Syntax.SynTypeDefnKind+Augmentation: FSharp.Compiler.Text.Range get_withKeyword()
+FSharp.Compiler.Syntax.SynTypeDefnKind+Augmentation: FSharp.Compiler.Text.Range withKeyword
 FSharp.Compiler.Syntax.SynTypeDefnKind+Delegate: FSharp.Compiler.Syntax.SynType get_signature()
 FSharp.Compiler.Syntax.SynTypeDefnKind+Delegate: FSharp.Compiler.Syntax.SynType signature
 FSharp.Compiler.Syntax.SynTypeDefnKind+Delegate: FSharp.Compiler.Syntax.SynValInfo get_signatureInfo()
@@ -8587,10 +8589,10 @@ FSharp.Compiler.Syntax.SynTypeDefnKind: Boolean get_IsStruct()
 FSharp.Compiler.Syntax.SynTypeDefnKind: Boolean get_IsUnion()
 FSharp.Compiler.Syntax.SynTypeDefnKind: Boolean get_IsUnspecified()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Abbrev
-FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Augmentation
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Class
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind IL
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Interface
+FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind NewAugmentation(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind NewDelegate(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynValInfo)
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Opaque
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Record
@@ -8598,7 +8600,6 @@ FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind S
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Union
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind Unspecified
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Abbrev()
-FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Augmentation()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Class()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_IL()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Interface()
@@ -8607,6 +8608,7 @@ FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind g
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Struct()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Union()
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind get_Unspecified()
+FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind+Augmentation
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind+Delegate
 FSharp.Compiler.Syntax.SynTypeDefnKind: FSharp.Compiler.Syntax.SynTypeDefnKind+Tags
 FSharp.Compiler.Syntax.SynTypeDefnKind: Int32 Tag

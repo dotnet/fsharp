@@ -3191,7 +3191,7 @@ module EstablishTypeDefinitionCores =
                     for SynTypeDefn(typeInfo=SynComponentInfo(typeParams=TyparDecls typars; longId=ids); typeRepr=trepr) in typeSpecs do 
                         if isNil typars then
                             match trepr with 
-                            | SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation, _, _) -> ()
+                            | SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> ()
                             | _ -> yield (List.last ids).idText
                 | _ -> () ]
             |> set
@@ -4593,7 +4593,7 @@ module TcDeclarations =
         declKind, tcref, typars
 
 
-    let private isAugmentationTyconDefnRepr = function SynTypeDefnSimpleRepr.General(SynTypeDefnKind.Augmentation, _, _, _, _, _, _, _) -> true | _ -> false
+    let private isAugmentationTyconDefnRepr = function SynTypeDefnSimpleRepr.General(kind=SynTypeDefnKind.Augmentation _) -> true | _ -> false
     let private isAutoProperty = function SynMemberDefn.AutoProperty _ -> true | _ -> false
     let private isMember = function SynMemberDefn.Member _ -> true | _ -> false
     let private isImplicitCtor = function SynMemberDefn.ImplicitCtor _ -> true | _ -> false

@@ -1491,7 +1491,7 @@ type SynTypeDefnKind =
     | Union
     | Abbrev
     | Opaque
-    | Augmentation
+    | Augmentation of withKeyword: Range
     | IL
     | Delegate of signature: SynType * signatureInfo: SynValInfo
 

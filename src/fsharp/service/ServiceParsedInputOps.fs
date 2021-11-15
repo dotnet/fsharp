@@ -1404,7 +1404,7 @@ module ParsedInput =
                     match repr with
                     | SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, _)
                     | SynTypeDefnSigRepr.ObjectModel(SynTypeDefnKind.Abbrev, _, _)
-                    | SynTypeDefnSigRepr.ObjectModel(SynTypeDefnKind.Augmentation, _, _) -> true
+                    | SynTypeDefnSigRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation _) -> true
                     | _ -> false
                 walkComponentInfo isTypeExtensionOrAlias info
                 walkTypeDefnSigRepr repr
@@ -1469,7 +1469,7 @@ module ParsedInput =
         and walkTypeDefn (SynTypeDefn (typeInfo=info; typeRepr=repr; members=members; implicitConstructor=implicitCtor)) =
             let isTypeExtensionOrAlias =
                 match repr with
-                | SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Augmentation, _, _)
+                | SynTypeDefnRepr.ObjectModel (kind=SynTypeDefnKind.Augmentation _)
                 | SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Abbrev, _, _)
                 | SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.TypeAbbrev _, _) -> true
                 | _ -> false

@@ -327,7 +327,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExpr * bool> atomicExpr
 %type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
 %type <Choice<SynEnumCase, SynUnionCase> list> unionTypeRepr
-%type <SynMemberDefns> tyconDefnAugmentation
+%type <Range * SynMemberDefns> tyconDefnAugmentation
 %type <SynExceptionDefn> exconDefn
 %type <SynExceptionDefnRepr> exconCore
 %type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
@@ -1431,7 +1431,8 @@ wrappedNamedModuleDefn:
 
 tyconDefnAugmentation: 
   | WITH classDefnBlock declEnd
-     { $2 }
+     { let mWithKwd = rhs parseState 1
+       mWithKwd, $2 }
 
 
 /* An optional list of custom attributes */
@@ -1558,8 +1559,9 @@ tyconDefn:
        SynTypeDefn($1, $2, tcDefRepr, members, None, mWhole) }
 
   | typeNameInfo tyconDefnAugmentation
-     { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun mem -> mem.Range)
-       SynTypeDefn($1, None, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation, [], m), $2, None, m) }
+     { let mWithKwd, classDefns = $2
+       let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
+       SynTypeDefn($1, None, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m) }
 
   | typeNameInfo opt_attributes opt_declVisibility opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
      { let vis, spats, az = $3, $5, $6
