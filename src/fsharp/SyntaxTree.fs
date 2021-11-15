@@ -612,8 +612,10 @@ type SynExpr =
         range: range
 
     | TryWith of
+        tryKeywordRange: Range *
         tryExpr: SynExpr *
         tryRange: range *
+        withKeywordRange: Range *
         withCases: SynMatchClause list *
         withRange: range *
         range: range *

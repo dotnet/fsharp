@@ -319,7 +319,7 @@ module Structure =
                     rcheck Scope.ObjExpr Collapse.Below wholeRange collapse
                 parseBindings bindings
                 parseExprInterfaces extraImpls
-            | SynExpr.TryWith (e, _, matchClauses, _, wholeRange, tryPoint, withPoint) ->
+            | SynExpr.TryWith (tryExpr=e; withCases=matchClauses; range=wholeRange; tryDebugPoint=tryPoint; withDebugPoint=withPoint) ->
                 match tryPoint, withPoint with
                 | DebugPointAtTry.Yes tryRange,  DebugPointAtWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange

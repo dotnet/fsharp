@@ -635,7 +635,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkBinds binds  
                       yield! walkExpr true bodyExpr
 
-                  | SynExpr.TryWith (tryExpr, _, cl, _, _, spTry, spWith) -> 
+                  | SynExpr.TryWith (tryExpr=tryExpr; withCases=cl; tryDebugPoint=spTry; withDebugPoint=spWith) -> 
                       yield! walkTrySeqPt spTry
                       yield! walkWithSeqPt spWith
                       yield! walkExpr true tryExpr 

@@ -487,7 +487,7 @@ module SyntaxTraversal =
                          yield dive synExpr synExpr.Range traverseSynExpr]
                         |> pick expr
 
-                | SynExpr.TryWith (synExpr, _range, synMatchClauseList, _range2, _range3, _sequencePointInfoForTry, _sequencePointInfoForWith) -> 
+                | SynExpr.TryWith (tryExpr=synExpr; withCases=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))]
                     |> pick expr

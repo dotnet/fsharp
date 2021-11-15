@@ -713,7 +713,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LetOrUse (_, _, bs, e, _) ->
               walkBinds bs || walkExpr e
 
-          | SynExpr.TryWith (e, _, cl, _, _, _, _) ->
+          | SynExpr.TryWith (tryExpr=e; withCases=cl) ->
               walkExpr e  || walkMatchClauses cl
 
           | SynExpr.TryFinally (e1, e2, _, _, _) ->

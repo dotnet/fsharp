@@ -3525,7 +3525,7 @@ declExpr:
         let mTryToWith = unionRanges mTry mWith 
         let mWithToLast = unionRanges mWith mLast 
         let mTryToLast = unionRanges mTry mLast
-        SynExpr.TryWith ($2, mTryToWith, clauses, mWithToLast, mTryToLast, spTry, spWith) }
+        SynExpr.TryWith (mTry, $2, mTryToWith, mWith, clauses, mWithToLast, mTryToLast, spTry, spWith) }
 
   | TRY typedSequentialExprBlockR recover              %prec expr_try 
       { // Produce approximate expression during error recovery 

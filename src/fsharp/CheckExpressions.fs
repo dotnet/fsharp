@@ -5752,8 +5752,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
 
-    | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
-        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith)
+    | SynExpr.TryWith (tryExpr=synBodyExpr; tryRange=mTryToWith; withCases=synWithClauses; withRange=mWithToLast; range=mTryToLast; tryDebugPoint=spTry; withDebugPoint=spWith) ->
+        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith)
 
     | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) ->
         TcExprTryFinally cenv overallTy env tpenv (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally)

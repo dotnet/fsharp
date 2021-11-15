@@ -1304,7 +1304,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // TODO: consider allowing translation to BindReturn
             Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
-        | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
+        | SynExpr.TryWith (tryExpr=innerComp; withCases=clauses; range=mTryToLast; tryDebugPoint=spTry) ->
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
@@ -1611,7 +1611,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.Match (_, _, clauses, _) ->
             clauses |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr innerComp)
         | SynExpr.MatchBang _ -> false
-        | SynExpr.TryWith (innerComp, _, clauses, _, _, _, _) -> 
+        | SynExpr.TryWith (tryExpr=innerComp; withCases=clauses) -> 
             isSimpleExpr innerComp && 
             clauses |> List.forall (fun (SynMatchClause(resultExpr = clauseComp)) -> isSimpleExpr clauseComp)
         | SynExpr.YieldOrReturnFrom _ -> false

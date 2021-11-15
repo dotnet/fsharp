@@ -579,7 +579,7 @@ module ParsedInput =
             | SynExpr.TypeApp (e, _, tys, _, _, _, _) -> 
                 walkExprWithKind (Some EntityKind.Type) e |> Option.orElseWith (fun () -> List.tryPick walkType tys)
             | SynExpr.LetOrUse (_, _, bindings, e, _) -> List.tryPick walkBinding bindings |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
-            | SynExpr.TryWith (e, _, clauses, _, _, _, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause clauses)
+            | SynExpr.TryWith (tryExpr=e; withCases=clauses) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause clauses)
             | SynExpr.TryFinally (e1, e2, _, _, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.Lazy (e, _) -> walkExprWithKind parentKind e
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
@@ -1315,7 +1315,7 @@ module ParsedInput =
                 List.iter walkType tys; walkExpr e
             | SynExpr.LetOrUse (_, _, bindings, e, _) ->
                 List.iter walkBinding bindings; walkExpr e
-            | SynExpr.TryWith (e, _, clauses, _, _, _, _) ->
+            | SynExpr.TryWith (tryExpr=e; withCases=clauses) ->
                 List.iter walkClause clauses;  walkExpr e
             | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3, _, _, _, _) ->
                 List.iter walkExpr [e1; e2]

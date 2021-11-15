@@ -617,6 +617,27 @@ for i = 1 to 10 do
             assertRange (2, 6) (2, 7) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExpr.TryWith contains the range of the try and with keyword`` () =
+        let ast =
+            """
+try
+    x
+with
+| ex -> y
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.TryWith(tryKeywordRange=mTry; withKeywordRange=mWith))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 3) mTry
+            assertRange (4, 0) (4, 4) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with

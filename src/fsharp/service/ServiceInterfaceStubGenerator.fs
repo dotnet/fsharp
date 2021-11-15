@@ -827,7 +827,7 @@ module InterfaceStubGenerator =
                 | SynExpr.LetOrUse (_, _, synBindingList, synExpr, _range) -> 
                     Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
-                | SynExpr.TryWith (synExpr, _range, _synMatchClauseList, _range2, _range3, _sequencePointInfoForTry, _sequencePointInfoForWith) -> 
+                | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
                 | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 

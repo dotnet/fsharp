@@ -6658,10 +6658,14 @@ FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Syntax.DebugPointAtWith 
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Syntax.SynExpr get_tryExpr()
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Syntax.SynExpr tryExpr
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range get_tryKeywordRange()
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range get_tryRange()
+FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range get_withKeywordRange()
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range get_withRange()
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range tryKeywordRange
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range tryRange
+FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range withKeywordRange
 FSharp.Compiler.Syntax.SynExpr+TryWith: FSharp.Compiler.Text.Range withRange
 FSharp.Compiler.Syntax.SynExpr+TryWith: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause] get_withCases()
 FSharp.Compiler.Syntax.SynExpr+TryWith: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause] withCases
@@ -6913,7 +6917,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSequentialOrIm
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTraitCall(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypar], FSharp.Compiler.Syntax.SynMemberSig, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryFinally(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtFinally)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryWith(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtWith)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTryWith(FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMatchClause], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.DebugPointAtTry, FSharp.Compiler.Syntax.DebugPointAtWith)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTypeApp(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynType], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTypeTest(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
