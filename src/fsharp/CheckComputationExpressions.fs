@@ -1289,7 +1289,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             Some(translatedCtxt (SynExpr.Match (mMatch, spMatch, expr, mWith, clauses, m)))
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
-        | SynExpr.MatchBang (spMatch, expr, clauses, m) ->
+        | SynExpr.MatchBang (matchDebugPoint=spMatch; expr=expr; clauses=clauses; range=m) ->
             let matchExpr = mkSourceExpr expr
             let mMatch = match spMatch with DebugPointAtBinding.Yes mMatch -> mMatch | _ -> m
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))

@@ -604,7 +604,7 @@ module ParsedInput =
             | SynExpr.YieldOrReturn (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.Match (expr=e; clauses=synMatchClauseList)
-            | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
+            | SynExpr.MatchBang (expr=e; clauses=synMatchClauseList) -> 
                 walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(rhs=e1; andBangs=es; body=e2) ->
                 [

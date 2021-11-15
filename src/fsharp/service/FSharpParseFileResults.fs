@@ -687,7 +687,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
-                  | SynExpr.MatchBang (spBind, e, cl, _) ->
+                  | SynExpr.MatchBang (matchDebugPoint=spBind; expr=e; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 

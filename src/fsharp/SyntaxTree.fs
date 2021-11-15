@@ -789,8 +789,10 @@ type SynExpr =
         range: range 
 
     | MatchBang of
+        matchKeyword: Range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
+        withKeyword: Range *
         clauses: SynMatchClause list *
         range: range
 

@@ -658,6 +658,26 @@ match x with
             assertRange (2, 0) (2, 5) mMatch
             assertRange (2, 8) (2, 12) mWith
         | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.MatchBang contains the range of the match and with keyword`` () =
+        let ast =
+            """
+match! x with
+| y -> z
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.MatchBang(matchKeyword=mMatch; withKeyword=mWith))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 6) mMatch
+            assertRange (2, 9) (2, 13) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with
