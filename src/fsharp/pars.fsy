@@ -1014,7 +1014,7 @@ classMemberSpfn:
   | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
-       let getSetRangeOpt, getSet = $10 
+       let mWith, getSetRangeOpt, getSet = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
            let m = rhs parseState 3 
@@ -1060,17 +1060,20 @@ classMemberSpfn:
 /* The optional "with get, set" on a member in a signature */
 classMemberSpfnGetSet:
   | /* EMPTY */ 
-    { None, SynMemberKind.Member }
+    { None, None, SynMemberKind.Member }
 
   | WITH classMemberSpfnGetSetElements 
-    { Some (rhs2 parseState 1 2), $2 }
+    { let mWith = rhs parseState 1
+      Some mWith, Some (rhs2 parseState 1 2), $2 }
 
   | OWITH classMemberSpfnGetSetElements OEND
-    { Some (rhs2 parseState 1 2), $2 }
+    { let mWith = rhs parseState 1
+      Some mWith, Some (rhs2 parseState 1 2), $2 }
 
   | OWITH classMemberSpfnGetSetElements error
-    {  reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedWith())
-       Some (rhs2 parseState 1 2), $2 }
+    {  let mWith = rhs parseState 1
+       reportParseErrorAt mWith (FSComp.SR.parsUnmatchedWith())
+       Some mWith, Some (rhs2 parseState 1 2), $2 }
 
 
 /* The "get, set" on a property member in a signature */
@@ -1979,7 +1982,7 @@ classDefnMember:
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
-       let getSetRangeOpt, getSet = $9
+       let mWith, getSetRangeOpt, getSet = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
            let m = rhs parseState 1
@@ -2044,14 +2047,14 @@ valDefnDecl:
 /* An auto-property definition in an object type definition */
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSequentialExprBlock classMemberSpfnGetSet
-     { let mGetSetOpt, getSet = $8
+     { let mWith, mGetSetOpt, getSet = $8
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
        (fun attribs isStatic flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range
-           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, mEquals, $7, mGetSetOpt, memberRange) ]) }
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
 
 
 /* An optional type on an auto-property definition */

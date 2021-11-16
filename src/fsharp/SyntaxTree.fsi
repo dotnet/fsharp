@@ -1874,6 +1874,7 @@ type SynMemberDefn =
         accessibility: SynAccess option *
         equalsRange: Range *
         synExpr: SynExpr *
+        withKeyword: Range option *
         getSetRange: range option *
         range: range
 

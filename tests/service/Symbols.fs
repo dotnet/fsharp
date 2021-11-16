@@ -493,6 +493,27 @@ type Foo() =
             assertRange (3, 18) (3, 22) mWithKeyword
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with AutoProperty contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    member val AutoProperty = autoProp with get, set
+    member val AutoProperty2 = autoProp
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
+                                                                                            SynMemberDefn.AutoProperty(withKeyword=Some mWith)
+                                                                                            SynMemberDefn.AutoProperty(withKeyword=None)])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 39) (3, 43) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
