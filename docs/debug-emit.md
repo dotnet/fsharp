@@ -79,7 +79,7 @@ This means there is an invariant that `ValidateBreakpointLocation` and the emitt
 
 > NOTE: The IL code can and does contain extra debug points that don't pass ValidateBreakpointLocation. It won't be possible to set a breakpoint for these, but they will appear in stepping.
 
-### Debug points for control-flow constructs
+### Intended debug points for control-flow constructs
 
 The intended debug points for control-flow constructs are as follows:
 
@@ -96,8 +96,15 @@ The intended debug points for control-flow constructs are as follows:
 | `try .. finally ..`   | `try` and `finally` and implicit on body and handler |
 | `use ..` | See below for `let` |
 | `expr1; expr` sequential | On `expr1` and implicit on `expr2` |
+| `expr1 |> expr2` | On `expr1` and `expr2` |
+| `(expr1a, expr1b) ||> expr2` | On `expr1a`, `expr1b` and `expr2` |
+| `(expr1a, expr1b, expr1c) |||> expr2` | On `expr1a`, `expr1b` and `expr2` |
+| `yield expr` | On `yield expr` |
+| `return expr` | On `return expr` |
 
-### Debug points for let-bindings
+Some debug points are implicit. In particular, whenever a non-control-flow expression (e.g. a constant or a call) is used in statement position (e.g. as the implementation of a method, or the body of a `while`) then there is an implicit debug point over the whole statement/expression.
+
+### Intended debug points for let-bindings
 
 `let` bindings get immediate debug points if the thing is not a function and the implementation is not control flow. For example
 
@@ -110,7 +117,7 @@ let f () =
     ...
 ```
 
-### Debug points for nested control-flow
+### Intended debug points for nested control-flow
 
 Debug points are not generally emitted for non-statement constructs, e.g. consider:
 
@@ -131,7 +138,38 @@ Here debug points are at `if today then` and `1` and `2` and all of `f (if today
 
 > NOTE: these debug points are overlapping
 
-### Debug points internally in the compiler
+### Intended debug points for `[...]`, `[| ... |]` code
+
+The intended debug points for these constructs are the same as for the expressions inside the constructs. For example
+
+```fsharp
+let x = [ for i in 1 .. 10 do yield 1 ]
+```
+
+This will have debug points on `for i in 1 .. 10 do` and `yield 1`.
+
+### Intended debug points for `seq { .. }` and `task { .. }` code
+
+The intended debug points for tasks is the same as for the expressions inside the constructs. For example
+
+```fsharp
+let f() = task { for i in 1 .. 10 do printfn "hello" }
+```
+
+This will have debug points on `for i in 1 .. 10 do` and `printfn "hello"`.
+
+> NOTE: there are glitches, see further below
+
+### Intended debug points for other computation expressions
+
+Other computation expressions such as `async { .. }` have significant problems with their debug points, for multiple reasons:
+
+* The debug points are largely lost during de-sugaring
+* The computations are often "cold-start" anyway, leading to a two-phase debug problem
+
+See further below. In practice debug points can often be placed for user code, e.g. sequential imperative statements or `let` bindings. However debug points for control constructs are often lossy or buggy.
+
+## Implementation of debug points in the compiler
 
 Most (but not all) debug points are noted by the parser by adding `DebugPointAtTarget`, `DebugPointAtSwitch`, `DebugPointAtSequential`, `DebugPointAtTry`, `DebugPointAtWith`, `DebugPointAtFinally`, `DebugPointAtFor`, `DebugPointAtWhile` or `DebugPointAtBinding`.
 
@@ -146,9 +184,9 @@ These are then used by `ValidateBreakpointLocation`. These same values are also 
 
 For many constructs this is adequate. However, in practice the situation is far more complicated.
 
-### Implicit debug points
+### Internals: Implicit debug points
 
-Some debug points are implicit. In particular, whenever a non-control-flow expression (e.g. a constant or a call) is used in statement position (e.g. as the implementation of a method, or the body of a `while`) then there is an implicit debug point.
+Internally in the compiler, some debug points are implicit. In particular, whenever a non-control-flow expression (e.g. a constant or a call) is used in statement position (e.g. as the implementation of a method, or the body of a `while`) then there is an implicit debug point.
 
 * "Statement position" is tracked by the `spAlways` argument within ValidateBreakpointLocation ([permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/service/FSharpParseFileResults.fs#L481))
 * "Statement position" is similarly tracked by `SPAlways` within IlxGen.fs [permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/IlxGen.fs#L2290)
@@ -157,9 +195,9 @@ Implicit debug points but they also arise in some code-generated constructs or i
 
 > For example, `DebugPointAtTry.Body` represents a debug point implicitly located on the body of the try (rather than a `try` keyword).  Searching the source code, this is generated in the "try/finally" implied by a "use x = ..." construct ([permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/CheckExpressions.fs#L10337)).  Is a debug point even needed here? Yes, because otherwise the body of the "using" wouldn't get a debug point.
 
-### Debug points for `[ ...]`, `[| ... |]` code
+### Internals: Debug points for `[...]`, `[| ... |]` 
 
-The implementation of debug points for list and array expressions is conceptually simple but a little complex.
+The internal implementation of debug points for list and array expressions is conceptually simple but a little complex.
 
 Conceptually the task is easy, e.g. `[ while check() do yield x + x ]` is lowered to code like this:
 
@@ -186,14 +224,14 @@ The TypedTree is a functional encoding into `Seq.toList`, `Seq.singleton` and so
 
 This then gives accurate debug points for these constructs.
 
-### Debug Points for `seq { .. .}` code
+### Internals: debug points for `seq { .. .}` code
 
 Debug points for `seq { .. }` compiling to state machines poses similar problems.
 
 * The de-sugaring is as for list and array expressions
 * The debug points are recovered in the state machine generation, for example [here (permalink)](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/LowerCallsAndSeqs.fs#L367)
 
-### Debug Points for `task { .. .}` code
+### Internals: debug points for `task { .. .}` code
 
 Debug points for `task { .. }` poses much harder problems. We use "while" loops as an example:
 
@@ -209,14 +247,9 @@ This however only works fully for those constructs with a single debug point tha
 * Some debug points associated with these `try/with` are suppressed in [`remarkExpr`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/TypedTreeOps.fs#L5862-L5880)
 * The debug points for the `with` and `finally` are not currently recovered.
 
-### Debug Points for other computation expressions
+### Internals: debug points for other computation expressions
 
-Other computation expressions such as `async { .. }` have significant problems with their debug points, for multiple reasons:
-
-* The debug points are largely lost during de-sugaring
-* The computations are often "cold-start" anyway, leading to a two-phase debug problem
-
-Debug points can often be placed for user code, e.g. sequential imperative statements or `let` bindings. However debug points for control constructs are often lossy or buggy.
+As mentioned above, other computation expressions such as `async { .. }` have significant problems with their debug points.
 
 > NOTE: A systematic solution for quality debugging of computation expressions and resumable code is still elusive.  It really needs the de-sugaring to explicitly or implicitly pass down the debug points through the process of inlining code.  For example consider the de-sugaring:
 
@@ -266,13 +299,11 @@ If carefully used this would allow reasonable debugging across multiple-phase bo
 
 ### FeeFee and F00F00 debug points (Hidden and JustMyCodeWithNoSource)
 
-Some fragments of code use constructs like calls that should not have debug points.
+Some fragments of code use constructs generate calls and other IL code that should not have debug points and not participate in "Step Into", for example. These are generated in IlxGen as "FeeFee" debug points. See the [old blog post on this](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
 
-These are generated in IlxGen as "FeeFee" debug points. See the [old blog post on this](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
+> TODO: There is also the future prospect of generating `JustMyCodeWithNoSource` (0xF00F00) debug points but these are not yet emitted by F#.  We should check what this is and when the C# compiler emits these.
 
-There is also the future prospect of generating `JustMyCodeWithNoSource` (0xF00F00) debug points but these are not yet emitted by F#.  We should check when the C# compiler emits these.
-
-We always make space for a debug point at the head of each method by [emitting a FeeFee debug sequence point](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L1953). This may be immediately replaced by a "real" debug point [here](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L2019). For more information on FeeFee debug points see [this old blog post](https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/).
+> NOTE: We always make space for a debug point at the head of each method by [emitting a FeeFee debug sequence point](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L1953). This may be immediately replaced by a "real" debug point [here](https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L2019).
 
 ## Generated code
 
