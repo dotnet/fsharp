@@ -49,32 +49,17 @@ IDE tooling performs queries into the F# language service, notably:
 
 * `ValidateBreakpointLocation` [(permalink)](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/service/FSharpParseFileResults.fs#L795) is called to validate every breakpoint before debugging is launched. This operates on syntax trees. See notes below.
 
-## Missing debug emit
+## Debugging and optimization
 
-### Missing debug emit for PDBs
+Nearly all optimizations are **off** when debug code is being generated.
 
-Our PDB emit is missing considerable information:
+* The optimizer is run for forced inlining only
+* List and array expressions do generate collector code
+* State machines are generated for tasks and sequences
+* "let mutable" --> "ref" promotion happens for captured local mutables
+* Tailcalls are off by default and not emitted in IlxGen.
 
-* Not emitted: [LocalConstants table](https://github.com/dotnet/fsharp/issues/12003)
-* Not emitted: [Compilation options table](https://github.com/dotnet/fsharp/issues/12002)
-* Not emitted: [Dynamic local variables table](https://github.com/dotnet/fsharp/issues/12001)
-* Not emitted: [StateMachineMethod table and StateMachineHoistedLocalScopes table](https://github.com/dotnet/fsharp/issues/12000)
-* Not emitted: [ImportScopes table](https://github.com/dotnet/fsharp/issues/1003)
-
-These are major holes in the F# experience. Some are required for things like hot-reload.
-
-### Missing design-time services
-
-Some design-time services are un-implemented by F#:
-
-* Unimplemented: [F# expression evaluator](https://github.com/dotnet/fsharp/issues/2544)
-* Unimplemented: [Proximity expressions](https://github.com/dotnet/fsharp/issues/4271) (for Autos window)
-
-These are major holes in the F# experience and should be implemented.
-
-### Missing debug emit for F# Interactive
-
-For F# Interactive [we do not currently emit debug information for script code](https://github.com/dotnet/fsharp/issues/5457). This is because of a missing piece of functionality in the Reflection.Emit APIs, and means we have to change our approach to emitting code fragments in F# Interactive to no longer use dynamic assemblies.
+Otherwise, what comes out of the type checker is pretty much what goes into IlxGen.fs.
 
 ## Debug points
 
@@ -441,3 +426,31 @@ See [shadowed locals mini-spec](https://github.com/dotnet/fsharp/pull/12018).
 ### Discriminated union debug display text
 
 For discriminated union types and all implied subtypes we emit a `DebuggerDisplayAttrubte` and a private `__DebugDisplay()` method that uses `sprintf "%+0.8A" obj` to format the object.
+
+## Missing debug emit
+
+### Missing debug emit for PDBs
+
+Our PDB emit is missing considerable information:
+
+* Not emitted: [LocalConstants table](https://github.com/dotnet/fsharp/issues/12003)
+* Not emitted: [Compilation options table](https://github.com/dotnet/fsharp/issues/12002)
+* Not emitted: [Dynamic local variables table](https://github.com/dotnet/fsharp/issues/12001)
+* Not emitted: [StateMachineMethod table and StateMachineHoistedLocalScopes table](https://github.com/dotnet/fsharp/issues/12000)
+* Not emitted: [ImportScopes table](https://github.com/dotnet/fsharp/issues/1003)
+
+These are major holes in the F# experience. Some are required for things like hot-reload.
+
+### Missing design-time services
+
+Some design-time services are un-implemented by F#:
+
+* Unimplemented: [F# expression evaluator](https://github.com/dotnet/fsharp/issues/2544)
+* Unimplemented: [Proximity expressions](https://github.com/dotnet/fsharp/issues/4271) (for Autos window)
+
+These are major holes in the F# experience and should be implemented.
+
+### Missing debug emit for F# Interactive
+
+For F# Interactive [we do not currently emit debug information for script code](https://github.com/dotnet/fsharp/issues/5457). This is because of a missing piece of functionality in the Reflection.Emit APIs, and means we have to change our approach to emitting code fragments in F# Interactive to no longer use dynamic assemblies.
+
