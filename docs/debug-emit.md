@@ -325,17 +325,17 @@ These all get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`, 
 
 ### Generated closures for lambdas
 
-The codegen involved in closures is as follows:
+The debug codegen involved in closures is as follows:
 
-|  Source         | Construct         | Debug Points | Attributes   | Notes |
-|:----------------|:------------------|:-------------|:-------------|:------|
-| (fun x -> ...)  | Closure class     |              |              |       |
-|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L584)     | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `Invoke` method   | from body of closure     |                                        | |
-| generic local defn  | Closure class |      |                                        | |
-|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L486)     | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `Specialize` method |  from body of closure  |                                        | |
-|  Intermediate closure classes   |   | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGenerated, DebuggerNonUserCode     | These are for long curried closures `fun a b c d e f -> ...`.  |
+|  Source         | Construct         | Debug Points | Attributes   |
+|:----------------|:------------------|:-------------|:-------------|
+| (fun x -> ...)  | Closure class     |              |              |
+|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L584)     | CompilerGenerated, DebuggerNonUserCode |
+|                 | `Invoke` method   | from body of closure     |                                        |
+| generic local defn  | Closure class |      |                                        |
+|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L486)     | CompilerGenerated, DebuggerNonUserCode |
+|                 | `Specialize` method |  from body of closure  |                                        |
+|  Intermediate closure classes   |  For long curried closures `fun a b c d e f -> ...`.  | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGenerated, DebuggerNonUserCode     |
 
 > TODO: generating debug points for the intermediate closures appears wrong, this is being assessed at time of writing
 
@@ -347,19 +347,19 @@ Sequence expressions generate class implementations which resemble closures.
 
 The debug points recovered for the generated state machine code for `seq { ... }` is covered up above. The other codegen is as follows:
 
-|  Source         | Construct         | Debug Points | Attributes   | Notes |
-|:----------------|:------------------|:-------------|:-------------|:------|
-| seq { ... }     | State machine class |            |  "Closure"             |       |
-|                 | `.ctor` method    |   none?      |  [none?](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5150) | |
-|                 | `GetFreshEnumerator`   |  [none?](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5108)  | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `LastGenerated`   |  [none?](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5146-L5148)  | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `Close`   |  [none?](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5124-L5127)  | none!? | |
-|                 | `get_CheckClose`  |  [none?](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5130-L5133)  | none!? | |
-|                 | `GenerateNext`    |  from desugaring, and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5136-L5143) | none | |
+|  Source         | Construct         | Debug Points | Attributes   |
+|:----------------|:------------------|:-------------|:-------------|
+| seq { ... }     | State machine class |            |  "Closure"             |
+|                 | `.ctor` method    |   none      |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5150) |
+|                 | `GetFreshEnumerator`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5108)  | CompilerGenerated, DebuggerNonUserCode |
+|                 | `LastGenerated`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5146-L5148)  | CompilerGenerated, DebuggerNonUserCode |
+|                 | `Close`   |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5124-L5127)  | none |
+|                 | `get_CheckClose`  |  [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5130-L5133)  | none |
+|                 | `GenerateNext`    |  from desugaring, and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/IlxGen.fs#L5136-L5143) | none |
 
 > NOTE: it appears from the code that extraneous debug points are not being generated, which is good, though should be checked
 
-> TODO: we should likely be generating attributes for the "Close" and other methods
+> TODO: we should likely be generating attributes for the `Close` and `get_CheckClose` and `.ctor` methods
 
 > TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing
 
@@ -372,7 +372,7 @@ The debug points recovered for the generated state machine code for `seq { ... }
 |  Source         | Construct         | Debug Points | Attributes   | Notes |
 |:----------------|:------------------|:-------------|:-------------|:------|
 | task { ... }     | State machine struct |          |  "Closure"   |       |
-|                 | `.ctor` method    |   none?      |  none?       | |
+|                 | `.ctor` method    |   none      |  none       | |
 |                 | TBD               |              |              | |
 
 > TODO: we should be generating attributes for some of these
@@ -381,23 +381,23 @@ The debug points recovered for the generated state machine code for `seq { ... }
 
 ### Generated code for delegate constructions `Func<int,int>(fun x y -> x + y)`
 
-TBD.  A closure class is generated.
+A closure class is generated.
 
 ### Generated code for constant-sized array and list expressions
 
-TBD. These are not generally problematic for debug.
+These are not generally problematic for debug.
 
 ### Generated code for large constant arrays
 
-TBD
+These are not generally problematic for debug.
 
 ### Generated code for pattern matching
 
-TBD
+The implementation is a little gnarly and complicated and has historically had glitches.
 
 ### Generated code for conditionals and boolean logic
 
-See for example [this proposed feature improvement](https://github.com/dotnet/fsharp/issues/11980)
+Generally straight-forward. See for example [this proposed feature improvement](https://github.com/dotnet/fsharp/issues/11980)
 
 ### Capture and closures
 
@@ -484,4 +484,3 @@ These are major holes in the F# experience and should be implemented.
 ### Missing debug emit for F# Interactive
 
 For F# Interactive [we do not currently emit debug information for script code](https://github.com/dotnet/fsharp/issues/5457). This is because of a missing piece of functionality in the Reflection.Emit APIs, and means we have to change our approach to emitting code fragments in F# Interactive to no longer use dynamic assemblies.
-
