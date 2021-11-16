@@ -330,12 +330,12 @@ The codegen involved in closures is as follows:
 |  Source         | Construct         | Debug Points | Attributes   | Notes |
 |:----------------|:------------------|:-------------|:-------------|:------|
 | (fun x -> ...)  | Closure class     |              |              |       |
-|                 | `.ctor` method    |      | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `Invoke` method   |      |                                        | |
+|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L584)     | CompilerGenerated, DebuggerNonUserCode | |
+|                 | `Invoke` method   | from body of closure     |                                        | |
 | generic local defn  | Closure class |      |                                        | |
-|                 | `.ctor` method    |      | CompilerGenerated, DebuggerNonUserCode | |
-|                 | `Specialize` method |    |                                        | |
-|  Intermediate closure classes   |   | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGeneratedAttribute, DebuggerNonUserCodeAttribute     | These are for long curried closures `fun a b c d e f -> ...`.  |
+|                 | `.ctor` method    | [none](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L486)     | CompilerGenerated, DebuggerNonUserCode | |
+|                 | `Specialize` method |  from body of closure  |                                        | |
+|  Intermediate closure classes   |   | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGenerated, DebuggerNonUserCode     | These are for long curried closures `fun a b c d e f -> ...`.  |
 
 > TODO: generating debug points for the intermediate closures appears wrong, this is being assessed at time of writing
 
