@@ -76,7 +76,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _); _ ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
@@ -88,7 +88,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (clauses=[ SynMatchClause (resultExpr=SynExpr.ArbitraryAfterError _) ]) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
