@@ -1685,6 +1685,7 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
+        withKeyword: Range option *
         range: range
 
     member RangeOfId: range

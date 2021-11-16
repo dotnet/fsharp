@@ -823,7 +823,7 @@ module Structure =
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
-            | SynModuleSigDecl.Val (SynValSig(attrs, ident, _, _, _, _, _, _, _, _, valrange), r) ->
+            | SynModuleSigDecl.Val (SynValSig(attributes=attrs; ident=ident; range=valrange), r) ->
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs

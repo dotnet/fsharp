@@ -1509,6 +1509,7 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
+        withKeyword: Range option *
         range: range
 
     member x.RangeOfId  = let (SynValSig(ident=id)) = x in id.idRange

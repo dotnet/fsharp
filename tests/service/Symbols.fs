@@ -514,6 +514,25 @@ type Foo() =
             assertRange (3, 39) (3, 43) mWith
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with AbstractSlot contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    abstract member Bar : int with get,set
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
+                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(withKeyword=Some mWith))])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 30) (3, 34) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
@@ -1306,6 +1325,26 @@ exception Foo with
             )
         ]) ])) ->
             assertRange (4, 14) (4, 18) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``memberSig of SynMemberSig.Member should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+type Foo =
+    abstract member Bar : int with get,set
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(withKeyword=Some mWithKeyword))])) ]
+            )
+        ]) ])) ->
+            assertRange (5, 30) (5, 34) mWithKeyword
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =

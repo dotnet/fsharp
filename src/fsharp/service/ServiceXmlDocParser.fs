@@ -122,7 +122,7 @@ module XmlDocParsing =
                     let paramNames = digNamesFrom synPat 
                     [XmlDocable(line,indent,paramNames)]
                 else []
-            | SynMemberDefn.AbstractSlot(SynValSig(synAttributes, _, _, _, synValInfo, _, _, preXmlDoc, _, _, _), _, range) -> 
+            | SynMemberDefn.AbstractSlot(SynValSig(attributes=synAttributes; arity=synValInfo; xmlDoc=preXmlDoc), _, range) -> 
                 if isEmptyXmlDoc preXmlDoc then
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                     let line = fullRange.StartLine 

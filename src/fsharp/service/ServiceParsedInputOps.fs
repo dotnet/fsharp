@@ -632,7 +632,7 @@ module ParsedInput =
         and walkField (SynField(Attributes attrs, _, _, t, _, _, _, _)) =
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
-        and walkValSig (SynValSig(Attributes attrs, _, _, t, _, _, _, _, _, _, _)) =
+        and walkValSig (SynValSig(attributes=Attributes attrs; synType=t)) =
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
         and walkMemberSig = function
@@ -1387,7 +1387,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
     
-        and walkValSig (SynValSig(Attributes attrs, _, _, t, SynValInfo(argInfos, argInfo), _, _, _, _, _, _)) =
+        and walkValSig (SynValSig(attributes=Attributes attrs; synType=t; arity=SynValInfo(argInfos, argInfo))) =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)

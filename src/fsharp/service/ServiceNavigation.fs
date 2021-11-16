@@ -233,7 +233,7 @@ module NavigationImpl =
                              [ createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, range, enclosingEntityKind, false, access) ]
                          | SynMemberDefn.AutoProperty(ident=id; accessibility=access) -> 
                              [ createMember(id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access) ]
-                         | SynMemberDefn.AbstractSlot(SynValSig(_, id, _, ty, _, _, _, _, access, _, _), _, _) ->
+                         | SynMemberDefn.AbstractSlot(SynValSig(ident=id; synType=ty; accessibility=access), _, _) ->
                              [ createMember(id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access) ]
                          | SynMemberDefn.NestedType _ -> failwith "tycon as member????" //processTycon tycon                
                          | SynMemberDefn.Interface(members=Some(membs)) ->
@@ -392,7 +392,7 @@ module NavigationImpl =
         and processSigMembers (members: SynMemberSig list): list<NavigationItem * int> = 
             [ for memb in members do
                  match memb with
-                 | SynMemberSig.Member(SynValSig.SynValSig(_, id, _, _, _, _, _, _, access, _, m), _, _) ->
+                 | SynMemberSig.Member(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _, _) ->
                      yield createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, access)
                  | SynMemberSig.ValField(SynField(_, _, Some(rcid), ty, _, _, access, _), _) ->
                      yield createMember(rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
@@ -400,7 +400,7 @@ module NavigationImpl =
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedSigDeclarations decls = decls |> List.collect (function
-            | SynModuleSigDecl.Val(SynValSig.SynValSig(_, id, _, _, _, _, _, _, access, _, m), _) ->
+            | SynModuleSigDecl.Val(SynValSig.SynValSig(ident=id; accessibility=access; range=m), _) ->
                 [ createMember(id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Module, false, access) ]
             | _ -> [] )        
 
@@ -540,7 +540,7 @@ module NavigateTo =
             | _ -> ()
             { Type = containerType; Name = formatLongIdent lid }
     
-        let addValSig kind (SynValSig(_, id, _, _, _, _, _, _, _, _, _)) isSig container = 
+        let addValSig kind (SynValSig(ident=id)) isSig container = 
             addIdent kind id isSig container
         
         let addField(SynField(_, _, id, _, _, _, _, _)) isSig container = 

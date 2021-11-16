@@ -4081,7 +4081,7 @@ module EstablishTypeDefinitionCores =
                         let abstractSlots = 
                             [ for valSpfn, memberFlags in slotsigs do 
 
-                                  let (SynValSig(_, _, _, _, _valSynData, _, _, _, _, _, m)) = valSpfn 
+                                  let (SynValSig(range=m)) = valSpfn
 
                                   CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
                                   
