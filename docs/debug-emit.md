@@ -73,11 +73,11 @@ Breakpoints have two existences which must give matching behavior:
 
 * At design-time, before debugging is launched, `ValidateBreakpointLocation` is called to validate every breakpoint.  This operators on the SyntaxTree and forms a kind of "gold-standard" about the exact places where break points are valid.
 
-* At run-time, breakpoints are "mapped" by the .NET runtime to actual sequence points found in .NET methods. The runtime searches all methods with debug points for the relevant document and determines where to "bind" the actual breakpoint to.  A typical debugger can bind a breakpoint to multiple locations.
+* At run-time, breakpoints are "mapped" by the .NET runtime to actual sequence points found in the PDB data for .NET methods. The runtime searches all methods with debug points for the relevant document and determines where to "bind" the actual breakpoint to.  A typical debugger can bind a breakpoint to multiple locations.
 
 This means there is an invariant that `ValidateBreakpointLocation` and the emitted IL debug points correspond.
 
-> NOTE: The IL code can contain extra debug points. It won't be possible to set a breakpoint for these, but they will appear in stepping
+> NOTE: The IL code can and does contain extra debug points that don't pass ValidateBreakpointLocation. It won't be possible to set a breakpoint for these, but they will appear in stepping.
 
 ### Debug points for control-flow constructs
 
