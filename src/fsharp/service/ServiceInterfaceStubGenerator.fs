@@ -503,7 +503,7 @@ module InterfaceStubGenerator =
         GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
-        | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
+        | SynPat.LongIdent(longDotId=LongIdentWithDots(xs, _)) ->
 //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
             Some(last.idText, last.idRange)

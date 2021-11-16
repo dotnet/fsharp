@@ -533,6 +533,72 @@ type Foo() =
             assertRange (3, 30) (3, 34) mWith
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``read-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A read-only property.
+    member this.MyReadProperty with get () = myInternalValue
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    ) ])
+             ]) ])) ->
+            assertRange (4, 31) (4, 35) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``write-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A write-only property.
+    member this.MyWriteOnlyProperty with set (value) = myInternalValue <- value
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    ) ])
+             ]) ])) ->
+            assertRange (4, 36) (4, 40) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``read/write property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A read-write property.
+    member this.MyReadWriteProperty
+        with get () = myInternalValue
+        and set (value) = myInternalValue <- value
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
+                                                          SynMemberDefn.Member _ ])
+                    ) ])
+             ]) ])) ->
+            assertRange (5, 8) (5, 12) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =

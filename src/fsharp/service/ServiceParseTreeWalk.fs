@@ -634,7 +634,7 @@ module SyntaxTraversal =
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
                 | SynPat.Attrib (p, _, _) -> traversePat path p
-                | SynPat.LongIdent(_, _, _, args, _, _) ->
+                | SynPat.LongIdent(argPats=args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
                     | SynArgPats.NamePatPairs (ps, _) ->

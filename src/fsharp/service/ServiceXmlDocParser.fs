@@ -24,7 +24,7 @@ module XmlDocParsing =
         | SynPat.Named (id,_isTheThisVar,_access,_range) -> [id.idText]
         | SynPat.Typed(pat,_type,_range) -> digNamesFrom pat
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
-        | SynPat.LongIdent(_lid,_idOpt,_typDeclsOpt,ConstructorPats pats,_access,_range) -> 
+        | SynPat.LongIdent(argPats=ConstructorPats pats) -> 
             pats |> List.collect digNamesFrom 
         | SynPat.Tuple(_,pats,_range) -> pats |> List.collect digNamesFrom 
         | SynPat.Paren(pat,_range) -> digNamesFrom pat

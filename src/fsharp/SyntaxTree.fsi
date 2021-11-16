@@ -1230,6 +1230,7 @@ type SynPat =
     /// A long identifier pattern possibly with argument patterns
     | LongIdent of
         longDotId: LongIdentWithDots *
+        propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -1298,6 +1299,11 @@ type SynPat =
 
     /// Gets the syntax range of this construct
     member Range: range
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type PropertyKeyword =
+    | With of Range
+    | And of Range
 
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison;>]

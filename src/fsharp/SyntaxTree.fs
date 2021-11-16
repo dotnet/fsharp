@@ -1090,6 +1090,7 @@ type SynPat =
 
     | LongIdent of
         longDotId: LongIdentWithDots *
+        propertyKeyword: PropertyKeyword option *
         extraId: Ident option * // holds additional ident for tooling
         typarDecls: SynValTyparDecls option * // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -1167,6 +1168,11 @@ type SynPat =
       | SynPat.OptionalVal (range=m)
       | SynPat.Paren (range=m)
       | SynPat.FromParseError (range=m) -> m
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type PropertyKeyword =
+    | With of Range
+    | And of Range
 
 [<NoEquality; NoComparison;>]
 type SynInterfaceImpl =

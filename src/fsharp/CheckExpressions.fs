@@ -2428,7 +2428,7 @@ module BindingNormalization =
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
             match pat with
             | SynPat.FromParseError(p, _) -> normPattern p
-            | SynPat.LongIdent (LongIdentWithDots(longId, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, _); extraId=toolId; typarDecls=tyargs; argPats=SynArgPats.Pats args; accessibility=vis; range=m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -4962,7 +4962,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
 
-    | SynPat.LongIdent (LongIdentWithDots(longId, _), _, tyargs, args, vis, m) ->
+    | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, _); typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
         if Option.isSome tyargs then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
         let warnOnUpperForId =
             match args with
@@ -4994,7 +4994,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.Const (c, m) -> SynExpr.Const (c, m)
             | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
             | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
-            | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) ->
+            | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, dotms) as lidwd; argPats=args; accessibility=None; range=m) ->
                 let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
                 let e =
                     if dotms.Length = longId.Length then
@@ -9620,7 +9620,7 @@ and CheckRecursiveBindingIds binds =
             match b with
             | SynPat.Named(id, _, _, _)
             | SynPat.As(_, SynPat.Named(id, _, _, _), _)
-            | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) -> id.idText
+            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))

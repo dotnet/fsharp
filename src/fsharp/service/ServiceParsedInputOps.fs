@@ -487,7 +487,7 @@ module ParsedInput =
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib(pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
             | SynPat.Or(pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
-            | SynPat.LongIdent(_, _, typars, ConstructorPats pats, _, r) -> 
+            | SynPat.LongIdent(typarDecls=typars; argPats=ConstructorPats pats; range=r) -> 
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () -> 
                     typars 
@@ -1000,7 +1000,7 @@ module ParsedInput =
                         | SynPat.LongIdent(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
                             // let fo|o x = ()
                             Some CompletionContext.Invalid
-                        | SynPat.LongIdent(_, _, _, ctorArgs, _, _) ->
+                        | SynPat.LongIdent(argPats=ctorArgs) ->
                             match ctorArgs with
                             | SynArgPats.Pats pats ->
                                 pats |> List.tryPick (fun (SkipFromParseErrorPat pat) ->
@@ -1211,7 +1211,7 @@ module ParsedInput =
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _) -> List.iter walkPat [pat1; pat2]
-            | SynPat.LongIdent (ident, _, typars, ConstructorPats pats, _, _) ->
+            | SynPat.LongIdent (longDotId=ident; typarDecls=typars; argPats=ConstructorPats pats) ->
                 addLongIdentWithDots ident
                 typars
                 |> Option.iter (fun (ValTyparDecls (typars, constraints, _)) ->

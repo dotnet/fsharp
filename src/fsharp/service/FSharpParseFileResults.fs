@@ -446,7 +446,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   let isFunction = 
                       Option.isSome memFlagsOpt ||
                       match synPat with 
-                      | SynPat.LongIdent (_, _, _, SynArgPats.Pats args, _, _) when not (List.isEmpty args) -> true
+                      | SynPat.LongIdent (argPats=SynArgPats.Pats args) when not (List.isEmpty args) -> true
                       | _ -> false
                   if not isFunction then 
                       yield! walkBindSeqPt spInfo
