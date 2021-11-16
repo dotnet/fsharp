@@ -8,9 +8,9 @@ index: 350
 
 The F# compiler code base emits debug information and attributes. This article documents what we do, how it is implemented and the problem areas in our implementation.
 
-> NOTE: There are mistakes and missing pieces to our debug information. Small improvements can make a major difference. Please help us fix mistakes and get things right.
+There are mistakes and missing pieces to our debug information. Small improvements can make a major difference. Please help us fix mistakes and get things right.
 
-> NOTE: The file `tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx` is crucial for testing the stepping experience for a range of constructs.
+The file `tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx` is crucial for testing the stepping experience for a range of constructs.
 
 ## User experiences
 
@@ -96,9 +96,9 @@ The intended debug points for control-flow constructs are as follows:
 | `try .. finally ..`   | `try` and `finally` and implicit on body and handler |
 | `use ..` | See below for `let` |
 | `expr1; expr` sequential | On `expr1` and implicit on `expr2` |
-| `expr1 |> expr2` | On `expr1` and `expr2` |
-| `(expr1a, expr1b) ||> expr2` | On `expr1a`, `expr1b` and `expr2` |
-| `(expr1a, expr1b, expr1c) |||> expr2` | On `expr1a`, `expr1b` and `expr2` |
+| `expr1 &#124;> expr2` | On `expr1` and `expr2` |
+| `(expr1a, expr1b) &#124;&#124;> expr2` | On `expr1a`, `expr1b` and `expr2` |
+| `(expr1a, expr1b, expr1c) &#124;&#124;&#124;> expr2` | On `expr1a`, `expr1b` and `expr2` |
 | `yield expr` | On `yield expr` |
 | `return expr` | On `return expr` |
 
