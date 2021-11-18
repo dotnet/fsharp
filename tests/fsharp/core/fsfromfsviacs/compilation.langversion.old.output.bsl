@@ -391,3 +391,13 @@ test.fsx(453,84): error FS0193: Type constraint mismatch. The type
 is not compatible with type
     'Nullable<int64>'    
 
+
+test.fsx(467,24): error FS0001: This expression was expected to have type
+    'Nullable<int64>'    
+but here has type
+    'int'    
+
+test.fsx(471,24): error FS0001: This expression was expected to have type
+    'Nullable<int64>'    
+but here has type
+    'int'    

@@ -458,6 +458,28 @@ module TestOptionalsAndNullablesInt32ToInt64 =
     check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionalsInt64(x = Nullable 6)) 4 // can provide nullable for legacy
 #endif
 
+module Test12414 =
+    open System
+    type C() =
+        member val ContentLength: Nullable<int64> = Nullable<int64>(0L) with get, set
+
+    let c = C()
+    c.ContentLength <- 0
+    
+    check "welewcvwlej1" c.ContentLength (Nullable<int64>(0L))
+
+    c.ContentLength <- 6
+    
+    check "welewcvwlej2" c.ContentLength (Nullable<int64>(6L))
+
+    c.ContentLength <- Nullable 7L
+    
+    check "welewcvwlej3" c.ContentLength (Nullable<int64>(7L))
+
+    c.ContentLength <- Nullable<int64>()
+    
+    check "welewcvwlej4" c.ContentLength (Nullable<int64>())
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
