@@ -155,7 +155,7 @@ type SynConst =
     
     /// Source Line, File, and Path Identifiers
     /// Containing both the original value as the evaluated value.
-    | SourceIdentifier of constant: string * value: string * range: Range
+    | SourceIdentifier of constant: string * value: string * range: range
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
@@ -587,7 +587,7 @@ type SynExpr =
     | AnonRecd of
         isStruct: bool *
         copyInfo:(SynExpr * BlockSeparator) option *
-        recordFields:(Ident * Range option * SynExpr) list *
+        recordFields:(Ident * range option * SynExpr) list *
         range: range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
@@ -618,7 +618,7 @@ type SynExpr =
     | ObjExpr of
         objType: SynType *
         argOptions:(SynExpr * Ident option) option *
-        withKeyword: Range option *
+        withKeyword: range option *
         bindings: SynBinding list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
@@ -635,7 +635,7 @@ type SynExpr =
     | For of
         forDebugPoint: DebugPointAtFor *
         ident: Ident *
-        equalsRange: Range option *
+        equalsRange: range option *
         identBody: SynExpr *
         direction: bool *
         toBody: SynExpr *
@@ -693,7 +693,7 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: Range option *
+        arrow: range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
         range: range
@@ -708,10 +708,10 @@ type SynExpr =
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
-        matchKeyword: Range *
+        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: Range *
+        withKeyword: range *
         clauses: SynMatchClause list *
         range: range 
 
@@ -760,10 +760,10 @@ type SynExpr =
 
     /// F# syntax: try expr with pat -> expr
     | TryWith of
-        tryKeywordRange: Range *
+        tryKeywordRange: range *
         tryExpr: SynExpr *
         tryRange: range *
-        withKeywordRange: Range *
+        withKeywordRange: range *
         withCases: SynMatchClause list *
         withRange: range *
         range: range *
@@ -972,7 +972,7 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: Range option *
+        equalsRange: range option *
         rhs: SynExpr *
         andBangs: SynExprAndBang list *
         body:SynExpr *
@@ -980,10 +980,10 @@ type SynExpr =
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
-        matchKeyword: Range *
+        matchKeyword: range *
         matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
-        withKeyword: Range *
+        withKeyword: range *
         clauses: SynMatchClause list *
         range: range
 
@@ -1069,15 +1069,15 @@ type SynExprAndBang =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: Range *
+        equalsRange: range *
         body: SynExpr *
-        range: Range
+        range: range
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
     | SynExprRecordField of
         fieldName: RecordFieldName *
-        equalsRange: Range option *
+        equalsRange: range option *
         expr: SynExpr option *
         blockSeparator: BlockSeparator option
 
@@ -1173,7 +1173,7 @@ type SynArgPats =
         pats: SynPat list
 
     | NamePatPairs of
-        pats: (Ident * Range * SynPat) list *
+        pats: (Ident * range * SynPat) list *
         range: range
 
     member Patterns: SynPat list
@@ -1256,7 +1256,7 @@ type SynPat =
 
     /// A record pattern
     | Record of
-        fieldPats: ((LongIdent * Ident) * Range * SynPat) list *
+        fieldPats: ((LongIdent * Ident) * range * SynPat) list *
         range: range
 
     /// The 'null' pattern
@@ -1300,17 +1300,18 @@ type SynPat =
     /// Gets the syntax range of this construct
     member Range: range
 
+/// Represents a used keyword for a property member
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type PropertyKeyword =
-    | With of Range
-    | And of Range
+    | With of range
+    | And of range
 
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison;>]
 type SynInterfaceImpl =
     | SynInterfaceImpl of
         interfaceTy: SynType *
-        withKeyword: Range option *
+        withKeyword: range option *
         bindings: SynBinding list *
         range: range
 
@@ -1320,7 +1321,7 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: Range option *
+        arrow: range option *
         resultExpr: SynExpr *
         range: range *
         debugPoint: DebugPointAtTarget
@@ -1386,7 +1387,7 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
-        equalsRange: Range option *
+        equalsRange: range option *
         expr: SynExpr  *
         range: range *
         debugPoint: DebugPointAtBinding
@@ -1497,7 +1498,7 @@ type SynTypeDefnKind =
     | Union
     | Abbrev
     | Opaque
-    | Augmentation of withKeyword: Range
+    | Augmentation of withKeyword: range
     | IL
     | Delegate of signature: SynType * signatureInfo: SynValInfo
 
@@ -1566,7 +1567,7 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident *
-        equalsRange: Range *
+        equalsRange: range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
@@ -1634,9 +1635,9 @@ type SynTypeDefnSig =
     /// The information for a type definition in a signature
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: Range option *
+        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: Range option *
+        withKeyword: range option *
         members: SynMemberSig list *
         range: range
 
@@ -1691,7 +1692,7 @@ type SynValSig =
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         synExpr: SynExpr option *
-        withKeyword: Range option *
+        withKeyword: range option *
         range: range
 
     member RangeOfId: range
@@ -1793,7 +1794,7 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: Range option *
+        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
@@ -1848,7 +1849,7 @@ type SynMemberDefn =
     /// An interface implementation definition within a class
     | Interface of
         interfaceType: SynType *
-        withKeyword: Range option *
+        withKeyword: range option *
         members: SynMemberDefns option *
         range: range
 
@@ -1879,9 +1880,9 @@ type SynMemberDefn =
         memberFlags:(SynMemberKind -> SynMemberFlags) *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: Range *
+        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: Range option *
+        withKeyword: range option *
         getSetRange: range option *
         range: range
 
@@ -1904,7 +1905,7 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: Range option *
+        equalsRange: range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
         range: range
@@ -1971,7 +1972,7 @@ type SynOpenDeclTarget =
 type SynExceptionSig =
     | SynExceptionSig of
         exnRepr: SynExceptionDefnRepr *
-        withKeyword: Range option *
+        withKeyword: range option *
         members: SynMemberSig list *
         range: range
 
@@ -1989,7 +1990,7 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: Range option *
+        equalsRange: range option *
         moduleDecls: SynModuleSigDecl list *
         range: range
 
@@ -2078,8 +2079,8 @@ type SynModuleOrNamespaceSig =
 /// Represents a parsed hash directive argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
-    | String of value: string * stringKind: SynStringKind * range: Range
-    | SourceIdentifier of constant: string * value: string * range: Range
+    | String of value: string * stringKind: SynStringKind * range: range
+    | SourceIdentifier of constant: string * value: string * range: range
 
     /// Gets the syntax range of this construct
     member Range: range

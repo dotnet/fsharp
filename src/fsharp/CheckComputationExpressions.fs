@@ -1283,15 +1283,14 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     // Build the 'Bind' call
                     Some (transBind q varSpace bindRange "Bind" [mergedSources] consumePat letSpBind innerComp translatedCtxt)
 
-        | SynExpr.Match (matchKeyword=mMatch ;matchDebugPoint=spMatch; withKeyword=mWith; expr=expr; clauses=clauses; range=m) ->
+        | SynExpr.Match (mMatch, spMatch, expr, mWith, clauses, m) ->
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
             let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, innerComp, patm, sp)) -> SynMatchClause(pat, cond, arrow, transNoQueryOps innerComp, patm, sp))
             Some(translatedCtxt (SynExpr.Match (mMatch, spMatch, expr, mWith, clauses, m)))
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
-        | SynExpr.MatchBang (matchDebugPoint=spMatch; expr=expr; clauses=clauses; range=m) ->
+        | SynExpr.MatchBang (mMatch, spMatch, expr, _withKeyword, clauses, _m) ->
             let matchExpr = mkSourceExpr expr
-            let mMatch = match spMatch with DebugPointAtBinding.Yes mMatch -> mMatch | _ -> m
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
 
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mMatch ad "Bind" builderTy) then
@@ -1303,7 +1302,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // TODO: consider allowing translation to BindReturn
             Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
-        | SynExpr.TryWith (tryExpr=innerComp; withCases=clauses; range=mTryToLast; tryDebugPoint=spTry) ->
+        | SynExpr.TryWith (_tryKeywordRange, innerComp, _mTryToWith, _withKeywordRange, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
@@ -1535,7 +1534,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     and convertSimpleReturnToExpr varSpace innerComp =
         match innerComp with 
         | SynExpr.YieldOrReturn ((false, _), returnExpr, _) -> Some (returnExpr, None)
-        | SynExpr.Match (matchKeyword=matchKeyword ;matchDebugPoint=spMatch; withKeyword=withKeyword; expr=expr; clauses=clauses; range=m) ->
+        | SynExpr.Match (mMatch, spMatch, mWith, expr, clauses, m) ->
             let clauses = 
                 clauses |> List.map (fun (SynMatchClause(pat, cond, arrow, innerComp2, patm, sp)) -> 
                     match convertSimpleReturnToExpr varSpace innerComp2 with
@@ -1543,7 +1542,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     | Some (_, Some _) -> None // custom op on branch = failure
                     | Some (innerExpr2, None) -> Some (SynMatchClause(pat, cond, arrow, innerExpr2, patm, sp)))
             if clauses |> List.forall Option.isSome then
-                Some (SynExpr.Match (matchKeyword, spMatch, expr, withKeyword, (clauses |> List.map Option.get), m), None)
+                Some (SynExpr.Match (mMatch, spMatch, mWith, expr, (clauses |> List.map Option.get), m), None)
             else
                 None
 
@@ -1869,7 +1868,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
         | SynExpr.LetOrUseBang (range=m) -> 
             error(Error(FSComp.SR.tcUseForInSequenceExpression(), m))
 
-        | SynExpr.Match (matchDebugPoint=spMatch; expr=expr; clauses=clauses) ->
+        | SynExpr.Match (_mMatch, spMatch, expr, _mWith, clauses, _m) ->
             let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
             let tclauses, tpenv = 
                 (tpenv, clauses) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, _, innerComp, _, sp)) ->

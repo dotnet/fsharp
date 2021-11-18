@@ -327,7 +327,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynExpr * bool> atomicExpr
 %type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
 %type <Choice<SynEnumCase, SynUnionCase> list> unionTypeRepr
-%type <Range * SynMemberDefns> tyconDefnAugmentation
+%type <range * SynMemberDefns> tyconDefnAugmentation
 %type <SynExceptionDefn> exconDefn
 %type <SynExceptionDefnRepr> exconCore
 %type <SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock

@@ -4768,9 +4768,9 @@ module TcDeclarations =
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
-                    | SynMemberDefn.Interface (interfaceType=ty; withKeyword=withM; members=Some membs; range=m) -> 
+                    | SynMemberDefn.Interface (ty, mWith, Some membs, m) -> 
                         let membs' = membs |> List.collect postAutoProps
-                        [SynMemberDefn.Interface (ty, withM, Some membs', m)]
+                        [SynMemberDefn.Interface (ty, mWith, Some membs', m)]
                     | SynMemberDefn.LetBindings _
                     | SynMemberDefn.ImplicitCtor _ 
                     | SynMemberDefn.Open _
