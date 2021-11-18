@@ -2,7 +2,7 @@
 //
 // Originally written in 2016 by Robert Peele (humbobst@gmail.com)
 // New operator-based overload resolution for F# 4.0 compatibility by Gustavo Leon in 2018.
-// Revised for insertion into FSHarp.Core by Microsoft, 2019.
+// Revised for insertion into FSharp.Core by Microsoft, 2019.
 //
 // Original notice:
 // To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights
