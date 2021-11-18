@@ -1463,7 +1463,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
         let IsUniqueUse vspec2 args = 
               valEq vspec1 vspec2  
            // REVIEW: this looks slow. Look only for one variable instead 
-           && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
+           && (let fvs = accFreeInExprs (CollectLocalsWithStackGuard()) args emptyFreeVars
                not (Zset.contains vspec1 fvs.FreeLocals))
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 

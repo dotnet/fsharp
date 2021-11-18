@@ -2131,7 +2131,19 @@ module RegressionTests =
     [<Test >]
     let ``12383-FSC_BASIC`` () = singleTestBuildAndRun "regression/12383" FSC_BASIC
 
+    //Check 12322 with fsc.exe 32-bit .NET Framework compiler
+    //Check 12322 with fsc.dll 64-bit .NET 6+ compiler
+    [<Test >]
+    let ``12322-FSC_BASIC`` () = singleTestBuildAndRun "regression/12322" FSC_BASIC
+
 #if !NETCOREAPP
+    //Check 12322 with fscAnyCpu 64-bit .NET Framework compiler
+    [<Test >]
+    let ``12322-FSCANYCPU_BASIC`` () = 
+        let cfg = testConfig dir
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        singleTestBuildAndRun "regression/12322" FSC_BASIC
+
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
         let cfg = testConfig "regression/5531"
