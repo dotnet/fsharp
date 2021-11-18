@@ -148,7 +148,7 @@ module TestConsumeCSharpOptionalParameter =
     // Check the type inferred for an un-annotated first-class use of the method
     check "csoptional23982f55" (let f = SomeClass.MethodTakingNullableOptionals in ((f : unit -> int) ())) -3
 
-#if LANGVERSION_PREVIEW
+
     check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", 8.0)) 20
     check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", Nullable 8.0)) 20
     check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", Nullable ())) 11
@@ -175,7 +175,7 @@ module TestConsumeCSharpOptionalParameter =
 
     // Check the type inferred for an un-annotated first-class use of the method
     check "acsoptional23982f55" (let f = SomeClass.MethodTakingNullables in ((f : Nullable<int> * string * Nullable<double> -> int) (Nullable 1,"aaaa",Nullable 3.0))) 8
-#endif
+
 
 // This tests overloaded variaitons of the methods, where the overloads vary by type but not nullability
 //
@@ -186,7 +186,7 @@ module TestConsumeCSharpOptionalParameterOverloads =
 
     check "csoptional23982f34o" (SomeClass.OverloadedMethodTakingOptionals(d = 8.0)) 14
 
-#if LANGVERSION_PREVIEW
+
     check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?d = Some 8.0)) 14
     
     check "csoptional23982f42o" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(x = 6)) 14 // can provide non-nullable 
@@ -210,7 +210,6 @@ module TestConsumeCSharpOptionalParameterOverloads =
     check "csoptional23982f52o2" (SomeClass.OverloadedMethodTakingNullables(Nullable(6), "aaaaaa", 8.0)) 20 // can provide nullable 
     check "csoptional23982f52o3" (SomeClass.OverloadedMethodTakingNullables(Nullable(6), "aaaaaa", Nullable(8.0))) 20 // can provide nullable 
 
-#endif
 
 #if CHECK_ERRORS
     // in these cases there's not enough information to resolve the overload
@@ -422,6 +421,42 @@ module TestConsumeCSharpOptionalParameterOverloads_ByNullability =
     check "cenwceoweioij5" (SomeClass.SimpleOverload(Nullable())) 100
     check "cenwceoweioij4" (SomeClass.SimpleOverload(x=Nullable(6))) 6
     check "cenwceoweioij5" (SomeClass.SimpleOverload(x=Nullable())) 100
+
+module TestOptionalsAndNullablesInt32ToInt64 = 
+    open System
+    open CSharpOptionalParameters
+
+    // Check can give 32-bit or 64-bit
+    check "csoptional23982f31" (SomeClass.MethodTakingOptionalsInt64()) 11L
+    check "csoptional23982f32" (SomeClass.MethodTakingOptionalsInt64(x = 6)) 14L
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionalsInt64(?x = Some 6)) 14L
+    check "csoptional23982f32" (SomeClass.MethodTakingOptionalsInt64(x = 6L)) 14L
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionalsInt64(?x = Some 6L)) 14L
+
+    // Check can take 32-bit or 64-bit
+    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64()) 11L
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = 6)) 14L // can provide non-nullable 
+    check "csoptional23982f431" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = 6)) 14L
+    check "csoptional23982f435" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(?x = Some 6)) 14L
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = 6L)) 14L // can provide non-nullable 
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = Nullable 6L)) 14L // can provide nullable for legacy
+    check "csoptional23982f431" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = 6L)) 14L
+    check "csoptional23982f435" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(?x = Some 6L)) 14L
+
+    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionalsInt64()) -3L
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionalsInt64(x = 6)) 4L // can provide nullable for legacy
+    check "csoptional23982f523" (SomeClass.MethodTakingNullableOptionalsInt64(x = 6)) 4L
+    check "csoptional23982f527" (SomeClass.MethodTakingNullableOptionalsInt64(?x = Some 6)) 4L
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionalsInt64(x = 6L)) 4L // can provide nullable for legacy
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionalsInt64(x = Nullable 6L)) 4L // can provide nullable for legacy
+    check "csoptional23982f523" (SomeClass.MethodTakingNullableOptionalsInt64(x = 6L)) 4L
+    check "csoptional23982f527" (SomeClass.MethodTakingNullableOptionalsInt64(?x = Some 6L)) 4L
+
+#if CHECK_ERRORS
+    // A 32-bit to 64-bit type directed conversion is not allowed for the legacy support of passing a Nullable as named argument
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaultsInt64(x = Nullable 6)) 14 // can provide nullable for legacy
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionalsInt64(x = Nullable 6)) 4 // can provide nullable for legacy
+#endif
 
 #if TESTS_AS_APP
 let RUN() = !failures
