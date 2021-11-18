@@ -1655,7 +1655,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then
+          if showAssertForUnexpectedException.Value then
               Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 

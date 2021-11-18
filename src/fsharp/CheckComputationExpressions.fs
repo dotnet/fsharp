@@ -760,6 +760,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     // translatedCtxt - represents the translation of the context in which the computation expression 'comp' occurs, up to a
     //                  hole to be filled by (part of) the results of translating 'comp'.
     let rec tryTrans firstTry q varSpace comp translatedCtxt =
+        // Guard the stack for deeply nested computation expressions
+        cenv.stackGuard.Guard <| fun () ->
 
         match comp with 
 

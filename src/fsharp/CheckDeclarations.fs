@@ -42,6 +42,8 @@ open FSharp.Compiler.ExtensionTyping
 
 type cenv = TcFileState
 
+let TcClassRewriteStackGuardDepth = StackGuard.GetDepthOption "TcClassRewrite"
+
 //-------------------------------------------------------------------------
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
@@ -1144,8 +1146,8 @@ module IncrClassChecking =
             RewriteExpr { PreIntercept = Some FixupExprNode 
                           PostTransform = (fun _ -> None)
                           PreInterceptBinding = None
-                          IsUnderQuotations=true } expr 
-
+                          RewriteQuotations = true
+                          StackGuard = StackGuard(TcClassRewriteStackGuardDepth) } expr 
 
     type IncrClassConstructionBindingsPhase2C =
       | Phase2CBindings of IncrClassBindingGroup list

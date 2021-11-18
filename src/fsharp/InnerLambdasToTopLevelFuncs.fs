@@ -22,6 +22,8 @@ open FSharp.Compiler.TcGlobals
 
 let verboseTLR = false
 
+let InnerLambdasToTopLevelFunctionsStackGuardDepth = StackGuard.GetDepthOption "InnerLambdasToTopLevelFunctions"
+
 //-------------------------------------------------------------------------
 // library helpers
 //-------------------------------------------------------------------------
@@ -482,7 +484,9 @@ module Pass2_DetermineReqdItems =
           if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName
           state
 
-    let FreeInBindings bs = List.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
+    let FreeInBindings bs =
+        let opts = CollectTyparsAndLocalsWithStackGuard()
+        List.fold (foldOn (freeInBindingRhs opts) unionFreeVars) emptyFreeVars bs
 
     /// Intercepts selected exprs.
     ///   "letrec f1, f2, ... = fBody1, fBody2, ... in rest" -
@@ -877,6 +881,7 @@ module Pass4_RewriteAssembly =
     type RewriteContext =
        { ccu: CcuThunk
          g: TcGlobals
+         stackGuard: StackGuard
          tlrS: Zset<Val>
          topValS: Zset<Val>
          arityM: Zmap<Val, int>
@@ -1098,6 +1103,7 @@ module Pass4_RewriteAssembly =
     /// At free vals, fixup 0-call if it is an arity-met constant.
     /// Other cases rewrite structurally.
     let rec TransExpr (penv: RewriteContext) (z: RewriteState) expr: Expr * RewriteState =
+        penv.stackGuard.Guard <| fun () ->
 
         match expr with
         // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
@@ -1128,7 +1134,7 @@ module Pass4_RewriteAssembly =
 
         // reclink - suppress
         | Expr.Link r ->
-            TransExpr penv z (!r)
+            TransExpr penv z r.Value
 
         // ilobj - has implicit lambda exprs and recursive/base references
         | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
@@ -1177,7 +1183,7 @@ module Pass4_RewriteAssembly =
                 (typeDefs,argTypes,argExprs,data), z
 
             let data, z =
-                match !dataCell with 
+                match dataCell.Value with 
                 | Some (data1, data2) ->
                    let data1, z = doData data1 z
                    let data2, z = doData data2 z
@@ -1374,7 +1380,16 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
       if verboseTLR then dprintf "TransExpr(rw)------\n"
       let expr, _ =
           let penv: Pass4_RewriteAssembly.RewriteContext =
-              {ccu=ccu; g=g; tlrS=tlrS; topValS=topValS; arityM=arityM; fclassM=fclassM; recShortCallS=recShortCallS; envPackM=envPackM; fHatM=fHatM}
+              { ccu = ccu
+                g = g
+                tlrS = tlrS
+                topValS = topValS
+                arityM = arityM
+                fclassM = fclassM
+                recShortCallS = recShortCallS
+                envPackM = envPackM
+                fHatM = fHatM
+                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth) }
           let z = Pass4_RewriteAssembly.rewriteState0
           Pass4_RewriteAssembly.TransImplFile penv z expr
 
