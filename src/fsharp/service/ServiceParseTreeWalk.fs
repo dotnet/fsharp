@@ -383,10 +383,10 @@ module SyntaxTraversal =
                     ] |> pick expr
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.ObjExpr (ty,baseCallOpt,binds,ifaces,_range1,_range2) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
                     let result = 
                         ifaces 
-                        |> Seq.map (fun (SynInterfaceImpl(ty, _, _)) -> ty)
+                        |> Seq.map (fun (SynInterfaceImpl(interfaceTy=ty)) -> ty)
                         |> Seq.tryPick (fun ty -> visitor.VisitInterfaceSynMemberDefnType(path, ty))
                     
                     if result.IsSome then 
@@ -401,7 +401,7 @@ module SyntaxTraversal =
                         | _ -> ()
                         for b in binds do
                             yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
-                        for SynInterfaceImpl(_ty, binds, _range) in ifaces do
+                        for SynInterfaceImpl(bindings=binds) in ifaces do
                             for b in binds do
                                 yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                     ] |> pick expr
@@ -456,7 +456,7 @@ module SyntaxTraversal =
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     |> pick expr
 
-                | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
+                | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
@@ -487,7 +487,7 @@ module SyntaxTraversal =
                          yield dive synExpr synExpr.Range traverseSynExpr]
                         |> pick expr
 
-                | SynExpr.TryWith (synExpr, _range, synMatchClauseList, _range2, _range3, _sequencePointInfoForTry, _sequencePointInfoForWith) -> 
+                | SynExpr.TryWith (tryExpr=synExpr; withCases=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))]
                     |> pick expr
@@ -601,7 +601,7 @@ module SyntaxTraversal =
                     ]
                     |> pick expr
 
-                | SynExpr.MatchBang (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
+                | SynExpr.MatchBang (expr=synExpr; clauses=synMatchClauseList) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
@@ -634,7 +634,7 @@ module SyntaxTraversal =
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
                 | SynPat.Attrib (p, _, _) -> traversePat path p
-                | SynPat.LongIdent(_, _, _, args, _, _) ->
+                | SynPat.LongIdent(argPats=args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
                     | SynArgPats.NamePatPairs (ps, _) ->
@@ -766,7 +766,7 @@ module SyntaxTraversal =
                 | Some x -> Some x
                 | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path)) |> pick m
             | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) -> None
-            | SynMemberDefn.Interface(synType, synMemberDefnsOption, _range) -> 
+            | SynMemberDefn.Interface(interfaceType=synType; members=synMemberDefnsOption) -> 
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with
                 | None -> 
                     match synMemberDefnsOption with 
