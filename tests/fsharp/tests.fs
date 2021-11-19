@@ -2132,33 +2132,43 @@ module RegressionTests =
     let ``12383-FSC_BASIC`` () = singleTestBuildAndRun "regression/12383" FSC_BASIC
 
 #if NETCOREAPP
-    //Check 12322 with fsc.dll 64-bit .NET 6+ compiler generating optimized code
     [<Test >]
     let ``Large inputs 12322 fsc.dll 64-bit fsc.dll .NET SDK generating optimized code`` () =
         singleTestBuildAndRun "regression/12322" FSC_BASIC
 
-    //Check 12322 with fsc.dll 64-bit .NET 6+ compiler generating debug code
     [<Test >]
     let ``Large inputs 12322 fsc.dll 64-bit .NET SDK generating debug code`` () =
         singleTestBuildAndRun "regression/12322" FSC_BASIC_OPT_MINUS
 
 #else
-    //Check 12322 with fsc.exe 32-bit .NET Framework compiler generating optimized code
     [<Test >]
-    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code`` () =
-        singleTestBuildAndRun "regression/12322" FSC_BASIC
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, portable PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable" }
+        singleTestBuildAndRunAux cfg FSC_BASIC
 
-    //Check 12322 with fsc.exe 32-bit .NET Framework compiler generating debug  code
-    //Check 12322 with fsc.dll 64-bit .NET 6+ compiler generating debug code
+    [<Test >]
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, full PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
+        singleTestBuildAndRunAux cfg FSC_BASIC
+
     [<Test >]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code`` () =
         singleTestBuildAndRun "regression/12322" FSC_BASIC_OPT_MINUS
 
-    //Check 12322 with fscAnyCpu 64-bit .NET Framework compiler
     [<Test >]
-    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code`` () = 
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable" }
+        singleTestBuildAndRunAux cfg FSC_BASIC
+
+    [<Test >]
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () = 
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
         singleTestBuildAndRunAux cfg FSC_BASIC
 
     //Check 12322 with fscAnyCpu 64-bit .NET Framework compiler

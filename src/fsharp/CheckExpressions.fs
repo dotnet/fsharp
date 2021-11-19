@@ -51,7 +51,11 @@ let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
 
 let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
 
-let TcStackGuardDepth = StackGuard.GetDepthOption "Tc"
+#if DEBUG
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
+#else
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
+#endif
 
 //-------------------------------------------------------------------------
 // Errors.

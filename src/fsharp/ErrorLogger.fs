@@ -9,6 +9,7 @@ open FSharp.Compiler.Text
 open System
 open System.Diagnostics
 open System.Threading
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 /// Represents the style being used to format errors
@@ -721,7 +722,7 @@ type StackGuard(maxDepth: int) =
                     Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
                     use _scope = new CompilationGlobalsScope(errorLogger, buildPhase)
                     return f()
-                } |> Async.RunSynchronously
+                } |> Async.RunImmediate
             else
                 f()
         finally
