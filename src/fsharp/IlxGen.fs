@@ -2941,26 +2941,35 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         // Compiler generated sequential executions result in suppressions of debug points on both
         // left and right of the sequence
         let spStmt, spExpr =
-            (match spSeq with
-             | DebugPointAtSequential.SuppressNeither -> SPAlways, SPAlways
-             | DebugPointAtSequential.SuppressStmt -> SPSuppress, sp
-             | DebugPointAtSequential.SuppressExpr -> sp, SPSuppress
-             | DebugPointAtSequential.SuppressBoth -> SPSuppress, SPSuppress)
+            match spSeq with
+            | DebugPointAtSequential.SuppressNeither -> SPAlways, SPAlways
+            | DebugPointAtSequential.SuppressStmt -> SPSuppress, sp
+            | DebugPointAtSequential.SuppressExpr -> sp, SPSuppress
+            | DebugPointAtSequential.SuppressBoth -> SPSuppress, SPSuppress
+
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spStmt e1 discard
             GenLinearExpr cenv cgbuf eenv spExpr e2 sequel true contf
         | ThenDoSeq ->
-            let g = cenv.g
-            let isUnit = isUnitTy g (tyOfExpr g e1) 
-            if isUnit then
-                GenExpr cenv cgbuf eenv spExpr e1 discard
-                GenExpr cenv cgbuf eenv spStmt e2 discard
-                GenUnitThenSequel cenv eenv e2.Range eenv.cloc cgbuf sequel
-            else
-                GenExpr cenv cgbuf eenv spExpr e1 Continue
-                GenExpr cenv cgbuf eenv spStmt e2 discard
-                GenSequel cenv eenv.cloc cgbuf sequel
+            // "e then ()" with DebugPointAtSequential.SuppressStmt is used
+            // in mkDebugPoint to emit a debug point on "e".  However we don't want this to interfere
+            // with tailcalls, so detect this case and throw the "then ()" away, having already
+            // worked out "spExpr" up above.
+            match e2 with
+            | Expr.Const (Const.Unit, _, _) ->
+                GenExpr cenv cgbuf eenv spExpr e1 sequel
+            | _ -> 
+                let g = cenv.g
+                let isUnit = isUnitTy g (tyOfExpr g e1) 
+                if isUnit then
+                    GenExpr cenv cgbuf eenv spExpr e1 discard
+                    GenExpr cenv cgbuf eenv spStmt e2 discard
+                    GenUnitThenSequel cenv eenv e2.Range eenv.cloc cgbuf sequel
+                else
+                    GenExpr cenv cgbuf eenv spExpr e1 Continue
+                    GenExpr cenv cgbuf eenv spStmt e2 discard
+                    GenSequel cenv eenv.cloc cgbuf sequel
             contf Fake
 
     | Expr.Let (bind, body, _, _) ->
