@@ -1289,7 +1289,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             Some(translatedCtxt (SynExpr.Match (mMatch, spMatch, expr, mWith, clauses, m)))
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
-        | SynExpr.MatchBang (mMatch, spMatch, expr, _withKeyword, clauses, _m) ->
+        | SynExpr.MatchBang (mMatch, spMatch, expr, _mWith, clauses, _m) ->
             let matchExpr = mkSourceExpr expr
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
 
@@ -1302,7 +1302,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // TODO: consider allowing translation to BindReturn
             Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
-        | SynExpr.TryWith (_tryKeywordRange, innerComp, _mTryToWith, _withKeywordRange, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
+        | SynExpr.TryWith (_mTry, innerComp, _mTryToWith, _mWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
