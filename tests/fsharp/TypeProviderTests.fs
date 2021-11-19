@@ -27,10 +27,10 @@ open FSharp.Compiler.IO
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_OPTIMIZED = FSC_NETCORE (true, false)
-let FSI_DEFAULT = FSI_NETCORE
+let FSI = FSI_NETCORE
 #else
 let FSC_OPTIMIZED = FSC_NETFX (true, false)
-let FSI_DEFAULT = FSI_NETFX
+let FSI = FSI_NETFX
 #endif
 
 let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
@@ -151,7 +151,7 @@ let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
 [<Test>]
-let ``helloWorld fsi`` () = helloWorld FSI_STDIN
+let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
 [<Test>]

@@ -8,14 +8,15 @@ open HandleExpects
 open FSharp.Compiler.IO
 
 type Permutation =
+#if NETCOREAPP
     | FSC_NETCORE of optimized: bool * buildOnly: bool
     | FSI_NETCORE
-#if !NETCOREAPP
+#else
     | FSC_NETFX of optimized: bool * buildOnly: bool
     | FSI_NETFX
-    | FSI_STDIN
-    | FSC_TEST_GENERATED_SIGNATURE
-    | FSC_TEST_ROUNDTRIP_AS_DLL
+    | FSI_NETFX_STDIN
+    | FSC_NETFX_TEST_GENERATED_SIGNATURE
+    | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 #endif
 
 // Because we build programs ad dlls the compiler will copy an fsharp.core.dll into the build directory
@@ -302,14 +303,14 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 printfn "Filename: %s" projectFileName
 
     match p with
+#if NETCOREAPP
     | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" optimized buildOnly
     | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
-
-#if !NETCOREAPP
+#else
     | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
     | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
 
-    | FSI_STDIN ->
+    | FSI_NETFX_STDIN ->
         use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
@@ -318,7 +319,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         testOkFile.CheckExists()
 
-    | FSC_TEST_GENERATED_SIGNATURE ->
+    | FSC_NETFX_TEST_GENERATED_SIGNATURE ->
         use _cleanup = (cleanUpFSharpCore cfg)
 
         let source1 =
@@ -329,7 +330,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
 
         log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:FSC_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
+        fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
@@ -337,7 +338,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
 
-    | FSC_TEST_ROUNDTRIP_AS_DLL ->
+    | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
