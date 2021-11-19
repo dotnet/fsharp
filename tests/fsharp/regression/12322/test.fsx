@@ -996,6 +996,7 @@ module LotsOfLets =
     let a481 = "foo"
     let a482 = "foo"
     let a483 = "foo"
+#if PORTABLE_PDB // 32-bit fsc.exe --debug:full fails in C++ code for the scope emit for any more than this. 
     let a484 = "foo"
     let a485 = "foo"
     let a486 = "foo"
@@ -1484,6 +1485,7 @@ module LotsOfLets =
     let b484 = "foo"
     let b485 = "foo"
     let b486 = "foo"
+#endif
 
 // This is a compilation test, not a lot actually happens in the test
 do (System.Console.Out.WriteLine "Test Passed"; 
