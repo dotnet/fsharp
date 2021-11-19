@@ -377,7 +377,8 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
+    | 3390 -> false // xmlDocBadlyFormed - off by default
+    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> 
         (severity = FSharpDiagnosticSeverity.Info) ||
         (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
