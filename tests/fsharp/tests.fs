@@ -21,14 +21,15 @@ open FSharp.Test
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSC_BASIC_OPT_MINUS = FSC_CORECLR_OPT_MINUS
-let FSC_BUILDONLY = FSC_CORECLR_BUILDONLY
-let FSI_BASIC = FSI_CORECLR
+let FSC_BASIC = FSC_NETCORE (true, false)
+let FSC_BASIC_OPT_MINUS = FSC_NETCORE (false, false)
+let FSC_BUILDONLY optimized = FSC_NETCORE (optimized, true)
+let FSI_BASIC = FSI_NETCORE
 #else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSC_BASIC_OPT_MINUS = FSC_OPT_MINUS_DEBUG
-let FSI_BASIC = FSI_FILE
+let FSC_BASIC = FSC_NETFX (true, false)
+let FSC_BASIC_OPT_MINUS = FSC_NETFX (false, false)
+let FSC_BUILDONLY optimized = FSC_NETFX (optimized, true)
+let FSI_BASIC = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
@@ -962,7 +963,7 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" AS_DLL
+    let ``genericmeasures-FSC_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_TEST_ROUNDTRIP_AS_DLL
 
 
     [<Test>]
@@ -982,7 +983,7 @@ module CoreTests =
         peverify cfg "client.exe"
 
     [<Test>]
-    let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  AS_DLL
+    let ``innerpoly-FSC_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  FSC_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
     let queriesCustomQueryOps () =
@@ -1358,10 +1359,10 @@ module CoreTests =
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
     [<Test>]
-    let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
+    let ``libtest-unoptimized codegen`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC_OPT_MINUS
 
     [<Test>]
-    let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+    let ``libtest-FSC_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1587,10 +1588,10 @@ module CoreTests =
 
 #if !NETCOREAPP
     [<Test>]
-    let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
+    let ``measures-FSC_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
-    let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
+    let ``members-basics-FSC_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/members/basics" FSC_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
     let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
@@ -2053,22 +2054,22 @@ module CoreTests =
 [<NonParallelizable>]
 module VersionTests =
     [<Test>]
-    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
+    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" (FSC_BUILDONLY true)
 
     [<Test>]
-    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
+    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
+    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" (FSC_BUILDONLY true)
 
     [<Test>]
-    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
+    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BUILDONLY "preview"
+    let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" (FSC_BUILDONLY true) "preview"
 
     [<Test>]
     let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BASIC "preview"
@@ -2136,66 +2137,66 @@ module RegressionTests =
     let ``Large inputs 12322 fsc.dll 64-bit fsc.dll .NET SDK generating optimized code`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<Test >]
     let ``Large inputs 12322 fsc.dll 64-bit .NET SDK generating debug code`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC_OPT_MINUS
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
 #else
     [<Test >]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<Test >]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
-        singleTestBuildAndRunAux cfg FSC_BASIC
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<Test >]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC_OPT_MINUS
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
     [<Test >]
     let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
-        singleTestBuildAndRunAux cfg FSC_BASIC_OPT_MINUS
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
     [<Test >]
     let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<Test >]
     let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full " }
-        singleTestBuildAndRunAux cfg FSC_BASIC
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<Test >]
     let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, portable PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
-        singleTestBuildAndRunAux cfg FSC_BASIC_OPT_MINUS
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
     [<Test >]
     let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, full PDB`` () = 
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
-        singleTestBuildAndRunAux cfg FSC_BASIC_OPT_MINUS
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 #endif
 
 #if !NETCOREAPP
@@ -3306,25 +3307,25 @@ namespace CST.RI.Anshun
 
 module GeneratedSignatureTests =
     [<Test>]
-    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
+    let ``libtest-FSC_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
+    let ``members-basics-FSC_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
+    let ``access-FSC_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
+    let ``array-FSC_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
+    let ``genericmeasures-FSC_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
+    let ``innerpoly-FSC_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" FSC_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
+    let ``measures-FSC_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

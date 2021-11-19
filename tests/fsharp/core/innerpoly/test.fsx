@@ -448,7 +448,7 @@ module Bug11620A =
         (fun () -> getService)
 
 // The generated signature for this bug repro has mistakes, we are not enabling it yet
-#if !GENERATED_SIGNATURE
+#if !FSC_TEST_GENERATED_SIGNATURE
 module Bug11620B =
 
     type Data = interface end

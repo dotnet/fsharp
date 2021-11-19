@@ -26,11 +26,11 @@ open FSharp.Compiler.IO
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSI_BASIC = FSI_CORECLR
+let FSC_BASIC = FSC_NETCORE (true, false)
+let FSI_BASIC = FSI_NETCORE
 #else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSI_BASIC = FSI_FILE
+let FSC_BASIC = FSC_NETFX (true, false)
+let FSI_BASIC = FSI_NETFX
 #endif
 
 let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir

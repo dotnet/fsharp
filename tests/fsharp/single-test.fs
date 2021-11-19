@@ -8,18 +8,14 @@ open HandleExpects
 open FSharp.Compiler.IO
 
 type Permutation =
-    | FSC_CORECLR
-    | FSC_CORECLR_OPT_MINUS
-    | FSC_CORECLR_BUILDONLY
-    | FSI_CORECLR
+    | FSC_NETCORE of optimized: bool * buildOnly: bool
+    | FSI_NETCORE
 #if !NETCOREAPP
-    | FSI_FILE
+    | FSC_NETFX of optimized: bool * buildOnly: bool
+    | FSI_NETFX
     | FSI_STDIN
-    | GENERATED_SIGNATURE
-    | FSC_BUILDONLY
-    | FSC_OPT_MINUS_DEBUG
-    | FSC_OPT_PLUS_DEBUG
-    | AS_DLL
+    | FSC_TEST_GENERATED_SIGNATURE
+    | FSC_TEST_ROUNDTRIP_AS_DLL
 #endif
 
 // Because we build programs ad dlls the compiler will copy an fsharp.core.dll into the build directory
@@ -306,16 +302,12 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 printfn "Filename: %s" projectFileName
 
     match p with
-    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true false
-    | FSC_CORECLR_OPT_MINUS -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" false false
-    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true true
-    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
 
 #if !NETCOREAPP
-    | FSC_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false true
-    | FSC_OPT_PLUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" true false
-    | FSC_OPT_MINUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false false
-    | FSI_FILE -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
+    | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
+    | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
 
     | FSI_STDIN ->
         use _cleanup = (cleanUpFSharpCore cfg)
@@ -326,7 +318,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         testOkFile.CheckExists()
 
-    | GENERATED_SIGNATURE ->
+    | FSC_TEST_GENERATED_SIGNATURE ->
         use _cleanup = (cleanUpFSharpCore cfg)
 
         let source1 =
@@ -337,7 +329,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
 
         log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
+        fsc cfg "%s --sig:tmptest.fsi --define:FSC_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
@@ -345,7 +337,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
 
-    | AS_DLL ->
+    | FSC_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
