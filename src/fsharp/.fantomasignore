@@ -8,6 +8,9 @@
 **/prim-parsing.fsi
 **/TaggedCollections.fsi
 
+# https://github.com/fsprojects/fantomas/issues/1974
+**/ParseHalpers.fsi
+
 # service  (to investigate)
 **/ServiceDeclarationLists.fsi
 
