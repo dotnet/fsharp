@@ -322,7 +322,7 @@ module internal ExtensionTyping =
     /// Represents the remapping information for a generated provided type and its nested types.
     ///
     /// There is one overall tree for each root 'type X = ... type generation expr...' specification.
-    type ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
+    type ProviderGeneratedType = ProviderGeneratedType of ilOrigTyRef: ILTypeRef * ilRenamedTyRef: ILTypeRef * ProviderGeneratedType list
 
     /// The table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly, plus what types are nested in side what types.

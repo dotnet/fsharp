@@ -1160,7 +1160,7 @@ module internal ExtensionTyping =
         | Some ilTypeRef -> ilTypeRef
         | None -> GetOriginalILTypeRefOfProvidedType (st, range)
 
-    type ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
+    type ProviderGeneratedType = ProviderGeneratedType of ilOrigTyRef: ILTypeRef * ilRenamedTyRef: ILTypeRef * ProviderGeneratedType list
 
     /// The table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
