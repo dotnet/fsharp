@@ -1,13 +1,5 @@
 *.fs
 *.fsx
-# https://github.com/fsprojects/fantomas/issues/1953
-PrettyNaming.fsi
-ErrorLogger.fsi
-lib.fsi
-
-# https://github.com/fsprojects/fantomas/issues/1954
-CompilerDiagnostics.fsi
-CompilerOptions.fsi
 
 # absil  (to investigate)
 **/ilread.fsi
@@ -15,8 +7,6 @@ CompilerOptions.fsi
 # utils  (to investigate)
 **/prim-parsing.fsi
 **/TaggedCollections.fsi
-# https://github.com/fsprojects/fantomas/issues/1954
-**/FileSystem.fsi
 
 # service  (to investigate)
 **/ServiceDeclarationLists.fsi
