@@ -647,6 +647,11 @@
         <target state="translated">内插字符串中的对齐无效</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">构造 "{0}" 只能在有效的可恢复代码中使用。</target>

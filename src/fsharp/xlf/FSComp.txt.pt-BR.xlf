@@ -647,6 +647,11 @@
         <target state="translated">Alinhamento inválido na cadeia de caracteres interpolada</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">A construção '{0}' só pode ser usada em código válido e retomável.</target>
