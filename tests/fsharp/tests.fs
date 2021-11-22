@@ -2128,6 +2128,9 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
+    [<Test >]
+    let ``12383-FSC_BASIC`` () = singleTestBuildAndRun "regression/12383" FSC_BASIC
+
 #if !NETCOREAPP
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
