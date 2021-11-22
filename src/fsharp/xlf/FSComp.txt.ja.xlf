@@ -288,7 +288,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
         <target state="translated">言語バージョン 5.0 が必要な最後からのスライスで、/langversion:preview を使用してください。</target>
         <note />
       </trans-unit>
@@ -433,7 +433,7 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
         <note />
       </trans-unit>

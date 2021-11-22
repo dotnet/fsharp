@@ -288,7 +288,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
         <target state="translated">Sondan dilimleme, 5.0 dil sürümünü gerektirir, /langversion:preview kullanın.</target>
         <note />
       </trans-unit>
@@ -433,7 +433,7 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Paket yönetimi özelliği dil sürümü 5.0 gerektiriyor, /langversion:preview kullanın</target>
         <note />
       </trans-unit>
