@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>The 'from the end slicing' feature requires language version 'preview'.</source>
-        <target state="translated">Для конечного среза, для которого требуется версия языка 5.0, используйте параметр /langversion:preview.</target>
+        <target state="new">The 'from the end slicing' feature requires language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="translated">Для функции управления пакетами требуется версия языка 5.0, используйте параметр /langversion:preview</target>
+        <target state="new">The 'package management' feature requires language version 5.0 or above</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
