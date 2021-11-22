@@ -647,6 +647,11 @@
         <target state="translated">보간 문자열의 잘못된 정렬</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">'{0}' 구문은 유효한 다시 시작 가능한 코드에서만 사용할 수 있습니다.</target>

@@ -10920,6 +10920,8 @@ and AnalyzeRecursiveDecl
                  bindingAttribs, vis2, tcrefContainerInfo,
                  memberFlagsOpt, ty, bindingRhs, mBinding)
 
+        | SynPat.Paren(_, m) -> error(Error(FSComp.SR.tcInvalidMemberDeclNameMissingOrHasParen(), m))
+
         | _ -> error(Error(FSComp.SR.tcOnlySimplePatternsInLetRec(), mBinding))
 
     analyzeRecursiveDeclPat tpenv declPattern
