@@ -1,10 +1,10 @@
-[CmdletBinding(PositionalBinding=$false)]
+[CmdletBinding(PositionalBinding = $false)]
 param([string]$configuration = "Debug",
-      [string]$msbuildEngine = "vs",
-      [string]$altRootDrive = "q:",
-      [switch]$help,
-      [switch]$norestore,
-      [switch]$rebuild)
+  [string]$msbuildEngine = "vs",
+  [string]$altRootDrive = "q:",
+  [switch]$help,
+  [switch]$norestore,
+  [switch]$rebuild)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
@@ -23,19 +23,23 @@ if ($help) {
 }
 
 # List of binary names that should be skipped because they have a known issue that
-# makes them non-deterministic.  
+# makes them non-deterministic.
 $script:skipList = @()
 function Run-Build([string]$rootDir, [string]$logFileName) {
 
   # Clean out the previous run
-  Write-Host "Cleaning binaries"
+  Write-Host "Cleaning binaries in $rootDir"
+  $binDir = Get-BinDir $rootDir
+  $objDir = Get-ObjDir $rootDir
   $stopWatch = [System.Diagnostics.StopWatch]::StartNew()
-  Remove-Item -Recurse (Get-BinDir $rootDir) -ErrorAction SilentlyContinue
-  Remove-Item -Recurse (Get-ObjDir $rootDir) -ErrorAction SilentlyContinue
+  Write-Host "Cleaning binaries in $binDir"
+  Remove-Item -Recurse $binDir -ErrorAction SilentlyContinue
+  Write-Host "Cleaning binaries in $objDir"
+  Remove-Item -Recurse $objDir -ErrorAction SilentlyContinue
   $stopWatch.Stop()
   Write-Host "Cleaning took $($stopWatch.Elapsed)"
 
-  $solution = Join-Path $rootDir "VisualFSharp.sln"
+  $solution = Join-Path $rootDir "FSharp.sln"
 
   if ($logFileName -eq "") {
     $logFileName = [IO.Path]::GetFileNameWithoutExtension($projectFilePath)
@@ -47,28 +51,35 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
 
   Write-Host "Building $solution using $bootstrapDir"
   MSBuild $toolsetBuildProj `
-     /p:Projects=$solution `
-     /p:Restore=true `
-     /p:Build=true `
-     /p:DebugDeterminism=true `
-     /p:Features="debug-determinism" `
-     /p:DeployExtension=false `
-     /p:RepoRoot=$rootDir `
-     /p:TreatWarningsAsErrors=true `
-     /p:BootstrapBuildPath=$bootstrapDir `
-     /p:RunAnalyzers=false `
-     /p:RunAnalyzersDuringBuild=false `
-     /p:RestoreUseStaticGraphEvaluation=true `
-     /bl:$logFilePath
+    /p:Configuration=$configuration `
+    /p:Projects=$solution `
+    /p:RepoRoot=$rootDir `
+    /p:Restore=true `
+    /p:Build=true `
+    /p:Rebuild=true `
+    /p:Pack=false `
+    /p:Sign=false `
+    /p:Publish=false `
+    /p:ContinuousIntegrationBuild=false `
+    /p:OfficialBuildId="" `
+    /p:QuietRestore=false `
+    /p:DotNetBuildFromSource=false `
+    /p:DebugDeterminism=true `
+    /p:Features="debug-determinism" `
+    /p:DeployExtension=false `
+    /p:BootstrapBuildPath=$bootstrapDir `
+    /p:RunAnalyzers=false `
+    /p:RunAnalyzersDuringBuild=false `
+    /bl:$logFilePath
 
   Stop-Processes
 }
 
-function Get-ObjDir([string]$rootDir) { 
+function Get-ObjDir([string]$rootDir) {
   return Join-Path $rootDir "artifacts\obj"
 }
 
-function Get-BinDir([string]$rootDir) { 
+function Get-BinDir([string]$rootDir) {
   return Join-Path $rootDir "artifacts\bin"
 }
 
@@ -76,8 +87,8 @@ function Get-BinDir([string]$rootDir) {
 # directory.
 function Get-FilesToProcess([string]$rootDir) {
   $objDir = Get-ObjDir $rootDir
-  foreach ($item in Get-ChildItem -re -in *.dll,*.exe,*.pdb,*.sourcelink.json $objDir) {
-    $filePath = $item.FullName 
+  foreach ($item in Get-ChildItem -re -in *.dll, *.exe, *.pdb, *.sourcelink.json $objDir) {
+    $filePath = $item.FullName
     $fileName = Split-Path -leaf $filePath
     $relativeDirectory = Split-Path -parent $filePath
     $relativeDirectory = $relativeDirectory.Substring($objDir.Length)
@@ -100,7 +111,7 @@ function Get-FilesToProcess([string]$rootDir) {
 
     $keyFilePath = $filePath + ".key"
     $keyFileName = Split-Path -leaf $keyFilePath
-    if (Test-Path $keyFilePath) { 
+    if (Test-Path $keyFilePath) {
       $data.KeyFileName = $keyFileName
       $data.KeyFilePath = $keyFilePath
       $data.KeyFileContent = [IO.File]::ReadAllBytes($keyFilePath)
@@ -121,7 +132,7 @@ function Record-Binaries([string]$rootDir) {
   Write-Host "Recording file hashes"
 
   $map = @{ }
-  foreach ($fileData in Get-FilesToProcess $rootDir) { 
+  foreach ($fileData in Get-FilesToProcess $rootDir) {
     Write-Host "`t$($fileData.FileId) = $($fileData.Hash)"
     $map[$fileData.FileId] = $fileData
   }
@@ -131,9 +142,9 @@ function Record-Binaries([string]$rootDir) {
 }
 
 # This is a sanity check to ensure that we're actually putting the right entries into
-# the core data map. Essentially to ensure things like if we change our directory layout 
-# that this test fails beacuse we didn't record the binaries we intended to record. 
-function Test-MapContents($dataMap) { 
+# the core data map. Essentially to ensure things like if we change our directory layout
+# that this test fails beacuse we didn't record the binaries we intended to record.
+function Test-MapContents($dataMap) {
 
   # Sanity check to ensure we didn't return a false positive because we failed
   # to examine any binaries.
@@ -146,16 +157,16 @@ function Test-MapContents($dataMap) {
     "FSharp.Core.dll",
     "FSharp.Compiler.Service.dll")
 
-  foreach ($fileName in $list) { 
+  foreach ($fileName in $list) {
     $found = $false
-    foreach ($value in $dataMap.Values) { 
-      if ($value.FileName -eq $fileName) { 
+    foreach ($value in $dataMap.Values) {
+      if ($value.FileName -eq $fileName) {
         $found = $true
         break;
       }
     }
 
-    if (-not $found) { 
+    if (-not $found) {
       throw "Did not find the expected binary $fileName"
     }
   }
@@ -182,7 +193,7 @@ function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
     }
 
     $oldfileData = $datamap[$fileId]
-    if ($fileData.Hash -ne $oldFileData.Hash) { 
+    if ($fileData.Hash -ne $oldFileData.Hash) {
       Write-Host "`tERROR! $relativeDir\$fileName contents don't match"
       $allGood = $false
       $errorList += $fileName
@@ -237,8 +248,8 @@ function Run-Test() {
   # Run a test against the source in the same directory location
   Test-Build -rootDir $RepoRoot -dataMap $dataMap -logFileName "test1"
 
-  # Run another build in a different source location and verify that path mapping 
-  # allows the build to be identical.  To do this we'll copy the entire source 
+  # Run another build in a different source location and verify that path mapping
+  # allows the build to be identical.  To do this we'll copy the entire source
   # tree under the artifacts\q directory and run a build from there.
   # Write-Host "Building in a different directory"
   # Exec-Command "subst" "$altRootDrive $(Split-Path -parent $RepoRoot)"
@@ -256,79 +267,78 @@ function Test-IsAdmin {
 }
 
 function TryDownloadDotnetFrameworkSdk() {
-    # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
-    $isAdmin = Test-IsAdmin
-    Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
-    if ($isAdmin -eq $true)
-    {
-        # Get program files(x86) location
-        if (${env:ProgramFiles(x86)} -eq $null) {
-            $programFiles = $env:ProgramFiles
-        }
-        else {
-            $programFiles = ${env:ProgramFiles(x86)}
-        }
-
-        # Get windowsSDK location for x86
-        $windowsSDK_ExecutablePath_x86 = $env:WindowsSDK_ExecutablePath_x86
-        $newWindowsSDK_ExecutablePath_x86 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools"
-
-        if ($windowsSDK_ExecutablePath_x86 -eq $null) {
-            $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
-        }
-        else {
-            $snPathX86 = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
-            $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
-            if ($snPathX86Exists -ne $true) {
-                $windowsSDK_ExecutablePath_x86 = null
-                $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
-            }
-        }
-
-        $windowsSDK_ExecutablePath_x64 = $env:WindowsSDK_ExecutablePath_x64
-        $newWindowsSDK_ExecutablePath_x64 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64"
-
-        if ($windowsSDK_ExecutablePath_x64 -eq $null) {
-            $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
-        }
-        else {
-            $snPathX64 = Join-Path $windowsSDK_ExecutablePath_x64 "sn.exe"
-            $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
-            if ($snPathX64Exists -ne $true) {
-                $windowsSDK_ExecutablePath_x86 = null
-                $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
-            }
-        }
-
-        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
-        Write-Host "pre-dl snPathX86Exists : $snPathX86Exists - '$snPathX86'"
-        if ($snPathX86Exists -ne $true) {
-            DownloadDotnetFrameworkSdk
-        }
-
-        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
-        if ($snPathX86Exists -eq $true) {
-            if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
-                $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
-                # x86 environment variable
-                Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
-                $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
-            }
-        }
-
-        # Also update environment variable for x64
-        $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
-        if ($snPathX64Exists -eq $true) {
-            if ($windowsSDK_ExecutablePath_x64 -ne $newWindowsSDK_ExecutablePath_x64) {
-                $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
-                # x64 environment variable
-                Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
-                $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
-            }
-        }
+  # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
+  $isAdmin = Test-IsAdmin
+  Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
+  if ($isAdmin -eq $true) {
+    # Get program files(x86) location
+    if ($null -eq ${env:ProgramFiles(x86)}) {
+      $programFiles = $env:ProgramFiles
     }
+    else {
+      $programFiles = ${env:ProgramFiles(x86)}
+    }
+
+    # Get windowsSDK location for x86
+    $windowsSDK_ExecutablePath_x86 = $env:WindowsSDK_ExecutablePath_x86
+    $newWindowsSDK_ExecutablePath_x86 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools"
+
+    if ($null -eq $windowsSDK_ExecutablePath_x86) {
+      $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+    }
+    else {
+      $snPathX86 = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
+      $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+      if ($snPathX86Exists -ne $true) {
+        $windowsSDK_ExecutablePath_x86 = null
+        $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+      }
+    }
+
+    $windowsSDK_ExecutablePath_x64 = $env:WindowsSDK_ExecutablePath_x64
+    $newWindowsSDK_ExecutablePath_x64 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64"
+
+    if ($null -eq $windowsSDK_ExecutablePath_x64) {
+      $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+    }
+    else {
+      $snPathX64 = Join-Path $windowsSDK_ExecutablePath_x64 "sn.exe"
+      $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+      if ($snPathX64Exists -ne $true) {
+        $windowsSDK_ExecutablePath_x86 = null
+        $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+      }
+    }
+
+    $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+    Write-Host "pre-dl snPathX86Exists : $snPathX86Exists - '$snPathX86'"
+    if ($snPathX86Exists -ne $true) {
+      DownloadDotnetFrameworkSdk
+    }
+
+    $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+    if ($snPathX86Exists -eq $true) {
+      if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
+        $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+        # x86 environment variable
+        Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
+        [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86", "$newWindowsSDK_ExecutablePath_x86", [System.EnvironmentVariableTarget]::Machine)
+        $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+      }
+    }
+
+    # Also update environment variable for x64
+    $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+    if ($snPathX64Exists -eq $true) {
+      if ($windowsSDK_ExecutablePath_x64 -ne $newWindowsSDK_ExecutablePath_x64) {
+        $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
+        # x64 environment variable
+        Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
+        [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64", "$newWindowsSDK_ExecutablePath_x64", [System.EnvironmentVariableTarget]::Machine)
+        $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
+      }
+    }
+  }
 }
 
 try {
@@ -349,12 +359,22 @@ try {
   $officialBuildId = ""
   $nodeReuse = $false
   $properties = @()
-  $script:bootstrap = $true
-  $script:bootstrapConfiguration = "Proto"
 
   $buildTool = InitializeBuildTool
   $toolsetBuildProj = InitializeToolset
   TryDownloadDotnetFrameworkSdk
+
+  $dotnetPath = InitializeDotNetCli
+  $env:DOTNET_ROOT = "$dotnetPath"
+  Get-Item -Path Env:
+
+  $script:bootstrap = $true
+  $script:bootstrapConfiguration = "Proto"
+  $script:bootstrapTfm = "net472"
+
+  if ($script:msbuildEngine -eq "dotnet") {
+    $script.bootstrapTfm = "net5.0"
+  }
 
   $bootstrapDir = Make-BootstrapBuild
 

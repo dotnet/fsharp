@@ -356,12 +356,27 @@ stages:
         # Determinism
         - job: Determinism_Debug
           pool:
-            vmImage: windows-latest
+            name: NetCore1ESPool-Public
+            demands: ImageOverride -equals Build.Windows.Amd64.VS2022.Pre.Open
+          timeoutInMinutes: 90
           steps:
-          - checkout: self
-            clean: true
+          - checkout: none
+          - script: |
+              @echo on
+              git init
+              git remote add origin "$(Build.Repository.Uri)"
+              git fetch --progress --no-tags --depth=1 origin "$(Build.SourceVersion)"
+              git checkout "$(Build.SourceVersion)"
+            displayName: Shallow checkout
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
