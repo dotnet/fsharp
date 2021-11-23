@@ -34,6 +34,8 @@ open FSharp.Compiler.TypeRelations
 open System.Collections.Generic
 open System.Collections.ObjectModel
 
+let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
+
 #if DEBUG
 let verboseOptimizationInfo = 
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo")) with _ -> false
@@ -427,6 +429,8 @@ type cenv =
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
+
+      stackGuard: StackGuard
 
     }
 
@@ -1198,7 +1202,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
         
           // Check for escape in lambda 
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when 
-            (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
+            (let fvs = freeInExpr (if isNil boundTyVars then (CollectLocalsWithStackGuard()) else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              fvs.UsesMethodLocalConstructs) ->
@@ -1459,7 +1463,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
         let IsUniqueUse vspec2 args = 
               valEq vspec1 vspec2  
            // REVIEW: this looks slow. Look only for one variable instead 
-           && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
+           && (let fvs = accFreeInExprs (CollectLocalsWithStackGuard()) args emptyFreeVars
                not (Zset.contains vspec1 fvs.FreeLocals))
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 
@@ -2009,6 +2013,7 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
     
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
+    cenv.stackGuard.Guard <| fun () ->
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
@@ -2540,7 +2545,7 @@ and OptimizeLinearExpr cenv env expr contf =
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
         // Is it quadratic or quasi-quadratic?
-        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr CollectLocals bodyR).FreeLocals) (bindR, bindingInfo) then
+        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
             exprR, 
@@ -3492,7 +3497,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
      // We can only split an expression out as a method if certain conditions are met. 
      // It can't use any protected or base calls, rethrow(), byrefs etc.
     let m = e.Range
-    (let fvs = freeInExpr CollectLocals e
+    (let fvs = freeInExpr (CollectLocalsWithStackGuard()) e
      not fvs.UsesUnboundRethrow &&
      not fvs.UsesMethodLocalConstructs &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
@@ -3761,7 +3766,7 @@ and OptimizeModuleExpr cenv env x =
         let def = 
             if not cenv.settings.LocalOptimizationsEnabled then def else 
 
-            let fvs = freeInModuleOrNamespace CollectLocals def 
+            let fvs = freeInModuleOrNamespace (CollectLocalsWithStackGuard()) def 
             let dead = 
                 bindInfosColl |> List.filter (fun (bind, binfo) -> 
 
@@ -3919,6 +3924,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
+          stackGuard = StackGuard(OptimizerStackGuardDepth) 
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  

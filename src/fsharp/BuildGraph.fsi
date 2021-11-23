@@ -8,13 +8,6 @@ open System.Threading.Tasks
 open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.Library
 
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-    interface IDisposable
-
 /// Represents code that can be run as part of the build graph.
 ///
 /// This is essentially cancellable async code where the only asynchronous waits are on nodes.

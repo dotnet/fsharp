@@ -4,7 +4,9 @@ module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Reflection
+open System.Runtime
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
@@ -30,7 +32,8 @@ let main(argv) =
             "fsc.exe"
 
     // Set the garbage collector to batch mode, which improves overall performance.
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
+    GCSettings.LatencyMode <- GCLatencyMode.Batch
+    Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
