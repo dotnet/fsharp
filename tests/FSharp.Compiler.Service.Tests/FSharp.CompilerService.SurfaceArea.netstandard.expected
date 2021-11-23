@@ -2131,9 +2131,9 @@ FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalys
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreateFromILModuleReader(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: FSharp.Compiler.CodeAnalysis.FSharpReferencedProject CreatePortableExecutable(System.String, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.DateTime], Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,Microsoft.FSharp.Core.FSharpOption`1[System.IO.Stream]])
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: Int32 GetHashCode()
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String FileName
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String OutputFile
 FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String ToString()
-FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_FileName()
+FSharp.Compiler.CodeAnalysis.FSharpReferencedProject: System.String get_OutputFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromAttribute
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromComputationExpression

@@ -51,6 +51,12 @@ let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
 
 let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
 
+#if DEBUG
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
+#else
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
+#endif
+
 //-------------------------------------------------------------------------
 // Errors.
 //-------------------------------------------------------------------------
@@ -358,6 +364,9 @@ type TcFileState =
       /// we infer type parameters
       mutable recUses: ValMultiMap<Expr ref * range * bool>
 
+      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+      stackGuard: StackGuard
+
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -421,6 +430,7 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
+          stackGuard = StackGuard(TcStackGuardDepth)
           createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
@@ -5359,7 +5369,11 @@ and TcExprFlex2 cenv desiredTy env isMethodArg tpenv synExpr =
     TcExpr cenv (MustConvertTo (isMethodArg, desiredTy)) env tpenv synExpr
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
-    // Start an error recovery handler
+
+    // Guard the stack for deeply nested expressions
+    cenv.stackGuard.Guard <| fun () ->
+
+    // Start an error recovery handler, and check for stack recursion depth, moving to a new stack if necessary.
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
     // So be careful!
     try
