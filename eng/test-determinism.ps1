@@ -64,6 +64,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
     /p:OfficialBuildId="" `
     /p:QuietRestore=false `
     /p:DotNetBuildFromSource=false `
+    /p:Deterministic=true `
     /p:DebugDeterminism=true `
     /p:Features="debug-determinism" `
     /p:DeployExtension=false `
