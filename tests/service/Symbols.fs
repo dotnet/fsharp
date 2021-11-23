@@ -1438,6 +1438,31 @@ exception SyntaxError of obj * range: range
             assertRange (5, 0) (6, 43) mException
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of members should be included in SynExceptionSig and SynModuleSigDecl.Exception`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module internal FSharp.Compiler.ParseHelpers
+
+exception SyntaxError of obj * range: range with
+    member Meh : string -> int
+
+open Foo
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Exception(
+                    SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
+                SynModuleSigDecl.Open _
+            ] ) ])) ->
+            assertRange (4, 0) (4, 43) mSynExceptionDefnRepr
+            assertRange (4, 0) (5, 30) mSynExceptionSig
+            assertRange (4, 0) (5, 30) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynMatchClause =
     [<Test>]
     let ``Range of single SynMatchClause`` () =
