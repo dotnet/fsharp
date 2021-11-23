@@ -97,12 +97,12 @@ let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
 let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
-let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, SynArgPats.Pats [], vis, m)
+let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, None, SynArgPats.Pats [], vis, m)
 
 /// Extract the argument for patterns corresponding to the declaration of 'new ... = ...'
 let (|SynPatForConstructorDecl|_|) x =
     match x with
-    | SynPat.LongIdent (LongIdentWithDots([_], _), _, _, SynArgPats.Pats [arg], _, _) -> Some arg
+    | SynPat.LongIdent (longDotId=LongIdentWithDots([_], _); argPats=SynArgPats.Pats [arg]) -> Some arg
     | _ -> None
 
 /// Recognize the '()' in 'new()'
@@ -156,7 +156,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         let m = p.Range
         let isCompGen, altNameRefCell, id, item =
             match p with
-            | SynPat.LongIdent(LongIdentWithDots([id], _), _, None, SynArgPats.Pats [], None, _) ->
+            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) ->
                 // The pattern is 'V' or some other capitalized identifier.
                 // It may be a real variable, in which case we want to maintain its name.
                 // But it may also be a nullary union case or some other identifier.
@@ -181,7 +181,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 Some (fun e ->
                     let clause = SynMatchClause(p, None, None, e, m, DebugPointAtTarget.No)
                     let artificialMatchRange = (unionRanges m e.Range).MakeSynthetic()
-                    SynExpr.Match (DebugPointAtBinding.NoneAtInvisible, item, [clause], artificialMatchRange))
+                    SynExpr.Match (artificialMatchRange, DebugPointAtBinding.NoneAtInvisible, item, artificialMatchRange, [clause], artificialMatchRange))
 
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange), fn
 
@@ -530,12 +530,12 @@ module SynInfo =
 
         let infosForExplicitArgs =
             match pat with
-            | Some(SynPat.LongIdent(_, _, _, SynArgPats.Pats curriedArgs, _, _)) -> List.map InferSynArgInfoFromPat curriedArgs
+            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
             | _ -> []
 
         let explicitArgsAreSimple =
             match pat with
-            | Some(SynPat.LongIdent(_, _, _, SynArgPats.Pats curriedArgs, _, _)) -> List.forall isSimplePattern curriedArgs
+            | Some(SynPat.LongIdent(argPats=SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
             | _ -> true
 
         let retInfo = InferSynReturnData retInfo
@@ -691,8 +691,8 @@ let rec synExprContainsError inpExpr =
               let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
               walkExprs flds
 
-          | SynExpr.ObjExpr (_, _, bs, is, _, _) ->
-              walkBinds bs || walkBinds [ for SynInterfaceImpl(_, bs, _) in is do yield! bs  ]
+          | SynExpr.ObjExpr (bindings=bs; extraImpls=is) ->
+              walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
 
           | SynExpr.ForEach (_, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->
@@ -707,13 +707,13 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Lambda (body = e) ->
               walkExpr e
 
-          | SynExpr.Match (_, e, cl, _) ->
+          | SynExpr.Match (expr=e; clauses=cl) ->
               walkExpr e || walkMatchClauses cl
 
           | SynExpr.LetOrUse (_, _, bs, e, _) ->
               walkBinds bs || walkExpr e
 
-          | SynExpr.TryWith (e, _, cl, _, _, _, _) ->
+          | SynExpr.TryWith (tryExpr=e; withCases=cl) ->
               walkExpr e  || walkMatchClauses cl
 
           | SynExpr.TryFinally (e1, e2, _, _, _) ->
@@ -744,7 +744,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
-          | SynExpr.MatchBang (_, e, cl, _) ->
+          | SynExpr.MatchBang (expr=e; clauses=cl) ->
               walkExpr e || walkMatchClauses cl
 
           | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->

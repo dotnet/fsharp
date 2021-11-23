@@ -24,7 +24,7 @@ module XmlDocParsing =
         | SynPat.Named (id,_isTheThisVar,_access,_range) -> [id.idText]
         | SynPat.Typed(pat,_type,_range) -> digNamesFrom pat
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
-        | SynPat.LongIdent(_lid,_idOpt,_typDeclsOpt,ConstructorPats pats,_access,_range) -> 
+        | SynPat.LongIdent(argPats=ConstructorPats pats) -> 
             pats |> List.collect digNamesFrom 
         | SynPat.Tuple(_,pats,_range) -> pats |> List.collect digNamesFrom 
         | SynPat.Paren(pat,_range) -> digNamesFrom pat
@@ -122,7 +122,7 @@ module XmlDocParsing =
                     let paramNames = digNamesFrom synPat 
                     [XmlDocable(line,indent,paramNames)]
                 else []
-            | SynMemberDefn.AbstractSlot(SynValSig(synAttributes, _, _, _, synValInfo, _, _, preXmlDoc, _, _, _), _, range) -> 
+            | SynMemberDefn.AbstractSlot(SynValSig(attributes=synAttributes; arity=synValInfo; xmlDoc=preXmlDoc), _, range) -> 
                 if isEmptyXmlDoc preXmlDoc then
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                     let line = fullRange.StartLine 
@@ -130,7 +130,7 @@ module XmlDocParsing =
                     let paramNames = synValInfo.ArgNames
                     [XmlDocable(line,indent,paramNames)]
                 else []
-            | SynMemberDefn.Interface(_synType, synMemberDefnsOption, _range) -> 
+            | SynMemberDefn.Interface(members=synMemberDefnsOption) -> 
                 match synMemberDefnsOption with 
                 | None -> [] 
                 | Some(x) -> x |> List.collect getXmlDocablesSynMemberDefn
