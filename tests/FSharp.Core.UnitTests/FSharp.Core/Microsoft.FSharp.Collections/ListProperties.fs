@@ -180,12 +180,12 @@ let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``
 let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
     let a = List.sortBy id xs |> Seq.toArray 
     let b = List.sort xs |> Seq.toArray
-    let result = ref true
+    let mutable result = true
     for i in 0 .. a.Length - 1 do
         if a.[i] <> b.[i] then
             if System.Double.IsNaN a.[i] <> System.Double.IsNaN b.[i] then
-                result := false
-    !result 
+                result <- false
+    result 
 
 [<Fact>]
 let ``sort behaves like sortby id`` () =   
@@ -746,15 +746,15 @@ let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs
     let b = Set.ofList xs
 
-    let result = ref (a.Length = b.Count)
+    let mutable result = (a.Length = b.Count)
     for x in a do
         if Set.contains x b |> not then
-            result := false
+            result <- false
 
     for x in b do
         if List.exists ((=) x) a |> not then
-            result := false
-    !result
+            result <- false
+    result
 
 [<Fact>]
 let ``distinct creates same elements like a set`` () =
@@ -807,9 +807,9 @@ let ``List.distinctBy is stable`` () =
 let ``List.sum calculates the sum`` () =
     let sum (xs : int list) =
         let s = List.sum xs
-        let r = ref 0
-        for x in xs do r := !r + x    
-        s = !r
+        let mutable r = 0
+        for x in xs do r <- r + x    
+        s = r
     Check.QuickThrowOnFailure sum
 
 let sumBy<'a> (xs : 'a list) (f:'a -> int) =

@@ -6,16 +6,16 @@
     <_NETCoreSdkIsPreview>true</_NETCoreSdkIsPreview>
   </PropertyGroup>
 
-  <Import Project="Test.props" />
+  <Import Project="PackageTest.props" />
 
   <PropertyGroup>
     <ExpectsValueTuple>false</ExpectsValueTuple>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>
     <ExpectsFSharpCore>true</ExpectsFSharpCore>
-    <ExpectedFSharpCorePackageVersion>$(FSharpCoreShippedPackageVersionProperty)</ExpectedFSharpCorePackageVersion>
+    <ExpectedFSharpCorePackageVersion>$(FSharpCoreShippedPackageVersionValue)</ExpectedFSharpCorePackageVersion>
   </PropertyGroup>
 
-  <Import Project="Test.targets" />
+  <Import Project="PackageTest.targets" />
 
 </Project>

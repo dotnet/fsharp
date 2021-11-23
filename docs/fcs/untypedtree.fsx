@@ -1,21 +1,29 @@
+(**
+---
+title: Tutorial: Expressions
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 300
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
-Compiler Services: Processing untyped syntax tree
+Compiler Services: Processing SyntaxTree
 =================================================
 
-This tutorial demonstrates how to get the untyped abstract syntax tree (AST)
+This tutorial demonstrates how to get the SyntaxTree (AST)
 for F# code and how to walk over the tree. This can be used for creating tools
 such as code formatter, basic refactoring or code navigation tools. The untyped
 syntax tree contains information about the code structure, but does not contain
 types and there are some ambiguities that are resolved only later by the type
-checker. You can also combine the untyped AST information with the API available
+checker. You can also combine the SyntaxTree information with the API available
 from [editor services](editor.html). 
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published
 
 
-Getting the untyped AST
+Getting the SyntaxTree
 -----------------------
 
 To access the untyped AST, you need to create an instance of `FSharpChecker`.
@@ -57,8 +65,8 @@ return the `ParseTree` property:
 /// Get untyped tree for a specified input
 let getUntypedTree (file, input) = 
   // Get compiler options for the 'project' implied by a single script file
-  let projOptions, errors = 
-      checker.GetProjectOptionsFromScript(file, input)
+  let projOptions, diagnostics = 
+      checker.GetProjectOptionsFromScript(file, input, assumeDotNetFramework=false)
       |> Async.RunSynchronously
 
   let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
@@ -137,9 +145,8 @@ let rec visitExpression e =
       // for 'let .. = .. and .. = .. in ...'
       printfn "LetOrUse with the following bindings:"
       for binding in bindings do
-        let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                        data, pat, retInfo, init, m, sp)) = binding
-        visitPattern pat 
+        let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, data, headPat, retInfo, equalsRange, init, m, debugPoint)) = binding
+        visitPattern headPat
         visitExpression init
       // Visit the body expression
       printfn "And the following body:"
@@ -168,8 +175,8 @@ let visitDeclarations decls =
         // Let binding as a declaration is similar to let binding
         // as an expression (in visitExpression), but has no body
         for binding in bindings do
-          let (SynBinding(access, kind, inlin, mutabl, attrs, xmlDoc, 
-                          data, pat, retInfo, body, m, sp)) = binding
+          let (SynBinding(access, kind, isInline, isMutable, attrs, xmlDoc, 
+                          valData, pat, retInfo, equalsRange, body, m, sp)) = binding
           visitPattern pat 
           visitExpression body         
     | _ -> printfn " - not supported declaration: %A" declaration

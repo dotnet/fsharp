@@ -131,6 +131,38 @@ do test "ilistSum"          (expectedArraySum   = ilistSum      )
 do test "rangeSum"          (expectedRangeSum   = rangeSum      )
 do test "stringSum"         (expectedStringSum  = stringSum     )
 
+module RegressionCase =
+    [<Struct>]
+    type ColorF =
+        val r: float32
+        val g: float32
+        val b: float32
+
+        new (r, g, b) = {
+            ColorF.r = r
+            ColorF.g = g
+            ColorF.b = b
+        }
+
+        static member (+) (first: ColorF, second: ColorF) =
+            ColorF(first.r + second.r, first.g + second.g, first.b + second.b)
+
+    let Issue12333 () =
+        for x = 0 to 1 do
+            printfn "iter %d" x
+            let mutable color: ColorF = ColorF()
+            printfn "init color %g %g %g" color.r color.g color.b
+            test "lclwejcjwl1" (color.r = 0.0f)
+            test "lclwejcjwl2" (color.g = 0.0f)
+            test "lclwejcjwl3" (color.b = 0.0f)
+            for s = 0 to 1 do
+                let temp = ColorF(0.1f, 0.1f, 0.1f)
+                color <- color + temp
+                printfn "color %g %g %g" color.r color.g color.b
+
+
+    Issue12333() // should run without exception
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

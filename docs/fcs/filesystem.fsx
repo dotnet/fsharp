@@ -1,3 +1,11 @@
+(**
+---
+title: IFileSystem
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 1200
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**

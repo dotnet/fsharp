@@ -216,6 +216,7 @@ type TestConfig =
       FSI : string
 #if !NETCOREAPP
       FSIANYCPU : string
+      FSCANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
@@ -335,8 +336,9 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
-    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
+    let FSCANYCPU = requireArtifact ("fscAnyCpu" ++ configurationName ++ fscArchitecture ++ "fscAnyCpu.exe")
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
@@ -360,6 +362,7 @@ let config configurationName envVars =
       FSC = FSC
       FSI = FSI
 #if !NETCOREAPP
+      FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -392,6 +395,7 @@ let logConfig (cfg: TestConfig) =
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
+    log "FSCANYCPU                = %s" cfg.FSCANYCPU
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags

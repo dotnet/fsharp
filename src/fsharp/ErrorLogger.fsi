@@ -338,3 +338,24 @@ val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature
 val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
 
 val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a
+
+type StackGuard =
+    new: maxDepth: int -> StackGuard
+
+    /// Execute the new function, on a new thread if necessary
+    member Guard: f: (unit -> 'T) -> 'T
+
+    static member GetDepthOption: string -> int
+
+/// This represents the global state established as each task function runs as part of the build.
+///
+/// Use to reset error and warning handlers.
+type CompilationGlobalsScope =
+    new: errorLogger: ErrorLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
+
+    interface IDisposable
+
+    member ErrorLogger: ErrorLogger
+
+    member BuildPhase: BuildPhase
+

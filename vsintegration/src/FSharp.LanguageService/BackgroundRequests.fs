@@ -201,7 +201,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                 None,true
                             | FSharpCheckFileAnswer.Succeeded results -> Some results, false
 
-                        sr := None
+                        sr.Value <- None
                         parseResults,typedResults,true,aborted,int64 req.Timestamp
                 
                 // Now that we have the parseResults, we can SetDependencyFiles().

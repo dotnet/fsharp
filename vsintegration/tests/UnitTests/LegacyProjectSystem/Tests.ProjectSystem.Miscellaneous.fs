@@ -278,15 +278,15 @@ type Miscellaneous() =
                 AssertEqual VSConstants.S_OK hr
                 
                 let mutable isCleaning = false
-                let success = ref false
+                let mutable success = false
                 use event = new System.Threading.ManualResetEvent(false)
                 let (hr, cookie) = 
                     buildableCfg.AdviseBuildStatusCallback(
                         { new IVsBuildStatusCallback with
                             member this.BuildBegin pfContinue = pfContinue <- 1; VSConstants.S_OK
                             member this.BuildEnd fSuccess =
-                                success := fSuccess <> 0
-                                printfn "Build %s, code %i, phase: %s." (if !success then "succeeded" else "failed") fSuccess (if isCleaning then "Cleaning" else "Build")
+                                success <- fSuccess <> 0
+                                printfn "Build %s, code %i, phase: %s." (if success then "succeeded" else "failed") fSuccess (if isCleaning then "Cleaning" else "Build")
 
                                 event.Set() |> Assert.IsTrue
                                 VSConstants.S_OK
@@ -297,13 +297,13 @@ type Miscellaneous() =
                     let buildMgrAccessor = project.Site.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
                     let output = VsMocks.vsOutputWindowPane(ref [])
                     let doBuild target =
-                        success := false
+                        success <- false
                         event.Reset() |> Assert.IsTrue
                         buildMgrAccessor.BeginDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
                         buildableCfg.Build(0u, output, target)
                         event.WaitOne() |> Assert.IsTrue
                         buildMgrAccessor.EndDesignTimeBuild() |> ValidateOK // this is not a design-time build, but our mock does all the right initialization of the build manager for us, similar to what the system would do in VS for real
-                        AssertEqual true !success
+                        AssertEqual true success
 
                     printfn "Building..."
                     doBuild "Build"

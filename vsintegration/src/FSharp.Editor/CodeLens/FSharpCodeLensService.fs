@@ -33,7 +33,7 @@ open Microsoft.VisualStudio.Text.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-    member val TaggedText: Async<(ResizeArray<TaggedText> * QuickInfoNavigation) option> = taggedText
+    member val TaggedText: Async<(ResizeArray<TaggedText> * FSharpNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
     member val UiElement: UIElement = uiElement with get, set
@@ -191,7 +191,7 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()        
                                 typeLayout |> Seq.iter taggedText.Add
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, realPosition)
+                                let navigation = FSharpNavigation(statusBar, metadataAsSource, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 
