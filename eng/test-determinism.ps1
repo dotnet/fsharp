@@ -56,7 +56,7 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
     /p:RepoRoot=$rootDir `
     /p:Restore=true `
     /p:Build=true `
-    /p:Rebuild=true `
+    /p:Rebuild=false `
     /p:Pack=false `
     /p:Sign=false `
     /p:Publish=false `
