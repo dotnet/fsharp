@@ -59,6 +59,9 @@ function Run-Build([string]$rootDir, [string]$logFileName) {
     /p:Rebuild=false `
     /p:Pack=false `
     /p:Sign=false `
+    /p:SignType=Test `
+    /p:DotNetSignType=Test `
+    /p:MicroBuild_SigningEnabled=false `
     /p:Publish=false `
     /p:ContinuousIntegrationBuild=false `
     /p:OfficialBuildId="" `
@@ -194,10 +197,12 @@ function Test-Build([string]$rootDir, $dataMap, [string]$logFileName) {
     }
 
     $oldfileData = $datamap[$fileId]
-    if ($fileData.Hash -ne $oldFileData.Hash) {
-      Write-Host "`tERROR! $relativeDir\$fileName contents don't match"
+    $oldHash = $oldfileData.Hash
+    $newHash = $fileData.Hash
+    if ($newHash -ne $oldHash) {
+      Write-Host "`tERROR! $relativeDir\$fileName hashes don't match"
       $allGood = $false
-      $errorList += $fileName
+      $errorList += "$fileName (old hash: $oldHash; new hash: $newHash)"
 
       $errorCurrentDirLeft = Join-Path $errorDirLeft $relativeDir
       Create-Directory $errorCurrentDirLeft

@@ -355,6 +355,9 @@ stages:
 
         # Determinism
         - job: Determinism_Release
+          variables:
+          - name: _SignType
+            value: Test
           pool:
             vmImage: windows-latest
           timeoutInMinutes: 90
