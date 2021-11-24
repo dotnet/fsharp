@@ -354,7 +354,7 @@ stages:
             displayName: End to end build tests
 
         # Determinism
-        - job: Determinism_Debug
+        - job: Determinism_Release
           pool:
             name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
@@ -362,13 +362,13 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\eng\test-determinism.cmd -configuration Debug
-            displayName: Determinism tests with Debug configuration
+          - script: .\eng\test-determinism.cmd -configuration Release
+            displayName: Determinism tests with Release configuration
           - task: PublishPipelineArtifact@1
             displayName: Publish Determinism Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+              artifactName: 'Determinism_Release Attempt $(System.JobAttempt) Logs'
             continueOnError: true
             condition: not(succeeded())
 
