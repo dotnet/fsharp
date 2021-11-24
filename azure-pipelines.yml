@@ -356,18 +356,12 @@ stages:
         # Determinism
         - job: Determinism_Debug
           pool:
-            name: NetCore1ESPool-Public
-            demands: ImageOverride -equals Build.Windows.Amd64.VS2022.Pre.Open
+            name: NetCore1ESPool-Svc-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
           steps:
-          - checkout: none
-          - script: |
-              @echo on
-              git init
-              git remote add origin "$(Build.Repository.Uri)"
-              git fetch --progress --no-tags --depth=1 origin "$(Build.SourceVersion)"
-              git checkout "$(Build.SourceVersion)"
-            displayName: Shallow checkout
+          - checkout: self
+            clean: true
           - script: .\eng\test-determinism.cmd -configuration Debug
             displayName: Determinism tests with Debug configuration
           - task: PublishPipelineArtifact@1
