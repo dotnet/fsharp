@@ -364,6 +364,7 @@ this file.
               VisualStudioStyleErrors="$(VisualStudioStyleErrors)"
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)"
+              WarningsNotAsErrors="$(WarningsNotAsErrors)"
               WarnOn="$(WarnOn)"
               Win32IconFile="$(ApplicationIcon)"
               Win32ManifestFile="$(Win32Manifest)"
