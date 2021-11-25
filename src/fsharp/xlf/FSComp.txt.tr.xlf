@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Sondan dilimleme, 5.0 dil sürümünü gerektirir, /langversion:preview kullanın.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="new">The 'from the end slicing' feature requires language version 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Paket yönetimi özelliği dil sürümü 5.0 gerektiriyor, /langversion:preview kullanın</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="new">The 'package management' feature requires language version 5.0 or above</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -667,6 +667,11 @@
         <target state="translated">Düz metin arasına kod eklenmiş dizede geçersiz hizalama</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">'{0}' yapısı yalnızca geçerli sürdürülebilir kodda kullanılabilir.</target>
@@ -713,8 +718,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
-        <target state="translated">'NoEagerConstraintApplicationAttribute' içeren yöntemlerin kullanılması /langversion:preview veya üstünü gerektiriyor</target>
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute' içeren yöntemlerin kullanılması /langversion:6.0 veya üstünü gerektiriyor</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">

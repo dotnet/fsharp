@@ -9,6 +9,8 @@ neg45.fs(25,5,25,11): typecheck error FS0685: The generic function 'Foo' must be
 
 neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
+neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
+
 neg45.fs(41,23,41,41): typecheck error FS0827: This is not a valid name for an active pattern
 
 neg45.fs(52,14,52,17): typecheck error FS0039: The type 'FooBir' does not define the field, constructor or member 'Foo'.

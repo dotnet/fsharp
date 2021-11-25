@@ -284,7 +284,8 @@ module rec Compiler =
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
                     let name = defaultArg fs.Name null
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
+                    let options = fs.Options |> List.toArray
+                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options = options, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References

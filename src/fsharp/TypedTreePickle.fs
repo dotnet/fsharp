@@ -1527,7 +1527,7 @@ let p_trait_sln sln st =
 
 
 let p_trait (TTrait(a, b, c, d, e, f)) st  =
-    p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
+    p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
     let ccu, info, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
@@ -2561,7 +2561,7 @@ and u_op st =
 
 and p_expr expr st =
     match expr with
-    | Expr.Link e -> p_expr !e st
+    | Expr.Link e -> p_expr e.Value st
     | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty (x, m, ty) st
     | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
     | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st

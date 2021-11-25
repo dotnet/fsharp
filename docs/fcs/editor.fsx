@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Editor services
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 500
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -55,7 +63,7 @@ let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
 let projOptions, _diagnostics =
-    checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+    checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
     |> Async.RunSynchronously
 
 let parsingOptions, _diagnostics2 =

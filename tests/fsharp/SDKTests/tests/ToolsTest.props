@@ -8,11 +8,19 @@
     <TargetFrameworkIdentifier Condition="'$(TargetFrameworkIdentifier)' == ''">.NETFramework</TargetFrameworkIdentifier>
 
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
-    <TargetsDirectory>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\bin\FSharp.Build\$(Configuration)\netstandard2.0</TargetsDirectory>
+    <TargetsDirectory>$(MSBuildThisFileDirectory)..\..\..\..\artifacts\bin\FSharpSuite.Tests\$(Configuration)\$(TARGETFRAMEWORK)</TargetsDirectory>
 
     <!-- these properties don't really matter, but they're necessary to make MSBuild happy -->
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
     <OutputPath>$(MSBuildThisFileDirectory)</OutputPath>
+  </PropertyGroup>
+
+  <!-- Initialize Paths -->
+  <PropertyGroup>
+    <NetCoreRoot>/_NetCoreRoot_/</NetCoreRoot>
+    <NETCoreSdkVersion>_NETCoreSdkVersion_</NETCoreSdkVersion>
+    <VsInstallRoot>_VsInstallRoot_</VsInstallRoot>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
   </PropertyGroup>
 
   <Import Project="$(TargetsDirectory)\Microsoft.FSharp.NetSdk.props" />

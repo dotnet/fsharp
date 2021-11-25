@@ -1,3 +1,9 @@
+---
+title: FSharp.Compiler.Service
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 100
+---
 # FSharp.Compiler.Service
 
 The [FSharp.Compiler.Service](https://www.nuget.org/packages/FSharp.Compiler.Service) package is a component derived from the F# compiler source code that
@@ -42,7 +48,15 @@ The libraries contain additional public API that can be used, but is not documen
 
 > **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published
 
-## API Namespaces
+## The Public Surface Area
+
+We are in the process of cleaning up the surface area of FCS to allow it to be fully binary compatible going forward.
+
+The full current surface area can be seen at: https://fsharp.github.io/fsharp-compiler-docs/reference/index.html
+
+The API is generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.) and we must continue to iterate to make this so.
+
+The parts of the compiler under `FSharp.Compiler.AbstractIL.*` are "incidental" and not really designed for public use apart from the hook for JetBrains Rider (Aside: In theory all these other parts could be renamed to FSharp.Compiler though there's no need to do that right now).   These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
 
 ### Basics - Syntax, Text and Diagnostics
 

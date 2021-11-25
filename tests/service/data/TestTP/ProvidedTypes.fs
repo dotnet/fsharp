@@ -5,6 +5,7 @@
 namespace ProviderImplementation.ProvidedTypes
 
 #nowarn "1182"
+#nowarn "3370"
 
 // This file contains a set of helper types and methods for providing types in an implementation
 // of ITypeProvider.
@@ -14189,7 +14190,7 @@ namespace ProviderImplementation.ProvidedTypes
                     ilg.Emit(I_conv DT_I1)
                 elif t1 = typeof<byte> then
                     ilg.Emit(I_conv DT_U1)
-            /// emits given expression to corresponding IL
+            // emits given expression to corresponding IL
             match expr with
             | ForIntegerRangeLoop(loopVar, first, last, body) ->
                 // for(loopVar = first..last) body

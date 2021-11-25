@@ -8,6 +8,7 @@ open System.Collections.Immutable
 open Internal.Utilities.Collections
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -770,6 +771,10 @@ val CollectTyparsAndLocalsNoCaching: FreeVarOptions
 val CollectTyparsAndLocals: FreeVarOptions
 
 val CollectLocals: FreeVarOptions
+
+val CollectLocalsWithStackGuard: unit -> FreeVarOptions
+
+val CollectTyparsAndLocalsWithStackGuard: unit -> FreeVarOptions
 
 val CollectTypars: FreeVarOptions
 
@@ -2328,7 +2333,8 @@ type ExprRewritingEnv =
     { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option
       PostTransform: Expr -> Expr option
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
-      IsUnderQuotations: bool }    
+      RewriteQuotations: bool
+      StackGuard: StackGuard }
 
 val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
 

@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Project analysis
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 600
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**

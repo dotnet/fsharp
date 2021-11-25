@@ -1,6 +1,6 @@
 <Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="Test.props" />
+  <Import Project="PackageTest.props" />
 
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -23,6 +23,6 @@
     <ExpectedValueTuplePackageVersion>44.44.44</ExpectedValueTuplePackageVersion>
   </PropertyGroup>
 
-  <Import Project="Test.targets" />
+  <Import Project="PackageTest.targets" />
 
 </Project>

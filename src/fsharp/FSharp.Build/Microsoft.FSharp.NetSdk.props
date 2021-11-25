@@ -74,10 +74,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
-    <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
-    <FSharpCoreShippedPackageVersion>{{FSharpCoreShippedPackageVersion}}</FSharpCoreShippedPackageVersion>
-    <FSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</FSharpCorePreviewPackageVersion>
-    <FSCorePackageVersion>{{FSCorePackageVersion}}</FSCorePackageVersion>
+    <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersionValue)</ValueTupleImplicitPackageVersion>
+    <FSharpCoreShippedPackageVersion>{{FSharpCoreShippedPackageVersionValue}}</FSharpCoreShippedPackageVersion>
+    <FSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersionValue}}</FSharpCorePreviewPackageVersion>
+    <FSCorePackageVersion>{{FSCorePackageVersionValue}}</FSCorePackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

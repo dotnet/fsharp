@@ -935,6 +935,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             | true, builder -> builder tinst
             | _ -> TType_app (tcref, tinst)
 
+  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
+  let v_attribs_Unsupported = [
+        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+        tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+                              ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override x.ToString() = "<TcGlobals>"
   member _.ilg=ilg
@@ -1228,10 +1234,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_ReferenceAssemblyAttribute = findSysAttrib "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
-  member val attribs_Unsupported = [
-        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
-        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
-                                   ] |> List.choose (Option.map (fun x -> x.TyconRef))
+  member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
