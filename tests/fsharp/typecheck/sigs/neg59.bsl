@@ -21,9 +21,9 @@ neg59.fs(49,15,49,27): typecheck error FS3090: An if/then/else expression may no
 
 neg59.fs(56,15,56,27): typecheck error FS3090: An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.
 
-neg59.fs(63,15,63,27): typecheck error FS3163: 'match' expressions may not be used in queries
+neg59.fs(63,15,63,20): typecheck error FS3163: 'match' expressions may not be used in queries
 
-neg59.fs(69,15,69,27): typecheck error FS3163: 'match' expressions may not be used in queries
+neg59.fs(69,15,69,20): typecheck error FS3163: 'match' expressions may not be used in queries
 
 neg59.fs(76,15,76,18): typecheck error FS3146: 'try/with' expressions may not be used in queries
 

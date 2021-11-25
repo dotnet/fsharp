@@ -1,3 +1,11 @@
+(**
+---
+title: Notes on FSharp.Core
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 1100
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**

@@ -1,14 +1,23 @@
+(**
+---
+title: Incrementality
+category: Language Service Internals
+categoryindex: 300
+index: 1400
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
-Compiler Services: Reacting to Changes
+Snapshots, incrementality and reacting to changes
 ============================================
 
-This tutorial discusses some technical aspects of how to make sure the F# compiler service is 
-providing up-to-date results especially when hosted in an IDE. See also [project wide analysis](project.html)
-for information on project analysis.
+FCS is an incremental execution engine. The aim is to make it Roslyn-like. We're not quite there.
 
-> **NOTE:** The FSharp.Compiler.Service API is subject to change when later versions of the nuget package are published.
+There are two dimensions of incrementality:
+
+* The inputs change, e.g. the source filed are edited or a referenced assembly changes, appears or disappears
+* The results of analysis on the inputs (e.g. a parse tree) are further enriched with information (e.g. symbol uses are requested) and this information is held, i.e. not re-computed, perhaps by a returned object.
 
 The logical results of all "Check" routines (``ParseAndCheckFileInProject``, ``GetBackgroundCheckResultsForFileInProject``, 
 ``TryGetRecentTypeCheckResultsForFile``, ``ParseAndCheckProject``) depend on results reported by the file system,

@@ -293,21 +293,21 @@ type internal MSBuildUtilities() =
     static member private MoveFolderUpHelper(folderToBeMoved : string, itemToMoveBefore : ProjectItemElement, projectNode : ProjectNode) =
         let msbuildProject = projectNode.BuildProject
         let big = EnsureValid msbuildProject projectNode true
-        let index = ref 0
-        let itemToMoveBeforeIndex = ref -1
+        let mutable index = 0
+        let mutable itemToMoveBeforeIndex = -1
         let itemsToMove = 
             [for bi in EnumerateItems(big) do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then
-                    yield (bi, !index)
+                    yield (bi, index)
                 if Same(bi, itemToMoveBefore) then
-                    itemToMoveBeforeIndex := !index
-                index := !index + 1]
-        if !itemToMoveBeforeIndex = -1 then
+                    itemToMoveBeforeIndex <- index
+                index <- index + 1]
+        if itemToMoveBeforeIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move before <%s Include=\"%s\">" (GetItemType itemToMoveBefore) (GetUnescapedUnevaluatedInclude itemToMoveBefore))
         for (item,i) in itemsToMove do
             Debug.Assert(i <> 0, "item is already at top")
-            Debug.Assert(!itemToMoveBeforeIndex < i, "not moving up")
+            Debug.Assert(itemToMoveBeforeIndex < i, "not moving up")
             big.RemoveChild(item)
             big.InsertBeforeChild(item, itemToMoveBefore)
 
@@ -320,21 +320,21 @@ type internal MSBuildUtilities() =
     static member private MoveFolderDownHelper(folderToBeMoved : string, itemToMoveAfter : ProjectItemElement, projectNode : ProjectNode) =
         let msbuildProject = projectNode.BuildProject
         let big = EnsureValid msbuildProject projectNode true
-        let index = ref 0
-        let itemToMoveAfterIndex = ref -1
+        let mutable index = 0
+        let mutable itemToMoveAfterIndex = -1
         let itemsToMove = 
             [for bi in EnumerateItems(big) do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then
-                    yield (bi, !index)
+                    yield (bi, index)
                 if Same(bi, itemToMoveAfter) then
-                    itemToMoveAfterIndex := !index
-                index := !index + 1]
-        if !itemToMoveAfterIndex = -1 then
+                    itemToMoveAfterIndex <- index
+                index <- index + 1]
+        if itemToMoveAfterIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move after <%s Include=\"%s\">" (GetItemType itemToMoveAfter) (GetUnescapedUnevaluatedInclude itemToMoveAfter))
         for (item,i) in List.rev itemsToMove do
-            Debug.Assert(i <> !index - 1, "item is already at bottom")
-            Debug.Assert(!itemToMoveAfterIndex > i, "not moving down")
+            Debug.Assert(i <> index - 1, "item is already at bottom")
+            Debug.Assert(itemToMoveAfterIndex > i, "not moving down")
             big.RemoveChild(item)
             big.InsertAfterChild(item, itemToMoveAfter)
 

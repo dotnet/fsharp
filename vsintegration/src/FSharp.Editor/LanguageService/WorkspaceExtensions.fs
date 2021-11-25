@@ -135,6 +135,11 @@ type Document with
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.Checker
 
+    /// Get the instance of the FSharpMetadataAsSourceService from the workspace by the given F# document.
+    member this.GetFSharpMetadataAsSource() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.MetadataAsSource
+
     /// A non-async call that quickly gets FSharpParsingOptions of the given F# document.
     /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
     member this.GetFSharpQuickParsingOptions() =

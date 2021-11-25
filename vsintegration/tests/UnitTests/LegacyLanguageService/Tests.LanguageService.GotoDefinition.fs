@@ -647,26 +647,26 @@ type UsingMSBuild()  =
       let origins = Dictionary<string, int*int>()
       let targets = Dictionary<string, int*int>()
       let lines =
-        [   let lineNo = ref 0
+        [   let mutable lineNo = 0
             for l in lines do
                 let builder = new System.Text.StringBuilder(l)
-                let cont = ref true
-                while !cont do
+                let mutable cont = true
+                while cont do
                     let s = builder.ToString()
                     let index = s.IndexOfAny([|'$';'#'|])
                     if index < 0 then
-                        cont := false
+                        cont <- false
                     else
                         let c = s.[index]
                         let nextIndex = s.IndexOf(c, index+1) 
                         let marker = s.Substring(index+1, nextIndex - (index+1))
                         if c = '$' then 
-                            origins.Add(marker, (!lineNo+1,index+1)) // caret positions are 1-based, but...
+                            origins.Add(marker, (lineNo+1,index+1)) // caret positions are 1-based, but...
                         else 
-                            targets.Add(marker, (!lineNo,index)) // ...spans are 0-based. Argh. Thank you, Salsa!
+                            targets.Add(marker, (lineNo,index)) // ...spans are 0-based. Argh. Thank you, Salsa!
                         builder.Remove(index, nextIndex - index + 1) |> ignore
                 yield builder.ToString()
-                lineNo := !lineNo + 1
+                lineNo <- lineNo + 1
         ]
 
       let (_, _, file) = this.CreateSingleFileProject(lines)
@@ -1429,8 +1429,8 @@ type UsingMSBuild()  =
         let definitionCode = "module Foo(*Mark*) ="
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"(*Mark*)",definitionCode) 
 
-    [<Test>]
     /// GotoDef on abbreviation
+    [<Test>]
     member public this.``GotoDefinition.Abbreviation.Bug193064``() =
         let fileContents = """
             type X = int
@@ -1438,9 +1438,9 @@ type UsingMSBuild()  =
         let definitionCode = "let f (x:X) = x(*Marker*)"
         this.VerifyGoToDefnSuccessAtStartOfMarker(fileContents,"x(*Marker*)",definitionCode) 
 
-    [<Test>]
     /// Verify the GotoDefinition on UoM yield does NOT jump out error dialog, 
     /// will do nothing in automation lab machine or GTD SI.fs on dev machine with enlistment.
+    [<Test>]
     member public this.``GotoDefinition.UnitOfMeasure.Bug193064``() =
         let fileContents = """
             open Microsoft.FSharp.Data.UnitSystems.SI

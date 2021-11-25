@@ -277,9 +277,6 @@ module AsyncUtil =
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
-module StackGuard =
-    val EnsureSufficientExecutionStack: recursionDepth:int -> unit
-
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T

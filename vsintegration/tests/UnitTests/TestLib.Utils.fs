@@ -207,12 +207,13 @@ module Spawn =
 
     let Batch batchText = 
         let outlock = obj()
-        let captured = ref []
+        let mutable captured = []
         let capture (msg:DataReceivedEventArgs) = 
-            lock outlock (fun () -> captured := msg.Data :: !captured)
+            lock outlock (fun () -> 
+                captured <- msg.Data :: captured)
 
         let exitWithResult command arguments actualCode _ = 
-            actualCode, (!captured)|>List.rev|>Array.ofList
+            actualCode, captured|>List.rev|>Array.ofList
 
         FilesystemHelpers.DoWithTempFile
             "$$temp-batch.cmd"
