@@ -1663,7 +1663,8 @@ module ParsedInput =
                     if isImplicitTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
-                // for namespaces the start line is start line of the first nested entity
+                // For namespaces the start line is start line of the first nested entity
+                // If we are not on the first line, try to find opening namespace, and return line after it (in F# format) 
                 if ctx.Pos.Line > 1 then
                     [0..ctx.Pos.Line - 1]
                     |> List.mapi (fun i line -> i, getLineStr line)
@@ -1674,7 +1675,14 @@ module ParsedInput =
                         // move to the next line below "namespace" and convert it to F# 1-based line number
                         | Some line -> line + 2 
                         | None -> ctx.Pos.Line
-                else 1  
+                // If we are on 1st line in the namespace ctx, this line _should_ be the namespace declaration, check it and return next line.
+                // Otherwise, return first line (which theoretically should not happen).
+                else
+                    let lineStr = getLineStr (ctx.Pos.Line - 1)
+                    if lineStr.StartsWithOrdinal("namespace") then
+                        ctx.Pos.Line + 1
+                    else
+                        ctx.Pos.Line
             | _ -> ctx.Pos.Line
 
         mkPos line ctx.Pos.Column
