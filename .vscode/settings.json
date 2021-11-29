@@ -3,7 +3,7 @@
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false,
     "FSharp.suggestGitignore": false,
-    //"FSharp.workspacePath": "./FSharp.sln",
+    "FSharp.workspacePath": "./FSharp.sln",
     "FSharp.excludeProjectDirectories": [
         ".git",
         "paket-files",
@@ -12,7 +12,7 @@
         "node_modules",
         "tests/projects/"
     ],
-    "omnisharp.autoStart": false,
+    "omnisharp.disableMSBuildDiagnosticWarning": true,
     "razor.disabled": true,
     "markdownlint.config": {
         "MD028": false,

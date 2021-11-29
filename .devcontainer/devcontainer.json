@@ -15,14 +15,24 @@
 	//
 	// Set .NET Core scripting as the default choice. Set that to true.
 	"settings": {
-		"dotnet-test-explorer.testProjectPath": "tests/*Tests/",
-		"FSharp.useSdkScripts": true,
-		"FSharp.dotnetRoot": "./.dotnet/",
+		"editor.trimAutoWhitespace": false,
+		"files.trimTrailingWhitespace": false,
+		"FSharp.suggestGitignore": false,
+		"FSharp.workspacePath": "./FSharp.sln",
+		"FSharp.excludeProjectDirectories": [
+			".git",
+			"paket-files",
+			".fable",
+			"packages",
+			"node_modules",
+			"tests/projects/"
+		],
+		"omnisharp.disableMSBuildDiagnosticWarning": true,
+		"razor.disabled": true,
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"formulahendry.dotnet-test-explorer",
 		"Ionide.Ionide-fsharp",
 		"ms-dotnettools.csharp"
 	],
@@ -31,8 +41,5 @@
 	"postCreateCommand": "./build.sh",
 
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode",
-	"features": {
-		"powershell": "latest"
-	}
+	//"remoteUser": "vscode",
 }
