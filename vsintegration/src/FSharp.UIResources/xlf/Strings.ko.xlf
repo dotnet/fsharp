@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="needs-review-translation">붙여넣을 때 들여쓰기 서식 다시 지정</target>
+        <target state="new">Re-format indentation on paste (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Suggest_names_for_errors_code_fix">
