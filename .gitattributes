@@ -24,6 +24,7 @@
 mono/launcher text eol=lf
 mono/config.make text eol=lf
 targets.make text eol=lf
+build.sh text eol=lf
 
 *.bsl linguist-vendored=true
 
