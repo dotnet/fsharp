@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste (Experimental)</source>
-        <target state="needs-review-translation">Повторно форматировать отступы при вставке</target>
+        <target state="new">Re-format indentation on paste (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Suggest_names_for_errors_code_fix">
