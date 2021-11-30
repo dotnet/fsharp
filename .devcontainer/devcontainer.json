@@ -1,45 +1,53 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.108.0/containers/dotnetcore-3.1-fsharp
 {
-	"name": "F# (.NET 6)",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"args": {
-			// Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0
-			// Append -bullseye or -focal to pin to an OS version.
-			"VARIANT": "6.0-focal"
-		}
-	},
+    "name": "F# (.NET 6)",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0
+            // Append -bullseye or -focal to pin to an OS version.
+            "VARIANT": "6.0-focal"
+        }
+    },
 
-	// Set *default* container specific settings.json values on container create.
-	//
-	// Set .NET Core scripting as the default choice. Set that to true.
-	"settings": {
-		"editor.trimAutoWhitespace": false,
-		"files.trimTrailingWhitespace": false,
-		"FSharp.suggestGitignore": false,
-		"FSharp.workspacePath": "./FSharp.sln",
-		"FSharp.excludeProjectDirectories": [
-			".git",
-			"paket-files",
-			".fable",
-			"packages",
-			"node_modules",
-			"tests/projects/"
-		],
-		"omnisharp.disableMSBuildDiagnosticWarning": true,
-		"razor.disabled": true,
-	},
+    // Set *default* container specific settings.json values on container create.
+    //
+    // Set .NET Core scripting as the default choice. Set that to true.
+    "settings": {
+        "search.exclude": {
+            "**/artifacts": true,
+            "**/.git": true
+        },
+        "editor.trimAutoWhitespace": false,
+        "files.trimTrailingWhitespace": false,
+        "FSharp.suggestGitignore": false,
+        "FSharp.workspacePath": "./FSharp.sln",
+        "FSharp.excludeProjectDirectories": [
+            ".git",
+            "artifacts",
+            "tests/projects/"
+        ],
+        "csharp.showOmnisharpLogOnError": false,
+        "csharp.suppressBuildAssetsNotification": true,
+        "csharp.suppressDotnetInstallWarning": true,
+        "csharp.suppressDotnetRestoreNotification": true,
+        "csharp.suppressHiddenDiagnostics": true,
+        "omnisharp.autoStart": false,
+        "omnisharp.disableMSBuildDiagnosticWarning": true,
+        "razor.disabled": true,
+        "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.fsproj",
+        "testExplorer.useNativeTesting": true
+    },
 
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"Ionide.Ionide-fsharp",
-		"ms-dotnettools.csharp"
-	],
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "ms-vscode.test-adapter-converter",
+        "hbenl.vscode-test-explorer",
+        "dotnet-test-explorer.testProjectPath",
+        "Ionide.Ionide-fsharp",
+        "ms-dotnettools.csharp"
+    ],
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "./build.sh",
-
-	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	//"remoteUser": "vscode",
+    "postCreateCommand": "./build.sh -c Debug",
 }
