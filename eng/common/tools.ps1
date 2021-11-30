@@ -381,7 +381,10 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
       $msbuildVersion = [Version]::new((Get-Item $msbuildCmd.Path).VersionInfo.ProductVersion.Split([char[]]@('-', '+'))[0])
 
       if ($msbuildVersion -ge $vsMinVersion) {
-        return $global:_MSBuildExe = $msbuildCmd.Path
+        #
+        # Work around for 64 bit msbuild.  We have an issue with nuget producing type match errors on 64 bit msbuild on this repo
+        # this strips AMD64 from the path causing us to use the 32 bit version which doesn't have that issue.
+        return $global:_MSBuildExe = ($msbuildCmd.Path) -replace '\\AMD64\\msbuild.exe', '\msbuild.exe'
       }
 
       # Report error - the developer environment is initialized with incompatible VS version.
