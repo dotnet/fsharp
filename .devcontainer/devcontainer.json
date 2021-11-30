@@ -10,7 +10,7 @@
             "VARIANT": "6.0-focal"
         }
     },
-
+    "waitFor": "postCreateCommand",
     // Set *default* container specific settings.json values on container create.
     //
     // Set .NET Core scripting as the default choice. Set that to true.
@@ -22,7 +22,8 @@
         "editor.trimAutoWhitespace": false,
         "files.trimTrailingWhitespace": false,
         "FSharp.suggestGitignore": false,
-        "FSharp.workspacePath": "./FSharp.sln",
+        "FSharp.enableMSBuildProjectGraph": true,
+        "FSharp.workspacePath": "${workspaceFolder}/FSharp.sln",
         "FSharp.excludeProjectDirectories": [
             ".git",
             "artifacts",
@@ -36,7 +37,7 @@
         "omnisharp.autoStart": false,
         "omnisharp.disableMSBuildDiagnosticWarning": true,
         "razor.disabled": true,
-        "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.fsproj",
+        "dotnet-test-explorer.testProjectPath": "${workspaceFolder}/tests/**/*Tests.fsproj",
         "testExplorer.useNativeTesting": true
     },
 
@@ -48,6 +49,5 @@
         "Ionide.Ionide-fsharp",
         "ms-dotnettools.csharp"
     ],
-
-    "postCreateCommand": "./build.sh -c Debug",
+    "postCreateCommand": "./build.sh -c Debug"
 }
