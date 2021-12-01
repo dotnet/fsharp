@@ -1,19 +1,26 @@
 {
-    "dotnet-test-explorer.testProjectPath": "tests/*Tests/",
+    "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.fsproj",
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false,
     "FSharp.suggestGitignore": false,
-    "FSharp.workspacePath": "./FSharp.sln",
+    "FSharp.enableMSBuildProjectGraph": true,
+    "FSharp.workspacePath": "FSharp.sln",
+    "FSharp.workspaceModePeekDeepLevel": 2,
     "FSharp.excludeProjectDirectories": [
         ".git",
-        "paket-files",
-        ".fable",
-        "packages",
-        "node_modules",
+        "artifacts",
         "tests/projects/"
     ],
+    "csharp.showOmnisharpLogOnError": false,
+    "csharp.suppressBuildAssetsNotification": true,
+    "csharp.suppressDotnetInstallWarning": true,
+    "csharp.suppressDotnetRestoreNotification": true,
+    "csharp.suppressHiddenDiagnostics": true,
+    "omnisharp.autoStart": false,
+    "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "razor.disabled": true,
+    "testExplorer.useNativeTesting": true,
     "markdownlint.config": {
         "MD028": false,
         "MD025": {
