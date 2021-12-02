@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>The 'from the end slicing' feature requires language version 'preview'.</source>
-        <target state="new">The 'from the end slicing' feature requires language version 'preview'.</target>
+        <target state="translated">Funkcja „Przycinanie od końca” wymaga „podglądu” wersji językowej.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -434,7 +434,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="new">The 'package management' feature requires language version 5.0 or above</target>
+        <target state="translated">Funkcja „Zarządzanie pakietami” wymaga języka w wersji 5.0 lub nowszej</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -649,7 +649,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
         <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
-        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <target state="translated">Nieprawidłowa deklaracja elementu członkowskiego. Brak nazwy elementu członkowskiego lub ma ona nawiasy.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
