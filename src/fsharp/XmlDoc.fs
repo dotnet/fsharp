@@ -149,14 +149,8 @@ type XmlDocCollector() =
     let mutable savedGrabPoints = Dictionary<pos, struct(int * int * bool)>()
     let mutable currentGrabPointCommentsCount = 0
     let mutable delayedGrabPoint = ValueNone
-    let savedLinesAsArray = lazy (savedLines.ToArray())
-
-    let check() =
-        // can't add more XmlDoc elements to XmlDocCollector after extracting first XmlDoc from the overall results
-        assert (not savedLinesAsArray.IsValueCreated)
 
     member x.AddGrabPoint(pos: pos) =
-        check()
         if currentGrabPointCommentsCount = 0 then () else
         let xmlDocBlock = struct(savedLines.Count - currentGrabPointCommentsCount, savedLines.Count - 1, false)
         savedGrabPoints.Add(pos, xmlDocBlock)
@@ -164,14 +158,12 @@ type XmlDocCollector() =
         delayedGrabPoint <- ValueNone
 
     member x.AddGrabPointDelayed(pos: pos) =
-        check()
         if currentGrabPointCommentsCount = 0 then () else
         match delayedGrabPoint with
         | ValueNone -> delayedGrabPoint <- ValueSome(pos)
         | _ -> ()
 
     member x.AddXmlDocLine(line, range) =
-        check()
         match delayedGrabPoint with
         | ValueNone -> ()
         | ValueSome pos -> x.AddGrabPoint(pos) // Commit delayed grab point
@@ -180,10 +172,21 @@ type XmlDocCollector() =
         currentGrabPointCommentsCount <- currentGrabPointCommentsCount + 1
 
     member x.LinesBefore grabPointPos =
-        let lines = savedLinesAsArray.Force()
         match savedGrabPoints.TryGetValue grabPointPos with
-        | true, struct(startIndex, endIndex, _) -> lines.[startIndex .. endIndex]
+        | true, struct(startIndex, endIndex, _) ->
+            let linesBefore = Array.create (endIndex - startIndex + 1) ("", range0)
+            for i in startIndex .. endIndex do
+                linesBefore.[i - startIndex] <- savedLines.[i]
+            linesBefore
         | false, _ -> [||]
+
+    member x.LinesRange grabPointPos =
+        match savedGrabPoints.TryGetValue grabPointPos with
+        | true, struct(startIndex, endIndex, _) ->
+            let startRange = savedLines.[startIndex] |> snd
+            let endRange = savedLines.[endIndex] |> snd
+            unionRanges startRange endRange
+        | false, _ -> range0
 
     member x.SetXmlDocValidity(grabPointPos, isValid) =
         match savedGrabPoints.TryGetValue grabPointPos with
@@ -195,11 +198,10 @@ type XmlDocCollector() =
         savedGrabPoints.TryGetValue grabPointPos |> fst
 
     member x.CheckInvalidXmlDocPositions() =
-        let lines = savedLinesAsArray.Force()
         for startIndex, endIndex, isValid in savedGrabPoints.Values do
             if isValid then () else
-            let _, startRange = lines.[startIndex]
-            let _, endRange = lines.[endIndex]
+            let _, startRange = savedLines.[startIndex]
+            let _, endRange = savedLines.[endIndex]
             let range = unionRanges startRange endRange
             informationalWarning (Error(FSComp.SR.invalidXmlDocPosition(), range))
 
@@ -226,6 +228,16 @@ type PreXmlDoc =
                 if check then
                    doc.Check(paramNamesOpt)
                 doc
+
+    member x.Range =
+        match x with
+        | PreXmlDirect (_, m) -> m
+        | PreXmlMerge(a, b) ->
+            if a.IsEmpty then b.Range
+            elif b.IsEmpty then a.Range
+            else unionRanges a.Range b.Range
+        | PreXmlDocEmpty -> Range.Zero
+        | PreXmlDoc (pos, collector) -> collector.LinesRange pos
 
     member x.IsEmpty =
         match x with
