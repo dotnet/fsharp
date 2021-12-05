@@ -7773,7 +7773,7 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                         if isAdjacent then
                             if IsIndexerType cenv.g cenv.amap expr.Type then
                                 if cenv.g.langVersion.IsExplicitlySpecifiedAs50OrBefore() then
-                                    error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, false))
+                                    error (NotAFunctionButIndexer(denv, expr.Type, vName, mExpr, mArg, false))
                                 match vName with
                                 | Some nm -> 
                                     error(Error(FSComp.SR.tcNotAFunctionButIndexerNamedIndexingNotYetEnabled(nm, nm), mExprAndArg))
@@ -7788,15 +7788,15 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                         else
                             if IsIndexerType cenv.g cenv.amap expr.Type then
                                 let old = not (cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot)
-                                error (NotAFunctionButIndexer(denv, overallTy.Commit, vName, mExpr, mArg, old))
+                                error (NotAFunctionButIndexer(denv, expr.Type, vName, mExpr, mArg, old))
                             else
-                                error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                                error (NotAFunction(denv, expr.Type, mExpr, mArg))
 
                 // f x  (where 'f' is not a function)
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv, overallTy.Commit, mExpr, mArg))
+                    error (NotAFunction(denv, expr.Type, mExpr, mArg))
 
     propagate false delayed expr.Range exprty
 
@@ -8065,7 +8065,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
 
         | _ ->
-            error (NotAFunction(denv, overallTy.Commit, mLeftExpr, mArg))
+            error (NotAFunction(denv, exprty, mLeftExpr, mArg))
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen: Typecheck "A.B.C<D>.E.F ... " constructs

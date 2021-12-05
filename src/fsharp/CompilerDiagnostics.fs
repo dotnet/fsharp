@@ -854,21 +854,23 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | InterfaceNotRevealed(denv, ity, _) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
 
-      | NotAFunctionButIndexer(_, _, name, _, _, old) ->
+      | NotAFunctionButIndexer(denv, ty, name, _, _, old) ->
+          let tyName = NicePrint.minimalStringOfType denv ty
           if old then
               match name with
-              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
-              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName(tyName, name)) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer tyName) |> ignore
           else
               match name with
-              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2 name) |> ignore
-              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2()) |> ignore
+              | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName2(tyName, name)) |> ignore
+              | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2 tyName) |> ignore
 
-      | NotAFunction(_, _, _, marg) ->
+      | NotAFunction(denv, ty, _, marg) ->
+          let tyName = NicePrint.minimalStringOfType denv ty
           if marg.StartColumn = 0 then
-              os.Append(FSComp.SR.notAFunctionButMaybeDeclaration()) |> ignore
+              os.Append(FSComp.SR.notAFunctionButMaybeDeclaration tyName) |> ignore
           else
-              os.Append(FSComp.SR.notAFunction()) |> ignore
+              os.Append(FSComp.SR.notAFunction tyName) |> ignore
 
       | TyconBadArgs(_, tcref, d, _) ->
           let exp = tcref.TyparsNoRange.Length

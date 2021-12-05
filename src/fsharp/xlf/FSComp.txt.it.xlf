@@ -388,13 +388,13 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer2">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
-        <target state="translated">Questa espressione non è una funzione e non può essere applicata. Si intendeva accedere all'indicizzatore tramite la sintassi 'expr[index]'?</target>
+        <source>This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via 'expr[index]'?</source>
+        <target state="new">This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via 'expr[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName2">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
-        <target state="translated">Questo valore non è una funzione e non può essere applicato. Si intendeva accedere all'indicizzatore tramite la sintassi '{0}[index]'?</target>
+        <source>This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via '{1}[index]'?</source>
+        <target state="new">This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via '{1}[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="optFailedToInlineSuggestedValue">
@@ -7748,23 +7748,23 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunction">
-        <source>This value is not a function and cannot be applied.</source>
-        <target state="translated">Questo valore non è una funzione e non può essere applicato.</target>
+        <source>This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Consider removing the extra argument.</source>
+        <target state="new">This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Consider removing the extra argument.</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
-        <target state="translated">Questo valore non è una funzione e non può essere applicato. Si intendeva accedere all'indicizzatore tramite la sintassi '{0}.[index]'?</target>
+        <source>This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via '{1}.[index]'?</source>
+        <target state="new">This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via '{1}.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
-        <target state="translated">Questa espressione non è una funzione e non può essere applicata. Si intendeva accedere all'indicizzatore tramite la sintassi 'expr.[index]'?</target>
+        <source>This is a expression of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via 'expr.[index]'?</source>
+        <target state="new">This is a expression of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you intend to access the indexer via 'expr.[index]'?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">
-        <source>This value is not a function and cannot be applied. Did you forget to terminate a declaration?</source>
-        <target state="translated">Questo valore non è una funzione e non può essere applicato. Potrebbe essere presente una dichiarazione non terminata.</target>
+        <source>This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you forget to terminate a declaration?</source>
+        <target state="new">This is a value of type '{0}', and not a function. It doesn't take any arguments, but you're trying to pass a value as an argument to it. Did you forget to terminate a declaration?</target>
         <note />
       </trans-unit>
       <trans-unit id="ArgumentsInSigAndImplMismatch">
