@@ -51,6 +51,7 @@ param (
     [switch]$testCambridge,
     [switch]$testCompiler,
     [switch]$testCompilerService,
+    [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testScripting,
@@ -70,48 +71,49 @@ $BuildMessage = ""
 
 function Print-Usage() {
     Write-Host "Common settings:"
-    Write-Host "  -configuration <value>    Build configuration: 'Debug' or 'Release' (short: -c)"
-    Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
-    Write-Host "  -deployExtensions         Deploy built vsixes"
-    Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
-    Write-Host "  -noLog                    Turn off logging (short: -nolog)"
-    Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
+    Write-Host "  -configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+    Write-Host "  -verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
+    Write-Host "  -deployExtensions             Deploy built vsixes"
+    Write-Host "  -binaryLog                    Create MSBuild binary log (short: -bl)"
+    Write-Host "  -noLog                        Turn off logging (short: -nolog)"
+    Write-Host "  -excludeCIBinaryLog           When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
-    Write-Host "  -restore                  Restore packages (short: -r)"
-    Write-Host "  -norestore                Don't restore packages"
-    Write-Host "  -build                    Build main solution (short: -b)"
-    Write-Host "  -rebuild                  Rebuild main solution"
-    Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
-    Write-Host "  -sign                     Sign our binaries"
-    Write-Host "  -publish                  Publish build artifacts (e.g. symbols)"
-    Write-Host "  -launch                   Launch Visual Studio in developer hive"
-    Write-Host "  -help                     Print help and exit"
+    Write-Host "  -restore                      Restore packages (short: -r)"
+    Write-Host "  -norestore                    Don't restore packages"
+    Write-Host "  -build                        Build main solution (short: -b)"
+    Write-Host "  -rebuild                      Rebuild main solution"
+    Write-Host "  -pack                         Build NuGet packages, VS insertion manifests and installer"
+    Write-Host "  -sign                         Sign our binaries"
+    Write-Host "  -publish                      Publish build artifacts (e.g. symbols)"
+    Write-Host "  -launch                       Launch Visual Studio in developer hive"
+    Write-Host "  -help                         Print help and exit"
     Write-Host ""
     Write-Host "Test actions"
-    Write-Host "  -testAll                  Run all tests"
-    Write-Host "  -testCambridge            Run Cambridge tests"
-    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
-    Write-Host "  -testCompilerService      Run FSharpCompilerService unit tests"
-    Write-Host "  -testDesktop              Run tests against full .NET Framework"
-    Write-Host "  -testCoreClr              Run tests against CoreCLR"
-    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
-    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
-    Write-Host "  -testScripting            Run Scripting tests"
-    Write-Host "  -testVs                   Run F# editor unit tests"
-    Write-Host "  -testpack                 Verify built packages"
-    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
+    Write-Host "  -testAll                      Run all tests"
+    Write-Host "  -testCambridge                Run Cambridge tests"
+    Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
+    Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
+    Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
+    Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testCoreClr                  Run tests against CoreCLR"
+    Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
+    Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testScripting                Run Scripting tests"
+    Write-Host "  -testVs                       Run F# editor unit tests"
+    Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
-    Write-Host "  -ci                       Set when running on CI server"
-    Write-Host "  -official                 Set when building an official build"
-    Write-Host "  -bootstrap                Build using a bootstrap compiler"
-    Write-Host "  -msbuildEngine <value>    Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
-    Write-Host "  -procdump                 Monitor test runs with procdump"
-    Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
-    Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
-    Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
-    Write-Host "  -sourceBuild              Simulate building for source-build."
+    Write-Host "  -ci                           Set when running on CI server"
+    Write-Host "  -official                     Set when building an official build"
+    Write-Host "  -bootstrap                    Build using a bootstrap compiler"
+    Write-Host "  -msbuildEngine <value>        Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
+    Write-Host "  -procdump                     Monitor test runs with procdump"
+    Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
+    Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
+    Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
+    Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -521,6 +523,13 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
     }
+
+
+    if ($testCompilerComponentTests) {
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+    }
+
 
     if ($testCompilerService) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
