@@ -5664,6 +5664,7 @@ let checkContentAsScript content =
 [<Test>]
 let ``References from #r nuget are included in script project options`` () =
     let checkResults = checkContentAsScript """
+#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
 #r "nuget: Dapper"
 """
     let assemblyNames =
