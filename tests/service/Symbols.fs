@@ -1413,6 +1413,56 @@ type Foo =
             assertRange (5, 30) (5, 34) mWithKeyword
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of attribute should be included in SynExceptionDefnRepr and SynExceptionSig`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module internal FSharp.Compiler.ParseHelpers
+
+/// The error raised by the parse_error_rich function, which is called by the parser engine
+[<NoEquality; NoComparison>]
+exception SyntaxError of obj * range: range
+
+
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Exception(
+                    SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
+            ] ) ])) ->
+            assertRange (5, 0) (6, 43) mSynExceptionDefnRepr
+            assertRange (5, 0) (6, 43) mSynExceptionSig
+            assertRange (5, 0) (6, 43) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of members should be included in SynExceptionSig and SynModuleSigDecl.Exception`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module internal FSharp.Compiler.ParseHelpers
+
+exception SyntaxError of obj * range: range with
+    member Meh : string -> int
+
+open Foo
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Exception(
+                    SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
+                SynModuleSigDecl.Open _
+            ] ) ])) ->
+            assertRange (4, 0) (4, 43) mSynExceptionDefnRepr
+            assertRange (4, 0) (5, 30) mSynExceptionSig
+            assertRange (4, 0) (5, 30) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynMatchClause =
     [<Test>]
     let ``Range of single SynMatchClause`` () =
