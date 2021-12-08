@@ -116,3 +116,5 @@ val minimalStringsOfTwoTypes: denv:DisplayEnv -> t1:TType -> t2:TType -> string 
 val minimalStringsOfTwoValues: denv:DisplayEnv -> infoReader:InfoReader -> v1:ValRef -> v2:ValRef -> string * string
 
 val minimalStringOfType: denv:DisplayEnv -> ty:TType -> string
+
+val prettyStringOfTy2: denv:DisplayEnv -> ty:TType -> string

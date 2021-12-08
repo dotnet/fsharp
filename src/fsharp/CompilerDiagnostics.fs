@@ -855,7 +855,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
 
       | NotAFunctionButIndexer(denv, ty, name, _, _, old) ->
-          let tyName = NicePrint.minimalStringOfType denv ty
+          let tyName = NicePrint.prettyStringOfTy2 denv ty
           if old then
               match name with
               | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName(tyName, name)) |> ignore
@@ -866,7 +866,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer2 tyName) |> ignore
 
       | NotAFunction(denv, ty, _, marg) ->
-          let tyName = NicePrint.minimalStringOfType denv ty
+          let tyName = NicePrint.prettyStringOfTy2 denv ty
           if marg.StartColumn = 0 then
               os.Append(FSComp.SR.notAFunctionButMaybeDeclaration tyName) |> ignore
           else

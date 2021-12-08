@@ -2507,3 +2507,11 @@ let minimalStringOfType denv ty =
     let denvMin = { denv with showImperativeTyparAnnotations=false; showConstraintTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
 
+let prettyStringOfTy2 denv ty =
+    match ty with
+    | ty when isArrayTy denv.g ty -> "array"
+    | ty when isListTy denv.g ty -> "list"
+    | ty when isAnonRecdTy denv.g ty -> "anonymous record"
+    | ty when isAnyTupleTy denv.g ty -> "tuple"
+    | ty when isAnyParTy denv.g ty -> "variable type"
+    | _ -> minimalStringOfType denv ty
