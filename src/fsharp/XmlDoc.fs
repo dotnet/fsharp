@@ -229,7 +229,7 @@ type PreXmlDoc =
                    doc.Check(paramNamesOpt)
                 doc
 
-    member x.Range =
+    member internal x.Range =
         match x with
         | PreXmlDirect (_, m) -> m
         | PreXmlMerge(a, b) ->

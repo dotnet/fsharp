@@ -63,7 +63,7 @@ type public PreXmlDoc =
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 
-    member Range: Range
+    member internal Range: Range
 
     member IsEmpty: bool
 
