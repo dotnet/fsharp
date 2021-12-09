@@ -58,7 +58,15 @@ module rec Compiler =
         { Source:     TestType
           References: CompilationUnit list  }
 
-    type ErrorType = Error of int | Warning of int
+    type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
+
+
+    let mapDiagnosticSeverity severity errorNumber =
+        match severity with
+        | FSharpDiagnosticSeverity.Hidden -> Hidden errorNumber
+        | FSharpDiagnosticSeverity.Info -> Information errorNumber
+        | FSharpDiagnosticSeverity.Warning -> Warning errorNumber
+        | FSharpDiagnosticSeverity.Error -> Error errorNumber
 
     type Line = Line of int
     type Col = Col of int
@@ -593,7 +601,7 @@ module rec Compiler =
     module Assertions =
         let private getErrorNumber (error: ErrorType) : int =
             match error with
-            | Error e | Warning e -> e
+            | Error e | Warning e | Information e | Hidden e -> e
 
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message
