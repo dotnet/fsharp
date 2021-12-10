@@ -605,6 +605,8 @@ module rec Compiler =
             | Some p -> ILChecker.checkIL p il
         | Failure _ -> failwith "Result should be \"Success\" in order to get IL."
 
+    let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
+
     let private verifyFSILBaseline (baseline: Baseline option) (result: Output) : unit =
         match baseline with
         | None -> failwith "Baseline was not provided."
