@@ -827,8 +827,10 @@ moduleSpfn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, members, range)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), withKeyword, members, range)
-        SynModuleSigDecl.Exception(ec, rhs parseState 3) }
+        let mDefnReprWithAttributes = (d2, $1) ||> unionRangeWithListBy (fun a -> a.Range)
+        let mWhole = (mDefnReprWithAttributes, members) ||> unionRangeWithListBy (fun (m: SynMemberSig) -> m.Range)
+        let ec = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, mDefnReprWithAttributes), withKeyword, members, mWhole)
+        SynModuleSigDecl.Exception(ec, mWhole) }
 
   | openDecl
       { SynModuleSigDecl.Open($1, (rhs parseState 1)) }

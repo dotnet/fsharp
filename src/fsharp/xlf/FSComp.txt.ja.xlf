@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>The 'from the end slicing' feature requires language version 'preview'.</source>
-        <target state="new">The 'from the end slicing' feature requires language version 'preview'.</target>
+        <target state="translated">'from the end slicing' (最後からのスライス) 機能には、言語バージョン 'preview' が必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="new">The 'package management' feature requires language version 5.0 or above</target>
+        <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -669,7 +669,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
         <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
-        <target state="new">Invalid member declaration. The name of the member is missing or has parentheses.</target>
+        <target state="translated">メンバーの宣言が無効です。メンバーの名前が見つからないか、かっこが含まれています。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
