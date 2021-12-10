@@ -3255,7 +3255,6 @@ module TestMatchBang =
 
     testSimpleMatchBang()
     
-#if LANGVERSION_PREVIEW
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
 
@@ -4063,8 +4062,6 @@ module ComputationExpressionWithOptionalsAndParamArray =
     check "vewhkvh4" email.Validators.Length 2
     check "vewhkvh5" password.Label (Some "Password")
     check "vewhkvh6" password.Validators.Length 3
-
-#endif
 
 module QuotationOfComputationExpressionZipOperation =
 

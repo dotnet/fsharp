@@ -6,12 +6,15 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+
+let LowerStateMachineStackGuardDepth = GetEnvInteger "FSHARP_LowerStateMachine" 50
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
@@ -91,7 +94,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
                     // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
                     // state machine locals.
                     (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
-                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty generateBody
+                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty generateBody
                             (mkCompGenSequential m 
                                 (mkValSet m vref (mkDefault (m, vref.Type)))
                                 (mkTrue g m))
@@ -113,8 +116,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" 
-      || (v.BaseOrThisInfo = MemberThisVal)) &&
+     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -355,7 +357,8 @@ type LowerStateMachine(g: TcGlobals) =
         { PreIntercept = Some (fun cont e -> match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
-          IsUnderQuotations=true } 
+          RewriteQuotations=true 
+          StackGuard = StackGuard(LowerStateMachineStackGuardDepth) }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr
@@ -413,15 +416,17 @@ type LowerStateMachine(g: TcGlobals) =
         else
             let initLabel = generateCodeLabel()
             let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
-            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
+            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointAtTarget.No)
             let dtree =
-                TDSwitch(pcExpr,
-                        [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
-                            for pc in pcs do
-                                yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
-                        // The default is to go to pcInit
-                        Some(mkGotoLabelTarget initLabel),
-                        m)
+                TDSwitch(
+                    DebugPointAtSwitch.No, 
+                    pcExpr,
+                    [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
+                        for pc in pcs do
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
+                    // The default is to go to pcInit
+                    Some(mkGotoLabelTarget initLabel),
+                    m)
 
             let table = mbuilder.Close(dtree, m, g.int_ty)
             mkCompGenSequential m table (mkLabelled m initLabel expr)
@@ -537,7 +542,7 @@ type LowerStateMachine(g: TcGlobals) =
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
                 let lab = (match reenterLabOpt with Some l -> l | _ -> generateCodeLabel())
-                mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
             { phase1 = recreate None resNone.phase1 resSome.phase1
               phase2 = (fun ctxt ->
                 let generate2 = resSome.phase2 ctxt

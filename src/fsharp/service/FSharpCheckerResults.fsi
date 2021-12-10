@@ -96,23 +96,39 @@ type public FSharpProjectOptions =
 
 and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
-    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
-    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
+    | FSharpReference of projectOutputFile: string * options: FSharpProjectOptions
+    | PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+    | ILModuleReference of projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
-    member FileName : string
+    ///<summary>
+    /// The fully qualified path to the output of the referenced project. This should be the same value as the <code>-r</code>
+    /// reference in the project options for this referenced project.
+    ///</summary>
+    member OutputFile : string
 
+    ///<summary>
     /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
-    static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
+    ///</summary>
+    ///<param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <code>-r</code> reference in the project options for this referenced project.</param>
+    ///<param name="options">The Project Options for this F# project</param>
+    static member CreateFSharp : projectOutputFile: string * options: FSharpProjectOptions -> FSharpReferencedProject
 
+    ///<summary>
     /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
     /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
     /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
     /// If the stream evaluation throws an exception, it will be automatically handled.
-    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
+    ///</summary>
+    ///<param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <code>-r</code> reference in the project options for this referenced project.</param>
+    ///<param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    ///<param name="getStream">A function that opens a Portable Executable data stream for reading.</param>
+    static member CreatePortableExecutable : projectOutputFile: string * getStamp: (unit -> DateTime) * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
 
-    /// Creates a reference from an ILModuleReader.
-    static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
+    ///<summary>Creates a reference from an ILModuleReader.</summary>
+    ///<param name="projectOutputFile">The fully qualified path to the output of the referenced project. This should be the same value as the <code>-r</code> reference in the project options for this referenced project.</param>
+    ///<param name="getStamp">A function that calculates a last-modified timestamp for this reference. This will be used to determine if the reference is up-to-date.</param>
+    ///<param name="getReader">A function that creates an ILModuleReader for reading module data.</param>
+    static member CreateFromILModuleReader : projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -120,6 +136,8 @@ type public FSharpSymbolUse =
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
+
+    member GenericArguments: (FSharpGenericParameter * FSharpType) list 
 
     /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
     /// and other methods to format items in a way that is suitable for a specific source code location.
@@ -156,7 +174,7 @@ type public FSharpSymbolUse =
     member IsPrivateToFile: bool 
 
     // For internal use only
-    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new: denv: DisplayEnv * symbol:FSharpSymbol * inst: TyparInst * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -177,6 +195,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpDiagnosticOptions
+      LangVersionText: string
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -260,6 +279,14 @@ type public FSharpCheckFileResults =
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
     member GetToolTip: line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> ToolTipText
+
+    /// <summary>Compute a formatted tooltip for the given symbol at position</summary>
+    ///
+    /// <param name="symbol">The symbol.</param>
+    /// <param name="inst">Generic arguments.</param>
+    /// <param name="displayFullName">Display the symbol full name.</param>
+    /// <param name="range">The position.</param>
+    member GetDescription: symbol: FSharpSymbol * inst: (FSharpGenericParameter * FSharpType) list * displayFullName: bool * range: range -> ToolTipText 
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///

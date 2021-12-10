@@ -16,20 +16,26 @@ open FSharp.Compiler.TcGlobals
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
+
     new: g:TcGlobals * amap:ImportMap * infoReader:InfoReader * instantiationGenerator:(range -> Typars -> TypeInst) -> NameResolver
+
     member InfoReader: InfoReader
+
     member amap: ImportMap
+
     member g: TcGlobals
+
     member languageSupportsNameOf: bool
 
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
+
     /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
 
@@ -39,8 +45,8 @@ val (|AbbrevOrAppTy|_|): TType -> TyconRef option
 
 type EnclosingTypeInst = TypeInst
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type Item = 
     /// Represents the resolution of a name to an F# value or function.
     | Value of  ValRef
@@ -122,11 +128,19 @@ type Item =
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
+    /// The text for the item to use in the declaration list.
+    /// This does not include backticks, parens etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    member DisplayNameCore: string
+
+    /// The full text for the item to show in error messages and to use in code.
+    /// This includes backticks, parens etc.
     member DisplayName: string
 
-[<RequireQualifiedAccess>]
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
 /// a particular usage point.
+[<RequireQualifiedAccess>]
 type ItemWithInst = 
     { Item: Item
       TyparInst: TyparInst }
@@ -257,8 +271,8 @@ val internal AddTypeContentsToNameEnv: TcGlobals -> ImportMap -> AccessorDomain 
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.
 type CheckForDuplicateTyparFlag =
-  | CheckForDuplicateTypars
-  | NoCheckForDuplicateTypars
+    | CheckForDuplicateTypars
+    | NoCheckForDuplicateTypars
 
 /// Add some declared type parameters to the name resolution environment
 val internal AddDeclaredTyparsToNameEnv: CheckForDuplicateTyparFlag -> NameResolutionEnv -> Typar list -> NameResolutionEnv
@@ -268,10 +282,11 @@ val internal LookupTypeNameInEnvNoArity: FullyQualifiedFlag -> string -> NameRes
 
 /// Indicates whether we are resolving type names to type definitions or to constructor methods.
 type TypeNameResolutionFlag =
-  /// Indicates we are resolving type names to constructor methods.
-  | ResolveTypeNamesToCtors
-  /// Indicates we are resolving type names to type definitions
-  | ResolveTypeNamesToTypeRefs
+    /// Indicates we are resolving type names to constructor methods.
+    | ResolveTypeNamesToCtors
+
+    /// Indicates we are resolving type names to type definitions
+    | ResolveTypeNamesToTypeRefs
 
 /// Represents information about the generic argument count of a type name when resolving it. 
 ///
@@ -279,17 +294,21 @@ type TypeNameResolutionFlag =
 /// of generic arguments. In others, we know precisely how many generic arguments are needed.
 [<Sealed;NoEquality; NoComparison>]
 type TypeNameResolutionStaticArgsInfo = 
-  /// Indicates definite knowledge of empty type arguments, i.e. the logical equivalent of name< >
-  static member DefiniteEmpty: TypeNameResolutionStaticArgsInfo
-  /// Deduce definite knowledge of type arguments
-  static member FromTyArgs: numTyArgs:int -> TypeNameResolutionStaticArgsInfo
+
+    /// Indicates definite knowledge of empty type arguments, i.e. the logical equivalent of name< >
+    static member DefiniteEmpty: TypeNameResolutionStaticArgsInfo
+
+    /// Deduce definite knowledge of type arguments
+    static member FromTyArgs: numTyArgs:int -> TypeNameResolutionStaticArgsInfo
 
 /// Represents information which guides name resolution of types.
 [<NoEquality; NoComparison>]
 type TypeNameResolutionInfo = 
-  | TypeNameResolutionInfo of TypeNameResolutionFlag * TypeNameResolutionStaticArgsInfo
-  static member Default: TypeNameResolutionInfo
-  static member ResolveToTypeRefs: TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
+    | TypeNameResolutionInfo of TypeNameResolutionFlag * TypeNameResolutionStaticArgsInfo
+
+    static member Default: TypeNameResolutionInfo
+
+    static member ResolveToTypeRefs: TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess; Struct>]
@@ -357,16 +376,15 @@ type internal TcResolutions =
     /// Represents the empty set of resolutions 
     static member Empty: TcResolutions
 
-
 [<Struct>]
 type TcSymbolUseData = 
-   { Item: Item
+   { ItemWithInst: ItemWithInst
      ItemOccurence: ItemOccurence
      DisplayEnv: DisplayEnv
      Range: range }
 
-[<Class>]
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
+[<Class>]
 type internal TcSymbolUses = 
 
     /// Get all the uses of a particular item within the file
@@ -381,30 +399,6 @@ type internal TcSymbolUses =
     /// Empty collection of symbol uses
     static member Empty: TcSymbolUses
 
-/// Represents open declaration statement.
-type internal OpenDeclaration =
-    { /// Syntax after 'open' as it's presented in source code.
-      Target: SynOpenDeclTarget
-      
-      /// Full range of the open declaration.
-      Range: range option
-
-      /// Modules or namespaces which is opened with this declaration.
-      Modules: ModuleOrNamespaceRef list 
-      
-      /// Types whose static content is opened with this declaration.
-      Types: TType list
-
-      /// Scope in which open declaration is visible.
-      AppliedScope: range 
-      
-      /// If it's `namespace Xxx.Yyy` declaration.
-      IsOwnNamespace: bool
-    }
-    
-    /// Create a new instance of OpenDeclaration.
-    static member Create: target: SynOpenDeclTarget * modules: ModuleOrNamespaceRef list * types: TType list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
-    
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
     { /// Source text
@@ -614,4 +608,3 @@ val GetVisibleNamespacesAndModulesAtPoint: NameResolver -> NameResolutionEnv -> 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 
 val TrySelectExtensionMethInfoOfILExtMem: range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option 
- 

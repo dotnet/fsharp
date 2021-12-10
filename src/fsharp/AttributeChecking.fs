@@ -434,7 +434,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
         | _ -> 
         // This attribute check is done by name to ensure compilation doesn't take a dependency 

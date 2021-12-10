@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BE
 }
 .module AsyncExpressionSteppingTest6.dll
-// MVID: {60EDFA6D-6394-4FAD-A745-03836DFAED60}
+// MVID: {611C52A3-6394-4FAD-A745-0383A3521C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071A0000
+// Image base: 0x06B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -768,11 +768,12 @@
   {
     // Code size       18 (0x12)
     .maxstack  5
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_0,
+    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> 'Pipe #1 input at line 22',
              [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_1)
-    .line 22,22 : 13,43 ''
+    .line 22,22 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6::f3()
     IL_0005:  stloc.0
+    .line 22,22 : 21,43 ''
     IL_0006:  ldloc.0
     IL_0007:  stloc.1
     IL_0008:  ldloc.1

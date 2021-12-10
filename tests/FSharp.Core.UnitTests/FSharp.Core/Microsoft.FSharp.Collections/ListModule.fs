@@ -19,7 +19,7 @@ Make sure each method works on:
 
 type ListModule() =
     [<Fact>]
-    member this.Empty() =
+    member _.Empty() =
         let emptyList = List.empty
         let resultEpt = List.length emptyList
         Assert.AreEqual(0, resultEpt)   
@@ -30,7 +30,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.AllPairs() =
+    member _.AllPairs() =
         // integer List
         let resultInt =  List.allPairs [1..3] [2..2..6]
         Assert.AreEqual([(1,2);(1,4);(1,6)
@@ -52,7 +52,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Append() =
+    member _.Append() =
         // integer List
         let intList = List.append [ 1; 2 ] [ 3; 4 ]
         Assert.AreEqual([ 1; 2; 3; 4 ],intList)
@@ -67,7 +67,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Average() =     
+    member _.Average() =     
         // empty float32 List
         let emptyFloatList = List.empty<System.Single> 
         CheckThrowsArgumentException(fun () -> List.average emptyFloatList |> ignore)
@@ -99,7 +99,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.AverageBy() =
+    member _.AverageBy() =
         // empty double List
         let emptyDouList = List.empty<System.Double>
         CheckThrowsArgumentException (fun () -> List.averageBy (fun x -> x + 6.7) emptyDouList |> ignore)
@@ -130,7 +130,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.ChunkBySize() =
+    member _.ChunkBySize() =
 
         // int list
         Assert.True([ [1..4]; [5..8] ] = List.chunkBySize 4 [1..8])
@@ -150,7 +150,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.SplitInto() =
+    member _.SplitInto() =
 
         // int list
         Assert.True([ [1..4]; [5..7]; [8..10] ] = List.splitInto 3 [1..10])
@@ -173,7 +173,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.distinct() = 
+    member _.distinct() = 
         // distinct should work on empty list
         Assert.AreEqual([], List.distinct [])
 
@@ -190,7 +190,7 @@ type ListModule() =
         Assert.True([null, list] = List.distinct [null, list])
 
     [<Fact>]
-    member this.distinctBy() =
+    member _.distinctBy() =
         // distinctBy should work on empty list
         Assert.AreEqual([], List.distinctBy (fun _ -> failwith "should not be executed") [])
         
@@ -209,7 +209,7 @@ type ListModule() =
         Assert.True([null, list] = List.distinctBy id [null, list])
 
     [<Fact>]
-    member this.Take() =
+    member _.Take() =
         Assert.AreEqual(([] : int list) ,List.take 0 ([] : int list))
         Assert.AreEqual(([] : string list),List.take 0 ["str1";"str2";"str3";"str4"])
         Assert.AreEqual([1;2;4],List.take 3 [1;2;4;5;7])
@@ -220,7 +220,7 @@ type ListModule() =
         CheckThrowsInvalidOperationExn (fun () -> List.take 5 ["str1";"str2";"str3";"str4"] |> ignore)
               
     [<Fact>]
-    member this.Choose() = 
+    member _.Choose() = 
         // int List
         let intSrc:int list = [ 1..100 ]    
         let funcInt x = if (x%5=0) then Some (x*x) else None       
@@ -252,7 +252,7 @@ type ListModule() =
         () 
 
     [<Fact>]
-    member this.compareWith() =
+    member _.compareWith() =
         // compareWith should work on empty lists
         Assert.AreEqual(0,List.compareWith (fun _ -> failwith "should not be executed")  [] [])
         Assert.AreEqual(-1,List.compareWith (fun _ -> failwith "should not be executed") [] [1])
@@ -273,7 +273,7 @@ type ListModule() =
         Assert.AreEqual(-1,List.compareWith (fun x y -> -1) ["1";"2"] ["1";"3"])
         
     [<Fact>]
-    member this.takeWhile() =
+    member _.takeWhile() =
         Assert.AreEqual(([] : int list),List.takeWhile (fun x -> failwith "should not be used") ([] : int list))
         Assert.AreEqual([1;2;4;5],List.takeWhile (fun x -> x < 6) [1;2;4;5;6;7])
         Assert.AreEqual(["a"; "ab"; "abc"],List.takeWhile (fun (x:string) -> x.Length < 4) ["a"; "ab"; "abc"; "abcd"; "abcde"])        
@@ -284,7 +284,7 @@ type ListModule() =
         Assert.AreEqual(["a"],List.takeWhile (fun x -> x <> "ab") ["a"; "ab"; "abc"; "abcd"; "abcde"])
 
     [<Fact>]
-    member this.Concat() =
+    member _.Concat() =
         // integer List
         let seqInt = 
             seq { for i in 1..10 do                
@@ -310,7 +310,7 @@ type ListModule() =
         () 
 
     [<Fact>]
-    member this.splitAt() =        
+    member _.splitAt() =        
         Assert.AreEqual((([] : int list),([] : int list)), List.splitAt 0 ([] : int list))
 
         Assert.AreEqual([1..4], List.splitAt 4 [1..10] |> fst)       
@@ -335,7 +335,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.countBy() =
+    member _.countBy() =
         // countBy should work on empty list
         Assert.AreEqual(0,List.countBy (fun _ -> failwith "should not be executed") [] |> List.length)
 
@@ -344,7 +344,7 @@ type ListModule() =
         Assert.AreEqual([3,3; 2,2; 1,3],List.countBy (fun x -> if x < 3 then x else 3) [5;2;1;2;3;3;1;1])
 
     [<Fact>]
-    member this.Except() =
+    member _.Except() =
         // integer list
         let intList1 = [ yield! {1..100}
                          yield! {1..100} ]
@@ -373,7 +373,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Exists() =
+    member _.Exists() =
         // integer List
         let intArr = [ 2;4;6;8 ]
         let funcInt x = if (x%2 = 0) then true else false
@@ -393,7 +393,7 @@ type ListModule() =
                
         ()
     [<Fact>]
-    member this.Exists2() =
+    member _.Exists2() =
         // integer List
         let intFir = [ 2;4;6;8 ]
         let intSec = [ 1;2;3;4 ]
@@ -417,7 +417,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Filter() =
+    member _.Filter() =
         // integer List
         let intArr = [ 1..20 ]
         let funcInt x = if (x%5 = 0) then true else false
@@ -438,7 +438,7 @@ type ListModule() =
         ()   
 
     [<Fact>]
-    member this.Where() =
+    member _.Where() =
         // integer List
         let intArr = [ 1..20 ]
         let funcInt x = if (x%5 = 0) then true else false
@@ -459,7 +459,7 @@ type ListModule() =
         ()   
 
     [<Fact>]
-    member this.``where should work like filter``() =
+    member _.``where should work like filter``() =
         Assert.AreEqual(([] : int list), List.where (fun x -> x % 2 = 0) [])
         Assert.AreEqual([0;2;4;6;8], List.where (fun x -> x % 2 = 0) [0..9])
         Assert.AreEqual(["a";"b";"c"], List.where (fun _ -> true) ["a";"b";"c"])
@@ -467,7 +467,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Find() =
+    member _.Find() =
         // integer List
         let intArr = [ 1..20 ]
         let funcInt x = if (x%5 = 0) then true else false
@@ -490,7 +490,7 @@ type ListModule() =
         () 
 
     [<Fact>]
-    member this.replicate() = 
+    member _.replicate() = 
         // replicate should create multiple copies of the given value
         Assert.AreEqual(0,List.replicate 0 null |> List.length)
         Assert.AreEqual(0,List.replicate 0 1 |> List.length)
@@ -500,7 +500,7 @@ type ListModule() =
         CheckThrowsArgumentException (fun () ->  List.replicate -1 null |> ignore)
 
     [<Fact>]
-    member this.FindBack() =
+    member _.FindBack() =
         // integer List
         let funcInt x = if (x%5 = 0) then true else false
         Assert.AreEqual(20, List.findBack funcInt [ 1..20 ])
@@ -523,7 +523,7 @@ type ListModule() =
 
 
     [<Fact>]
-    member this.FindIndex() =
+    member _.FindIndex() =
         // integer List
         let intArr = [ 1..20 ]
         let funcInt x = if (x%5 = 0) then true else false
@@ -546,7 +546,7 @@ type ListModule() =
         () 
         
     [<Fact>]
-    member this.FindIndexBack() =
+    member _.FindIndexBack() =
         // integer List
         let funcInt x = if (x%5 = 0) then true else false
         Assert.AreEqual(19, List.findIndexBack funcInt [ 1..20 ])
@@ -568,7 +568,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.TryPick() =
+    member _.TryPick() =
         // integer List
         let intArr = [ 1..10 ]    
         let funcInt x = 
@@ -595,7 +595,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Fold() =
+    member _.Fold() =
         // integer List
         let intArr = [ 1..10 ]    
         let funcInt x y = x+y
@@ -616,7 +616,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Fold2() =
+    member _.Fold2() =
         // integer List  
         let funcInt x y z = x + y + z
         let resultInt = List.fold2 funcInt 9 [ 1..10 ]  [1..2..20]        
@@ -635,7 +635,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.FoldBack() =
+    member _.FoldBack() =
         // integer List
         let intArr = [ 1..10 ]    
         let funcInt x y = x+y
@@ -673,7 +673,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.FoldBack2() =
+    member _.FoldBack2() =
         // integer List  
         let funcInt x y z = x + y + z
         let resultInt = List.foldBack2 funcInt  [ 1..10 ]  [1..2..20] 9        
@@ -713,7 +713,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.ForAll() =
+    member _.ForAll() =
         // integer List
         let resultInt = List.forall (fun x -> x > 2) [ 3..2..10 ]        
         Assert.True(resultInt)
@@ -729,7 +729,7 @@ type ListModule() =
         ()
         
     [<Fact>]
-    member this.ForAll2() =
+    member _.ForAll2() =
         // integer List
         let resultInt = List.forall2 (fun x y -> x < y) [ 1..10 ] [2..2..20]        
         Assert.True(resultInt)
@@ -745,7 +745,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.GroupBy() =
+    member _.GroupBy() =
         let funcInt x = x%5
              
         let IntList = [ 0 .. 9 ]
@@ -781,7 +781,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Hd() =
+    member _.Hd() =
         // integer List
         let resultInt = List.head  [2..2..20]        
         Assert.AreEqual(2, resultInt)
@@ -794,35 +794,35 @@ type ListModule() =
         ()    
 
     [<Fact>]
-    member this.``exactlyOne should return the element from singleton lists``() =
+    member _.``exactlyOne should return the element from singleton lists``() =
         Assert.AreEqual(1, List.exactlyOne [1])
         Assert.AreEqual("2", List.exactlyOne ["2"])
         ()
 
     [<Fact>]
-    member this.``exactlyOne should fail on empty list``() = 
+    member _.``exactlyOne should fail on empty list``() = 
         CheckThrowsArgumentException(fun () -> List.exactlyOne [] |> ignore)
 
     [<Fact>]
-    member this.``exactlyOne should fail on lists with more than one element``() =
+    member _.``exactlyOne should fail on lists with more than one element``() =
         CheckThrowsArgumentException(fun () -> List.exactlyOne ["1"; "2"] |> ignore)
 
     [<Fact>]
-    member this.``tryExactlyOne should return the element from singleton lists``() =
+    member _.``tryExactlyOne should return the element from singleton lists``() =
         Assert.AreEqual(Some 1, List.tryExactlyOne [1])
         Assert.AreEqual(Some "2", List.tryExactlyOne ["2"])
         ()
 
     [<Fact>]
-    member this.``tryExactlyOne should return None for empty list``() =
+    member _.``tryExactlyOne should return None for empty list``() =
         Assert.AreEqual(None, List.tryExactlyOne [])
 
     [<Fact>]
-    member this.``tryExactlyOne should return None for lists with more than one element``() =
+    member _.``tryExactlyOne should return None for lists with more than one element``() =
         Assert.AreEqual(None, List.tryExactlyOne ["1"; "2"])
 
     [<Fact>]
-    member this.TryHead() =
+    member _.TryHead() =
         // integer List
         let resultInt = List.tryHead  [2..2..20]        
         Assert.AreEqual(2, resultInt.Value)
@@ -835,7 +835,7 @@ type ListModule() =
         Assert.AreEqual(None, resultNone)
 
     [<Fact>]
-    member this.TryLast() =
+    member _.TryLast() =
         // integer List
         let intResult = List.tryLast [1..9]
         Assert.AreEqual(9, intResult.Value)
@@ -850,7 +850,7 @@ type ListModule() =
         () 
 
     [<Fact>]
-    member this.last() =
+    member _.last() =
         // last should fail on empty list
         CheckThrowsArgumentException(fun () -> List.last [] |> ignore)
 
@@ -860,7 +860,7 @@ type ListModule() =
         Assert.AreEqual(["4"], List.last [["1"; "3"]; []; ["4"]])
 
     [<Fact>]
-    member this.Init() = 
+    member _.Init() = 
         // integer List
         let resultInt = List.init 3 (fun x -> x + 3)         
         Assert.AreEqual([3;4;5], resultInt)
@@ -883,7 +883,7 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.IsEmpty() =
+    member _.IsEmpty() =
         // integer List
         let intArr = [ 3;4;7;8;10 ]    
         let resultInt = List.isEmpty intArr         
@@ -901,115 +901,115 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.Iter() =
+    member _.Iter() =
         // integer List
         let intArr = [ 1..10 ]  
-        let resultInt = ref 0    
+        let mutable resultInt = 0    
         let funInt (x:int) =   
-            resultInt := !resultInt + x              
+            resultInt <- resultInt + x              
             () 
         List.iter funInt intArr         
-        Assert.AreEqual(55, !resultInt)
+        Assert.AreEqual(55, resultInt)
         
         // string List
         let strArr = ["a";"b";"c";"d"]
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:string) =
-            resultStr := (!resultStr) + x   
+            resultStr <- resultStr + x   
             ()
         List.iter funStr strArr          
-        Assert.AreEqual("abcd", !resultStr)
+        Assert.AreEqual("abcd", resultStr)
         
         // empty List    
         let emptyArr:int list = [ ]
-        let resultEpt = ref 0
+        let mutable resultEpt = 0
         List.iter funInt emptyArr         
-        Assert.AreEqual(0, !resultEpt)
+        Assert.AreEqual(0, resultEpt)
         
         ()
        
     [<Fact>]
-    member this.Iter2() =
+    member _.Iter2() =
         // integer List
-        let resultInt = ref 0    
+        let mutable resultInt = 0    
         let funInt (x:int) (y:int) =   
-            resultInt := !resultInt + x + y             
+            resultInt <- resultInt + x + y             
             () 
         List.iter2 funInt [ 1..10 ] [2..2..20]         
-        Assert.AreEqual(165, !resultInt)
+        Assert.AreEqual(165, resultInt)
         
         // string List
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:string) (y:string) =
-            resultStr := (!resultStr) + x  + y 
+            resultStr <- resultStr + x  + y 
             ()
         List.iter2 funStr ["a";"b";"c";"d"] ["A";"B";"C";"D"]          
-        Assert.AreEqual("aAbBcCdD", !resultStr)
+        Assert.AreEqual("aAbBcCdD", resultStr)
         
         // empty List    
         let emptyArr:int list = [ ]
-        let resultEpt = ref 0
+        let mutable resultEpt = 0
         List.iter2 funInt emptyArr emptyArr         
-        Assert.AreEqual(0, !resultEpt)
+        Assert.AreEqual(0, resultEpt)
         
         ()
         
     [<Fact>]
-    member this.Iteri() =
+    member _.Iteri() =
         // integer List
         let intArr = [ 1..10 ]  
-        let resultInt = ref 0    
+        let mutable resultInt = 0    
         let funInt (x:int) y =   
-            resultInt := !resultInt + x + y             
+            resultInt <- resultInt + x + y             
             () 
         List.iteri funInt intArr         
-        Assert.AreEqual(100, !resultInt)
+        Assert.AreEqual(100, resultInt)
         
         // string List
         let strArr = ["a";"b";"c";"d"]
-        let resultStr = ref 0
+        let mutable resultStr = 0
         let funStr (x:int) (y:string) =
-            resultStr := (!resultStr) + x + y.Length
+            resultStr <- resultStr + x + y.Length
             ()
         List.iteri funStr strArr          
-        Assert.AreEqual(10, !resultStr)
+        Assert.AreEqual(10, resultStr)
         
         // empty List    
         let emptyArr:int list = [ ]
-        let resultEpt = ref 0
+        let mutable resultEpt = 0
         List.iteri funInt emptyArr         
-        Assert.AreEqual(0, !resultEpt)
+        Assert.AreEqual(0, resultEpt)
         
         ()
         
     [<Fact>]
-    member this.Iteri2() =
+    member _.Iteri2() =
         // integer List
-        let resultInt = ref 0    
+        let mutable resultInt = 0    
         let funInt (x:int) (y:int) (z:int) =   
-            resultInt := !resultInt + x + y + z            
+            resultInt <- resultInt + x + y + z            
             () 
         List.iteri2 funInt [ 1..10 ] [2..2..20]         
-        Assert.AreEqual(210, !resultInt)
+        Assert.AreEqual(210, resultInt)
         
         // string List
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:int) (y:string) (z:string) =
-            resultStr := (!resultStr) + x.ToString()  + y + z
+            resultStr <- resultStr + x.ToString()  + y + z
             ()
         List.iteri2 funStr ["a";"b";"c";"d"] ["A";"B";"C";"D"]          
-        Assert.AreEqual("0aA1bB2cC3dD", !resultStr)
+        Assert.AreEqual("0aA1bB2cC3dD", resultStr)
         
         // empty List    
         let emptyArr:int list = [ ]
-        let resultEpt = ref 0
+        let mutable resultEpt = 0
         List.iteri2 funInt emptyArr emptyArr         
-        Assert.AreEqual(0, !resultEpt)
+        Assert.AreEqual(0, resultEpt)
         
         ()        
 
     [<Fact>]
-    member this.Contains() =
+    member _.Contains() =
         // integer List
         let intList = [ 2;4;6;8 ]
         let resultInt = List.contains 4 intList
@@ -1026,7 +1026,7 @@ type ListModule() =
         Assert.False(resultEpt)
         
     [<Fact>]
-    member this.Singleton() =
+    member _.Singleton() =
         Assert.AreEqual([null],List.singleton null)
         Assert.AreEqual(["1"],List.singleton "1")   
         Assert.AreEqual([[]],List.singleton [])
@@ -1034,44 +1034,44 @@ type ListModule() =
         ()
 
     [<Fact>]
-    member this.``pairwise should return pairs of the input list``() =
+    member _.``pairwise should return pairs of the input list``() =
         Assert.AreEqual(([] : (int*int) list), List.pairwise [1])
         Assert.AreEqual([1,2], List.pairwise [1;2])
         Assert.AreEqual([1,2; 2,3], List.pairwise [1;2;3])
         Assert.AreEqual(["H","E"; "E","L"; "L","L"; "L","O"], List.pairwise ["H";"E";"L";"L";"O"])
 
     [<Fact>]
-    member this.``Slicing with first index reverse behaves as expected``()  = 
+    member _.``Slicing with first index reverse behaves as expected``()  = 
         let list = [ 1;2;3;4;5 ]
 
         Assert.AreEqual(list.[^3..], list.[1..])
 
     [<Fact>]
-    member this.``Slicing with second index reverse behaves as expected``()  = 
+    member _.``Slicing with second index reverse behaves as expected``()  = 
         let list = [ 1;2;3;4;5 ]
 
         Assert.AreEqual(list.[..^1], list.[..3])
 
     [<Fact>]
-    member this.``Slicing with both index reverse behaves as expected``()  = 
+    member _.``Slicing with both index reverse behaves as expected``()  = 
         let list = [ 1;2;3;4;5 ]
 
         Assert.AreEqual(list.[^3..^1], list.[1..3])
 
     [<Fact>]
-    member this.``Slicing with first index reverse and second index non reverse behaves as expected``()=
+    member _.``Slicing with first index reverse and second index non reverse behaves as expected``()=
         let list = [1;2;3;4;5]
 
         Assert.AreEqual(list.[^3..4], list.[1..4])
 
     [<Fact>]
-    member this.``Slicing with first index non reverse and second index reverse behaves as expected``()=
+    member _.``Slicing with first index non reverse and second index reverse behaves as expected``()=
         let list = [1;2;3;4;5]
 
         Assert.AreEqual(list.[3..^0], list.[3..4])
 
     [<Fact>]
-    member this.``Get item with reverse index behaves as expected``() = 
+    member _.``Get item with reverse index behaves as expected``() = 
         let list = [1;2;3;4;5]
 
         Assert.AreEqual(list.[^1], 4)

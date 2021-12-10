@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <OutputType>Exe</OutputType>
@@ -10,7 +9,6 @@
     <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
     <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
-
     <!-- By default this project will compile with the proto compiler -->
     <!-- Uncommenting this will build with a previous installed compiler  -->
     <!--
@@ -19,13 +17,14 @@
     <DotnetFscCompilerPath></DotnetFscCompilerPath>
     -->
   </PropertyGroup>
-
   <ItemGroup>
+    <Compile Include="Async.fs" />
+    <Compile Include="Conditions.fs" />
+    <Compile Include="Collections.fs" />
     <Compile Include="Benchmarks.fs" />
     <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
   </ItemGroup>
-
 </Project>

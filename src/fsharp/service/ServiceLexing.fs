@@ -921,10 +921,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
 [<Sealed>]
 type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
 
-    // Public callers are unable to answer LanguageVersion feature support questions.
-    // External Tools including the VS IDE will enable the default LanguageVersion
-    let isFeatureSupported (_featureId:LanguageFeature) = true
-    let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
+    let langVersion = LanguageVersion.Default
     let reportLibraryOnlyFeatures = true
 
     let lexResourceManager = LexResourceManager()
@@ -932,25 +929,24 @@ type FSharpSourceTokenizer(conditionalDefines: string list, filename: string opt
     let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, lineText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
         FSharpLineTokenizer(lexbuf, Some lineText.Length, filename, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
-        let lexbuf = UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, bufferFiller)
+        let lexbuf = UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
         FSharpLineTokenizer(lexbuf, None, filename, lexargs)
 
 module FSharpKeywords =
-    open FSharp.Compiler.Lexhelp.Keywords
 
-    let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
+    let DoesIdentifierNeedBackticks s = PrettyNaming.DoesIdentifierNeedBackticks s
 
-    let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    let AddBackticksToIdentifierIfNeeded s = PrettyNaming.AddBackticksToIdentifierIfNeeded s
 
-    let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    let NormalizeIdentifierBackticks s = PrettyNaming.NormalizeIdentifierBackticks s
 
-    let KeywordsWithDescription = keywordsWithDescription
+    let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
 
-    let KeywordNames = keywordNames
+    let KeywordNames = Lexhelp.Keywords.keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =
@@ -1515,14 +1511,14 @@ type FSharpToken =
 
 [<AutoOpen>]
 module FSharpLexerImpl =
-    let lexWithErrorLogger (text: ISourceText) conditionalCompilationDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures supportsFeature checkLanguageFeatureErrorRecover errorLogger onToken pathMap (ct: CancellationToken) =
+    let lexWithErrorLogger (text: ISourceText) conditionalCompilationDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion errorLogger onToken pathMap (ct: CancellationToken) =
         let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
         let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
         let isCompiling = (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
         let isCompilingFSharpCore = (flags &&& FSharpLexerFlags.CompilingFSharpCore) = FSharpLexerFlags.CompilingFSharpCore
         let canUseLexFilter = (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
 
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, supportsFeature, checkLanguageFeatureErrorRecover, text)
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
         let lightStatus = LightSyntaxStatus(isLightSyntaxOn, true)
         let lexargs = mkLexargs (conditionalCompilationDefines, lightStatus, LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
@@ -1544,9 +1540,9 @@ module FSharpLexerImpl =
             ct.ThrowIfCancellationRequested ()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
-    let lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures supportsFeature checkLanguageFeatureErrorRecover lexCallback pathMap ct =
+    let lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
         let errorLogger = CompilationErrorLogger("Lexer", FSharpDiagnosticOptions.Default)
-        lexWithErrorLogger text conditionalCompilationDefines flags reportLibraryOnlyFeatures supportsFeature checkLanguageFeatureErrorRecover errorLogger lexCallback pathMap ct
+        lexWithErrorLogger text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion errorLogger lexCallback pathMap ct
 
 [<AbstractClass;Sealed>]
 type FSharpLexer =
@@ -1559,9 +1555,6 @@ type FSharpLexer =
         let pathMap = defaultArg pathMap Map.Empty
         let ct = defaultArg ct CancellationToken.None
 
-        let supportsFeature = langVersion.SupportsFeature
-        let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover langVersion
-
         let pathMap =
             (PathMap.empty, pathMap)
             ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
@@ -1573,4 +1566,4 @@ type FSharpLexer =
                 | _ -> tokenCallback fsTok
 
         let reportLibraryOnlyFeatures = true
-        lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures supportsFeature checkLanguageFeatureErrorRecover onToken pathMap ct
+        lex text conditionalCompilationDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct

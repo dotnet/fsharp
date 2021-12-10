@@ -1303,12 +1303,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 match entity.TypeReprInfo with
                 // This is the first extension
                 | TNoRepr ->
-                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
+                    TProvidedNamespaceRepr(typeProviderEnvironment, [provider])
 
                 // Add to the existing list of extensions
-                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr ->
+                | TProvidedNamespaceRepr(resolutionFolder, prior) as repr ->
                     if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then
-                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider :: prior)
+                        TProvidedNamespaceRepr(resolutionFolder, provider :: prior)
                     else
                         repr
 
@@ -1977,7 +1977,5 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let buildTcEnv tcEnv asm =
-        AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-    let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
+    let _openDecls, tcEnv = (tcEnv, asms) ||> List.collectFold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes))
     tcEnv, (dllinfos, asms)

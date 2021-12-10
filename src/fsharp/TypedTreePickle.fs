@@ -1527,7 +1527,7 @@ let p_trait_sln sln st =
 
 
 let p_trait (TTrait(a, b, c, d, e, f)) st  =
-    p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
+    p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, f.Value) st
 
 let u_anonInfo_data st =
     let ccu, info, nms = u_tup3 u_ccuref u_bool (u_array u_ident) st
@@ -1830,21 +1830,21 @@ let rec dummy x = x
 and p_tycon_repr x st =
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with
-    | TRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
-    | TUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
+    | TFSharpRecdRepr fs         -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
+    | TFSharpUnionRepr x         -> p_byte 1 st; p_byte 1 st; p_array p_unioncase_spec x.CasesTable.CasesByIndex st; false
     | TAsmRepr ilty        -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFSharpObjectRepr r  -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty  -> p_byte 1 st; p_byte 4 st; p_ty ty st; false
     | TNoRepr              -> p_byte 0 st; false
 #if !NO_EXTENSIONTYPING
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
         if info.IsErased then
             // Pickle erased type definitions as a NoRepr
             p_byte 0 st; false
         else
             // Pickle generated type definitions as a TAsmRepr
             p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType, range0), []))) st; true
-    | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
+    | TProvidedNamespaceRepr _ -> p_byte 0 st; false
 #endif
     | TILObjectRepr (TILObjectReprData (_, _, td)) -> error (Failure("Unexpected IL type definition"+td.Name))
 
@@ -1857,6 +1857,8 @@ and p_attribs_ext f x st = p_list_ext f p_attrib x st
 and p_unioncase_spec x st =
     p_rfield_table x.FieldTable st
     p_ty x.ReturnType st
+    // The union case compiled name is now computed from Id field when needed and is not stored in UnionCase record.
+    // So this field doesn't really need to be stored but it exists for legacy compat
     p_string x.CompiledName st
     p_ident x.Id st
     // The XmlDoc are only written for the extended in-memory format. We encode their presence using a marker bit here
@@ -1972,11 +1974,11 @@ and p_member_info (x: ValMemberInfo) st =
 
 and p_tycon_objmodel_kind x st =
     match x with
-    | TTyconClass       -> p_byte 0 st
-    | TTyconInterface   -> p_byte 1 st
-    | TTyconStruct      -> p_byte 2 st
-    | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
-    | TTyconEnum        -> p_byte 4 st
+    | TFSharpClass       -> p_byte 0 st
+    | TFSharpInterface   -> p_byte 1 st
+    | TFSharpStruct      -> p_byte 2 st
+    | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
+    | TFSharpEnum        -> p_byte 4 st
 
 and p_vrefFlags x st =
     match x with
@@ -2028,7 +2030,7 @@ and u_tycon_repr st =
         match tag2 with
         | 0 ->
             let v = u_rfield_table st
-            (fun _flagBit -> TRecdRepr v)
+            (fun _flagBit -> TFSharpRecdRepr v)
         | 1 ->
             let v = u_list u_unioncase_spec  st
             (fun _flagBit -> Construct.MakeUnionRepr v)
@@ -2049,7 +2051,7 @@ and u_tycon_repr st =
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
                             | h :: t ->
                                 let nestedTypeDef = tdefs.FindByName h
-                                find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
+                                find (nestedTypeDef :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs, ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
                         TILObjectRepr(TILObjectReprData(st.iilscope, nestedILTypeDefs, ilTypeDef))
                     with _ ->
@@ -2257,11 +2259,11 @@ and u_member_info st : ValMemberInfo =
 and u_tycon_objmodel_kind st =
     let tag = u_byte st
     match tag with
-    | 0 -> TTyconClass
-    | 1 -> TTyconInterface
-    | 2 -> TTyconStruct
-    | 3 -> u_slotsig st |> TTyconDelegate
-    | 4 -> TTyconEnum
+    | 0 -> TFSharpClass
+    | 1 -> TFSharpInterface
+    | 2 -> TFSharpStruct
+    | 3 -> u_slotsig st |> TFSharpDelegate
+    | 4 -> TFSharpEnum
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
 and u_vrefFlags st =
@@ -2376,7 +2378,7 @@ and u_const st =
 
 and p_dtree x st =
     match x with
-    | TDSwitch (a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
+    | TDSwitch (_sp, a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
     | TDSuccess (a, b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a, b) st
     | TDBind (a, b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a, b) st
 
@@ -2406,9 +2408,11 @@ and p_recdInfo x st =
 and u_dtree st =
     let tag = u_byte st
     match tag with
-    | 0 -> u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st |> TDSwitch
-    | 1 -> u_tup2 u_Exprs u_int                                             st |> TDSuccess
-    | 2 -> u_tup2 u_bind u_dtree                                                st |> TDBind
+    | 0 ->
+        let a,b,c,d = u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st
+        TDSwitch(DebugPointAtSwitch.No, a, b, c, d)
+    | 1 -> u_tup2 u_Exprs u_int st |> TDSuccess
+    | 2 -> u_tup2 u_bind u_dtree st |> TDBind
     | _ -> ufailwith st "u_dtree"
 
 and u_dtree_case st = let a, b = u_tup2 u_dtree_discrim u_dtree st in (TCase(a, b))
@@ -2423,7 +2427,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No, None))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointAtTarget.No, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
@@ -2557,7 +2561,7 @@ and u_op st =
 
 and p_expr expr st =
     match expr with
-    | Expr.Link e -> p_expr !e st
+    | Expr.Link e -> p_expr e.Value st
     | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty (x, m, ty) st
     | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
     | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st

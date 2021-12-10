@@ -1191,7 +1191,7 @@ namespace ProviderImplementation.ProvidedTypes
         static member Product (measure1, measure2) = typedefof<CompilerServices.MeasureProduct<_,_>>.MakeGenericType [| measure1;measure2 |]
         static member Inverse denominator = typedefof<CompilerServices.MeasureInverse<_>>.MakeGenericType [| denominator |]
         static member Ratio (numerator, denominator) = ProvidedMeasureBuilder.Product(numerator, ProvidedMeasureBuilder.Inverse denominator)
-        static member Square m = ProvidedMeasureBuilder.Product(m, m)
+        static member Square ``measure`` = ProvidedMeasureBuilder.Product(``measure``, ``measure``)
 
         // If the unit is not a valid type, instead
         // of assuming it's a type abbreviation, which may not be the case and cause a

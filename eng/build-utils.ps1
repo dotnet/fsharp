@@ -247,7 +247,7 @@ function Make-BootstrapBuild() {
     $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 
@@ -260,7 +260,7 @@ function Make-BootstrapBuild() {
     $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 

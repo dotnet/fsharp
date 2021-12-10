@@ -225,6 +225,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     | res -> failwithf "Parsing did not finish... (%A)" res
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
+let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let parseSourceCode (name: string, code: string) =
@@ -252,6 +253,21 @@ let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
+
+let getSingleModuleMemberDecls (input: ParsedInput) =
+    let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl input
+    decls
+
+let getSingleDeclInModule (input: ParsedInput) =
+    match getSingleModuleMemberDecls input with
+    | [ decl ] -> decl
+    | _ -> failwith "Can't get single module member declaration"
+
+let getSingleExprInModule (input: ParsedInput) =
+    match getSingleDeclInModule input with
+    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | _ -> failwith "Unexpected expression"
+
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -365,8 +381,15 @@ let getParseResultsOfSignatureFile (source: string) =
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
 
+let getParseAndCheckResultsOfSignatureFile (source: string) =
+    parseAndCheckScript("/home/user/Test.fsi", source)
+
 let getParseAndCheckResultsPreview (source: string) =
     parseAndCheckScriptPreview("/home/user/Test.fsx", source)
+
+let getParseAndCheckResults50 (source: string) =
+    parseAndCheckScript50("/home/user/Test.fsx", source)
+
 
 let inline dumpErrors results =
     (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)

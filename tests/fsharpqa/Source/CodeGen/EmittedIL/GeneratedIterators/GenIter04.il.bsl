@@ -36,13 +36,13 @@
   // Offset: 0x000001E8 Length: 0x0000007B
 }
 .module GenIter04.exe
-// MVID: {60BCDCE8-F79D-DC98-A745-0383E8DCBC60}
+// MVID: {611C4D7C-F79D-DC98-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06940000
+// Image base: 0x06650000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -130,6 +130,7 @@
       IL_0033:  ldloc.2
       IL_0034:  isinst     [mscorlib]System.IDisposable
       IL_0039:  stloc.s    V_5
+      .line 100001,100001 : 0,0 ''
       IL_003b:  ldloc.s    V_5
       IL_003d:  brfalse.s  IL_0047
 

@@ -21,11 +21,13 @@ open TestFramework
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
-    member this.VerifyIL (expectedIL: string list) =
+    member _.VerifyIL (expectedIL: string list) =
         ILChecker.checkIL dllFilePath expectedIL
 
-    //member this.VerifyILWithDebugPoints (expectedIL: string list) =
-    //    ILChecker.checkILWithDebugPoints dllFilePath expectedIL
+[<Sealed>]
+type PdbDebugInfo(debugInfo: string) =
+
+    member _.InfoText = debugInfo
 
 type Worker () =
     inherit MarshalByRefObject()
@@ -89,16 +91,17 @@ type CompilerAssert private () =
             ctxt.Unload()
 #else
 
-    static let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
-
     static let adSetup =
         let setup = new System.AppDomainSetup ()
-        setup.PrivateBinPath <- pathToThisDll
+        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        setup.ApplicationBase <- directory
         setup
 
     static let executeBuiltApp assembly deps =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+        let worker =
+            use _ = new AlreadyLoadedAppDomainResolver()
+            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
         worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
 #endif
 
@@ -171,7 +174,7 @@ type CompilerAssert private () =
     static let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning && error.Severity <> FSharpDiagnosticSeverity.Info else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
@@ -622,6 +625,28 @@ type CompilerAssert private () =
             f (ILVerifier outputFilePath)
         )
 
+    static member CompileLibraryAndVerifyDebugInfoWithOptions options (expectedFile: string) (source: string) =
+        let options = [| yield! options; yield"--test:DumpDebugInfo" |]
+        compile false options source (fun (errors, outputFilePath) ->
+            let errors =
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
+            if errors.Length > 0 then
+                Assert.Fail (sprintf "Compile had errors: %A" errors)
+            let debugInfoFile = outputFilePath + ".debuginfo"
+            if not (File.Exists expectedFile) then 
+                File.Copy(debugInfoFile, expectedFile)
+                failwith $"debug info expected file {expectedFile} didn't exist, now copied over"
+            let debugInfo = File.ReadAllLines(debugInfoFile)
+            let expected = File.ReadAllLines(expectedFile)
+            if debugInfo <> expected then 
+                File.Copy(debugInfoFile, expectedFile, overwrite=true)
+                failwith $"""debug info mismatch
+Expected is in {expectedFile}
+Actual is in {debugInfoFile}
+Updated automatically, please check diffs in your pull request, changes must be scrutinized
+"""
+        )
+
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
@@ -668,13 +693,17 @@ type CompilerAssert private () =
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
-    static member Parse (source: string) =
-        let sourceFileName = "test.fs"
-        let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
+    static member Parse (source: string, ?langVersion: string, ?fileName: string) =
+        let langVersion = defaultArg langVersion "default"
+        let sourceFileName = defaultArg fileName "test.fsx"
+        let parsingOptions =
+            { FSharpParsingOptions.Default with
+                SourceFiles = [| sourceFileName |]
+                LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string) expectedParseErrors =
-        let parseResults = CompilerAssert.Parse source
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+        let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
 
@@ -682,6 +711,7 @@ type CompilerAssert private () =
             parseResults.Diagnostics
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
 
+        printfn $"diagnostics: %A{[| for e in errors -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message |]}"
         Assert.AreEqual(Array.length expectedParseErrors, errors.Length, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         Array.zip errors expectedParseErrors

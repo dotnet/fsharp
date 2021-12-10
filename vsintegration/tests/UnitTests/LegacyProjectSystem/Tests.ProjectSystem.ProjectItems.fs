@@ -27,7 +27,7 @@ type ProjectItems() =
                 project.CompilationOptions
                 |> Array.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
 
-            let wasCalled = ref false
+            let mutable wasCalled = false
             Assert.IsTrue(containsSystemNumerics (), "Project should contains reference to System.Numerics")
 
             let refContainer = project.GetReferenceContainer()
@@ -35,11 +35,11 @@ type ProjectItems() =
                 refContainer.EnumReferences() 
                 |> Seq.find(fun r -> r.SimpleName = "System.Numerics")
             (
-                use _guard = listener.OnAfterRemoveFiles.Subscribe(fun _ -> wasCalled := true)
+                use _guard = listener.OnAfterRemoveFiles.Subscribe(fun _ -> wasCalled <- true)
                 reference.Remove(false)
             )
 
-            Assert.IsFalse(!wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
+            Assert.IsFalse(wasCalled, "No events from IVsTrackProjectDocuments2 are expected")
             Assert.IsFalse(containsSystemNumerics(), "Project should not contains reference to System.Numerics")            
             ))
 

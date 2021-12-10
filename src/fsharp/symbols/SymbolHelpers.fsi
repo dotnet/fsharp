@@ -29,10 +29,10 @@ namespace FSharp.Compiler.Diagnostics
         /// Gets the end column for the diagnostic
         member EndColumn: int
 
-        /// Gets the start column for the diagnostic
+        /// Gets the start line for the diagnostic
         member StartLine: int
 
-        /// Gets the end column for the diagnostic
+        /// Gets the end line for the diagnostic
         member EndLine: int
 
         /// Gets the range for the diagnostic
@@ -149,7 +149,7 @@ namespace FSharp.Compiler.Symbols
 
         val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
-        val FlattenItems : TcGlobals -> range -> Item -> Item list
+        val FlattenItems : TcGlobals -> range -> ItemWithInst -> ItemWithInst list
 
 #if !NO_EXTENSIONTYPING
         val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option

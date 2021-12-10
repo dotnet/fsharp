@@ -170,6 +170,8 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 let tname_AsyncCallback = "System.AsyncCallback"
 [<Literal>]
 let tname_IAsyncResult = "System.IAsyncResult"
+[<Literal>]
+let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -556,6 +558,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
       AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
+  let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -624,6 +629,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let v_reference_equality_inner_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                        "PhysicalEqualityIntrinsic"            , None                 , None          , [vara],     mk_rel_sig varaTy)
 
+  let v_piperight_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_PipeRight"                         , None                 , None          , [vara; varb],([[varaTy];[varaTy --> varbTy]], varbTy))
+  let v_piperight2_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                            "op_PipeRight2"                        , None                 , None          , [vara; varb; varc],([[varaTy; varbTy];[varaTy --> (varbTy --> varcTy)]], varcTy))
+  let v_piperight3_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                            "op_PipeRight3"                        , None                 , None          , [vara; varb; varc; vard],([[varaTy; varbTy; varcTy];[varaTy --> (varbTy --> (varcTy --> vardTy))]], vardTy))
   let v_bitwise_or_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseOr"                         , None                 , None          , [vara],     mk_binop_ty varaTy)
   let v_bitwise_and_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseAnd"                        , None                 , None          , [vara],     mk_binop_ty varaTy)
   let v_bitwise_xor_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ExclusiveOr"                       , None                 , None          , [vara],     mk_binop_ty varaTy)
@@ -638,6 +646,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_unchecked_unary_plus_info  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryPlus"                         , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  , None                 , Some "Not"    , [],     mk_unop_ty v_bool_ty)
+  let v_refcell_deref_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Dereference"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]], varaTy))
+  let v_refcell_assign_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ColonEquals"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]; [varaTy]], v_unit_ty))
+  let v_refcell_incr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "incr"                                 , None                 , Some "Increment" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
+  let v_refcell_decr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "decr"                                 , None                 , Some "Decrement" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
 
   let v_checked_addition_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_checked_subtraction_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -923,6 +935,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             | true, builder -> builder tinst
             | _ -> TType_app (tcref, tinst)
 
+  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
+  let v_attribs_Unsupported = [
+        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+        tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+                              ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override x.ToString() = "<TcGlobals>"
   member _.ilg=ilg
@@ -1183,7 +1201,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsByRefLikeAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_IsReadOnlyAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
 
   member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
@@ -1201,6 +1218,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
   member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
   member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
+  member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
   member val attrib_ContextStaticAttribute  = tryFindSysAttrib "System.ContextStaticAttribute"
   member val attrib_FlagsAttribute          = findSysAttrib "System.FlagsAttribute"
   member val attrib_DefaultMemberAttribute  = findSysAttrib "System.Reflection.DefaultMemberAttribute"
@@ -1213,10 +1231,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
-  member val attribs_Unsupported = [
-        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
-        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
-                                   ] |> List.choose (Option.map (fun x -> x.TyconRef))
+  member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1298,6 +1313,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val reference_equality_inner_vref         = ValRefForIntrinsic v_reference_equality_inner_info
 
+  member val piperight_vref            = ValRefForIntrinsic v_piperight_info
+  member val piperight2_vref            = ValRefForIntrinsic v_piperight2_info
+  member val piperight3_vref            = ValRefForIntrinsic v_piperight3_info
   member val bitwise_or_vref            = ValRefForIntrinsic v_bitwise_or_info
   member val bitwise_and_vref           = ValRefForIntrinsic v_bitwise_and_info
   member val bitwise_xor_vref           = ValRefForIntrinsic v_bitwise_xor_info
@@ -1311,6 +1329,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
+  member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
+  member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
+  member val refcell_incr_vref = ValRefForIntrinsic v_refcell_incr_info
+  member val refcell_decr_vref = ValRefForIntrinsic v_refcell_decr_info
 
   member _.bitwise_or_info            = v_bitwise_or_info
   member _.bitwise_and_info           = v_bitwise_and_info

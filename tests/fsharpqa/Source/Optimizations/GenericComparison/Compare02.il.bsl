@@ -36,13 +36,13 @@
   // Offset: 0x00000230 Length: 0x000000B9
 }
 .module Compare02.dll
-// MVID: {60BE1F16-0481-F88E-A745-0383161FBE60}
+// MVID: {611C550D-0481-F88E-A745-03830D551C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07180000
+// Image base: 0x05530000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -77,6 +77,7 @@
       IL_0007:  ldc.i4.1
       IL_0008:  cgt
       IL_000a:  stloc.2
+      .line 16707566,16707566 : 0,0 ''
       IL_000b:  ldloc.2
       IL_000c:  brfalse.s  IL_0012
 
@@ -91,6 +92,7 @@
       IL_0013:  ldc.i4.2
       IL_0014:  cgt
       IL_0016:  stloc.3
+      .line 16707566,16707566 : 0,0 ''
       IL_0017:  ldloc.3
       IL_0018:  brfalse.s  IL_001e
 

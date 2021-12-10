@@ -21,14 +21,15 @@ open FSharp.Test
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSC_BASIC_OPT_MINUS = FSC_CORECLR_OPT_MINUS
-let FSC_BUILDONLY = FSC_CORECLR_BUILDONLY
-let FSI_BASIC = FSI_CORECLR
+let FSC_OPTIMIZED = FSC_NETCORE (true, false)
+let FSC_DEBUG = FSC_NETCORE (false, false)
+let FSC_BUILDONLY optimized = FSC_NETCORE (optimized, true)
+let FSI = FSI_NETCORE
 #else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSC_BASIC_OPT_MINUS = FSC_OPT_MINUS_DEBUG
-let FSI_BASIC = FSI_FILE
+let FSC_OPTIMIZED = FSC_NETFX (true, false)
+let FSC_DEBUG = FSC_NETFX (false, false)
+let FSC_BUILDONLY optimized = FSC_NETFX (optimized, true)
+let FSI = FSI_NETFX
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
@@ -41,304 +42,362 @@ let testConfig = getTestsDirectory >> testConfig
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
-    let ``access-FSC_BASIC_OPT_MINUS``() = singleTestBuildAndRun "core/access" FSC_BASIC_OPT_MINUS
+    let ``access-FSC_DEBUG``() = singleTestBuildAndRun "core/access" FSC_DEBUG
 
     [<Test>]
-    let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
+    let ``access-FSC_OPTIMIZED``() = singleTestBuildAndRun "core/access" FSC_OPTIMIZED
 
     [<Test>]
-    let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
+    let ``access-FSI``() = singleTestBuildAndRun "core/access" FSI
 
     [<Test>]
-    let ``apporder-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC_OPT_MINUS
+    let ``apporder-FSC_DEBUG`` () = singleTestBuildAndRun "core/apporder" FSC_DEBUG
 
     [<Test>]
-    let ``apporder-FSC_BASIC`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC
+    let ``apporder-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/apporder" FSC_OPTIMIZED
 
     [<Test>]
-    let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
+    let ``apporder-FSI`` () = singleTestBuildAndRun "core/apporder" FSI
 
     [<Test>]
-    let ``array-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/array" FSC_BASIC_OPT_MINUS
+    let ``array-FSC_DEBUG-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_DEBUG "5.0"
 
     [<Test>]
-    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
+    let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED "5.0"
 
-    // TODO: We need to migrate to .NET 6, but Array2D.set is broken there yet, until https://github.com/dotnet/runtime/pull/54656 gets into the release.
-    // It should land into preview7, which is set to be released August 10th 2021.
-    // These tests should be reenabled then.
     [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+    let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI "5.0"
 
     [<Test>]
-    let ``comprehensions-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC_OPT_MINUS
+    let ``array-FSC_OPTIMIZED-preview`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED "preview"
 
     [<Test>]
-    let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC
+    let ``array-no-dot-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_DEBUG "preview"
 
     [<Test>]
-    let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSI_BASIC
+    let ``array-no-dot-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_OPTIMIZED "preview"
 
+    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    let ``array-no-dot-FSI`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI "preview"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-default`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "default" "test-langversion-default"
+
+    [<Test>]
+    let ``array-no-dot-warnings-langversion-5_0`` () =
+        let cfg = testConfig "core/array-no-dot-warnings"
+        singleVersionedNegTest cfg "5.0" "test-langversion-5.0"
+
+    [<Test>]
+    let ``ref-ops-deprecation-langversion-preview`` () =
+        let cfg = testConfig "core/ref-ops-deprecation"
+        singleVersionedNegTest cfg "preview" "test-langversion-preview"
+
+    [<Test>]
+    let ``auto-widen-version-5_0``() = 
+        let cfg = testConfig "core/auto-widen/5.0"
+        singleVersionedNegTest cfg "5.0" "test"
+
+    [<Test>]
+    let ``auto-widen-version-FSC_DEBUG-preview``() =
+        singleTestBuildAndRunVersion "core/auto-widen/preview" FSC_DEBUG "preview"
+
+    [<Test>]
+    let ``auto-widen-version-FSC_OPTIMIZED-preview``() =
+        singleTestBuildAndRunVersion "core/auto-widen/preview" FSC_OPTIMIZED "preview"
+
+    [<Test>]
+    let ``auto-widen-version-preview-warns-on``() = 
+        let cfg = testConfig "core/auto-widen/preview"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3388 --warnon:3389 --warnon:3395 --warnaserror+ --define:NEGATIVE" }
+        singleVersionedNegTest cfg "preview" "test"
+
     [<Test>]
-    let ``comprehensionshw-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC_OPT_MINUS
+    let ``auto-widen-version-preview-default-warns``() = 
+        let cfg = testConfig "core/auto-widen/preview-default-warns"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnaserror+ --define:NEGATIVE" }
+        singleVersionedNegTest cfg "preview" "test"
 
     [<Test>]
-    let ``comprehensionshw-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC
+    let ``comprehensions-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions" FSC_DEBUG
 
     [<Test>]
-    let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
+    let ``comprehensions-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehensions" FSC_OPTIMIZED
 
-    [<Test; Ignore("test fails in debug mode, see https://github.com/dotnet/fsharp/pull/11763")>]
-    let ``genericmeasures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC_OPT_MINUS
+    [<Test>]
+    let ``comprehensions-FSI`` () = singleTestBuildAndRun "core/comprehensions" FSI
+
+    [<Test>]
+    let ``comprehensionshw-FSC_DEBUG`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_DEBUG
+
+    [<Test>]
+    let ``comprehensionshw-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``comprehensionshw-FSI`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI
+
+    [<Test>]
+    let ``genericmeasures-FSC_DEBUG`` () = singleTestBuildAndRun "core/genericmeasures" FSC_DEBUG
+
+    [<Test>]
+    let ``genericmeasures-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/genericmeasures" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``genericmeasures-FSI`` () = singleTestBuildAndRun "core/genericmeasures" FSI
+
+    [<Test>]
+    let ``innerpoly-FSC_DEBUG`` () = singleTestBuildAndRun "core/innerpoly"  FSC_DEBUG
 
     [<Test>]
-    let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC
+    let ``innerpoly-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/innerpoly" FSC_OPTIMIZED
 
     [<Test>]
-    let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
+    let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
     [<Test>]
-    let ``innerpoly-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/innerpoly"  FSC_BASIC_OPT_MINUS
+    let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" FSC_DEBUG
 
     [<Test>]
-    let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
+    let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" FSC_OPTIMIZED
 
     [<Test>]
-    let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
+    let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr
 
     [<Test>]
-    let ``namespaceAttributes-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC_OPT_MINUS
+    let ``unicode2-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/unicode" FSC_OPTIMIZED // TODO: fails on coreclr
 
     [<Test>]
-    let ``namespaceAttributes-FSC_BASIC`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
+    let ``unicode2-FSI`` () = singleTestBuildAndRun "core/unicode" FSI
 
     [<Test>]
-    let ``unicode2-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/unicode" FSC_BASIC_OPT_MINUS // TODO: fails on coreclr
+    let ``lazy test-FSC_DEBUG`` () = singleTestBuildAndRun "core/lazy" FSC_DEBUG
 
     [<Test>]
-    let ``unicode2-FSC_BASIC`` () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
+    let ``lazy test-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/lazy" FSC_OPTIMIZED
 
     [<Test>]
-    let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
+    let ``lazy test-FSI`` () = singleTestBuildAndRun "core/lazy" FSI
 
     [<Test>]
-    let ``lazy test-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC_OPT_MINUS
+    let ``letrec-FSC_DEBUG`` () = singleTestBuildAndRun "core/letrec" FSC_DEBUG
 
     [<Test>]
-    let ``lazy test-FSC_BASIC`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC
+    let ``letrec-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/letrec" FSC_OPTIMIZED
 
     [<Test>]
-    let ``lazy test-FSI_BASIC`` () = singleTestBuildAndRun "core/lazy" FSI_BASIC
+    let ``letrec-FSI`` () = singleTestBuildAndRun "core/letrec" FSI
 
     [<Test>]
-    let ``letrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC_OPT_MINUS
+    let ``letrec (mutrec variations part one) FSC_DEBUG`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_DEBUG
 
     [<Test>]
-    let ``letrec-FSC_BASIC`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC
+    let ``letrec (mutrec variations part one) FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_OPTIMIZED
 
     [<Test>]
-    let ``letrec-FSI_BASIC`` () = singleTestBuildAndRun "core/letrec" FSI_BASIC
+    let ``letrec (mutrec variations part one) FSI`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC_OPT_MINUS
+    let ``libtest-FSC_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_DEBUG
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC
+    let ``libtest-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/libtest" FSC_OPTIMIZED
 
     [<Test>]
-    let ``letrec (mutrec variations part one) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_BASIC
+    let ``libtest-FSI`` () = singleTestBuildAndRun "core/libtest" FSI
 
     [<Test>]
-    let ``libtest-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC_OPT_MINUS
+    let ``lift-FSC_DEBUG`` () = singleTestBuildAndRun "core/lift" FSC_DEBUG
 
     [<Test>]
-    let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
+    let ``lift-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/lift" FSC_OPTIMIZED
 
     [<Test>]
-    let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
+    let ``lift-FSI`` () = singleTestBuildAndRun "core/lift" FSI
 
     [<Test>]
-    let ``lift-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/lift" FSC_BASIC_OPT_MINUS
+    let ``map-FSC_DEBUG`` () = singleTestBuildAndRun "core/map" FSC_DEBUG
 
     [<Test>]
-    let ``lift-FSC_BASIC`` () = singleTestBuildAndRun "core/lift" FSC_BASIC
+    let ``map-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/map" FSC_OPTIMIZED
 
     [<Test>]
-    let ``lift-FSI_BASIC`` () = singleTestBuildAndRun "core/lift" FSI_BASIC
+    let ``map-FSI`` () = singleTestBuildAndRun "core/map" FSI
 
     [<Test>]
-    let ``map-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/map" FSC_BASIC_OPT_MINUS
+    let ``measures-FSC_DEBUG`` () = singleTestBuildAndRun "core/measures" FSC_DEBUG
 
     [<Test>]
-    let ``map-FSC_BASIC`` () = singleTestBuildAndRun "core/map" FSC_BASIC
+    let ``measures-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/measures" FSC_OPTIMIZED
 
     [<Test>]
-    let ``map-FSI_BASIC`` () = singleTestBuildAndRun "core/map" FSI_BASIC
+    let ``measures-FSI`` () = singleTestBuildAndRun "core/measures" FSI
 
     [<Test>]
-    let ``measures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/measures" FSC_BASIC_OPT_MINUS
+    let ``nested-FSC_DEBUG`` () = singleTestBuildAndRun "core/nested" FSC_DEBUG
 
     [<Test>]
-    let ``measures-FSC_BASIC`` () = singleTestBuildAndRun "core/measures" FSC_BASIC
+    let ``nested-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/nested" FSC_OPTIMIZED
 
     [<Test>]
-    let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
+    let ``nested-FSI`` () = singleTestBuildAndRun "core/nested" FSI
 
     [<Test>]
-    let ``nested-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/nested" FSC_BASIC_OPT_MINUS
+    let ``members-ops-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/ops" FSC_OPTIMIZED
 
     [<Test>]
-    let ``nested-FSC_BASIC`` () = singleTestBuildAndRun "core/nested" FSC_BASIC
+    let ``members-ops-FSC_DEBUG`` () = singleTestBuildAndRun "core/members/ops" FSC_DEBUG
 
     [<Test>]
-    let ``nested-FSI_BASIC`` () = singleTestBuildAndRun "core/nested" FSI_BASIC
+    let ``members-ops-FSI`` () = singleTestBuildAndRun "core/members/ops" FSI
 
     [<Test>]
-    let ``members-ops-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC
+    let ``members-ops-mutrec-FSC_DEBUG`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_DEBUG
 
     [<Test>]
-    let ``members-ops-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC_OPT_MINUS
+    let ``members-ops-mutrec-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-ops-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSI_BASIC
+    let ``members-ops-mutrec-FSI`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSI
 
     [<Test>]
-    let ``members-ops-mutrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC_OPT_MINUS
+    let ``seq-FSC_DEBUG`` () = singleTestBuildAndRun "core/seq" FSC_DEBUG
 
     [<Test>]
-    let ``members-ops-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC
+    let ``seq-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/seq" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-ops-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSI_BASIC
+    let ``seq-FSI`` () = singleTestBuildAndRun "core/seq" FSI
 
     [<Test>]
-    let ``seq-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/seq" FSC_BASIC_OPT_MINUS
+    let ``math-numbers-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/math/numbers" FSC_OPTIMIZED
 
     [<Test>]
-    let ``seq-FSC_BASIC`` () = singleTestBuildAndRun "core/seq" FSC_BASIC
+    let ``math-numbers-FSI`` () = singleTestBuildAndRun "core/math/numbers" FSI
 
     [<Test>]
-    let ``seq-FSI_BASIC`` () = singleTestBuildAndRun "core/seq" FSI_BASIC
+    let ``members-ctree-FSC_DEBUG`` () = singleTestBuildAndRun "core/members/ctree" FSC_DEBUG
 
     [<Test>]
-    let ``math-numbers-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbers" FSC_BASIC
+    let ``members-ctree-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/ctree" FSC_OPTIMIZED
 
     [<Test>]
-    let ``math-numbers-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbers" FSI_BASIC
+    let ``members-ctree-FSI`` () = singleTestBuildAndRun "core/members/ctree" FSI
 
     [<Test>]
-    let ``members-ctree-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC_OPT_MINUS
+    let ``members-factors-FSC_DEBUG`` () = singleTestBuildAndRun "core/members/factors" FSC_DEBUG
 
     [<Test>]
-    let ``members-ctree-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC
+    let ``members-factors-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/factors" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-ctree-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSI_BASIC
+    let ``members-factors-FSI`` () = singleTestBuildAndRun "core/members/factors" FSI
 
     [<Test>]
-    let ``members-factors-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC_OPT_MINUS
+    let ``members-factors-mutrec-FSC_DEBUG`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_DEBUG
 
     [<Test>]
-    let ``members-factors-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC
+    let ``members-factors-mutrec-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-factors-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSI_BASIC
+    let ``members-factors-mutrec-FSI`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI
 
     [<Test>]
-    let ``members-factors-mutrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC_OPT_MINUS
+    let ``graph-FSC_DEBUG`` () = singleTestBuildAndRun "perf/graph" FSC_DEBUG
 
     [<Test>]
-    let ``members-factors-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
+    let ``graph-FSC_OPTIMIZED`` () = singleTestBuildAndRun "perf/graph" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-factors-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI_BASIC
+    let ``graph-FSI`` () = singleTestBuildAndRun "perf/graph" FSI
 
     [<Test>]
-    let ``graph-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "perf/graph" FSC_BASIC_OPT_MINUS
+    let ``nbody-FSC_DEBUG`` () = singleTestBuildAndRun "perf/nbody" FSC_DEBUG
 
     [<Test>]
-    let ``graph-FSC_BASIC`` () = singleTestBuildAndRun "perf/graph" FSC_BASIC
+    let ``nbody-FSC_OPTIMIZED`` () = singleTestBuildAndRun "perf/nbody" FSC_OPTIMIZED
 
     [<Test>]
-    let ``graph-FSI_BASIC`` () = singleTestBuildAndRun "perf/graph" FSI_BASIC
+    let ``nbody-FSI`` () = singleTestBuildAndRun "perf/nbody" FSI
 
     [<Test>]
-    let ``nbody-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "perf/nbody" FSC_BASIC_OPT_MINUS
+    let ``forexpression-FSC_DEBUG`` () = singleTestBuildAndRun "core/forexpression" FSC_DEBUG
 
     [<Test>]
-    let ``nbody-FSC_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSC_BASIC
+    let ``forexpression-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/forexpression" FSC_OPTIMIZED
 
     [<Test>]
-    let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
+    let ``forexpression-FSI`` () = singleTestBuildAndRun "core/forexpression" FSI
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC_OPT_MINUS
+    let ``letrec (mutrec variations part two) FSC_DEBUG`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_DEBUG
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC
+    let ``letrec (mutrec variations part two) FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_OPTIMIZED
 
     [<Test>]
-    let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
+    let ``letrec (mutrec variations part two) FSI`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI
 
     [<Test>]
-    let ``printf`` () = singleTestBuildAndRunVersion "core/printf" FSC_BASIC "preview"
+    let ``printf`` () = singleTestBuildAndRunVersion "core/printf" FSC_OPTIMIZED "preview"
 
     [<Test>]
-    let ``printf-interpolated`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_BASIC "preview"
+    let ``printf-interpolated`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_OPTIMIZED "preview"
 
     [<Test>]
-    let ``tlr-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC_OPT_MINUS
+    let ``tlr-FSC_DEBUG`` () = singleTestBuildAndRun "core/tlr" FSC_DEBUG
 
     [<Test>]
-    let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC
+    let ``tlr-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/tlr" FSC_OPTIMIZED
 
     [<Test>]
-    let ``tlr-FSI_BASIC`` () = singleTestBuildAndRun "core/tlr" FSI_BASIC
+    let ``tlr-FSI`` () = singleTestBuildAndRun "core/tlr" FSI
 
     [<Test>]
-    let ``subtype-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/subtype" FSC_BASIC_OPT_MINUS
+    let ``subtype-FSC_DEBUG`` () = singleTestBuildAndRun "core/subtype" FSC_DEBUG
 
     [<Test>]
-    let ``subtype-FSC_BASIC`` () = singleTestBuildAndRun "core/subtype" FSC_BASIC
+    let ``subtype-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/subtype" FSC_OPTIMIZED
 
     [<Test>]
-    let ``subtype-FSI_BASIC`` () = singleTestBuildAndRun "core/subtype" FSI_BASIC
+    let ``subtype-FSI`` () = singleTestBuildAndRun "core/subtype" FSI
 
     [<Test>]
-    let ``syntax-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/syntax" FSC_BASIC_OPT_MINUS
+    let ``syntax-FSC_DEBUG`` () = singleTestBuildAndRun "core/syntax" FSC_DEBUG
 
     [<Test>]
-    let ``syntax-FSC_BASIC`` () = singleTestBuildAndRun "core/syntax" FSC_BASIC
+    let ``syntax-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/syntax" FSC_OPTIMIZED
 
     [<Test>]
-    let ``syntax-FSI_BASIC`` () = singleTestBuildAndRun "core/syntax" FSI_BASIC
+    let ``syntax-FSI`` () = singleTestBuildAndRun "core/syntax" FSI
 
     [<Test>]
-    let ``test int32-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/int32" FSC_BASIC_OPT_MINUS
+    let ``test int32-FSC_DEBUG`` () = singleTestBuildAndRun "core/int32" FSC_DEBUG
 
     [<Test>]
-    let ``test int32-FSC_BASIC`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
+    let ``test int32-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/int32" FSC_OPTIMIZED
 
     [<Test>]
-    let ``test int32-FSI_BASIC`` () = singleTestBuildAndRun "core/int32" FSI_BASIC
+    let ``test int32-FSI`` () = singleTestBuildAndRun "core/int32" FSI
 
     [<Test>]
-    let ``quotes-FSC-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC_OPT_MINUS
+    let ``quotes-FSC-FSC_DEBUG`` () = singleTestBuildAndRun "core/quotes" FSC_DEBUG
 
     [<Test>]
-    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
+    let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_OPTIMIZED
 
     [<Test>]
-    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
+    let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI
 
     [<Test>]
-    let ``recordResolution-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC_OPT_MINUS
+    let ``recordResolution-FSC_DEBUG`` () = singleTestBuildAndRun "core/recordResolution" FSC_DEBUG
 
     [<Test>]
-    let ``recordResolution-FSC_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC
+    let ``recordResolution-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/recordResolution" FSC_OPTIMIZED
 
     [<Test>]
-    let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
+    let ``recordResolution-FSI`` () = singleTestBuildAndRun "core/recordResolution" FSI
 
     [<Test>]
     let ``SDKTests`` () =
@@ -347,10 +406,10 @@ module CoreTests =
 
 #if !NETCOREAPP
     [<Test>]
-    let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
+    let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
 
     [<Test>]
-    let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
+    let ``attributes-FSI`` () = singleTestBuildAndRun "core/attributes" FSI
 
     [<Test>]
     let byrefs () =
@@ -594,58 +653,58 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let ``control-FSC_BASIC`` () = singleTestBuildAndRun "core/control" FSC_BASIC
+    let ``control-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/control" FSC_OPTIMIZED
 
     [<Test>]
-    let ``control-FSI_BASIC`` () = singleTestBuildAndRun "core/control" FSI_BASIC
+    let ``control-FSI`` () = singleTestBuildAndRun "core/control" FSI
 
     [<Test>]
     let ``control --tailcalls`` () =
         let cfg = testConfig "core/control"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
 
     [<Test>]
-    let ``controlChamenos-FSC_BASIC`` () =
+    let ``controlChamenos-FSC_OPTIMIZED`` () =
         let cfg = testConfig "core/controlChamenos"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
 
     [<Test>]
-    let ``controlChamenos-FSI_BASIC`` () =
+    let ``controlChamenos-FSI`` () =
         let cfg = testConfig "core/controlChamenos"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSI_BASIC
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSI
 
     [<Test>]
-    let ``controlMailbox-FSC_BASIC`` () = singleTestBuildAndRun "core/controlMailbox" FSC_BASIC
+    let ``controlMailbox-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/controlMailbox" FSC_OPTIMIZED
 
     [<Test>]
-    let ``controlMailbox-FSI_BASIC`` () = singleTestBuildAndRun "core/controlMailbox" FSI_BASIC
+    let ``controlMailbox-FSI`` () = singleTestBuildAndRun "core/controlMailbox" FSI
 
     [<Test>]
     let ``controlMailbox --tailcalls`` () =
         let cfg = testConfig "core/controlMailbox"
-        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC
+        singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_OPTIMIZED
 
     [<Test>]
-    let ``csext-FSC_BASIC`` () = singleTestBuildAndRun "core/csext" FSC_BASIC
+    let ``csext-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/csext" FSC_OPTIMIZED
 
     [<Test>]
-    let ``csext-FSI_BASIC`` () = singleTestBuildAndRun "core/csext" FSI_BASIC
+    let ``csext-FSI`` () = singleTestBuildAndRun "core/csext" FSI
 
     [<Test>]
-    let ``enum-FSC_BASIC`` () = singleTestBuildAndRun "core/enum" FSC_BASIC
+    let ``enum-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/enum" FSC_OPTIMIZED
 
     [<Test>]
-    let ``enum-FSI_BASIC`` () = singleTestBuildAndRun "core/enum" FSI_BASIC
+    let ``enum-FSI`` () = singleTestBuildAndRun "core/enum" FSI
 
 #if !NETCOREAPP
 
     // Requires winforms will not run on coreclr
     [<Test>]
-    let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_BASIC
+    let controlWpf () = singleTestBuildAndRun "core/controlwpf" FSC_OPTIMIZED
 
     // These tests are enabled for .NET Framework
     [<Test>]
-    let ``anon-FSC_BASIC``() =
+    let ``anon-FSC_OPTIMIZED``() =
         let cfg = testConfig "core/anon"
 
         fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
@@ -808,42 +867,42 @@ module CoreTests =
 
         csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        // some features missing in 4.7
-        for version in ["4.7"] do
-            let outFile = "compilation.langversion.old.output.txt"
-            let expectedFile = "compilation.langversion.old.output.bsl"
-            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_%s --langversion:%s" cfg.fsc_flags (version.Replace(".","_")) version ["test.fsx"]
-
-            let diffs = fsdiff cfg outFile expectedFile
-            match diffs with
-            | "" -> ()
-            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
-
         // all features available in preview
-        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same with library references the other way around
-        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
+        // some features missing in 4.7
+        for version in ["4.7"] do
+            let outFile = "compilation.langversion.old.output.txt"
+            let expectedFile = "compilation.langversion.old.output.bsl"
+            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --langversion:%s" cfg.fsc_flags version ["test.fsx"]
+
+            let diffs = fsdiff cfg outFile expectedFile
+            match diffs with
+            | "" -> ()
+            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
+
         // check error messages for some cases
         let outFile = "compilation.errors.output.txt"
         let expectedFile = "compilation.errors.output.bsl"
-        fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_PREVIEW --langversion:preview --define:CHECK_ERRORS" cfg.fsc_flags ["test.fsx"]
+        fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo  --define:CHECK_ERRORS" cfg.fsc_flags ["test.fsx"]
 
         let diffs = fsdiff cfg outFile expectedFile
         match diffs with
@@ -904,7 +963,7 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
-    let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" AS_DLL
+    let ``genericmeasures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
 
     [<Test>]
@@ -924,7 +983,7 @@ module CoreTests =
         peverify cfg "client.exe"
 
     [<Test>]
-    let ``innerpoly-AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  AS_DLL
+    let ``innerpoly-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/innerpoly"  FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
     let queriesCustomQueryOps () =
@@ -1012,39 +1071,39 @@ module CoreTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-1 --langversion:4.7`` () =
+    let ``printing-default-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-1 --langversion:5.0`` () =
+    let ``printing-default-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:4.7`` () =
+    let ``printing-1000-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.47.txt" "z.output.test.1000.stdout.47.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-2 --langversion:5.0`` () =
+    let ``printing-1000-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:4.7`` () =
+    let ``printing-200-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.47.txt" "z.output.test.200.stdout.47.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-3  --langversion:5.0`` () =
+    let ``printing-200-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:4.7`` () =
+    let ``printing-off-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.47.txt" "z.output.test.off.stdout.47.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-4  --langversion:5.0`` () =
+    let ``printing-off-stdout-50 --langversion:5_0`` () =
          printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-5`` () =
+    let ``printing-quiet-stdout`` () =
          printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
     type SigningType =
@@ -1139,7 +1198,7 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
-        fsc cfg "%s --define:LANGVERSION_PREVIEW --langversion:preview -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s  -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -1297,16 +1356,13 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
-    let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
-
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``libtest-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" GENERATED_SIGNATURE
+    let ``libtest-FSI_NETFX_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_NETFX_STDIN
 
     [<Test>]
-    let ``libtest-FSC_OPT_MINUS_DEBUG`` () = singleTestBuildAndRun "core/libtest" FSC_OPT_MINUS_DEBUG
+    let ``libtest-unoptimized codegen`` () = singleTestBuildAndRun "core/libtest" FSC_DEBUG
 
     [<Test>]
-    let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+    let ``libtest-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
     let ``no-warn-2003-tests`` () =
@@ -1499,64 +1555,64 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let ``longnames-FSC_BASIC`` () = singleTestBuildAndRun "core/longnames" FSC_BASIC
+    let ``longnames-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/longnames" FSC_OPTIMIZED
 
     [<Test>]
-    let ``longnames-FSI_BASIC`` () = singleTestBuildAndRun "core/longnames" FSI_BASIC
+    let ``longnames-FSI`` () = singleTestBuildAndRun "core/longnames" FSI
 
     [<Test>]
-    let ``math-numbersVS2008-FSC_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_BASIC
+    let ``math-numbersVS2008-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSC_OPTIMIZED
 
     [<Test>]
-    let ``math-numbersVS2008-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI_BASIC
+    let ``math-numbersVS2008-FSI`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI
 
     [<Test>]
-    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+    let ``patterns-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/patterns" FSC_OPTIMIZED "preview"
 
 //BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
 //    [<Test>]
-//    let ``patterns-FSI_BASIC`` () = singleTestBuildAndRun' "core/patterns" FSI_BASIC
+//    let ``patterns-FSI`` () = singleTestBuildAndRun' "core/patterns" FSI
 
     [<Test>]
-    let ``pinvoke-FSC_BASIC`` () = singleTestBuildAndRun "core/pinvoke" FSC_BASIC
+    let ``pinvoke-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/pinvoke" FSC_OPTIMIZED
 
     [<Test>]
-    let ``pinvoke-FSI_BASIC`` () =
-        singleTestBuildAndRun "core/pinvoke" FSI_BASIC
+    let ``pinvoke-FSI`` () =
+        singleTestBuildAndRun "core/pinvoke" FSI
 
     [<Test>]
-    let ``fsi_load-FSC_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSC_BASIC
+    let ``fsi_load-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/fsi-load" FSC_OPTIMIZED
 
     [<Test>]
-    let ``fsi_load-FSI_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSI_BASIC
+    let ``fsi_load-FSI`` () = singleTestBuildAndRun "core/fsi-load" FSI
 
 #if !NETCOREAPP
     [<Test>]
-    let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
+    let ``measures-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
-    let ``members-basics-AS_DLL`` () = singleTestBuildAndRun "core/members/basics" AS_DLL
+    let ``members-basics-FSC_NETFX_TEST_ROUNDTRIP_AS_DLL`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 
     [<Test>]
-    let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_BASIC
+    let ``members-basics-hw`` () = singleTestBuildAndRun "core/members/basics-hw" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_BASIC
+    let ``members-basics-hw-mutrec`` () = singleTestBuildAndRun "core/members/basics-hw-mutrec" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-incremental-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental" FSC_BASIC
+    let ``members-incremental-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-incremental-FSI_BASIC`` () = singleTestBuildAndRun "core/members/incremental" FSI_BASIC
+    let ``members-incremental-FSI`` () = singleTestBuildAndRun "core/members/incremental" FSI
 
     [<Test>]
-    let ``members-incremental-hw-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_BASIC
+    let ``members-incremental-hw-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental-hw" FSC_OPTIMIZED
 
     [<Test>]
-    let ``members-incremental-hw-FSI_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw" FSI_BASIC
+    let ``members-incremental-hw-FSI`` () = singleTestBuildAndRun "core/members/incremental-hw" FSI
 
     [<Test>]
-    let ``members-incremental-hw-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_BASIC
+    let ``members-incremental-hw-mutrec-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/members/incremental-hw-mutrec" FSC_OPTIMIZED
 
     [<Test>]
     let queriesLeafExpressionConvert () =
@@ -1756,10 +1812,10 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let ``reflect-FSC_BASIC`` () = singleTestBuildAndRun "core/reflect" FSC_BASIC
+    let ``reflect-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/reflect" FSC_OPTIMIZED
 
     [<Test>]
-    let ``reflect-FSI_BASIC`` () = singleTestBuildAndRun "core/reflect" FSI_BASIC
+    let ``reflect-FSI`` () = singleTestBuildAndRun "core/reflect" FSI
 
 #if !NETCOREAPP
     [<Test>]
@@ -1998,28 +2054,28 @@ module CoreTests =
 [<NonParallelizable>]
 module VersionTests =
     [<Test>]
-    let ``member-selfidentifier-version4.6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" FSC_BUILDONLY "4.6"
+    let ``member-selfidentifier-version4_6``() = singleTestBuildAndRunVersion "core/members/self-identifier/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``member-selfidentifier-version4.7``() = singleTestBuildAndRun "core/members/self-identifier/version47" FSC_BUILDONLY
+    let ``member-selfidentifier-version4_7``() = singleTestBuildAndRun "core/members/self-identifier/version47" (FSC_BUILDONLY true)
 
     [<Test>]
-    let ``indent-version4.6``() = singleTestBuildAndRunVersion "core/indent/version46" FSC_BUILDONLY "4.6"
+    let ``indent-version4_6``() = singleTestBuildAndRunVersion "core/indent/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``indent-version4.7``() = singleTestBuildAndRun "core/indent/version47" FSC_BUILDONLY
+    let ``indent-version4_7``() = singleTestBuildAndRun "core/indent/version47" (FSC_BUILDONLY true)
 
     [<Test>]
-    let ``nameof-version4.6``() = singleTestBuildAndRunVersion "core/nameof/version46" FSC_BUILDONLY "4.6"
+    let ``nameof-version4_6``() = singleTestBuildAndRunVersion "core/nameof/version46" (FSC_BUILDONLY true) "4.6"
 
     [<Test>]
-    let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BUILDONLY "preview"
+    let ``nameof-versionpreview``() = singleTestBuildAndRunVersion "core/nameof/preview" (FSC_BUILDONLY true) "preview"
 
     [<Test>]
-    let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_BASIC "preview"
+    let ``nameof-execute``() = singleTestBuildAndRunVersion "core/nameof/preview" FSC_OPTIMIZED "preview"
 
     [<Test>]
-    let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI_BASIC "preview"
+    let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
 [<NonParallelizable>]
@@ -2048,32 +2104,103 @@ module ToolsTests =
 #endif
 
     [<Test>]
-    let ``eval-FSC_BASIC`` () = singleTestBuildAndRun "tools/eval" FSC_BASIC
+    let ``eval-FSC_OPTIMIZED`` () = singleTestBuildAndRun "tools/eval" FSC_OPTIMIZED
     [<Test>]
-    let ``eval-FSI_BASIC`` () = singleTestBuildAndRun "tools/eval" FSI_BASIC
+    let ``eval-FSI`` () = singleTestBuildAndRun "tools/eval" FSI
 
 [<NonParallelizable>]
 module RegressionTests =
 
     [<Test>]
-    let ``literal-value-bug-2-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_BASIC
+    let ``literal-value-bug-2-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_OPTIMIZED
 
     [<Test>]
-    let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
+    let ``literal-value-bug-2-FSI`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI
 
     [<Test>]
-    let ``OverloadResolution-bug-FSC_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_BASIC
+    let ``OverloadResolution-bug-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSC_OPTIMIZED
 
     [<Test>]
-    let ``OverloadResolution-bug-FSI_BASIC`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI_BASIC
+    let ``OverloadResolution-bug-FSI`` () = singleTestBuildAndRun "regression/OverloadResolution-bug" FSI
 
     [<Test>]
-    let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
+    let ``struct-tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_OPTIMIZED
 
     [<Test >]
-    let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
+    let ``tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_OPTIMIZED
+
+    [<Test >]
+    let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
+
+#if NETCOREAPP
+    [<Test >]
+    let ``Large inputs 12322 fsc.dll 64-bit fsc.dll .NET SDK generating optimized code`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
+
+    [<Test >]
+    let ``Large inputs 12322 fsc.dll 64-bit .NET SDK generating debug code`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
+
+#else
+    [<Test >]
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, portable PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
+
+    [<Test >]
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating optimized code, full PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
+
+    [<Test >]
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code portable PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
+
+    [<Test >]
+    let ``Large inputs 12322 fsc.exe 32-bit .NET Framework generating debug code, full PDB`` () =
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
+
+    [<Test >]
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () = 
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
+
+    [<Test >]
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () = 
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full " }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
+
+    [<Test >]
+    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, portable PDB`` () = 
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
+
+    [<Test >]
+    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, full PDB`` () = 
+        let cfg = testConfig "regression/12322"
+        let cfg = { cfg with FSC = cfg.FSCANYCPU }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
+        singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
+#endif
 
 #if !NETCOREAPP
+
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
         let cfg = testConfig "regression/5531"
@@ -2103,10 +2230,10 @@ module RegressionTests =
 #endif
 
     [<Test>]
-    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_BASIC
+    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_OPTIMIZED
 
     [<Test >]
-    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
+    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
 
 #if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -2141,10 +2268,10 @@ module RegressionTests =
 #if !NETCOREAPP
     // Requires WinForms
     [<Test>]
-    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
+    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_OPTIMIZED
 
     [<Test >]
-    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_BASIC
+    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_OPTIMIZED
 
     [<Test >]
     let ``85`` () =
@@ -2156,10 +2283,10 @@ module RegressionTests =
 #endif
 
     [<Test >]
-    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_BASIC
+    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_OPTIMIZED
 
     [<Test >]
-    let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
+    let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
 
 #if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -2310,10 +2437,10 @@ module TypecheckTests =
     [<Test>]
     let ``full-rank-arrays`` () =
         let cfg = testConfig "typecheck/full-rank-arrays"
-        SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_BASIC
+        SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_OPTIMIZED
 
     [<Test>]
-    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
+    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_OPTIMIZED
 
 #if !NETCOREAPP
 
@@ -2416,6 +2543,13 @@ module TypecheckTests =
         fsc cfg "%s --target:exe -o:pos39.exe" cfg.fsc_flags ["pos39.fs"]
         peverify cfg "pos39.exe"
         exec cfg ("." ++ "pos39.exe") ""
+
+    [<Test>]
+    let ``sigs pos40`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+        peverify cfg "pos40.exe"
+        exec cfg ("." ++ "pos40.exe") ""
 
     [<Test>]
     let ``sigs pos23`` () =
@@ -2615,24 +2749,33 @@ module TypecheckTests =
     let ``type check neg20`` () = singleNegTest (testConfig "typecheck/sigs") "neg20"
 
     [<Test>]
-    let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
+    let ``type check neg20 version 5_0`` () =
+        let cfg = testConfig "typecheck/sigs/version50"
+        singleVersionedNegTest cfg "5.0" "neg20"
 
     [<Test>]
-    let ``type check neg22`` () = singleNegTest (testConfig "typecheck/sigs") "neg22"
+    let ``type check neg21`` () = singleNegTest (testConfig "typecheck/sigs") "neg21"
 
     [<Test>]
     let ``type check neg23`` () = singleNegTest (testConfig "typecheck/sigs") "neg23"
 
     [<Test>]
-    let ``type check neg24 version 4.6`` () =
+    let ``type check neg24 version 4_6`` () =
         let cfg = testConfig "typecheck/sigs/version46"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "4.6" "neg24"
 
     [<Test>]
-    let ``type check neg24 version 4.7`` () =
+    let ``type check neg24 version 4_7`` () =
         let cfg = testConfig "typecheck/sigs/version47"
+        // For some reason this warning is off by default in the test framework but in this case we are testing for it
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
+        singleVersionedNegTest cfg "4.7" "neg24"
+
+    [<Test>]
+    let ``type check neg24 version preview`` () =
+        let cfg = testConfig "typecheck/sigs"
         // For some reason this warning is off by default in the test framework but in this case we are testing for it
         let cfg = { cfg with fsc_flags = cfg.fsc_flags.Replace("--nowarn:20", "") }
         singleVersionedNegTest cfg "preview" "neg24"
@@ -2700,8 +2843,10 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
     [<Test>]
     let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+#endif
 
     [<Test>]
     let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"
@@ -2833,9 +2978,6 @@ module TypecheckTests =
     let ``type check neg86`` () = singleNegTest (testConfig "typecheck/sigs") "neg86"
 
     [<Test>]
-    let ``type check neg87`` () = singleNegTest (testConfig "typecheck/sigs") "neg87"
-
-    [<Test>]
     let ``type check neg88`` () = singleNegTest (testConfig "typecheck/sigs") "neg88"
 
     [<Test>]
@@ -2963,6 +3105,15 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
+
+    [<Test>]
+    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg131"
+
+    [<Test>]
+    let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"
+    
+    [<Test>]
+    let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
@@ -3159,22 +3310,25 @@ namespace CST.RI.Anshun
 
 module GeneratedSignatureTests =
     [<Test>]
-    let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
-
-    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
-    let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
+    let ``libtest-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``array-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" GENERATED_SIGNATURE
-
-    [<Test; Ignore("incorrect signature file generated, test has been disabled a long time")>]
-    let ``genericmeasures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" GENERATED_SIGNATURE
+    let ``members-basics-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``innerpoly-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" GENERATED_SIGNATURE
+    let ``access-FSC_NETFX_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" FSC_NETFX_TEST_GENERATED_SIGNATURE
 
     [<Test>]
-    let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
+    let ``array-FSC_NETFX_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``genericmeasures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``innerpoly-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``measures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

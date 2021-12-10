@@ -5,7 +5,9 @@ module internal FSharp.Compiler.FindUnsolved
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -14,12 +16,15 @@ open FSharp.Compiler.TypeRelations
 
 type env = Nix
 
+let FindUnsolvedStackGuardDepth = StackGuard.GetDepthOption "FindUnsolved"
+
 /// The environment and collector
 type cenv = 
     { g: TcGlobals 
       amap: Import.ImportMap 
       denv: DisplayEnv 
-      mutable unsolved: Typars }
+      mutable unsolved: Typars 
+      stackGuard: StackGuard }
 
     override x.ToString() = "<cenv>"
 
@@ -34,7 +39,9 @@ let accTypeInst cenv env tyargs =
     tyargs |> List.iter (accTy cenv env)
 
 /// Walk expressions, collecting type variables
-let rec accExpr   (cenv:cenv) (env:env) expr =     
+let rec accExpr (cenv:cenv) (env:env) expr =     
+    cenv.stackGuard.Guard <| fun () ->
+
     let expr = stripExpr expr 
     match expr with
     | Expr.Sequential (e1, e2, _, _, _) -> 
@@ -177,7 +184,7 @@ and accDTree cenv env x =
     match x with 
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
-    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
+    | TDSwitch (_, e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
 and accSwitch cenv env (e, cases, dflt, _m) =
     accExpr cenv env e
@@ -253,11 +260,12 @@ and accModuleOrNamespaceDefs cenv env x =
 
 and accModuleOrNamespaceDef cenv env x = 
     match x with 
-    | TMDefRec(_, tycons, mbinds, _m) -> 
+    | TMDefRec(_, _opens, tycons, mbinds, _m) -> 
         accTycons cenv env tycons
         accModuleOrNamespaceBinds cenv env mbinds 
     | TMDefLet(bind, _m)  -> accBind cenv env bind 
     | TMDefDo(e, _m)  -> accExpr cenv env e
+    | TMDefOpens __ -> ()
     | TMAbstract(def)  -> accModuleOrNamespaceExpr cenv env def
     | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
 
@@ -277,7 +285,8 @@ let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
       { g =g  
         amap=amap 
         denv=denv 
-        unsolved = [] }
+        unsolved = [] 
+        stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
    accModuleOrNamespaceDef cenv Nix mdef
    accAttribs cenv Nix extraAttribs
    List.rev cenv.unsolved

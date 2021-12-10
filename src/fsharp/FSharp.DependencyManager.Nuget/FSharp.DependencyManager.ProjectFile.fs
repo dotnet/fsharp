@@ -130,7 +130,6 @@ $(POUND_R)
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
-    <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>                      <!-- Disable preview FSharp.Core for legacy DotNet Sdks -->
     <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->

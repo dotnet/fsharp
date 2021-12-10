@@ -20,9 +20,10 @@ let pretty () = true
 // --------------------------------------------------------------------
 
 let tyvar_generator =
-  let i = ref 0
+  let mutable i = 0
   fun n ->
-    incr i; n + string !i
+    i <- i + 1
+    n + string i
 
 // Carry an environment because the way we print method variables
 // depends on the gparams of the current scope.
@@ -583,7 +584,7 @@ let goutput_freevar env os l =
 let goutput_freevars env os ps =
   output_parens (output_seq ", " (goutput_freevar env)) os ps
 
-let output_source os (s:ILSourceMarker) =
+let output_source os (s:ILDebugPoint) =
   if s.Document.File <> "" then
     output_string os " .line "
     output_int os s.Line

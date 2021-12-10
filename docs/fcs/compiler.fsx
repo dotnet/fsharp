@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Hosting the compiler
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 900
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
