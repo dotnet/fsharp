@@ -367,12 +367,22 @@ type CompilerAssert private () =
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
+    static let CompilerAssertTempPath = Path.Combine(Path.GetTempPath(), "CompilerAssert")
+    static let CreateCompilerAssertTempPath() =
+        if not (FileSystem.DirectoryExistsShim CompilerAssertTempPath) then
+            FileSystem.DirectoryCreateShim CompilerAssertTempPath |> ignore
+
     static member Checker = checker
 
     static member DefaultProjectOptions = defaultProjectOptions
 
-    static member GenerateFsInputPath() = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
-    static member GenerateDllOutputPath() = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+    static member GenerateFsInputPath() =
+        CreateCompilerAssertTempPath()
+        Path.Combine(CompilerAssertTempPath, Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+
+    static member GenerateDllOutputPath() =
+        CreateCompilerAssertTempPath()
+        Path.Combine(CompilerAssertTempPath, Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false

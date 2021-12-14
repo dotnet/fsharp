@@ -26,13 +26,13 @@ let test() =
 
         File.WriteAllText(inputFilePath, src)
 
-        let mvid1 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--deterministic"] 
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--deterministic"]
             |> compileGuid
-        let mvid2 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--deterministic"] 
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--deterministic"]
             |> compileGuid
 
         // Two identical compilations should produce the same MVID
@@ -54,13 +54,13 @@ let test() =
 
         File.WriteAllText(inputFilePath, src)
 
-        let mvid1 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--deterministic"] 
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--deterministic"]
             |> compileGuid
-        let mvid2 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--deterministic";"--platform:Itanium"] 
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--deterministic";"--platform:Itanium"]
             |> compileGuid
 
         // No two platforms should produce the same MVID
@@ -82,13 +82,13 @@ let test() =
 
         File.WriteAllText(inputFilePath, src)
 
-        let mvid1 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--refonly";"--deterministic"] 
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
-        let mvid2 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--refonly";"--deterministic"] 
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
 
         // Two identical compilations should produce the same MVID
@@ -110,14 +110,112 @@ let test() =
 
         File.WriteAllText(inputFilePath, src)
 
-        let mvid1 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--refonly";"--deterministic"] 
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
             |> compileGuid
-        let mvid2 = 
-            FSharpWithInputAndOutputPath inputFilePath outputFilePath 
-            |> withOptions ["--refonly";"--deterministic";"--platform:Itanium"] 
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic";"--platform:Itanium"]
             |> compileGuid
 
         // No two platforms should produce the same MVID
         Assert.AreNotEqual(mvid1, mvid2)
+
+
+    [<Test>]
+    let ``False-positive reference assemblies test, different aseemblies' mvid should not match`` () =
+        let inputFilePath = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let test() =
+    Console.WriteLine("Hello World!")
+            """
+
+        File.WriteAllText(inputFilePath, src)
+
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+
+        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
+        let src2 =
+            """
+module ReferenceAssembly
+
+open System
+
+let test2() =
+    Console.WriteLine("Hello World!")
+            """
+
+        File.WriteAllText(inputFilePath2, src2)
+
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+        // Two different compilations should _not_ produce the same MVID
+        Assert.AreNotEqual(mvid1, mvid2)
+
+    [<Test>]
+    let ``Reference assemblies should be deterministic when we change non-public code`` () =
+        let inputFilePath = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
+let test() =
+    privTest()
+    Console.WriteLine("Hello World!")
+            """
+
+        File.WriteAllText(inputFilePath, src)
+
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+
+        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
+        let src2 =
+            """
+module ReferenceAssembly
+
+open System
+
+let private privTest2() =
+    Console.Write("Private Hello Worldz!")
+    1
+
+let test() =
+    privTest2() |> ignore
+    Console.WriteLine("Hello World!")
+            """
+
+        File.WriteAllText(inputFilePath2, src2)
+
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+        // Two compilations with changes only to private code should produce the same MVID
+        Assert.AreEqual(mvid1, mvid2)
