@@ -176,7 +176,7 @@ let test2() =
         Assert.AreNotEqual(mvid1, mvid2)
 
     [<Test>]
-    let ``Reference assemblies should be deterministic when only private function name is different (with the same function name length)`` () =
+    let ``Reference assemblies should be deterministic when only private function name is different with the same function name length`` () =
         let inputFilePath = CompilerAssert.GenerateFsInputPath()
         let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
@@ -229,7 +229,7 @@ let test() =
     
     
     [<Test>]
-    let ``Reference assemblies should be deterministic when only private function name is different (with the different function name length)`` () =
+    let ``Reference assemblies should be deterministic when only private function name is different with the different function name length`` () =
         let inputFilePath = CompilerAssert.GenerateFsInputPath()
         let outputFilePath = CompilerAssert.GenerateDllOutputPath()
         let src =
