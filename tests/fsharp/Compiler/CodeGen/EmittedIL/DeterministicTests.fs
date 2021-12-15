@@ -76,7 +76,11 @@ module ReferenceAssembly
 
 open System
 
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
 let test() =
+    privTest()
     Console.WriteLine("Hello World!")
             """
 
@@ -104,7 +108,11 @@ module ReferenceAssembly
 
 open System
 
+let private privTest() =
+    Console.WriteLine("Private Hello World!")
+
 let test() =
+    privTest()
     Console.WriteLine("Hello World!")
             """
 
@@ -168,6 +176,13 @@ let test2() =
         Assert.AreNotEqual(mvid1, mvid2)
 
     [<Test>]
+    // TODO:
+    // 1. Test same code with different private function names (1 symbol).
+    // 2. Test same code with different private function bodies.
+    // 3. Test same code with different private function return types.
+    // 4. Test same code with more than one private function.
+    // 5. Test same code with a private function with different parameters.
+    // 6. Test same code with and without private function (only public function is the same).
     let ``Reference assemblies should be deterministic when we change non-public code`` () =
         let inputFilePath = CompilerAssert.GenerateFsInputPath()
         let outputFilePath = CompilerAssert.GenerateDllOutputPath()
