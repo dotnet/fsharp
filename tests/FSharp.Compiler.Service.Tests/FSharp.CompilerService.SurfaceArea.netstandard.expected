@@ -2440,6 +2440,8 @@ FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 ParameterList
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 PatternType
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 RangeOperator
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 RecordField
+FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 TypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.CompletionContext)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -2451,6 +2453,8 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean IsParameterList
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsPatternType
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsRangeOperator
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsRecordField
+FSharp.Compiler.EditorServices.CompletionContext: Boolean IsTypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext: Boolean IsUnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsAttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsInherit()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsInvalid()
@@ -2459,6 +2463,8 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsParameterList()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsPatternType()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsRangeOperator()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsRecordField()
+FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsTypeAbbreviation()
+FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsUnionCaseFieldsDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext AttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext Invalid
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewInherit(FSharp.Compiler.EditorServices.InheritanceContext, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
@@ -2467,10 +2473,14 @@ FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewRecordField(FSharp.Compiler.EditorServices.RecordContext)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext PatternType
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext RangeOperator
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext TypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_AttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_Invalid()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_PatternType()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_RangeOperator()
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_TypeAbbreviation()
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_UnionCaseFieldsDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext+Inherit
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext+ParameterList
@@ -3476,21 +3486,26 @@ FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FShar
 FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Constructor
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 CopyOnUpdate
+FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Declaration
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 New
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(FSharp.Compiler.EditorServices.RecordContext)
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.RecordContext: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsConstructor
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsCopyOnUpdate
+FSharp.Compiler.EditorServices.RecordContext: Boolean IsDeclaration
 FSharp.Compiler.EditorServices.RecordContext: Boolean IsNew
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsConstructor()
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsCopyOnUpdate()
+FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsDeclaration()
 FSharp.Compiler.EditorServices.RecordContext: Boolean get_IsNew()
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewConstructor(System.String)
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewCopyOnUpdate(FSharp.Compiler.Text.Range, System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
+FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewDeclaration(Boolean)
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext NewNew(System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]])
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+Constructor
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate
+FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+Declaration
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+New
 FSharp.Compiler.EditorServices.RecordContext: FSharp.Compiler.EditorServices.RecordContext+Tags
 FSharp.Compiler.EditorServices.RecordContext: Int32 GetHashCode()

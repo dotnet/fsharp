@@ -48,6 +48,8 @@ type public CompletionContext =
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
 
+    | TypeAbbreviation
+
 type public ModuleKind =
     { IsAutoOpen: bool
       HasModuleSuffix: bool }

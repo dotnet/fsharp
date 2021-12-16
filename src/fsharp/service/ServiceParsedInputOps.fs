@@ -73,6 +73,8 @@ type CompletionContext =
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
 
+    | TypeAbbreviation
+
 type ShortIdent = string
 
 type ShortIdents = ShortIdent[]
@@ -1104,6 +1106,9 @@ module ParsedInput =
 
                     member _.VisitEnumDefn(_path, _, range) =
                         if rangeContainsPos range pos then Some CompletionContext.Invalid else None
+
+                    member _.VisitTypeAbbrev(_path, _, range) =
+                        if rangeContainsPos range pos then Some CompletionContext.TypeAbbreviation else None
             }
 
         SyntaxTraversal.Traverse(pos, parsedInput, walker)

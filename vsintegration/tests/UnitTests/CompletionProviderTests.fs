@@ -783,6 +783,13 @@ type A =
     VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
+let ``Completion list on type alias contains modules and types but not keywords or functions``() =
+    let fileContents = """
+type A = l
+"""
+    VerifyCompletionList(fileContents, "= l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
 let ``No completion on enum case identifier at declaration site``() =
     let fileContents = """
 type A =
