@@ -3482,6 +3482,8 @@ FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: FSharp.Compiler.Text.
 FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: FSharp.Compiler.Text.Range range
 FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] get_path()
 FSharp.Compiler.EditorServices.RecordContext+CopyOnUpdate: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
+FSharp.Compiler.EditorServices.RecordContext+Declaration: Boolean get_isInIdentifier()
+FSharp.Compiler.EditorServices.RecordContext+Declaration: Boolean isInIdentifier
 FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] get_path()
 FSharp.Compiler.EditorServices.RecordContext+New: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] path
 FSharp.Compiler.EditorServices.RecordContext+Tags: Int32 Constructor
