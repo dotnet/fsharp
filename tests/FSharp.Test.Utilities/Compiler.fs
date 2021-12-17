@@ -5,6 +5,7 @@ namespace FSharp.Test
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
 open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
@@ -60,6 +61,26 @@ module rec Compiler =
 
     type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
 
+    type SymbolType = 
+        | MemberOrFunctionOrValue of string 
+        | Entity of string 
+        | GenericParameter of string 
+        | Parameter of string 
+        | StaticParameter of string 
+        | ActivePatternCase of string
+        | UnionCase of string 
+        | Field of string 
+ 
+        member this.FullName () =
+            match this with
+            | MemberOrFunctionOrValue fullname
+            | Entity fullname
+            | GenericParameter fullname
+            | Parameter fullname
+            | StaticParameter fullname
+            | ActivePatternCase fullname
+            | UnionCase fullname
+            | Field fullname -> fullname
 
     let mapDiagnosticSeverity severity errorNumber =
         match severity with
