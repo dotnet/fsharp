@@ -1061,9 +1061,9 @@ module ParsedInput =
                         pats |> List.tryPick (fun pat ->
                             // No completions in an identifier or type in a pattern
                             match pat with
-                            // fun x| =
+                            // fun x| ->
                             | SynSimplePat.Id(range = range)
-                            // fun (x: int|) =
+                            // fun (x: int|) ->
                             | SynSimplePat.Typed(SynSimplePat.Id(range = range), _, _) when rangeContainsPos range pos ->
                                 Some CompletionContext.Invalid
                             | _ -> None)
