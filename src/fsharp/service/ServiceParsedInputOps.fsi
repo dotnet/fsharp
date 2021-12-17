@@ -48,7 +48,9 @@ type public CompletionContext =
     /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
     | UnionCaseFieldsDeclaration
 
-    | TypeAbbreviation
+    /// Completing a type abbreviation (e.g. type Long = int6|)
+    /// or a single case union without a bar (type SomeUnion = Abc|)
+    | TypeAbbreviationOrSingleCaseUnion
 
 type public ModuleKind =
     { IsAutoOpen: bool
