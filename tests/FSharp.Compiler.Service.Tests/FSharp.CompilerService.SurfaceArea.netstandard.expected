@@ -2440,7 +2440,7 @@ FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 ParameterList
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 PatternType
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 RangeOperator
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 RecordField
-FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 TypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 TypeAbbreviationOrSingleCaseUnion
 FSharp.Compiler.EditorServices.CompletionContext+Tags: Int32 UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(FSharp.Compiler.EditorServices.CompletionContext)
 FSharp.Compiler.EditorServices.CompletionContext: Boolean Equals(System.Object)
@@ -2453,7 +2453,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean IsParameterList
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsPatternType
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsRangeOperator
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsRecordField
-FSharp.Compiler.EditorServices.CompletionContext: Boolean IsTypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext: Boolean IsTypeAbbreviationOrSingleCaseUnion
 FSharp.Compiler.EditorServices.CompletionContext: Boolean IsUnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsAttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsInherit()
@@ -2463,7 +2463,7 @@ FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsParameterList()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsPatternType()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsRangeOperator()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsRecordField()
-FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsTypeAbbreviation()
+FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsTypeAbbreviationOrSingleCaseUnion()
 FSharp.Compiler.EditorServices.CompletionContext: Boolean get_IsUnionCaseFieldsDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext AttributeApplication
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext Invalid
@@ -2473,13 +2473,13 @@ FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext NewRecordField(FSharp.Compiler.EditorServices.RecordContext)
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext PatternType
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext RangeOperator
-FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext TypeAbbreviation
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext TypeAbbreviationOrSingleCaseUnion
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext UnionCaseFieldsDeclaration
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_AttributeApplication()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_Invalid()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_PatternType()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_RangeOperator()
-FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_TypeAbbreviation()
+FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_TypeAbbreviationOrSingleCaseUnion()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext get_UnionCaseFieldsDeclaration()
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext+Inherit
 FSharp.Compiler.EditorServices.CompletionContext: FSharp.Compiler.EditorServices.CompletionContext+OpenDeclaration
