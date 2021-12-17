@@ -78,15 +78,16 @@ namespace Microsoft.FSharp.Control
         /// <code lang="fsharp">
         /// printfn "A"
         ///
-        /// async {
+        /// let result = async {
         ///     printfn "B"
         ///     do! Async.Sleep(1000)
         ///     printfn "C"
+        ///     17
         /// } |> Async.RunSynchronously
         ///
         /// printfn "D"
         /// </code>
-        /// Prints "A", "B" immediately, then "C", "D" in 1 second.
+        /// Prints "A", "B" immediately, then "C", "D" in 1 second. result is set to 17.
         /// </example>
         static member RunSynchronously : computation:Async<'T> * ?timeout : int * ?cancellationToken:CancellationToken-> 'T
         
@@ -112,7 +113,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// printfn "D"
         /// </code>
-        /// Prints "A", "D" immediately, then "B" quickly, and then "C" in 1 second.
+        /// Prints "A", then "D", "B" quickly in any order, and then "C" in 1 second.
         /// </example>
         /// <example-tbd></example-tbd>
         static member Start : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
@@ -141,7 +142,7 @@ namespace Microsoft.FSharp.Control
         /// t.Wait()
         /// printfn "E"
         /// </code>
-        /// Prints "A", "D" immediately, then "B" quickly, then "C", "E" in 1 second.
+        /// Prints "A", then "D", "B" quickly in any order, then "C", "E" in 1 second.
         /// </example>
         static member StartAsTask : computation:Async<'T> * ?taskCreationOptions:TaskCreationOptions * ?cancellationToken:CancellationToken -> Task<'T>
 
@@ -165,6 +166,11 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="catch-example-1">
         /// <code lang="fsharp">
+        /// let someRiskyBusiness() =
+        /// match DateTime.Today with
+        /// | dt when dt.DayOfWeek = DayOfWeek.Monday -> failwith "Not compatible with Mondays"
+        /// | dt -> dt
+        /// 
         /// async { return someRiskyBusiness() }
         /// |> Async.Catch
         /// |> Async.RunSynchronously
@@ -191,15 +197,13 @@ namespace Microsoft.FSharp.Control
         /// <example id="try-cancelled-1">
         /// <code lang="fsharp">
         /// [ 2; 3; 5; 7; 11 ]
-        /// |> List.map
-        ///     (fun i ->
-        ///         Async.TryCancelled(
-        ///             async {
-        ///                 do! Async.Sleep(i * 1000)
-        ///                 printfn $"{i}"
-        ///             },
-        ///             fun oce -> printfn $"Computation Cancelled: {i}"
-        ///         ))
+        /// |> List.map (fun i ->
+        ///     Async.TryCancelled(
+        ///         async {
+        ///             do! Async.Sleep(i * 1000)
+        ///             printfn $"{i}"
+        ///         },
+        ///     fun oce -> printfn $"Computation Cancelled: {i}"))
         /// |> List.iter Async.Start
         ///
         /// Thread.Sleep(6000)
@@ -232,13 +236,12 @@ namespace Microsoft.FSharp.Control
         /// <example id="on-cancel-1">
         /// <code lang="fsharp">
         ///     [ 2; 3; 5; 7; 11 ]
-        /// |> List.iter
-        ///     (fun i ->
-        ///         async {
-        ///             use! holder = Async.OnCancel(fun () -> printfn $"Computation Cancelled: {i}")
-        ///             do! Async.Sleep(i * 1000)
-        ///             printfn $"{i}"
-        ///         } |> Async.Start)
+        /// |> List.iter (fun i ->
+        ///     async {
+        ///         use! holder = Async.OnCancel(fun () -> printfn $"Computation Cancelled: {i}")
+        ///         do! Async.Sleep(i * 1000)
+        ///         printfn $"{i}"
+        ///     } |> Async.Start)
         ///
         /// Thread.Sleep(6000)
         /// Async.CancelDefaultToken()
@@ -275,16 +278,14 @@ namespace Microsoft.FSharp.Control
         /// try
         ///     let computations =
         ///         [ 2; 3; 5; 7; 11 ]
-        ///         |> List.map
-        ///             (fun i ->
-        ///                 async {
-        ///                     do! Async.Sleep(i * 1000)
-        ///                     printfn $"{i}"
-        ///                 })
+        ///         |> List.map (fun i ->
+        ///             async {
+        ///                 do! Async.Sleep(i * 1000)
+        ///                 printfn $"{i}"
+        ///             })
         ///
         ///     let t =
-        ///         Async.Parallel(computations, 3)
-        ///         |> Async.StartAsTask
+        ///         Async.Parallel(computations, 3) |> Async.StartAsTask
         ///
         ///     Thread.Sleep(6000)
         ///     Async.CancelDefaultToken()
@@ -307,12 +308,11 @@ namespace Microsoft.FSharp.Control
         /// <code lang="fsharp">
         /// Async.DefaultCancellationToken.Register(fun () -> printfn "Computation Cancelled") |> ignore
         /// [ 2; 3; 5; 7; 11 ]
-        /// |> List.map
-        ///     (fun i ->
-        ///         async {
-        ///             do! Async.Sleep(i * 1000)
-        ///             printfn $"{i}"
-        ///         })
+        /// |> List.map (fun i ->
+        ///     async {
+        ///         do! Async.Sleep(i * 1000)
+        ///         printfn $"{i}"
+        ///     })
         /// |> List.iter Async.Start
         ///
         /// Thread.Sleep(6000)
@@ -356,29 +356,27 @@ namespace Microsoft.FSharp.Control
         /// <example id="start-child-1">
         /// <code lang="fsharp">
         /// let computeWithTimeout timeout =
-        /// async {
-        ///     let! completor1 =
-        ///         Async.StartChild(
-        ///             (async {
-        ///                 do! Async.Sleep(1000)
-        ///                 return 1
-        ///              }),
-        ///             millisecondsTimeout = timeout
-        ///         )
+        ///     async {
+        ///         let! completor1 =
+        ///             Async.StartChild(
+        ///                 (async {
+        ///                     do! Async.Sleep(1000)
+        ///                     return 1
+        ///                  }),
+        ///                 millisecondsTimeout = timeout)
         ///
-        ///     let! completor2 =
-        ///         Async.StartChild(
-        ///             (async {
-        ///                 do! Async.Sleep(2000)
-        ///                 return 2
-        ///              }),
-        ///             millisecondsTimeout = timeout
-        ///         )
+        ///         let! completor2 =
+        ///             Async.StartChild(
+        ///                 (async {
+        ///                     do! Async.Sleep(2000)
+        ///                     return 2
+        ///                  }),
+        ///                 millisecondsTimeout = timeout)
         ///
-        ///     let! v1 = completor1
-        ///     let! v2 = completor2
-        ///     printfn $"Result: {v1 + v2}"
-        /// } |> Async.RunSynchronously
+        ///         let! v1 = completor1
+        ///         let! v2 = completor2
+        ///         printfn $"Result: {v1 + v2}"
+        ///     } |> Async.RunSynchronously
         /// </code>
         /// Will throw a System.TimeoutException if called with a timeout less than 2000, otherwise will print "Result: 3".
         /// </example>
@@ -464,7 +462,7 @@ namespace Microsoft.FSharp.Control
         ///             })
         ///
         /// let t =
-        ///     Async.Parallel(computations, 3)
+        ///     Async.Parallel(computations, maxDegreeOfParallelism=3)
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
@@ -651,6 +649,11 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="from-continuations-1">
         /// <code lang="fsharp">
+        /// let someRiskyBusiness() =
+        /// match DateTime.Today with
+        /// | dt when dt.DayOfWeek = DayOfWeek.Monday -> failwith "Not compatible with Mondays"
+        /// | dt -> dt
+        /// 
         /// let computation =
         ///     (fun (successCont, exceptionCont, cancellationCont) ->
         ///         try
@@ -667,7 +670,7 @@ namespace Microsoft.FSharp.Control
         ///     (fun oce -> printfn $"Cancelled: {oce}")
         ///  )
         /// </code>
-        /// This anonymous function will call someRiskyBusiness() and be a good citizen with regards to the continuations
+        /// This anonymous function will call someRiskyBusiness() and properly use the provided continuations
         /// defined to report the outcome.
         /// </example>
         static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
