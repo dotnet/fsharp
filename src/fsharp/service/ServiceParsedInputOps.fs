@@ -44,6 +44,7 @@ type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
     | New of path: CompletionPath
+    | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
 type CompletionContext = 
@@ -68,6 +69,13 @@ type CompletionContext =
 
     /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
+    /// Completing union case fields declaration (e.g. 'A of stri|' but not 'B of tex|: string')
+    | UnionCaseFieldsDeclaration
+
+    /// Completing a type abbreviation (e.g. type Long = int6|)
+    /// or a single case union without a bar (type SomeUnion = Abc|)
+    | TypeAbbreviationOrSingleCaseUnion
 
 type ShortIdent = string
 
@@ -1022,7 +1030,8 @@ module ParsedInput =
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
-                    member _.VisitHashDirective (_path, _directive, range) = 
+                    member _.VisitHashDirective (_path, _directive, range) =
+                        // No completions in a directive
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
                         else None 
                         
@@ -1031,11 +1040,15 @@ module ParsedInput =
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
+                                // No completions in a top level a module or namespace identifier
                                 Some CompletionContext.Invalid
                             else None
                         | _ -> None 
 
-                    member _.VisitComponentInfo(_path, SynComponentInfo(range = range)) = 
+                    member _.VisitComponentInfo(_path, SynComponentInfo(range = range)) =
+                        // No completions in component info (unless it's within an attribute)
+                        // /// XmlDo|
+                        // type R = class end
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
@@ -1046,9 +1059,12 @@ module ParsedInput =
 
                     member _.VisitSimplePats (_path, pats) =
                         pats |> List.tryPick (fun pat ->
+                            // No completions in an identifier or type in a pattern
                             match pat with
+                            // fun x| ->
                             | SynSimplePat.Id(range = range)
-                            | SynSimplePat.Typed(SynSimplePat.Id(range = range), _, _) when rangeContainsPos range pos -> 
+                            // fun (x: int|) ->
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = range), _, _) when rangeContainsPos range pos ->
                                 Some CompletionContext.Invalid
                             | _ -> None)
 
@@ -1077,6 +1093,35 @@ module ParsedInput =
                         | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType
                         | _ -> defaultTraverse ty
+
+                    member _.VisitRecordDefn(_path, fields, _range) =
+                        fields |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
+                            match idOpt with
+                            | Some id when rangeContainsPos id.idRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration true))
+                            | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
+                            | _ -> None)
+
+                    member _.VisitUnionDefn(_path, cases, _range) =
+                        cases |> List.tryPick (fun (SynUnionCase (ident = id; caseType = caseType)) ->
+                            if rangeContainsPos id.idRange pos then
+                                // No completions in a union case identifier
+                                Some CompletionContext.Invalid
+                            else
+                                match caseType with
+                                | SynUnionCaseKind.Fields fieldCases ->
+                                    fieldCases |> List.tryPick (fun (SynField (idOpt = fieldIdOpt; range = fieldRange)) ->
+                                        match fieldIdOpt with
+                                        // No completions in a union case field identifier
+                                        | Some id when rangeContainsPos id.idRange pos -> Some CompletionContext.Invalid
+                                        | _ -> if rangeContainsPos fieldRange pos then Some CompletionContext.UnionCaseFieldsDeclaration else None)
+                                | _ -> None)
+
+                    member _.VisitEnumDefn(_path, _, range) =
+                        // No completions anywhere in an enum
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid else None
+
+                    member _.VisitTypeAbbrev(_path, _, range) =
+                        if rangeContainsPos range pos then Some CompletionContext.TypeAbbreviationOrSingleCaseUnion else None
             }
 
         SyntaxTraversal.Traverse(pos, parsedInput, walker)
