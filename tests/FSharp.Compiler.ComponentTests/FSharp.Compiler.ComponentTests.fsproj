@@ -47,6 +47,8 @@
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
+    <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
+    <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
