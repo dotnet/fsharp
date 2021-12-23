@@ -23,12 +23,16 @@ module المطبّقة
         let ذر = إجراء
 
         member ةتثجح.ابةت(testإجراء : إجراء) =
-            match ذر with
-            | إجراء.Bar(_) -> "Match1"
-            | إجراء.Baz(_) -> "Match2"
-            | إجراء.Zoo(_) -> "Match3"
-            | إجراء.Yap(_) -> "Match4"
-        
+            ذر |> ignore
+            match testإجراء with
+            | إجراء.Bar(_)  -> "Match1"
+            | إجراء.Baz(_)  -> "Match2"
+            | إجراء.Zoo(_)  -> "Match3"
+            | إجراء.Yap(_)  -> "Match4"
+            | إجراء.Uتلم(_)  -> "Match5"
+            | إجراء.Uرنت(_)  -> "Match6"
+            | إجراء.Uتسجي(_)  -> "Match7"
+
     let ذرزسشصض = ةتثجحخ(تلميح)
     let ذرزسشص = ةتثجحخ(تروني)
     let ذرزسش = ةتثجحخ(ارالتسج)
