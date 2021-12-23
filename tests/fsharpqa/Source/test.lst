@@ -252,7 +252,6 @@ Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
 Misc01			Diagnostics\ParsingAtEOF
 Misc01			EntryPoint
-Misc01			Globalization
 Misc01,NoMT		Import
 Misc01,NoMT		..\..\..\testsprivate\fsharpqa\Source\InteractiveSession\AssemblyLoading
 Misc01,NoMT		InteractiveSession\Misc

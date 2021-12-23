@@ -4,10 +4,10 @@
 
 let x = System.Char.ConvertFromUtf32(0x00020001)
 let y = "\U00020001"
-let x1 = x.[0]
-let x2 = x.[1]
-let y1 = y.[0]
-let y2 = y.[1]
+let x1 = x[0]
+let x2 = x[1]
+let y1 = y[0]
+let y2 = y[1]
 if (x1 <> y1) then 
     printfn "x1 == y1 => %b" (x1 = y1)
     exit 1
