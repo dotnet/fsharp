@@ -411,18 +411,29 @@ let getSymbolUsesFromSource (source: string) =
 let getSymbols (symbolUses: seq<FSharpSymbolUse>) =
     symbolUses |> Seq.map (fun symbolUse -> symbolUse.Symbol)
 
-
 let getSymbolName (symbol: FSharpSymbol) =
     match symbol with
     | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
     | :? FSharpEntity as entity -> Some entity.LogicalName
-    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpGenericParameter as genericParameter -> Some genericParameter.Name
     | :? FSharpParameter as parameter -> parameter.Name
-    | :? FSharpStaticParameter as parameter -> Some parameter.Name
-    | :? FSharpActivePatternCase as case -> Some case.Name
-    | :? FSharpUnionCase as case -> Some case.Name
+    | :? FSharpStaticParameter as staticParameter -> Some staticParameter.Name
+    | :? FSharpActivePatternCase as activePatternCase -> Some activePatternCase.Name
+    | :? FSharpUnionCase as unionCase -> Some unionCase.Name
+    | :? FSharpField as field -> Some field.Name
     | _ -> None
 
+let getSymbolFullName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.FullName
+    | :? FSharpEntity as entity -> entity.TryFullName
+    | :? FSharpGenericParameter as genericParameter -> Some genericParameter.FullName
+    | :? FSharpParameter as parameter -> Some parameter.FullName
+    | :? FSharpStaticParameter as staticParameter -> Some staticParameter.FullName
+    | :? FSharpActivePatternCase as activePatternCase -> Some activePatternCase.FullName
+    | :? FSharpUnionCase as unioncase -> Some unioncase.FullName
+    | :? FSharpField as field -> Some field.FullName
+    | _ -> None
 
 let assertContainsSymbolWithName name source =
     getSymbols source
@@ -450,7 +461,6 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
     for name in names do
         Assert.That(Set.contains name symbolNames, name)
 
-
 let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
     getSymbolUses results
     |> Seq.find (fun symbolUse ->
@@ -461,6 +471,10 @@ let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
 let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
     let symbolUse = findSymbolUseByName name results
     symbolUse.Symbol
+
+let findSymbolUse (evaluateSymbol:FSharpSymbolUse->bool) (results: FSharpCheckFileResults) =
+    let symbolUses = getSymbolUses results
+    symbolUses |> Seq.find (fun symbolUse -> evaluateSymbol symbolUse)
 
 let taggedTextToString (tts: TaggedText[]) =
     tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
