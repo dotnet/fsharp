@@ -271,7 +271,7 @@ type internal FSharpSignatureHelpProvider
                 | ToolTipText [ToolTipElement.None] -> return! None
                 | _ ->                    
                     let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.Range.Start
-                    let numArgsAlreadyApplied =
+                    let numArgsAlreadyAppliedViaPipeline =
                         match possiblePipelineIdent with
                         | None -> 0
                         | Some (_, numArgsApplied) -> numArgsApplied
@@ -326,7 +326,7 @@ type internal FSharpSignatureHelpProvider
                             match possibleNextIndex with
                             | Some index -> Some index
                             | None ->
-                                if numDefinedArgs - numArgsAlreadyApplied > curriedArgsInSource.Length then
+                                if numDefinedArgs - numArgsAlreadyAppliedViaPipeline > curriedArgsInSource.Length then
                                     Some (numDefinedArgs - (numDefinedArgs - curriedArgsInSource.Length))
                                 else
                                     None
