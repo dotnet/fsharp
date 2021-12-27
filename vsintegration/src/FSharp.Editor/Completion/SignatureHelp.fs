@@ -354,7 +354,7 @@ type internal FSharpSignatureHelpProvider
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
-                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
+                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyAppliedViaPipeline] |> Array.iteri (fun index argument ->
                         let tt = ResizeArray()
 
                         if argument.Count = 1 then
