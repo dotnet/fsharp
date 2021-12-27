@@ -752,8 +752,11 @@ type CalledMeth<'T>
     member x.AssignsAllNamedArgs = isNil x.UnassignedNamedArgs
 
     member x.HasCorrectArity =
+      let calledArgs (argSet: CalledMethArgSet<'T>) =
+        argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs
+
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&
-      x.ArgSets |> List.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
+      x.ArgSets |> List.forall calledArgs
 
     member x.HasCorrectGenericArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  
