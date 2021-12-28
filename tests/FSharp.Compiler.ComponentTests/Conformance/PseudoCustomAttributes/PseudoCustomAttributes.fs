@@ -71,17 +71,24 @@ module ``PseudoCustomAttributes Test Cases`` =
         |> shouldSucceed
 
     [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyVersion_002.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_002.fs")))
-        |> asExe
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
     let ``PseudoCustomAttributes - AssemblyVersion_001.fs``() =
         FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_001.fs")))
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
 
+    [<Fact>]
+    let ``PseudoCustomAttributes - AssemblyVersion_002.fs``() =
+        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_002.fs")))
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``PseudoCustomAttributes - AssemblyVersion_003.fs``() =
+        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_003.fs")))
+        |> asExe
+        |> withAssemblyVersion "4.5.6.7"
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
