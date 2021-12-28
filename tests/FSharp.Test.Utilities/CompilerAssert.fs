@@ -133,7 +133,6 @@ type CompilerAssert private () =
                yield inputFilePath; 
                yield "-o:" + outputFilePath; 
                yield (if isExe then "--target:exe" else "--target:library"); 
-               yield "--nowin32manifest" 
                yield! defaultProjectOptions.OtherOptions
                yield! options
              |]

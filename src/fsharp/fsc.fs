@@ -740,7 +740,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
            match tcConfig.version with
            | VersionNone -> Some v
            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(), rangeStartup)); None
-        | _ -> None
+        | _ -> Some (ILVersionInfo (0us,0us,0us,0us))               //If no attribute was specified in source then version is 0.0.0.0
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"
