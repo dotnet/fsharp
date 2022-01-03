@@ -1083,12 +1083,18 @@ let GetTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
 let canGenMethodDef cenv (md: ILMethodDef) =
-    // When emitting a reference assembly, do not emit methods that are private unless they are virtual/abstract or provide an explicit interface implementation.
-    // Internal methods can be omitted only if the assembly does not contain a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-    if cenv.referenceAssemblyOnly &&
-        (match md.Access with ILMemberAccess.Private -> true | ILMemberAccess.Assembly | ILMemberAccess.FamilyAndAssembly -> not cenv.hasInternalsVisibleToAttrib | _ -> false) &&
-        not (md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal) then false
-    else true
+    if not cenv.referenceAssemblyOnly then
+        true
+    else
+        match md.Access with
+        | ILMemberAccess.Public -> true
+        // When emitting a reference assembly, do not emit methods that are private/internal unless they are virtual/abstract or provide an explicit interface implementation.
+        | ILMemberAccess.Private | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
+            when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
+        // When emitting a reference assembly, we only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+        | ILMemberAccess.Assembly | ILMemberAccess.FamilyAndAssembly
+            when cenv.hasInternalsVisibleToAttrib -> true
+        | _ -> false
 
 let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name

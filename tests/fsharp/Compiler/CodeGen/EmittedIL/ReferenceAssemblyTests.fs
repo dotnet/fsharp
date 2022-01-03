@@ -450,3 +450,4 @@ let test() =
         |> shouldFail
         |> withSingleDiagnostic (Error 2030, Line 0, Col 1, Line 0, Col 1, "Invalid use of emitting a reference assembly. Check the compiler options to not specify static linking, or using '--refonly' and '--refout' together.")
         |> ignore
+    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.

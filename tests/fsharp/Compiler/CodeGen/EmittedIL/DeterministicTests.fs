@@ -528,3 +528,5 @@ let test() =
 
         // Two compilations with changes only to private code should produce the same MVID
         Assert.AreEqual(mvid1, mvid2)
+
+    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
