@@ -431,6 +431,55 @@ let test() =
 
         // Two compilations with changes only to private code should produce the same MVID
         Assert.AreEqual(mvid1, mvid2)
+
+
+    [<Test>]
+    let ``Reference assemblies should be deterministic when only private function parameter count is different and private function is unused`` () =
+        let inputFilePath = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
+        let src =
+            """
+module ReferenceAssembly
+
+open System
+
+let private privTest1 () : string = "Private Hello World!"
+
+let test() =
+    Console.WriteLine()
+            """
+
+        File.WriteAllText(inputFilePath, src)
+
+        let mvid1 =
+            FSharpWithInputAndOutputPath inputFilePath outputFilePath
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+
+        let inputFilePath2 = CompilerAssert.GenerateFsInputPath()
+        let outputFilePath2 = CompilerAssert.GenerateDllOutputPath()
+        let src2 =
+            """
+module ReferenceAssembly
+
+open System
+
+let private privTest1 () () : string = "Private Hello World!"
+
+let test() =
+    Console.WriteLine()
+            """
+
+        File.WriteAllText(inputFilePath2, src2)
+
+        let mvid2 =
+            FSharpWithInputAndOutputPath inputFilePath2 outputFilePath2
+            |> withOptions ["--refonly";"--deterministic"]
+            |> compileGuid
+
+        // Two compilations with changes only to private code should produce the same MVID
+        Assert.AreEqual(mvid1, mvid2)
      
     [<Test>]
     let ``Reference assemblies should be deterministic when only private function parameter types are different`` () =

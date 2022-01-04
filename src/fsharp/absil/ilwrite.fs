@@ -1092,7 +1092,7 @@ let canGenMethodDef cenv (md: ILMethodDef) =
         | ILMemberAccess.Private | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
             when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
         // When emitting a reference assembly, we only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-        | ILMemberAccess.Assembly | ILMemberAccess.FamilyAndAssembly
+        | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
