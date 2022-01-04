@@ -99,6 +99,8 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
+    member ProjectTimeStamp: DateTime 
+
     member TryPeekTcInfo: unit -> TcInfo option
 
     member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option

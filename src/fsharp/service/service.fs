@@ -529,7 +529,7 @@ type BackgroundCompiler(
                         (match builder.GetCheckResultsBeforeFileInProjectEvenIfStale filename with 
                         | None -> false
                         | Some(tcPrior) -> 
-                            tcPrior.TimeStamp = priorTimeStamp &&
+                            tcPrior.ProjectTimeStamp = priorTimeStamp &&
                             builder.AreCheckResultsBeforeFileInProjectReady(filename)) -> 
                     return Some (parseResults,checkResults)
                 | _ ->
@@ -577,7 +577,7 @@ type BackgroundCompiler(
                         keepAssemblyContents,
                         suggestNamesForErrors) |> NodeCode.FromCancellable
             GraphNode.SetPreferredUILang tcConfig.preferredUiLang
-            return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.TimeStamp)
+            return (parseResults, checkAnswer, sourceText.GetHashCode() |> int64, tcPrior.ProjectTimeStamp)
         }
         
 
