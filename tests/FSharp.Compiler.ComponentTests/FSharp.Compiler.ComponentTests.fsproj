@@ -91,6 +91,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\StructTypes.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
+    <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />

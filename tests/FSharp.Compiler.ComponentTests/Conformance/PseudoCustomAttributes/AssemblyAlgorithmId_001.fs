@@ -10,8 +10,10 @@ open System
 open System.Reflection;
 open System.Configuration.Assemblies
 
-let CheckAssemblyAttribute () = 
-    if AssemblyHashAlgorithm.MD5 = Assembly.GetExecutingAssembly().GetName().HashAlgorithm then 0 else 1
+let CheckAssemblyAttribute () =
+    let alg = Assembly.GetExecutingAssembly().GetName().HashAlgorithm
+    printfn "%A" alg
+    if not (AssemblyHashAlgorithm.MD5 = alg) then raise (new Exception("Invalid Assembly Hash Algorithm"))
 
 [<assembly:AssemblyAlgorithmId(AssemblyHashAlgorithm.MD5)>]
-do CheckAssemblyAttribute () |> exit
+CheckAssemblyAttribute ()
