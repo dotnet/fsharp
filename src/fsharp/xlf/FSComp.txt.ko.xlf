@@ -7629,7 +7629,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
         <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
-        <target state="needs-review-translation">구조체 형식을 선언하는 데 사용됩니다. 제네릭 매개 변수 제약 조건에서도 사용됩니다. 모듈 정의에서 OCaml 호환성에 대해 사용됩니다.</target>
+        <target state="new">Used to declare a structure type. Also used in generic parameter constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">
