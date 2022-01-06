@@ -266,7 +266,6 @@ Misc01			Warnings
 Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
-Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
 Misc02,CodeGen			Optimizations\GenericComparison
