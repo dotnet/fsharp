@@ -59,7 +59,7 @@ type LanguageVersion (versionText) =
     static let latestVersion = defaultVersion           // Language version when latest specified
     static let latestMajorVersion = languageVersion60   // Language version when latestmajor specified
 
-    static let validOptions = [| "PREVIEW"; "DEFAULT"; "LATEST"; "LATESTMAJOR" |]
+    static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
     static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60 |]
 
     static let features =
