@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-<!--
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\Misc.fs" />
@@ -65,6 +64,7 @@
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
+    <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times.fs" />
@@ -102,7 +102,6 @@
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
-	  -->
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
   </ItemGroup>
 
