@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+<!--
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\Misc.fs" />
@@ -91,6 +92,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\StructTypes.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
+    <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
@@ -100,6 +102,7 @@
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
+	  -->
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
   </ItemGroup>
 

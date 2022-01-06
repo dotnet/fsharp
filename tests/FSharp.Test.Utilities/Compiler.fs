@@ -251,6 +251,9 @@ module rec Compiler =
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
+    let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
+
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit

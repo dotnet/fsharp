@@ -1762,7 +1762,7 @@ module internal ParseAndCheckFile =
                 let isExe = options.IsExe
 
                 try
-                    ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
+                    ParseInput(lexfun, options.ErrorSeverityOptions, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
