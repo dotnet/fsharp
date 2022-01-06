@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+<!--
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\Misc.fs" />
@@ -101,6 +102,7 @@
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
+	  -->
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
   </ItemGroup>
 

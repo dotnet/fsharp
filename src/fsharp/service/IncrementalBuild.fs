@@ -460,8 +460,8 @@ type BoundModel private (tcConfig: TcConfig,
                 | input, _sourceRange, filename, parseErrors ->
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
-                    let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
-                    let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
+                    let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions) // Probably just a capturing now @@@@@@@@@@@@@@@@@@@@@
+                    let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.errorSeverityOptions, capturingErrorLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger filename

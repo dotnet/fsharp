@@ -251,7 +251,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
         let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
         inputT, moduleNamesDictT
 
-let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) =
+let ParseInput (lexer, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) =
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy filename
     //  - if you have a #line directive, e.g.
@@ -295,7 +295,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
         input
     finally
         // OK, now commit the errors, since the ScopedPragmas will (hopefully) have been scraped
-        let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, errorLogger)
+        let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, diagnosticOptions, errorLogger)
         delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
 type Tokenizer = unit -> Parser.token
@@ -395,7 +395,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
                     TestInteractionParserAndExit (tokenizer, lexbuf)
 
                 // Parse the input
-                let res = ParseInput((fun _ -> tokenizer ()), errorLogger, lexbuf, None, filename, isLastCompiland)
+                let res = ParseInput((fun _ -> tokenizer ()), tcConfig.errorSeverityOptions, errorLogger, lexbuf, None, filename, isLastCompiland)
 
                 // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then
@@ -946,9 +946,9 @@ let TypeCheckOneInput(checkForErrors,
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig:TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
     // 'use' ensures that the warning handler is restored at the end
-    use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
+    use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, tcConfig.errorSeverityOptions, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     RequireCompilationThread ctok

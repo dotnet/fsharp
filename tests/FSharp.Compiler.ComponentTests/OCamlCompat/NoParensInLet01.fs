@@ -17,4 +17,5 @@ let (F(a, b)) = F(1, 2)     // this is a pattern match
                             // val it : int = 1
                             // val it : int = 2         
                                
-(if F(10,20) = F(1,2) && a=1 && b=2 then 0 else 1) |> exit
+(if F(10,20) = F(1,2) && a=1 && b=2 then 0 else 1) |>ignore
+()

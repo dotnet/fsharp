@@ -21,4 +21,4 @@ let SmartJoe  = { Make = "BMW";
 raceResults.Add("Gold", SmartJoe)
 raceResults.Add("Silver", MadMike)
 
-exit 0
+()
