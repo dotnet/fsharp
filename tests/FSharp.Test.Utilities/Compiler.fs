@@ -5,6 +5,7 @@ namespace FSharp.Test
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
 open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
@@ -60,6 +61,26 @@ module rec Compiler =
 
     type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
 
+    type SymbolType = 
+        | MemberOrFunctionOrValue of string 
+        | Entity of string 
+        | GenericParameter of string 
+        | Parameter of string 
+        | StaticParameter of string 
+        | ActivePatternCase of string
+        | UnionCase of string 
+        | Field of string 
+ 
+        member this.FullName () =
+            match this with
+            | MemberOrFunctionOrValue fullname
+            | Entity fullname
+            | GenericParameter fullname
+            | Parameter fullname
+            | StaticParameter fullname
+            | ActivePatternCase fullname
+            | UnionCase fullname
+            | Field fullname -> fullname
 
     let mapDiagnosticSeverity severity errorNumber =
         match severity with
@@ -113,6 +134,9 @@ module rec Compiler =
         | Path p ->
             use stream = FileSystem.OpenFileForReadShim(p)
             stream.ReadAllText()
+
+    // Load the source file from the path
+    let loadSourceFromFile path = getSource(TestType.Path path)
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -226,6 +250,9 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
+
+    let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =

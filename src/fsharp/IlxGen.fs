@@ -8697,7 +8697,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization impl
     // Generate the whole assembly
     CodegenAssembly cenv eenv mgbuf implFiles
 
-    let ilAssemAttrs = GenAttrs cenv eenv assemAttribs
+    let ilAssemAttrs = GenAttrs cenv eenv (assemAttribs |> List.filter (fun a -> not(IsAssemblyVersionAttribute g a)))
 
     let tdefs, reflectedDefinitions = mgbuf.Close()
 
