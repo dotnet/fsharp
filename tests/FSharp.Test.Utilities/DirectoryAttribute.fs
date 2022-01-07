@@ -1,13 +1,12 @@
-﻿namespace FSharp.Test.Xunit.Attributes
+﻿namespace FSharp.Test
 
 open System
 open System.IO
 open System.Reflection
+
 open Xunit.Sdk
 
 open FSharp.Compiler.IO
-
-open FSharp.Test
 open FSharp.Test.Compiler
 
 /// Attribute to use with Xunit's TheoryAttribute.

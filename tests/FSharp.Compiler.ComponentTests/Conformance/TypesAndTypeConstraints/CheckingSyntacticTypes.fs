@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Conformance.TypesAndTypeConstraints
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.Xunit.Attributes
 
 module CheckingSyntacticTypes =
 

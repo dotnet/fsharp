@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Globalization
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.Xunit.Attributes
 
 module ``PseudoCustomAttributes Test Cases`` =
 

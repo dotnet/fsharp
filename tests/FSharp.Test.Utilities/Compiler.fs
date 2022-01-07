@@ -127,6 +127,12 @@ module rec Compiler =
 
     let private defaultOptions : string list = []
 
+#if DEBUG
+    let configurationName = "Debug"
+#else
+    let configurationName = "Release"
+#endif
+
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
     let private getSource (src: TestType) : string =
         match src with
@@ -134,6 +140,9 @@ module rec Compiler =
         | Path p ->
             use stream = FileSystem.OpenFileForReadShim(p)
             stream.ReadAllText()
+
+    // Load the source file from the path
+    let loadSourceFromFile path = getSource(TestType.Path path)
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
