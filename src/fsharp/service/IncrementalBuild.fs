@@ -1198,9 +1198,12 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             stamps |> Seq.max
 
     let computeProjectTimeStamp (state: IncrementalBuilderState) fileSlot =
-        let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
-        let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
-        max t1 t2
+        if fileSlot = 0 then
+            MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
+        else
+            let t1 = MaxTimeStampInDependencies state.stampedReferencedAssemblies -1
+            let t2 = MaxTimeStampInDependencies state.logicalStampedFileNames fileSlot
+            max t1 t2
 
     let gate = obj()
     let mutable currentState = state 
