@@ -4,89 +4,66 @@ namespace FSharp.Compiler.ComponentTests.Globalization
 
 open Xunit
 open FSharp.Test.Compiler
-open System.IO
+open FSharp.Test.Xunit.Attributes
+
 module ``PseudoCustomAttributes Test Cases`` =
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyAlgorithmId_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyAlgorithmId_001.fs")))
+    let ``PseudoCustomAttributes - Compile and Run`` compilation =
+        compilation
         |> asExe
         |> compileAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyCompany_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyCompany_001.fs")))
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyAlgorithmId_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyAlgorithmId_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyConfiguration_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyConfiguration_001.fs")))
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyCompany_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyCompany_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
 
-    [<Fact>]
-    let ``Globalization - AssemblyCopyright_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyCopyright_001.fs")))
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyConfiguration_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyConfiguration_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyDescription_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyDescription_001.fs")))
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyCopyright_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyCopyright_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyFileVersion_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyFileVersion_001.fs")))
-        |> asExe
-        |> compileAndRun
-        |> shouldSucceed
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyDescription_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyDescription_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyInformationalVersion_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyInformationalVersion_001.fs")))
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyFileVersion_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyFileVersion_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyInformationalVersion_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyInformationalVersion_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyTitle_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyTitle_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyTrademark_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyTrademark_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion_001.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyVersion_001_fs`` compilation =
+        ``PseudoCustomAttributes - Compile and Run`` compilation
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion_002.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyVersion_002_fs`` compilation =
+        compilation
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
 
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyTitle_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyTitle_001.fs")))
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyTrademark_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyTrademark_001.fs")))
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyVersion_001.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_001.fs")))
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyVersion_002.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_002.fs")))
-        |> asExe
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Fact>]
-    let ``PseudoCustomAttributes - AssemblyVersion_003.fs``() =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "AssemblyVersion_003.fs")))
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyVersion_003.fs"|])>]
+    let ``PseudoCustomAttributes - AssemblyVersion_003_fs`` compilation =
+        compilation
         |> asExe
         |> withAssemblyVersion "4.5.6.7"
         |> ignoreWarnings

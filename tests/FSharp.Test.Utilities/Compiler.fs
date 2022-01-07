@@ -135,9 +135,6 @@ module rec Compiler =
             use stream = FileSystem.OpenFileForReadShim(p)
             stream.ReadAllText()
 
-    // Load the source file from the path
-    let loadSourceFromFile path = getSource(TestType.Path path)
-
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
         | null -> failwith "Source cannot be null"
