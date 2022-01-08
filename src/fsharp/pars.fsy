@@ -896,7 +896,10 @@ tyconSpfn:
       { let mWithKwd, members = $2
         let m =
             match members with
-            | [] -> lhs parseState
+            | [] ->
+                match mWithKwd with
+                | None -> rhs parseState 1
+                | Some mWithKwd -> unionRanges (rhs parseState 1) mWithKwd
             | decls ->
                 let (SynComponentInfo(range=start)) = $1
                 (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
