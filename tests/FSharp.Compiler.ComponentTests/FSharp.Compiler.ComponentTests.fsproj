@@ -64,6 +64,7 @@
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
+    <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
     <Compile Include="CompilerOptions\fsc\times.fs" />
@@ -91,6 +92,7 @@
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction.fs" />
     <Compile Include="Conformance\ObjectOrientedTypeDefinitions\StructTypes.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
+    <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
