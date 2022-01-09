@@ -128,12 +128,6 @@ module rec Compiler =
 
     let private defaultOptions : string list = []
 
-#if DEBUG
-    let configurationName = "Debug"
-#else
-    let configurationName = "Release"
-#endif
-
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
     let private getSource (src: TestType) : string =
         match src with
