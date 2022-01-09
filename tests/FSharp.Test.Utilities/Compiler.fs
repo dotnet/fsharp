@@ -42,6 +42,7 @@ module rec Compiler =
           Baseline:       Baseline option
           Options:        string list
           OutputType:     CompileOutput
+          OutputDirectory:DirectoryInfo option
           SourceKind:     SourceKind
           Name:           string option
           IgnoreWarnings: bool
@@ -152,6 +153,7 @@ module rec Compiler =
               Baseline       = None
               Options        = defaultOptions
               OutputType     = Library
+              OutputDirectory= None
               SourceKind     = kind
               Name           = None
               IgnoreWarnings = false
@@ -305,9 +307,8 @@ module rec Compiler =
                 | FS fs ->
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
-                    let name = defaultArg fs.Name null
                     let options = fs.Options |> List.toArray
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options = options, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
+                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, fs.Name, fs.OutputDirectory) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References
@@ -350,7 +351,7 @@ module rec Compiler =
 
         let references = processReferences fsSource.References
 
-        let compilation = Compilation.Create(source, sourceKind, output, options, references)
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, fsSource.Name, fsSource.OutputDirectory)
 
         compileFSharpCompilation compilation fsSource.IgnoreWarnings
 

@@ -20,7 +20,34 @@ type DirectoryAttribute(dir: string) =
         if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
 
-    let directory = dir
+    let dirInfo = Path.GetFullPath(dir)
+    let outputDirectory =
+        // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
+        // Thus the output directory will be in a subdirectory below where we are executing.
+        // The subdirectory will be relative to the source directory containing the test source file,
+        // E.g
+        //    When the source code is in:
+        //        $(repo-root)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
+        //    and the test is running in the FSharp.Compiler.ComponentTeststest library
+        //    The output directory will be: 
+        //        artifacts\bin\FSharp.Compiler.ComponentTests\$(Flavour)\$(TargetFramework)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
+        //
+        //    If we can't find anything then we execute in the directory containing the source
+        //
+        try
+            let testlibraryLocation=Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            let pos = testlibraryLocation.IndexOf(@"artifacts\bin",StringComparison.OrdinalIgnoreCase)
+            if pos > 0 then
+                // Running under CI or dev build
+                let testRoot = Path.Combine(testlibraryLocation.Substring(0, pos), "tests")
+                let testSourceDirectory = dirInfo.Replace(testRoot, "")
+                let outputDirectory = new DirectoryInfo(Path.Combine(testlibraryLocation, testSourceDirectory.Trim('\\')))
+                Some outputDirectory
+            else
+                None
+
+        with | _ ->
+            raise (new InvalidOperationException("Can't get the location of the executing assembly"))
 
     let mutable includes = Array.empty<string>
 
@@ -47,32 +74,31 @@ type DirectoryAttribute(dir: string) =
           SourceKind     = SourceKind.Fsx
           Name           = Some fs
           IgnoreWarnings = false
-          References     = [] } |> FS
+          References     = []
+          OutputDirectory = outputDirectory } |> FS
 
     member _.Includes with get() = includes and set v = includes <- v
 
     override _.GetData(_: MethodInfo) =
-        let absolutePath = Path.GetFullPath(directory)
+        if not (Directory.Exists(dirInfo)) then
+            failwith (sprintf "Directory does not exist: \"%s\"." dirInfo)
 
-        if not (Directory.Exists(absolutePath)) then
-            failwith (sprintf "Directory does not exist: \"%s\"." absolutePath)
-
-        let allFiles : string[] = Directory.GetFiles(absolutePath, "*.fs")
+        let allFiles : string[] = Directory.GetFiles(dirInfo, "*.fs")
 
         let filteredFiles =
-            match (includes |> Array.map (fun f -> absolutePath ++ f)) with
+            match (includes |> Array.map (fun f -> dirInfo ++ f)) with
                 | [||] -> allFiles
                 | incl -> incl
 
         let fsFiles = filteredFiles |> Array.map Path.GetFileName
 
         if fsFiles |> Array.length < 1 then
-            failwith (sprintf "No required files found in \"%s\".\nAll files: %A.\nIncludes:%A." absolutePath allFiles includes)
+            failwith (sprintf "No required files found in \"%s\".\nAll files: %A.\nIncludes:%A." dirInfo allFiles includes)
 
         for f in filteredFiles do
             if not <| FileSystem.FileExistsShim(f) then
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
 
         fsFiles
-        |> Array.map (fun fs -> createCompilationUnit absolutePath fs)
+        |> Array.map (fun fs -> createCompilationUnit dirInfo fs)
         |> Seq.map (fun c -> [| c |])
