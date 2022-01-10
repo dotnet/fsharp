@@ -76,7 +76,10 @@ and Compilation =
         static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?outputDirectory) =
             let options = defaultArg options [||]
             let cmplRefs = defaultArg cmplRefs []
-            let name = defaultArg name None
+            let name =
+                match defaultArg name null with
+                | null -> None
+                | n -> Some n
             let outputDirectory = defaultArg outputDirectory None
             Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
 
