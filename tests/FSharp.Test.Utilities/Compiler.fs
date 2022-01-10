@@ -643,7 +643,9 @@ module rec Compiler =
 
         let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
-                if not (List.exists (fun (el: ErrorInfo) -> el.Message = exp) source) then
+                if not (List.exists (fun (el: ErrorInfo) ->
+                    let msg = el.Message 
+                    msg = exp) source) then
                     failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
 
