@@ -3,14 +3,15 @@
 namespace FSharp.Compiler.ComponentTests.OcamlCompat
 
 open Xunit
-open System.IO
+open FSharp.Test
 open FSharp.Test.Compiler
 
 module ``OCamlCompat test cases`` =
 
-    [<Fact>]  //	SOURCE=E_IndentOff01.fs  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_IndentOff01.fs
-    let ``OCamlCompat - --warnaserror --test:ErrorRanges E_IndentOff01.fs`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "E_IndentOff01.fs")))
+    //	SOURCE=E_IndentOff01.fs  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_IndentOff01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndentOff01.fs"|])>]
+    let ``E_IndentOff01_fs  --warnaserror --test:ErrorRanges`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--test:ErrorRanges"]
         |> compile
@@ -19,9 +20,9 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]
-    let ``OCamlCompat - --warnaserror"; "--mlcompatibility IndentOff02.fs`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "IndentOff02.fs")))
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndentOff02.fs"|])>]
+    let ``IndentOff02_fs  --warnaserror"; "--mlcompatibility`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--mlcompatibility"]
         |> typecheck
@@ -29,9 +30,9 @@ module ``OCamlCompat test cases`` =
 
 
     //<Expects status="warning" span="(4,1-4,14)" id="FS0062">This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\.$</Expects>
-    [<Fact>]
-    let ``OCamlCompat - --test:ErrorRanges W_IndentOff03.fs`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "W_IndentOff03.fs")))
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_IndentOff03.fs"|])>]
+    let ``W_IndentOff03_fs  --test:ErrorRanges`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
@@ -40,9 +41,10 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]    //NoMT	SOURCE=IndentOff04.fsx   COMPILE_ONLY=1 SCFLAGS="--warnaserror --mlcompatibility" FSIMODE=PIPE					# IndentOff04.fsx
-    let ``OCamlCompat - --warnaserror --mlcompatibility IndentOff04.fsx`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "IndentOff04.fsx")))
+    //NoMT	SOURCE=IndentOff04.fsx   COMPILE_ONLY=1 SCFLAGS="--warnaserror --mlcompatibility" FSIMODE=PIPE					# IndentOff04.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndentOff04.fsx"|])>]
+    let ``IndentOff04_fsx  --warnaserror --mlcompatibility`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; " --mlcompatibility"]
         |> compile
@@ -51,9 +53,10 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]    //NoMT	SOURCE=W_IndentOff05.fsx COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"              FSIMODE=PIPE					# W_IndentOff05.fsx
-    let ``OCamlCompat - --test:ErrorRanges W_IndentOff05.fsx`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "W_IndentOff05.fsx")))
+    //NoMT	SOURCE=W_IndentOff05.fsx COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"              FSIMODE=PIPE					# W_IndentOff05.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_IndentOff05.fsx"|])>]
+    let ``W_IndentOff05_fsx  --test:ErrorRanges`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
@@ -62,9 +65,10 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]    //NoMT	SOURCE=E_IndentOff06.fsx COMPILE_ONLY=1 SCFLAGS="--warnaserror"                   FSIMODE=PIPE					# E_IndentOff06.fsx
-    let ``OCamlCompat - --test:ErrorRanges E_IndentOff06.fsx`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "E_IndentOff06.fsx")))
+    //NoMT	SOURCE=E_IndentOff06.fsx COMPILE_ONLY=1 SCFLAGS="--warnaserror"                   FSIMODE=PIPE					# E_IndentOff06.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_IndentOff06.fsx"|])>]
+    let ``E_IndentOff06_fsx  --test:ErrorRanges`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--test:ErrorRanges"]
         |> compile
@@ -73,62 +77,68 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]  //	SOURCE=E_mlExtension01.ml  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_mlExtension01.ml
-    let ``OCamlCompat - E_mlExtension01.ml - --test:ErrorRanges`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "E_mlExtension01.ml")))
+    //	SOURCE=E_mlExtension01.ml  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_mlExtension01.ml
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_mlExtension01.ml"|])>]
+    let ``E_mlExtension01.ml --test:ErrorRanges`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
 
-
-    [<Fact>]  //	SOURCE=mlExtension02.ml    COMPILE_ONLY=1 SCFLAGS="--warnaserror --mlcompatibility"				# mlExtension02.ml
-    let ``OCamlCompat - mlExtension02.ml - --warnaserror --mlcompatibility`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "mlExtension02.ml")))
+    //	SOURCE=mlExtension02.ml    COMPILE_ONLY=1 SCFLAGS="--warnaserror --mlcompatibility"				# mlExtension02.ml
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_mlExtension01.ml"|])>]
+    let ``mlExtension02_ml  --warnaserror --mlcompatibility`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--mlcompatibility"]
         |> compile
         |> shouldSucceed
 
 
-    [<Fact>]  //	SOURCE=W_mlExtension03.ml  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# W_mlExtension03.ml
-    let ``OCamlCompat - W_mlExtension03.ml - --test:ErrorRanges`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "W_mlExtension03.ml")))
+    //	SOURCE=W_mlExtension03.ml  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# W_mlExtension03.ml
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_mlExtension03.ml"|])>]
+    let `` W_mlExtension03_ml  --test:ErrorRanges`` compilation =
+        compilation
         |> asExe
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
 
 
-    [<Fact>]  //	SOURCE=Hat01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# Hat01.fs
-    let ``OCamlCompat - Hat01.fs - --warnaserror --mlcompatibility`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "Hat01.fs")))
+    //	SOURCE=Hat01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# Hat01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"Hat01.fs"|])>]
+    let ``Hat01_fs  --warnaserror --mlcompatibility`` compilation =
+        compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--mlcompatibility"]
         |> typecheck
         |> shouldSucceed
 
 
-    [<Fact>]  //	SOURCE=W_Hat01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# W_Hat01.fs
-    let ``OCamlCompat - W_Hat01.fs - --warnaserror --mlcompatibility`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "W_Hat01.fs")))
+    //	SOURCE=W_Hat01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# W_Hat01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_Hat01.fs"|])>]
+    let ``W_Hat01_fs  --warnaserror --mlcompatibility`` compilation =
+        compilation
         |> asExe
         |> withOptions ["--test:ErrorRanges"; "--mlcompatibility"]
         |> compile
         |> shouldSucceed
 
 
-    [<Fact>]  //	SOURCE=NoParensInLet01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# NoParensInLet01.fs
-    let ``OCamlCompat - NoParensInLet01.fs`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "NoParensInLet01.fs")))
+    //	SOURCE=NoParensInLet01.fs  COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"						# NoParensInLet01.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NoParensInLet01.fs"|])>]
+    let ``NoParensInLet01_fs`` compilation =
+        compilation
         |> asExe
         |> compile
         |> shouldSucceed
 
 
-    [<Fact>]  //	SOURCE=W_MultiArgumentGenericType.fs					# W_MultiArgumentGenericType.fs
-    let ``OCamlCompat - W_MultiArgumentGenericType.fs`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "W_MultiArgumentGenericType.fs")))
+    //	SOURCE=W_MultiArgumentGenericType.fs					# W_MultiArgumentGenericType.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_MultiArgumentGenericType.fs"|])>]
+    let ``W_MultiArgumentGenericType.fs``compilation =
+        compilation
         |> asExe
         |> ignoreWarnings
         |> compile
@@ -137,9 +147,10 @@ module ``OCamlCompat test cases`` =
         |> withDiagnosticMessageMatches "This construct is for ML compatibility\. The syntax '\(typ,\.\.\.,typ\) ident' is not used in F# code. Consider using 'ident<typ,\.\.\.,typ>' instead. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
 
 
-    [<Fact>]  //	SOURCE=OCamlStyleArrayIndexing.fs SCFLAGS="--mlcompatibility"		# OCamlStyleArrayIndexing.fs
-    let ``OCamlCompat - OCamlStyleArrayIndexing.fs --mlcompatibility`` () =
-        FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__, "OCamlStyleArrayIndexing.fs")))
+    //	SOURCE=OCamlStyleArrayIndexing.fs SCFLAGS="--mlcompatibility"		# OCamlStyleArrayIndexing.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"OCamlStyleArrayIndexing.fs"|])>]
+    let ``OCamlStyleArrayIndexing_fs  --mlcompatibility`` compilation =
+        compilation
         |> asExe
         |> withOptions ["--mlcompatibility"]
         |> compile
