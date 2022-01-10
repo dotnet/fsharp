@@ -244,9 +244,6 @@ Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
 Conformance08			Conformance\Expressions\DataExpressions\NameOf
 
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyAlgorithmId
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyConfiguration
-Misc01			ClrFx\PseudoCustomAttributes\AssemblyVersion
 Misc01			Diagnostics\async
 Misc01,Diagnostics			Diagnostics\General
 Misc01			Diagnostics\NONTERM
@@ -269,7 +266,6 @@ Misc01			Warnings
 Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
-Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
 Misc02,CodeGen			Optimizations\GenericComparison

@@ -497,7 +497,6 @@ let CheckValAttributes g (x:ValRef) m =
 let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
-    
 // Identify any security attributes
 let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
     // There's no CAS on Silverlight, so we have to be careful here
@@ -518,3 +517,10 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
 
+// Identify any AssemblyVersion attributes
+let IsAssemblyVersionAttribute (g: TcGlobals) (Attrib(tcref, _, _, _, _, _, _)) =
+
+    match g.TryFindSysAttrib("System.Reflection.AssemblyVersionAttribute") with
+    | None -> false
+    | Some attr ->
+        attr.TyconRef.CompiledRepresentationForNamedType.QualifiedName = tcref.CompiledRepresentationForNamedType.QualifiedName
