@@ -43,6 +43,9 @@
         <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"                target="lib\netstandard2.0" />
         <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.xml"                target="lib\netstandard2.0" />
 
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\default.win32manifest"                                    target="lib\netstandard2.0" />
+
+
         <!-- resources -->
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"                 target="lib\netstandard2.0" />
         <file src="FSharp.DependencyManager.Nuget\$Configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"   target="lib\netstandard2.0" />

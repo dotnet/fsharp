@@ -873,7 +873,8 @@ let setLanguageVersion specifiedVersion =
         exit 0
 
     if specifiedVersion = "?" then dumpAllowedValues ()
-    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then ()
+    elif not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
     languageVersion
 
 let languageFlags tcConfigB =

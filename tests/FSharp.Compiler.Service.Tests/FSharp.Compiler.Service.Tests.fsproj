@@ -75,6 +75,9 @@
     <Compile Include="..\service\XmlDocTests.fs">
       <Link>XmlDocTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\XmlDocTests - Units of Measure.fs">
+      <Link>XmlDocTests - Units of Measure.fs</Link>
+    </Compile>
     <Compile Include="..\service\PrettyNaming.fs">
       <Link>PrettyNaming.fs</Link>
     </Compile>

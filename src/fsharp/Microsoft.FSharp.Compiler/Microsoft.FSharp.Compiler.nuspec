@@ -54,11 +54,11 @@
         <file src="FSharp.Build\$Configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\net5.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
                                                                                                            target="lib\net5.0" />
-            <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
+        <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
                                                                                                            target="lib\net5.0" />
 
         <!-- additional files -->
-        <file src="fsc\$Configuration$\net5.0\default.win32manifest"                                       target="contentFiles\any\any" />
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\default.win32manifest"           target="contentFiles\any\any" />
         <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
         <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.Portable.FSharp.Targets"          target="contentFiles\any\any" />
         <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.NetSdk.props"              target="contentFiles\any\any" />

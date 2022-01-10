@@ -111,6 +111,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03
 		docs\fcs\typedtree.fsx = docs\fcs\typedtree.fsx
 		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
 	EndProjectSection
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fscAnyCpu", "src\fsharp\fscAnyCpu\fscAnyCpu.fsproj", "{8ACA60C2-7266-425A-B641-A2946396B7D1}"
 EndProject
 Global

@@ -79,3 +79,4 @@ val IsSecurityAttribute: g:TcGlobals -> amap:Import.ImportMap -> casmap:Dictiona
 
 val IsSecurityCriticalAttribute: g:TcGlobals -> Attrib -> bool
 
+val IsAssemblyVersionAttribute: g:TcGlobals -> Attrib -> bool
