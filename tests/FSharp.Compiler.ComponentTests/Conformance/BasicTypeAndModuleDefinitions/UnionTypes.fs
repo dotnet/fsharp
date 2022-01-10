@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Conformance.BasicTypeAndModuleDefinitions
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
-open FSharp.Test.Xunit.Attributes
 
 module UnionTypes =
 

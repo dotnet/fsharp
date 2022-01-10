@@ -24,7 +24,7 @@
     <Compile Include="Assert.fs" />
     <Compile Include="ScriptHelpers.fs" />
     <Compile Include="Compiler.fs" />
-    <Compile Include="Xunit\Attributes\DirectoryAttribute.fs" />
+    <Compile Include="DirectoryAttribute.fs" />
   </ItemGroup>
 
   <ItemGroup>
