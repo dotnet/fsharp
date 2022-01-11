@@ -460,7 +460,7 @@ type BoundModel private (tcConfig: TcConfig,
                 | input, _sourceRange, filename, parseErrors ->
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
-                    let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions) // Probably just a capturing now @@@@@@@@@@@@@@@@@@@@@
+                    let capturingErrorLogger = CapturingErrorLogger("TypeCheck")
                     let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.errorSeverityOptions, capturingErrorLogger)
                     use _ = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
@@ -486,15 +486,14 @@ type BoundModel private (tcConfig: TcConfig,
                                 (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink),
                                 prevTcState, input,
                                 partialCheck)
-                        |> NodeCode.FromCancellable        
-                        
+                        |> NodeCode.FromCancellable
+
                     Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                        
+
                     fileChecked.Trigger filename
-                    let newErrors = Array.append parseErrors (capturingErrorLogger.GetDiagnostics())
-                        
+                    let newErrors = Array.append parseErrors (capturingErrorLogger.Diagnostics |> List.toArray)
                     let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
-                        
+
                     let tcInfo =
                         {
                             tcState = tcState
