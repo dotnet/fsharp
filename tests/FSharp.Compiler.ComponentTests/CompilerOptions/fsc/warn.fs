@@ -94,7 +94,6 @@ module TestCompilerWarningLevel =
     let ``warn40_fs`` compilation =
         compilation
         |> asExe
-        |> withOptions ["--warnaserror"]
         |> compile
         |> shouldFail
         |> withWarningCodes [21; 40]

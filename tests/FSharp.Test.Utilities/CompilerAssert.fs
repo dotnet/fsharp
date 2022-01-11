@@ -99,7 +99,7 @@ type CompilerAssert private () =
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [| |])) |> ignore
         finally
             ctxt.Unload()
 #else
@@ -305,10 +305,9 @@ type CompilerAssert private () =
     // The reason behind is so we can compose verification of test runs easier.
     // TODO: We must not rely on the filesystem when compiling
     static let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
-        let removePeriods (name:string) = name.Replace(".", "_")
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, Some name, Some outputDirectory) -> Path.Combine(outputDirectory.FullName, removePeriods name)
+            | Compilation(_, _, _, _, _, Some name, Some outputDirectory) -> Path.Combine(outputDirectory.FullName, name)
             | Compilation(_, _, _, _, _, _, _) -> Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
 
         Directory.CreateDirectory(outputDirectory) |> ignore
