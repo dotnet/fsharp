@@ -20,8 +20,13 @@ type DirectoryAttribute(dir: string) =
         if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
 
+    let normalizeName name =
+        let invalidPathChars = Array.concat [Path.GetInvalidPathChars(); [| ':'; '\\'; '/'; ' '; '.' |]]
+        let result = invalidPathChars |> Array.fold(fun (acc:string) (c:char) -> acc.Replace(string(c), "_")) name
+        result
+
     let dirInfo = Path.GetFullPath(dir)
-    let outputDirectory =
+    let outputDirectory name =
         // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
         // Thus the output directory will be in a subdirectory below where we are executing.
         // The subdirectory will be relative to the source directory containing the test source file,
@@ -39,9 +44,13 @@ type DirectoryAttribute(dir: string) =
             let pos = testlibraryLocation.IndexOf(@"artifacts\bin",StringComparison.OrdinalIgnoreCase)
             if pos > 0 then
                 // Running under CI or dev build
-                let testRoot = Path.Combine(testlibraryLocation.Substring(0, pos), "tests")
-                let testSourceDirectory = dirInfo.Replace(testRoot, "")
-                let outputDirectory = new DirectoryInfo(Path.Combine(testlibraryLocation, testSourceDirectory.Trim('\\')))
+                let testRoot = Path.Combine(testlibraryLocation.Substring(0, pos), @"tests\")
+                let testSourceDirectory =
+                    let testPaths = dirInfo.Replace(testRoot, "").Split('\\')
+                    testPaths[0] <- "tests"
+                    Path.Combine(testPaths)
+                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('\\'), normalizeName name)
+                let outputDirectory = new DirectoryInfo(n)
                 Some outputDirectory
             else
                 None
@@ -56,11 +65,17 @@ type DirectoryAttribute(dir: string) =
             | true -> Some <| File.ReadAllText path
             | _ -> None
 
-    let createCompilationUnit path fs =
+    let createCompilationUnit path fs name =
+        let outputDirectory =  outputDirectory name
         let filePath = path ++ fs
         let fsSource = File.ReadAllText filePath
         let bslFilePath = filePath + ".bsl"
-        let ilFilePath  = filePath + ".il"
+        let ilFilePath  =
+            if outputDirectory.IsSome then
+                outputDirectory.Value.FullName + fs + ".il"
+            else
+                filePath + ".il"
+
         let bslSource = readFileOrDefault bslFilePath
         let ilSource = readFileOrDefault ilFilePath
 
@@ -79,7 +94,7 @@ type DirectoryAttribute(dir: string) =
 
     member _.Includes with get() = includes and set v = includes <- v
 
-    override _.GetData(_: MethodInfo) =
+    override _.GetData(method: MethodInfo) =
         if not (Directory.Exists(dirInfo)) then
             failwith (sprintf "Directory does not exist: \"%s\"." dirInfo)
 
@@ -100,5 +115,5 @@ type DirectoryAttribute(dir: string) =
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
 
         fsFiles
-        |> Array.map (fun fs -> createCompilationUnit dirInfo fs)
+        |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name)
         |> Seq.map (fun c -> [| c |])
