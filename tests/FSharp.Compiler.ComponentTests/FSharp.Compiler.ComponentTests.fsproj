@@ -87,10 +87,10 @@
     <Compile Include="Conformance\LexicalFiltering\Basic\OffsideExceptions.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication.fs" />
-    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction.fs" />
-    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\StructTypes.fs" />
+    <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\ClassTypes\ValueRestriction.fs" />
+    <Compile Include="Conformance\StructTypes\StructTypes.fs" />
     <Compile Include="Conformance\PatternMatching\Simple.fs" />
     <Compile Include="Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes.fs" />

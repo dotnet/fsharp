@@ -18,6 +18,14 @@ open NUnit.Framework
 open FSharp.Test.Utilities
 open TestFramework
 
+module private CompilerAssertHelpers =
+    // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
+    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
+        if entryPoint.GetParameters().Length = 1 then
+            yield Array.empty<string>
+    |]
+
+open CompilerAssertHelpers
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
@@ -41,7 +49,8 @@ type Worker () =
             |> Option.defaultValue null))
         let asm = Assembly.LoadFrom(assemblyPath)
         let entryPoint = asm.EntryPoint
-        (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+        let args = mkDefaultArgs entryPoint
+        (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
 
 type SourceKind =
     | Fs
@@ -99,7 +108,8 @@ type CompilerAssert private () =
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+            let args = mkDefaultArgs entryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
             ctxt.Unload()
 #else
@@ -305,10 +315,9 @@ type CompilerAssert private () =
     // The reason behind is so we can compose verification of test runs easier.
     // TODO: We must not rely on the filesystem when compiling
     static let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
-        let removePeriods (name:string) = name.Replace(".", "_")
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, Some name, Some outputDirectory) -> Path.Combine(outputDirectory.FullName, removePeriods name)
+            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> outputDirectory.FullName
             | Compilation(_, _, _, _, _, _, _) -> Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
 
         Directory.CreateDirectory(outputDirectory) |> ignore
