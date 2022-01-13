@@ -1,7 +1,5 @@
 // #Regression #NoMT #CompilerOptions 
-//
-//
-
+// See DevDiv:364238
 open System.Collections.Generic
 
 let x : IEnumerator<KeyValuePair<int, int>> = failwith ""

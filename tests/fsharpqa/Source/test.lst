@@ -58,9 +58,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\times
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
-CompilerOptions01,NoMT				CompilerOptions\fsc\warn
-CompilerOptions01,NoMT				CompilerOptions\fsc\warnaserror
-CompilerOptions01,NoMT				CompilerOptions\fsc\warnon
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT,help				CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
@@ -266,7 +263,6 @@ Misc01			Warnings
 Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
-Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
 Misc02,CodeGen			Optimizations\GenericComparison
