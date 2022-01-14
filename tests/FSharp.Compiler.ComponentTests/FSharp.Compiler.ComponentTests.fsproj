@@ -87,6 +87,7 @@
     <Compile Include="Conformance\LexicalFiltering\Basic\OffsideExceptions.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication.fs" />
+    <Compile Include="Conformance\MethodResolution\ParametersResolution.fs" />
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ValueRestriction.fs" />
