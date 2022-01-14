@@ -3737,7 +3737,7 @@ namespace Microsoft.FSharp.Core
         ///     .ForAll(fun _ -> counter2.IncrementWithLock())
         /// 
         /// //  Evaluates to 100000 deterministically because the increment to the counter object is locked
-        /// counter.Count
+        /// counter2.Count
         /// </code>
         /// </example>
         /// 
