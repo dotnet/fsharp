@@ -1612,6 +1612,7 @@ type SynTypeDefn =
         typeInfo: SynComponentInfo *
         equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
         range: range

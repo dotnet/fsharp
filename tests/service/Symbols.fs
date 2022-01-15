@@ -454,6 +454,26 @@ type Person(name : string, age : int) =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
+    let ``SynTypeDefn with Record contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo =
+    { Bar : int }
+    with
+        member this.Meh (v:int) = this.Bar + v
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr=SynTypeDefnRepr.Simple(simpleRepr= SynTypeDefnSimpleRepr.Record _); withKeyword= Some mWithKeyword) ]
+            )
+        ]) ])) ->
+            assertRange (4, 4) (4, 8) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
     let ``SynTypeDefn with Augmentation contains the range of the with keyword`` () =
         let parseResults = 
             getParseResults
