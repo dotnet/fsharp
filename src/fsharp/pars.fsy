@@ -1334,10 +1334,10 @@ moduleDefn:
   /* 'exception' definitions */
   | opt_attributes opt_declVisibility exconDefn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3 
+        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, e, f)) = $3 
         let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), e, f))
+        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), withKeyword, e, f))
         [ SynModuleDecl.Exception(ec, f) ] }
 
   /* 'module' definitions */
@@ -2619,8 +2619,8 @@ fieldDecl:
 /* An exception definition */
 exconDefn: 
   | exconCore opt_classDefn 
-     { let _mWith, optClassDefn = $2
-       SynExceptionDefn($1, optClassDefn, ($1.Range, optClassDefn) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
+     { let mWith, optClassDefn = $2
+       SynExceptionDefn($1, mWith, optClassDefn, ($1.Range, optClassDefn) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
   
 /* Part of an exception definition */
 exconCore: 

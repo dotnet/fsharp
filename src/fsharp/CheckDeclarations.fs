@@ -3004,7 +3004,7 @@ module TcExceptionDeclarations =
         binds, exnc
 
 
-    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, aug, m), scopem) = 
+    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, _, aug, m), scopem) = 
         let binds1, exnc = TcExnDefnCore cenv envInitial parent core
         let envMutRec = AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
 
@@ -5561,7 +5561,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange, ref [])) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
-              | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
+              | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
                   let (SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, None, members, None, m)) ]

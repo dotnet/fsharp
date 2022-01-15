@@ -1759,6 +1759,7 @@ type SynExceptionDefn =
 
     | SynExceptionDefn of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         range: range
 
