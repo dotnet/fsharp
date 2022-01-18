@@ -737,7 +737,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       for d in decls do yield! walkDecl d
                   | SynModuleDecl.Types(tydefs, m) when isMatchRange m -> 
                       for d in tydefs do yield! walkTycon d
-                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr _, membDefns, _), m) 
+                  | SynModuleDecl.Exception(SynExceptionDefn(SynExceptionDefnRepr _, _, membDefns, _), m) 
                         when isMatchRange m ->
                       for m in membDefns do yield! walkMember m
                   | _ -> () ] 
