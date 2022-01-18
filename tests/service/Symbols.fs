@@ -593,10 +593,11 @@ type Foo() =
                 typeDefns = [ SynTypeDefn(typeRepr =
                     SynTypeDefnRepr.ObjectModel(members=[ _
                                                           SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
-                                                          SynMemberDefn.Member _ ])
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
                     ) ])
              ]) ])) ->
             assertRange (5, 8) (5, 12) mWith
+            assertRange (6, 8) (6, 11) mAnd
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SyntaxExpressions =
