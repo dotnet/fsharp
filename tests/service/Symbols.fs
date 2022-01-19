@@ -454,6 +454,26 @@ type Person(name : string, age : int) =
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
+    let ``SynTypeDefn with Record contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo =
+    { Bar : int }
+    with
+        member this.Meh (v:int) = this.Bar + v
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr=SynTypeDefnRepr.Simple(simpleRepr= SynTypeDefnSimpleRepr.Record _); withKeyword= Some mWithKeyword) ]
+            )
+        ]) ])) ->
+            assertRange (4, 4) (4, 8) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
     let ``SynTypeDefn with Augmentation contains the range of the with keyword`` () =
         let parseResults = 
             getParseResults
@@ -593,10 +613,11 @@ type Foo() =
                 typeDefns = [ SynTypeDefn(typeRepr =
                     SynTypeDefnRepr.ObjectModel(members=[ _
                                                           SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
-                                                          SynMemberDefn.Member _ ])
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.And mAnd)))) ])
                     ) ])
              ]) ])) ->
             assertRange (5, 8) (5, 12) mWith
+            assertRange (6, 8) (6, 11) mAnd
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SyntaxExpressions =
@@ -2595,4 +2616,25 @@ match x with
             )
         ]) ])) ->
             assertRange (3, 7) (3, 8) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+module Exceptions =
+    [<Test>]
+    let ``SynExceptionDefn should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+namespace X
+
+exception Foo with
+    member Meh () = ()
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace(decls = [
+            SynModuleDecl.Exception(
+                exnDefn=SynExceptionDefn(withKeyword = Some mWithKeyword)
+            )
+        ]) ])) ->
+            assertRange (4, 14) (4, 18) mWithKeyword
         | _ -> Assert.Fail "Could not get valid AST"

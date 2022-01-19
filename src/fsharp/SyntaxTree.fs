@@ -1578,6 +1578,7 @@ type SynExceptionDefn =
 
     | SynExceptionDefn of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         range: range
 
@@ -1612,6 +1613,7 @@ type SynTypeDefn =
         typeInfo: SynComponentInfo *
         equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
         range: range

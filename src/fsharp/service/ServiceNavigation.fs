@@ -171,7 +171,7 @@ module NavigationImpl =
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
 
         // Process a class declaration or F# type declaration
-        and processExnDefn baseName (SynExceptionDefn(repr, membDefns, _)) =  
+        and processExnDefn baseName (SynExceptionDefn(repr, _, membDefns, _)) =  
             let nested = processMembers membDefns NavigationEntityKind.Exception |> snd
             processExnDefnRepr baseName nested repr
 
@@ -663,7 +663,7 @@ module NavigateTo =
     
         and walkSynModuleDecl(decl: SynModuleDecl) container =
             match decl with
-            | SynModuleDecl.Exception(SynExceptionDefn(repr, synMembers, _), _) -> 
+            | SynModuleDecl.Exception(SynExceptionDefn(repr, _, synMembers, _), _) -> 
                 let container = addExceptionRepr repr false container
                 for m in synMembers do
                     walkSynMemberDefn m container
