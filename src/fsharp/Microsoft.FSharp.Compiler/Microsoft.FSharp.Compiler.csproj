@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +23,12 @@
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NuspecProperty Include="artifactsShippingPackagesDir=$(ArtifactsShippingPackagesDir)" />
+    <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
   </ItemGroup>
 
   <Target Name="Build" />
