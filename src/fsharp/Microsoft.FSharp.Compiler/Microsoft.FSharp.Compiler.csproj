@@ -27,7 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="artifactsShippingPackagesDir=$(ArtifactsShippingPackagesDir)" />
+    <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
+    <NuspecProperty Include="fSharpCorePackageVersion=$(FSCorePackageVersionValue)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
   </ItemGroup>
 

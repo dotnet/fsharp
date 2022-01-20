@@ -462,6 +462,9 @@ try {
         }
     }
 
+    if ($pack) {
+        BuildSolution "Microsoft.FSharp.Compiler.sln"
+    }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
     }

@@ -54,7 +54,7 @@
         <file src="FSharp.Build\$Configuration$\netstandard2.0\**\FSharp.Build.resources.dll"              target="lib\net5.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                            target="lib\net5.0" />
-				<file src="$artifactsPackagesDir$**Shipping\FSharp.Core.*.nupkg"                                   target="contentFiles\Shipping" />
-				<file src="$artifactsPackagesDir$**Release\FSharp.Core.*.nupkg"                                   target="contentFiles\Release" />
+				<file src="$artifactsPackagesDir$Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"     target="contentFiles\Shipping" />
+				<file src="$artifactsPackagesDir$Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
     </files>
 </package>
