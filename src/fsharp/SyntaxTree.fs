@@ -8,6 +8,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SyntaxTrivia
 
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident (text: string, range: range) =
@@ -615,15 +616,12 @@ type SynExpr =
         range: range
 
     | TryWith of
-        tryKeywordRange: range *
         tryExpr: SynExpr *
-        tryRange: range *
-        withKeywordRange: range *
         withCases: SynMatchClause list *
-        withRange: range *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        withDebugPoint: DebugPointAtWith
+        withDebugPoint: DebugPointAtWith *
+        trivia: SynExprTryWithTrivia
 
     | TryFinally of
         tryExpr: SynExpr *

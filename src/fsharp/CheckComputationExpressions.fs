@@ -1304,8 +1304,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // TODO: consider allowing translation to BindReturn
             Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
-        | SynExpr.TryWith (_mTry, innerComp, _mTryToWith, _mWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
-            let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
+        | SynExpr.TryWith (innerComp, clauses, mTryToLast, spTry, _spWith, trivia) ->
+            let mTry = match spTry with DebugPointAtTry.Yes _ -> trivia.TryKeyword.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> trivia.TryKeyword
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
 
@@ -1882,7 +1882,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let matchv, matchExpr = CompilePatternForMatchClauses cenv env inputExprMark inputExprMark true ThrowIncompleteMatchException (Some inputExpr) inputExprTy genOuterTy tclauses 
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
-        | SynExpr.TryWith (tryRange=mTryToWith) ->
+        | SynExpr.TryWith (trivia={ TryToWithRange = mTryToWith }) ->
             error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
 
         | SynExpr.YieldOrReturnFrom ((isYield, _), yieldExpr, m) -> 

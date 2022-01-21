@@ -5766,8 +5766,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
 
-    | SynExpr.TryWith (_mTry, synBodyExpr, _mTryToWith, _mWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
-        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith)
+    | SynExpr.TryWith (synBodyExpr, synWithClauses, mTryToLast, spTry, spWith, trivia) ->
+        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, synWithClauses, trivia.WithToEndRange, mTryToLast, spTry, spWith)
 
     | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) ->
         TcExprTryFinally cenv overallTy env tpenv (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally)
@@ -6036,7 +6036,7 @@ and TcExprIntegerForLoop cenv overallTy env tpenv (spBind, id, start, dir, finis
     let bodyExpr, tpenv = TcStmt cenv envinner tpenv body
     mkFastForLoop cenv.g (spBind, m, idv, startExpr, dir, finishExpr, bodyExpr), tpenv
 
-and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) =
+and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) =
     let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
     // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
     let filterClauses =

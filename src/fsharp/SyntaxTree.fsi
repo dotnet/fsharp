@@ -5,6 +5,7 @@ namespace rec FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SyntaxTrivia
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison>]
@@ -760,15 +761,12 @@ type SynExpr =
 
     /// F# syntax: try expr with pat -> expr
     | TryWith of
-        tryKeywordRange: range *
         tryExpr: SynExpr *
-        tryRange: range *
-        withKeywordRange: range *
         withCases: SynMatchClause list *
-        withRange: range *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        withDebugPoint: DebugPointAtWith
+        withDebugPoint: DebugPointAtWith *
+        trivia: SynExprTryWithTrivia
 
     /// F# syntax: try expr finally expr
     | TryFinally of

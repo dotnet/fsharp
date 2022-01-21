@@ -18,6 +18,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.SyntaxTreeOps
@@ -3576,7 +3577,12 @@ declExpr:
         let mTryToWith = unionRanges mTry mWith 
         let mWithToLast = unionRanges mWith mLast 
         let mTryToLast = unionRanges mTry mLast
-        SynExpr.TryWith (mTry, $2, mTryToWith, mWith, clauses, mWithToLast, mTryToLast, spTry, spWith) }
+        let trivia: SynExprTryWithTrivia = 
+            { TryKeyword = mTry
+              TryToWithRange = mTryToWith
+              WithKeyword = mWith
+              WithToEndRange = mWithToLast }
+        SynExpr.TryWith ($2, clauses, mTryToLast, spTry, spWith, trivia) }
 
   | TRY typedSequentialExprBlockR recover              %prec expr_try 
       { // Produce approximate expression during error recovery 

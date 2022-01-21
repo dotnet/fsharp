@@ -799,7 +799,7 @@ with
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.DoExpr(expr =
-                            SynExpr.TryWith(tryKeywordRange=mTry; withKeywordRange=mWith))
+                            SynExpr.TryWith(trivia={ TryKeyword = mTry; WithKeyword = mWith }))
                     ])
                 ])) ->
             assertRange (2, 0) (2, 3) mTry
