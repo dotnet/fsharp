@@ -4,27 +4,7 @@
         $CommonMetadataElements$
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NET5.0">
-                <dependency id="Microsoft.NETCore.Platforms" version="2.0.0" />
-                <dependency id="NETStandard.Library" version="2.0.0" />
-                <dependency id="System.Collections.Immutable" version="1.5.0" />
-                <dependency id="System.Diagnostics.Process" version="4.3.0" />
-                <dependency id="System.Diagnostics.TraceSource" version="4.3.0" />
-                <dependency id="System.Linq.Expressions" version="4.3.0" />
-                <dependency id="System.Linq.Queryable" version="4.3.0" />
-                <dependency id="System.Net.Requests" version="4.3.0" />
-                <dependency id="System.Reflection.Emit" version="4.3.0" />
-                <dependency id="System.Reflection.Metadata" version="1.6.0" />
-                <dependency id="System.Runtime.InteropServices" version="4.3.0" />
-                <dependency id="System.Runtime.Loader" version="4.3.0" />
-                <dependency id="System.Security.Cryptography.Algorithms" version="4.3.0" />
-                <dependency id="System.Threading.Tasks.Parallel" version="4.3.0" />
-                <dependency id="System.Threading.Thread" version="4.3.0" />
-                <dependency id="System.Threading.ThreadPool" version="4.3.0" />
-                <dependency id="System.ValueTuple" version="4.4.0" />
-                <dependency id="System.Buffers" version="4.5.1" />
-                <dependency id="System.Memory" version="4.5.4" />
-            </group>
+            <group targetFramework=".NET5.0" />
         </dependencies>
         <contentFiles>
             <files include="any\any\default.win32manifest"                       buildAction="Content" copyToOutput="true" flatten="false" />
@@ -74,5 +54,11 @@
         <file src="FSharp.Build\$Configuration$\netstandard2.0\**\FSharp.Build.resources.dll"              target="lib\net5.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                            target="lib\net5.0" />
+        <file src="$artifactsPackagesDir$Shipping\FSharp.Core.$fSharpCorePreviewPackageVersion$*nupkg"     target="contentFiles\Shipping" />
+        <file src="$artifactsPackagesDir$Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
+        <file src="$artifactsPackagesDir$Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"
+                                                                                                           target="contentFiles\Shipping" />
+        <file src="$artifactsPackagesDir$Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"
+        	                                                                                                 target="contentFiles\Release" />
     </files>
 </package>
