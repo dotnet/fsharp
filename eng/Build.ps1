@@ -198,7 +198,7 @@ function Update-Arguments() {
 function BuildSolution([string] $solutionName) {
     Write-Host "${solutionName}:"
 
-    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
+    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot  $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
@@ -462,6 +462,9 @@ try {
         }
     }
 
+    if ($pack) {
+        BuildSolution "Microsoft.FSharp.Compiler.sln"
+    }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
     }
