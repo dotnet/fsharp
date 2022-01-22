@@ -14,6 +14,8 @@
   <ItemGroup>
     <NuspecProperty Include="fSharpCorePreviewPackageVersion=$(FSCorePackageVersionValue)-$(VersionSuffix)" />
     <NuspecProperty Include="fSharpCorePackageVersion=$(FSCorePackageVersionValue)" />
+    <NuspecProperty Include="fSharpCompilerServicePackagePreviewPackageVersion=$(FSharpCompilerServicePackageVersion)-$(VersionSuffix)" />
+    <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
   </ItemGroup>
 
