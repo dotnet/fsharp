@@ -54,14 +54,19 @@ namespace Microsoft.FSharp.Control
         ///        
         /// If no cancellation token is provided then the default cancellation token is used.
         ///
+        /// The computation is started on the current thread if <see cref="P:System.Threading.SynchronizationContext.Current"/> is null,
+        /// <see cref="P:System.Threading.Thread.CurrentThread"/> has  <see cref="P:System.Threading.Thread.IsThreadPoolThread"/>
+        /// of <c>true</c>, and no timeout is specified. Otherwise the computation is started by queueing a new work item in the thread pool,
+        /// and the current thread is blocked awaiting the completion of the computation.
+        ///
         /// The timeout parameter is given in milliseconds.  A value of -1 is equivalent to
-        /// System.Threading.Timeout.Infinite.</remarks>
+        /// <see cref="F:System.Threading.Timeout.Infinite"/>.
+        /// </remarks>
         ///
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
         /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.
-        /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
+        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>
         ///
