@@ -36,13 +36,13 @@
   // Offset: 0x00000220 Length: 0x0000010B
 }
 .module Hash02.dll
-// MVID: {61E0712B-9642-796E-A745-03832B71E061}
+// MVID: {61F0294F-9642-796E-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071D0000
+// Image base: 0x06FB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,9 +57,13 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f4_triple() cil managed
     {
-      // Code size       1 (0x1)
+      // Code size       2 (0x2)
       .maxstack  8
-      IL_0000:  ret
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash02.fsx'
+      IL_0000:  nop
+      .line 6,6 : 8,24 ''
+      IL_0001:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f4_triple
 
   } // end of class HashMicroPerfAndCodeGenerationTests

@@ -36,13 +36,13 @@
   // Offset: 0x000006D8 Length: 0x000003B2
 }
 .module Hash06.dll
-// MVID: {61E0712B-9642-78F2-A745-03832B71E061}
+// MVID: {61F0294F-9642-78F2-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D20000
+// Image base: 0x06B50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -681,32 +681,34 @@
 
     .method public static void  f5a() cil managed
     {
-      // Code size       30 (0x1e)
+      // Code size       31 (0x1f)
       .maxstack  4
       .locals init ([0] int32 i,
                [1] int32 V_1)
+      .line 6,6 : 8,25 ''
+      IL_0000:  nop
       .line 7,7 : 8,11 ''
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  br.s       IL_0015
+      IL_0001:  ldc.i4.0
+      IL_0002:  stloc.0
+      IL_0003:  br.s       IL_0016
 
       .line 8,8 : 12,46 ''
-      IL_0004:  ldc.i4.1
-      IL_0005:  ldc.i4.2
-      IL_0006:  call       class Hash06/HashMicroPerfAndCodeGenerationTests/Key Hash06/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
+      IL_0005:  ldc.i4.1
+      IL_0006:  ldc.i4.2
+      IL_0007:  call       class Hash06/HashMicroPerfAndCodeGenerationTests/Key Hash06/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
-      IL_000b:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
-      IL_0010:  stloc.1
-      IL_0011:  ldloc.0
-      IL_0012:  ldc.i4.1
-      IL_0013:  add
-      IL_0014:  stloc.0
+      IL_000c:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
+      IL_0011:  stloc.1
+      IL_0012:  ldloc.0
+      IL_0013:  ldc.i4.1
+      IL_0014:  add
+      IL_0015:  stloc.0
       .line 7,7 : 18,20 ''
-      IL_0015:  ldloc.0
-      IL_0016:  ldc.i4     0x989681
-      IL_001b:  blt.s      IL_0004
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4     0x989681
+      IL_001c:  blt.s      IL_0005
 
-      IL_001d:  ret
+      IL_001e:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f5a
 
   } // end of class HashMicroPerfAndCodeGenerationTests

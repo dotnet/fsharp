@@ -41,13 +41,13 @@
   // Offset: 0x00000140 Length: 0x00000050
 }
 .module Decimal01.exe
-// MVID: {61E07031-F150-FA46-A745-03833170E061}
+// MVID: {61F02896-F150-FA46-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AE0000
+// Image base: 0x06C60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,6 +70,8 @@
     .entrypoint
     // Code size       13 (0xd)
     .maxstack  8
+    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+    .line 6,6 : 9,13 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Decimal01.fs'
     IL_0000:  ldc.i4.s   12
     IL_0002:  ldc.i4.0
     IL_0003:  ldc.i4.0

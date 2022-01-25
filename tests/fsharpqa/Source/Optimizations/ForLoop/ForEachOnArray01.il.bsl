@@ -36,13 +36,13 @@
   // Offset: 0x000001E0 Length: 0x0000007C
 }
 .module ForEachOnArray01.dll
-// MVID: {61EFED17-7E2E-D3AE-A745-038317EDEF61}
+// MVID: {61F0294F-7E2E-D3AE-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x074C0000
+// Image base: 0x07580000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,6 +62,7 @@
     .line 6,6 : 6,23 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnArray01.fs'
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
+    .line 7,7 : 6,9 ''
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
     IL_0004:  br.s       IL_0016

@@ -36,13 +36,13 @@
   // Offset: 0x00000A90 Length: 0x00000585
 }
 .module Hash12.dll
-// MVID: {61E0712B-9661-796E-A745-03832B71E061}
+// MVID: {61F0294F-9661-796E-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x066C0000
+// Image base: 0x07540000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1402,49 +1402,51 @@
 
     .method public static void  f9() cil managed
     {
-      // Code size       61 (0x3d)
+      // Code size       62 (0x3e)
       .maxstack  6
       .locals init ([0] class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys key,
                [1] int32 i,
                [2] int32 V_2)
+      .line 7,7 : 8,25 ''
+      IL_0000:  nop
       .line 8,8 : 8,64 ''
-      IL_0000:  ldc.i4.1
-      IL_0001:  ldc.i4.2
-      IL_0002:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
+      IL_0001:  ldc.i4.1
+      IL_0002:  ldc.i4.2
+      IL_0003:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
-      IL_0007:  ldc.i4.1
-      IL_0008:  ldc.i4.2
-      IL_0009:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
+      IL_0008:  ldc.i4.1
+      IL_0009:  ldc.i4.2
+      IL_000a:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
-      IL_000e:  ldc.i4.1
-      IL_000f:  ldc.i4.2
-      IL_0010:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
+      IL_000f:  ldc.i4.1
+      IL_0010:  ldc.i4.2
+      IL_0011:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/Key Hash12/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
-      IL_0015:  newobj     instance void class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::.ctor(!0,
+      IL_0016:  newobj     instance void class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>::.ctor(!0,
                                                                                                                                                                                           !1)
-      IL_001a:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Hash12/HashMicroPerfAndCodeGenerationTests/Key,
+      IL_001b:  call       class Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::NewKeyWithInnerKeys(class Hash12/HashMicroPerfAndCodeGenerationTests/Key,
                                                                                                                                                                               class [mscorlib]System.Tuple`2<class Hash12/HashMicroPerfAndCodeGenerationTests/Key,class Hash12/HashMicroPerfAndCodeGenerationTests/Key>)
-      IL_001f:  stloc.0
+      IL_0020:  stloc.0
       .line 9,9 : 8,11 ''
-      IL_0020:  ldc.i4.0
-      IL_0021:  stloc.1
-      IL_0022:  br.s       IL_0034
+      IL_0021:  ldc.i4.0
+      IL_0022:  stloc.1
+      IL_0023:  br.s       IL_0035
 
       .line 10,10 : 12,30 ''
-      IL_0024:  ldloc.0
-      IL_0025:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
-      IL_002a:  callvirt   instance int32 Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
-      IL_002f:  stloc.2
-      IL_0030:  ldloc.1
-      IL_0031:  ldc.i4.1
-      IL_0032:  add
-      IL_0033:  stloc.1
+      IL_0025:  ldloc.0
+      IL_0026:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
+      IL_002b:  callvirt   instance int32 Hash12/HashMicroPerfAndCodeGenerationTests/KeyWithInnerKeys::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0030:  stloc.2
+      IL_0031:  ldloc.1
+      IL_0032:  ldc.i4.1
+      IL_0033:  add
+      IL_0034:  stloc.1
       .line 9,9 : 18,20 ''
-      IL_0034:  ldloc.1
-      IL_0035:  ldc.i4     0x989681
-      IL_003a:  blt.s      IL_0024
+      IL_0035:  ldloc.1
+      IL_0036:  ldc.i4     0x989681
+      IL_003b:  blt.s      IL_0025
 
-      IL_003c:  ret
+      IL_003d:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f9
 
   } // end of class HashMicroPerfAndCodeGenerationTests

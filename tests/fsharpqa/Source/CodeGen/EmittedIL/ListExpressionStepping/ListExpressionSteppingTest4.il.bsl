@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest4.exe
-// MVID: {61E07031-3154-FA67-A745-03833170E061}
+// MVID: {61F02896-3154-FA67-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x068C0000
+// Image base: 0x06FE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -122,6 +122,7 @@
     .entrypoint
     // Code size       7 (0x7)
     .maxstack  8
+    .line 14,14 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest4/ListExpressionSteppingTest4::f3()
     IL_0005:  pop
     IL_0006:  ret

@@ -36,13 +36,13 @@
   // Offset: 0x00000298 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {61E07031-98A2-AB14-A745-03833170E061}
+// MVID: {61F02896-98A2-AB14-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07170000
+// Image base: 0x06990000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -233,6 +233,7 @@
     IL_0017:  dup
     IL_0018:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$ListExpressionSteppingTest6>'.$ListExpressionSteppingTest6::es@5
     IL_001d:  stloc.0
+    .line 14,14 : 13,17 ''
     IL_001e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest6/ListExpressionSteppingTest6::f7()
     IL_0023:  pop
     IL_0024:  ret

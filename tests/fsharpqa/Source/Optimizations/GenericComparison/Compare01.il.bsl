@@ -36,13 +36,13 @@
   // Offset: 0x00000228 Length: 0x000000B2
 }
 .module Compare01.dll
-// MVID: {619833D0-04A0-F88E-A745-0383D0339861}
+// MVID: {61F0294F-04A0-F88E-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07510000
+// Image base: 0x07170000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,7 +57,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f4() cil managed
     {
-      // Code size       34 (0x22)
+      // Code size       36 (0x24)
       .maxstack  4
       .locals init ([0] int32 x,
                [1] int32 i,
@@ -66,42 +66,46 @@
       .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare01.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
+      .line 6,6 : 8,22 ''
+      IL_0002:  nop
+      .line 7,7 : 8,22 ''
+      IL_0003:  nop
       .line 9,9 : 8,11 ''
-      IL_0002:  ldc.i4.0
-      IL_0003:  stloc.1
-      IL_0004:  br.s       IL_0019
+      IL_0004:  ldc.i4.0
+      IL_0005:  stloc.1
+      IL_0006:  br.s       IL_001b
 
       .line 10,10 : 12,30 ''
-      IL_0006:  ldc.i4.1
-      IL_0007:  ldc.i4.1
-      IL_0008:  cgt
-      IL_000a:  stloc.2
+      IL_0008:  ldc.i4.1
+      IL_0009:  ldc.i4.1
+      IL_000a:  cgt
+      IL_000c:  stloc.2
       .line 16707566,16707566 : 0,0 ''
-      IL_000b:  ldloc.2
-      IL_000c:  brfalse.s  IL_0012
+      IL_000d:  ldloc.2
+      IL_000e:  brfalse.s  IL_0014
 
       .line 16707566,16707566 : 0,0 ''
-      IL_000e:  ldloc.2
+      IL_0010:  ldloc.2
       .line 16707566,16707566 : 0,0 ''
-      IL_000f:  nop
-      IL_0010:  br.s       IL_0014
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0016
 
       .line 16707566,16707566 : 0,0 ''
-      IL_0012:  ldc.i4.m1
+      IL_0014:  ldc.i4.m1
       .line 16707566,16707566 : 0,0 ''
-      IL_0013:  nop
+      IL_0015:  nop
       .line 16707566,16707566 : 0,0 ''
-      IL_0014:  stloc.0
-      IL_0015:  ldloc.1
-      IL_0016:  ldc.i4.1
-      IL_0017:  add
-      IL_0018:  stloc.1
+      IL_0016:  stloc.0
+      IL_0017:  ldloc.1
+      IL_0018:  ldc.i4.1
+      IL_0019:  add
+      IL_001a:  stloc.1
       .line 9,9 : 18,20 ''
-      IL_0019:  ldloc.1
-      IL_001a:  ldc.i4     0x989681
-      IL_001f:  blt.s      IL_0006
+      IL_001b:  ldloc.1
+      IL_001c:  ldc.i4     0x989681
+      IL_0021:  blt.s      IL_0008
 
-      IL_0021:  ret
+      IL_0023:  ret
     } // end of method CompareMicroPerfAndCodeGenerationTests::f4
 
   } // end of class CompareMicroPerfAndCodeGenerationTests

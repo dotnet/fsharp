@@ -36,13 +36,13 @@
   // Offset: 0x00000140 Length: 0x0000004E
 }
 .module Tuple07.exe
-// MVID: {61E07031-7229-962D-A745-03833170E061}
+// MVID: {61F02896-7229-962D-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CF0000
+// Image base: 0x07100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,6 +65,8 @@
     .entrypoint
     // Code size       14 (0xe)
     .maxstack  9
+    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+    .line 3,3 : 9,22 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\Tuple07.fs'
     IL_0000:  ldc.i4.1
     IL_0001:  ldc.i4.2
     IL_0002:  ldc.i4.3

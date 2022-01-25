@@ -1650,8 +1650,8 @@ let MakeStructuralBindingTempVal (v: Val) i (arg: Expr) argTy =
     mkCompGenLocal arg.Range name argTy
 
 let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
-    let v, ve = MakeStructuralBindingTempVal v i arg argTy
-    ve, mkCompGenBind v arg
+    let vi, vie = MakeStructuralBindingTempVal v i arg argTy
+    vie, mkCompGenBind vi arg
 
 let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
     let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget

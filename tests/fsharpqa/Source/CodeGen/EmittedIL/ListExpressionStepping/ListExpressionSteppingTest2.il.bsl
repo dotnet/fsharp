@@ -36,13 +36,13 @@
   // Offset: 0x000002D0 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest2.exe
-// MVID: {61E07031-D3DE-B780-A745-03833170E061}
+// MVID: {61F02896-D3DE-B780-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CB0000
+// Image base: 0x07340000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -445,8 +445,10 @@
     .entrypoint
     // Code size       14 (0xe)
     .maxstack  8
+    .line 11,11 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest2/ListExpressionSteppingTest2::f1()
     IL_0005:  pop
+    .line 29,29 : 13,17 ''
     IL_0006:  ldc.i4.5
     IL_0007:  call       class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!0,int32>>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`3<!!0,int32,int32>>> ListExpressionSteppingTest2/ListExpressionSteppingTest2::f2<int32>(!!0)
     IL_000c:  pop

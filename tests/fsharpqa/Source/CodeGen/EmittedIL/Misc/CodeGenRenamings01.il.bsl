@@ -36,13 +36,13 @@
   // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {61E07031-8173-986B-A745-03833170E061}
+// MVID: {61F02896-8173-986B-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07570000
+// Image base: 0x05910000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -567,18 +567,23 @@
     IL_00dc:  dup
     IL_00dd:  stsfld     int32[0...,0...,0...,0...] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array4D@13
     IL_00e2:  stloc.s    array4D
+    .line 16,16 : 9,27 ''
     IL_00e4:  call       int32[] CodeGenRenamings01::get_array()
     IL_00e9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfArray<int32>(!!0[])
     IL_00ee:  pop
+    .line 17,17 : 9,24 ''
     IL_00ef:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> CodeGenRenamings01::get_aseq()
     IL_00f4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfSeq<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00f9:  pop
+    .line 20,20 : 9,27 ''
     IL_00fa:  call       class [mscorlib]System.Tuple`2<int32,int32>[] CodeGenRenamings01::get_array1()
     IL_00ff:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfArray<int32,int32>(class [mscorlib]System.Tuple`2<!!0,!!1>[])
     IL_0104:  pop
+    .line 21,21 : 9,25 ''
     IL_0105:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<int32,int32>> CodeGenRenamings01::get_list1()
     IL_010a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfList<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!0,!!1>>)
     IL_010f:  pop
+    .line 22,22 : 9,23 ''
     IL_0110:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,int32>> CodeGenRenamings01::get_seq1()
     IL_0115:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfSeq<int32,int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<!!0,!!1>>)
     IL_011a:  pop
