@@ -1092,7 +1092,7 @@ let canGenMethodDef cenv (md: ILMethodDef) =
         | ILMemberAccess.Private | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
             when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
         // When emitting a reference assembly, we only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-        | ILMemberAccess.Assembly
+        | ILMemberAccess.FamilyOrAssembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
@@ -1261,17 +1261,24 @@ and GetFieldDefAsFieldDefIdx cenv tidx fd =
 // methods in the module being emitted.
 // --------------------------------------------------------------------
 
-let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
+let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
     let tref = mref.DeclaringTypeRef
     try
         if not (isTypeRefLocal tref) then
-             failwithf "method referred to by method impl, event or property is not in a type defined in this module, method ref is %A" mref
-        let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
-        let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
-        FindMethodDefIdx cenv mdkey
+             Result.Error $"method referred to by method impl, event or property is not in a type defined in this module, method ref is %A{mref}"
+        else
+            let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
+            let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
+            let idx = FindMethodDefIdx cenv mdkey
+            Ok idx
     with e ->
-        failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name) e.Message
+        Result.Error $"Error in GetMethodRefAsMethodDefIdx for mref = %A{(mref.Name, tref.Name)}, error: %s{e.Message}"
 
+let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
+    match TryGetMethodRefAsMethodDefIdx cenv mref with
+    | Result.Error msg -> failwith msg
+    | Ok idx -> idx
+    
 let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, varargs, genarity) =
     MemberRefRow(GetTypeAsMemberRefParent cenv env ty,
                  GetStringHeapIdx cenv nm,
@@ -2663,14 +2670,16 @@ let GenMethodDefPass4 cenv env md =
         List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
 let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
-    // REVIEW: why are we catching exceptions here?
-    let midx = try GetMethodRefAsMethodDefIdx cenv mref with MethodDefNotFound -> 1
-    AddUnsharedRow cenv TableNames.MethodSemantics
-        (UnsharedRow
-           [| UShort (uint16 kind)
-              SimpleIndex (TableNames.Method, midx)
-              HasSemantics (hs_Property, pidx) |]) |> ignore
-
+    // NOTE: We only generate get_* and set_* methods for properties if we have method refs for them.
+    match TryGetMethodRefAsMethodDefIdx cenv mref with
+    | Ok midx ->
+        AddUnsharedRow cenv TableNames.MethodSemantics
+            (UnsharedRow
+               [| UShort (uint16 kind)
+                  SimpleIndex (TableNames.Method, midx)
+                  HasSemantics (hs_Property, pidx) |]) |> ignore
+    | _ -> ()
+    
 let rec GetPropertySigAsBlobIdx cenv env prop =
     GetBytesAsBlobIdx cenv (GetPropertySigAsBytes cenv env prop)
 
@@ -2690,7 +2699,21 @@ and GetPropertyAsPropertyRow cenv env (prop: ILPropertyDef) =
           Blob (GetPropertySigAsBlobIdx cenv env prop) |]
 
 /// ILPropertyDef --> Property Row + MethodSemantics entries
-and GenPropertyPass3 cenv env prop =
+and GenPropertyPass3 cenv env (prop: ILPropertyDef) =
+    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+    // NOTE: They can be not-None and missing MethodDefs if we generating them for reference assembly in the earlier pass.
+    // Only generate property if we have at least getter or setter, otherwise, we skip.
+    let canGenerateProperty = [| prop.GetMethod; prop.SetMethod |]
+                              |> Array.filter Option.isSome
+                              |> Array.map Option.get
+                              |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
+                              |> Array.exists (function | Ok _ -> true | _ -> false)
+    
+    if not canGenerateProperty then
+        ()
+
+    // REVIEW: We do double check here (via canGenerateProperty and GenPropertyMethodSemanticsPass3).
+    
     let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
     prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001)
     prop.GetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0002)

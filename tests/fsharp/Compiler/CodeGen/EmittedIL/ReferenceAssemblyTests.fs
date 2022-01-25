@@ -469,4 +469,4 @@ type internal RingState<'item> = | Writable of 'item
             """
             foo
             """]
-    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events.
+    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events + different combinations.
