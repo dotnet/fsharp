@@ -297,6 +297,11 @@
         <target state="translated">Ungültige Direktive "#{0} {1}"</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">Das fortsetzbare Codekonstrukt "{0}" darf nur in Inlinecode verwendet werden, der durch "if __useResumableCode then..." geschützt wird. Die Gesamtkomposition muss einen gültigen fortsetzbaren Code bilden.</target>

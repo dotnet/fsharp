@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000230 Length: 0x0000007B
 }
 .module TupleElimination.exe
-// MVID: {6124063B-DFDD-92DF-A745-03833B062461}
+// MVID: {61EFEE1F-DFDD-92DF-A745-03831FEEEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D10000
+// Image base: 0x07030000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -78,7 +78,6 @@
     .line 7,7 : 5,64 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleElimination.fs'
     IL_0000:  newobj     instance void class [mscorlib]System.Collections.Generic.Dictionary`2<int32,int32>::.ctor()
     IL_0005:  stloc.0
-    .line 9,9 : 31,48 ''
     IL_0006:  ldloc.0
     IL_0007:  ldc.i4.1
     IL_0008:  ldloca.s   i
@@ -109,7 +108,6 @@
     IL_0048:  ldloc.s    V_4
     IL_004a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
     IL_004f:  pop
-    .line 14,14 : 38,65 ''
     IL_0050:  ldstr      "123"
     IL_0055:  ldloca.s   l
     IL_0057:  call       bool [mscorlib]System.Int64::TryParse(string,

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr06.exe
-// MVID: {611B0EC4-35A8-E566-A745-0383C40E1B61}
+// MVID: {61E07031-35A8-E566-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07080000
+// Image base: 0x06B20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -77,16 +77,18 @@
     .method public strict virtual instance bool 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       15 (0xf)
+      // Code size       16 (0x10)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 9,9 : 15,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr06.fs'
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ComputationExpr06/'res6@9-1'::x
-      IL_0006:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-      IL_000b:  ldc.i4.0
-      IL_000c:  cgt
-      IL_000e:  ret
+      .line 9,9 : 9,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr06.fs'
+      IL_0000:  nop
+      .line 9,9 : 15,21 ''
+      IL_0001:  ldarg.0
+      IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ComputationExpr06/'res6@9-1'::x
+      IL_0007:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
+      IL_000c:  ldc.i4.0
+      IL_000d:  cgt
+      IL_000f:  ret
     } // end of method 'res6@9-1'::Invoke
 
   } // end of class 'res6@9-1'
@@ -232,7 +234,6 @@
       IL_0000:  ldc.i4.1
       IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
       IL_0006:  stloc.0
-      .line 9,9 : 9,21 ''
       IL_0007:  ldarg.0
       IL_0008:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr06/res6@8::builder@
       IL_000d:  ldarg.0
@@ -297,9 +298,10 @@
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res6,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1,
              [2] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input at line 18')
-    .line 100001,100001 : 0,0 ''
+    .line 7,7 : 5,15 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
+    .line 7,7 : 5,15 ''
     IL_0006:  ldloc.1
     IL_0007:  ldloc.1
     IL_0008:  newobj     instance void ComputationExpr06/res6@8::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)

@@ -62,6 +62,12 @@ val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> Ident list -> CompilationPa
 /// Ignore 'Expr.Link' in an expression
 val stripExpr: Expr -> Expr
 
+/// Ignore 'Expr.Link' and 'Expr.DebugPoint' in an expression
+val stripDebugPoints: Expr -> Expr
+
+/// Match any 'Expr.Link' and 'Expr.DebugPoint' in an expression, providing the inner expression and a function to rebuild debug points
+val (|DebugPoints|): Expr -> Expr * (Expr -> Expr) 
+
 /// Get the values for a set of bindings
 val valsOfBinds: Bindings -> Vals 
 
@@ -78,7 +84,7 @@ type MatchBuilder =
     member AddTarget: DecisionTreeTarget -> int
 
     /// Add a new destination target that is an expression result
-    member AddResultTarget: Expr * DebugPointAtTarget -> DecisionTree
+    member AddResultTarget: Expr -> DecisionTree
 
     /// Finish the targets
     member CloseTargets: unit -> DecisionTreeTarget list
@@ -90,10 +96,10 @@ type MatchBuilder =
 val mkBoolSwitch: DebugPointAtSwitch -> range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond: DebugPointAtBinding -> DebugPointAtTarget -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond: DebugPointAtBinding -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -155,7 +161,7 @@ val mkMemberLambdas: range -> Typars -> Val option -> Val option -> Val list lis
 val mkWhile: TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range -> Expr
 
 /// Build a 'for' loop expression
-val mkFor: TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
+val mkIntegerForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
 /// Build a 'try/with' expression
 val mkTryWith: TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
@@ -1101,10 +1107,6 @@ val freeTyvarsAllPublic: FreeTyvars -> bool
 /// Check if a set of free variables are all public
 val freeVarsAllPublic: FreeVars -> bool
 
-/// Get the mark/range/position information from an expression
-type Expr with 
-    member Range: range
-
 /// Compute the type of an expression from the expression itself
 val tyOfExpr: TcGlobals -> Expr -> TType 
 
@@ -1767,9 +1769,9 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
+val mkSequential: range -> Expr -> Expr -> Expr
 
-val mkThenDoSequential: DebugPointAtSequential -> range -> expr: Expr -> stmt: Expr -> Expr
+val mkThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
 /// This is used for tacking on code _before_ the expression. The SuppressStmt
 /// setting is used for debug points, suppressing the debug points for the statement if possible.
@@ -1779,7 +1781,7 @@ val mkCompGenSequential: range -> stmt: Expr -> expr: Expr -> Expr
 /// setting is used for debug points, suppressing the debug points for the statement if possible.
 val mkCompGenThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
-val mkSequentials: DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
+val mkSequentials: TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr: TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
@@ -2304,7 +2306,7 @@ val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> haveWitne
 val mkStaticOptimizationExpr: TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
 /// Build for loops
-val mkFastForLoop: TcGlobals -> DebugPointAtFor * range * Val * Expr * bool * Expr * Expr -> Expr
+val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
 
 //---------------------------------------------------------------------------
 // Active pattern helpers
@@ -2407,7 +2409,7 @@ val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
 
 type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
 
-val DetectAndOptimizeForExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
+val DetectAndOptimizeForEachExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
 
 val TryEliminateDesugaredConstants: TcGlobals -> range -> Const -> Expr option
 
@@ -2417,9 +2419,9 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType) option
+val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType) option
 
-val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType -> Expr
+val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
@@ -2481,14 +2483,17 @@ val (|StructStateMachineExpr|_|):
 /// Recognise a sequential or binding construct in a resumable code
 val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
 
+/// Recognise a '__debugPoint' expression
+val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string option
+
 /// Recognise a '__resumeAt' expression
 val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr option
 
 /// Recognise a while expression
 val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
 
-/// Recognise a for-loop expression
-val (|ForLoopExpr|_|): Expr -> (DebugPointAtFor * ForLoopStyle * Expr * Expr * Val * Expr * range) option
+/// Recognise an integer for-loop expression
+val (|IntegerForLoopExpr|_|): Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) option
 
 /// Recognise a try-with expression
 val (|TryWithExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
@@ -2536,5 +2541,4 @@ val (|OpPipeRight3|_|):
     expr: Expr -> 
         (TType * Expr * Expr * Expr * Expr * range) option
 
-/// This uses 'expr thendo ()' with a note that there should be a debug point on the 'expr'
-val mkDebugPoint: g: TcGlobals -> m: range -> expr: Expr -> Expr
+val mkDebugPoint: m: range -> expr: Expr -> Expr

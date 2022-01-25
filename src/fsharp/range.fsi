@@ -9,13 +9,27 @@ open System.Collections.Generic
 type internal FileIndex = int32 
 
 [<RequireQualifiedAccess>]
-type internal RangeDebugPointKind =
+type internal NotedSourceConstruct =
     | None
+    /// Notes that a range is related to a "while" in "while .. do" in a computation, list, array or sequence expression
     | While
+    /// Notes that a range is related to a "for" in "for .. do" in a computation, list, array or sequence expression
     | For
+    /// Notes that a range is related to a "in" in a "for .. in ... do" or "to" in "for .. = .. to .. do" in a computation, list, array or sequence expression
+    | InOrTo
+    /// Notes that a range is related to a "try" in a "try/with" in a computation, list, array or sequence expression
     | Try
+    /// Notes that a range is related to a "let" or other binding range in a computation, list, array or sequence expression
     | Binding
+    /// Notes that a range is related to a "finally" in a "try/finally" in a computation, list, array or sequence expression
     | Finally
+    /// Notes that a range is related to a "with" in a "try/with" in a computation, list, array or sequence expression
+    | With
+    /// Notes that a range is related to a sequential "a; b" translated to a "Combine" call in a computation expression
+    ///
+    /// This doesn't include "expr; cexpr" sequentials where the "expr" is a side-effecting simple statement
+    /// This does include "expr; cexpr" sequentials where the "expr" is interpreted as an implicit yield + Combine call
+    | Combine
 
 /// Represents a position in a file
 [<Struct; CustomEquality; NoComparison>]
@@ -81,15 +95,15 @@ type Range =
     /// service operations like dot-completion.
     member IsSynthetic: bool 
 
-    /// When de-sugaring computation expressions we convert a debug point into a plain range, and then later
-    /// recover that the range definitely indicates a debug point.
-    member internal DebugPointKind: RangeDebugPointKind
-
     /// Convert a range to be synthetic
     member internal MakeSynthetic: unit -> range
 
+    /// When de-sugaring computation expressions we convert a debug point into a plain range, and then later
+    /// recover that the range definitely indicates a debug point.
+    member internal NotedSourceConstruct: NotedSourceConstruct
+
     /// Note that a range indicates a debug point
-    member internal NoteDebugPoint: kind: RangeDebugPointKind -> range
+    member internal NoteSourceConstruct: kind: NotedSourceConstruct -> range
 
     /// Check if the range is adjacent to another range
     member internal IsAdjacentTo: otherRange: Range -> bool
@@ -180,7 +194,7 @@ module Range =
     /// Reduce a range so it only covers a line
     val trimRangeToLine: range -> range
 
-    /// not a total order, but enough to sort on ranges 
+    /// Order ranges (file, then start pos, then end pos)
     val rangeOrder: IComparer<range>
 
     /// Output a range

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Testfunction22c
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x00000056
 }
 .module Testfunction22c.exe
-// MVID: {60B68B97-459D-3DF8-A745-0383978BB660}
+// MVID: {61E07031-459D-3DF8-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F10000
+// Image base: 0x053B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,8 +65,6 @@
     .entrypoint
     // Code size       6 (0x6)
     .maxstack  8
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 10,36 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22c.fs'
     IL_0000:  call       void [mscorlib]System.Console::WriteLine()
     IL_0005:  ret
   } // end of method $Testfunction22c::main@

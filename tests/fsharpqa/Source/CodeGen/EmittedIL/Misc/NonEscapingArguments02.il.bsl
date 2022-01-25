@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly NonEscapingArguments02
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000360 Length: 0x0000019E
 }
 .module NonEscapingArguments02.dll
-// MVID: {60B68B7F-BB56-6582-A745-03837F8BB660}
+// MVID: {61E07031-BB56-6582-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B40000
+// Image base: 0x05190000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,18 +61,14 @@
     {
       // Code size       21 (0x15)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\NonEscapingArguments02.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 6,6 : 5,36 ''
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
       IL_000a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
       IL_000f:  stfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
-      .line 5,5 : 6,21 ''
       IL_0014:  ret
     } // end of method ListSizeCounter`1::.ctor
 
@@ -81,7 +77,8 @@
     {
       // Code size       7 (0x7)
       .maxstack  8
-      .line 7,7 : 24,28 ''
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 7,7 : 24,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\NonEscapingArguments02.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
       IL_0006:  ret

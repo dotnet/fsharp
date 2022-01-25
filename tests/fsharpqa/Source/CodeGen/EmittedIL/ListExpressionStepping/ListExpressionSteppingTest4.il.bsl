@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ListExpressionSteppingTest4
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest4.exe
-// MVID: {611C4D7C-3154-FA67-A745-03837C4D1C61}
+// MVID: {61E07031-3154-FA67-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AA0000
+// Image base: 0x068C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,8 +83,8 @@
       IL_0016:  ldloc.2
       IL_0017:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
       IL_001c:  nop
-      .line 10,10 : 11,19 ''
       IL_001d:  ldloca.s   V_0
+      .line 10,10 : 17,19 ''
       IL_001f:  ldloc.1
       IL_0020:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
       IL_0025:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
@@ -96,12 +96,11 @@
       IL_0032:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
       IL_0037:  add
       IL_0038:  stloc.3
-      .line 12,12 : 11,18 ''
       IL_0039:  ldloca.s   V_0
+      .line 12,12 : 17,18 ''
       IL_003b:  ldloc.3
       IL_003c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0041:  nop
-      .line 6,12 : 9,20 ''
       IL_0042:  ldloca.s   V_0
       IL_0044:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
       IL_0049:  ret
@@ -123,7 +122,6 @@
     .entrypoint
     // Code size       7 (0x7)
     .maxstack  8
-    .line 14,14 : 13,17 ''
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest4/ListExpressionSteppingTest4::f3()
     IL_0005:  pop
     IL_0006:  ret

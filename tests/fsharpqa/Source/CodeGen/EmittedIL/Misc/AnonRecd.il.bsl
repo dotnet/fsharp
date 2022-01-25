@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly AnonRecd
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000001C8 Length: 0x0000006B
 }
 .module AnonRecd.exe
-// MVID: {611C4D7C-C42F-5208-A745-03837C4D1C61}
+// MVID: {61E07031-C42F-5208-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07240000
+// Image base: 0x07100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -161,80 +161,78 @@
           instance int32  CompareTo(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       85 (0x55)
+    // Code size       84 (0x54)
     .maxstack  5
     .locals init ([0] int32 V_0)
-    .line 1,1 : 1,1 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\unknown'
-    IL_0000:  nop
-    .line 100001,100001 : 0,0 ''
-    IL_0001:  ldarg.0
-    IL_0002:  ldnull
-    IL_0003:  cgt.un
-    IL_0005:  brfalse.s  IL_004b
+    .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\unknown'
+    IL_0000:  ldarg.0
+    IL_0001:  ldnull
+    IL_0002:  cgt.un
+    IL_0004:  brfalse.s  IL_004a
 
     .line 100001,100001 : 0,0 ''
-    IL_0007:  ldarg.1
-    IL_0008:  ldnull
-    IL_0009:  cgt.un
-    IL_000b:  brfalse.s  IL_0049
+    IL_0006:  ldarg.1
+    IL_0007:  ldnull
+    IL_0008:  cgt.un
+    IL_000a:  brfalse.s  IL_0048
 
     .line 100001,100001 : 0,0 ''
-    IL_000d:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-    IL_0012:  ldarg.0
-    IL_0013:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_0018:  ldarg.1
-    IL_0019:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_001e:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericComparisonWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IComparer,
+    IL_000c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+    IL_0011:  ldarg.0
+    IL_0012:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_0017:  ldarg.1
+    IL_0018:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_001d:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericComparisonWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IComparer,
                                                                                                                                    !!0,
                                                                                                                                    !!0)
-    IL_0023:  stloc.0
+    IL_0022:  stloc.0
     .line 100001,100001 : 0,0 ''
-    IL_0024:  ldloc.0
-    IL_0025:  ldc.i4.0
-    IL_0026:  bge.s      IL_002a
+    IL_0023:  ldloc.0
+    IL_0024:  ldc.i4.0
+    IL_0025:  bge.s      IL_0029
 
     .line 100001,100001 : 0,0 ''
-    IL_0028:  ldloc.0
-    IL_0029:  ret
+    IL_0027:  ldloc.0
+    IL_0028:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_002a:  ldloc.0
-    IL_002b:  ldc.i4.0
-    IL_002c:  ble.s      IL_0030
+    IL_0029:  ldloc.0
+    IL_002a:  ldc.i4.0
+    IL_002b:  ble.s      IL_002f
 
     .line 100001,100001 : 0,0 ''
-    IL_002e:  ldloc.0
-    IL_002f:  ret
+    IL_002d:  ldloc.0
+    IL_002e:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0030:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-    IL_0035:  ldarg.0
-    IL_0036:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_003b:  ldarg.1
-    IL_003c:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_0041:  tail.
-    IL_0043:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericComparisonWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IComparer,
+    IL_002f:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+    IL_0034:  ldarg.0
+    IL_0035:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_003a:  ldarg.1
+    IL_003b:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_0040:  tail.
+    IL_0042:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericComparisonWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IComparer,
                                                                                                                                    !!0,
                                                                                                                                    !!0)
-    IL_0048:  ret
+    IL_0047:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0049:  ldc.i4.1
-    IL_004a:  ret
+    IL_0048:  ldc.i4.1
+    IL_0049:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_004b:  ldarg.1
-    IL_004c:  ldnull
-    IL_004d:  cgt.un
-    IL_004f:  brfalse.s  IL_0053
+    IL_004a:  ldarg.1
+    IL_004b:  ldnull
+    IL_004c:  cgt.un
+    IL_004e:  brfalse.s  IL_0052
 
     .line 100001,100001 : 0,0 ''
-    IL_0051:  ldc.i4.m1
-    IL_0052:  ret
+    IL_0050:  ldc.i4.m1
+    IL_0051:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0053:  ldc.i4.0
-    IL_0054:  ret
+    IL_0052:  ldc.i4.0
+    IL_0053:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::CompareTo
 
   .method public hidebysig virtual final 
@@ -243,7 +241,6 @@
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       15 (0xf)
     .maxstack  8
-    .line 1,1 : 1,1 ''
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
     IL_0002:  unbox.any  class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
@@ -262,7 +259,7 @@
     .locals init ([0] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0,
              [1] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_1,
              [2] int32 V_2)
-    .line 1,1 : 1,1 ''
+    .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.1
     IL_0001:  unbox.any  class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
     IL_0006:  stloc.0
@@ -345,58 +342,56 @@
           instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       67 (0x43)
+    // Code size       66 (0x42)
     .maxstack  7
     .locals init ([0] int32 V_0)
-    .line 1,1 : 1,1 ''
-    IL_0000:  nop
     .line 100001,100001 : 0,0 ''
-    IL_0001:  ldarg.0
-    IL_0002:  ldnull
-    IL_0003:  cgt.un
-    IL_0005:  brfalse.s  IL_0041
+    IL_0000:  ldarg.0
+    IL_0001:  ldnull
+    IL_0002:  cgt.un
+    IL_0004:  brfalse.s  IL_0040
 
     .line 100001,100001 : 0,0 ''
-    IL_0007:  ldc.i4.0
-    IL_0008:  stloc.0
-    IL_0009:  ldc.i4     0x9e3779b9
-    IL_000e:  ldarg.1
-    IL_000f:  ldarg.0
-    IL_0010:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_0015:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericHashWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
+    IL_0006:  ldc.i4.0
+    IL_0007:  stloc.0
+    IL_0008:  ldc.i4     0x9e3779b9
+    IL_000d:  ldarg.1
+    IL_000e:  ldarg.0
+    IL_000f:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_0014:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericHashWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                              !!0)
-    IL_001a:  ldloc.0
-    IL_001b:  ldc.i4.6
-    IL_001c:  shl
-    IL_001d:  ldloc.0
-    IL_001e:  ldc.i4.2
-    IL_001f:  shr
+    IL_0019:  ldloc.0
+    IL_001a:  ldc.i4.6
+    IL_001b:  shl
+    IL_001c:  ldloc.0
+    IL_001d:  ldc.i4.2
+    IL_001e:  shr
+    IL_001f:  add
     IL_0020:  add
     IL_0021:  add
-    IL_0022:  add
-    IL_0023:  stloc.0
-    IL_0024:  ldc.i4     0x9e3779b9
-    IL_0029:  ldarg.1
-    IL_002a:  ldarg.0
-    IL_002b:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_0030:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericHashWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
+    IL_0022:  stloc.0
+    IL_0023:  ldc.i4     0x9e3779b9
+    IL_0028:  ldarg.1
+    IL_0029:  ldarg.0
+    IL_002a:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_002f:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericHashWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                              !!0)
-    IL_0035:  ldloc.0
-    IL_0036:  ldc.i4.6
-    IL_0037:  shl
-    IL_0038:  ldloc.0
-    IL_0039:  ldc.i4.2
-    IL_003a:  shr
+    IL_0034:  ldloc.0
+    IL_0035:  ldc.i4.6
+    IL_0036:  shl
+    IL_0037:  ldloc.0
+    IL_0038:  ldc.i4.2
+    IL_0039:  shr
+    IL_003a:  add
     IL_003b:  add
     IL_003c:  add
-    IL_003d:  add
-    IL_003e:  stloc.0
-    IL_003f:  ldloc.0
-    IL_0040:  ret
+    IL_003d:  stloc.0
+    IL_003e:  ldloc.0
+    IL_003f:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0041:  ldc.i4.0
-    IL_0042:  ret
+    IL_0040:  ldc.i4.0
+    IL_0041:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::GetHashCode
 
   .method public hidebysig virtual final 
@@ -405,7 +400,6 @@
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       14 (0xe)
     .maxstack  8
-    .line 1,1 : 1,1 ''
     IL_0000:  ldarg.0
     IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
     IL_0006:  tail.
@@ -418,123 +412,119 @@
                                 class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       72 (0x48)
+    // Code size       71 (0x47)
     .maxstack  5
     .locals init ([0] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0,
              [1] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_1)
-    .line 1,1 : 1,1 ''
-    IL_0000:  nop
     .line 100001,100001 : 0,0 ''
-    IL_0001:  ldarg.0
-    IL_0002:  ldnull
-    IL_0003:  cgt.un
-    IL_0005:  brfalse.s  IL_0040
+    IL_0000:  ldarg.0
+    IL_0001:  ldnull
+    IL_0002:  cgt.un
+    IL_0004:  brfalse.s  IL_003f
 
     .line 100001,100001 : 0,0 ''
-    IL_0007:  ldarg.1
-    IL_0008:  isinst     class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
-    IL_000d:  stloc.0
+    IL_0006:  ldarg.1
+    IL_0007:  isinst     class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
+    IL_000c:  stloc.0
     .line 100001,100001 : 0,0 ''
-    IL_000e:  ldloc.0
-    IL_000f:  brfalse.s  IL_003e
+    IL_000d:  ldloc.0
+    IL_000e:  brfalse.s  IL_003d
 
     .line 100001,100001 : 0,0 ''
-    IL_0011:  ldloc.0
-    IL_0012:  stloc.1
+    IL_0010:  ldloc.0
+    IL_0011:  stloc.1
     .line 100001,100001 : 0,0 ''
-    IL_0013:  ldarg.2
-    IL_0014:  ldarg.0
-    IL_0015:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_001a:  ldloc.1
-    IL_001b:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_0020:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
+    IL_0012:  ldarg.2
+    IL_0013:  ldarg.0
+    IL_0014:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_0019:  ldloc.1
+    IL_001a:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_001f:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<A>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                                 !!0,
                                                                                                                                 !!0)
-    IL_0025:  brfalse.s  IL_003c
+    IL_0024:  brfalse.s  IL_003b
 
     .line 100001,100001 : 0,0 ''
-    IL_0027:  ldarg.2
-    IL_0028:  ldarg.0
-    IL_0029:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_002e:  ldloc.1
-    IL_002f:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_0034:  tail.
-    IL_0036:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
+    IL_0026:  ldarg.2
+    IL_0027:  ldarg.0
+    IL_0028:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_002d:  ldloc.1
+    IL_002e:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_0033:  tail.
+    IL_0035:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityWithComparer<!'<B>j__TPar'>(class [mscorlib]System.Collections.IEqualityComparer,
                                                                                                                                 !!0,
                                                                                                                                 !!0)
-    IL_003b:  ret
+    IL_003a:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_003c:  ldc.i4.0
-    IL_003d:  ret
+    IL_003b:  ldc.i4.0
+    IL_003c:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_003e:  ldc.i4.0
-    IL_003f:  ret
+    IL_003d:  ldc.i4.0
+    IL_003e:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0040:  ldarg.1
-    IL_0041:  ldnull
-    IL_0042:  cgt.un
-    IL_0044:  ldc.i4.0
-    IL_0045:  ceq
-    IL_0047:  ret
+    IL_003f:  ldarg.1
+    IL_0040:  ldnull
+    IL_0041:  cgt.un
+    IL_0043:  ldc.i4.0
+    IL_0044:  ceq
+    IL_0046:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::Equals
 
   .method public hidebysig virtual final 
           instance bool  Equals(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       64 (0x40)
-    .maxstack  4
-    .line 1,1 : 1,1 ''
-    IL_0000:  nop
+    // Code size       63 (0x3f)
+    .maxstack  8
     .line 100001,100001 : 0,0 ''
-    IL_0001:  ldarg.0
-    IL_0002:  ldnull
-    IL_0003:  cgt.un
-    IL_0005:  brfalse.s  IL_0038
+    IL_0000:  ldarg.0
+    IL_0001:  ldnull
+    IL_0002:  cgt.un
+    IL_0004:  brfalse.s  IL_0037
 
     .line 100001,100001 : 0,0 ''
-    IL_0007:  ldarg.1
-    IL_0008:  ldnull
-    IL_0009:  cgt.un
-    IL_000b:  brfalse.s  IL_0036
+    IL_0006:  ldarg.1
+    IL_0007:  ldnull
+    IL_0008:  cgt.un
+    IL_000a:  brfalse.s  IL_0035
 
     .line 100001,100001 : 0,0 ''
-    IL_000d:  ldarg.0
-    IL_000e:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_0013:  ldarg.1
-    IL_0014:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
-    IL_0019:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<A>j__TPar'>(!!0,
+    IL_000c:  ldarg.0
+    IL_000d:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_0012:  ldarg.1
+    IL_0013:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
+    IL_0018:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<A>j__TPar'>(!!0,
                                                                                                                       !!0)
-    IL_001e:  brfalse.s  IL_0034
+    IL_001d:  brfalse.s  IL_0033
 
     .line 100001,100001 : 0,0 ''
-    IL_0020:  ldarg.0
-    IL_0021:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_0026:  ldarg.1
-    IL_0027:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
-    IL_002c:  tail.
-    IL_002e:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<B>j__TPar'>(!!0,
+    IL_001f:  ldarg.0
+    IL_0020:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_0025:  ldarg.1
+    IL_0026:  ldfld      !1 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::B@
+    IL_002b:  tail.
+    IL_002d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::GenericEqualityER<!'<B>j__TPar'>(!!0,
                                                                                                                       !!0)
-    IL_0033:  ret
+    IL_0032:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0034:  ldc.i4.0
-    IL_0035:  ret
+    IL_0033:  ldc.i4.0
+    IL_0034:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0036:  ldc.i4.0
-    IL_0037:  ret
+    IL_0035:  ldc.i4.0
+    IL_0036:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0038:  ldarg.1
-    IL_0039:  ldnull
-    IL_003a:  cgt.un
-    IL_003c:  ldc.i4.0
-    IL_003d:  ceq
-    IL_003f:  ret
+    IL_0037:  ldarg.1
+    IL_0038:  ldnull
+    IL_0039:  cgt.un
+    IL_003b:  ldc.i4.0
+    IL_003c:  ceq
+    IL_003e:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::Equals
 
   .method public hidebysig virtual final 
@@ -544,7 +534,7 @@
     // Code size       22 (0x16)
     .maxstack  4
     .locals init ([0] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0)
-    .line 1,1 : 1,1 ''
+    .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.1
     IL_0001:  isinst     class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
     IL_0006:  stloc.0

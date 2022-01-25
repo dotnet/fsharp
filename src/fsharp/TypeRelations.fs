@@ -210,7 +210,7 @@ let IterativelySubstituteTyparSolutions g tps solutions =
     loop 0 solutions
 
 let ChooseTyparSolutionsForFreeChoiceTypars g amap e = 
-    match e with 
+    match stripDebugPoints e with 
     | Expr.TyChoose (tps, e1, _m)  -> 
     
         /// Only make choices for variables that are actually used in the expression 
@@ -229,7 +229,7 @@ let ChooseTyparSolutionsForFreeChoiceTypars g amap e =
 /// PostTypeCheckSemanticChecks before we've eliminated these nodes.
 let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
     let rec stripLambdaUpto n (e, ty) = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.Lambda (_, None, None, v, b, _, retTy) when n > 0 -> 
             let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (v :: vs', b', retTy') 
@@ -237,7 +237,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
             ([], e, ty)
 
     let rec startStripLambdaUpto n (e, ty) = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.Lambda (_, ctorThisValOpt, baseValOpt, v, b, _, retTy) when n > 0 -> 
             let vs', b', retTy' = stripLambdaUpto (n-1) (b, retTy)
             (ctorThisValOpt, baseValOpt, (v :: vs'), b', retTy') 
@@ -248,7 +248,7 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
 
     let n = tvd.NumCurriedArgs
     let tps, taue, tauty = 
-        match e with 
+        match stripDebugPoints e with 
         | Expr.TyLambda (_, tps, b, _, retTy) when not (isNil tpNames) -> tps, b, retTy 
         | _ -> [], e, ty
     let ctorThisValOpt, baseValOpt, vsl, body, retTy = startStripLambdaUpto n (taue, tauty)

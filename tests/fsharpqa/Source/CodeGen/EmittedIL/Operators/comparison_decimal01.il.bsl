@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.comparison_decimal01
 {
-  // Offset: 0x00000000 Length: 0x00000170
+  // Offset: 0x00000000 Length: 0x00000172
 }
 .mresource public FSharpOptimizationData.comparison_decimal01
 {
   // Offset: 0x00000178 Length: 0x0000005B
 }
 .module comparison_decimal01.exe
-// MVID: {5F1FA087-76D8-7EE3-A745-038387A01F5F}
+// MVID: {61E07031-76D8-7EE3-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BE0000
+// Image base: 0x07480000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,8 +70,6 @@
     .entrypoint
     // Code size       228 (0xe4)
     .maxstack  8
-    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 9,20 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
     IL_0000:  ldc.i4.s   10
     IL_0002:  ldc.i4.0
     IL_0003:  ldc.i4.0
@@ -95,7 +93,6 @@
     IL_0016:  call       bool [netstandard]System.Decimal::op_LessThan(valuetype [netstandard]System.Decimal,
                                                                        valuetype [netstandard]System.Decimal)
     IL_001b:  pop
-    .line 5,5 : 9,21 ''
     IL_001c:  ldc.i4.s   10
     IL_001e:  ldc.i4.0
     IL_001f:  ldc.i4.0
@@ -119,7 +116,6 @@
     IL_0032:  call       bool [netstandard]System.Decimal::op_LessThanOrEqual(valuetype [netstandard]System.Decimal,
                                                                               valuetype [netstandard]System.Decimal)
     IL_0037:  pop
-    .line 6,6 : 9,20 ''
     IL_0038:  ldc.i4.s   10
     IL_003a:  ldc.i4.0
     IL_003b:  ldc.i4.0
@@ -143,7 +139,6 @@
     IL_004e:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
                                                                           valuetype [netstandard]System.Decimal)
     IL_0053:  pop
-    .line 7,7 : 9,21 ''
     IL_0054:  ldc.i4.s   10
     IL_0056:  ldc.i4.0
     IL_0057:  ldc.i4.0
@@ -167,7 +162,6 @@
     IL_006a:  call       bool [netstandard]System.Decimal::op_GreaterThanOrEqual(valuetype [netstandard]System.Decimal,
                                                                                  valuetype [netstandard]System.Decimal)
     IL_006f:  pop
-    .line 8,8 : 9,20 ''
     IL_0070:  ldc.i4.s   10
     IL_0072:  ldc.i4.0
     IL_0073:  ldc.i4.0
@@ -191,7 +185,6 @@
     IL_0086:  call       bool [netstandard]System.Decimal::op_Equality(valuetype [netstandard]System.Decimal,
                                                                        valuetype [netstandard]System.Decimal)
     IL_008b:  pop
-    .line 9,9 : 9,21 ''
     IL_008c:  ldc.i4.s   10
     IL_008e:  ldc.i4.0
     IL_008f:  ldc.i4.0
@@ -217,7 +210,6 @@
     IL_00a7:  ldc.i4.0
     IL_00a8:  ceq
     IL_00aa:  pop
-    .line 10,10 : 9,20 ''
     IL_00ab:  ldc.i4.s   10
     IL_00ad:  ldc.i4.0
     IL_00ae:  ldc.i4.0
@@ -241,7 +233,6 @@
     IL_00c1:  call       bool [netstandard]System.Decimal::op_Equality(valuetype [netstandard]System.Decimal,
                                                                        valuetype [netstandard]System.Decimal)
     IL_00c6:  pop
-    .line 11,11 : 9,26 ''
     IL_00c7:  ldc.i4.s   10
     IL_00c9:  ldc.i4.0
     IL_00ca:  ldc.i4.0

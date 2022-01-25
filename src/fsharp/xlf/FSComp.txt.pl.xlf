@@ -297,6 +297,11 @@
         <target state="translated">Nieprawidłowa dyrektywa „#{0} {1}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">Konstrukcja kodu z możliwością wznowienia "{0}" może być używana tylko w nieliniowym kodzie chronionym przez "If __useResumableCode then..." i ogólna kompozycja musi być w formacie prawidłowego kodu z możliwością wznowienia.</target>

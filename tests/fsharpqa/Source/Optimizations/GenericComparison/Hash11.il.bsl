@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Hash11
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000220 Length: 0x000000A9
 }
 .module Hash11.dll
-// MVID: {60BE1F16-9661-78D3-A745-0383161FBE60}
+// MVID: {619833D0-9661-78D3-A745-0383D0339861}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C60000
+// Image base: 0x05A40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,7 +73,7 @@
       IL_0009:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_000e:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0013:  stloc.0
-      .line 7,7 : 8,32 ''
+      .line 7,7 : 8,11 ''
       IL_0014:  ldc.i4.0
       IL_0015:  stloc.1
       IL_0016:  br.s       IL_0023
@@ -86,7 +86,7 @@
       IL_0020:  ldc.i4.1
       IL_0021:  add
       IL_0022:  stloc.1
-      .line 7,7 : 8,32 ''
+      .line 7,7 : 18,20 ''
       IL_0023:  ldloc.1
       IL_0024:  ldc.i4     0x989681
       IL_0029:  blt.s      IL_0018

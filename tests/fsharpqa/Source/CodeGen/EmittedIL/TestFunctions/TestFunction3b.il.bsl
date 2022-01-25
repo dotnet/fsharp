@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction3b
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3b.exe
-// MVID: {611C4D9E-A662-4FC9-A745-03839E4D1C61}
+// MVID: {61E07031-A662-4FC9-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053D0000
+// Image base: 0x07430000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -51,7 +51,7 @@ let rec private evalILAttribElem e =
     | ILAttribElem.TypeRef None     -> null
 
 let rec private evalFSharpAttribArg g e = 
-    match e with
+    match stripDebugPoints e with
     | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b

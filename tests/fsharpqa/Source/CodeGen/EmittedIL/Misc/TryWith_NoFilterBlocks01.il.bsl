@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TryWith_NoFilterBlocks01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x0000005F
 }
 .module TryWith_NoFilterBlocks01.exe
-// MVID: {611C4D7C-3DEF-9A40-A745-03837C4D1C61}
+// MVID: {61E07031-3DEF-9A40-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x066A0000
+// Image base: 0x067E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -87,6 +87,7 @@
       .line 100001,100001 : 0,0 ''
       IL_000a:  ldloc.0
       IL_000b:  stloc.1
+      .line 6,6 : 12,31 ''
       IL_000c:  ldloc.1
       IL_000d:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
       IL_0012:  ldc.i4.0

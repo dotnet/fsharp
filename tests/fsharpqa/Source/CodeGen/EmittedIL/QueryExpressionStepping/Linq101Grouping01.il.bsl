@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern System.Core
 {
@@ -50,13 +50,13 @@
   // Offset: 0x00000408 Length: 0x00000129
 }
 .module Linq101Grouping01.exe
-// MVID: {611B0EC5-FB79-E5BF-A745-0383C50E1B61}
+// MVID: {61E07032-FB79-E5BF-A745-03833270E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053C0000
+// Image base: 0x07050000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -94,7 +94,7 @@
       .maxstack  6
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 14,14 : 9,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 15,15 : 9,29 ''
@@ -214,9 +214,10 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,int32> g)
-      .line 15,15 : 35,36 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
+      .line 16,16 : 9,36 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'Pipe #1 input at line 13@15-3'::builder@
       IL_0008:  ldloc.0
@@ -298,7 +299,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] string w)
-      .line 24,24 : 9,26 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 25,25 : 9,29 ''
@@ -418,9 +419,10 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<char,string> g)
-      .line 25,25 : 35,36 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
+      .line 26,26 : 9,36 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'Pipe #2 input at line 23@25-3'::builder@
       IL_0008:  ldloc.0
@@ -502,7 +504,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 34,34 : 9,29 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 35,35 : 9,32 ''
@@ -622,9 +624,10 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g)
-      .line 35,35 : 38,39 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
+      .line 36,36 : 9,36 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'Pipe #3 input at line 33@35-3'::builder@
       IL_0008:  ldloc.0
@@ -706,7 +709,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 47,47 : 17,37 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 48,48 : 17,48 ''
@@ -829,7 +832,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 51,51 : 25,39 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 52,52 : 25,57 ''
@@ -952,9 +955,10 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> mg)
-      .line 52,52 : 63,65 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
+      .line 53,53 : 25,54 ''
       IL_0002:  ldarg.0
       IL_0003:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'monthGroups@52-3'::builder@
       IL_0008:  ldloc.0
@@ -1038,14 +1042,17 @@
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> yg,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>> monthGroups,
                [2] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_2)
-      .line 48,48 : 54,56 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
+      .line 50,50 : 21,26 ''
       IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
       IL_0007:  stloc.2
+      .line 50,50 : 21,26 ''
       IL_0008:  ldloc.2
       IL_0009:  ldloc.2
       IL_000a:  ldloc.2
+      .line 51,51 : 25,28 ''
       IL_000b:  ldloc.2
       IL_000c:  ldloc.2
       IL_000d:  ldloc.0
@@ -1164,15 +1171,17 @@
       .locals init ([0] class [Utils]Utils/Customer c,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>> yearGroups,
                [2] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_2)
-      .line 44,44 : 9,30 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
-      .line 57,57 : 9,53 ''
+      .line 46,46 : 13,18 ''
       IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
       IL_0007:  stloc.2
+      .line 46,46 : 13,18 ''
       IL_0008:  ldloc.2
       IL_0009:  ldloc.2
       IL_000a:  ldloc.2
+      .line 47,47 : 17,20 ''
       IL_000b:  ldloc.2
       IL_000c:  ldloc.2
       IL_000d:  ldloc.0
@@ -1521,9 +1530,11 @@
     .line 13,13 : 5,10 ''
     IL_00ba:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00bf:  stloc.s    V_10
+    .line 13,13 : 5,10 ''
     IL_00c1:  ldloc.s    V_10
     IL_00c3:  ldloc.s    V_10
     IL_00c5:  ldloc.s    V_10
+    .line 14,14 : 9,12 ''
     IL_00c7:  ldloc.s    V_10
     IL_00c9:  ldloc.s    V_10
     IL_00cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Grouping01::get_numbers()
@@ -1580,9 +1591,11 @@
     .line 23,23 : 5,10 ''
     IL_0164:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0169:  stloc.s    V_12
+    .line 23,23 : 5,10 ''
     IL_016b:  ldloc.s    V_12
     IL_016d:  ldloc.s    V_12
     IL_016f:  ldloc.s    V_12
+    .line 24,24 : 9,12 ''
     IL_0171:  ldloc.s    V_12
     IL_0173:  ldloc.s    V_12
     IL_0175:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Grouping01::get_words()
@@ -1621,9 +1634,11 @@
     .line 33,33 : 5,10 ''
     IL_01d4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01d9:  stloc.s    V_14
+    .line 33,33 : 5,10 ''
     IL_01db:  ldloc.s    V_14
     IL_01dd:  ldloc.s    V_14
     IL_01df:  ldloc.s    V_14
+    .line 34,34 : 9,12 ''
     IL_01e1:  ldloc.s    V_14
     IL_01e3:  ldloc.s    V_14
     IL_01e5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Grouping01::get_products()
@@ -1662,7 +1677,9 @@
     .line 43,43 : 5,10 ''
     IL_0244:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0249:  stloc.s    V_16
+    .line 43,43 : 5,10 ''
     IL_024b:  ldloc.s    V_16
+    .line 44,44 : 9,12 ''
     IL_024d:  ldloc.s    V_16
     IL_024f:  ldloc.s    V_16
     IL_0251:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Grouping01::get_customers()

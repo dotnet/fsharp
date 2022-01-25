@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ArgumentNamesInClosures01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000003A0 Length: 0x0000010D
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {6124062D-39CA-41B5-A745-03832D062461}
+// MVID: {61E07031-39CA-41B5-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BD0000
+// Image base: 0x07340000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,12 +83,10 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 40,40 : 10,11 ''
       IL_0008:  ret
     } // end of method T::.ctor
 
@@ -135,7 +133,6 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 41,41 : 22,23 ''
       IL_0000:  ldarg.1
       IL_0001:  tail.
       IL_0003:  call       int32 M::I(class M/C)

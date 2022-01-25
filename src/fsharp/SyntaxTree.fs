@@ -188,8 +188,11 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    | Body
     | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtLeafExpr =
+    | Yes of range
 
 [<RequireQualifiedAccess>]
 type DebugPointAtWith =
@@ -199,11 +202,15 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
-    | Body
     | No
 
 [<RequireQualifiedAccess>]
 type DebugPointAtFor =
+    | Yes of range: range
+    | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
@@ -216,7 +223,7 @@ type DebugPointAtWhile =
 type DebugPointAtBinding =
     | Yes of range: range
 
-    | NoneAtDo
+    | ImplicitAtDo
 
     | NoneAtLet
 
@@ -520,6 +527,7 @@ type SynExpr =
 
     | For of
         forDebugPoint: DebugPointAtFor *
+        toDebugPoint: DebugPointAtInOrTo *
         ident: Ident *
         equalsRange: range option *
         identBody: SynExpr *
@@ -530,6 +538,7 @@ type SynExpr =
 
     | ForEach of
         forDebugPoint: DebugPointAtFor *
+        inDebugPoint: DebugPointAtInOrTo *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -848,6 +857,10 @@ type SynExpr =
         synStringKind :SynStringKind *
         range: range
 
+    | DebugPoint of
+        debugPoint: (DebugPointAtLeafExpr * bool) option *
+        innerExpr: SynExpr
+
     member e.Range =
         match e with
         | SynExpr.Paren (_, leftParenRange, rightParenRange, r) ->
@@ -918,6 +931,7 @@ type SynExpr =
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.DebugPoint (_, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with
@@ -938,7 +952,7 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) ->
             e1.RangeOfFirstPortion
-        | SynExpr.ForEach (_, _, _, pat, _, _, r) ->
+        | SynExpr.ForEach (pat=pat; range=r) ->
             let start = r.Start
             let e = (pat.Range: range).Start
             mkRange r.FileName start e

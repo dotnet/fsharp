@@ -79,7 +79,7 @@ and TypedMatchClause =
     member c.Pattern = let (TClause(p, _, _, _)) = c in p
     member c.Range = let (TClause(_, _, _, m)) = c in m
     member c.Target = let (TClause(_, _, tg, _)) = c in tg
-    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _, _), _m)) = c in vs
+    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
 
 let debug = false
 
@@ -853,7 +853,7 @@ let CompilePatternBasic
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget([], throwExpr, DebugPointAtTarget.No, None)
+            let tg = TTarget([], throwExpr, None)
             let _ = matchBuilder.AddTarget tg
             let clause = TClause(TPat_wild matchm, None, tg, matchm)
             incompleteMatchClauseOnce <- Some clause
@@ -1406,14 +1406,8 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
             // Make the expression that represents the remaining cases of the pattern match.
             let expr = mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible exprm matchm resultTy decisionTree targets
 
-            // If the remainder of the match boiled away to nothing interesting.
-            // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
-            let spTarget =
-                if equals expr.Range matchm then DebugPointAtTarget.No
-                else DebugPointAtTarget.Yes
-
             // Make the clause that represents the remaining cases of the pattern match
-            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget, None), matchm)
+            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, None), matchm)
 
             CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
 

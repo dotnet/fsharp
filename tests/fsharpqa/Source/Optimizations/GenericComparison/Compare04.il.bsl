@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000238 Length: 0x000000B9
 }
 .module Compare04.dll
-// MVID: {611C550D-053B-F88E-A745-03830D551C61}
+// MVID: {619833D0-053B-F88E-A745-0383D0339861}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071C0000
+// Image base: 0x06AD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,7 +74,7 @@
       .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare04.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
-      .line 8,8 : 8,32 ''
+      .line 8,8 : 8,11 ''
       IL_0002:  ldc.i4.0
       IL_0003:  stloc.1
       IL_0004:  br         IL_00c3
@@ -191,7 +191,7 @@
       IL_00c0:  ldc.i4.1
       IL_00c1:  add
       IL_00c2:  stloc.1
-      .line 8,8 : 8,32 ''
+      .line 8,8 : 18,20 ''
       IL_00c3:  ldloc.1
       IL_00c4:  ldc.i4     0x989681
       IL_00c9:  blt        IL_0009

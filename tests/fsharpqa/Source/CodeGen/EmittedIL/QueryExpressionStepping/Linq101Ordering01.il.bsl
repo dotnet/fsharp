@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern Utils
 {
@@ -40,13 +40,13 @@
   // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {611C4D82-649A-6956-A745-0383824D1C61}
+// MVID: {61E07032-649A-6956-A745-03833270E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071E0000
+// Image base: 0x069D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -95,7 +95,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] string V_0,
                [1] string w)
@@ -113,78 +113,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 11,11 : 9,26 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      .line 11,11 : 9,26 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 11,11 : 9,12 ''
+      IL_0025:  nop
+      .line 11,11 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0054:  stloc.0
-      .line 11,11 : 9,26 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 12,12 : 9,17 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      .line 11,11 : 9,26 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldnull
-      IL_008d:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #1 input at line 10@11'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #1 input at line 10@11'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldnull
+      IL_008e:  stfld      string Linq101Ordering01/'Pipe #1 input at line 10@11'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #1 input at line 10@11'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -257,7 +256,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 11,11 : 9,26 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -267,20 +265,18 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 11,11 : 9,26 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_007c:  ldloc.0
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007e:  ret
     } // end of method 'Pipe #1 input at line 10@11'::Close
 
     .method public strict virtual instance bool 
@@ -434,7 +430,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] string V_0,
                [1] string w)
@@ -451,78 +447,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 18,18 : 9,26 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      .line 18,18 : 9,26 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 18,18 : 9,12 ''
+      IL_0025:  nop
+      .line 18,18 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_words()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0054:  stloc.0
-      .line 18,18 : 9,26 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 19,19 : 9,26 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      .line 18,18 : 9,26 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldnull
-      IL_008d:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #2 input at line 17@18'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #2 input at line 17@18'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldnull
+      IL_008e:  stfld      string Linq101Ordering01/'Pipe #2 input at line 17@18'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #2 input at line 17@18'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -595,7 +590,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 18,18 : 9,26 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -605,20 +599,18 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 18,18 : 9,26 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_007c:  ldloc.0
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007e:  ret
     } // end of method 'Pipe #2 input at line 17@18'::Close
 
     .method public strict virtual instance bool 
@@ -761,7 +753,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 26,26 : 9,29 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 27,27 : 9,29 ''
@@ -893,7 +885,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product V_0,
                [1] class [Utils]Utils/Product p)
@@ -910,78 +902,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 44,44 : 9,29 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      .line 44,44 : 9,29 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 44,44 : 9,12 ''
+      IL_0025:  nop
+      .line 44,44 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-      IL_0054:  stloc.0
-      .line 44,44 : 9,29 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 45,45 : 9,40 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      .line 44,44 : 9,29 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldnull
-      IL_008d:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101Ordering01/'Pipe #4 input at line 43@44'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #4 input at line 43@44'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldnull
+      IL_008e:  stfld      class [Utils]Utils/Product Linq101Ordering01/'Pipe #4 input at line 43@44'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #4 input at line 43@44'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1054,7 +1045,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 44,44 : 9,29 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -1064,20 +1054,18 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 44,44 : 9,29 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_007c:  ldloc.0
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007e:  ret
     } // end of method 'Pipe #4 input at line 43@44'::Close
 
     .method public strict virtual instance bool 
@@ -1233,7 +1221,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       149 (0x95)
       .maxstack  6
       .locals init ([0] string V_0,
                [1] string d)
@@ -1250,78 +1238,77 @@
 
       .line 100001,100001 : 0,0 ''
       IL_001b:  nop
-      IL_001c:  br.s       IL_006a
+      IL_001c:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
       IL_001e:  nop
-      IL_001f:  br.s       IL_0067
+      IL_001f:  br.s       IL_0068
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_008b
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      .line 52,52 : 9,27 ''
-      IL_0025:  ldarg.0
-      IL_0026:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_digits()
-      IL_002b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0030:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0035:  ldarg.0
-      IL_0036:  ldc.i4.1
-      IL_0037:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      .line 52,52 : 9,27 ''
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0042:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0047:  brfalse.s  IL_006a
+      .line 52,52 : 9,12 ''
+      IL_0025:  nop
+      .line 52,52 : 9,12 ''
+      IL_0026:  ldarg.0
+      IL_0027:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Ordering01::get_digits()
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_0031:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0036:  ldarg.0
+      IL_0037:  ldc.i4.1
+      IL_0038:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_003d:  ldarg.0
+      IL_003e:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0043:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0048:  brfalse.s  IL_006b
 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_004f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0054:  stloc.0
-      .line 52,52 : 9,27 ''
-      IL_0055:  ldloc.0
-      IL_0056:  stloc.1
+      IL_004a:  ldarg.0
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0050:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_0055:  stloc.0
+      IL_0056:  ldloc.0
+      IL_0057:  stloc.1
       .line 53,53 : 9,24 ''
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.2
-      IL_0059:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldloc.1
-      IL_0060:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
-      IL_0065:  ldc.i4.1
-      IL_0066:  ret
+      IL_0058:  ldarg.0
+      IL_0059:  ldc.i4.2
+      IL_005a:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_005f:  ldarg.0
+      IL_0060:  ldloc.1
+      IL_0061:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
+      IL_0066:  ldc.i4.1
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0067:  nop
-      IL_0068:  br.s       IL_003c
+      IL_0068:  nop
+      IL_0069:  br.s       IL_003d
 
-      IL_006a:  ldarg.0
-      IL_006b:  ldc.i4.3
-      IL_006c:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      .line 52,52 : 9,27 ''
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_007c:  nop
-      IL_007d:  ldarg.0
-      IL_007e:  ldnull
-      IL_007f:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
-      IL_0084:  ldarg.0
-      IL_0085:  ldc.i4.3
-      IL_0086:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
-      IL_008b:  ldarg.0
-      IL_008c:  ldnull
-      IL_008d:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
+      IL_006b:  ldarg.0
+      IL_006c:  ldc.i4.3
+      IL_006d:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_007d:  nop
+      IL_007e:  ldarg.0
+      IL_007f:  ldnull
+      IL_0080:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Ordering01/'Pipe #5 input at line 51@52'::'enum'
+      IL_0085:  ldarg.0
+      IL_0086:  ldc.i4.3
+      IL_0087:  stfld      int32 Linq101Ordering01/'Pipe #5 input at line 51@52'::pc
+      IL_008c:  ldarg.0
+      IL_008d:  ldnull
+      IL_008e:  stfld      string Linq101Ordering01/'Pipe #5 input at line 51@52'::current
+      IL_0093:  ldc.i4.0
+      IL_0094:  ret
     } // end of method 'Pipe #5 input at line 51@52'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       128 (0x80)
+      // Code size       127 (0x7f)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception e)
@@ -1394,7 +1381,6 @@
       {
         IL_0066:  castclass  [mscorlib]System.Exception
         IL_006b:  stloc.1
-        .line 52,52 : 9,27 ''
         IL_006c:  ldloc.1
         IL_006d:  stloc.0
         IL_006e:  leave.s    IL_0070
@@ -1404,20 +1390,18 @@
       IL_0070:  nop
       IL_0071:  br         IL_0000
 
-      .line 52,52 : 9,27 ''
-      IL_0076:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldloc.0
-      IL_0078:  ldnull
-      IL_0079:  cgt.un
-      IL_007b:  brfalse.s  IL_007f
+      IL_0076:  ldloc.0
+      IL_0077:  ldnull
+      IL_0078:  cgt.un
+      IL_007a:  brfalse.s  IL_007e
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldloc.0
-      IL_007e:  throw
+      IL_007c:  ldloc.0
+      IL_007d:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_007f:  ret
+      IL_007e:  ret
     } // end of method 'Pipe #5 input at line 51@52'::Close
 
     .method public strict virtual instance bool 
@@ -1598,7 +1582,7 @@
       // Code size       17 (0x11)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 60,60 : 9,29 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 61,61 : 9,26 ''
@@ -1934,6 +1918,7 @@
     .line 10,10 : 5,10 ''
     IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0030:  stloc.s    V_10
+    .line 10,10 : 5,10 ''
     IL_0032:  ldloc.s    V_10
     IL_0034:  ldnull
     IL_0035:  ldc.i4.0
@@ -1958,6 +1943,7 @@
     .line 17,17 : 5,10 ''
     IL_0061:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0066:  stloc.s    V_12
+    .line 17,17 : 5,10 ''
     IL_0068:  ldloc.s    V_12
     IL_006a:  ldnull
     IL_006b:  ldc.i4.0
@@ -1987,8 +1973,10 @@
     .line 25,25 : 5,10 ''
     IL_00a3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00a8:  stloc.s    V_14
+    .line 25,25 : 5,10 ''
     IL_00aa:  ldloc.s    V_14
     IL_00ac:  ldloc.s    V_14
+    .line 26,26 : 9,12 ''
     IL_00ae:  ldloc.s    V_14
     IL_00b0:  ldloc.s    V_14
     IL_00b2:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
@@ -2016,6 +2004,7 @@
     .line 43,43 : 5,10 ''
     IL_00f3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00f8:  stloc.s    V_16
+    .line 43,43 : 5,10 ''
     IL_00fa:  ldloc.s    V_16
     IL_00fc:  ldnull
     IL_00fd:  ldc.i4.0
@@ -2075,6 +2064,7 @@
     .line 51,51 : 5,10 ''
     IL_019b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01a0:  stloc.s    V_18
+    .line 51,51 : 5,10 ''
     IL_01a2:  ldloc.s    V_18
     IL_01a4:  ldloc.s    V_18
     IL_01a6:  ldnull
@@ -2103,9 +2093,11 @@
     .line 59,59 : 5,10 ''
     IL_01de:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01e3:  stloc.s    V_20
+    .line 59,59 : 5,10 ''
     IL_01e5:  ldloc.s    V_20
     IL_01e7:  ldloc.s    V_20
     IL_01e9:  ldloc.s    V_20
+    .line 60,60 : 9,12 ''
     IL_01eb:  ldloc.s    V_20
     IL_01ed:  ldloc.s    V_20
     IL_01ef:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Ordering01::get_products()
