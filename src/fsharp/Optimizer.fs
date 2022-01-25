@@ -1645,9 +1645,12 @@ let CanExpandStructuralBinding (v: Val) =
 
 let ExprIsValue = function Expr.Val _ -> true | _ -> false
 
-let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
+let MakeStructuralBindingTempVal (v: Val) i (arg: Expr) argTy =
     let name = v.LogicalName + "_" + string i
-    let v, ve = mkCompGenLocal arg.Range name argTy
+    mkCompGenLocal arg.Range name argTy
+
+let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
+    let v, ve = MakeStructuralBindingTempVal v i arg argTy
     ve, mkCompGenBind v arg
 
 let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
@@ -1795,8 +1798,13 @@ let rec ExpandStructuralBinding cenv expr =
         when (isRefTupleTy cenv.g v.Type &&
               not (isRefTupleExpr rhs) &&
               CanExpandStructuralBinding v) ->
-        match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
-        | Some e -> ExpandStructuralBindingRaw cenv e
+        match RearrangeTupleBindings rhs (fun top -> mkLet DebugPointAtBinding.NoneAtLet m v top body) with
+        | Some e ->
+            let e2 = ExpandStructuralBindingRaw cenv e
+            // Preserve the outer debug point at the right point in the evaluation order
+            match tgtSeqPtOpt with
+            | DebugPointAtBinding.Yes dpm -> mkDebugPoint dpm e2
+            | _ -> e2
         | None ->
             // RearrangeTupleBindings could have failed because the rhs branches
             TryRewriteBranchingTupleBinding cenv.g v rhs tgtSeqPtOpt body m |> Option.defaultValue expr
@@ -1809,9 +1817,10 @@ let rec ExpandStructuralBinding cenv expr =
              cenv.g.unionCaseRefEq uc (mkSomeCase cenv.g) &&
              CanExpandStructuralBinding v ->
             let argTy = destOptionTy cenv.g v.Type 
-            let ve, bind = MakeStructuralBindingTemp v 0 arg argTy
-            let newExpr = mkSome cenv.g argTy ve m
-            mkLetBind m bind (mkLet tgtSeqPtOpt m v newExpr body)
+            let vi, vie = MakeStructuralBindingTempVal v 0 arg argTy
+            let bind = mkBind tgtSeqPtOpt vi arg
+            let newExpr = mkSome cenv.g argTy vie m
+            mkLetBind m bind (mkLet DebugPointAtBinding.NoneAtLet m vi newExpr body)
 
     | e ->
         ExpandStructuralBindingRaw cenv e
@@ -2608,6 +2617,12 @@ and OptimizeLinearExpr cenv env expr contf =
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
             let evalueR = AbstractExprInfoByVars ([bindR.Var], []) bodyInfo.Info 
+
+            // Preserve the debug points for eliminated bindings that have debug points. 
+            let bodyR =
+                match bindR.DebugPoint with
+                | DebugPointAtBinding.Yes m -> mkDebugPoint m bodyR
+                | _ -> bodyR
             bodyR, 
             { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize - localVarSize // eliminated a local var
               FunctionSize = bindingInfo.FunctionSize + bodyInfo.FunctionSize - localVarSize (* eliminated a local var *) 

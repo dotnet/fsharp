@@ -1220,7 +1220,7 @@ type CheckedBindingInfo =
        literalValue: Const option *
        isFixed: bool
     member x.Expr = let (CheckedBindingInfo(_, _, _, _, _, _, expr, _, _, _, _, _, _, _)) = x in expr
-    member x.SeqPoint = let (CheckedBindingInfo(_, _, _, _, _, _, _, _, _, _, spBind, _, _, _)) = x in spBind
+    member x.DebugPoint = let (CheckedBindingInfo(_, _, _, _, _, _, _, _, _, _, spBind, _, _, _)) = x in spBind
 
 /// Return the generalized type for a type scheme
 let GeneralizedTypeForTypeScheme typeScheme =
@@ -10188,8 +10188,22 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 let (PartialValReprInfo(argInfos, _)) = partialValReprInfo
 
                 // The right-hand-side is control flow (has an implicit debug point) in any situation where we
-                // haven't extended the debug point to include the 'let'.
-                let rhsIsControlFlow = match spBind with DebugPointAtBinding.Yes _ -> false | _ -> true
+                // haven't extended the debug point to include the 'let', that is, there is a debug point noted
+                // at the binding. 
+                //
+                // This includes
+                //    let _ = expr
+                //    let () = expr
+                // which are transformed to sequential expressions in TcLetBinding
+                let rhsIsControlFlow =
+                    match pat with 
+                    | SynPat.Wild _
+                    | SynPat.Const (SynConst.Unit, _)
+                    | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
+                    | _ ->
+                    match spBind with
+                    | DebugPointAtBinding.Yes _ -> false
+                    | _ -> true
                 
                 let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
 
@@ -10545,15 +10559,15 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
             (buildExpr >> mkSequentialBind, env, tpenv)
         | _ ->
 
-        // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
         let patternInputTmp, checkedPat2 =
+
             match checkedPat with
-            // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
+
+            // We don't introduce a temporary for the case
+            //   let v = expr
             | TPat_as (pat, PBind(v, TypeScheme(generalizedTypars', _)), _)
                 when List.lengthsEqAndForall2 typarRefEq generalizedTypars generalizedTypars' ->
-
                     v, pat
-                    //Op (LValueOp (LByrefGet,x),[],[],C:\GitHub\dsyme\visualfsharp\a.fs (15,42--15,43) IsSynthetic=false)
 
             | _ when inlineFlag.MustInline ->
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
@@ -11559,7 +11573,7 @@ and TcLetrecAdjustMemberForSpecialVals cenv (pgrbind: PostGeneralizationRecursiv
 
     let (RecursiveBindingInfo(_, _, _, _, vspec, _, _, _, baseValOpt, safeThisValOpt, safeInitInfo, _, _, _)) = pgrbind.RecBindingInfo
     let expr = pgrbind.CheckedBinding.Expr
-    let spBind = pgrbind.CheckedBinding.SeqPoint
+    let spBind = pgrbind.CheckedBinding.DebugPoint
 
     let expr =
         match TcLetrecComputeCtorSafeThisValBind cenv safeThisValOpt with
