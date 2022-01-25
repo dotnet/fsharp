@@ -1818,9 +1818,8 @@ let rec ExpandStructuralBinding cenv expr =
              CanExpandStructuralBinding v ->
             let argTy = destOptionTy cenv.g v.Type 
             let vi, vie = MakeStructuralBindingTempVal v 0 arg argTy
-            let bind = mkBind tgtSeqPtOpt vi arg
             let newExpr = mkSome cenv.g argTy vie m
-            mkLetBind m bind (mkLet DebugPointAtBinding.NoneAtLet m vi newExpr body)
+            mkLet tgtSeqPtOpt m vi arg (mkLet DebugPointAtBinding.NoneAtLet m v newExpr body)
 
     | e ->
         ExpandStructuralBindingRaw cenv e
