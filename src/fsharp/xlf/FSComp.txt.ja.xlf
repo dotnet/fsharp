@@ -7649,7 +7649,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
         <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
-        <target state="new">Used to declare a structure type. Also used in generic parameter constraints.</target>
+        <target state="translated">構造体型を宣言するために使用されます。ジェネリック パラメーター制約でも使用されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

@@ -683,7 +683,7 @@ module InterfaceStubGenerator =
                 None
             else
                 match decl with
-                | SynModuleDecl.Exception(SynExceptionDefn(_, synMembers, _), _) -> 
+                | SynModuleDecl.Exception(SynExceptionDefn(_, _, synMembers, _), _) -> 
                     List.tryPick walkSynMemberDefn synMembers
                 | SynModuleDecl.Let(_isRecursive, bindings, _range) ->
                     List.tryPick walkBinding bindings

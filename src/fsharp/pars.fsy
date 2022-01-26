@@ -816,11 +816,10 @@ moduleSpfn:
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let mTc =
-            let keywordM = rhs parseState 3
-            (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
+            (d3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr, withKeyword, members, mTc))
-        let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
+        let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
@@ -895,7 +894,16 @@ tyconSpfn:
         $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
       { let mWithKwd, members = $2
-        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), mWithKwd, members, lhs parseState) }
+        let m =
+            match members with
+            | [] ->
+                match mWithKwd with
+                | None -> rhs parseState 1
+                | Some mWithKwd -> unionRanges (rhs parseState 1) mWithKwd
+            | decls ->
+                let (SynComponentInfo(range=start)) = $1
+                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), mWithKwd, members, m) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -930,8 +938,14 @@ tyconSpfnRhs:
            SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), None, augmentation, mWhole)) }
 
   | tyconClassSpfn 
-     { let objectModelRange = lhs parseState 
-       let needsCheck, (kind, decls) = $1
+     {  let needsCheck, (kind, decls) = $1
+        let objectModelRange =
+            match decls with
+            | [] -> lhs parseState
+            | decls ->
+                let start = mkSynRange parseState.ResultStartPosition parseState.ResultStartPosition
+                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+
        (fun nameRange nameInfo mEquals augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())
@@ -1309,21 +1323,21 @@ moduleDefn:
   | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), mEquals, e, f, g, h)) = $4
+        let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), mEquals, e, mWith, f, g, h)) = $4
         _xmlDoc.MarkAsInvalid()
         let attrs = $1@cas
         let mTc = (h, attrs)  ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-        let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), mEquals, e, f, g, mTc))
+        let tc = (SynTypeDefn(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), mEquals, e, mWith, f, g, mTc))
         let types = tc :: $5
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 
   /* 'exception' definitions */
   | opt_attributes opt_declVisibility exconDefn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), e, f)) = $3 
+        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, e, f)) = $3 
         let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
-        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), e, f))
+        let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, d2), withKeyword, e, f))
         [ SynModuleDecl.Exception(ec, f) ] }
 
   /* 'module' definitions */
@@ -1541,9 +1555,9 @@ tyconDefnList:
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconDefn =
            if xmlDoc.IsEmpty then $2 else
-           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, members, implicitConstructor, range)) = $2
+           let (SynTypeDefn(SynComponentInfo (a, typars, c, lid, _xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, mWith, members, implicitConstructor, range)) = $2
            _xmlDoc.MarkAsInvalid()
-           SynTypeDefn(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, members, implicitConstructor, range)
+           SynTypeDefn(SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, rangeOfLid), mEquals, typeRepr, mWith, members, implicitConstructor, range)
        tyconDefn :: $3 }
   |                             
      { [] }
@@ -1551,7 +1565,7 @@ tyconDefnList:
 /* A type definition */
 tyconDefn: 
   | typeNameInfo 
-     { SynTypeDefn($1, None, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range) }
+     { SynTypeDefn($1, None, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), None, [], None, $1.Range) }
 
   | typeNameInfo opt_equals tyconDefnRhsBlock 
      { match $2 with
@@ -1563,20 +1577,20 @@ tyconDefn:
             raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
        
        let nameRange = rhs parseState 1
-       let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
+       let (tcDefRepr:SynTypeDefnRepr), mWith ,members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)    
-       SynTypeDefn($1, $2, tcDefRepr, members, None, mWhole) }
+       SynTypeDefn($1, $2, tcDefRepr, mWith, members, None, mWhole) }
 
   | typeNameInfo tyconDefnAugmentation
      { let mWithKwd, classDefns = $2
        let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
-       SynTypeDefn($1, None, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m) }
+       SynTypeDefn($1, None, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), None, classDefns, None, m) }
 
   | typeNameInfo opt_attributes opt_declVisibility opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
      { let vis, spats, az = $3, $5, $6
        let nameRange = rhs parseState 1
-       let (tcDefRepr, members) = $8 nameRange
+       let (tcDefRepr, mWith, members) = $8 nameRange
        let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1
        let mEquals = rhs parseState 7
        // Gets the XML doc comments prior to the implicit constructor
@@ -1589,7 +1603,7 @@ tyconDefn:
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
        
-       SynTypeDefn($1, Some mEquals, tcDefRepr, members, Some memberCtorPattern, mWhole) }
+       SynTypeDefn($1, Some mEquals, tcDefRepr, mWith, members, Some memberCtorPattern, mWhole) }
 
 
 /* The right-hand-side of a type definition */
@@ -1603,17 +1617,28 @@ tyconDefnRhsBlock:
   /* block still needs to be considered and may occur indented or undented from the core type */
   /* representation. */
   | OBLOCKBEGIN  tyconDefnRhs opt_OBLOCKSEP classDefnMembers opt_classDefn oblockend opt_classDefn  
-     { let m = unionRanges (rhs parseState 1) (match $7 with [] -> (match $5 with [] -> (rhs parseState 4) | _ -> (rhs parseState 5)) | _ -> (rhs parseState 7))
-       (fun nameRange -> $2 nameRange (checkForMultipleAugmentations m ($4 @ $5) $7)) }
+     { let mWith, optClassDefn = $5
+       let mWith2, optClassDefn2 = $7
+       let m = unionRanges (rhs parseState 1) (match optClassDefn2 with [] -> (match optClassDefn with [] -> (rhs parseState 4) | _ -> (rhs parseState 5)) | _ -> (rhs parseState 7))
+       (fun nameRange ->
+           let tcDefRepr, members = $2 nameRange (checkForMultipleAugmentations m ($4 @ optClassDefn) optClassDefn2)
+           let mWith = Option.orElse mWith2 mWith
+           tcDefRepr, mWith, members) }
 
   | OBLOCKBEGIN  tyconDefnRhs opt_OBLOCKSEP classDefnMembers opt_classDefn recover
      { if not $6 then reportParseErrorAt (rhs parseState 6) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition())
-       let m = unionRanges (rhs parseState 1) (match $5 with [] -> (rhs parseState 4) | _ -> (rhs parseState 5))
-       (fun nameRange -> $2 nameRange (checkForMultipleAugmentations m ($4 @ $5) [])) }
+       let mWith, optClassDefn = $5
+       let m = unionRanges (rhs parseState 1) (match optClassDefn with [] -> (rhs parseState 4) | _ -> (rhs parseState 5))
+       (fun nameRange -> 
+           let tcDefRepr, members = $2 nameRange (checkForMultipleAugmentations m ($4 @ optClassDefn) [])
+           tcDefRepr, mWith, members) }
 
   | tyconDefnRhs opt_classDefn
      { let m = rhs parseState 1
-       (fun nameRange -> $1 nameRange $2) }
+       let mWith, optClassDefn = $2
+       (fun nameRange -> 
+           let tcDefRepr, members = $1 nameRange optClassDefn
+           tcDefRepr, mWith, members) }
 
 
 /* The right-hand-side of a type definition */
@@ -1737,9 +1762,10 @@ classDefnMemberGetSet:
 /* The "get, set" part of a member definition */
 classDefnMemberGetSetElements: 
   | classDefnMemberGetSetElement 
-     { [$1]  }
+     { [$1], None  }
   | classDefnMemberGetSetElement AND classDefnMemberGetSetElement
-     { [$1;$3] }
+     { let mAnd = rhs parseState 2
+       [$1;$3], Some mAnd }
 
 classDefnMemberGetSetElement: 
   | opt_inline opt_attributes bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSequentialExprBlock 
@@ -1766,7 +1792,7 @@ memberCore:
 
   /* Properties with explicit get/set, also indexer properties */
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
-     { let mWith, classDefnMemberGetSetElements = $4
+     { let mWith, (classDefnMemberGetSetElements, mAnd) = $4
        let mWhole = (rhs parseState 2, classDefnMemberGetSetElements) ||> unionRangeWithListBy (fun (_, _, _, _, _, _, m2) -> m2) 
        let propertyNameBindingBuilder, _ = $2 
        let optPropertyType = $3 
@@ -1955,7 +1981,7 @@ memberCore:
              // Iterate over 1 or 2 'get'/'set' entries
              match classDefnMemberGetSetElements with
              | [ h ] -> List.choose id [ tryMkSynMemberDefnMember (Some (PropertyKeyword.With mWith)) h ]
-             | [ g ; s ] -> List.choose id [ tryMkSynMemberDefnMember (Some (PropertyKeyword.With mWith)) g ; tryMkSynMemberDefnMember None s ]
+             | [ g ; s ] -> List.choose id [ tryMkSynMemberDefnMember (Some (PropertyKeyword.With mWith)) g ; tryMkSynMemberDefnMember (Option.map PropertyKeyword.And mAnd) s ]
              | _ -> [])
        }
 
@@ -2143,10 +2169,11 @@ opt_interfaceImplDefn:
 
 opt_classDefn: 
   | WITH classDefnBlock declEnd
-     { $2 } 
+     { let mWithKwd = rhs parseState 1
+       (Some mWithKwd), $2 } 
 
   | /* EMPTY */
-     { [] }
+     { None, [] }
 
 
 /* An 'inherits' definition in an object type definition */
@@ -2593,7 +2620,8 @@ fieldDecl:
 /* An exception definition */
 exconDefn: 
   | exconCore opt_classDefn 
-     { SynExceptionDefn($1, $2, ($1.Range, $2) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
+     { let mWith, optClassDefn = $2
+       SynExceptionDefn($1, mWith, optClassDefn, ($1.Range, optClassDefn) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
   
 /* Part of an exception definition */
 exconCore: 

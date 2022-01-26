@@ -45,6 +45,7 @@ module rec Compiler =
           Baseline:       Baseline option
           Options:        string list
           OutputType:     CompileOutput
+          OutputDirectory:DirectoryInfo option
           SourceKind:     SourceKind
           Name:           string option
           IgnoreWarnings: bool
@@ -65,16 +66,16 @@ module rec Compiler =
 
     type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
 
-    type SymbolType = 
-        | MemberOrFunctionOrValue of string 
-        | Entity of string 
-        | GenericParameter of string 
-        | Parameter of string 
-        | StaticParameter of string 
+    type SymbolType =
+        | MemberOrFunctionOrValue of string
+        | Entity of string
+        | GenericParameter of string
+        | Parameter of string
+        | StaticParameter of string
         | ActivePatternCase of string
-        | UnionCase of string 
-        | Field of string 
- 
+        | UnionCase of string
+        | Field of string
+
         member this.FullName () =
             match this with
             | MemberOrFunctionOrValue fullname
@@ -146,15 +147,15 @@ module rec Compiler =
         match source with
         | null -> failwith "Source cannot be null"
         | _ ->
-            { Source           = Text source
-              Baseline         = None
-              Options          = defaultOptions
-              OutputType       = Library
-              SourceKind       = kind
-              Name             = None
-              IgnoreWarnings   = false
-              References       = []
-              CompileDirectory = None }
+            { Source         = Text source
+              Baseline       = None
+              Options        = defaultOptions
+              OutputType     = Library
+              OutputDirectory= None
+              SourceKind     = kind
+              Name           = None
+              IgnoreWarnings = false
+              References     = [] }
 
     let private csFromString (source: string) : CSharpCompilationSource =
         match source with
@@ -318,9 +319,9 @@ module rec Compiler =
                 | FS fs ->
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
-                    let name = defaultArg fs.Name null
                     let options = fs.Options |> List.toArray
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options = options, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
+                    let name = defaultArg fs.Name null
+                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, fs.OutputDirectory) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References
@@ -354,23 +355,19 @@ module rec Compiler =
         else
             Success { result with OutputPath = Some outputFilePath }
 
-    let private compileFSharp (fsSource: FSharpCompilationSource) : TestResult =
+    let private compileFSharp (fs: FSharpCompilationSource) : TestResult =
 
-        let source = getSource fsSource.Source
-        let sourceKind = fsSource.SourceKind
-        let output = fsSource.OutputType
-        let options = fsSource.Options |> Array.ofList
+        let source = getSource fs.Source
+        let sourceKind = fs.SourceKind
+        let output = fs.OutputType
+        let options = fs.Options |> Array.ofList
+        let name = defaultArg fs.Name null
 
-        let references = processReferences fsSource.References
+        let references = processReferences fs.References
 
-        let compilation = 
-            match fsSource.CompileDirectory with
-            | Some compileDirectory ->
-                Compilation.Create(source, sourceKind, output, options, references, compileDirectory)
-            | _ ->
-                Compilation.Create(source, sourceKind, output, options, references)
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory)
 
-        compileFSharpCompilation compilation fsSource.IgnoreWarnings
+        compileFSharpCompilation compilation fs.IgnoreWarnings
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
@@ -447,7 +444,7 @@ module rec Compiler =
         let reader1 = reader1.GetMetadataReader()
 
         reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
-        
+
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
@@ -687,7 +684,9 @@ module rec Compiler =
 
         let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
-                if not (List.exists (fun (el: ErrorInfo) -> el.Message = exp) source) then
+                if not (List.exists (fun (el: ErrorInfo) ->
+                    let msg = el.Message
+                    msg = exp) source) then
                     failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
 
@@ -698,7 +697,7 @@ module rec Compiler =
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-            
+
             let inline checkEqual k a b =
              if a <> b then
                  Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
@@ -726,7 +725,7 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = 
+                let message =
                     [ sprintf "Operation failed (expected to succeed).\n All errors:\n%A\n" r.Diagnostics
                       match r.Output with
                       | Some (ExecutionOutput output) ->
