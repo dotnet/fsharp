@@ -155,7 +155,8 @@ module rec Compiler =
               SourceKind     = kind
               Name           = None
               IgnoreWarnings = false
-              References     = [] }
+              References     = []
+              CompileDirectory= None }
 
     let private csFromString (source: string) : CSharpCompilationSource =
         match source with
@@ -217,6 +218,7 @@ module rec Compiler =
           Name             = Some name
           IgnoreWarnings   = false
           References       = []
+          OutputDirectory  = None
           CompileDirectory = Some compileDirectory }
         |> FS
 

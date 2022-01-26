@@ -447,4 +447,42 @@ extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
 }"""]
-    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events + different combinations.
+
+    [<Test>]
+    let ``Types with internal-only properties and methods don't generate anything without IVT`` () =
+        FSharp """
+module ReferenceAssembly
+[<NoComparison;NoEquality>]
+type MyType() =
+    let mutable myInternalValue = 1
+    member internal this.MyReadOnlyProperty = myInternalValue
+    // A write-only property.
+    member internal this.MyWriteOnlyProperty with set (value) = myInternalValue <- value
+    // A read-write property.
+    member internal this.MyReadWriteProperty
+        with get () = myInternalValue
+        and set (value) = myInternalValue <- value"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """
+.class auto ansi serializable nested public MyType
+extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 myInternalValue
+    .method public specialname rtspecialname 
+   instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+  }"""]
+    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties (+ different visibility for getters and setters), events + different combinations.
