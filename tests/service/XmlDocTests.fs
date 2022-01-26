@@ -22,8 +22,8 @@ let (|Types|TypeSigs|) = function
         Types(range, types)
 
      | ParsedInput.SigFile(ParsedSigFileInput(modules = [
-            SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
-                SynModuleSigDecl.Types(range = range; types = types)])])) ->
+        SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(range = range; types = types)])])) ->
          TypeSigs(range, types)
 
      | x -> failwith $"Unexpected ParsedInput %A{x}"
@@ -100,20 +100,27 @@ let (|Members|MemberSigs|) = function
 let (|Lets|LetBindings|ValSig|LetOrUse|) = function
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) -> LetOrUse(range, bindings)
+                SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) ->
+        LetOrUse(range, bindings)
+
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-                SynModuleDecl.Let(range = range; bindings = bindings)])])) -> LetBindings(range, bindings)
+                SynModuleDecl.Let(range = range; bindings = bindings)])])) ->
+        LetBindings(range, bindings)
+
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.DoExpr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
         LetBindings(range, bindings)
+
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
-            SynModuleOrNamespace.SynModuleOrNamespace(decls = decls)])) -> Lets(decls)
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = decls)])) ->
+        Lets(decls)
 
      | ParsedInput.SigFile(ParsedSigFileInput(modules = [
          SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
-            SynModuleSigDecl.Val(valSig = SynValSig(range = valSigRange); range = range)])])) -> ValSig(range, valSigRange)
+            SynModuleSigDecl.Val(valSig = SynValSig(range = valSigRange); range = range)])])) ->
+         ValSig(range, valSigRange)
 
      | x -> failwith $"Unexpected ParsedInput %A{x}"
 
@@ -886,8 +893,6 @@ type A() =
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 
-
-//TODO: add explicit range for primary constructor
 [<Test>]
 let ``type members 06 - implicit ctor``(): unit =
     let parseResults, checkResults = getParseAndCheckResults """
@@ -905,6 +910,12 @@ type A ///CTOR1
 
     parseResults
     |> checkParsingErrors [|Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."|]
+
+    match parseResults.ParseTree with
+    | Members([SynMemberDefn.ImplicitCtor(range = range)]) ->
+        assertRange (2, 5) (2, 6) range
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
 
 [<Test>]
 let record(): unit =
