@@ -14,7 +14,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Test.Compiler
 open FsUnit
 open NUnit.Framework
-open FSharp.Compiler.Diagnostics
 
 let (|Types|TypeSigs|) = function
      | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
@@ -177,8 +176,6 @@ let checkXmlSymbols expected checkResults =
     for symbol, docs in expected do
         checkXmlSymbol symbol docs checkResults
 
-
-
 let checkSignatureAndImplementation code checkResultsAction parseResultsAction =
     let checkCode getResultsFunc =
         let parseResults, checkResults = getResultsFunc code
@@ -249,7 +246,7 @@ type A = class end
         (checkXml "A" [|"B"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -273,7 +270,7 @@ type A = class end
         (checkXml "A" [|"B"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -298,7 +295,7 @@ type A = class end
         (checkXml "A" [|"B"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -340,8 +337,8 @@ type
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
-                Error 3520, Line 7, Col 4, Line 7, Col 9, "XML comment is not placed on a valid language element."
-                Error 3520, Line 9, Col 13, Line 9, Col 18, "XML comment is not placed on a valid language element."
+                Information 3520, Line 7, Col 4, Line 7, Col 9, "XML comment is not placed on a valid language element."
+                Information 3520, Line 9, Col 13, Line 9, Col 18, "XML comment is not placed on a valid language element."
             |]
 
             match parseResults.ParseTree with
@@ -373,16 +370,11 @@ and B = class end
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange1, synComponentRange1)
-                            TypeRange(typeRange2, synComponentRange2)]) ->
-                assertRange (4, 0) (7, 17) range
-                assertRange (4, 5) (4, 18) typeRange1
-                assertRange (4, 5) (4, 6) synComponentRange1
-                assertRange (5, 0) (7, 17) typeRange2
-                assertRange (7, 4) (7, 5) synComponentRange2
+                            TypeRange(typeRange2, synComponentRange2)])
             | TypeSigs(range, [TypeSigRange(typeRange1, synComponentRange1)
                                TypeSigRange(typeRange2, synComponentRange2)]) ->
                 assertRange (4, 0) (7, 17) range
-                assertRange (4, 0) (4, 18) typeRange1
+                assertRange (4, 5) (4, 18) typeRange1
                 assertRange (4, 5) (4, 6) synComponentRange1
                 assertRange (5, 0) (7, 17) typeRange2
                 assertRange (7, 4) (7, 5) synComponentRange2
@@ -404,7 +396,7 @@ and ///B1
         (checkXml "B" [|"B1"; "B2"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -428,7 +420,7 @@ and ///B2
         (checkXml "B" [|"B1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [_; TypeRange(typeRange2, synComponentRange2)])
@@ -451,7 +443,7 @@ type ///A2
         (checkXml "A" [|"A1"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -474,7 +466,7 @@ type A = class end
         (checkXml "A" [||])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 5, Col 0, Line 5, Col 4, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 5, Col 0, Line 5, Col 4, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Types(range, [TypeRange(typeRange, synComponentRange)])
@@ -828,7 +820,7 @@ type A =
         (checkXml "get_M" [|"M1"; "M2"|])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Members([SynMemberDefn.AbstractSlot(range = range; slotSig = SynValSig(range = slotRange))])
@@ -933,7 +925,7 @@ type A =
 
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 9, Col 8, Line 9, Col 13, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 9, Col 8, Line 9, Col 13, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Record([SynField(range = range)]) -> assertRange (6, 8) (10, 14) range
@@ -955,8 +947,8 @@ module
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
-                Error 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
-                Error 3520, Line 7, Col 7, Line 7, Col 12, "XML comment is not placed on a valid language element."
+                Information 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
+                Information 3520, Line 7, Col 7, Line 7, Col 12, "XML comment is not placed on a valid language element."
             |]
 
             match parseResults.ParseTree with
@@ -975,7 +967,7 @@ module ///M2
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
-                Error 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
+                Information 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
             |]
 
             match parseResults.ParseTree with
@@ -983,30 +975,31 @@ module ///M2
             | x -> failwith $"Unexpected ParsedInput: %A{x}")
 
 [<Test>]
-let ``module 03 - multiple``(): unit =
-    checkSignatureAndImplementation """
+let ``module 03 - signature - multiple``(): unit =
+    let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
 ///M1
 [<Attr>]
-module M1 = type A
+module M1 =
+    type A with
+        member B: unit -> unit
 
 ///M2
 [<Attr>]
 module M2 = type A
 """
-        (checkXmls [|
-            "M1", [|"M1"|]
-            "M2", [|"M2"|]
-         |])
-        (fun parseResults ->
-            match parseResults.ParseTree with
-            | NestedModules(range1, range2) ->
-                assertRange (2, 0) (4, 18) range1
-                assertRange (6, 0) (8, 18) range2
-            | NestedModulesSigs(range1, range2) ->
-                assertRange (2, 0) (7, 2) range1
-                assertRange (6, 0) (9, 0) range2
-            | x ->
-                failwith $"Unexpected ParsedInput: %A{x}")
+
+    checkResults |>
+    checkXmls [|
+        "M1", [|"M1"|]
+        "M2", [|"M2"|]
+    |]
+
+    match parseResults.ParseTree with
+    | NestedModulesSigs(range1, range2) ->
+        assertRange (2, 0) (6, 30) range1
+        assertRange (8, 0) (11, 0) range2
+    | x ->
+        failwith $"Unexpected ParsedInput: %A{x}"
 
 [<Test>]
 let ``union cases 01 - without bar``(): unit =
@@ -1063,8 +1056,8 @@ type A =
        (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
-                Error 3520, Line 8, Col 6, Line 8, Col 13, "XML comment is not placed on a valid language element."
-                Error 3520, Line 13, Col 6, Line 13, Col 13, "XML comment is not placed on a valid language element."
+                Information 3520, Line 8, Col 6, Line 8, Col 13, "XML comment is not placed on a valid language element."
+                Information 3520, Line 13, Col 6, Line 13, Col 13, "XML comment is not placed on a valid language element."
             |]
 
             match parseResults.ParseTree with
@@ -1148,8 +1141,8 @@ exception ///E4
         (fun parseResults ->
             parseResults |>
             checkParsingErrors [|
-                Error 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
-                Error 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
+                Information 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
+                Information 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
             |]
 
             match parseResults.ParseTree with
@@ -1170,7 +1163,7 @@ exception ///E
         (checkXml "E" [||])
         (fun parseResults ->
             parseResults |>
-            checkParsingErrors [|Error 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|]
+            checkParsingErrors [|Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
             | Exception(exnRange, exnDefnRange, exnDefnReprRange) ->
@@ -1195,7 +1188,7 @@ type A =
       compareXml [|"B1"; "B2"|])
      (fun parseResults ->
         parseResults |>
-        checkParsingErrors [|Error 3520, Line 8, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."|]
+        checkParsingErrors [|Information 3520, Line 8, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."|]
 
         match parseResults.ParseTree with
         | Members([SynMemberDefn.ValField(range = range)])

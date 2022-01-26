@@ -848,7 +848,7 @@ valSpfn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
-        let m = (rhs2 parseState 1 11) |> unionRangeWithXmlDoc doc
+        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
         let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
@@ -1578,7 +1578,7 @@ tyconDefnList:
            if xmlDoc.IsEmpty then
                if _xmlDoc.IsEmpty then $2 else
                let range = unionRangeWithXmlDoc _xmlDoc range
-               SynTypeDefn(componentInfo, mEquals, typeRepr, members, implicitConstructor, range)
+               SynTypeDefn(componentInfo, mEquals, typeRepr, mWith, members, implicitConstructor, range)
 
            else
                _xmlDoc.MarkAsInvalid()
