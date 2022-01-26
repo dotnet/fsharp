@@ -215,7 +215,6 @@
     <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
     <NunitXmlTestLoggerVersion>2.1.41</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
-    <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.8.3-alpha</StreamJsonRpcVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
