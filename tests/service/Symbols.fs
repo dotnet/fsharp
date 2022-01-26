@@ -2017,7 +2017,7 @@ module Operators =
             assertRange (12, 9) (20, 35) mTupleType
             assertRange (13, 8) (20, 35) mTupleObjectModel
             assertRange (23, 0) (40, 25) mChoiceModule
-            assertRange (45, 0) (60, 26) mOperatorsModule
+            assertRange (44, 0) (60, 26) mOperatorsModule
             assertRange (48, 4) (60, 26) mOperatorsTypes
             assertRange (48, 9) (60, 26) mAugmentation
             assertRange (48, 9) (60, 26) mAugmentationSimple
