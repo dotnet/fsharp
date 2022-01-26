@@ -149,7 +149,7 @@ module Array =
     ///
     /// Array.blit source 1 target 3 2
     /// </code>
-    /// After evaluation <c>target</c> contains <c>[| 0; 1; 2; 12; 13; 5 |]</c>.
+    /// After evaluation <c>target</c> contains <c>[| 0; 1; 2; 13; 14; 5 |]</c>.
     /// </example>
     [<CompiledName("CopyTo")>]
     val inline blit: source:'T[] -> sourceIndex:int -> target:'T[] -> targetIndex:int -> count:int -> unit
