@@ -786,6 +786,10 @@ type internal ILMethodBody =
     }
 
 /// Member Access
+/// Assembly - Indicates that the method is accessible to any class of this assembly. (internal)
+/// FamilyAndAssembly - Indicates that the method is accessible to members of this type and its derived types that are in _this assembly only_. (private protected)
+/// FamilyOrAssembly - Indicates that the method is accessible to derived classes anywhere, as well as to any class _in the assembly_. (protected internal)
+/// Family - Indicates that the method is accessible only to members of this class and its derived classes. (protected)
 [<RequireQualifiedAccess>]
 type ILMemberAccess =
     | Assembly

@@ -665,13 +665,24 @@ let GetTypeNameAsElemPair cenv n =
     StringE (GetStringHeapIdxOption cenv n1),
     StringE (GetStringHeapIdx cenv n2)
 
+let canGenTypeDef cenv (td: ILTypeDef) =
+    if not cenv.referenceAssemblyOnly then
+        true
+    else
+        match td.Access with
+        | ILTypeDefAccess.Public | ILTypeDefAccess.Nested ILMemberAccess.Public-> true
+        | ILTypeDefAccess.Nested ILMemberAccess.Assembly | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly
+            when cenv.hasInternalsVisibleToAttrib -> true
+        | _ -> false
+
 //=====================================================================
 // Pass 1 - allocate indexes for types
 //=====================================================================
 
 let rec GenTypeDefPass1 enc cenv (td: ILTypeDef) =
-  ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
+  if canGenTypeDef cenv td then
+      ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
+      GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
 
 and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
 
@@ -1088,11 +1099,11 @@ let canGenMethodDef cenv (md: ILMethodDef) =
     else
         match md.Access with
         | ILMemberAccess.Public -> true
-        // When emitting a reference assembly, do not emit methods that are private/internal unless they are virtual/abstract or provide an explicit interface implementation.
-        | ILMemberAccess.Private | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
+        // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
+        | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
             when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
         // When emitting a reference assembly, we only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
-        | ILMemberAccess.FamilyOrAssembly
+        | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
@@ -1175,34 +1186,35 @@ and GenEventDefPass2 cenv tidx x =
 
 and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
    try
-      let env = envForTypeDef td
-      let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-      let tidx2 = AddUnsharedRow cenv TableNames.TypeDef (GetTypeDefAsRow cenv env enc td)
-      if tidx <> tidx2 then failwith "index of typedef on second pass does not match index on first pass"
+      if canGenTypeDef cenv td then
+          let env = envForTypeDef td
+          let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
+          let tidx2 = AddUnsharedRow cenv TableNames.TypeDef (GetTypeDefAsRow cenv env enc td)
+          if tidx <> tidx2 then failwith "index of typedef on second pass does not match index on first pass"
 
-      // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc.
-      // Note Nested is organised differently to the others...
-      if not (isNil enc) then
-          AddUnsharedRow cenv TableNames.Nested
-              (UnsharedRow
-                  [| SimpleIndex (TableNames.TypeDef, tidx)
-                     SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
-      let props = td.Properties.AsList
-      if not (isNil props) then
-          AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
-      let events = td.Events.AsList
-      if not (isNil events) then
-          AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
+          // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc.
+          // Note Nested is organised differently to the others...
+          if not (isNil enc) then
+              AddUnsharedRow cenv TableNames.Nested
+                  (UnsharedRow
+                      [| SimpleIndex (TableNames.TypeDef, tidx)
+                         SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
+          let props = td.Properties.AsList
+          if not (isNil props) then
+              AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
+          let events = td.Events.AsList
+          if not (isNil events) then
+              AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
 
-      // Now generate or assign index numbers for tables referenced by the maps.
-      // Don't yet generate contents of these tables - leave that to pass3, as
-      // code may need to embed these entries.
-      td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
-      props |> List.iter (GenPropertyDefPass2 cenv tidx)
-      events |> List.iter (GenEventDefPass2 cenv tidx)
-      td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
-      td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
-      td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
+          // Now generate or assign index numbers for tables referenced by the maps.
+          // Don't yet generate contents of these tables - leave that to pass3, as
+          // code may need to embed these entries.
+          td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
+          props |> List.iter (GenPropertyDefPass2 cenv tidx)
+          events |> List.iter (GenEventDefPass2 cenv tidx)
+          td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
+          td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
+          td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
 
@@ -1278,6 +1290,15 @@ let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
     match TryGetMethodRefAsMethodDefIdx cenv mref with
     | Result.Error msg -> failwith msg
     | Ok idx -> idx
+
+let canGenPropertyDef cenv (prop: ILPropertyDef) =
+    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+    // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
+    // Only generate property if we have at least getter or setter, otherwise, we skip.
+    [| prop.GetMethod; prop.SetMethod |]
+    |> Array.filter Option.isSome
+    |> Array.map (Option.get >> TryGetMethodRefAsMethodDefIdx cenv)
+    |> Array.exists (function | Ok _ -> true | _ -> false)
     
 let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, varargs, genarity) =
     MemberRefRow(GetTypeAsMemberRefParent cenv env ty,
@@ -2700,33 +2721,21 @@ and GetPropertyAsPropertyRow cenv env (prop: ILPropertyDef) =
 
 /// ILPropertyDef --> Property Row + MethodSemantics entries
 and GenPropertyPass3 cenv env (prop: ILPropertyDef) =
-    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
-    // NOTE: They can be not-None and missing MethodDefs if we generating them for reference assembly in the earlier pass.
-    // Only generate property if we have at least getter or setter, otherwise, we skip.
-    let canGenerateProperty = [| prop.GetMethod; prop.SetMethod |]
-                              |> Array.filter Option.isSome
-                              |> Array.map Option.get
-                              |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
-                              |> Array.exists (function | Ok _ -> true | _ -> false)
-    
-    if not canGenerateProperty then
-        ()
-
+    if canGenPropertyDef cenv prop then   
     // REVIEW: We do double check here (via canGenerateProperty and GenPropertyMethodSemanticsPass3).
-    
-    let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
-    prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001)
-    prop.GetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0002)
-    // Write Constant table
-    match prop.Init with
-    | None -> ()
-    | Some i ->
-        AddUnsharedRow cenv TableNames.Constant
-            (UnsharedRow
-                [| GetFieldInitFlags i
-                   HasConstant (hc_Property, pidx)
-                   Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
-    GenCustomAttrsPass3Or4 cenv (hca_Property, pidx) prop.CustomAttrs
+        let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
+        prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001)
+        prop.GetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0002)
+        // Write Constant table
+        match prop.Init with
+        | None -> ()
+        | Some i ->
+            AddUnsharedRow cenv TableNames.Constant
+                (UnsharedRow
+                    [| GetFieldInitFlags i
+                       HasConstant (hc_Property, pidx)
+                       Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
+        GenCustomAttrsPass3Or4 cenv (hca_Property, pidx) prop.CustomAttrs
 
 let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
     let addIdx = try GetMethodRefAsMethodDefIdx cenv mref with MethodDefNotFound -> 1
@@ -2793,28 +2802,29 @@ and GenResourcePass3 cenv r =
 
 let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
    try
-      let env = envForTypeDef td
-      let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-      td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
-      td.Events.AsList |> List.iter (GenEventPass3 cenv env)
-      td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
-      td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
-      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
-    // ClassLayout entry if needed
-      match td.Layout with
-      | ILTypeDefLayout.Auto -> ()
-      | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->
-          if Option.isSome layout.Pack || Option.isSome layout.Size then
-            AddUnsharedRow cenv TableNames.ClassLayout
-                (UnsharedRow
-                    [| UShort (defaultArg layout.Pack (uint16 0x0))
-                       ULong (defaultArg layout.Size 0x0)
-                       SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
+      if canGenTypeDef cenv td then
+          let env = envForTypeDef td
+          let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
+          td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
+          td.Events.AsList |> List.iter (GenEventPass3 cenv env)
+          td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
+          td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
+          td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
+        // ClassLayout entry if needed
+          match td.Layout with
+          | ILTypeDefLayout.Auto -> ()
+          | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->
+              if Option.isSome layout.Pack || Option.isSome layout.Size then
+                AddUnsharedRow cenv TableNames.ClassLayout
+                    (UnsharedRow
+                        [| UShort (defaultArg layout.Pack (uint16 0x0))
+                           ULong (defaultArg layout.Size 0x0)
+                           SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
 
-      td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
-      td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
-      td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
-      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
+          td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
+          td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
+          td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
+          td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
@@ -2828,11 +2838,12 @@ and GenTypeDefsPass3 enc cenv tds =
 
 let rec GenTypeDefPass4 enc cenv (td: ILTypeDef) =
    try
-       let env = envForTypeDef td
-       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-       td.Methods |> Seq.iter (GenMethodDefPass4 cenv env)
-       List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) td.GenericParams
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
+       if canGenTypeDef cenv td then
+           let env = envForTypeDef td
+           let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
+           td.Methods |> Seq.iter (GenMethodDefPass4 cenv env)
+           List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) td.GenericParams
+           GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()

@@ -42,11 +42,6 @@ let test() =
         IL_0001:  throw
       }
 
-    }
-
-    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
-           extends [runtime]System.Object
-    {
     }"""
         ]
         |> ignore
@@ -85,11 +80,6 @@ let test() =
         IL_0001:  throw
       }
 
-    }
-
-    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
-           extends [runtime]System.Object
-    {
     }"""
         ]
         |> ignore
@@ -117,11 +107,6 @@ let test(_x: {| a: int32 |}) =
         IL_0001:  throw
       }
 
-    }
-
-    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
-           extends [runtime]System.Object
-    {
     }"""
         ]
         |> ignore
@@ -164,11 +149,6 @@ module Nested =
 
       }
 
-    }
-
-    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
-            extends [runtime]System.Object
-    {
     }"""
         ]
         |> ignore
@@ -345,11 +325,6 @@ module Nested =
 
       }
 
-    }
-
-    .class private abstract auto ansi sealed '<StartupCode$assembly>'.$ReferenceAssembly
-            extends [runtime]System.Object
-    {
     }"""
         ]
         |> ignore
@@ -467,6 +442,9 @@ type internal RingState<'item> = | Writable of 'item
         |> verifyIL [
             referenceAssemblyAttributeExpectedIL
             """
-            foo
-            """]
+.class public abstract auto ansi sealed ReferenceAssembly
+extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+}"""]
     // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties, events + different combinations.
