@@ -1072,7 +1072,16 @@ namespace Microsoft.FSharp.Control
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="get-response">
+            /// <code lang="fsharp">
+            /// let responseStreamToString = fun (responseStream : System.Net.WebResponse) ->
+            //     let reader = new System.IO.StreamReader(responseStream.GetResponseStream())
+            //     reader.ReadToEnd()
+            // let webRequest = WebRequest.Create("https://www.microsoft.com")
+            // let result = webRequest.AsyncGetResponse() |> Async.RunSynchronously |> responseStreamToString
+            /// </code>
+            /// </example>
+            /// Gets the web response asynchronously and converts response stream to string
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
 
@@ -1084,7 +1093,13 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-string">
+            /// <code lang="fsharp">
+            // let client = new WebClient()
+            // System.Uri("https://www.microsoft.com") |> client.AsyncDownloadString |> Async.RunSynchronously
+            /// </code>
+            /// This will download the server response from https://www.microsoft.com
+            /// </example>
             [<CompiledName("AsyncDownloadString")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadString : address:System.Uri -> Async<string>
 
@@ -1094,7 +1109,13 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-data">
+            /// <code lang="fsharp">
+            /// let client = new WebClient()
+            /// client.AsyncDownloadData(Uri("https://www.microsoft.com")) |> Async.RunSynchronously |> System.Text.Encoding.ASCII.GetString 
+            /// </code>
+            /// </example>
+            /// Downloads the data in bytes and decodes it to a string.
             [<CompiledName("AsyncDownloadData")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadData : address:System.Uri -> Async<byte[]>
 
@@ -1105,7 +1126,13 @@ namespace Microsoft.FSharp.Control
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             /// 
-            /// <example-tbd></example-tbd>
+            /// <example id="async-download-file">
+            /// <code lang="fsharp">
+            /// let client = new System.Net.WebClient()
+            /// System.Uri("https://www.microsoft.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronouslyl
+            /// </code>
+            /// This will download the server response as a file and output it as output.html
+            /// </example>
             [<CompiledName("AsyncDownloadFile")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadFile : address:System.Uri * fileName: string -> Async<unit>
 
