@@ -72,21 +72,6 @@ type CompilationReference =
     static member Create(cmpl: TestCompilation) =
         TestCompilationReference cmpl
 
-<<<<<<< HEAD
-and Compilation = private Compilation of source: string * SourceKind * CompileOutput * options: string[] * CompilationReference list * name: string option * compileDirectory: string option with
-
-    static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?compileDirectory) =
-        let options = defaultArg options [||]
-        let cmplRefs = defaultArg cmplRefs []
-        Compilation(source, sourceKind, output, options, cmplRefs, name, compileDirectory)
-||||||| aa9ffacda9
-and Compilation = private Compilation of source: string * SourceKind * CompileOutput * options: string[] * CompilationReference list * name: string option with
-
-    static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name) =
-        let options = defaultArg options [||]
-        let cmplRefs = defaultArg cmplRefs []
-        Compilation(source, sourceKind, output, options, cmplRefs, name)
-=======
 and Compilation =
     private Compilation of
         source: string *
@@ -106,7 +91,6 @@ and Compilation =
                 | n -> Some n
             let outputDirectory = defaultArg outputDirectory None
             Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
->>>>>>> upstream/main
 
 [<Sealed;AbstractClass>]
 type CompilerAssert private () =
