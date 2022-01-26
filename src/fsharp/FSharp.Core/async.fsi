@@ -1075,10 +1075,10 @@ namespace Microsoft.FSharp.Control
             /// <example id="get-response">
             /// <code lang="fsharp">
             /// let responseStreamToString = fun (responseStream : System.Net.WebResponse) ->
-            //     let reader = new System.IO.StreamReader(responseStream.GetResponseStream())
-            //     reader.ReadToEnd()
-            // let webRequest = WebRequest.Create("https://www.microsoft.com")
-            // let result = webRequest.AsyncGetResponse() |> Async.RunSynchronously |> responseStreamToString
+            ///     let reader = new System.IO.StreamReader(responseStream.GetResponseStream())
+            ///     reader.ReadToEnd()
+            /// let webRequest = WebRequest.Create("https://www.microsoft.com")
+            /// let result = webRequest.AsyncGetResponse() |> Async.RunSynchronously |> responseStreamToString
             /// </code>
             /// </example>
             /// Gets the web response asynchronously and converts response stream to string
@@ -1095,8 +1095,8 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example id="async-download-string">
             /// <code lang="fsharp">
-            // let client = new WebClient()
-            // System.Uri("https://www.microsoft.com") |> client.AsyncDownloadString |> Async.RunSynchronously
+            /// let client = new WebClient()
+            /// System.Uri("https://www.microsoft.com") |> client.AsyncDownloadString |> Async.RunSynchronously
             /// </code>
             /// This will download the server response from https://www.microsoft.com
             /// </example>
