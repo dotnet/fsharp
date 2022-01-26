@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Tuple01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000140 Length: 0x0000004E
 }
 .module Tuple01.exe
-// MVID: {60B68B97-6FDB-3E0B-A745-0383978BB660}
+// MVID: {61F02896-6FDB-3E0B-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07270000
+// Image base: 0x04F50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -16,6 +16,9 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+    open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+#endif
 
     type LinkedSubSource(cancellationToken: CancellationToken) =
 
@@ -504,7 +507,7 @@ namespace Microsoft.FSharp.Control
         let MakeAsync body = { Invoke = body }
 
         [<DebuggerHidden>]
-        let MakeAsyncWithCancelCheck body =
+        let inline MakeAsyncWithCancelCheck ([<InlineIfLambda>] body) =
             MakeAsync (fun ctxt ->
                 if ctxt.IsCancellationRequested then
                     ctxt.OnCancellation ()
@@ -641,7 +644,9 @@ namespace Microsoft.FSharp.Control
         ///   - Hijack check after 'entering' the try/finally and before running the body (see TryFinally)
         ///   - Apply 'finallyFunction' with exception protection (see TryFinally)
         let inline CreateTryFinallyAsync finallyFunction computation =
-            MakeAsync (fun ctxt -> TryFinally ctxt computation finallyFunction)
+            MakeAsync (fun ctxt -> 
+                TryFinally ctxt computation (fun () ->
+                    finallyFunction()))
 
         /// Create an async for a try/with filtering exceptions through a pattern match
         ///   - Cancellation check before entering the try (see TryWith)
@@ -649,7 +654,9 @@ namespace Microsoft.FSharp.Control
         ///   - Apply `filterFunction' to argument with exception protection (see TryWith)
         ///   - Hijack check before invoking the resulting computation or exception continuation
         let inline CreateTryWithFilterAsync filterFunction computation =
-            MakeAsync (fun ctxt -> TryWith ctxt computation filterFunction)
+            MakeAsync (fun ctxt ->
+                TryWith ctxt computation (fun exn ->
+                    filterFunction exn))
 
         /// Create an async for a try/with filtering
         ///   - Cancellation check before entering the try (see TryWith)
@@ -657,7 +664,9 @@ namespace Microsoft.FSharp.Control
         ///   - Apply `catchFunction' to argument with exception protection (see TryWith)
         ///   - Hijack check before invoking the resulting computation or exception continuation
         let inline CreateTryWithAsync catchFunction computation =
-            MakeAsync (fun ctxt -> TryWith ctxt computation (fun exn -> Some (catchFunction exn)))
+            MakeAsync (fun ctxt ->
+                TryWith ctxt computation (fun exn ->
+                    Some (catchFunction exn)))
 
         /// Call the finallyFunction if the computation results in a cancellation, and then continue with cancellation.
         /// If the finally function gives an exception then continue with cancellation regardless.
@@ -680,7 +689,7 @@ namespace Microsoft.FSharp.Control
         /// A single pre-allocated computation that returns a unit result
         ///   - Cancellation check (see CreateReturnAsync)
         ///   - Hijack check (see CreateReturnAsync)
-        let unitAsync =
+        let UnitAsync =
             CreateReturnAsync()
 
         /// Implement use/Dispose
@@ -690,16 +699,16 @@ namespace Microsoft.FSharp.Control
         ///   - Cancellation check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
         ///   - Hijack check after 'entering' the implied try/finally and before running the body  (see CreateTryFinallyAsync)
         ///   - Run 'disposeFunction' with exception protection (see CreateTryFinallyAsync)
-        let CreateUsingAsync (resource:'T :> IDisposable) (computation:'T -> Async<'a>) : Async<'a> =
+        let inline CreateUsingAsync (resource:'T :> IDisposable) ([<InlineIfLambda>] computation:'T -> Async<'a>) : Async<'a> =
             let disposeFunction () = Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
             CreateTryFinallyAsync disposeFunction (CreateCallAsync computation resource)
 
         ///   - Initial cancellation check (see CreateBindAsync)
         ///   - Initial hijack check (see CreateBindAsync)
-        ///   - Cancellation check after (see unitAsync)
-        ///   - No hijack check after (see unitAsync)
+        ///   - Cancellation check after (see UnitAsync)
+        ///   - No hijack check after (see UnitAsync)
         let inline CreateIgnoreAsync computation =
-            CreateBindAsync computation (fun _ -> unitAsync)
+            CreateBindAsync computation (fun _ -> UnitAsync)
 
         /// Implement the while loop construct of async computation expressions
         ///   - No initial cancellation check before first execution of guard
@@ -708,18 +717,18 @@ namespace Microsoft.FSharp.Control
         ///   - Hijack check before each execution of guard (see CreateBindAsync)
         ///   - Cancellation check before each execution of the body after guard (CreateBindAsync)
         ///   - No hijack check before each execution of the body after guard (see CreateBindAsync)
-        ///   - Cancellation check after guard fails (see unitAsync)
-        ///   - Hijack check after guard fails (see unitAsync)
+        ///   - Cancellation check after guard fails (see UnitAsync)
+        ///   - Hijack check after guard fails (see UnitAsync)
         ///   - Apply 'guardFunc' with exception protection (see ProtectCode)
         //
         // Note: There are allocations during loop set up, but no allocations during iterations of the loop
-        let CreateWhileAsync guardFunc computation =
+        let inline CreateWhileAsync ([<InlineIfLambda>] guardFunc) computation =
             if guardFunc() then
                 let mutable whileAsync = Unchecked.defaultof<_>
-                whileAsync <- CreateBindAsync computation (fun () -> if guardFunc() then whileAsync else unitAsync)
+                whileAsync <- CreateBindAsync computation (fun () -> if guardFunc() then whileAsync else UnitAsync)
                 whileAsync
             else
-                unitAsync
+                UnitAsync
 
 #if REDUCED_ALLOCATIONS_BUT_RUNS_SLOWER
         /// Implement the while loop construct of async computation expressions
@@ -763,10 +772,14 @@ namespace Microsoft.FSharp.Control
 
         // Note: No allocations during iterations of the loop apart from those from
         // applying the loop body to the element
-        let CreateForLoopAsync (source: seq<_>) computation =
+        let inline CreateForLoopAsync (source: seq<_>) computation =
             CreateUsingAsync (source.GetEnumerator()) (fun ie ->
                 CreateWhileAsync
-                    (fun () -> ie.MoveNext())
+                    (fun () -> 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+                        __debugPoint "ForLoop.InOrToKeyword"
+#endif
+                        ie.MoveNext())
                     (CreateDelayAsync (fun () -> computation ie.Current)))
 
 #if REDUCED_ALLOCATIONS_BUT_RUNS_SLOWER
@@ -1278,7 +1291,7 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed; CompiledName("FSharpAsyncBuilder")>]
     type AsyncBuilder() =
-        member _.Zero () = unitAsync
+        member _.Zero () = UnitAsync
 
         member _.Delay generator = CreateDelayAsync generator
 
@@ -1290,9 +1303,19 @@ namespace Microsoft.FSharp.Control
 
         member _.Using (resource, binder) = CreateUsingAsync resource binder
 
-        member _.While (guard, computation) = CreateWhileAsync guard computation
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member _.While (guard, computation) =
+#else
+        member inline _.While (guard, computation) =
+#endif
+            CreateWhileAsync (fun () ->
+                guard()) computation
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         member _.For (sequence, body) = CreateForLoopAsync sequence body
+#else
+        member inline _.For (sequence, body) = CreateForLoopAsync sequence body
+#endif
 
         member inline _.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
 
@@ -1311,7 +1334,7 @@ namespace Microsoft.FSharp.Control
 
         static member CancellationToken = cancellationTokenAsync
 
-        static member CancelCheck () = unitAsync
+        static member CancelCheck () = UnitAsync
 
         static member FromContinuations (callback: ('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) : Async<'T> =
             MakeAsyncWithCancelCheck (fun ctxt ->

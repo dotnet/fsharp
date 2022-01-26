@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction9b1
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000208 Length: 0x00000083
 }
 .module TestFunction9b1.exe
-// MVID: {611C4D9E-A406-DAF4-A745-03839E4D1C61}
+// MVID: {61E07031-A406-DAF4-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x052D0000
+// Image base: 0x06CD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -117,6 +117,7 @@
     IL_0060:  ldloc.1
     IL_0061:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0066:  stloc.s    a
+    .line 8,8 : 18,25 ''
     IL_0068:  ldloc.s    a
     IL_006a:  ldloc.3
     IL_006b:  add
@@ -157,6 +158,7 @@
     IL_00be:  ldloc.1
     IL_00bf:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_00c4:  stloc.s    V_9
+    .line 8,8 : 18,25 ''
     IL_00c6:  ldloc.s    V_9
     IL_00c8:  ldloc.s    V_8
     IL_00ca:  add
@@ -212,6 +214,7 @@
     IL_0141:  ldloc.1
     IL_0142:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
     IL_0147:  stloc.s    V_12
+    .line 8,8 : 18,25 ''
     IL_0149:  ldloc.s    V_12
     IL_014b:  ldloc.s    V_11
     IL_014d:  add

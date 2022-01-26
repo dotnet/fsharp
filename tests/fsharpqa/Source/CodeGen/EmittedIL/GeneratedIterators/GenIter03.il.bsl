@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly GenIter03
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000001F8 Length: 0x0000007B
 }
 .module GenIter03.exe
-// MVID: {611C4D7C-F77C-DC98-A745-03837C4D1C61}
+// MVID: {61E07031-F77C-DC98-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06DC0000
+// Image base: 0x04FB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,7 +54,7 @@
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           squaresOfOneToTenC() cil managed
   {
-    // Code size       79 (0x4f)
+    // Code size       80 (0x50)
     .maxstack  5
     .locals init ([0] valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
              [1] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_1,
@@ -63,64 +63,64 @@
              [4] class [mscorlib]System.IDisposable V_4)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 4,4 : 28,57 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\GeneratedIterators\\GenIter03.fs'
-    IL_0000:  ldc.i4.0
-    IL_0001:  ldc.i4.1
-    IL_0002:  ldc.i4.s   10
-    IL_0004:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+    IL_0000:  nop
+    .line 4,4 : 30,33 ''
+    IL_0001:  ldc.i4.0
+    IL_0002:  ldc.i4.1
+    IL_0003:  ldc.i4.s   10
+    IL_0005:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
                                                                                                                                                                      int32,
                                                                                                                                                                      int32)
-    IL_0009:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_000e:  stloc.1
-    .line 4,4 : 30,46 ''
+    IL_000a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+    IL_000f:  stloc.1
+    .line 4,4 : 36,38 ''
     .try
     {
-      IL_000f:  ldloc.1
-      IL_0010:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0015:  brfalse.s  IL_002c
+      IL_0010:  ldloc.1
+      IL_0011:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0016:  brfalse.s  IL_002d
 
-      IL_0017:  ldloc.1
-      IL_0018:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_001d:  stloc.3
+      IL_0018:  ldloc.1
+      IL_0019:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_001e:  stloc.3
+      IL_001f:  ldloca.s   V_0
       .line 4,4 : 50,55 ''
-      IL_001e:  ldloca.s   V_0
-      IL_0020:  ldloc.3
       IL_0021:  ldloc.3
-      IL_0022:  mul
-      IL_0023:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-      IL_0028:  nop
-      .line 100001,100001 : 0,0 ''
+      IL_0022:  ldloc.3
+      IL_0023:  mul
+      IL_0024:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0029:  nop
-      IL_002a:  br.s       IL_000f
+      .line 100001,100001 : 0,0 ''
+      IL_002a:  nop
+      IL_002b:  br.s       IL_0010
 
-      IL_002c:  ldnull
-      IL_002d:  stloc.2
-      IL_002e:  leave.s    IL_0045
+      IL_002d:  ldnull
+      IL_002e:  stloc.2
+      IL_002f:  leave.s    IL_0046
 
-      .line 4,4 : 30,55 ''
     }  // end .try
     finally
     {
-      IL_0030:  ldloc.1
-      IL_0031:  isinst     [mscorlib]System.IDisposable
-      IL_0036:  stloc.s    V_4
+      IL_0031:  ldloc.1
+      IL_0032:  isinst     [mscorlib]System.IDisposable
+      IL_0037:  stloc.s    V_4
       .line 100001,100001 : 0,0 ''
-      IL_0038:  ldloc.s    V_4
-      IL_003a:  brfalse.s  IL_0044
+      IL_0039:  ldloc.s    V_4
+      IL_003b:  brfalse.s  IL_0045
 
       .line 100001,100001 : 0,0 ''
-      IL_003c:  ldloc.s    V_4
-      IL_003e:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_0043:  endfinally
-      .line 100001,100001 : 0,0 ''
+      IL_003d:  ldloc.s    V_4
+      IL_003f:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
       IL_0044:  endfinally
       .line 100001,100001 : 0,0 ''
+      IL_0045:  endfinally
+      .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0045:  ldloc.2
-    IL_0046:  pop
-    .line 4,4 : 28,57 ''
-    IL_0047:  ldloca.s   V_0
-    IL_0049:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_004e:  ret
+    IL_0046:  ldloc.2
+    IL_0047:  pop
+    IL_0048:  ldloca.s   V_0
+    IL_004a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_004f:  ret
   } // end of method GenIter03::squaresOfOneToTenC
 
 } // end of class GenIter03

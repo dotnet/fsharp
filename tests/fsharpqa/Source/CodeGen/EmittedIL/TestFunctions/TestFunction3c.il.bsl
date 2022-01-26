@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3c.exe
-// MVID: {611C4D9E-A662-4FAC-A745-03839E4D1C61}
+// MVID: {61E07031-A662-4FAC-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06740000
+// Image base: 0x06DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -121,6 +121,7 @@
       IL_0025:  ldloc.3
       IL_0026:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
       IL_002b:  stloc.s    msg
+      .line 13,13 : 27,40 ''
       IL_002d:  ldloc.s    msg
       IL_002f:  ldstr      "hello"
       IL_0034:  call       bool [netstandard]System.String::Equals(string,

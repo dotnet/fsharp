@@ -573,7 +573,7 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> List.tryPick walkInterfaceImpl ifaces)
             | SynExpr.While (_, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.For (identBody=e1; toBody=e2; doBody=e3) -> List.tryPick (walkExprWithKind parentKind) [e1; e2; e3]
-            | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
+            | SynExpr.ForEach (_, _, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListComputed (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.ComputationExpr (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
@@ -1348,7 +1348,7 @@ module ParsedInput =
             | SynExpr.For (ident=ident; identBody=e1; toBody=e2; doBody=e3) ->
                 addIdent ident
                 List.iter walkExpr [e1; e2; e3]
-            | SynExpr.ForEach (_, _, _, pat, e1, e2, _) ->
+            | SynExpr.ForEach (_, _, _, _, pat, e1, e2, _) ->
                 walkPat pat
                 List.iter walkExpr [e1; e2]
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) ->

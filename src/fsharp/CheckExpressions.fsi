@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckExpressions
 
 open System
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler 
@@ -102,6 +103,8 @@ type TcEnv =
 
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
+
+      eIsControlFlow: bool
     } 
 
     member DisplayEnv : DisplayEnv
@@ -226,6 +229,8 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
             
+      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+
       isInternalTestSpanStackReferring: bool
       // forward call 
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
@@ -705,7 +710,7 @@ val TcLetrecBinding: cenv:TcFileState * envRec:TcEnv * scopem:range * extraGener
 val TcLetrecComputeCtorSafeThisValBind: cenv:TcFileState -> safeThisValOpt:Val option -> Binding option    
 
 /// Check a collection of `let rec` bindings
-val TcLetrec: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
+val TcLetrecBindings: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
 
 /// Part of check a collection of recursive bindings that might include members
 val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGeneralizationRecursiveBinding -> PostSpecialValsRecursiveBinding

@@ -153,7 +153,7 @@ let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 let (|TyappAndApp|_|) e = 
     match e with 
     | Expr.App (f, fty, tys, args, m)       -> 
-        match stripExpr f with
+        match stripDebugPoints (stripExpr f) with
         | Expr.App (f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
@@ -298,7 +298,7 @@ module GlobalUsageAnalysis =
           let context = []
           recognise context origExpr
 
-      let targetIntercept exprF z = function TTarget(_argvs, body, _, _) -> Some (foldUnderLambda exprF z body)
+      let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
       
       {ExprFolder0 with

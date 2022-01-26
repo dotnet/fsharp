@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr01.exe
-// MVID: {611B0EC4-3703-E566-A745-0383C40E1B61}
+// MVID: {61E07031-3703-E566-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071D0000
+// Image base: 0x07390000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -128,9 +128,10 @@
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res1,
              [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1,
              [2] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input at line 10')
-    .line 100001,100001 : 0,0 ''
+    .line 7,7 : 5,15 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
+    .line 7,7 : 5,15 ''
     IL_0006:  ldloc.1
     IL_0007:  ldloc.1
     IL_0008:  newobj     instance void ComputationExpr01/res1@8::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)

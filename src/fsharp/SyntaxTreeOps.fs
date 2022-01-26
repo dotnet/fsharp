@@ -72,8 +72,14 @@ let (|SingleIdent|_|) inp =
 /// This affects placement of sequence points
 let rec IsControlFlowExpression e =
     match e with
-    | SynExpr.ObjExpr _
+    // We do allow breakpoints on the creation of a delegate or object using an object expression
+    //| SynExpr.ObjExpr _
+
+    // These expressions create an object, but we do not allow breakpoints on the creation of the lambda, only on the execution
+    // of its body.
+    | SynExpr.MatchLambda _
     | SynExpr.Lambda _
+    
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
@@ -88,6 +94,17 @@ let rec IsControlFlowExpression e =
     | SynExpr.While _ -> true
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
+
+// The debug point for a 'let' extends to include the 'let' if we're not defining a function and the r.h.s. is not a control-flow
+// expression
+let IsDebugPointBinding synPat synExpr =
+    not (IsControlFlowExpression synExpr) &&
+    // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
+    let isFunction = 
+        match synPat with 
+        | SynPat.LongIdent (argPats=SynArgPats.Pats args) when not (List.isEmpty args) -> true
+        | _ -> false
+    not isFunction
 
 let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, xmlDoc, None, ty.Range)
 
@@ -667,6 +684,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.YieldOrReturnFrom (_, e, _)
           | SynExpr.DoBang (e, _)
           | SynExpr.Fixed (e, _)
+          | SynExpr.DebugPoint (_, e)
           | SynExpr.Paren (e, _, _, _) ->
               walkExpr e
 
@@ -694,7 +712,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.ObjExpr (bindings=bs; extraImpls=is) ->
               walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
 
-          | SynExpr.ForEach (_, _, _, _, e1, e2, _)
+          | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 

@@ -222,6 +222,9 @@ type TcEnv =
 
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
+
+      // Do we lay down an implicit debug point?
+      eIsControlFlow: bool
     }
 
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
@@ -409,6 +412,8 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
 
+      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
+
       isInternalTestSpanStackReferring: bool
       // forward call
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
@@ -442,6 +447,7 @@ type TcFileState =
           synArgNameGenerator = SynArgNameGenerator()
           isSig = isSig
           haveSig = haveSig
+          namedDebugPointsForInlinedCode = Dictionary()
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFslib
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
@@ -696,9 +702,9 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
 
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
     let checkExpr m expr =
-        match expr with
+        match stripDebugPoints expr with
         | Expr.App (Expr.Val (vf, _, _), _, _, exprs, _) when vf.LogicalName = opNameEquals ->
-            match exprs with
+            match List.map stripDebugPoints exprs with
             | Expr.App (Expr.Val (propRef, _, _), _, _, Expr.Val (vf, _, _) :: _, _) :: _ ->
                 if propRef.IsPropertyGetterMethod then
                     let propertyName = propRef.PropertyName
@@ -722,12 +728,12 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
             | _ -> UnitTypeExpectedWithEquality (denv, ty, m)
         | _ -> UnitTypeExpected (denv, ty, m)
 
-    match expr with
-    | Expr.Let (_, Expr.Sequential (_, inner, _, _, _), _, _)
-    | Expr.Sequential (_, inner, _, _, _) ->
+    match stripDebugPoints expr with
+    | Expr.Let (_, DebugPoints(Expr.Sequential (_, inner, _, _), _), _, _)
+    | Expr.Sequential (_, inner, _, _) ->
         let rec extractNext expr =
-            match expr with
-            | Expr.Sequential (_, inner, _, _, _) -> extractNext inner
+            match stripDebugPoints expr with
+            | Expr.Sequential (_, inner, _, _) -> extractNext inner
             | _ -> checkExpr expr.Range expr
         extractNext inner
     | expr -> checkExpr m expr
@@ -1033,7 +1039,7 @@ let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 
 /// A flag to represent the sort of bindings are we processing.
 /// Processing "declaration" and "class" bindings that make up a module (such as "let x = 1 let y = 2")
-/// shares the same code paths (e.g. TcLetBinding and TcLetrec) as processing expression bindings (such as "let x = 1 in ...")
+/// shares the same code paths (e.g. TcLetBinding and TcLetrecBindings) as processing expression bindings (such as "let x = 1 in ...")
 /// Member bindings also use this path.
 //
 // However there are differences in how different bindings get processed,
@@ -1214,7 +1220,7 @@ type CheckedBindingInfo =
        literalValue: Const option *
        isFixed: bool
     member x.Expr = let (CheckedBindingInfo(_, _, _, _, _, _, expr, _, _, _, _, _, _, _)) = x in expr
-    member x.SeqPoint = let (CheckedBindingInfo(_, _, _, _, _, _, _, _, _, _, spBind, _, _, _)) = x in spBind
+    member x.DebugPoint = let (CheckedBindingInfo(_, _, _, _, _, _, _, _, _, _, spBind, _, _, _)) = x in spBind
 
 /// Return the generalized type for a type scheme
 let GeneralizedTypeForTypeScheme typeScheme =
@@ -1534,7 +1540,7 @@ let AdjustAndForgetUsesOfRecValue cenv (vrefTgt: ValRef) (valScheme: ValScheme) 
                   // Keep any values for explicit type arguments
                   let fixedUpExpr =
                       let vrefFlags, tyargs0 =
-                          match fixupPoint.Value with
+                          match stripDebugPoints fixupPoint.Value with
                           | Expr.App (Expr.Val (_, vrefFlags, _), _, tyargs0, [], _) -> vrefFlags, tyargs0
                           | Expr.Val (_, vrefFlags, _) -> vrefFlags, []
                           | _ ->
@@ -2092,6 +2098,7 @@ module GeneralizationHelpers =
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
         | Expr.Obj (_, ty, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
         | Expr.Link eref -> IsGeneralizableValue g eref.Value
+        | Expr.DebugPoint (_, innerExpr) -> IsGeneralizableValue g innerExpr
 
         | _ -> false
 
@@ -2467,7 +2474,7 @@ module BindingNormalization =
                             NormalizeStaticMemberBinding cenv memberFlags valSynData memberId vis typars args m rhsExpr
                     | _ -> NormalizedBindingPat(pat, rhsExpr, valSynData, typars)
 
-            // Object constructors are normalized in TcLetrec
+            // Object constructors are normalized in TcLetrecBindings
             // Here we are normalizing member definitions with simple (not long) ids,
             // e.g. "static member x = 3" and "member x = 3" (instance with missing "this." comes through here. It is trapped and generates a warning)
             | SynPat.Named(id, false, vis, m)
@@ -3043,7 +3050,7 @@ let BuildILFieldGet g amap m objExpr (finfo: ILFieldInfo) =
 /// Checks that setting a field value does not set a literal or initonly field
 let private CheckFieldLiteralArg (finfo: ILFieldInfo) argExpr m =
     finfo.LiteralValue |> Option.iter (fun _ ->
-        match argExpr with
+        match stripDebugPoints argExpr with
         | Expr.Const (v, _, _) ->
             let literalValue = string v
             error (Error(FSComp.SR.tcLiteralFieldAssignmentWithArg literalValue, m))
@@ -3145,9 +3152,9 @@ let CompilePatternForMatchClauses cenv env mExpr matchm warnOnUnused actionOnFai
     // Avoid creating a dummy in the common cases where we are about to bind a name for the expression 
     // CLEANUP: avoid code duplication with code further below, i.e.all callers should call CompilePatternForMatch 
     match tclauses with 
-    | [TClause(TPat_as (pat1, PBind (asVal, TypeScheme(generalizedTypars, _)), _), None, TTarget(vs, e, spTarget, _), m2)] ->
+    | [TClause(TPat_as (pat1, PBind (asVal, TypeScheme(generalizedTypars, _)), _), None, TTarget(vs, e, _), m2)] ->
         let vs2 = ListSet.remove valEq asVal vs
-        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (asVal, generalizedTypars, None) [TClause(pat1, None, TTarget(vs2, e, spTarget, None), m2)] inputTy resultTy
+        let expr = CompilePatternForMatch cenv env mExpr matchm warnOnUnused actionOnFailure (asVal, generalizedTypars, None) [TClause(pat1, None, TTarget(vs2, e, None), m2)] inputTy resultTy
         asVal, expr
     | _ ->
         let matchValueTmp, _ = mkCompGenLocal mExpr "matchValue" inputTy
@@ -3375,7 +3382,7 @@ let EliminateInitializationGraphs
     let mutable definiteDependencies = []
 
     let rec stripChooseAndExpr e =
-        match stripExpr e with
+        match stripDebugPoints (stripExpr e) with
         | Expr.TyChoose (_, b, _) -> stripChooseAndExpr b
         | e -> e
 
@@ -3441,13 +3448,14 @@ let EliminateInitializationGraphs
                 CheckExpr (strict st) e1
                 List.iter (CheckExpr (strict st)) args
           // Binary expressions
-            | Expr.Sequential (e1, e2, _, _, _)
+            | Expr.Sequential (e1, e2, _, _)
             | Expr.StaticOptimization (_, e1, e2, _) ->
                  CheckExpr (strict st) e1; CheckExpr (strict st) e2
           // n-ary expressions
             | Expr.Op (op, _, args, m) -> CheckExprOp st op m; List.iter (CheckExpr (strict st)) args
           // misc
             | Expr.Link eref -> CheckExpr st eref.Value
+            | Expr.DebugPoint (_, e2) -> CheckExpr st e2
             | Expr.TyChoose (_, b, _) -> CheckExpr st b
             | Expr.Quote _ -> ()
             | Expr.WitnessArg (_witnessInfo, _m) -> ()
@@ -3459,7 +3467,7 @@ let EliminateInitializationGraphs
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
 
-        and CheckDecisionTreeTarget st (TTarget(_, e, _, _)) = CheckExpr st e
+        and CheckDecisionTreeTarget st (TTarget(_, e, _)) = CheckExpr st e
 
         and CheckExprOp st op m =
             match op with
@@ -3578,7 +3586,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let ty = tyOfExpr g recdExpr
                    let thisExpr = mkGetArg0 m ty
                    let setExpr = mkRefCellSet g m ty (exprForValRef m (mkLocalValRef safeInitVal)) thisExpr
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.SuppressStmt, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, m)
            let recdExpr =
                match ctorInfo.safeInitInfo with
                | NoSafeInitInfo -> recdExpr
@@ -3587,7 +3595,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let thisExpr = mkGetArg0 m thisTy
                    let thisTyInst = argsOfAppTy g thisTy
                    let setExpr = mkRecdFieldSetViaExprAddr (thisExpr, rfref, thisTyInst, mkOne g m, m)
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, DebugPointAtSequential.SuppressStmt, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, m)
            recdExpr
 
 
@@ -3598,21 +3606,24 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
         | Expr.Op (TOp.Recd (RecdExprIsObjInit, _), _, _, _) -> rewriteConstruction expr
 
         // <ctor-body> = "a; <ctor-body>"
-        | Expr.Sequential (a, body, NormalSeq, spSeq, b) -> Expr.Sequential (a, checkAndRewrite body, NormalSeq, spSeq, b)
+        | Expr.Sequential (a, body, NormalSeq, b) ->
+            Expr.Sequential (a, checkAndRewrite body, NormalSeq, b)
 
         // <ctor-body> = "<ctor-body> then <expr>"
-        | Expr.Sequential (body, a, ThenDoSeq, spSeq, b) -> Expr.Sequential (checkAndRewrite body, a, ThenDoSeq, spSeq, b)
+        | Expr.Sequential (body, a, ThenDoSeq, b) ->
+            Expr.Sequential (checkAndRewrite body, a, ThenDoSeq, b)
 
         // <ctor-body> = "let pat = expr in <ctor-body>"
         | Expr.Let (bind, body, m, _) -> mkLetBind m bind (checkAndRewrite body)
 
         // The constructor is a sequence "let pat = expr in <ctor-body>" 
         | Expr.Match (spBind, a, b, targets, c, d) ->
-            let targets = targets |> Array.map (fun (TTarget(vs, body, spTarget, flags)) -> TTarget(vs, checkAndRewrite body, spTarget, flags))
+            let targets = targets |> Array.map (fun (TTarget(vs, body, flags)) -> TTarget(vs, checkAndRewrite body, flags))
             Expr.Match (spBind, a, b, targets, c, d)
 
         // <ctor-body> = "let rec binds in <ctor-body>"
-        | Expr.LetRec (a, body, _, _) -> Expr.LetRec (a, checkAndRewrite body, m, Construct.NewFreeVarsCache())
+        | Expr.LetRec (a, body, _, _) ->
+            Expr.LetRec (a, checkAndRewrite body, m, Construct.NewFreeVarsCache())
 
         // <ctor-body> = "new C(...)"
         | Expr.App (f, b, c, d, m) ->
@@ -3621,25 +3632,28 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
             let expr = Expr.App (f, b, c, d, m)
             rewriteConstruction expr
 
+        | Expr.DebugPoint (dp, innerExpr) ->
+            Expr.DebugPoint (dp, checkAndRewrite innerExpr)
+
         | _ ->
             error expr
 
     and checkAndRewriteCtorUsage expr =
-         match expr with
-         | Expr.Link eref ->
-               let e = checkAndRewriteCtorUsage eref.Value
-               eref.Value <- e
-               expr
+        match expr with
+        | Expr.Link eref ->
+            let e = checkAndRewriteCtorUsage eref.Value
+            eref.Value <- e
+            expr
 
-         // Type applications are ok, e.g.
-         //     type C<'a>(x: int) =
-         //         new() = C<'a>(3)
-         | Expr.App (f, fty, tyargs, [], m) ->
-             let f = checkAndRewriteCtorUsage f
-             Expr.App (f, fty, tyargs, [], m)
+        // Type applications are ok, e.g.
+        //     type C<'a>(x: int) =
+        //         new() = C<'a>(3)
+        | Expr.App (f, fty, tyargs, [], m) ->
+            let f = checkAndRewriteCtorUsage f
+            Expr.App (f, fty, tyargs, [], m)
 
-         // Self-calls are OK and get rewritten.
-         | Expr.Val (vref, NormalValUse, a) ->
+        // Self-calls are OK and get rewritten.
+        | Expr.Val (vref, NormalValUse, a) ->
            let isCtor =
                match vref.MemberInfo with
                | None -> false
@@ -3649,6 +3663,10 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                error expr
            else
                Expr.Val (vref, CtorValUsedAsSelfInit, a)
+
+        | Expr.DebugPoint (dp, innerExpr) ->
+            Expr.DebugPoint (dp, checkAndRewriteCtorUsage innerExpr)
+
          | _ ->
             error expr
 
@@ -3844,7 +3862,7 @@ type RecDefnBindingInfo =
         declKind: DeclKind *
         synBinding: SynBinding
 
-/// RecursiveBindingInfo - flows through initial steps of TcLetrec
+/// RecursiveBindingInfo - flows through initial steps of TcLetrecBindings
 type RecursiveBindingInfo =
     | RecursiveBindingInfo of
           recBindIndex: int * // index of the binding in the recursive group
@@ -3901,7 +3919,7 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     // Skip over LAM tps. Choose 'a.
     if vspec.IsInstanceMember then
         let rec firstArg e =
-          match e with
+          match stripDebugPoints e with
             | Expr.TyLambda (_, _, b, _, _) -> firstArg b
             | Expr.TyChoose (_, b, _) -> firstArg b
             | Expr.Lambda (_, _, _, [v], _, _, _) -> Some v
@@ -4500,6 +4518,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
         v, tpenv
+
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
@@ -4508,7 +4527,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
         // Evaluate the constant expression using static attribute argument rules
         let te = EvalLiteralExprOrAttribArg g te
         let v =
-            match stripExpr te with
+            match stripDebugPoints (stripExpr te) with
             // Check we have a residue constant. We know the type was correct because we checked the expression with this type.
             | Expr.Const (c, _, _) ->
                 match c with
@@ -4530,9 +4549,11 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
                 | _ -> fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
         v, tpenv'
+
     | SynType.LongIdent lidwd ->
         let m = lidwd.Range
         TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent (false, lidwd, None, m), m)) idOpt container
+
     | _ ->
         fail()
 
@@ -5456,6 +5477,7 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     match synExpr with
 
     | LongOrSingleIdent (isOpt, longId, altNameRefCellOpt, mLongId) ->
+        TcNonControlFlowExpr env <| fun env ->
         if isOpt then errorR(Error(FSComp.SR.tcSyntaxErrorUnexpectedQMark(), mLongId))
         // Check to see if pattern translation decided to use an alternative identifier.
         match altNameRefCellOpt with
@@ -5467,6 +5489,7 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     // f(x)  // hpa=true
     // f[x]  // hpa=true
     | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+        TcNonControlFlowExpr env <| fun env ->
         
         // func (arg)[arg2] gives warning that .[ must be used.
         match delayed with
@@ -5502,12 +5525,14 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     // e1.id1.id2
     // etc.
     | SynExpr.DotGet (e1, _, LongIdentWithDots(longId, _), _) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprThen cenv overallTy env tpenv false e1 ((DelayedDotLookup (longId, synExpr.RangeWithoutAnyExtraDot)) :: delayed)
 
     // e1.[e2]
     // e1.[e21, ..., e2n]
     // etc.
     | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
+        TcNonControlFlowExpr env <| fun env ->
         if not isArg && cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             informationalWarning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
@@ -5516,6 +5541,7 @@ and TcExprThen cenv (overallTy: OverallTy) env tpenv isArg synExpr delayed =
     // e1.[e21, ..., e2n] <- e3
     // etc.
     | SynExpr.DotIndexedSet (e1, IndexerArgs indexArgs, e3, mOfLeftOfSet, mDot, mWholeExpr) ->
+        TcNonControlFlowExpr env <| fun env ->
         if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
             warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (e3, mOfLeftOfSet)) e1 indexArgs delayed
@@ -5637,6 +5663,29 @@ and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy 
     | _ ->
         expr
 
+and TcNonControlFlowExpr (env: TcEnv) f =
+    if env.eIsControlFlow then 
+        let envinner = { env with eIsControlFlow = false }
+        let res, tpenv = f envinner
+        let m = res.Range
+        
+        // If the range is associated with calls like `async.For` for computation expression syntax control-flow
+        // desugaring then don't emit a debug point - the debug points are placed separately in CheckComputationExpressions.fs
+        match m.NotedSourceConstruct with
+        | NotedSourceConstruct.Binding
+        | NotedSourceConstruct.Finally
+        | NotedSourceConstruct.Try
+        | NotedSourceConstruct.For
+        | NotedSourceConstruct.InOrTo
+        | NotedSourceConstruct.Combine
+        | NotedSourceConstruct.With
+        | NotedSourceConstruct.While -> 
+            res, tpenv
+        | NotedSourceConstruct.None ->
+            mkDebugPoint res.Range res, tpenv
+    else
+        f env
+
 and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     match synExpr with
@@ -5656,15 +5705,18 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, _, m), _) ->
+        TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.InterpolatedString (parts, _, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
     | SynExpr.Const (synConst, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
 
@@ -5673,8 +5725,11 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     | SynExpr.Match (_mMatch, spMatch, synInputExpr, _mWith, synClauses, _m) ->
 
-        let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv synInputExpr
+        let inputExpr, inputTy, tpenv =
+            let env = { env with eIsControlFlow = false }
+            TcExprOfUnknownType cenv env tpenv synInputExpr
         let mInputExpr = inputExpr.Range
+        let env = { env with eIsControlFlow = true }
         let matchVal, matchExpr, tpenv = TcAndPatternCompileMatchClauses mInputExpr mInputExpr ThrowIncompleteMatchException cenv (Some inputExpr) inputTy overallTy env tpenv synClauses
         let overallExpr = mkLet spMatch mInputExpr matchVal inputExpr matchExpr
         overallExpr, tpenv
@@ -5683,82 +5738,107 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcExprMatchLambda cenv overallTy env tpenv (isExnMatch, mArg, clauses, spMatch, m)
 
     | SynExpr.Assert (x, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcAssertExpr cenv overallTy env m tpenv x
+
+    | SynExpr.DebugPoint (dpOpt, innerExpr) ->
+        match dpOpt with 
+        | Some (dp , isExpr)->
+            let env = if isExpr then { env with eIsControlFlow = false } else { env with eIsControlFlow = true } 
+            let innerExprR, tpenv = TcExpr cenv overallTy env tpenv innerExpr
+            Expr.DebugPoint (dp, innerExprR), tpenv
+        | None ->
+            let env = { env with eIsControlFlow = true }
+            TcExpr cenv overallTy env tpenv innerExpr
 
     | SynExpr.Fixed (_, m) ->
         error(Error(FSComp.SR.tcFixedNotAllowed(), m))
 
     // e: ty
     | SynExpr.Typed (synBodyExpr, synType, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprTypeAnnotated cenv overallTy env tpenv (synBodyExpr, synType, m)
 
     // e :? ty
     | SynExpr.TypeTest (synInnerExpr, tgtTy, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprTypeTest cenv overallTy env tpenv (synInnerExpr, tgtTy, m)
 
     // SynExpr.AddressOf is noted in the syntax ast in order to recognize it as concrete type information
     // during type checking, in particular prior to resolving overloads. This helps distinguish
     // its use at method calls from the use of the conflicting 'ref' mechanism for passing byref parameters
     | SynExpr.AddressOf (byref, synInnerExpr, opm, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m (if byref then "~&" else "~&&") synInnerExpr)
 
     | SynExpr.Upcast (synInnerExpr, _, m) | SynExpr.InferredUpcast (synInnerExpr, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprUpcast cenv overallTy env tpenv (synExpr, synInnerExpr, m)
 
     | SynExpr.Downcast (synInnerExpr, _, m) | SynExpr.InferredDowncast (synInnerExpr, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprDowncast cenv overallTy env tpenv (synExpr, synInnerExpr, m)
 
     | SynExpr.Null m ->
+        TcNonControlFlowExpr env <| fun env ->
         AddCxTypeMustSupportNull env.DisplayEnv cenv.css m NoTrace overallTy.Commit
         mkNull m overallTy.Commit, tpenv
 
     | SynExpr.Lazy (synInnerExpr, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprLazy cenv overallTy env tpenv (synInnerExpr, m)
 
     | SynExpr.Tuple (isExplicitStruct, args, _, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprTuple cenv overallTy env tpenv (isExplicitStruct, args, m)
 
     | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnonRecdTy cenv.g ty || isTyparTy cenv.g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
         )
 
     | SynExpr.ArrayOrList (isArray, args, m) ->
-       TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
+        TcNonControlFlowExpr env <| fun env ->
+        TcExprArrayOrList cenv overallTy env tpenv (isArray, args, m)
 
     | SynExpr.New (superInit, synObjTy, arg, mNewExpr) ->
-      let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
+        let objTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.Use env tpenv synObjTy
 
-      TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
-        TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
-      )
+        TcNonControlFlowExpr env <| fun env ->
+        TcPropagatingExprLeafThenConvert cenv overallTy objTy env (* true *) mNewExpr (fun () ->
+          TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
+        )
 
     | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, extraImpls, mNewExpr, m) ->
-      TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
+        TcNonControlFlowExpr env <| fun env ->
+        TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
-      TcExprRecord cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
+        TcNonControlFlowExpr env <| fun env ->
+        TcExprRecord cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
         TcExprWhileLoop cenv overallTy env tpenv (spWhile, synGuardExpr, synBodyExpr, m)
 
-    | SynExpr.For (spBind, id, _, start, dir, finish, body, m) ->
-        TcExprIntegerForLoop cenv overallTy env tpenv (spBind, id, start, dir, finish, body, m)
+    | SynExpr.For (spFor, spTo, id, _, start, dir, finish, body, m) ->
+        TcExprIntegerForLoop cenv overallTy env tpenv (spFor, spTo, id, start, dir, finish, body, m)
 
-    | SynExpr.ForEach (spForLoop, SeqExprOnly seqExprOnly, isFromSource, pat, enumSynExpr, bodySynExpr, m) ->
+    | SynExpr.ForEach (spFor, spIn, SeqExprOnly seqExprOnly, isFromSource, pat, synEnumExpr, synBodyExpr, m) ->
         assert isFromSource
         if seqExprOnly then warning (Error(FSComp.SR.tcExpressionRequiresSequence(), m))
-        let enumSynExpr =
-            match RewriteRangeExpr enumSynExpr with
+        let synEnumExpr =
+            match RewriteRangeExpr synEnumExpr with
             | Some e -> e
-            | None -> enumSynExpr
-        TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, m, spForLoop)
+            | None -> synEnumExpr
+        TcForEachExpr cenv overallTy env tpenv (pat, synEnumExpr, synBodyExpr, m, spFor, spIn)
 
     | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
         let env = ExitFamilyRegion env
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
     | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         let env = ExitFamilyRegion env
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.eAccessRights)
         cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
@@ -5804,40 +5884,51 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
 
     // This is for internal use in the libraries only
     | SynExpr.LibraryOnlyStaticOptimization (constraints, e2, e3, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprStaticOptimization cenv overallTy env tpenv (constraints, e2, e3, m)
 
     // e1.longId <- e2
     | SynExpr.DotSet (e1, lidwd, e2, mStmt) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprDotSet cenv overallTy env tpenv (e1, lidwd, e2, mStmt)
 
     // e1 <- e2
     | SynExpr.Set (e1, e2, mStmt) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprThen cenv overallTy env tpenv false e1 [MakeDelayedSet(e2, mStmt)]
 
     // e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, lidwd, e2, e3, mStmt) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprDotNamedIndexedPropertySet cenv overallTy env tpenv (e1, lidwd, e2, e3, mStmt)
 
     | SynExpr.LongIdentSet (lidwd, e2, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprLongIdentSet cenv overallTy env tpenv (lidwd, e2, m)
 
     // Type.Items(e1) <- e2
     | SynExpr.NamedIndexedPropertySet (lidwd, e1, e2, mStmt) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprNamedIndexPropertySet cenv overallTy env tpenv (lidwd, e1, e2, mStmt)
 
     | SynExpr.TraitCall (tps, memSpfn, arg, m) ->
-      TcExprTraitCall cenv overallTy env tpenv (tps, memSpfn, arg, m)
+        TcNonControlFlowExpr env <| fun env ->
+        TcExprTraitCall cenv overallTy env tpenv (tps, memSpfn, arg, m)
 
     | SynExpr.LibraryOnlyUnionCaseFieldGet (e1, c, n, m) ->
-      TcExprUnionCaseFieldGet cenv overallTy env tpenv (e1, c, n, m)
+        TcNonControlFlowExpr env <| fun env ->
+        TcExprUnionCaseFieldGet cenv overallTy env tpenv (e1, c, n, m)
 
     | SynExpr.LibraryOnlyUnionCaseFieldSet (e1, c, n, e2, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprUnionCaseFieldSet cenv overallTy env tpenv (e1, c, n, e2, m)
 
     | SynExpr.LibraryOnlyILAssembly (s, tyargs, args, rtys, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         TcExprILAssembly cenv overallTy env tpenv (s, tyargs, args, rtys, m)
 
     | SynExpr.Quote (oper, raw, ast, isFromQueryExpression, m) ->
+        TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m)
 
@@ -5878,6 +5969,7 @@ and TcExprMatchLambda cenv overallTy env tpenv (isExnMatch, mArg, clauses, spMat
     let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
     let idv1, idve1 = mkCompGenLocal mArg (cenv.synArgNameGenerator.New()) domainTy
     let envinner = ExitFamilyRegion env
+    let envinner = { envinner with eIsControlFlow = true }
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mArg (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
     overallExpr, tpenv
@@ -5932,7 +6024,9 @@ and TcExprDowncast cenv overallTy env tpenv (synExpr, synInnerExpr, m) =
 and TcExprLazy cenv overallTy env tpenv (synInnerExpr, m) =
     let innerTy = NewInferenceType ()
     UnifyTypes cenv env m overallTy.Commit (mkLazyTy cenv.g innerTy)
-    let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) env tpenv synInnerExpr
+    let envinner = ExitFamilyRegion env
+    let envinner = { envinner with eIsControlFlow = true }
+    let innerExpr, tpenv = TcExpr cenv (MustEqual innerTy) envinner tpenv synInnerExpr
     let expr = mkLazyDelayed cenv.g m innerTy (mkUnitDelayLambda cenv.g m innerExpr)
     expr, tpenv
 
@@ -6018,25 +6112,35 @@ and TcExprRecord cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeEx
 
 and TcExprWhileLoop cenv overallTy env tpenv (spWhile, synGuardExpr, synBodyExpr, m) =
     UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
-    let guardExpr, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) env tpenv synGuardExpr
-    let bodyExpr, tpenv = TcStmt cenv env tpenv synBodyExpr
+    let guardExpr, tpenv = 
+        let env = { env with eIsControlFlow = false }
+        TcExpr cenv (MustEqual cenv.g.bool_ty) env tpenv synGuardExpr
+    let bodyExpr, tpenv =
+        let env = { env with eIsControlFlow = true }
+        TcStmt cenv env tpenv synBodyExpr
     mkWhile cenv.g (spWhile, NoSpecialWhileLoopMarker, guardExpr, bodyExpr, m), tpenv
 
-and TcExprIntegerForLoop cenv overallTy env tpenv (spBind, id, start, dir, finish, body, m) =
+and TcExprIntegerForLoop cenv overallTy env tpenv (spFor, spTo, id, start, dir, finish, body, m) =
     UnifyTypes cenv env m overallTy.Commit cenv.g.unit_ty
-    let startExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv start
-    let finishExpr, tpenv = TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv finish
+    let startExpr, tpenv =
+        let env = { env with eIsControlFlow = false }
+        TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv start
+    let finishExpr, tpenv =
+        let env = { env with eIsControlFlow = false }
+        TcExpr cenv (MustEqual cenv.g.int_ty) env tpenv finish
     let idv, _ = mkLocal id.idRange id.idText cenv.g.int_ty
     let envinner = AddLocalVal cenv.g cenv.tcSink m idv env
+    let envinner = { envinner with eIsControlFlow = true }
 
     // notify name resolution sink about loop variable
     let item = Item.Value(mkLocalValRef idv)
     CallNameResolutionSink cenv.tcSink (idv.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
 
     let bodyExpr, tpenv = TcStmt cenv envinner tpenv body
-    mkFastForLoop cenv.g (spBind, m, idv, startExpr, dir, finishExpr, bodyExpr), tpenv
+    mkFastForLoop cenv.g (spFor, spTo, m, idv, startExpr, dir, finishExpr, bodyExpr), tpenv
 
 and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) =
+    let env = { env with eIsControlFlow = true }
     let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
     // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
     let filterClauses =
@@ -6051,6 +6155,7 @@ and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithCla
     mkTryWith cenv.g (bodyExpr, v1, filterExpr, v2, handlerExpr, mTryToLast, overallTy.Commit, spTry, spWith), tpenv
 
 and TcExprTryFinally cenv overallTy env tpenv (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) =
+    let env = { env with eIsControlFlow = true }
     let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
     let finallyExpr, tpenv = TcStmt cenv env tpenv synFinallyExpr
     mkTryFinally cenv.g (bodyExpr, finallyExpr, mTryToLast, overallTy.Commit, spTry, spFinally), tpenv
@@ -6061,23 +6166,27 @@ and TcExprJoinIn cenv overallTy env tpenv (e1, mInToken, e2, mAll) =
     let _, _, tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv e2)
     mkDefault(mAll, overallTy.Commit), tpenv
 
-and TcExprSequential cenv overallTy env tpenv (synExpr, sp, dir, synExpr1, synExpr2, m) =
+and TcExprSequential cenv overallTy env tpenv (synExpr, _sp, dir, synExpr1, synExpr2, m) =
     if dir then
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
     else
         // Constructors using "new (...) = <ctor-expr> then <expr>"
+        let env = { env with eIsControlFlow = true }
         let expr1, tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synExpr1
         if (GetCtorShapeCounter env) <> 1 then
             errorR(Error(FSComp.SR.tcExpressionFormRequiresObjectConstructor(), m))
         let expr2, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv synExpr2
-        Expr.Sequential (expr1, expr2, ThenDoSeq, sp, m), tpenv
+        Expr.Sequential (expr1, expr2, ThenDoSeq, m), tpenv
 
 and TcExprSequentialOrImplicitYield cenv overallTy env tpenv (sp, synExpr1, synExpr2, otherExpr, m) =
-    let isStmt, expr1, tpenv = TryTcStmt cenv env tpenv synExpr1
+    let isStmt, expr1, tpenv =
+        let env1 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
+        TryTcStmt cenv env1 tpenv synExpr1
     if isStmt then
-        let env = ShrinkContext env m synExpr2.Range
-        let expr2, tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synExpr2
-        Expr.Sequential(expr1, expr2, NormalSeq, sp, m), tpenv
+        let env2 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
+        let env2 = ShrinkContext env2 m synExpr2.Range
+        let expr2, tpenv = TcExprThatCanBeCtorBody cenv overallTy env2 tpenv synExpr2
+        Expr.Sequential(expr1, expr2, NormalSeq, m), tpenv
     else
         // The first expression wasn't unit-typed, so proceed to the alternative interpretation
         // Note a copy of the first expression is embedded in 'otherExpr' and thus
@@ -6243,6 +6352,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         mkMultiLambda m vspecs (bodyExpr, resultTy), tpenv 
 
     | e -> 
+        let env = { env with eIsControlFlow = true }
         // Dive into the expression to check for syntax errors and suppress them if they show.
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
             TcExpr cenv overallTy env tpenv e)
@@ -7524,7 +7634,8 @@ and TcAnonRecdExpr cenv (overallTy: TType) env tpenv (isStruct, optOrigSynExpr, 
         let expr = mkCompGenLet mOrigExpr oldv origExprChecked expr
         expr, tpenv
 
-and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWholeExpr, spForLoop) =
+and TcForEachExpr cenv overallTy env tpenv (synPat, synEnumExpr, synBodyExpr, mWholeExpr, spFor, spIn) =
+
     let tryGetOptimizeSpanMethodsAux g m ty isReadOnlySpan =
         match (if isReadOnlySpan then tryDestReadOnlySpanTy g m ty else tryDestSpanTy g m ty) with
         | ValueSome(struct(_, destTy)) ->
@@ -7546,17 +7657,23 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
 
     UnifyTypes cenv env mWholeExpr overallTy.Commit cenv.g.unit_ty
 
-    let mPat = pat.Range
-    //let mBodyExpr = bodySynExpr.Range
-    let mEnumExpr = enumSynExpr.Range
-    let mForLoopStart = match spForLoop with DebugPointAtFor.Yes mStart -> mStart | DebugPointAtFor.No -> mEnumExpr
+    let mPat = synPat.Range
+    let mBodyExpr = synBodyExpr.Range
+    let mEnumExpr = synEnumExpr.Range
+    let mFor = match spFor with DebugPointAtFor.Yes mStart -> mStart | DebugPointAtFor.No -> mEnumExpr
+    let mIn = match spIn with DebugPointAtInOrTo.Yes mStart -> mStart | DebugPointAtInOrTo.No -> mBodyExpr
+    let spEnumExpr = DebugPointAtBinding.Yes mEnumExpr
+    let spForBind = match spFor with DebugPointAtFor.Yes m -> DebugPointAtBinding.Yes m | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky
+    let spInAsWhile = match spIn with DebugPointAtInOrTo.Yes m -> DebugPointAtWhile.Yes m | DebugPointAtInOrTo.No -> DebugPointAtWhile.No
 
     // Check the expression being enumerated
-    let enumExpr, enumExprTy, tpenv = TcExprOfUnknownType cenv env tpenv enumSynExpr
+    let enumExpr, enumExprTy, tpenv =
+        let env = { env with eIsControlFlow = false }
+        TcExprOfUnknownType cenv env tpenv synEnumExpr
 
     // Depending on its type we compile it in different ways
     let enumElemTy, bodyExprFixup, overallExprFixup, iterationTechnique =
-        match enumExpr with
+        match stripDebugPoints enumExpr with
 
         // optimize 'for i in n .. m do'
         | Expr.App (Expr.Val (vf, _, _), _, [tyarg], [startExpr;finishExpr], _)
@@ -7570,13 +7687,13 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
             let elemTy = destArrayTy cenv.g enumExprTy
 
             // Evaluate the array index lookup
-            let bodyExprFixup elemVar bodyExpr = mkCompGenLet mForLoopStart elemVar (mkLdelem cenv.g mForLoopStart elemTy arrExpr idxExpr) bodyExpr
+            let bodyExprFixup elemVar bodyExpr = mkInvisibleLet mIn elemVar (mkLdelem cenv.g mIn elemTy arrExpr idxExpr) bodyExpr
 
             // Evaluate the array expression once and put it in arrVar
-            let overallExprFixup overallExpr = mkCompGenLet mForLoopStart arrVar enumExpr overallExpr
+            let overallExprFixup overallExpr = mkLet spForBind mFor arrVar enumExpr overallExpr
 
             // Ask for a loop over integers for the given range
-            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart (mkLdlen cenv.g mForLoopStart arrExpr)))
+            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mFor, mkDecr cenv.g mFor (mkLdlen cenv.g mFor arrExpr)))
 
         | _ ->
             // try optimize 'for i in span do' for span or readonlyspan
@@ -7590,18 +7707,18 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
 
                 // Evaluate the span index lookup
                 let bodyExprFixup elemVar bodyExpr =
-                    let elemAddrVar, _ = mkCompGenLocal mForLoopStart "addr" elemAddrTy
-                    let e = mkCompGenLet mForLoopStart elemVar (mkAddrGet mForLoopStart (mkLocalValRef elemAddrVar)) bodyExpr
+                    let elemAddrVar, _ = mkCompGenLocal mIn "addr" elemAddrTy
+                    let e = mkInvisibleLet mIn elemVar (mkAddrGet mIn (mkLocalValRef elemAddrVar)) bodyExpr
                     let getItemCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getItemMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [ idxExpr ]
-                    mkCompGenLet mForLoopStart elemAddrVar getItemCallExpr e
+                    mkInvisibleLet mIn elemAddrVar getItemCallExpr e
 
                 // Evaluate the span expression once and put it in spanVar
-                let overallExprFixup overallExpr = mkCompGenLet mForLoopStart spanVar enumExpr overallExpr
+                let overallExprFixup overallExpr = mkLet spForBind mFor spanVar enumExpr overallExpr
 
                 let getLengthCallExpr, _ = BuildMethodCall tcVal cenv.g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] []
 
                 // Ask for a loop over integers for the given range
-                (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mForLoopStart, mkDecr cenv.g mForLoopStart getLengthCallExpr))
+                (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero cenv.g mFor, mkDecr cenv.g mFor getLengthCallExpr))
 
             | _ ->
                 let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
@@ -7609,7 +7726,10 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
                     AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
                 (enumElemTy, (fun _ x -> x), id, Choice3Of3(enumerableVar, enumeratorVar, enumeratorExpr, getEnumExpr, getEnumTy, guardExpr, currentExpr))
 
-    let pat, _, vspecs, envinner, tpenv = TcMatchPattern cenv enumElemTy env tpenv (pat, None)
+    let pat, _, vspecs, envinner, tpenv =
+        let env = { env with eIsControlFlow = false }
+        TcMatchPattern cenv enumElemTy env tpenv (synPat, None)
+
     let elemVar, pat =
         // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
         match pat with
@@ -7620,14 +7740,16 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
               tmp, pat
 
     // Check the body of the loop
-    let bodyExpr, tpenv = TcStmt cenv envinner tpenv bodySynExpr
+    let bodyExpr, tpenv =
+        let envinner = { envinner with eIsControlFlow = true }
+        TcStmt cenv envinner tpenv synBodyExpr
 
     // Add the pattern match compilation
     let bodyExpr =
         let valsDefinedByMatching = ListSet.remove valEq elemVar vspecs
         CompilePatternForMatch
-            cenv env enumSynExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
-            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.Yes, None), mForLoopStart)] 
+            cenv env synEnumExpr.Range pat.Range false IgnoreWithWarning (elemVar, [], None)
+            [TClause(pat, None, TTarget(valsDefinedByMatching, bodyExpr, None), mIn)] 
             enumElemTy
             overallTy.Commit
 
@@ -7641,27 +7763,26 @@ and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWhol
 
         // Build iteration as a for loop
         | Choice1Of3(startExpr, finishExpr) ->
-            mkFastForLoop cenv.g (spForLoop, mWholeExpr, elemVar, startExpr, true, finishExpr, bodyExpr)
+            mkFastForLoop cenv.g (spFor, spIn, mWholeExpr, elemVar, startExpr, true, finishExpr, bodyExpr)
 
         // Build iteration as a for loop with a specific index variable that is not the same as the elemVar
         | Choice2Of3(idxVar, startExpr, finishExpr) ->
-            mkFastForLoop cenv.g (spForLoop, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
+            mkFastForLoop cenv.g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
 
         // Build iteration as a while loop with a try/finally disposal
         | Choice3Of3(enumerableVar, enumeratorVar, _, getEnumExpr, _, guardExpr, currentExpr) ->
 
-            // This compiled for must be matched EXACTLY by CompiledForEachExpr in opt.fs and creflect.fs
-            mkCompGenLet mForLoopStart enumerableVar enumExpr
-              (let cleanupE = BuildDisposableCleanup cenv env mWholeExpr enumeratorVar
-               let spBind = match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding.Yes spStart | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky
-               (mkLet spBind mForLoopStart enumeratorVar getEnumExpr
+            // This compiled for must be matched EXACTLY by CompiledForEachExpr
+            mkLet spForBind mFor enumerableVar enumExpr
+              (mkLet spEnumExpr mFor enumeratorVar getEnumExpr
                    (mkTryFinally cenv.g
                        (mkWhile cenv.g
-                           (DebugPointAtWhile.No,
+                           (spInAsWhile,
                             WhileLoopForCompiledForEachExprMarker, guardExpr,
-                            mkCompGenLet mForLoopStart elemVar currentExpr bodyExpr,
-                            mForLoopStart),
-                        cleanupE, mForLoopStart, cenv.g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No))))
+                            mkInvisibleLet mIn elemVar currentExpr bodyExpr,
+                            mFor),
+                        BuildDisposableCleanup cenv env mWholeExpr enumeratorVar, 
+                        mFor, cenv.g.unit_ty, DebugPointAtTry.No, DebugPointAtFinally.No)))
 
     let overallExpr = overallExprFixup overallExpr
     overallExpr, tpenv
@@ -8472,6 +8593,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.InferredUpcast (synExpr, _)
         | SynExpr.InferredDowncast (synExpr, _)
         | SynExpr.AddressOf (_, synExpr, _, _)
+        | SynExpr.DebugPoint (_, synExpr)
         | SynExpr.Quote (_, _, synExpr, _, _) -> isSimpleArgument synExpr
 
         | SynExpr.InterpolatedString _
@@ -9686,12 +9808,14 @@ and CheckRecursiveBindingIds binds =
 and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
     match expr with
     | SynExpr.Sequential (sp, true, e1, e2, m) when not isCompExpr ->
-        let e1', _ = TcStmtThatCantBeCtorBody cenv env tpenv e1
+        let e1', _ =
+            let env1 = { env with eIsControlFlow = (match sp with | DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
+            TcStmtThatCantBeCtorBody cenv env1 tpenv e1
+        let env2 = { env with eIsControlFlow = (match sp with | DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
+        let env2 = ShrinkContext env2 m e2.Range
         // tailcall
-        let env = ShrinkContext env m e2.Range
-        // tailcall
-        TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) ->
-            cont (Expr.Sequential (e1', e2', NormalSeq, sp, m), tpenv))
+        TcLinearExprs bodyChecker cenv env2 overallTy tpenv isCompExpr e2 (fun (e2', tpenv) ->
+            cont (Expr.Sequential (e1', e2', NormalSeq, m), tpenv))
 
     | SynExpr.LetOrUse (isRec, isUse, binds, body, m) when not (isUse && isCompExpr) ->
         if isRec then
@@ -9699,7 +9823,8 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             CheckRecursiveBindingIds binds
             let binds = List.map (fun x -> RecDefnBindingInfo(ExprContainerInfo, NoNewSlots, ExpressionBinding, x)) binds
             if isUse then errorR(Error(FSComp.SR.tcBindingCannotBeUseAndRec(), m))
-            let binds, envinner, tpenv = TcLetrec ErrorOnOverrides cenv env tpenv (binds, m, m)
+            let binds, envinner, tpenv = TcLetrecBindings ErrorOnOverrides cenv env tpenv (binds, m, m)
+            let envinner = { envinner with eIsControlFlow = true }
             let bodyExpr, tpenv = bodyChecker overallTy envinner tpenv body
             let bodyExpr = bindLetRec binds m bodyExpr
             cont (bodyExpr, tpenv)
@@ -9707,12 +9832,17 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf, envinner, tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds, m, body.Range)
             let envinner = ShrinkContext envinner m body.Range
+            let envinner = { envinner with eIsControlFlow = true }
             // tailcall
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) ->
                 cont (fst (mkf (x, overallTy.Commit)), tpenv))
 
     | SynExpr.IfThenElse (_, _, synBoolExpr, _, synThenExpr, _, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
-        let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv (MustEqual cenv.g.bool_ty) env tpenv synBoolExpr
+        let boolExpr, tpenv =
+            let env = { env with eIsControlFlow = false }
+            TcExprThatCantBeCtorBody cenv (MustEqual cenv.g.bool_ty) env tpenv synBoolExpr
+
+        let env = { env with eIsControlFlow = true }
         let thenExpr, tpenv =
             let env =
                 match env.eContextInfo with
@@ -9730,15 +9860,14 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         match synElseExprOpt with
         | None ->
             let elseExpr = mkUnit cenv.g mIfToThen
-            let spElse = DebugPointAtTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
-            let overallExpr = primMkCond spIfToThen DebugPointAtTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
+            let overallExpr = primMkCond spIfToThen m overallTy.Commit boolExpr thenExpr elseExpr
             cont (overallExpr, tpenv)
 
         | Some synElseExpr ->
             let env = { env with eContextInfo = ContextInfo.ElseBranchResult synElseExpr.Range }
             // tailcall
             TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr synElseExpr (fun (elseExpr, tpenv) ->
-                let resExpr = primMkCond spIfToThen DebugPointAtTarget.Yes DebugPointAtTarget.Yes m overallTy.Commit boolExpr thenExpr elseExpr
+                let resExpr = primMkCond spIfToThen m overallTy.Commit boolExpr thenExpr elseExpr
                 cont (resExpr, tpenv))
 
     | _ ->
@@ -9772,8 +9901,9 @@ and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchC
     let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
     let pat', optWhenExprR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
+    let resultEnv = match spTgt with DebugPointAtTarget.Yes -> { resultEnv with eIsControlFlow = true } | DebugPointAtTarget.No -> resultEnv
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
-    TClause(pat', optWhenExprR, TTarget(vspecs, e', spTgt, None), patm), tpenv
+    TClause(pat', optWhenExprR, TTarget(vspecs, e', None), patm), tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c =
     match c with
@@ -9798,7 +9928,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
     match overallExprTy with
     | ty when isByrefTy cenv.g ty ->
         let okByRef =
-            match stripExpr fixedExpr with
+            match stripDebugPoints (stripExpr fixedExpr) with
             | Expr.Op (op, tyargs, args, _) ->
                     match op, tyargs, args with
                     | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
@@ -9978,8 +10108,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             errorR(Error(FSComp.SR.tcFixedNotAllowed(), mBinding))
 
         if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
-            HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute valAttribs
-        then
+            HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute valAttribs then
             errorR(Error(FSComp.SR.tcDllImportNotAllowed(), mBinding))
 
         if Option.isNone memberFlagsOpt && HasFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute valAttribs then
@@ -10040,10 +10169,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | None ->
                 envinner
 
-        // Now tc the r.h.s.
         // If binding a ctor then set the ugly counter that permits us to write ctor expressions on the r.h.s.
         let isCtor = (match memberFlagsOpt with Some memberFlags -> memberFlags.MemberKind = SynMemberKind.Constructor | _ -> false)
 
+        // Now check the r-ght of the binding.
+        //
         // At each module binding, dive into the expression to check for syntax errors and suppress them if they show.
         // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
         let rhsExprChecked, tpenv =
@@ -10056,7 +10186,26 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
                 // Save the arginfos away to match them up in the lambda
                 let (PartialValReprInfo(argInfos, _)) = partialValReprInfo
-                let envinner = { envinner with eLambdaArgInfos = argInfos }
+
+                // The right-hand-side is control flow (has an implicit debug point) in any situation where we
+                // haven't extended the debug point to include the 'let', that is, there is a debug point noted
+                // at the binding. 
+                //
+                // This includes
+                //    let _ = expr
+                //    let () = expr
+                // which are transformed to sequential expressions in TcLetBinding
+                let rhsIsControlFlow =
+                    match pat with 
+                    | SynPat.Wild _
+                    | SynPat.Const (SynConst.Unit, _)
+                    | SynPat.Paren (SynPat.Const (SynConst.Unit, _), _) -> true
+                    | _ ->
+                    match spBind with
+                    | DebugPointAtBinding.Yes _ -> false
+                    | _ -> true
+                
+                let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
 
                 if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
                 else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr)
@@ -10137,10 +10286,10 @@ and TcNonrecBindingTyparDecls cenv env tpenv bind =
     let (NormalizedBinding(_, _, _, _, _, _, synTyparDecls, _, _, _, _, _)) = bind
     TcBindingTyparDecls true cenv env tpenv synTyparDecls
 
-and TcNonRecursiveBinding declKind cenv env tpenv ty b =
-    let b = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env b
-    let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv b
-    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) b
+and TcNonRecursiveBinding declKind cenv env tpenv ty binding =
+    let binding = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env binding
+    let explicitTyparInfo, tpenv = TcNonrecBindingTyparDecls cenv env tpenv binding
+    TcNormalizedBinding declKind cenv env tpenv ty None NoSafeInitInfo ([], explicitTyparInfo) binding
 
 //-------------------------------------------------------------------------
 // TcAttribute*
@@ -10287,7 +10436,7 @@ and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribut
 
                     AttribNamedArg(nm, argty, isProp, mkAttribExpr callerArgExpr))
 
-                match expr with
+                match stripDebugPoints expr with
                 | Expr.Op (TOp.ILCall (_, _, isStruct, _, _, _, _, ilMethRef, [], [], _), [], args, m) ->
                     if isStruct then error (Error(FSComp.SR.tcCustomAttributeMustBeReferenceType(), m))
                     if args.Length <> ilMethRef.ArgTypes.Length then error (Error(FSComp.SR.tcCustomAttributeArgumentMismatch(), m))
@@ -10406,19 +10555,19 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit'
 
         | TPat_wild _ | TPat_const (Const.Unit, _) when not isUse && not isFixed && isNil generalizedTypars ->
-            let mkSequentialBind (tm, tmty) = (mkSequential DebugPointAtSequential.SuppressNeither m rhsExpr tm, tmty)
+            let mkSequentialBind (tm, tmty) = mkSequential m rhsExpr tm, tmty
             (buildExpr >> mkSequentialBind, env, tpenv)
         | _ ->
 
-        // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
         let patternInputTmp, checkedPat2 =
+
             match checkedPat with
-            // nice: don't introduce awful temporary for r.h.s. in the 99% case where we know what we're binding it to
+
+            // We don't introduce a temporary for the case
+            //   let v = expr
             | TPat_as (pat, PBind(v, TypeScheme(generalizedTypars', _)), _)
                 when List.lengthsEqAndForall2 typarRefEq generalizedTypars generalizedTypars' ->
-
                     v, pat
-                    //Op (LValueOp (LByrefGet,x),[],[],C:\GitHub\dsyme\visualfsharp\a.fs (15,42--15,43) IsSynthetic=false)
 
             | _ when inlineFlag.MustInline ->
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
@@ -10457,7 +10606,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Add the compilation of the pattern to the bodyExpr we get from mkCleanup
         let mkPatBind (bodyExpr, bodyExprTy) =
             let valsDefinedByMatching = ListSet.remove valEq patternInputTmp allValsDefinedByPattern
-            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, DebugPointAtTarget.No, None), m)]
+            let clauses = [TClause(checkedPat2, None, TTarget(valsDefinedByMatching, bodyExpr, None), m)]
             let matchx = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
             let matchx = if (DeclKind.ConvertToLinearBindings declKind) then LinearizeTopMatch cenv.g altActualParent matchx else matchx
             matchx, bodyExprTy
@@ -10470,7 +10619,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
                 (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
                     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
-                    mkTryFinally cenv.g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.Body, DebugPointAtFinally.No), bodyExprTy)
+                    mkTryFinally cenv.g (bodyExpr, cleanupE, m, bodyExprTy, DebugPointAtTry.No, DebugPointAtFinally.No), bodyExprTy)
             else
                 (bodyExpr, bodyExprTy)
 
@@ -10491,9 +10640,10 @@ and TcLetBindings cenv env containerInfo declKind tpenv (binds, bindsm, scopem) 
     let mkf, env, tpenv = TcLetBinding cenv false env containerInfo declKind tpenv (binds, bindsm, scopem)
     let unite = mkUnit cenv.g bindsm
     let expr, _ = mkf (unite, cenv.g.unit_ty)
-    let rec stripLets acc = function
+    let rec stripLets acc expr =
+        match stripDebugPoints expr with
         | Expr.Let (bind, body, m, _) -> stripLets (TMDefLet(bind, m) :: acc) body
-        | Expr.Sequential (e1, e2, NormalSeq, _, m) -> stripLets (TMDefDo(e1, m) :: acc) e2
+        | Expr.Sequential (e1, e2, NormalSeq, m) -> stripLets (TMDefDo(e1, m) :: acc) e2
         | Expr.Const (Const.Unit, _, _) -> List.rev acc
         | _ -> failwith "TcLetBindings: let sequence is non linear. Maybe a LHS pattern was not linearised?"
     let binds = stripLets [] expr
@@ -10705,7 +10855,7 @@ and CheckForNonAbstractInterface declKind tcref (memberFlags: SynMemberFlags) m 
             error(Error(FSComp.SR.tcConcreteMembersIllegalInInterface(), m))
 
 //-------------------------------------------------------------------------
-// TcLetrec - AnalyzeAndMakeAndPublishRecursiveValue s
+// TcLetrecBindings - AnalyzeAndMakeAndPublishRecursiveValue s
 //------------------------------------------------------------------------
 
 and AnalyzeRecursiveStaticMemberOrValDecl
@@ -11039,7 +11189,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     let recBindIdx = recBindIdx + 1
 
-    // Done - add the declared name to the List.map and return the bundle for use by TcLetrec
+    // Done - add the declared name to the List.map and return the bundle for use by TcLetrecBindings
     let primaryBinding: PreCheckingRecursiveBinding =
         { SyntacticBinding = revisedBinding
           RecBindingInfo = rbinfo }
@@ -11423,7 +11573,7 @@ and TcLetrecAdjustMemberForSpecialVals cenv (pgrbind: PostGeneralizationRecursiv
 
     let (RecursiveBindingInfo(_, _, _, _, vspec, _, _, _, baseValOpt, safeThisValOpt, safeInitInfo, _, _, _)) = pgrbind.RecBindingInfo
     let expr = pgrbind.CheckedBinding.Expr
-    let spBind = pgrbind.CheckedBinding.SeqPoint
+    let spBind = pgrbind.CheckedBinding.DebugPoint
 
     let expr =
         match TcLetrecComputeCtorSafeThisValBind cenv safeThisValOpt with
@@ -11490,12 +11640,12 @@ and FixupLetrecBind cenv denv generalizedTyparsForRecursiveBlock (bind: PostSpec
       Binding = TBind(vspec, expr, spBind) }
 
 //-------------------------------------------------------------------------
-// TcLetrec - for both expressions and class-let-rec-declarations
+// TcLetrecBindings - for both expressions and class-let-rec-declarations
 //------------------------------------------------------------------------
 
 and unionGeneralizedTypars typarSets = List.foldBack (ListSet.unionFavourRight typarEq) typarSets []
 
-and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
+and TcLetrecBindings overridesOK cenv env tpenv (binds, bindsm, scopem) =
 
     // Create prelimRecValues for the recursive items (includes type info from LHS of bindings) *)
     let binds = binds |> List.map (fun (RecDefnBindingInfo(a, b, c, bind)) -> NormalizedRecBindingDefn(a, b, c, BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env bind))

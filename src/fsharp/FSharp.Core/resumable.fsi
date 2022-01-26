@@ -137,6 +137,29 @@ module StateMachineHelpers =
     val __useResumableCode<'T> : bool 
 
     /// <summary>
+    /// Indicates a named debug point arising from the context of inlined resumable code.
+    /// </summary>
+    /// <remarks>
+    /// If the code was ultimately inlined from a "try .. with" construct in a computation expression,
+    /// the names "TryWith.TryKeyword" and "TryWith.WithKeyword" can be used.
+    ///
+    /// If the code was ultimately inlined from a "try .. finally" construct in a computation expression,
+    /// the names "TryFinally.TryKeyword" and "TryFinally.FinallyKeyword" can be used.
+    ///
+    /// If the code was ultimately inlined from a "while .. do" construct in a computation expression,
+    /// the name "While.WhileKeyword" can be used.
+    ///
+    /// If the code was ultimately inlined from a "for .. in .. do" or "for .. = .. to .. do" construct in a computation expression,
+    /// the name "ForLoop.InOrToKeyword" can be used.
+    ///
+    /// If the name doesn't correspond to a known debug point arising from the original source context, then no
+    /// debug point is emitted. If opt-in warning 3514 is enabled a warning is emitted.
+    /// </remarks>
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __debugPoint: string -> unit
+
+    /// <summary>
     /// Indicates a resumption point within resumable code
     /// </summary>
     [<MethodImpl(MethodImplOptions.NoInlining)>]

@@ -4403,13 +4403,12 @@ type DecisionTreeTarget =
     | TTarget of 
         boundVals: Val list *
         targetExpr: Expr *
-        debugPoint: DebugPointAtTarget *
         isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    member x.TargetExpression = (let (TTarget(_, expr, _, _)) = x in expr)
+    member x.TargetExpression = (let (TTarget(_, expr, _)) = x in expr)
 
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
@@ -4569,7 +4568,6 @@ type Expr =
         expr1: Expr *
         expr2: Expr *
         kind: SequentialOpKind *
-        debugPoint: DebugPointAtSequential *
         range: range
 
     /// Lambda expressions. 
@@ -4655,7 +4653,7 @@ type Expr =
         range: range
 
     /// An intrinsic applied to some (strictly evaluated) arguments 
-    /// A few of intrinsics (TOp_try, TOp.While, TOp.For) expect arguments kept in a normal form involving lambdas 
+    /// A few of intrinsics (TOp_try, TOp.While, TOp.IntegerForLoop) expect arguments kept in a normal form involving lambdas 
     | Op of
         op: TOp *
         typeArgs: TypeInst *
@@ -4706,6 +4704,9 @@ type Expr =
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
 
+    /// Indicates a debug point should be placed prior to the expression. 
+    | DebugPoint of DebugPointAtLeafExpr * Expr
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member expr.DebugText = expr.ToDebugString(3)
 
@@ -4717,7 +4718,7 @@ type Expr =
         match expr with 
         | Const (c, _, _) -> c.ToString()
         | Val (v, _, _) -> v.LogicalName
-        | Sequential (e1, e2, _, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
+        | Sequential (e1, e2, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
         | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
         | TyLambda (_, tps, body, _, _) -> sprintf "TyLambda(%+A, " tps + body.ToDebugString(depth) + ")"
         | App (f, _, _, args, _) -> "App(" + f.ToDebugString(depth) + ", [" + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + "])"
@@ -4731,7 +4732,19 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToShortString()) + e.ToDebugString(depth) + ")"
 
+    /// Get the mark/range/position information from an expression
+    member expr.Range =
+        match expr with
+        | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
+        | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, m) 
+        | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
+        | Expr.WitnessArg (_, m)
+        | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
+        | Expr.Link eref -> eref.Value.Range
+        | Expr.DebugPoint (_, e2) -> e2.Range
+    
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}") >]
 type TOp =
 
@@ -4760,16 +4773,16 @@ type TOp =
     | UInt16s of uint16[] 
 
     /// An operation representing a lambda-encoded while loop. The special while loop marker is used to mark compilations of 'foreach' expressions
-    | While of DebugPointAtWhile * SpecialWhileLoopMarker
+    | While of spWhile: DebugPointAtWhile * marker: SpecialWhileLoopMarker
 
-    /// An operation representing a lambda-encoded for loop
-    | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
+    /// An operation representing a lambda-encoded integer for-loop
+    | IntegerForLoop of spFor: DebugPointAtFor * spTo: DebugPointAtInOrTo * style: ForLoopStyle (* count up or down? *)
 
     /// An operation representing a lambda-encoded try/with
-    | TryWith of DebugPointAtTry * DebugPointAtWith
+    | TryWith of spTry: DebugPointAtTry * spWith: DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
-    | TryFinally of DebugPointAtTry * DebugPointAtFinally
+    | TryFinally of spTry: DebugPointAtTry * spFinally: DebugPointAtFinally
 
     /// Construct a record or object-model value. The ValRef is for self-referential class constructors, otherwise 
     /// it indicates that we're in a constructor and the purpose of the expression is to 
@@ -4871,7 +4884,7 @@ type TOp =
         | Bytes _ -> "Bytes(..)"
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
-        | For _ -> "For"
+        | IntegerForLoop _ -> "FastIntegerForLoop"
         | TryWith _ -> "TryWith"
         | TryFinally _ -> "TryFinally"
         | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
@@ -5155,18 +5168,37 @@ type ModuleOrNamespaceBinding =
 
     override _.ToString() = "ModuleOrNamespaceBinding(...)"
 
+[<CustomEquality; CustomComparison; RequireQualifiedAccess>]
+type NamedDebugPointKey =
+    { Range: range
+      Name: string }
+    override x.GetHashCode() = hash x.Name + hash x.Range
+    override x.Equals(yobj: obj) = 
+        match yobj with 
+        | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
+        | _ -> false
+    interface IComparable with
+        member x.CompareTo(yobj: obj) =
+           match yobj with 
+           | :? NamedDebugPointKey as y ->  
+               let c = Range.rangeOrder.Compare(x.Range, y.Range) 
+               if c <> 0 then c else
+               compare x.Name y.Name
+           | _ -> -1
+
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
-/// TImplFile (qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
+/// TImplFile (qualifiedNameOfFile, pragmas, implExprWithSig, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFile = 
     | TImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
         pragmas: ScopedPragma list *
-        implementationExpressionWithSignature: ModuleOrNamespaceExprWithSig *
+        implExprWithSig: ModuleOrNamespaceExprWithSig *
         hasExplicitEntryPoint: bool *
         isScript: bool *
-        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo>
+        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
+        namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

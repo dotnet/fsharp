@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly GenericTypeStaticField01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000608 Length: 0x000001E1
 }
 .module GenericTypeStaticField01.exe
-// MVID: {60B68B7F-1E75-7E6B-A745-03837F8BB660}
+// MVID: {61E07031-1E75-7E6B-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F10000
+// Image base: 0x07590000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,13 +62,10 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\GenericTypeStaticField01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 2,2 : 6,9 ''
       IL_0008:  ret
     } // end of method Foo`1::.ctor
 
@@ -77,39 +74,39 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 3,3 : 10,41 ''
       IL_0000:  newobj     instance void class GenericTypeStaticField01/Foo`1<!a>::.ctor()
       IL_0005:  stsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
       IL_000a:  ldc.i4.1
       IL_000b:  volatile.
       IL_000d:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
-      .line 2,2 : 6,9 ''
       IL_0012:  ret
     } // end of method Foo`1::.cctor
 
     .method public specialname static class GenericTypeStaticField01/Foo`1<!a> 
             get_Instance() cil managed
     {
-      // Code size       26 (0x1a)
+      // Code size       27 (0x1b)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 28,39 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\GenericTypeStaticField01.fs'
+      IL_0000:  nop
       .line 16707566,16707566 : 0,0 ''
-      IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
-      IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_0013
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
 
       .line 16707566,16707566 : 0,0 ''
-      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_000f:  nop
-      .line 16707566,16707566 : 0,0 ''
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
       IL_0010:  nop
-      IL_0011:  br.s       IL_0014
+      .line 16707566,16707566 : 0,0 ''
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
 
       .line 16707566,16707566 : 0,0 ''
-      IL_0013:  nop
-      .line 4,4 : 28,39 ''
-      IL_0014:  ldsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
-      IL_0019:  ret
+      IL_0014:  nop
+      IL_0015:  ldsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
+      IL_001a:  ret
     } // end of method Foo`1::get_Instance
 
     .property class GenericTypeStaticField01/Foo`1<!a>
@@ -130,12 +127,10 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 16707566,16707566 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 6,6 : 6,9 ''
       IL_0008:  ret
     } // end of method Bar`2::.ctor
 
@@ -144,39 +139,38 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 7,7 : 10,44 ''
       IL_0000:  newobj     instance void class GenericTypeStaticField01/Bar`2<!a,!b>::.ctor()
       IL_0005:  stsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
       IL_000a:  ldc.i4.1
       IL_000b:  volatile.
       IL_000d:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
-      .line 6,6 : 6,9 ''
       IL_0012:  ret
     } // end of method Bar`2::.cctor
 
     .method public specialname static class GenericTypeStaticField01/Bar`2<!a,!b> 
             get_Instance() cil managed
     {
-      // Code size       26 (0x1a)
+      // Code size       27 (0x1b)
       .maxstack  8
-      .line 16707566,16707566 : 0,0 ''
-      IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
-      IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_0013
-
-      .line 16707566,16707566 : 0,0 ''
-      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
-      IL_000f:  nop
-      .line 16707566,16707566 : 0,0 ''
-      IL_0010:  nop
-      IL_0011:  br.s       IL_0014
-
-      .line 16707566,16707566 : 0,0 ''
-      IL_0013:  nop
       .line 8,8 : 28,39 ''
-      IL_0014:  ldsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
-      IL_0019:  ret
+      IL_0000:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_0001:  volatile.
+      IL_0003:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
+      IL_0008:  ldc.i4.1
+      IL_0009:  bge.s      IL_0014
+
+      .line 16707566,16707566 : 0,0 ''
+      IL_000b:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_0010:  nop
+      .line 16707566,16707566 : 0,0 ''
+      IL_0011:  nop
+      IL_0012:  br.s       IL_0015
+
+      .line 16707566,16707566 : 0,0 ''
+      IL_0014:  nop
+      IL_0015:  ldsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
+      IL_001a:  ret
     } // end of method Bar`2::get_Instance
 
     .property class GenericTypeStaticField01/Bar`2<!a,!b>

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ListExpressionSteppingTest1
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest1.exe
-// MVID: {60B78A57-50CF-F6CE-A745-0383578AB760}
+// MVID: {61F02896-50CF-F6CE-A745-03839628F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07190000
+// Image base: 0x06AA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,10 +64,10 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 6,6 : 9,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest1.fs'
       IL_0000:  ldloca.s   V_0
+      .line 6,6 : 17,18 ''
       IL_0002:  ldc.i4.1
       IL_0003:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0008:  nop
-      .line 6,6 : 9,20 ''
       IL_0009:  ldloca.s   V_0
       IL_000b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
       IL_0010:  ret

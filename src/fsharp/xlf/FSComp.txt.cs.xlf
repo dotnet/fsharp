@@ -297,6 +297,11 @@
         <target state="translated">Neplatná direktiva #{0} {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">Konstruktor obnovitelného kódu {0} se dá použít jenom ve vloženém kódu chráněném příkazem if __useResumableCode then ... a celkové složení musí tvořit platný obnovitelný kód.</target>

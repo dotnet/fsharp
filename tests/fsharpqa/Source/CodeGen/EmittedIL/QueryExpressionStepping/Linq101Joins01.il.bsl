@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern Utils
 {
@@ -45,13 +45,13 @@
   // Offset: 0x00000310 Length: 0x000000C3
 }
 .module Linq101Joins01.exe
-// MVID: {611C4D82-151B-685E-A745-0383824D1C61}
+// MVID: {61E07032-151B-685E-A745-03833270E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C40000
+// Image base: 0x06FE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -211,7 +211,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product> V_0,
                [1] class [Utils]Utils/Product p,
                [2] string c)
-      .line 14,14 : 9,47 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -220,6 +220,7 @@
       IL_0009:  ldloc.0
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product>::get_Item1()
       IL_000f:  stloc.2
+      .line 15,15 : 9,34 ''
       IL_0010:  ldarg.0
       IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #1 input at line 12@14-3'::builder@
       IL_0016:  ldloc.2
@@ -434,7 +435,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 22,22 : 9,60 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -443,6 +444,7 @@
       IL_0009:  ldloc.0
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
+      .line 23,23 : 9,23 ''
       IL_0010:  ldarg.0
       IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #2 input at line 20@22-3'::builder@
       IL_0016:  ldloc.2
@@ -664,7 +666,7 @@
       // Code size       34 (0x22)
       .maxstack  8
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 31,31 : 9,23 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 32,32 : 9,34 ''
@@ -715,7 +717,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 30,30 : 9,60 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -724,6 +726,7 @@
       IL_0009:  ldloc.0
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
+      .line 31,31 : 9,12 ''
       IL_0010:  ldarg.0
       IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #3 input at line 28@30-3'::builder@
       IL_0016:  ldarg.0
@@ -959,7 +962,7 @@
       .maxstack  9
       .locals init ([0] class [Utils]Utils/Product p,
                [1] string t)
-      .line 40,40 : 9,40 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 41,41 : 17,39 ''
@@ -1035,7 +1038,7 @@
       .locals init ([0] class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>> V_0,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> ps,
                [2] string c)
-      .line 39,39 : 9,60 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       IL_0002:  ldloc.0
@@ -1044,6 +1047,7 @@
       IL_0009:  ldloc.0
       IL_000a:  call       instance !0 class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>::get_Item1()
       IL_000f:  stloc.2
+      .line 40,40 : 9,12 ''
       IL_0010:  ldarg.0
       IL_0011:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'Pipe #4 input at line 37@39-3'::builder@
       IL_0016:  ldarg.0
@@ -1284,6 +1288,7 @@
     .line 12,12 : 5,10 ''
     IL_004b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0050:  stloc.s    V_7
+    .line 12,12 : 5,10 ''
     IL_0052:  ldloc.s    V_7
     IL_0054:  ldloc.s    V_7
     IL_0056:  ldloc.s    V_7
@@ -1321,6 +1326,7 @@
     .line 20,20 : 5,10 ''
     IL_00b0:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00b5:  stloc.s    V_9
+    .line 20,20 : 5,10 ''
     IL_00b7:  ldloc.s    V_9
     IL_00b9:  ldloc.s    V_9
     IL_00bb:  ldloc.s    V_9
@@ -1358,6 +1364,7 @@
     .line 28,28 : 5,10 ''
     IL_0115:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_011a:  stloc.s    V_11
+    .line 28,28 : 5,10 ''
     IL_011c:  ldloc.s    V_11
     IL_011e:  ldloc.s    V_11
     IL_0120:  ldloc.s    V_11
@@ -1395,6 +1402,7 @@
     .line 37,37 : 5,10 ''
     IL_017b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0180:  stloc.s    V_13
+    .line 37,37 : 5,10 ''
     IL_0182:  ldloc.s    V_13
     IL_0184:  ldloc.s    V_13
     IL_0186:  ldloc.s    V_13

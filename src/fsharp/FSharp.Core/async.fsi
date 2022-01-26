@@ -789,6 +789,12 @@ namespace Microsoft.FSharp.Control
         /// <returns>A value indicating asynchronous execution.</returns>
         val TryWith: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> catchFunction: (Exception -> Async<'T> option) -> AsyncReturn
 
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        /// <returns>The unit-returning async.</returns>
+        val UnitAsync: Async<unit>
+#endif
+
         [<Sealed; AutoSerializable(false)>]        
         // Internals used by MailboxProcessor
         type internal ResultCell<'T> =
@@ -827,7 +833,11 @@ namespace Microsoft.FSharp.Control
         /// for each element.</returns>
         /// 
         /// <example-tbd></example-tbd>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         member For: sequence:seq<'T> * body:('T -> Async<unit>) -> Async<unit>
+#else
+        member inline For: sequence:seq<'T> * body:('T -> Async<unit>) -> Async<unit>
+#endif
 
         /// <summary>Creates an asynchronous computation that just returns <c>()</c>.</summary>
         ///
@@ -871,7 +881,11 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that behaves similarly to a while loop when run.</returns>
         /// 
         /// <example-tbd></example-tbd>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         member While : guard:(unit -> bool) * computation:Async<unit> -> Async<unit>
+#else
+        member inline While : guard:(unit -> bool) * computation:Async<unit> -> Async<unit>
+#endif
 
         /// <summary>Creates an asynchronous computation that returns the result <c>v</c>.</summary>
         ///

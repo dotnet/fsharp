@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionSteppingTest1
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest1.exe
-// MVID: {611B0EC5-2432-947D-A745-0383C50E1B61}
+// MVID: {61E07032-2432-947D-A745-03833270E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CF0000
+// Image base: 0x071A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -110,11 +110,11 @@
 
         .line 100001,100001 : 0,0 ''
         IL_001d:  nop
-        .line 6,6 : 15,22 ''
         IL_001e:  ldarg.0
         IL_001f:  ldc.i4.1
         IL_0020:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0025:  ldarg.0
+        .line 6,6 : 21,22 ''
         IL_0026:  ldc.i4.1
         IL_0027:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
         IL_002c:  ldc.i4.1

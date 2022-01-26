@@ -203,7 +203,7 @@ let (|ObjectInitializationCheck|_|) g expr =
             (_, 
                 Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet (RecdFieldRef(_, name)), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
             ),
-           [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _, _); _ |], _, resultTy
+           [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when
             IsCompilerGeneratedName name &&
             name.StartsWithOrdinal("init") &&
@@ -281,7 +281,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     let g = cenv.g
 
-    let expr = DetectAndOptimizeForExpression g OptimizeIntRangesOnly expr
+    let expr = DetectAndOptimizeForEachExpression g OptimizeIntRangesOnly expr
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
@@ -479,10 +479,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let typR = ConvType cenv env m retTy
         ConvDecisionTree cenv env tgs typR dtree
 
-    | Expr.Sequential (ObjectInitializationCheck g, x1, NormalSeq, _, _) ->
+    | Expr.Sequential (ObjectInitializationCheck g, x1, NormalSeq, _) ->
         ConvExpr cenv env x1
 
-    | Expr.Sequential (x0, x1, NormalSeq, _, _)  ->
+    | Expr.Sequential (x0, x1, NormalSeq, _)  ->
         QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
 
     | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy g ty ->
@@ -497,7 +497,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.TyChoose _ ->
         ConvExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
 
-    | Expr.Sequential  (x0, x1, ThenDoSeq, _, _) ->
+    | Expr.Sequential  (x0, x1, ThenDoSeq, _) ->
         QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
 
     | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m) ->
@@ -657,15 +657,15 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.While _, [], [Expr.Lambda (_, _, _, [_], test, _, _);Expr.Lambda (_, _, _, [_], body, _, _)]  ->
               QP.mkWhileLoop(ConvExpr cenv env test, ConvExpr cenv env body)
 
-        | TOp.For (_, FSharpForLoopUp), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody g (arr, elemTy, body)] ->
+        | TOp.IntegerForLoop (_, _, FSharpForLoopUp), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody g (arr, elemTy, body)] ->
             let lim1 =
                 let len = mkCallArrayLength g lm elemTy arr // Array.length arr
                 mkCallSubtractionOperator g lm g.int32_ty len (Expr.Const (Const.Int32 1, m, g.int32_ty)) // len - 1
-            QP.mkForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
+            QP.mkIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
 
-        | TOp.For (_, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _);Expr.Lambda (_, _, _, [_], lim1, _, _);body]  ->
+        | TOp.IntegerForLoop (_, _, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _);Expr.Lambda (_, _, _, [_], lim1, _, _);body]  ->
             match dir with
-            | FSharpForLoopUp -> QP.mkForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
+            | FSharpForLoopUp -> QP.mkIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
         | TOp.ILCall (_, _, _, isCtor, valUseFlag, isProperty, _, ilMethRef, enclTypeInst, methInst, _), [], callArgs ->
@@ -749,6 +749,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     | Expr.WitnessArg (traitInfo, m) ->
         ConvWitnessInfo cenv env m traitInfo
+
+    | Expr.DebugPoint (_, innerExpr) ->
+        ConvExpr cenv env innerExpr
 
     | _ ->
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr, expr.Range))
@@ -1104,7 +1107,7 @@ and ConvDecisionTree cenv env tgs typR x =
         EmitDebugInfoIfNecessary cenv env m converted
 
       | TDSuccess (args, n) ->
-          let (TTarget(vars, rhs, _, _)) = tgs.[n]
+          let (TTarget(vars, rhs, _)) = tgs.[n]
           // TAST stores pattern bindings in reverse order for some reason
           // Reverse them here to give a good presentation to the user
           let args = List.rev args
