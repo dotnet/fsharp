@@ -72,6 +72,7 @@ type NotedSourceConstruct =
     | Finally
     | With
     | Combine
+    | DelayOrQuoteOrRun
 
 [<AutoOpen>]
 module RangeImpl =
@@ -265,6 +266,7 @@ type Range(code1:int64, code2: int64) =
         | 6 -> NotedSourceConstruct.InOrTo
         | 7 -> NotedSourceConstruct.With
         | 8 -> NotedSourceConstruct.Combine
+        | 9 -> NotedSourceConstruct.DelayOrQuoteOrRun
         | _ -> NotedSourceConstruct.None
 
     member m.Start = pos (m.StartLine, m.StartColumn)
@@ -298,6 +300,7 @@ type Range(code1:int64, code2: int64) =
             | NotedSourceConstruct.InOrTo -> 6
             | NotedSourceConstruct.With -> 7
             | NotedSourceConstruct.Combine -> 8
+            | NotedSourceConstruct.DelayOrQuoteOrRun -> 9
         range(code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
 
     member _.Code1 = code1

@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest4.dll
-// MVID: {61EFEE1F-6394-6D4B-A745-03831FEEEF61}
+// MVID: {61F2CC40-6394-6D4B-A745-038340CCF261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06840000
+// Image base: 0x072B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -204,43 +204,6 @@
 
     } // end of class 'f4@12-3'
 
-    .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@6-5'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
-    {
-      .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> compensation
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .method assembly specialname rtspecialname 
-              instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> compensation) cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       14 (0xe)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
-        IL_0006:  ldarg.0
-        IL_0007:  ldarg.1
-        IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-5'::compensation
-        IL_000d:  ret
-      } // end of method 'f4@6-5'::.ctor
-
-      .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
-      {
-        // Code size       15 (0xf)
-        .maxstack  8
-        IL_0000:  ldarg.0
-        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-5'::compensation
-        IL_0006:  ldnull
-        IL_0007:  tail.
-        IL_0009:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-        IL_000e:  ret
-      } // end of method 'f4@6-5'::Invoke
-
-    } // end of class 'f4@6-5'
-
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f4@6-4'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
@@ -274,19 +237,18 @@
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
               Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       26 (0x1a)
+        // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::computation
         IL_0007:  ldarg.0
         IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-4'::compensation
-        IL_000d:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/'f4@6-5'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_0012:  tail.
-        IL_0014:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::TryFinally<int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
+        IL_000d:  tail.
+        IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::TryFinally<int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-        IL_0019:  ret
+        IL_0014:  ret
       } // end of method 'f4@6-4'::Invoke
 
     } // end of class 'f4@6-4'

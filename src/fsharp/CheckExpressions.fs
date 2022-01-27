@@ -5680,7 +5680,8 @@ and TcNonControlFlowExpr (env: TcEnv) f =
         | NotedSourceConstruct.InOrTo
         | NotedSourceConstruct.Combine
         | NotedSourceConstruct.With
-        | NotedSourceConstruct.While -> 
+        | NotedSourceConstruct.While
+        | NotedSourceConstruct.DelayOrQuoteOrRun -> 
             res, tpenv
         | NotedSourceConstruct.None ->
             // Skip outer debug point for "e1 && e2" and "e1 || e2"

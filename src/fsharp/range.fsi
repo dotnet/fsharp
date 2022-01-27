@@ -11,25 +11,37 @@ type internal FileIndex = int32
 [<RequireQualifiedAccess>]
 type internal NotedSourceConstruct =
     | None
+
     /// Notes that a range is related to a "while" in "while .. do" in a computation, list, array or sequence expression
     | While
+
     /// Notes that a range is related to a "for" in "for .. do" in a computation, list, array or sequence expression
     | For
+
     /// Notes that a range is related to a "in" in a "for .. in ... do" or "to" in "for .. = .. to .. do" in a computation, list, array or sequence expression
     | InOrTo
+
     /// Notes that a range is related to a "try" in a "try/with" in a computation, list, array or sequence expression
     | Try
+
     /// Notes that a range is related to a "let" or other binding range in a computation, list, array or sequence expression
     | Binding
+
     /// Notes that a range is related to a "finally" in a "try/finally" in a computation, list, array or sequence expression
     | Finally
+
     /// Notes that a range is related to a "with" in a "try/with" in a computation, list, array or sequence expression
     | With
+
     /// Notes that a range is related to a sequential "a; b" translated to a "Combine" call in a computation expression
     ///
     /// This doesn't include "expr; cexpr" sequentials where the "expr" is a side-effecting simple statement
     /// This does include "expr; cexpr" sequentials where the "expr" is interpreted as an implicit yield + Combine call
     | Combine
+
+    /// Notes that a range is related to an implied "Delay"m "Quote" or "Run" at the entry to a computation expression. THis doesn't
+    /// apply to the "Delay" calls added for try/with, try/finally, while or for constructs.
+    | DelayOrQuoteOrRun
 
 /// Represents a position in a file
 [<Struct; CustomEquality; NoComparison>]

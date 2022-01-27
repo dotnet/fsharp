@@ -1736,23 +1736,28 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     let basicSynExpr = 
         trans CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp id
 
+    let mDelayOrQuoteOrRun = mBuilderVal.NoteSourceConstruct(NotedSourceConstruct.DelayOrQuoteOrRun).MakeSynthetic()
+
+    // Add a call to 'Delay' if the method is present
     let delayedExpr = 
         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with 
         | [] -> basicSynExpr
-        | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)]
+        | _ ->
+            mkSynCall "Delay" mDelayOrQuoteOrRun [(mkSynDelay2 basicSynExpr)]
 
+    // Add a call to 'Quote' if the method is present
     let quotedSynExpr = 
         if isAutoQuote then 
-            SynExpr.Quote (mkSynIdGet (mBuilderVal.MakeSynthetic()) (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
+            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
         else delayedExpr
             
+    // Add a call to 'Run' if the method is present
     let runExpr = 
         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Run" builderTy with 
         | [] -> quotedSynExpr
-        | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr]
+        | _ -> mkSynCall "Run" mDelayOrQuoteOrRun [quotedSynExpr]
 
     let lambdaExpr = 
-        let mBuilderVal = mBuilderVal.MakeSynthetic()
         SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), None, runExpr, None, mBuilderVal)
 
     let env =

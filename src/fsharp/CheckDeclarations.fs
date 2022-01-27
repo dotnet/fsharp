@@ -2091,6 +2091,8 @@ module MutRecBindingChecking =
                                 mkUnit g tcref.Range, false, None, defnCs
                             else
                                 let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+                                // If there is no 'inherits' add a debug point at the entry to the constructor over the type name itself.
+                                let inheritsExpr = mkDebugPoint tcref.Range inheritsExpr
                                 inheritsExpr, false, None, defnCs
                        
                     let envForTycon = MakeInnerEnvForTyconRef envForDecls tcref false 
