@@ -13,6 +13,9 @@
       ]
     }
   },
+  "native-tools": {
+    "perl": "5.32.1.1"
+  },
   "msbuild-sdks": {
     "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22075.6",
     "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
