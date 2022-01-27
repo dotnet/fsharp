@@ -45,7 +45,7 @@ The following are the key data formats and internal data representations of the 
 
 The following are the most relevant parts of the F# compiler tooling, making up the "engine" and API surface area of `FSharp.Compiler.Service`.
 
-* The incremental project build engine state in [IncrementalBuild.fsi](https://github.com/fsharp/FSharp.Compiler.Service/tree/main/src/fsharp/service/IncrementalBuild.fsi)/[IncrementalBuild.fs](https://github.com/fsharp/FSharp.Compiler.Service/tree/main/src/fsharp/service/IncrementalBuild.fs), a part of the F# Compiler Service API.
+* The incremental project build engine state in [IncrementalBuild.fsi](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service/IncrementalBuild.fsi)/[IncrementalBuild.fs](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service/IncrementalBuild.fs), a part of the F# Compiler Service API.
 
 * The corresponding APIs wrapping and accessing these structures in the public-facing [`FSharp.Compiler.Service` API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/service) and [Symbol API](https://github.com/dotnet/fsharp/tree/main/src/fsharp/symbols).
 
