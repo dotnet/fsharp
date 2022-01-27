@@ -1074,10 +1074,12 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example id="get-response">
             /// <code lang="fsharp">
-            /// let responseStreamToString = fun (responseStream : System.Net.WebResponse) ->
-            ///     let reader = new System.IO.StreamReader(responseStream.GetResponseStream())
+            /// open System.Net
+            /// open System.IO
+            /// let responseStreamToString = fun (responseStream : WebResponse) ->
+            ///     let reader = new StreamReader(responseStream.GetResponseStream())
             ///     reader.ReadToEnd()
-            /// let webRequest = WebRequest.Create("https://www.microsoft.com")
+            /// let webRequest = WebRequest.Create("https://www.w3.org")
             /// let result = webRequest.AsyncGetResponse() |> Async.RunSynchronously |> responseStreamToString
             /// </code>
             /// </example>
@@ -1095,10 +1097,11 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example id="async-download-string">
             /// <code lang="fsharp">
+            /// open System
             /// let client = new WebClient()
-            /// System.Uri("https://www.microsoft.com") |> client.AsyncDownloadString |> Async.RunSynchronously
+            /// Uri("https://www.w3.org") |> client.AsyncDownloadString |> Async.RunSynchronously
             /// </code>
-            /// This will download the server response from https://www.microsoft.com
+            /// This will download the server response from https://www.w3.org
             /// </example>
             [<CompiledName("AsyncDownloadString")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadString : address:System.Uri -> Async<string>
@@ -1111,8 +1114,11 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example id="async-download-data">
             /// <code lang="fsharp">
+            /// open System.Net
+            /// open System.Text
+            /// open System
             /// let client = new WebClient()
-            /// client.AsyncDownloadData(Uri("https://www.microsoft.com")) |> Async.RunSynchronously |> System.Text.Encoding.ASCII.GetString 
+            /// client.AsyncDownloadData(Uri("https://www.w3.org")) |> Async.RunSynchronously |> Encoding.ASCII.GetString 
             /// </code>
             /// </example>
             /// Downloads the data in bytes and decodes it to a string.
@@ -1128,8 +1134,10 @@ namespace Microsoft.FSharp.Control
             /// 
             /// <example id="async-download-file">
             /// <code lang="fsharp">
-            /// let client = new System.Net.WebClient()
-            /// System.Uri("https://www.microsoft.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronouslyl
+            /// open System.Net
+            /// open System
+            /// let client = new WebClient()
+            /// Uri("https://www.w3.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronouslyl
             /// </code>
             /// This will download the server response as a file and output it as output.html
             /// </example>
