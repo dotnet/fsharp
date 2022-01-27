@@ -86,7 +86,6 @@ module StateMachineHelpers =
         
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __debugPoint (_name: string) : unit = ()
-        //failwith "__debugPoint should always be eliminated by the F# compiler"
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __resumableEntry () : int option = 

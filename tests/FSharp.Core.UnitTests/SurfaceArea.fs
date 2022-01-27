@@ -2493,8 +2493,6 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
-Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] UnitAsync
-Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] get_UnitAsync()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Void __debugPoint(System.String)
 "
 #if NETCOREAPP
