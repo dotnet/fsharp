@@ -527,6 +527,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! checkRange e.Range
                       yield! walkExpr false e
 
+                  | SynAndAlso (e1, e2) ->
+                      yield! walkExpr true e1
+                      yield! walkExpr true e2
+
                   // Always allow breakpoints on input and stages of x |> f1 |> f2 pipelines
                   | SynPipeRight _ ->
                       let rec loop e =

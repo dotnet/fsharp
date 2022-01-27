@@ -807,3 +807,14 @@ let (|SynPipeRight3|_|) input =
         when synId.idText = "op_PipeRight3" -> 
         Some (x1a, x1b, x1c, x2)
     | _ -> None
+
+let (|SynAndAlso|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanAnd" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynOrElse|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanOr" -> Some (x1, x2)
+    | _ -> None
+
