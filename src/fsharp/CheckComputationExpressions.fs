@@ -752,7 +752,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     // Flag that a debug point should get emitted prior to both the evaluation of 'rhsExpr' and the call to Using
     let addBindDebugPoint spBind e =
         match spBind with
-        | DebugPointAtBinding.Yes m -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m, true), e)
+        | DebugPointAtBinding.Yes m ->
+            SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m, true), e)
         | _ -> e
 
     let emptyVarSpace = LazyWithContext.NotLazy ([], env)
@@ -979,7 +980,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
                         let forCall =
                             match spFor with
-                            | DebugPointAtFor.Yes m -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m, false), forCall)
+                            | DebugPointAtFor.Yes _ ->
+                                SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mFor, true), forCall)
                             | DebugPointAtFor.No -> forCall
 
                         translatedCtxt forCall))
@@ -1007,8 +1009,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // 'while' is hit just before each time the guard is called
             let guardExpr = 
                 match spWhile with
-                | DebugPointAtWhile.Yes mWhile ->
-                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mWhile, false), guardExpr)
+                | DebugPointAtWhile.Yes _ ->
+                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mWhile, true), guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
@@ -1020,11 +1022,13 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally) ->
 
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Try) | _ -> mTryToLast
+            let mFinally = match spFinally with DebugPointAtFinally.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Finally) | _ -> mTryToLast
 
             // Put down a debug point for the 'finally'
             let unwindExpr2 =
                 match spFinally with
-                | DebugPointAtFinally.Yes mFinally -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mFinally, false), unwindExpr)
+                | DebugPointAtFinally.Yes _ ->
+                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mFinally, false), unwindExpr)
                 | DebugPointAtFinally.No -> unwindExpr
 
             if isQuery then error(Error(FSComp.SR.tcNoTryFinallyInQuery(), mTry))
@@ -1035,12 +1039,13 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mTry ad "Delay" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mTry))
 
+            let innerExpr = transNoQueryOps innerComp
+
             let innerExpr =
-                transNoQueryOps innerComp
-                |> fun e -> 
-                    match spTry with
-                    | DebugPointAtTry.Yes mTry -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), e)
-                    | _ -> e
+                match spTry with
+                | DebugPointAtTry.Yes _ ->
+                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
+                | _ -> innerExpr
                 
             Some (translatedCtxt 
                 (mkSynCall "TryFinally" mTry [
@@ -1401,19 +1406,19 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mTry ad "Delay" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mTry))
 
+            let innerExpr = transNoQueryOps innerComp
+
             let innerExpr =
-                transNoQueryOps innerComp
-                |> fun e -> 
                     match spTry with
-                    | DebugPointAtTry.Yes m -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m, false), e)
-                    | _ -> e
+                    | DebugPointAtTry.Yes _ ->
+                        SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
+                    | _ -> innerExpr
                 
             let callExpr = 
                 mkSynCall "TryWith" mTry [
                     mkSynCall "Delay" mTry [mkSynDelay2 innerExpr]
                     consumeExpr
                 ]
-                //|> fun e -> SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m), e)
 
             Some(translatedCtxt callExpr)
 
@@ -1912,7 +1917,10 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let guardLambdaExpr = mkUnitDelayLambda cenv.g guardExprMark guardExpr
             
             // We attach the debug point to the lambda expression so we can fetch it out again in LowerComputedListOrArraySeqExpr
-            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | _ -> guardExprMark
+            let mWhile =
+                match spWhile with
+                | DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While)
+                | _ -> guardExprMark
 
             let innerDelayedExpr = mkSeqDelayedExpr mWhile innerExpr
             Some(mkSeqGenerated cenv env guardExprMark genOuterTy guardLambdaExpr innerDelayedExpr, tpenv)

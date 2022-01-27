@@ -102,7 +102,7 @@ The intended debug points for control-flow constructs are as follows:
 | `yield expr` | On `yield expr` |
 | `return expr` | On `return expr` |
 
-Some debug points are implicit. In particular, whenever a non-control-flow expression (e.g. a constant or a call) is used in statement position (e.g. as the implementation of a method, or the body of a `while`) then there is an implicit debug point over the whole statement/expression.
+Other non-control-flow expression (e.g. a constant or a call) get a debug point when used in statement position (e.g. as the implementation of a method, or the body of a `while`).
 
 ### Intended debug points for let-bindings
 
@@ -162,7 +162,24 @@ This will have debug points on `for i in 1 .. 10 do` and `printfn "hello"`.
 
 ### Intended debug points for other computation expressions
 
-Other computation expressions such as `async { .. }` have significant problems with their debug points, for multiple reasons:
+Other computation expressions such as `async { .. }` or `builder { ... }` get debug points as follows:
+
+* A debug point for `builder` prior to the evaluation of the expression
+
+* In the de-sugaring of the computation expression, each point a lambda is created implicitly, then the body of that
+  lambda as specified by the F# language spec is treated as control-flow and debug points added per the earlier spec.
+
+* For every `builder.Bind`, `builder.BindReturn` and similar call that corresponds to a `let` where there would be a debug point, a debug point is added immediately prior to the call.
+
+* For every `builder.For` call, a debug point covering the `for` keyword is added immediately prior to the call.  No debug point is added for the `builder.For` call itself even if used in statement position. The `ForLoop.InOrToKeyword` named debug point is associated with the `in` or `to` keyword and made available to inline code using `__debugPoint`.
+
+* For every `builder.While` call, a debug point covering the `while` keyword plus guard expression is added immediately prior to the execution of the guard within the guard lambda expression. No debug point is added for the `builder.While` call itself even if used in statement position.
+
+* For every `builder.TryFinally` call, a debug point covering the `try` keyword is added immediately within the body lambda expression. A debug point covering the `finally` keyword is added immediately within the finally lambda expression. No debug point is added for the `builder.TryFinally` call itself even if used in statement position.
+
+* For every `builder.Yield`, `builder.Return`, `builder.YieldFrom` or `builder.ReturnFrom` call, debug points are placed on the expression as if it were control flow. For example `yield 1` will place a debug point on `1`and `yield! printfn "hello"; [2]` will place two debug points.
+
+* No debug point is added for the `builder.Run`, `builder.Run` or `builder.Delay` calls at the entrance to the computation expression, nor the `builder.Delay` calls implied by `try/with` or `try/finally` or sequential `Combine` calls.
 
 * The debug points are largely lost during de-sugaring
 * The computations are often "cold-start" anyway, leading to a two-phase debug problem

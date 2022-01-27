@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest2.dll
-// MVID: {61F2D6A5-6394-D499-A745-0383A5D6F261}
+// MVID: {61F2E23B-6394-D499-A745-03833BE2F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06940000
+// Image base: 0x05BB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -77,18 +77,16 @@
       .method public strict virtual instance bool 
               Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
       {
-        // Code size       16 (0x10)
+        // Code size       15 (0xf)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 6,6 : 17,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest2.fs'
-        IL_0000:  nop
-        .line 6,6 : 23,29 ''
-        IL_0001:  ldarg.0
-        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/'f2@6-1'::x
-        IL_0007:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-        IL_000c:  ldc.i4.4
-        IL_000d:  clt
-        IL_000f:  ret
+        IL_0000:  ldarg.0
+        IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/'f2@6-1'::x
+        IL_0006:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
+        IL_000b:  ldc.i4.4
+        IL_000c:  clt
+        IL_000e:  ret
       } // end of method 'f2@6-1'::Invoke
 
     } // end of class 'f2@6-1'
