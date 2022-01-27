@@ -1774,12 +1774,14 @@ module Cancellable =
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
 *)
 
+let inline invoke ([<InlineIfLambda>] f: Cancellable<'T>) ct = f ct
+
 type CancellableBuilder() = 
 
     member inline _.Delay ([<InlineIfLambda>] f: unit -> Cancellable<'T>) : Cancellable<'T> = 
         (fun ct ->
             let g = f()
-            g ct)
+            invoke g ct)
 
     member inline _.BindReturn([<InlineIfLambda>] comp: Cancellable<'T>, [<InlineIfLambda>] f: ('T -> 'U)) : Cancellable<'U> = 
         (fun ct -> 
@@ -1798,7 +1800,7 @@ type CancellableBuilder() =
                 match comp ct with
                 | ValueOrCancelled.Value res ->
                     let comp2 = f res
-                    comp2 ct
+                    invoke comp2 ct
                 | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
 
     member inline _.Return v =
@@ -1824,7 +1826,7 @@ type CancellableBuilder() =
             while not fin do
                 if ie.MoveNext() then
                     let step = f ie.Current
-                    match step ct with
+                    match invoke step ct with
                     | ValueOrCancelled.Value () -> ()
                     | ValueOrCancelled.Cancelled err ->
                         fin <- true

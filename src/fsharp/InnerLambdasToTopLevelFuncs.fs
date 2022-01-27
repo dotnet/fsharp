@@ -1295,15 +1295,15 @@ module Pass4_RewriteAssembly =
            let rest, z = TransDecisionTree penv z rest
            TDBind(bind, rest), z
 
-       | TDSwitch (sp, e, cases, dflt, m) ->
+       | TDSwitch (e, cases, dflt, m) ->
            let e, z = TransExpr penv z e
            let TransDecisionTreeCase penv z (TCase (discrim, dtree)) =
                let dtree, z = TransDecisionTree penv z dtree
                TCase(discrim, dtree), z
 
            let cases, z = List.mapFold (TransDecisionTreeCase penv) z cases
-           let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
-           TDSwitch (sp, e, cases, dflt, m), z
+           let dflt, z  = Option.mapFold (TransDecisionTree penv) z dflt
+           TDSwitch (e, cases, dflt, m), z
 
     and TransDecisionTreeTarget penv z (TTarget(vs, e, flags)) =
         let z = EnterInner z

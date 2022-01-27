@@ -1210,12 +1210,12 @@ type MatchBuilder(spBind, inpRange: range) =
 
     member _.Close(dtree, m, ty) = primMkMatch (spBind, inpRange, dtree, targets.ToArray(), m, ty)
 
-let mkBoolSwitch debugPoint m g t e =
-    TDSwitch(debugPoint, g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
+let mkBoolSwitch m g t e =
+    TDSwitch(g, [TCase(DecisionTreeTest.Const(Const.Bool true), t)], Some e, m)
 
 let primMkCond spBind m ty e1 e2 e3 = 
     let mbuilder = MatchBuilder(spBind, m)
-    let dtree = mkBoolSwitch DebugPointAtSwitch.No m e1 (mbuilder.AddResultTarget(e2)) (mbuilder.AddResultTarget(e3)) 
+    let dtree = mkBoolSwitch m e1 (mbuilder.AddResultTarget(e2)) (mbuilder.AddResultTarget(e3)) 
     mbuilder.Close(dtree, m, ty)
 
 let mkCond spBind m ty e1 e2 e3 =
@@ -4164,7 +4164,7 @@ module DebugPrint =
             (bind @@ decisionTreeL g body) 
         | TDSuccess (args, n) -> 
             wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL g))
-        | TDSwitch (_, test, dcases, dflt, _) ->
+        | TDSwitch (test, dcases, dflt, _) ->
             (wordL(tagText "Switch") --- exprL g test) @@--
             (aboveListL (List.map (dcaseL g) dcases) @@
              match dflt with
@@ -4667,7 +4667,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
 
 and accFreeInDecisionTree opts x (acc: FreeVars) =
     match x with 
-    | TDSwitch(_, e1, csl, dflt, _) -> accFreeInExpr opts e1 (accFreeInSwitchCases opts csl dflt acc)
+    | TDSwitch(e1, csl, dflt, _) -> accFreeInExpr opts e1 (accFreeInSwitchCases opts csl dflt acc)
     | TDSuccess (es, _) -> accFreeInFlatExprs opts es acc
     | TDBind (bind, body) -> unionFreeVars (bindLhs opts bind (accBindRhs opts bind (freeInDecisionTree opts body))) acc
   
@@ -5519,7 +5519,7 @@ and remapFlatExprs ctxt compgen tmenv es = List.mapq (remapExprImpl ctxt compgen
 
 and remapDecisionTree ctxt compgen tmenv x =
     match x with 
-    | TDSwitch(sp, e1, cases, dflt, m) -> 
+    | TDSwitch(e1, cases, dflt, m) -> 
         let e1R = remapExprImpl ctxt compgen tmenv e1
         let casesR =
             cases |> List.map (fun (TCase(test, subTree)) -> 
@@ -5535,7 +5535,7 @@ and remapDecisionTree ctxt compgen tmenv x =
                 let subTreeR = remapDecisionTree ctxt compgen tmenv subTree
                 TCase(testR, subTreeR))
         let dfltR = Option.map (remapDecisionTree ctxt compgen tmenv) dflt
-        TDSwitch(sp, e1R, casesR, dfltR, m)
+        TDSwitch(e1R, casesR, dfltR, m)
 
     | TDSuccess (es, n) -> 
         TDSuccess (remapFlatExprs ctxt compgen tmenv es, n)
@@ -5953,11 +5953,11 @@ and remarkExprs m es = es |> List.map (remarkExpr m)
 
 and remarkDecisionTree m x =
     match x with 
-    | TDSwitch(sp, e1, cases, dflt, _) ->
+    | TDSwitch(e1, cases, dflt, _) ->
         let e1R = remarkExpr m e1
         let casesR = cases |> List.map (fun (TCase(test, y)) -> TCase(test, remarkDecisionTree m y))
         let dfltR = Option.map (remarkDecisionTree m) dflt
-        TDSwitch(sp, e1R, casesR, dfltR, m)
+        TDSwitch(e1R, casesR, dfltR, m)
     | TDSuccess (es, n) ->
         TDSuccess (remarkExprs m es, n)
     | TDBind (bind, rest) ->
@@ -6194,7 +6194,7 @@ let mkTyAppExpr m (f, fty) tyargs = match tyargs with [] -> f | _ -> primMkApp (
 
 let rec accTargetsOfDecisionTree tree acc =
     match tree with 
-    | TDSwitch (_, _, cases, dflt, _) -> 
+    | TDSwitch (_, cases, dflt, _) -> 
         List.foldBack (fun (c: DecisionTreeCase) -> accTargetsOfDecisionTree c.CaseTree) cases 
             (Option.foldBack accTargetsOfDecisionTree dflt acc)
     | TDSuccess (_, i) -> i :: acc
@@ -6202,10 +6202,10 @@ let rec accTargetsOfDecisionTree tree acc =
 
 let rec mapTargetsOfDecisionTree f tree =
     match tree with 
-    | TDSwitch (sp, e, cases, dflt, m) ->
+    | TDSwitch (e, cases, dflt, m) ->
         let casesR = cases |> List.map (mapTargetsOfDecisionTreeCase f) 
         let dfltR = Option.map (mapTargetsOfDecisionTree f) dflt
-        TDSwitch (sp, e, casesR, dfltR, m)
+        TDSwitch (e, casesR, dfltR, m)
     | TDSuccess (es, i) -> TDSuccess(es, f i) 
     | TDBind (bind, rest) -> TDBind(bind, mapTargetsOfDecisionTree f rest)
 
@@ -6238,7 +6238,7 @@ let rec targetOfSuccessDecisionTree tree =
 /// Check a decision tree only has bindings that immediately cover a 'Success'
 let rec decisionTreeHasNonTrivialBindings tree =
     match tree with 
-    | TDSwitch (_, _, cases, dflt, _) -> 
+    | TDSwitch (_, cases, dflt, _) -> 
         cases |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
@@ -6258,7 +6258,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
         // Build a map showing how each target might be reached
         let rec accumulateTipsOfDecisionTree accBinds tree =
             match tree with 
-            | TDSwitch (_, _, cases, dflt, _) -> 
+            | TDSwitch (_, cases, dflt, _) -> 
                 assert (isNil accBinds)  // No switches under bindings
                 for edge in cases do
                     accumulateTipsOfDecisionTree accBinds edge.CaseTree
@@ -6291,10 +6291,10 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                 | Some i when isLinearTgtIdx i -> TDSuccess([], i)
                 | _ -> 
                     match tree with 
-                    | TDSwitch (sp, e, cases, dflt, m) ->
+                    | TDSwitch (e, cases, dflt, m) ->
                         let casesR = List.map rebuildDecisionTreeEdge cases
                         let dfltR = Option.map rebuildDecisionTree dflt
-                        TDSwitch (sp, e, casesR, dfltR, m)
+                        TDSwitch (e, casesR, dfltR, m)
                     | TDSuccess _ -> tree
                     | TDBind _ -> tree
 
@@ -6845,7 +6845,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             let z = valBindF true z bind
             dtreeF z rest
         | TDSuccess (args, _) -> exprsF z args
-        | TDSwitch (_, test, dcases, dflt, _) -> 
+        | TDSwitch (test, dcases, dflt, _) -> 
             let z = exprF z test
             let z = List.fold dcaseF z dcases
             let z = Option.fold dtreeF z dflt
@@ -8589,7 +8589,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2)
         let tg3 = mbuilder.AddResultTarget(e3)
-        let dtree = TDSwitch(DebugPointAtSwitch.No, exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
+        let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
@@ -8597,7 +8597,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, None)))
         let tg3 = mbuilder.AddResultTarget(e3)
-        let dtree = TDSwitch(DebugPointAtSwitch.No, vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
+        let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
 
@@ -8609,7 +8609,7 @@ let mkNullTest g m e1 e2 e3 =
     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
     let tg2 = mbuilder.AddResultTarget(e2)
     let tg3 = mbuilder.AddResultTarget(e3)            
-    let dtree = TDSwitch(DebugPointAtSwitch.No, e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
+    let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
     let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
     expr         
 
@@ -8955,11 +8955,11 @@ and RewriteDecisionTree env x =
       if LanguagePrimitives.PhysicalEquality es esR then x 
       else TDSuccess(esR, n)
 
-  | TDSwitch (sp, e, cases, dflt, m) ->
+  | TDSwitch (e, cases, dflt, m) ->
       let eR = RewriteExpr env e
       let casesR = List.map (fun (TCase(discrim, e)) -> TCase(discrim, RewriteDecisionTree env e)) cases
       let dfltR = Option.map (RewriteDecisionTree env) dflt
-      TDSwitch (sp, eR, casesR, dfltR, m)
+      TDSwitch (eR, casesR, dfltR, m)
 
   | TDBind (bind, body) ->
       let bindR = rewriteBind env bind
@@ -9193,7 +9193,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
     and checkDecisionTree vrefs x = 
         match x with 
         | TDSuccess (es, _n) -> es |> List.forall (checkExpr vrefs)
-        | TDSwitch (_, e, cases, dflt, _m) ->
+        | TDSwitch (e, cases, dflt, _m) ->
             checkExpr vrefs e &&
             cases |> List.forall (checkDecisionTreeCase vrefs) &&
             dflt |> Option.forall (checkDecisionTree vrefs)
@@ -9589,10 +9589,10 @@ let (|UseResumableStateMachinesExpr|_|) g expr =
     | ValApp g g.cgh__useResumableCode_vref (_, _, _m) -> Some ()
     | _ -> None
 
-/// Match 
+/// Match an if...then...else expression or the result of "a && b" or "a || b"
 let (|IfThenElseExpr|_|) expr =
     match expr with
-    | Expr.Match (_spBind, _exprm, TDSwitch(_spSwitch, cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
                   [| TTarget([], thenExpr, _); TTarget([], elseExpr, _) |], _m, _ty) -> 
         Some (cond, thenExpr,  elseExpr)
     | _ -> None
@@ -9699,11 +9699,11 @@ let (|TryWithExpr|_|) expr =
 
 let (|MatchTwoCasesExpr|_|) expr =
     match expr with 
-    | Expr.Match (spBind, exprm, TDSwitch(spSwitch, cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
+    | Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
 
         // How to rebuild this construct
         let rebuild (cond, ucref, tg1, tg2, tgs) = 
-            Expr.Match (spBind, exprm, TDSwitch(spSwitch, cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
+            Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
 
         Some (cond, ucref, tg1, tg2, tgs, rebuild)
 

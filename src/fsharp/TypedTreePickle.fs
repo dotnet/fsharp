@@ -2378,7 +2378,7 @@ and u_const st =
 
 and p_dtree x st =
     match x with
-    | TDSwitch (_sp, a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
+    | TDSwitch (a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
     | TDSuccess (a, b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a, b) st
     | TDBind (a, b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a, b) st
 
@@ -2410,7 +2410,7 @@ and u_dtree st =
     match tag with
     | 0 ->
         let a,b,c,d = u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st
-        TDSwitch(DebugPointAtSwitch.No, a, b, c, d)
+        TDSwitch(a, b, c, d)
     | 1 -> u_tup2 u_Exprs u_int st |> TDSuccess
     | 2 -> u_tup2 u_bind u_dtree st |> TDBind
     | _ -> ufailwith st "u_dtree"

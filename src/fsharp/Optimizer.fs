@@ -1485,25 +1485,25 @@ let TryEliminateBinding cenv _env bind e2 _m =
 
          // Immediate consumption of function in an application in a sequential, e.g. 'let part1 = e in part1 arg; rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(DebugPoints(Expr.App(Expr.Val (VRefLocal vspec2, _, _), f0ty, c, args, d), recreate), rest, NormalSeq, m)  
+         | Expr.Sequential(DebugPoints(Expr.App(DebugPoints(Expr.Val (VRefLocal vspec2, _, _), recreate2), f0ty, c, args, d), recreate1), rest, NormalSeq, m)  
              when IsUniqueUse vspec2 (rest :: args) -> 
-               Some (Expr.Sequential(recreate(Expr.App(e1, f0ty, c, args, d)), rest, NormalSeq, m)  |> recreate0)
+               Some (Expr.Sequential(recreate1(Expr.App(recreate2 e1, f0ty, c, args, d)), rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of delegate via an application in a sequential, e.g. 'let part1 = e in part1.Invoke(args); rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(DebugPoints(DelegateInvokeExpr cenv.g (invokeRef, f0ty, tyargs, Expr.Val (VRefLocal vspec2, _, _), args, _), recreate), rest, NormalSeq, m)  
+         | Expr.Sequential(DebugPoints(DelegateInvokeExpr cenv.g (invokeRef, f0ty, tyargs, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), args, _), recreate1), rest, NormalSeq, m)  
              when IsUniqueUse vspec2 (rest :: args) -> 
-               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce cenv.g (invokeRef, e1, f0ty, tyargs, args, m)
-               Some (Expr.Sequential(recreate invoke, rest, NormalSeq, m)  |> recreate0)
+               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce cenv.g (invokeRef, recreate2 e1, f0ty, tyargs, args, m)
+               Some (Expr.Sequential(recreate1 invoke, rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
-         | Expr.Match (spMatch, _exprm, TDSwitch(sp, Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
+         | Expr.Match (spMatch, _exprm, TDSwitch(DebugPoints(Expr.Val (VRefLocal vspec2, _, _), recreate1), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 &&
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
                    not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
               let spMatch = spBind.Combine spMatch
-              Some (Expr.Match (spMatch, e1.Range, TDSwitch(sp, e1, cases, dflt, m), targets, m, ty2)  |> recreate0)
+              Some (Expr.Match (spMatch, e1.Range, TDSwitch(recreate1 e1, cases, dflt, m), targets, m, ty2)  |> recreate0)
                
          // Immediate use of value as part of an application. 'let f = e in f ...' and 'let x = e in f ... x ...'
          // Note functions are evaluated before args 
@@ -1518,11 +1518,11 @@ let TryEliminateBinding cenv _env bind e2 _m =
          // 'let x = e in op[op[x;arg2];arg3]' --> op[op[e;arg2];arg3]
          // 'let x = e in op[op[arg1;x];arg3]' --> op[op[arg1;e];arg3] when arg1 has no side effects etc.
          // 'let x = e in op[op[arg1;arg2];x]' --> op[op[arg1;arg2];e] when arg1, arg2 have no side effects etc.
-         | Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2);arg3], m1) -> 
+         | Expr.Op (c1, tyargs1, [DebugPoints(Expr.Op (c2, tyargs2, [arg1;arg2], m2), recreate1);arg3], m1) -> 
              match GetImmediateUseContext [] [arg1;arg2;arg3] with 
-             | Some([], [arg2;arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [e1;arg2], m2);arg3], m1) |> recreate0)
-             | Some([arg1], [arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;e1], m2);arg3], m1) |> recreate0)
-             | Some([arg1;arg2], []) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2);e1], m1) |> recreate0)
+             | Some([], [arg2;arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [e1;arg2], m2) |> recreate1; arg3], m1) |> recreate0)
+             | Some([arg1], [arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;e1], m2) |> recreate1; arg3], m1) |> recreate0)
+             | Some([arg1;arg2], []) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2) |> recreate1; e1], m1) |> recreate0)
              | Some _ -> error(InternalError("unexpected return pattern from GetImmediateUseContext", m1))
              | None -> None
 
@@ -1552,8 +1552,8 @@ let rec (|KnownValApp|_|) expr =
 /// check single case with bool const.
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
-    | TDSwitch(sp, expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
-        Some (sp, expr, testBool, caseTree, defaultTree, range)
+    | TDSwitch(expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
+        Some (expr, testBool, caseTree, defaultTree, range)
     | _ -> 
         None
 
@@ -1567,7 +1567,7 @@ let (|ConstantBoolTarget|_|) target =
 /// apart from one branch which defers to another expression
 let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, costOuterDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (_sp, _expr, [case], Some defaultTree, _range) -> 
+    | TDSwitch (_expr, [case], Some defaultTree, _range) -> 
         let tc1,ec1 = CountBoolLogicTree data case.CaseTree 
         let tc2, ec2 = CountBoolLogicTree data defaultTree 
         tc1 + tc2, ec1 + ec2
@@ -1583,14 +1583,14 @@ let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, co
 /// depending on whether the target result was true/false
 let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (sp, expr, cases, defaultTree, range) -> 
+    | TDSwitch (expr, cases, defaultTree, range) -> 
         let cases2 = cases |> List.map (RewriteBoolLogicCase data)
         let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
-        TDSwitch (sp, expr, cases2, defaultTree2, range)
+        TDSwitch (expr, cases2, defaultTree2, range)
     | TDSuccess([], idx) -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
-        | TTarget([], exp, _) -> mkBoolSwitch DebugPointAtSwitch.No exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
+        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
     | _ -> failwith "CountBoolLogicTree should exclude this case"
 
@@ -1605,7 +1605,7 @@ let rec CombineBoolLogic expr =
     // try to find nested boolean switch
     match expr with
     | Expr.Match (outerSP, outerMatchRange, 
-                  TDBoolSwitch(_switchSP, 
+                  TDBoolSwitch(
                       DebugPoints(Expr.Match (_innerSP, _innerMatchRange, innerTree, innerTargets, _innerDefaultRange, _innerMatchTy), _),
                       outerTestBool, outerCaseTree, outerDefaultTree, _outerSwitchRange ), 
                   outerTargets, outerDefaultRange, outerMatchTy) ->
@@ -3673,7 +3673,7 @@ and OptimizeDecisionTree cenv env m x =
         else 
             rest, rinfo
 
-    | TDSwitch (sp, e, cases, dflt, m) -> 
+    | TDSwitch (e, cases, dflt, m) -> 
         // We always duplicate boolean-typed guards prior to optimizing. This is work which really should be done in patcompile.fs
         // where we must duplicate "when" expressions to ensure uniqueness of bound variables.
         //
@@ -3681,7 +3681,7 @@ and OptimizeDecisionTree cenv env m x =
         // Hence we do it here. There is no doubt a better way to do this.
         let e = if typeEquiv cenv.g (tyOfExpr cenv.g e) cenv.g.bool_ty then copyExpr cenv.g CloneAll e else e
 
-        OptimizeSwitch cenv env (sp, e, cases, dflt, m)
+        OptimizeSwitch cenv env (e, cases, dflt, m)
 
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test, vinfo with 
@@ -3695,7 +3695,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 
-and OptimizeSwitch cenv env (sp, e, cases, dflt, m) =
+and OptimizeSwitch cenv env (e, cases, dflt, m) =
     let eR, einfo = OptimizeExpr cenv env e 
 
     let cases, dflt = 
@@ -3712,9 +3712,9 @@ and OptimizeSwitch cenv env (sp, e, cases, dflt, m) =
     // OK, see what weRre left with and continue
     match cases, dflt with 
     | [], Some case -> OptimizeDecisionTree cenv env m case
-    | _ -> OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m)
+    | _ -> OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m)
 
-and OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m) =
+and OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m) =
     let casesR, cinfos =
         cases 
         |> List.map (fun (TCase(discrim, e)) -> let eR, einfo = OptimizeDecisionTree cenv env m e in TCase(discrim, eR), einfo)
@@ -3726,7 +3726,7 @@ and OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m) =
     let size = (dinfos.Length + cinfos.Length) * 2
     let info = CombineValueInfosUnknown (einfo :: cinfos @ dinfos)
     let info = { info with TotalSize = info.TotalSize + size; FunctionSize = info.FunctionSize + size; }
-    TDSwitch (sp, eR, casesR, dfltR, m), info
+    TDSwitch (eR, casesR, dfltR, m), info
 
 and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
     try 

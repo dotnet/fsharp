@@ -187,7 +187,7 @@ let (|SimpleArrayLoopUpperBound|_|) expr =
 
 let (|SimpleArrayLoopBody|_|) g expr =
     match expr with
-    | Expr.Lambda (_, a, b, ([_] as args), Expr.Let (TBind(forVarLoop, Expr.Op (TOp.ILAsm ([I_ldelem_any(ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx], m1), seqPoint), body, m2, freeVars), m, ty) ->
+    | Expr.Lambda (_, a, b, ([_] as args), DebugPoints (Expr.Let (TBind(forVarLoop, DebugPoints (Expr.Op (TOp.ILAsm ([I_ldelem_any(ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx], m1), _), seqPoint), body, m2, freeVars), _), m, ty) ->
         let body = Expr.Let (TBind(forVarLoop, mkCallArrayGet g m1 elemTy arr idx, seqPoint), body, m2, freeVars)
         let expr = Expr.Lambda (newUnique(), a, b, args, body, m, ty)
         Some (arr, elemTy, expr)
@@ -197,12 +197,9 @@ let (|ObjectInitializationCheck|_|) g expr =
     // recognize "if this.init@ < 1 then failinit"
     match expr with
     | Expr.Match
-        (
-           _, _,
+        (_, _,
            TDSwitch
-            (_, 
-                Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet (RecdFieldRef(_, name)), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
-            ),
+            (DebugPoints (Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet (RecdFieldRef(_, name)), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _), _, _, _),
            [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when
             IsCompilerGeneratedName name &&
@@ -1046,7 +1043,7 @@ and ConvConst cenv env m c ty =
 
 and ConvDecisionTree cenv env tgs typR x =
     match x with
-    | TDSwitch(_, e1, csl, dfltOpt, m) ->
+    | TDSwitch(e1, csl, dfltOpt, m) ->
         let acc =
             match dfltOpt with
             | Some d -> ConvDecisionTree cenv env tgs typR d

@@ -1838,7 +1838,7 @@ and CheckDecisionTree cenv env x =
     | TDBind(bind, rest) -> 
         CheckBinding cenv env false PermitByRefExpr.Yes bind |> ignore
         CheckDecisionTree cenv env rest 
-    | TDSwitch (_, e, cases, dflt, m) -> 
+    | TDSwitch (e, cases, dflt, m) -> 
         CheckDecisionTreeSwitch cenv env (e, cases, dflt, m)
 
 and CheckDecisionTreeSwitch cenv env (e, cases, dflt, m) =

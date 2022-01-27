@@ -188,7 +188,7 @@ and accDTree cenv env x =
     match x with 
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
-    | TDSwitch (_, e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
+    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
 and accSwitch cenv env (e, cases, dflt, _m) =
     accExpr cenv env e

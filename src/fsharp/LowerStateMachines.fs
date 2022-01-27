@@ -426,7 +426,6 @@ type LowerStateMachine(g: TcGlobals) =
             let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m))
             let dtree =
                 TDSwitch(
-                    DebugPointAtSwitch.No, 
                     pcExpr,
                     [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
                         for pc in pcs do

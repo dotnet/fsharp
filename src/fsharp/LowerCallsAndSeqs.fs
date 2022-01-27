@@ -737,7 +737,6 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m))
                 let dtree =
                   TDSwitch(
-                      DebugPointAtSwitch.No,
                       pcExpr,
                       [
                         // Add an empty disposal action for the initial state (pc = 0)
@@ -805,7 +804,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
                     let addResultTarget e = mbuilder.AddResultTarget(e)
                     let dtree =
-                        TDSwitch(DebugPointAtSwitch.No, 
+                        TDSwitch(
                             pcExpr,
                             [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
                             Some (addResultTarget (mkUnit g m)),

@@ -4307,7 +4307,7 @@ type DecisionTree =
     ///    cases -- The list of tests and their subsequent decision trees
     ///    default -- The default decision tree, if any
     ///    range -- (precise documentation needed)
-    | TDSwitch of debugPoint: DebugPointAtSwitch * input: Expr * cases: DecisionTreeCase list * defaultOpt: DecisionTree option * range: range
+    | TDSwitch of input: Expr * cases: DecisionTreeCase list * defaultOpt: DecisionTree option * range: range
 
     /// TDSuccess(results, targets)
     ///

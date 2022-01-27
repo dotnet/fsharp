@@ -5546,13 +5546,7 @@ and GenDecisionTreeAndTargetsInner cenv cgbuf inplabOpt stackAtTargets eenv tree
         | _ ->
             contf targetInfos
 
-    | TDSwitch(sp, e, cases, dflt, m) ->
-        
-        // Emit the debug point 
-        match sp with
-        | DebugPointAtSwitch.Yes dpm -> CG.EmitDebugPoint cgbuf dpm
-        | DebugPointAtSwitch.No -> ()
-
+    | TDSwitch(e, cases, dflt, m) ->
         GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases dflt m targets targetCounts targetInfos sequel contf
 
 and GetTarget (targets:_[]) n =
@@ -5765,8 +5759,8 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   (cases, caseLabels) ||> List.map2 (fun case label ->
                       let i =
                         match case.Discriminator with
-                          DecisionTreeTest.Const c' ->
-                            match c' with
+                          DecisionTreeTest.Const c2 ->
+                            match c2 with
                             | Const.SByte i -> int32 i
                             | Const.Int16 i -> int32 i
                             | Const.Int32 i -> i
@@ -5792,6 +5786,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   error(InternalError("non-dense integer matches not implemented in codegen - these should have been removed by the pattern match compiler", switchm))
                 GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases contf
             | _ -> error(InternalError("these matches should never be needed", switchm))
+
         | DecisionTreeTest.Error m -> error(InternalError("Trying to compile error recovery branch", m))
 
 and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets targetCounts targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =

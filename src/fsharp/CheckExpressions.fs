@@ -3462,8 +3462,9 @@ let EliminateInitializationGraphs
 
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
 
-        and CheckDecisionTree st = function
-            | TDSwitch(_, e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
+        and CheckDecisionTree st dt =
+            match dt with
+            | TDSwitch(e1, csl, dflt, _) -> CheckExpr st e1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
             | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
             | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
 
@@ -5682,7 +5683,12 @@ and TcNonControlFlowExpr (env: TcEnv) f =
         | NotedSourceConstruct.While -> 
             res, tpenv
         | NotedSourceConstruct.None ->
-            mkDebugPoint res.Range res, tpenv
+            // Skip outer debug point for "e1 && e2" and "e1 || e2"
+            let res2 =
+                match res with
+                | IfThenElseExpr _ -> res
+                | _ -> mkDebugPoint res.Range res
+            res2, tpenv
     else
         f env
 
@@ -8120,6 +8126,7 @@ and isAdjacentListExpr isSugar atomicFlag (synLeftExprOpt: SynExpr option) (synA
 // Check seq { expr }
 // Check async { expr }
 and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftExprOpt leftExpr exprty (synArg: SynExpr) atomicFlag isSugar delayed =
+    let g = cenv.g
     let denv = env.DisplayEnv
     let mArg = synArg.Range
     let mLeftExpr = leftExpr.Range
@@ -8158,7 +8165,23 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
                     SynExpr.ComputationExpr (true, comp, m)
                 | _ -> synArg
 
-            let arg, tpenv = TcExprFlex2 cenv domainTy env false tpenv synArg
+            let arg, tpenv =
+                // treat left and right of '||' and '&&' as control flow, so for example
+                //     f e1 && g e2
+                // will have debug points on "f e1" and "g e2"
+                let env =
+                    match leftExpr with
+                    | ApplicableExpr(_, Expr.Val (vf, _, _), _)
+                    | ApplicableExpr(_, Expr.App (Expr.Val (vf, _, _), _, _, [_], _), _)
+                         when valRefEq g vf g.and_vref
+                           || valRefEq g vf g.and2_vref 
+                           || valRefEq g vf g.or_vref
+                           || valRefEq g vf g.or2_vref ->
+                        { env with eIsControlFlow = true }
+                    | _ -> env
+
+                TcExprFlex2 cenv domainTy env false tpenv synArg
+
             let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 

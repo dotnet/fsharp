@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {61E07032-FF23-CD21-A745-03833270E061}
+// MVID: {61F2AFFA-FF23-CD21-A745-0383FAAFF261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071D0000
+// Image base: 0x06BE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -363,36 +363,34 @@
     .method public strict virtual instance bool 
             Invoke(class [Utils]Utils/Product p) cil managed
     {
-      // Code size       38 (0x26)
+      // Code size       37 (0x25)
       .maxstack  10
-      .line 33,33 : 16,57 ''
-      IL_0000:  nop
-      .line 100001,100001 : 0,0 ''
-      IL_0001:  ldarg.1
-      IL_0002:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
-      IL_0007:  ldc.i4.0
-      IL_0008:  ble.s      IL_0024
+      .line 33,33 : 16,34 ''
+      IL_0000:  ldarg.1
+      IL_0001:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
+      IL_0006:  ldc.i4.0
+      IL_0007:  ble.s      IL_0023
 
-      .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
-      IL_0010:  ldc.i4     0x12c
+      .line 33,33 : 38,57 ''
+      IL_0009:  ldarg.1
+      IL_000a:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
+      IL_000f:  ldc.i4     0x12c
+      IL_0014:  ldc.i4.0
       IL_0015:  ldc.i4.0
       IL_0016:  ldc.i4.0
-      IL_0017:  ldc.i4.0
-      IL_0018:  ldc.i4.2
-      IL_0019:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+      IL_0017:  ldc.i4.2
+      IL_0018:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
                                                                             int32,
                                                                             int32,
                                                                             bool,
                                                                             uint8)
-      IL_001e:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
+      IL_001d:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
                                                                             valuetype [netstandard]System.Decimal)
-      IL_0023:  ret
+      IL_0022:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0024:  ldc.i4.0
-      IL_0025:  ret
+      IL_0023:  ldc.i4.0
+      IL_0024:  ret
     } // end of method 'expensiveInStockProducts@33-1'::Invoke
 
     .method private specialname rtspecialname static 

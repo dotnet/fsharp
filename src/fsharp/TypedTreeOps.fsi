@@ -93,7 +93,7 @@ type MatchBuilder =
     member Close: DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch: DebugPointAtSwitch -> range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
 val primMkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -2542,3 +2542,6 @@ val (|OpPipeRight3|_|):
         (TType * Expr * Expr * Expr * Expr * range) option
 
 val mkDebugPoint: m: range -> expr: Expr -> Expr
+
+/// Match an if...then...else expression or the result of "a && b" or "a || b"
+val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option

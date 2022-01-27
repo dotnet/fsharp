@@ -219,7 +219,7 @@ module FSharpExprConvert =
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(_, Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
         // Match "init@41 <- 6"
@@ -1251,7 +1251,7 @@ module FSharpExprConvert =
 
     and ConvDecisionTreePrim cenv env dtreeRetTy x = 
         match x with 
-        | TDSwitch(_, e1, csl, dfltOpt, m) -> 
+        | TDSwitch(e1, csl, dfltOpt, m) -> 
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
