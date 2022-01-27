@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr05.exe
-// MVID: {61E07031-3687-E566-A745-03833170E061}
+// MVID: {61F2D6A5-3687-E566-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06E70000
+// Image base: 0x06E50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -236,7 +236,6 @@
     .line 7,7 : 5,15 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
-    .line 7,7 : 5,15 ''
     IL_0006:  ldloc.1
     IL_0007:  ldloc.1
     IL_0008:  newobj     instance void ComputationExpr05/res5@8::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)

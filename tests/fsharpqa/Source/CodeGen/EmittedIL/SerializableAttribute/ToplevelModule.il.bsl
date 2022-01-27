@@ -36,13 +36,13 @@
   // Offset: 0x00001148 Length: 0x000003FD
 }
 .module TopLevelModule.dll
-// MVID: {61EFEE22-37F5-C118-A745-038322EEEF61}
+// MVID: {61F2D6CA-37F5-C118-A745-0383CAD6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07240000
+// Image base: 0x07430000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -792,6 +792,7 @@
     {
       // Code size       16 (0x10)
       .maxstack  8
+      .line 8,8 : 14,15 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -1563,6 +1564,7 @@
       {
         // Code size       16 (0x10)
         .maxstack  8
+        .line 18,18 : 18,19 ''
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
         IL_0006:  ldarg.0

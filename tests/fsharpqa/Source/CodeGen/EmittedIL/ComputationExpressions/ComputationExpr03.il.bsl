@@ -40,13 +40,13 @@
   // Offset: 0x00000240 Length: 0x0000008C
 }
 .module ComputationExpr03.exe
-// MVID: {61E07031-3649-E566-A745-03833170E061}
+// MVID: {61F2D6A5-3649-E566-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07350000
+// Image base: 0x07320000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -237,7 +237,6 @@
       IL_0003:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr03/'res3@15-1'::builder@
       IL_0008:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
       IL_000d:  stloc.1
-      .line 16,16 : 13,23 ''
       IL_000e:  ldloc.1
       IL_000f:  ldloc.1
       IL_0010:  newobj     instance void ComputationExpr03/'res3@17-2'::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
@@ -352,7 +351,6 @@
     .line 7,7 : 5,15 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.2
-    .line 7,7 : 5,15 ''
     IL_0006:  ldloc.2
     IL_0007:  ldloc.2
     IL_0008:  newobj     instance void ComputationExpr03/res2@8::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)
@@ -370,7 +368,6 @@
     .line 13,13 : 5,15 ''
     IL_0026:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_002b:  stloc.s    V_4
-    .line 13,13 : 5,15 ''
     IL_002d:  ldloc.s    V_4
     IL_002f:  ldloc.s    V_4
     IL_0031:  newobj     instance void ComputationExpr03/res3@14::.ctor(class [ComputationExprLibrary]Library.EventuallyBuilder)

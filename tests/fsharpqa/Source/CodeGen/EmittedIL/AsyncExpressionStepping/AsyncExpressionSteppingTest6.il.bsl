@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BE
 }
 .module AsyncExpressionSteppingTest6.dll
-// MVID: {61EFEE1F-6394-4FAD-A745-03831FEEEF61}
+// MVID: {61F2D6A5-6394-4FAD-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067A0000
+// Image base: 0x05370000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -721,7 +721,6 @@
       .line 5,5 : 9,14 ''
       IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0
-      .line 5,5 : 9,14 ''
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
       IL_0008:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/f2@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)
@@ -739,7 +738,6 @@
       .line 13,13 : 9,14 ''
       IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0
-      .line 13,13 : 9,14 ''
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
       IL_0008:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/f3@13::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)

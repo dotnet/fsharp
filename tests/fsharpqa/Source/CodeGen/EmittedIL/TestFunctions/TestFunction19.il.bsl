@@ -36,13 +36,13 @@
   // Offset: 0x00000358 Length: 0x00000100
 }
 .module TestFunction19.exe
-// MVID: {61E07031-A624-46AE-A745-03833170E061}
+// MVID: {61F2D6A5-A624-46AE-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07110000
+// Image base: 0x06B00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,6 +63,8 @@
     {
       // Code size       23 (0x17)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction19.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -81,8 +83,7 @@
     {
       // Code size       7 (0x7)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 21,22 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction19.fs'
+      .line 5,5 : 21,22 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 TestFunction19/C::x
       IL_0006:  ret

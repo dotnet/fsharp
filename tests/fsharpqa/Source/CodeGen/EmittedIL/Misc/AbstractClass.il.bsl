@@ -36,13 +36,13 @@
   // Offset: 0x00000308 Length: 0x000000B1
 }
 .module AbstractClass.exe
-// MVID: {61E07031-333C-8BAF-A745-03833170E061}
+// MVID: {61F2D6A5-333C-8BAF-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04E00000
+// Image base: 0x07160000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,6 +61,8 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\AbstractClass.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -73,8 +75,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 22,26 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\AbstractClass.fs'
+      .line 5,5 : 22,26 ''
       IL_0000:  ldarg.0
       IL_0001:  ldc.i4.1
       IL_0002:  callvirt   instance void AbstractClass/X::.ctor(int32)

@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest4.dll
-// MVID: {61F2CC40-6394-6D4B-A745-038340CCF261}
+// MVID: {61F2D6A5-6394-6D4B-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x072B0000
+// Image base: 0x07140000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -323,7 +323,6 @@
       .line 5,5 : 9,14 ''
       IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_0005:  stloc.0
-      .line 5,5 : 9,14 ''
       IL_0006:  ldloc.0
       IL_0007:  ldloc.0
       IL_0008:  newobj     instance void AsyncExpressionSteppingTest4/AsyncExpressionSteppingTest4/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder)

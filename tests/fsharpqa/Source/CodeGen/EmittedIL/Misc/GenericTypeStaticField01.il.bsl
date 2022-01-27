@@ -36,13 +36,13 @@
   // Offset: 0x00000608 Length: 0x000001E1
 }
 .module GenericTypeStaticField01.exe
-// MVID: {61E07031-1E75-7E6B-A745-03833170E061}
+// MVID: {61F2D6A5-1E75-7E6B-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07590000
+// Image base: 0x06F00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,6 +62,8 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 2,2 : 6,9 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\GenericTypeStaticField01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -87,8 +89,7 @@
     {
       // Code size       27 (0x1b)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 28,39 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\GenericTypeStaticField01.fs'
+      .line 4,4 : 28,39 ''
       IL_0000:  nop
       .line 16707566,16707566 : 0,0 ''
       IL_0001:  volatile.
@@ -127,6 +128,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
+      .line 6,6 : 6,9 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0

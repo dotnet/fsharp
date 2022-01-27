@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {61F2AFFA-FF23-CD21-A745-0383FAAFF261}
+// MVID: {61F2D6A6-FF23-CD21-A745-0383A6D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BE0000
+// Image base: 0x06A50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1220,7 +1220,6 @@
     .line 13,13 : 5,10 ''
     IL_004a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_004f:  stloc.s    V_10
-    .line 13,13 : 5,10 ''
     IL_0051:  ldloc.s    V_10
     IL_0053:  ldloc.s    V_10
     .line 14,14 : 9,12 ''
@@ -1254,7 +1253,6 @@
     .line 23,23 : 5,10 ''
     IL_00a4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00a9:  stloc.s    V_11
-    .line 23,23 : 5,10 ''
     IL_00ab:  ldloc.s    V_11
     IL_00ad:  ldloc.s    V_11
     .line 24,24 : 9,12 ''
@@ -1279,7 +1277,6 @@
     .line 31,31 : 5,10 ''
     IL_00e9:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00ee:  stloc.s    V_12
-    .line 31,31 : 5,10 ''
     IL_00f0:  ldloc.s    V_12
     IL_00f2:  ldloc.s    V_12
     .line 32,32 : 9,12 ''
@@ -1311,7 +1308,6 @@
     .line 41,41 : 5,10 ''
     IL_013d:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0142:  stloc.s    V_14
-    .line 41,41 : 5,10 ''
     IL_0144:  ldloc.s    V_14
     IL_0146:  ldloc.s    V_14
     .line 42,42 : 9,12 ''
@@ -1377,7 +1373,6 @@
     .line 50,50 : 5,10 ''
     IL_01fe:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0203:  stloc.s    V_16
-    .line 50,50 : 5,10 ''
     IL_0205:  ldnull
     IL_0206:  ldc.i4.0
     IL_0207:  ldnull

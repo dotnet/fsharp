@@ -36,13 +36,13 @@
   // Offset: 0x000003A0 Length: 0x0000010D
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {61E07031-39CA-41B5-A745-03833170E061}
+// MVID: {61F2D6A5-39CA-41B5-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07340000
+// Image base: 0x07320000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,6 +83,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
+      .line 40,40 : 10,11 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0

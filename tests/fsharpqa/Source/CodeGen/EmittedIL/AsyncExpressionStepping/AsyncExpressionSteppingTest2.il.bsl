@@ -36,7 +36,7 @@
   // Offset: 0x00000268 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest2.dll
-// MVID: {61F2CC40-6394-D499-A745-038340CCF261}
+// MVID: {61F2D6A5-6394-D499-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
@@ -212,7 +212,6 @@
       .line 6,6 : 9,14 ''
       IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_DefaultAsyncBuilder()
       IL_000c:  stloc.1
-      .line 6,6 : 9,14 ''
       IL_000d:  ldloc.1
       IL_000e:  ldloc.0
       IL_000f:  ldloc.1

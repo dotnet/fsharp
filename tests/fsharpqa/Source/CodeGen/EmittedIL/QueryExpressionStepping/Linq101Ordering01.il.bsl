@@ -40,13 +40,13 @@
   // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {61E07032-649A-6956-A745-03833270E061}
+// MVID: {61F2D6A6-649A-6956-A745-0383A6D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x069D0000
+// Image base: 0x05060000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1918,7 +1918,6 @@
     .line 10,10 : 5,10 ''
     IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0030:  stloc.s    V_10
-    .line 10,10 : 5,10 ''
     IL_0032:  ldloc.s    V_10
     IL_0034:  ldnull
     IL_0035:  ldc.i4.0
@@ -1943,7 +1942,6 @@
     .line 17,17 : 5,10 ''
     IL_0061:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0066:  stloc.s    V_12
-    .line 17,17 : 5,10 ''
     IL_0068:  ldloc.s    V_12
     IL_006a:  ldnull
     IL_006b:  ldc.i4.0
@@ -1973,7 +1971,6 @@
     .line 25,25 : 5,10 ''
     IL_00a3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00a8:  stloc.s    V_14
-    .line 25,25 : 5,10 ''
     IL_00aa:  ldloc.s    V_14
     IL_00ac:  ldloc.s    V_14
     .line 26,26 : 9,12 ''
@@ -2004,7 +2001,6 @@
     .line 43,43 : 5,10 ''
     IL_00f3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00f8:  stloc.s    V_16
-    .line 43,43 : 5,10 ''
     IL_00fa:  ldloc.s    V_16
     IL_00fc:  ldnull
     IL_00fd:  ldc.i4.0
@@ -2064,7 +2060,6 @@
     .line 51,51 : 5,10 ''
     IL_019b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01a0:  stloc.s    V_18
-    .line 51,51 : 5,10 ''
     IL_01a2:  ldloc.s    V_18
     IL_01a4:  ldloc.s    V_18
     IL_01a6:  ldnull
@@ -2093,7 +2088,6 @@
     .line 59,59 : 5,10 ''
     IL_01de:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_01e3:  stloc.s    V_20
-    .line 59,59 : 5,10 ''
     IL_01e5:  ldloc.s    V_20
     IL_01e7:  ldloc.s    V_20
     IL_01e9:  ldloc.s    V_20

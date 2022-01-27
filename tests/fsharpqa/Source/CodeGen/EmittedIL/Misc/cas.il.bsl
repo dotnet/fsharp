@@ -43,13 +43,13 @@
   // Offset: 0x00000620 Length: 0x000000F3
 }
 .module cas.exe
-// MVID: {61E07031-35EA-18E3-A745-03833170E061}
+// MVID: {61F2D6A5-35EA-18E3-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07440000
+// Image base: 0x05050000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -75,6 +75,8 @@
       {
         // Code size       9 (0x9)
         .maxstack  8
+        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+        .line 11,11 : 10,13 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\cas.fs'
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
         IL_0006:  ldarg.0
@@ -92,8 +94,7 @@
         // Code size       8 (0x8)
         .maxstack  3
         .locals init ([0] class Cas/AttrTest/Foo x)
-        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\cas.fs'
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  stloc.0
         .line 14,14 : 33,37 ''

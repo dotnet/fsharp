@@ -36,13 +36,13 @@
   // Offset: 0x00000338 Length: 0x000000AD
 }
 .module StaticInit_Class01.dll
-// MVID: {61E07031-EC34-E66E-A745-03833170E061}
+// MVID: {61F2D6A5-EC34-E66E-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071A0000
+// Image base: 0x07370000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,6 +62,8 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
+      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Class01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -74,8 +76,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       38 (0x26)
       .maxstack  8
-      .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 7,7 : 23,37 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Class01.fs'
+      .line 7,7 : 23,37 ''
       IL_0000:  nop
       .line 100001,100001 : 0,0 ''
       IL_0001:  volatile.

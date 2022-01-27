@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {61EFEE23-218B-729A-A745-038323EEEF61}
+// MVID: {61F2D6CC-218B-729A-A745-0383CCD6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07150000
+// Image base: 0x07080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -787,6 +787,7 @@
   {
     // Code size       16 (0x10)
     .maxstack  8
+    .line 9,9 : 10,11 ''
     IL_0000:  ldarg.0
     IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
     IL_0006:  ldarg.0
@@ -1558,6 +1559,7 @@
     {
       // Code size       16 (0x10)
       .maxstack  8
+      .line 15,15 : 14,15 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -2329,6 +2331,7 @@
       {
         // Code size       16 (0x10)
         .maxstack  8
+        .line 25,25 : 18,19 ''
         IL_0000:  ldarg.0
         IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
         IL_0006:  ldarg.0
