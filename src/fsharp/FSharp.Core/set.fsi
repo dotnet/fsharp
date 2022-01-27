@@ -22,7 +22,13 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>The result set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-new">
+    /// <code lang="fsharp">
+    /// let seq = seq { 1 .. 3 }
+    /// Set(seq)
+    /// </code>
+    /// </example>
+    /// Creates a new Set containing the elements of the given sequence. <c> set [1; 2; 3]</c>
     new : elements:seq<'T> -> Set<'T> 
 
     /// <summary>A useful shortcut for Set.add. Note this operation produces a new set
@@ -33,7 +39,13 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>The result set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(1).Add(2)
+    /// printfn "The new set is: %A" set
+    /// </code>
+    /// The sample evaluates to the following output: <c>The new set is: set [1; 2]</c>
+    /// </example>
     member Add : value:'T -> Set<'T>
     
     /// <summary>A useful shortcut for Set.remove. Note this operation produces a new set
@@ -44,12 +56,24 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>The result set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-remove">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(1).Add(2)
+    /// printfn "The new set is: %A" set
+    /// </code>
+    /// The sample evaluates to the following output: <c>The new set is: set [2]</c>
+    /// </example>
     member Remove : value:'T -> Set<'T>
     
     /// <summary>The number of elements in the set</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-count">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(1).Add(2)
+    /// printfn "The new set is: %A" set
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set has 3 elements</c>
+    /// </example>
     member Count : int
     
     /// <summary>A useful shortcut for Set.contains. See the Set module for further operations on sets.</summary>
@@ -58,12 +82,25 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>True if the set contains <c>value</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-contains">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(2).Add(3)
+    /// printfn "Does the set contain 1? %A" (set.Contains(1))
+    /// set.Contains(1) |> printfn "Does the set contain 1? %A"
+    /// </code>
+    /// The sample evaluates to the following output: <c>Does the set contain 1? false</c>
+    /// </example>
     member Contains : value:'T -> bool
     
     /// <summary>A useful shortcut for Set.isEmpty. See the Set module for further operations on sets.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-isempty">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(2).Add(3)
+    /// printfn "Is the set empty? %A" (set.IsEmpty)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is the set empty? false</c>
+    /// </example>
     member IsEmpty  : bool
 
     /// <summary>Returns a new set with the elements of the second set removed from the first.</summary>
@@ -73,7 +110,14 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>A set containing elements of the first set that are not contained in the second set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-subtract">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(2).Add(3).Add(4)
+    /// printfn "The new set is: %A" (set1 - set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The new set is: set [1]</c>
+    /// </example>
     static member (-) : set1:Set<'T> * set2:Set<'T> -> Set<'T> 
 
     /// <summary>Compute the union of the two sets.</summary>
@@ -83,7 +127,14 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>The union of the two input sets.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-add">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(2).Add(3).Add(4)
+    /// printfn "Output is %A" (set1 = set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The new set is: set [1; 2; 3; 4]</c>
+    /// </example>
     static member (+) : set1:Set<'T> * set2:Set<'T> -> Set<'T> 
 
     /// <summary>Evaluates to "true" if all elements of the first set are in the second.</summary>
@@ -92,7 +143,14 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>True if this set is a subset of <c>otherSet</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-issubsetof">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a subset of %A? %A" set1 set2 (Set.isSubset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a subset of set [1; 2; 3; 4]? true</c>
+    /// </example>
     member IsSubsetOf: otherSet:Set<'T> -> bool
 
     /// <summary>Evaluates to "true" if all elements of the first set are in the second, and at least 
@@ -102,7 +160,14 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>True if this set is a proper subset of <c>otherSet</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-ispropersubsetof">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper subset of set [1; 2; 3; 4]? true</c>
+    /// </example>
     member IsProperSubsetOf: otherSet:Set<'T> -> bool
 
     /// <summary>Evaluates to "true" if all elements of the second set are in the first.</summary>
@@ -111,7 +176,14 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>True if this set is a superset of <c>otherSet</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-issupersetof">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a superset of %A? %A" set1 set2 (Set.isSuperset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a superset of set [1; 2; 3; 4]? false</c>
+    /// </example>
     member IsSupersetOf: otherSet:Set<'T> -> bool
 
     /// <summary>Evaluates to "true" if all elements of the second set are in the first, and at least 
@@ -121,17 +193,38 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     ///
     /// <returns>True if this set is a proper superset of <c>otherSet</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-ispropersupersetof">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper superset of set [1; 2; 3; 4]? false</c>
+    /// </example>
     member IsProperSupersetOf: otherSet:Set<'T> -> bool
 
     /// <summary>Returns the lowest element in the set according to the ordering being used for the set.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-minimumelement">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// set.MinimumElement
+    /// printfn "MinimumElement: %d" set.MinimumElement
+    /// </code>
+    /// The sample evaluates to the following output: <c>MinimumElement: 1</c>
+    /// </example>
     member MinimumElement: 'T
 
     /// <summary>Returns the highest element in the set according to the ordering being used for the set.</summary>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-maximumelement">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// set.MaximumElement
+    /// printfn "MaximumElement: %d" set.MaximumElement
+    /// </code>
+    /// The sample evaluates to the following output: <c>MaximumElement: 3</c>
+    /// </example>
     member MaximumElement: 'T
 
     interface ICollection<'T> 
@@ -188,7 +281,13 @@ module Set =
     ///
     /// <returns>A new set containing <c>value</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-add">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(1).Add(2)
+    /// printfn "The new set is: %A" set
+    /// </code>
+    /// The sample evaluates to the following output: <c>The new set is: set [1; 2]</c>
+    /// </example>
     [<CompiledName("Add")>]
     val add: value:'T -> set:Set<'T> -> Set<'T>
 
@@ -199,7 +298,14 @@ module Set =
     ///
     /// <returns>True if <c>element</c> is in <c>set</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-contains">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(2).Add(3)
+    /// printfn "Does the set contain 1? %A" (set.Contains(1))
+    /// set.Contains(1) |> printfn "Does the set contain 1? %A"
+    /// </code>
+    /// The sample evaluates to the following output: <c>Does the set contain 1? false</c>
+    /// </example>
     [<CompiledName("Contains")>]
     val contains: element:'T -> set:Set<'T> -> bool
 
@@ -210,7 +316,14 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a subset of <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-issubset">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a subset of %A? %A" set1 set2 (Set.isSubset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a subset of set [1; 2; 3; 4]? true</c>
+    /// </example>
     [<CompiledName("IsSubset")>]
     val isSubset: set1: Set<'T> -> set2:Set<'T> -> bool
 
@@ -222,7 +335,14 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a proper subset of <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-ispropersubset">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a proper subset of %A? %A" set1 set2 (Set.isProperSubset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper subset of set [1; 2; 3; 4]? true</c>
+    /// </example>
     [<CompiledName("IsProperSubset")>]
     val isProperSubset: set1: Set<'T> -> set2:Set<'T> -> bool
 
@@ -233,7 +353,14 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a superset of <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-issuperset">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a superset of %A? %A" set1 set2 (Set.isSuperset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a superset of set [1; 2; 3; 4]? false</c>
+    /// </example>
     [<CompiledName("IsSuperset")>]
     val isSuperset: set1: Set<'T> -> set2:Set<'T> -> bool
 
@@ -245,7 +372,14 @@ module Set =
     ///
     /// <returns>True if <c>set1</c> is a proper superset of <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-ispropersuperset">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper superset of set [1; 2; 3; 4]? false</c>
+    /// </example>
     [<CompiledName("IsProperSuperset")>]
     val isProperSuperset: set1: Set<'T> -> set2:Set<'T> -> bool
 
@@ -256,7 +390,13 @@ module Set =
     ///
     /// <returns>The number of elements in the set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-count">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The set has %d elements" set.Count
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set has 3 elements</c>
+    /// </example>
     [<CompiledName("Count")>]
     val count: set:Set<'T> -> int
 
@@ -269,7 +409,13 @@ module Set =
     ///
     /// <returns>True if any element of <c>set</c> satisfies <c>predicate</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-exists">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// Set.exists (fun x -> x = 1) set  |> printfn "Does the set contain 1? %A"
+    /// </code>
+    /// The sample evaluates to the following output: <c>Does the set contain 1? true</c>
+    /// </example>
     [<CompiledName("Exists")>]
     val exists: predicate:('T -> bool) -> set:Set<'T> -> bool
 
@@ -281,7 +427,13 @@ module Set =
     ///
     /// <returns>The set containing only the elements for which <c>predicate</c> returns true.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-filter">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// Set.filter (fun x -> x % 2 = 0) set |> printfn "The set with even numbers is %A" 
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set with even numbers is set [2; 4]</c>
+    /// </example>
     [<CompiledName("Filter")>]
     val filter: predicate:('T -> bool) -> set:Set<'T> -> Set<'T>
 
@@ -293,7 +445,13 @@ module Set =
     ///
     /// <returns>A set containing the transformed elements.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-map">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// Set.map (fun x -> x * 2) set |> printfn "The set with doubled values is %A" 
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set with doubled values is set [2; 4; 6]</c>
+    /// </example>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> set:Set<'T> -> Set<'U>
 
@@ -305,7 +463,17 @@ module Set =
     ///
     /// <returns>The final state.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-fold">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The sum of the set is %A" (Set.fold (+) 0 set)
+    /// printfn "The product of the set is %A" (Set.fold (*) 1 set)
+    /// printfn "The reverse of the set is %A" (Set.fold (fun x y -> y :: x) [] set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The sum of the set is 6
+    /// The product of the set is 6
+    /// The reverse of the set is [3; 2; 1]</c>
+    /// </example>
     [<CompiledName("Fold")>]
     val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> set:Set<'T> -> 'State when 'T : comparison
 
@@ -317,7 +485,15 @@ module Set =
     ///
     /// <returns>The final state.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-foldback">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The sum of the set is %A" (Set.foldBack (+) set 0)
+    /// printfn "The set is %A" (Set.foldBack (fun x acc -> x :: acc) set [])
+    /// </code>
+    /// The sample evaluates to the following output: <c>The sum of the set is 6
+    /// The set is [1; 2; 3]</c>
+    /// </example>
     [<CompiledName("FoldBack")>]
     val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> set:Set<'T> -> state:'State -> 'State when 'T : comparison
 
@@ -330,7 +506,13 @@ module Set =
     ///
     /// <returns>True if all elements of <c>set</c> satisfy <c>predicate</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-forall">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "Does the set contain even numbers? %A" (Set.forall (fun x -> x % 2 = 0) set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Does the set contain even numbers? false</c>
+    /// </example>
     [<CompiledName("ForAll")>]
     val forall: predicate:('T -> bool) -> set:Set<'T> -> bool
 
@@ -341,7 +523,14 @@ module Set =
     ///
     /// <returns>The intersection of <c>set1</c> and <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-intersect">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(2).Add(3).Add(4)
+    /// printfn "The intersection of %A and %A is %A" set1 set2 (Set.intersect set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The intersection of set [1; 2; 3] and set [2; 3; 4] is set [2; 3]</c>
+    /// </example>
     [<CompiledName("Intersect")>]
     val intersect: set1:Set<'T> -> set2:Set<'T> -> Set<'T>
 
@@ -351,7 +540,22 @@ module Set =
     ///
     /// <returns>The intersection of the input sets.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-intersectmany">
+    /// <code lang="fsharp">
+    /// let headersByFile = seq{
+    /// yield [ "id"; "name"; "date"; "color" ]
+    /// yield [ "id"; "age"; "date" ]
+    /// yield [ "id"; "sex"; "date"; "animal" ]
+    /// }
+    /// headersByFile
+    /// |> Seq.map Set.ofList
+    /// |> Set.intersectMany
+    /// |> printfn "The intersection of %A is %A" headersByFile 
+    /// </code>
+    /// The sample evaluates to the following output: <c>The intersection of seq
+    /// [["id"; "name"; "date"; "color"]; ["id"; "age"; "date"];
+    /// ["id"; "sex"; "date"; "animal"]] is set ["date"; "id"]</c>
+    /// </example>
     [<CompiledName("IntersectMany")>]
     val intersectMany: sets:seq<Set<'T>> -> Set<'T>
 
@@ -362,7 +566,14 @@ module Set =
     ///
     /// <returns>The union of <c>set1</c> and <c>set2</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-union">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(2).Add(3).Add(4)
+    /// printfn "The union of %A and %A is %A" set1 set2 (Set.union set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The union of set [1; 2; 3] and set [2; 3; 4] is set [1; 2; 3; 4]</c>
+    /// </example>
     [<CompiledName("Union")>]
     val union: set1:Set<'T> -> set2:Set<'T> -> Set<'T>
 
@@ -372,7 +583,22 @@ module Set =
     ///
     /// <returns>The union of the input sets.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-unionmany">
+    /// <code lang="fsharp">
+    /// let headersByFile = seq{
+    /// yield [ "id"; "name"; "date"; "color" ]
+    /// yield [ "id"; "age"; "date" ]
+    /// yield [ "id"; "sex"; "date"; "animal" ]
+    /// }
+    /// headersByFile
+    /// |> Seq.map Set.ofList
+    /// |> Set.intersectMany
+    /// |> printfn "The intersection of %A is %A" headersByFile 
+    /// </code>
+    /// The sample evaluates to the following output: <c>The union of seq
+    /// [["id"; "name"; "date"; "color"]; ["id"; "age"; "date"];
+    /// ["id"; "sex"; "date"; "animal"]] is set ["age"; "animal"; "color"; "date"; "id"; "name"; "sex"]</c>
+    /// </example>
     [<CompiledName("UnionMany")>]
     val unionMany: sets:seq<Set<'T>> -> Set<'T>
 
@@ -382,7 +608,13 @@ module Set =
     ///
     /// <returns>True if <c>set</c> is empty.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-isempty">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(2).Add(3)
+    /// printfn "Is the set empty? %A" (set.IsEmpty)
+    /// </code>
+    /// The sample evaluates to the following output: <c>Is the set empty? false</c>
+    /// </example>
     [<CompiledName("IsEmpty")>]
     val isEmpty: set:Set<'T> -> bool
 
@@ -392,7 +624,16 @@ module Set =
     /// <param name="action">The function to apply to each element.</param>
     /// <param name="set">The input set.</param>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-iter">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// Set.iter (fun x -> printfn "The set contains %A" x) set
+    /// </code>
+    /// The sample evaluates to the following output: <c>
+    /// The set contains 1
+    /// The set contains 2
+    /// The set contains 3</c>
+    /// </example>
     [<CompiledName("Iterate")>]
     val iter: action:('T -> unit) -> set:Set<'T> -> unit
 
@@ -405,7 +646,13 @@ module Set =
     /// <returns>A pair of sets with the first containing the elements for which <c>predicate</c> returns
     /// true and the second containing the elements for which <c>predicate</c> returns false.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-partition">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
+    /// printfn "The set with even numbers is %A" (Set.partition (fun x -> x % 2 = 0) set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The partitioned sets are: (set [2; 4], set [1; 3])</c>
+    /// </example>
     [<CompiledName("Partition")>]
     val partition: predicate:('T -> bool) -> set:Set<'T> -> (Set<'T> * Set<'T>)
 
@@ -417,7 +664,13 @@ module Set =
     ///
     /// <returns>The input set with <c>value</c> removed.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-remove">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The set without 1 is %A" (Set.remove 1 set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set without 1 is set [2; 3]</c>
+    /// </example>
     [<CompiledName("Remove")>]
     val remove: value: 'T -> set:Set<'T> -> Set<'T>
 
@@ -427,7 +680,13 @@ module Set =
     ///
     /// <returns>The min value from the set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-minelement">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The min element of %A is %A" set (Set.minElement set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The min element of set [1; 2; 3] is 1</c>
+    /// </example>
     [<CompiledName("MinElement")>]
     val minElement: set:Set<'T> -> 'T
 
@@ -437,7 +696,13 @@ module Set =
     ///
     /// <returns>The max value from the set.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-maxelement">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// printfn "The min element of %A is %A" set (Set.minElement set)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The max element of set [1; 2; 3] is 3</c>
+    /// </example>
     [<CompiledName("MaxElement")>]
     val maxElement: set:Set<'T> -> 'T
 
@@ -447,7 +712,13 @@ module Set =
     ///
     /// <returns>A set containing the elements form the input list.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-oflist">
+    /// <code lang="fsharp">
+    /// let set = Set.ofList [1, 2, 3]
+    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
+    /// </example>
     [<CompiledName("OfList")>]
     val ofList: elements:'T list -> Set<'T>
 
@@ -457,7 +728,14 @@ module Set =
     ///
     /// <returns>An ordered list of the elements of <c>set</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-tolist">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// let list = Set.toList set
+    /// printfn "The set is %A and type is %A" (list) (list.GetType().Name)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set is [1; 2; 3] and type is "FSharpList`1"</c>
+    /// </example>
     [<CompiledName("ToList")>]
     val toList: set:Set<'T> -> 'T list
 
@@ -467,7 +745,13 @@ module Set =
     ///
     /// <returns>A set containing the elements of <c>array</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-remove">
+    /// <code lang="fsharp">
+    /// let set = Set.ofArray [|1, 2, 3|]
+    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
+    /// </example>
     [<CompiledName("OfArray")>]
     val ofArray: array:'T[] -> Set<'T>
 
@@ -477,7 +761,14 @@ module Set =
     ///
     /// <returns>An ordered array of the elements of <c>set</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-toarray">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// let array = Set.toArray set
+    /// printfn "The set is %A and type is %A" (array) (array.GetType())
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set is [|1; 2; 3|] and type is System.Int32[]</c>
+    /// </example>
     [<CompiledName("ToArray")>]
     val toArray: set:Set<'T> -> 'T[]
 
@@ -487,7 +778,14 @@ module Set =
     ///
     /// <returns>An ordered sequence of the elements of <c>set</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-toseq">
+    /// <code lang="fsharp">
+    /// let set = Set.empty.Add(1).Add(2).Add(3)
+    /// let seq = Set.toSeq set
+    /// printfn "The set is %A and type is %A" (seq) (seq.GetType())
+    /// </code>
+    /// The sample evaluates to the following output: <c>he set is set [1; 2; 3] and type is Microsoft.FSharp.Collections.FSharpSet`1[System.Int32]</c>
+    /// </example>
     [<CompiledName("ToSeq")>]
     val toSeq: set:Set<'T> -> seq<'T>
 
@@ -497,7 +795,13 @@ module Set =
     ///
     /// <returns>The set containing <c>elements</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-ofseq">
+    /// <code lang="fsharp">
+    /// let set = Set.ofSeq [1, 2, 3]
+    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
+    /// </example>
     [<CompiledName("OfSeq")>]
     val ofSeq: elements:seq<'T> -> Set<'T>
 
@@ -508,6 +812,13 @@ module Set =
     ///
     /// <returns>The set with the elements of <c>set2</c> removed from <c>set1</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example id="set-difference">
+    /// <code lang="fsharp">
+    /// let set1 = Set.empty.Add(1).Add(2).Add(3)
+    /// let set2 = Set.empty.Add(2).Add(3).Add(4)
+    /// printfn "The difference of %A and %A is %A" set1 set2 (Set.difference set1 set2)
+    /// </code>
+    /// The sample evaluates to the following output: <c>The difference of set [1; 2; 3] and set [2; 3; 4] is set [1]</c>
+    /// </example>
     [<CompiledName("Difference")>]
     val difference: set1:Set<'T> -> set2:Set<'T> -> Set<'T>
