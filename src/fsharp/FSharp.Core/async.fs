@@ -699,7 +699,7 @@ namespace Microsoft.FSharp.Control
         ///   - Cancellation check after (see unitAsync)
         ///   - No hijack check after (see unitAsync)
         let inline CreateIgnoreAsync computation =
-            CreateBindAsync computation (fun _ -> UnitAsync)
+            CreateBindAsync computation (fun _ -> unitAsync)
 
         /// Implement the while loop construct of async computation expressions
         ///   - No initial cancellation check before first execution of guard
