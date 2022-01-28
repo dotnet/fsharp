@@ -24,9 +24,9 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// 
     /// <example id="set-new">
     /// <code lang="fsharp">
-    /// let seq = seq { 1 .. 3 }
-    /// Set(seq)
-    /// printfn $"The set is {set}"
+    /// let sequenceOfNumbers = seq { 1 .. 3 }
+    /// let numbersInSet = Set(sequenceOfNumbers)
+    /// printfn $"The set is {numbersInSet}"
     /// </code>
     /// </example>
     /// Creates a new Set containing the elements of the given sequence. <c> set [1; 2; 3]</c>
@@ -43,7 +43,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example>
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn "The new set is: %A" set
+    /// printfn $"The new set is: {set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1; 2]</c>
     /// </example>
@@ -60,7 +60,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn "The new set is: %A" set
+    /// printfn $"The new set is: {set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [2]</c>
     /// </example>
@@ -71,7 +71,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-count">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn "The new set is: %A" set
+    /// printfn $"The new set is: {set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
@@ -86,8 +86,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-contains">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
-    /// printfn "Does the set contain 1? %A" (set.Contains(1))
-    /// set.Contains(1) |> printfn "Does the set contain 1? %A"
+    /// printfn $"Does the set contain 1? {set.Contains(1)}"
     /// </code>
     /// The sample evaluates to the following output: <c>Does the set contain 1? false</c>
     /// </example>
@@ -98,7 +97,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-isempty">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
-    /// printfn "Is the set empty? %A" (set.IsEmpty)
+    /// printfn $"Is the set empty? {set.IsEmpty}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is the set empty? false</c>
     /// </example>
@@ -115,7 +114,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "The new set is: %A" (set1 - set2)
+    /// printfn $"The new set is: {set1 - set2}" 
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1]</c>
     /// </example>
@@ -132,7 +131,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "Output is %A" (set1 + set2)
+    /// printfn $"Output is %A" {set1 + set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1; 2; 3; 4]</c>
     /// </example>
@@ -148,7 +147,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a subset of %A? %A" set1 set2 (Set.isSubset set1 set2)
+    /// printfn $"Is {set1} a subset of {set2}? {Set.isSubset set1 set2}" 
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a subset of set [1; 2; 3; 4]? true</c>
     /// </example>
@@ -165,7 +164,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// printfn $"Is {set1} a proper superset of {set2}? {Set.isProperSuperset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper subset of set [1; 2; 3; 4]? true</c>
     /// </example>
@@ -181,7 +180,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a superset of %A? %A" set1 set2 (Set.isSuperset set1 set2)
+    /// printfn $"Is {set1} a superset of {set2}? {Set.isSuperset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a superset of set [1; 2; 3; 4]? false</c>
     /// </example>
@@ -198,7 +197,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// printfn $"Is {set1} a proper superset of {set2}? {Set.isProperSuperset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper superset of set [1; 2; 3; 4]? false</c>
     /// </example>
@@ -209,8 +208,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-minimumelement">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// set.MinimumElement
-    /// printfn "MinimumElement: %d" set.MinimumElement
+    /// printfn $"MinimumElement: {set.MinimumElement}"
     /// </code>
     /// The sample evaluates to the following output: <c>MinimumElement: 1</c>
     /// </example>
@@ -221,8 +219,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <example id="set-maximumelement">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// set.MaximumElement
-    /// printfn "MaximumElement: %d" set.MaximumElement
+    /// printfn $"MaximumElement: {set.MaximumElement}"
     /// </code>
     /// The sample evaluates to the following output: <c>MaximumElement: 3</c>
     /// </example>
@@ -285,7 +282,7 @@ module Set =
     /// <example id="set-add">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(1).Add(2)
-    /// printfn "The new set is: %A" set
+    /// printfn $"The new set is: {set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1; 2]</c>
     /// </example>
@@ -302,8 +299,7 @@ module Set =
     /// <example id="set-contains">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
-    /// printfn "Does the set contain 1? %A" (set.Contains(1))
-    /// set.Contains(1) |> printfn "Does the set contain 1? %A"
+    /// printfn $"Does the set contain 1? {set.Contains(1))}"
     /// </code>
     /// The sample evaluates to the following output: <c>Does the set contain 1? false</c>
     /// </example>
@@ -321,7 +317,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a subset of %A? %A" set1 set2 (Set.isSubset set1 set2)
+    /// printfn $"Is {set1} a subset of {set2}? {Set.isSubset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a subset of set [1; 2; 3; 4]? true</c>
     /// </example>
@@ -340,7 +336,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a proper subset of %A? %A" set1 set2 (Set.isProperSubset set1 set2)
+    /// printfn $"Is {set1} a proper subset of {set2}? {Set.isProperSubset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper subset of set [1; 2; 3; 4]? true</c>
     /// </example>
@@ -358,7 +354,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a superset of %A? %A" set1 set2 (Set.isSuperset set1 set2)
+    /// printfn $"Is {set1} a superset of {set2}? {Set.isSuperset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a superset of set [1; 2; 3; 4]? false</c>
     /// </example>
@@ -377,7 +373,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "Is %A a proper superset of %A? %A" set1 set2 (Set.isProperSuperset set1 set2)
+    /// printfn $"Is {set1} a proper superset of {set2}? {Set.isProperSuperset set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is set [1; 2; 3] a proper superset of set [1; 2; 3; 4]? false</c>
     /// </example>
@@ -394,7 +390,7 @@ module Set =
     /// <example id="set-count">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The set has %d elements" set.Count
+    /// printfn $"The set has {set.Count} elements"
     /// </code>
     /// The sample evaluates to the following output: <c>The set has 3 elements</c>
     /// </example>
@@ -413,7 +409,7 @@ module Set =
     /// <example id="set-exists">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// Set.exists (fun x -> x = 1) set  |> printfn "Does the set contain 1? %A"
+    /// printfn $"Does the set contain 1? {Set.exists (fun x -> x = 1) set}"
     /// </code>
     /// The sample evaluates to the following output: <c>Does the set contain 1? true</c>
     /// </example>
@@ -431,7 +427,7 @@ module Set =
     /// <example id="set-filter">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// Set.filter (fun x -> x % 2 = 0) set |> printfn "The set with even numbers is %A" 
+    /// printfn $"The set with even numbers is {Set.filter (fun x -> x % 2 = 0) set" 
     /// </code>
     /// The sample evaluates to the following output: <c>The set with even numbers is set [2; 4]</c>
     /// </example>
@@ -449,7 +445,7 @@ module Set =
     /// <example id="set-map">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// Set.map (fun x -> x * 2) set |> printfn "The set with doubled values is %A" 
+    /// printfn $"The set with doubled values is {Set.map (fun x -> x * 2) set}" 
     /// </code>
     /// The sample evaluates to the following output: <c>The set with doubled values is set [2; 4; 6]</c>
     /// </example>
@@ -467,9 +463,9 @@ module Set =
     /// <example id="set-fold">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The sum of the set is %A" (Set.fold (+) 0 set)
-    /// printfn "The product of the set is %A" (Set.fold (*) 1 set)
-    /// printfn "The reverse of the set is %A" (Set.fold (fun x y -> y :: x) [] set)
+    /// printfn $"The sum of the set is {Set.fold (+) 0 set}"
+    /// printfn $"The product of the set is {Set.fold (*) 1 set}"
+    /// printfn $"The reverse of the set is {Set.fold (fun x y -> y :: x) [] set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The sum of the set is 6
     /// The product of the set is 6
@@ -489,8 +485,8 @@ module Set =
     /// <example id="set-foldback">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The sum of the set is %A" (Set.foldBack (+) set 0)
-    /// printfn "The set is %A" (Set.foldBack (fun x acc -> x :: acc) set [])
+    /// printfn $"The sum of the set is {Set.foldBack (+) set 0}"
+    /// printfn $"The set is {Set.foldBack (fun x acc -> x :: acc) set []}"
     /// </code>
     /// The sample evaluates to the following output: <c>The sum of the set is 6
     /// The set is [1; 2; 3]</c>
@@ -510,7 +506,7 @@ module Set =
     /// <example id="set-forall">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "Does the set contain even numbers? %A" (Set.forall (fun x -> x % 2 = 0) set)
+    /// printfn $"Does the set contain even numbers? {Set.forall (fun x -> x % 2 = 0) set}"
     /// </code>
     /// The sample evaluates to the following output: <c>Does the set contain even numbers? false</c>
     /// </example>
@@ -528,7 +524,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "The intersection of %A and %A is %A" set1 set2 (Set.intersect set1 set2)
+    /// printfn $"The intersection of {set1} and {set2} is {Set.intersect set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>The intersection of set [1; 2; 3] and set [2; 3; 4] is set [2; 3]</c>
     /// </example>
@@ -571,7 +567,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "The union of %A and %A is %A" set1 set2 (Set.union set1 set2)
+    /// printfn $"The union of {set1} and {set2} is {(Set.union set1 set2)}"
     /// </code>
     /// The sample evaluates to the following output: <c>The union of set [1; 2; 3] and set [2; 3; 4] is set [1; 2; 3; 4]</c>
     /// </example>
@@ -612,7 +608,7 @@ module Set =
     /// <example id="set-isempty">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(2).Add(3)
-    /// printfn "Is the set empty? %A" (set.IsEmpty)
+    /// printfn $"Is the set empty? {set.IsEmpty}"
     /// </code>
     /// The sample evaluates to the following output: <c>Is the set empty? false</c>
     /// </example>
@@ -628,7 +624,7 @@ module Set =
     /// <example id="set-iter">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// Set.iter (fun x -> printfn "The set contains %A" x) set
+    /// Set.iter (fun x -> printfn $"The set contains {x}") set
     /// </code>
     /// The sample evaluates to the following output: <c>
     /// The set contains 1
@@ -650,7 +646,7 @@ module Set =
     /// <example id="set-partition">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn "The set with even numbers is %A" (Set.partition (fun x -> x % 2 = 0) set)
+    /// printfn $"The set with even numbers is {Set.partition (fun x -> x % 2 = 0) set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The partitioned sets are: (set [2; 4], set [1; 3])</c>
     /// </example>
@@ -668,7 +664,7 @@ module Set =
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The set without 1 is %A" (Set.remove 1 set)
+    /// printfn $"The set without 1 is {Set.remove 1 set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set without 1 is set [2; 3]</c>
     /// </example>
@@ -684,7 +680,7 @@ module Set =
     /// <example id="set-minelement">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The min element of %A is %A" set (Set.minElement set)
+    /// printfn $"The min element of {set} is {Set.minElement set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The min element of set [1; 2; 3] is 1</c>
     /// </example>
@@ -700,7 +696,7 @@ module Set =
     /// <example id="set-maxelement">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
-    /// printfn "The min element of %A is %A" set (Set.minElement set)
+    /// printfn $"The min element of {set} is {Set.minElement set}"
     /// </code>
     /// The sample evaluates to the following output: <c>The max element of set [1; 2; 3] is 3</c>
     /// </example>
@@ -716,7 +712,7 @@ module Set =
     /// <example id="set-oflist">
     /// <code lang="fsharp">
     /// let set = Set.ofList [1, 2, 3]
-    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// printfn $"The set is {set} and type is {set.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
     /// </example>
@@ -733,7 +729,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
     /// let list = Set.toList set
-    /// printfn "The set is %A and type is %A" (list) (list.GetType().Name)
+    /// printfn $"The set is {list} and type is {list.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set is [1; 2; 3] and type is "FSharpList`1"</c>
     /// </example>
@@ -749,7 +745,7 @@ module Set =
     /// <example id="set-remove">
     /// <code lang="fsharp">
     /// let set = Set.ofArray [|1, 2, 3|]
-    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// printfn $"The set is {set} and type is {set.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
     /// </example>
@@ -766,7 +762,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
     /// let array = Set.toArray set
-    /// printfn "The set is %A and type is %A" (array) (array.GetType())
+    /// printfn$ "The set is {set} and type is {array.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set is [|1; 2; 3|] and type is System.Int32[]</c>
     /// </example>
@@ -783,7 +779,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3)
     /// let seq = Set.toSeq set
-    /// printfn "The set is %A and type is %A" (seq) (seq.GetType())
+    /// printfn $"The set is {set} and type is {seq.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>he set is set [1; 2; 3] and type is Microsoft.FSharp.Collections.FSharpSet`1[System.Int32]</c>
     /// </example>
@@ -799,7 +795,7 @@ module Set =
     /// <example id="set-ofseq">
     /// <code lang="fsharp">
     /// let set = Set.ofSeq [1, 2, 3]
-    /// printfn "The set is %A and type is %A" (set) (set.GetType().Name)
+    /// printfn $"The set is {set} and type is {set.GetType().Name}"
     /// </code>
     /// The sample evaluates to the following output: <c>The set is set [(1, 2, 3)] and type is "FSharpSet`1"</c>
     /// </example>
@@ -817,7 +813,7 @@ module Set =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "The difference of %A and %A is %A" set1 set2 (Set.difference set1 set2)
+    /// printfn $"The difference of {set1} and {set2} is {Set.difference set1 set2}"
     /// </code>
     /// The sample evaluates to the following output: <c>The difference of set [1; 2; 3] and set [2; 3; 4] is set [1]</c>
     /// </example>
