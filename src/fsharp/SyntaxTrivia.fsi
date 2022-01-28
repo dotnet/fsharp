@@ -59,5 +59,7 @@ type SynMatchClauseTrivia =
     {
         /// The syntax range of the `->` token.
         ArrowRange: range option
+        /// The syntax range of the `|` token.
+        BarRange: range option
     }
     static member Zero: SynMatchClauseTrivia

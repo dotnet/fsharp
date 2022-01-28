@@ -1647,6 +1647,96 @@ match foo with
             assertRange (3, 31) (3, 33) mArrow
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``Range of bar in a single SynMatchClause in SynExpr.Match`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar when (someCheck bar) -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ BarRange = Some mBar }) ]))
+        ]) ])) ->
+            assertRange (3, 0) (3, 1) mBar
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of bar in multiple SynMatchClauses in SynExpr.Match`` () =
+        let parseResults = 
+            getParseResults
+                """
+match foo with
+| Bar bar when (someCheck bar) -> ()
+| Far too -> near ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ BarRange = Some mBar1 })
+                                                                  SynMatchClause(trivia={ BarRange = Some mBar2 }) ]))
+        ]) ])) ->
+            assertRange (3, 0) (3, 1) mBar1
+            assertRange (4, 0) (4, 1) mBar2
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of bar in a single SynMatchClause in SynExpr.TryWith`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    foo ()
+with
+| exn -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = Some mBar }) ]))
+        ]) ])) ->
+            assertRange (5, 0) (5, 1) mBar
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``No range of bar in a single SynMatchClause in SynExpr.TryWith`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    foo ()
+with exn ->
+    // some comment
+    ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = None }) ]))
+        ]) ])) ->
+            Assert.Pass()
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of bar in a multiple SynMatchClauses in SynExpr.TryWith`` () =
+        let parseResults = 
+            getParseResults
+                """
+try
+    foo ()
+with
+| IOException as ioex ->
+    // some comment
+    ()
+| ex -> ()"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = Some mBar1 })
+                                                                      SynMatchClause(trivia={ BarRange = Some mBar2 }) ]))
+        ]) ])) ->
+            assertRange (5, 0) (5, 1) mBar1
+            assertRange (8, 0) (8, 1) mBar2
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SourceIdentifiers =
     [<Test>]
     let ``__LINE__`` () =

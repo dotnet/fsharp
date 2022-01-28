@@ -31,5 +31,6 @@ type SynExprLambdaTrivia =
 
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
-    { ArrowRange: range option }
-    static member Zero: SynMatchClauseTrivia = { ArrowRange = None }
+    { ArrowRange: range option
+      BarRange: range option }
+    static member Zero: SynMatchClauseTrivia = { ArrowRange = None; BarRange = None }

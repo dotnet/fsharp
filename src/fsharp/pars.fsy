@@ -4060,10 +4060,11 @@ withClauses:
 
 withPatternClauses:
   | patternClauses 
-      { $1 }
+      { $1 None }
 
   | BAR patternClauses 
-      { $2 }
+      { let mBar = rhs parseState 1 |> Some
+        $2 mBar }
 
   | BAR error 
       { // silent recovery 
@@ -4086,40 +4087,48 @@ patternClauses:
        let mArrow, resultExpr = $2
        let mLast = resultExpr.Range
        let m = unionRanges resultExpr.Range pat.Range
-       [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow })], mLast }
+       fun mBar ->
+           [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], mLast }
 
   | patternAndGuard patternResult BAR patternClauses
      { let pat, guard = $1
        let mArrow, resultExpr = $2
-       let clauses, mLast = $4
+       let mNextBar = rhs parseState 3 |> Some
+       let clauses, mLast = $4 mNextBar
        let m = unionRanges resultExpr.Range pat.Range
-       (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow }) :: clauses), mLast }
+       fun mBar ->
+           (SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar }) :: clauses), mLast }
 
   | patternAndGuard error BAR patternClauses
      { let pat, guard = $1
-       let clauses, mLast = $4
+       let mNextBar = rhs parseState 3 |> Some
+       let clauses, mLast = $4 mNextBar
        let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
-       (SynMatchClause(pat, guard, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero) :: clauses), mLast }
+       fun _mBar ->
+           (SynMatchClause(pat, guard, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero) :: clauses), mLast }
 
   | patternAndGuard patternResult BAR error 
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = rhs parseState 3 
        let m = unionRanges resultExpr.Range pat.Range
-       [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow })], mLast  }
+       fun mBar ->
+           [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], mLast }
 
   | patternAndGuard patternResult error
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let m = unionRanges resultExpr.Range pat.Range
-       [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow })], m }
+       fun mBar ->
+           [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], m }
 
   | patternAndGuard error
      { let pat, guard = $1
        let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
-       [SynMatchClause(pat, guard, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero)], m }
+       fun mBar ->
+           [SynMatchClause(pat, guard, arbExpr ("patternClauses2", m.EndRange), m, DebugPointAtTarget.Yes, { ArrowRange = None; BarRange = mBar })], m }
 
 patternGuard: 
   | WHEN declExpr 
