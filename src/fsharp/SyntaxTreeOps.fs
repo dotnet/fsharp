@@ -725,7 +725,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.SequentialOrImplicitYield (_, e1, e2, _, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3opt, _, _, _, _) ->
+          | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 
           | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 

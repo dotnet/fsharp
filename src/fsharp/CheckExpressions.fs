@@ -8484,7 +8484,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
         | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
         | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
-        | SynExpr.IfThenElse (_, _, synExpr, _, synExpr2, _, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
+        | SynExpr.IfThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
         | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
         | SynExpr.ObjExpr _
         | SynExpr.AnonRecd _
@@ -9711,7 +9711,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) ->
                 cont (fst (mkf (x, overallTy.Commit)), tpenv))
 
-    | SynExpr.IfThenElse (_, _, synBoolExpr, _, synThenExpr, _, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
+    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, m, trivia) when not isCompExpr ->
         let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv (MustEqual cenv.g.bool_ty) env tpenv synBoolExpr
         let thenExpr, tpenv =
             let env =
@@ -9729,7 +9729,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
 
         match synElseExprOpt with
         | None ->
-            let elseExpr = mkUnit cenv.g mIfToThen
+            let elseExpr = mkUnit cenv.g trivia.IfToThenRange
             let spElse = DebugPointAtTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
             let overallExpr = primMkCond spIfToThen DebugPointAtTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
             cont (overallExpr, tpenv)

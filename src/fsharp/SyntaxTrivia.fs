@@ -6,12 +6,20 @@ open FSharp.Compiler.Text
 
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =
-    { TryKeyword: Range
-      TryToWithRange: Range
-      WithKeyword: Range
-      WithToEndRange: Range }
+    { TryKeyword: range
+      TryToWithRange: range
+      WithKeyword: range
+      WithToEndRange: range }
 
 [<NoEquality; NoComparison>]
 type SynExprTryFinallyTrivia =
-    { TryKeyword: Range
-      FinallyKeyword: Range }
+    { TryKeyword: range
+      FinallyKeyword: range }
+
+[<NoEquality; NoComparison>]
+type SynExprIfThenElseTrivia =
+    { IfKeyword: range
+      IsElif: bool
+      ThenKeyword: range
+      ElseKeyword: range option
+      IfToThenRange: range }

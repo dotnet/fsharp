@@ -9,13 +9,13 @@ open FSharp.Compiler.Text
 type SynExprTryWithTrivia =
     {
         /// The syntax range of the `try` keyword.
-        TryKeyword: Range
+        TryKeyword: range
         /// The syntax range from the beginning of the `try` keyword till the end of the `with` keyword.
-        TryToWithRange: Range
+        TryToWithRange: range
         /// The syntax range of the `with` keyword
-        WithKeyword: Range
+        WithKeyword: range
         /// The syntax range from the beginning of the `with` keyword till the end of the TryWith expression.
-        WithToEndRange: Range
+        WithToEndRange: range
     }
 
 /// Represents additional information for SynExpr.TryFinally
@@ -23,7 +23,23 @@ type SynExprTryWithTrivia =
 type SynExprTryFinallyTrivia =
     {
         /// The syntax range of the `try` keyword.
-        TryKeyword: Range
+        TryKeyword: range
         /// The syntax range of the `finally` keyword
-        FinallyKeyword: Range
+        FinallyKeyword: range
+    }
+
+/// Represents additional information for SynExpr.IfThenElse
+[<NoEquality; NoComparison>]
+type SynExprIfThenElseTrivia =
+    {
+        /// The syntax range of the `if` keyword.
+        IfKeyword: range
+        /// Indicates if the `elif` keyword was used
+        IsElif: bool
+        /// The syntax range of the `then` keyword.
+        ThenKeyword: range
+        /// The syntax range of the `else` keyword.
+        ElseKeyword: range option
+        /// The syntax range from the beginning of the `if` keyword till the end of the `then` keyword.
+        IfToThenRange: range
     }

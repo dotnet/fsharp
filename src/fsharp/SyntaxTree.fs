@@ -643,17 +643,13 @@ type SynExpr =
         range: range
 
     | IfThenElse of
-        ifKeyword: range *
-        isElif: bool *
         ifExpr: SynExpr *
-        thenKeyword: range *
         thenExpr: SynExpr *
-        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
-        ifToThenRange: range *
-        range: range
+        range: range *
+        trivia: SynExprIfThenElseTrivia
 
     | Ident of
         ident: Ident

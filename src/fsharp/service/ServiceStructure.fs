@@ -346,7 +346,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (_, _, ifExpr, _, thenExpr, _, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
+            | SynExpr.IfThenElse (ifExpr=ifExpr; thenExpr=thenExpr; elseExpr=elseExprOpt; spIfToThen=spIfToThen; range=r; trivia=trivia) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->
                     // Outline the entire IfThenElse
@@ -354,8 +354,8 @@ module Structure =
                     let collapse = Range.endToEnd  ifExpr.Range r
                     rcheck Scope.IfThenElse Collapse.Below fullrange collapse
                     // Outline the `then` scope
-                    let thenRange = Range.endToEnd (Range.modEnd -4  ifToThenRange)   thenExpr.Range
-                    let thenCollapse = Range.endToEnd ifToThenRange thenExpr.Range
+                    let thenRange = Range.endToEnd (Range.modEnd -4 trivia.IfToThenRange)   thenExpr.Range
+                    let thenCollapse = Range.endToEnd trivia.IfToThenRange thenExpr.Range
                     rcheck Scope.ThenInIfThenElse Collapse.Below thenRange thenCollapse
                 | _ -> ()
                 parseExpr ifExpr

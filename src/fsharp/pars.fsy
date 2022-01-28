@@ -3618,7 +3618,8 @@ declExpr:
         let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
-        exprFromParseError (SynExpr.IfThenElse (m, false, arbExpr("ifGuard1", mEnd), m, arbExpr("thenBody1", mEnd), None, None, spIfToThen, true, m, m)) }
+        let trivia = { IfKeyword = m; IsElif = false; ThenKeyword = m; ElseKeyword = None; IfToThenRange = m }
+        exprFromParseError (SynExpr.IfThenElse (arbExpr("ifGuard1", mEnd), arbExpr("thenBody1", mEnd), None, spIfToThen, true, m, trivia)) }
 
   | LAZY declExpr %prec expr_lazy 
       { SynExpr.Lazy ($2, unionRanges (rhs parseState 1) $2.Range) }
@@ -4141,7 +4142,8 @@ ifExprCases:
             let lastBranch : SynExpr = match elseExpr with None -> exprThen | Some e -> e
             let mIfToEndOfLastBranch = unionRanges mIf lastBranch.Range
             let spIfToThen = DebugPointAtBinding.Yes(mIfToThen)
-            SynExpr.IfThenElse (mIf, isElif, exprGuard, mThen, exprThen, mElse, elseExpr, spIfToThen, false, mIfToThen, mIfToEndOfLastBranch)) }
+            let trivia = { IfKeyword = mIf; IsElif = isElif; ThenKeyword = mThen; ElseKeyword = mElse; IfToThenRange = mIfToThen }
+            SynExpr.IfThenElse (exprGuard, exprThen, elseExpr, spIfToThen, false, mIfToEndOfLastBranch, trivia)) }
 
 ifExprThen: 
   | THEN  declExpr %prec prec_then_if 

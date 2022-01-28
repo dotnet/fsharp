@@ -2384,7 +2384,7 @@ module IfThenElse =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = None)
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = None })
             )
         ]) ])) ->
             assertRange (1, 0) (1, 2) mIfKw
@@ -2400,7 +2400,7 @@ module IfThenElse =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = Some mElse)
+                expr =SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse })
             )
         ]) ])) ->
             assertRange (1, 0) (1, 2) mIfKw
@@ -2420,7 +2420,7 @@ else c"""
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw; isElif = false; thenKeyword = mThenKw; elseKeyword = Some mElse)
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse })
             )
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIfKw
@@ -2440,11 +2440,8 @@ elif c then d"""
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
-                                          isElif = false
-                                          thenKeyword = mThenKw
-                                          elseKeyword = None
-                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElif; isElif = true)))
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif=false; ThenKeyword = mThenKw; ElseKeyword = None }
+                                          elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElif; IsElif = true })))
             )
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIfKw
@@ -2465,11 +2462,8 @@ else
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
-                                          isElif = false
-                                          thenKeyword = mThenKw
-                                          elseKeyword = Some mElse
-                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElseIf; isElif = false)))
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse }
+                                          elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElseIf; IsElif = false })))
             )
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIfKw
@@ -2491,11 +2485,8 @@ else if c then
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIfKw
-                                          isElif = false
-                                          thenKeyword = mThenKw
-                                          elseKeyword = Some mElse
-                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElseIf; isElif = false)))
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif=false; ThenKeyword = mThenKw; ElseKeyword = Some mElse }
+                                          elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElseIf; IsElif = false })))
             )
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIfKw
@@ -2522,15 +2513,9 @@ else
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIf1
-                                          isElif = false
-                                          elseKeyword = None
-                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mElif
-                                                                              isElif = true
-                                                                              elseKeyword = Some mElse1
-                                                                              elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mIf2
-                                                                                                                  isElif = false
-                                                                                                                  elseKeyword = Some mElse2))))))
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIf1; IsElif = false; ElseKeyword = None }
+                                          elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElif; IsElif = true; ElseKeyword = Some mElse1 }
+                                                                              elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mIf2; IsElif = false; ElseKeyword = Some mElse2 }))))))
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIf1
             assertRange (4, 0) (4, 4) mElif
@@ -2553,10 +2538,8 @@ else (* some long comment here *) if c then
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.IfThenElse(ifKeyword = mIf1
-                                          isElif = false
-                                          elseKeyword = Some mElse
-                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = mIf2; isElif = false))))
+                expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIf1; IsElif = false; ElseKeyword = Some mElse }
+                                          elseExpr = Some (SynExpr.IfThenElse(trivia = { IfKeyword = mIf2; IsElif = false }))))
         ]) ])) ->
             assertRange (2, 0) (2, 2) mIf1
             assertRange (4, 0) (4, 4) mElse
