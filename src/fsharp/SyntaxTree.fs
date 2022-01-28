@@ -628,7 +628,8 @@ type SynExpr =
         finallyExpr: SynExpr *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        finallyDebugPoint: DebugPointAtFinally
+        finallyDebugPoint: DebugPointAtFinally *
+        trivia: SynExprTryFinallyTrivia
 
     | Lazy of
         expr: SynExpr *

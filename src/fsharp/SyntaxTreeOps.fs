@@ -716,7 +716,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TryWith (tryExpr=e; withCases=cl) ->
               walkExpr e  || walkMatchClauses cl
 
-          | SynExpr.TryFinally (e1, e2, _, _, _) ->
+          | SynExpr.TryFinally (tryExpr=e1; finallyExpr=e2) ->
               walkExpr e1 || walkExpr e2
 
           | SynExpr.Sequential (_, _, e1, e2, _) ->

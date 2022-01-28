@@ -10,3 +10,8 @@ type SynExprTryWithTrivia =
       TryToWithRange: Range
       WithKeyword: Range
       WithToEndRange: Range }
+
+[<NoEquality; NoComparison>]
+type SynExprTryFinallyTrivia =
+    { TryKeyword: Range
+      FinallyKeyword: Range }

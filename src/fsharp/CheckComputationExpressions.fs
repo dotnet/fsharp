@@ -710,8 +710,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         match innerComp1 with 
         | SynExpr.IfThenElse (ifToThenRange=mIfToThen) -> mIfToThen
         | SynExpr.Match (matchDebugPoint=DebugPointAtBinding.Yes mMatch) -> mMatch
-        | SynExpr.TryWith (tryDebugPoint=DebugPointAtTry.Yes mTry) -> mTry
-        | SynExpr.TryFinally (tryDebugPoint=DebugPointAtTry.Yes mTry)  -> mTry
+        | SynExpr.TryWith (trivia={ TryKeyword = mTry }) -> mTry
+        | SynExpr.TryFinally (trivia={ TryKeyword = mTry })  -> mTry
         | SynExpr.For (forDebugPoint=DebugPointAtFor.Yes mBind) -> mBind
         | SynExpr.ForEach (forDebugPoint=DebugPointAtFor.Yes mBind) -> mBind
         | SynExpr.While (whileDebugPoint=DebugPointAtWhile.Yes mWhile) -> mWhile
@@ -967,9 +967,9 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mWhile))
             Some(trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill -> translatedCtxt (mkSynCall "While" mWhile [mkSynDelay2 guardExpr; mkSynCall "Delay" mWhile [mkSynDelay innerComp.Range holeFill]])) )
 
-        | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, _spFinally) ->
+        | SynExpr.TryFinally (innerComp, unwindExpr, _mTryToLast, spTry, _spFinally, trivia) ->
 
-            let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
+            let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> trivia.TryKeyword
             if isQuery then error(Error(FSComp.SR.tcNoTryFinallyInQuery(), mTry))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mTry ad "TryFinally" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("TryFinally"), mTry))
@@ -1789,7 +1789,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let innerExpr = mkDelayedExpr mWhile innerExpr
             Some(mkSeqGenerated cenv env guardExprMark genOuterTy guardExpr innerExpr, tpenv)
 
-        | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally) ->
+        | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally, trivia) ->
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp
             let unwindExpr, tpenv = TcExpr cenv (MustEqual cenv.g.unit_ty) env tpenv unwindExpr
             
@@ -1797,12 +1797,12 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let mTry = 
                 match spTry with 
                 | DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try)
-                | _ -> unwindExpr.Range
+                | _ -> trivia.TryKeyword
 
             let mFinally = 
                 match spFinally with 
                 | DebugPointAtFinally.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Finally)
-                | _ -> unwindExpr.Range
+                | _ -> trivia.FinallyKeyword
 
             let innerExpr = mkDelayedExpr mTry innerExpr
             let unwindExpr = mkUnitDelayLambda cenv.g mFinally unwindExpr

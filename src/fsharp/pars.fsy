@@ -3593,9 +3593,11 @@ declExpr:
   | TRY typedSequentialExprBlockR FINALLY typedSequentialExprBlock %prec expr_try 
       { let mTry = rhs parseState 1 
         let spTry = DebugPointAtTry.Yes mTry
-        let spFinally = DebugPointAtFinally.Yes (rhs parseState 3) 
+        let mFinally = rhs parseState 3
+        let spFinally = DebugPointAtFinally.Yes mFinally
         let mTryToLast = unionRanges mTry $4.Range 
-        SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally) }
+        let trivia = { TryKeyword = mTry; FinallyKeyword = mFinally }
+        SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally, trivia) }
 
   | IF declExpr ifExprCases %prec expr_if 
       { let mIf = rhs parseState 1

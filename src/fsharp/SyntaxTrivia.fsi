@@ -17,3 +17,13 @@ type SynExprTryWithTrivia =
         /// The syntax range from the beginning of the `with` keyword till the end of the TryWith expression.
         WithToEndRange: Range
     }
+
+/// Represents additional information for SynExpr.TryFinally
+[<NoEquality; NoComparison>]
+type SynExprTryFinallyTrivia =
+    {
+        /// The syntax range of the `try` keyword.
+        TryKeyword: Range
+        /// The syntax range of the `finally` keyword
+        FinallyKeyword: Range
+    }

@@ -807,6 +807,28 @@ with
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
+    let ``SynExpr.TryFinally contains the range of the try and with keyword`` () =
+        let ast =
+            """
+try
+    x
+finally
+    ()
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.TryFinally(trivia={ TryKeyword = mTry; FinallyKeyword = mFinally }))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 3) mTry
+            assertRange (4, 0) (4, 7) mFinally
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
     let ``SynExpr.Match contains the range of the match and with keyword`` () =
         let ast =
             """

@@ -830,7 +830,7 @@ module InterfaceStubGenerator =
                 | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
-                | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 
+                | SynExpr.TryFinally (tryExpr=synExpr1; finallyExpr=synExpr2) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | Sequentials exprs  -> 

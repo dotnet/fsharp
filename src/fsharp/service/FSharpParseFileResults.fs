@@ -641,7 +641,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr true tryExpr 
                       yield! walkMatchClauses cl
                   
-                  | SynExpr.TryFinally (e1, e2, _, spTry, spFinally) ->
+                  | SynExpr.TryFinally (tryExpr=e1; finallyExpr=e2; tryDebugPoint=spTry; finallyDebugPoint=spFinally) ->
                       yield! walkExpr true e1
                       yield! walkExpr true e2
                       yield! walkTrySeqPt spTry
