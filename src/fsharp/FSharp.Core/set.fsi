@@ -26,6 +26,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let seq = seq { 1 .. 3 }
     /// Set(seq)
+    /// printfn $"The set is {set}"
     /// </code>
     /// </example>
     /// Creates a new Set containing the elements of the given sequence. <c> set [1; 2; 3]</c>
@@ -131,7 +132,7 @@ type Set<[<EqualityConditionalOn>]'T  when 'T : comparison> =
     /// <code lang="fsharp">
     /// let set1 = Set.empty.Add(1).Add(2).Add(3)
     /// let set2 = Set.empty.Add(2).Add(3).Add(4)
-    /// printfn "Output is %A" (set1 = set2)
+    /// printfn "Output is %A" (set1 + set2)
     /// </code>
     /// The sample evaluates to the following output: <c>The new set is: set [1; 2; 3; 4]</c>
     /// </example>
