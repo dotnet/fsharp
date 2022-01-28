@@ -235,7 +235,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | None -> None
                     | Some clause ->
                         match clause with
-                        | SynMatchClause.SynMatchClause (_, whenExprOpt, _, resultExpr, _, _) ->
+                        | SynMatchClause.SynMatchClause (whenExpr=whenExprOpt; resultExpr=resultExpr) ->
                             match whenExprOpt with
                             | None ->
                                 getIdentRangeForFuncExprInApp traverseSynExpr resultExpr pos
@@ -458,7 +458,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             and walkBinds es = List.collect walkBind es
 
             and walkMatchClauses cl = 
-                [ for SynMatchClause(_, whenExprOpt, _, tgtExpr, _, _) in cl do 
+                [ for SynMatchClause(whenExpr=whenExprOpt; resultExpr=tgtExpr) in cl do 
                     match whenExprOpt with 
                     | Some whenExpr -> yield! walkExpr false whenExpr 
                     | _ -> ()
@@ -617,7 +617,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.MatchLambda (_isExnMatch, _argm, cl, spBind, _wholem) -> 
                       yield! walkBindSeqPt spBind
-                      for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
+                      for SynMatchClause(whenExpr=whenExpr; resultExpr=e) in cl do 
                           yield! walkExprOpt true whenExpr
                           yield! walkExpr true e 
 
@@ -627,7 +627,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.Match (matchDebugPoint=spBind; expr=inpExpr; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false inpExpr 
-                      for SynMatchClause(_, whenExpr, _, tgtExpr, _, _) in cl do 
+                      for SynMatchClause(whenExpr=whenExpr; resultExpr=tgtExpr) in cl do 
                           yield! walkExprOpt true whenExpr
                           yield! walkExpr true tgtExpr 
 
@@ -690,7 +690,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.MatchBang (matchDebugPoint=spBind; expr=e; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
-                      for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
+                      for SynMatchClause(whenExpr=whenExpr; resultExpr=e) in cl do 
                           yield! walkExprOpt true whenExpr
                           yield! walkExpr true e ]
             

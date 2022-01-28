@@ -542,7 +542,7 @@ module ParsedInput =
             | SynType.Paren(t, _) -> walkType t
             | _ -> None
 
-        and walkClause (SynMatchClause(pat, e1, _, e2, _, _)) =
+        and walkClause (SynMatchClause(pat=pat; whenExpr=e1; resultExpr=e2)) =
             walkPatWithKind (Some EntityKind.Type) pat 
             |> Option.orElseWith (fun () -> walkExpr e2)
             |> Option.orElseWith (fun () -> Option.bind walkExpr e1)
@@ -1293,7 +1293,7 @@ module ParsedInput =
                 walkType t; List.iter walkTypeConstraint typeConstraints
             | _ -> ()
     
-        and walkClause (SynMatchClause (pat, e1, _, e2, _, _)) =
+        and walkClause (SynMatchClause (pat=pat; whenExpr=e1; resultExpr=e2)) =
             walkPat pat
             walkExpr e2
             e1 |> Option.iter walkExpr

@@ -1316,10 +1316,10 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointAtTarget
+        debugPoint: DebugPointAtTarget *
+        trivia: SynMatchClauseTrivia
 
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range

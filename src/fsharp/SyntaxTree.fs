@@ -1182,14 +1182,14 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointAtTarget
+        debugPoint: DebugPointAtTarget *
+        trivia: SynMatchClauseTrivia
 
     member this.RangeOfGuardAndRhs =
         match this with
-        | SynMatchClause(_, eo, _, e, _, _) ->
+        | SynMatchClause(whenExpr=eo; resultExpr=e) ->
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range

@@ -1627,7 +1627,7 @@ match foo with
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ ArrowRange = Some mArrow }) ]))
         ]) ])) ->
             assertRange (3, 10) (3, 12) mArrow
         | _ -> Assert.Fail "Could not get valid AST"
@@ -1642,7 +1642,7 @@ match foo with
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(arrow = Some mArrow) ]))
+            SynModuleDecl.DoExpr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ ArrowRange = Some mArrow }) ]))
         ]) ])) ->
             assertRange (3, 31) (3, 33) mArrow
         | _ -> Assert.Fail "Could not get valid AST"

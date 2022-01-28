@@ -28,3 +28,8 @@ type SynExprIfThenElseTrivia =
 type SynExprLambdaTrivia =
     { ArrowRange: range option }
     static member Zero: SynExprLambdaTrivia = { ArrowRange = None }
+
+[<NoEquality; NoComparison>]
+type SynMatchClauseTrivia =
+    { ArrowRange: range option }
+    static member Zero: SynMatchClauseTrivia = { ArrowRange = None }

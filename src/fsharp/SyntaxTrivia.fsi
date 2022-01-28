@@ -52,3 +52,12 @@ type SynExprLambdaTrivia =
         ArrowRange: range option
     }
     static member Zero: SynExprLambdaTrivia
+
+/// Represents additional information for SynMatchClause
+[<NoEquality; NoComparison>]
+type SynMatchClauseTrivia =
+    {
+        /// The syntax range of the `->` token.
+        ArrowRange: range option
+    }
+    static member Zero: SynMatchClauseTrivia
