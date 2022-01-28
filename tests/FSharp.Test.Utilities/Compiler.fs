@@ -41,16 +41,15 @@ module rec Compiler =
         override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
 
     type FSharpCompilationSource =
-        { Source:         TestType
-          Baseline:       Baseline option
-          Options:        string list
-          OutputType:     CompileOutput
-          OutputDirectory:DirectoryInfo option
-          SourceKind:     SourceKind
-          Name:           string option
-          IgnoreWarnings: bool
-          References:     CompilationUnit list
-          CompileDirectory: string option }
+        { Source:          TestType
+          Baseline:        Baseline option
+          Options:         string list
+          OutputType:      CompileOutput
+          OutputDirectory: DirectoryInfo option
+          SourceKind:      SourceKind
+          Name:            string option
+          IgnoreWarnings:  bool
+          References:      CompilationUnit list }
         override this.ToString() = match this.Name with | Some n -> n | _ -> (sprintf "%A" this)
 
     type CSharpCompilationSource =
@@ -147,16 +146,15 @@ module rec Compiler =
         match source with
         | null -> failwith "Source cannot be null"
         | _ ->
-            { Source         = Text source
-              Baseline       = None
-              Options        = defaultOptions
-              OutputType     = Library
-              OutputDirectory= None
-              SourceKind     = kind
-              Name           = None
-              IgnoreWarnings = false
-              References     = []
-              CompileDirectory= None }
+            { Source          = Text source
+              Baseline        = None
+              Options         = defaultOptions
+              OutputType      = Library
+              OutputDirectory = None
+              SourceKind      = kind
+              Name            = None
+              IgnoreWarnings  = false
+              References      = [] }
 
     let private csFromString (source: string) : CSharpCompilationSource =
         match source with
@@ -218,8 +216,7 @@ module rec Compiler =
           Name             = Some name
           IgnoreWarnings   = false
           References       = []
-          OutputDirectory  = None
-          CompileDirectory = Some compileDirectory }
+          OutputDirectory  = Some(DirectoryInfo(compileDirectory)) }
         |> FS
 
     let CSharp (source: string) : CompilationUnit =

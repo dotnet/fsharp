@@ -1107,6 +1107,17 @@ let canGenMethodDef cenv (md: ILMethodDef) =
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
+let canGenFieldDef cenv (fd: ILFieldDef) =
+    if not cenv.referenceAssemblyOnly then
+        true
+    else
+        match fd.Access with
+        | ILMemberAccess.Public -> true
+        // When emitting a reference assembly, we only generate internal fields if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+        | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
+            when cenv.hasInternalsVisibleToAttrib -> true
+        | _ -> false
+
 let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
     let flags =
@@ -1142,7 +1153,8 @@ and GetKeyForFieldDef tidx (fd: ILFieldDef) =
     FieldDefKey (tidx, fd.Name, fd.FieldType)
 
 and GenFieldDefPass2 cenv tidx fd =
-    ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey: FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
+    if canGenFieldDef cenv fd then
+        ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey: FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
 and GetKeyForMethodDef cenv tidx (md: ILMethodDef) =
     MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
@@ -2399,38 +2411,39 @@ let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) =
 and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.FieldType
 
 and GenFieldDefPass3 cenv env fd =
-    let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
-    GenCustomAttrsPass3Or4 cenv (hca_FieldDef, fidx) fd.CustomAttrs
-    // Write FieldRVA table - fixups into data section done later
-    match fd.Data with
-    | None -> ()
-    | Some b ->
-        let offs = cenv.data.Position
-        cenv.data.EmitBytes b
-        AddUnsharedRow cenv TableNames.FieldRVA
-            (UnsharedRow [| Data (offs, false); SimpleIndex (TableNames.Field, fidx) |]) |> ignore
-    // Write FieldMarshal table
-    match fd.Marshal with
-    | None -> ()
-    | Some ntyp ->
-        AddUnsharedRow cenv TableNames.FieldMarshal
-              (UnsharedRow [| HasFieldMarshal (hfm_FieldDef, fidx)
-                              Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
-    // Write Content table
-    match fd.LiteralValue with
-    | None -> ()
-    | Some i ->
-        AddUnsharedRow cenv TableNames.Constant
-              (UnsharedRow
-                  [| GetFieldInitFlags i
-                     HasConstant (hc_FieldDef, fidx)
-                     Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
-    // Write FieldLayout table
-    match fd.Offset with
-    | None -> ()
-    | Some offset ->
-        AddUnsharedRow cenv TableNames.FieldLayout
-              (UnsharedRow [| ULong offset; SimpleIndex (TableNames.Field, fidx) |]) |> ignore
+    if canGenFieldDef cenv fd then
+        let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
+        GenCustomAttrsPass3Or4 cenv (hca_FieldDef, fidx) fd.CustomAttrs
+        // Write FieldRVA table - fixups into data section done later
+        match fd.Data with
+        | None -> ()
+        | Some b ->
+            let offs = cenv.data.Position
+            cenv.data.EmitBytes b
+            AddUnsharedRow cenv TableNames.FieldRVA
+                (UnsharedRow [| Data (offs, false); SimpleIndex (TableNames.Field, fidx) |]) |> ignore
+        // Write FieldMarshal table
+        match fd.Marshal with
+        | None -> ()
+        | Some ntyp ->
+            AddUnsharedRow cenv TableNames.FieldMarshal
+                  (UnsharedRow [| HasFieldMarshal (hfm_FieldDef, fidx)
+                                  Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
+        // Write Content table
+        match fd.LiteralValue with
+        | None -> ()
+        | Some i ->
+            AddUnsharedRow cenv TableNames.Constant
+                  (UnsharedRow
+                      [| GetFieldInitFlags i
+                         HasConstant (hc_FieldDef, fidx)
+                         Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
+        // Write FieldLayout table
+        match fd.Offset with
+        | None -> ()
+        | Some offset ->
+            AddUnsharedRow cenv TableNames.FieldLayout
+                  (UnsharedRow [| ULong offset; SimpleIndex (TableNames.Field, fidx) |]) |> ignore
 
 
 // --------------------------------------------------------------------
@@ -3009,11 +3022,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
     let isDll = m.IsDLL
 
     let hasInternalsVisibleToAttrib =
-        m.CustomAttrs.AsArray
-        |> Array.exists (fun x ->
-            x.Method.MethodRef.Name = "InternalsVisibleToAttribute" &&
-            x.Method.MethodRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices"
-        )
+        (match m.Manifest with Some manifest -> manifest.CustomAttrs | None -> m.CustomAttrs).AsArray
+        |> Array.exists (fun x -> x.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.InternalsVisibleToAttribute")
 
     let m =
         // Emit System.Runtime.CompilerServices.ReferenceAssemblyAttribute as an assembly-level attribute when generating a reference assembly.

@@ -474,7 +474,6 @@ extends [runtime]System.Object
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 myInternalValue
     .method public specialname rtspecialname 
    instance void  .ctor() cil managed
     {
@@ -485,4 +484,38 @@ extends [runtime]System.Object
     } 
 
   }"""]
-    // TODO: Add tests for Internal types (+IVT), (private, internal, public) fields, properties (+ different visibility for getters and setters), events + different combinations.
+
+    [<Test>]
+    let ``Internal function is emitted when IVT is present`` () =
+        FSharp """
+module ReferenceAssembly
+
+open System.Runtime.CompilerServices
+
+[<assembly: InternalsVisibleTo("Test")>]
+do ()
+
+let internal foo () = ()
+"""
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            ".custom instance void [runtime]System.Runtime.CompilerServices.InternalsVisibleToAttribute::.ctor(string) = ( 01 00 04 54 65 73 74 00 00 )"
+            referenceAssemblyAttributeExpectedIL
+            """
+.class public abstract auto ansi sealed ReferenceAssembly
+        extends [runtime]System.Object
+{
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+    .method assembly static void  foo() cil managed
+    {
+        
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+    } 
+    
+} 
+            """]
+    // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

@@ -90,7 +90,6 @@ type DirectoryAttribute(dir: string) =
           Name           = Some fs
           IgnoreWarnings = false
           References     = []
-          CompileDirectory = if outputDirectory.IsSome then Some(outputDirectory.Value.FullName) else None
           OutputDirectory  = outputDirectory } |> FS
 
     member _.Includes with get() = includes and set v = includes <- v
