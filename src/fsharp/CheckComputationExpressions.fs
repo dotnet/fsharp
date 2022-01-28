@@ -1409,10 +1409,10 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let innerExpr = transNoQueryOps innerComp
 
             let innerExpr =
-                    match spTry with
-                    | DebugPointAtTry.Yes _ ->
-                        SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
-                    | _ -> innerExpr
+                match spTry with
+                | DebugPointAtTry.Yes _ ->
+                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
+                | _ -> innerExpr
                 
             let callExpr = 
                 mkSynCall "TryWith" mTry [

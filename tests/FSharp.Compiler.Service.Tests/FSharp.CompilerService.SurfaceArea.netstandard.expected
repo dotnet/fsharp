@@ -5290,28 +5290,6 @@ FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtSequential: System.String ToString()
-FSharp.Compiler.Syntax.DebugPointAtSwitch
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags: Int32 No
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags: Int32 Yes
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes: FSharp.Compiler.Text.Range Item
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes: FSharp.Compiler.Text.Range get_Item()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtSwitch)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(System.Object)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean IsNo
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean IsYes
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean get_IsNo()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean get_IsYes()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch NewYes(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch No
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch get_No()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 GetHashCode()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 Tag
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 get_Tag()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtTarget
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 Yes
