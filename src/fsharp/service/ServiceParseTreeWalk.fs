@@ -443,7 +443,7 @@ module SyntaxTraversal =
                     else
                     traverseSynExpr synExpr
 
-                | SynExpr.Lambda (_, _, synSimplePats, _, synExpr, _, _range) ->
+                | SynExpr.Lambda (args=synSimplePats; body=synExpr) ->
                     match synSimplePats with
                     | SynSimplePats.SimplePats(pats,_) ->
                         match visitor.VisitSimplePats(path, pats) with

@@ -23,3 +23,8 @@ type SynExprIfThenElseTrivia =
       ThenKeyword: range
       ElseKeyword: range option
       IfToThenRange: range }
+
+[<NoEquality; NoComparison>]
+type SynExprLambdaTrivia =
+    { ArrowRange: range option }
+    static member Zero: SynExprLambdaTrivia = { ArrowRange = None }

@@ -564,10 +564,10 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
-        range: range
+        range: range *
+        trivia: SynExprLambdaTrivia
 
     | MatchLambda of
         isExnMatch: bool *

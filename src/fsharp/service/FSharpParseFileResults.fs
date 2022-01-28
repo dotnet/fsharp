@@ -255,7 +255,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             // Capture the body of a lambda, often nested in a call to a collection function
-            | SynExpr.Lambda(_, _, _args, _, body, _, _) when rangeContainsPos body.Range pos -> 
+            | SynExpr.Lambda(body=body) when rangeContainsPos body.Range pos -> 
                 getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
             | SynExpr.Do(expr, range) when rangeContainsPos range pos ->

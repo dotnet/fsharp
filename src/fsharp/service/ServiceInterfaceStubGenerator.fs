@@ -802,7 +802,7 @@ module InterfaceStubGenerator =
                     walkExpr synExpr
                 | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
+                | SynExpr.Lambda (body=synExpr) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 

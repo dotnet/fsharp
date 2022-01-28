@@ -5,6 +5,7 @@ module FSharp.Compiler.SyntaxTreeOps
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -224,7 +225,7 @@ let rec SimplePatsOfPat synArgNameGenerator p =
 
 let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
     let nowPats, laterF = SimplePatsOfPat synArgNameGenerator pat
-    nowPats, SynExpr.Lambda (isMember, false, nowPats, None, appFunOpt laterF rhs, None, rhs.Range)
+    nowPats, SynExpr.Lambda (isMember, false, nowPats, appFunOpt laterF rhs, None, rhs.Range, SynExprLambdaTrivia.Zero)
 
 let private isSimplePattern pat =
     let _nowPats, laterF = SimplePatsOfPat (SynArgNameGenerator()) pat
@@ -253,8 +254,8 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats arrow rhs
         match spatsl with
         | [] -> rhs
         | h :: t ->
-            let expr = List.foldBack (fun spats e -> SynExpr.Lambda (isMember, true, spats, arrow, e, None, wholem)) t rhs
-            let expr = SynExpr.Lambda (isMember, false, h, arrow, expr, Some (pats, rhs), wholem)
+            let expr = List.foldBack (fun spats e -> SynExpr.Lambda (isMember, true, spats, e, None, wholem, { ArrowRange = arrow })) t rhs
+            let expr = SynExpr.Lambda (isMember, false, h, expr, Some (pats, rhs), wholem, { ArrowRange = arrow })
             expr
     spatsl, expr
 
@@ -325,7 +326,7 @@ let mkSynUnit m = SynExpr.Const (SynConst.Unit, m)
 let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
-    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynCompGenSimplePatVar (mkSynId m "unitVar")], m), None, e, None, m)
+    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynCompGenSimplePatVar (mkSynId m "unitVar")], m), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
@@ -509,7 +510,7 @@ module SynInfo =
         if retInfo.Attributes.Length > 0 then [] else
         let rec loop e =
             match e with
-            | SynExpr.Lambda (false, _, spats, _, rest, _, _) ->
+            | SynExpr.Lambda (fromMethod=false; args=spats; body=rest) ->
                 InferSynArgInfoFromSimplePats spats :: loop rest
             | _ -> []
         loop origRhsExpr

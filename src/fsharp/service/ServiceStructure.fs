@@ -375,7 +375,7 @@ module Structure =
             | SynExpr.While (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
-            | SynExpr.Lambda (_, _, pats, _, e, _, r) ->
+            | SynExpr.Lambda (args=pats; body=e; range=r) ->
                 match pats with
                 | SynSimplePats.SimplePats (_, pr)
                 | SynSimplePats.Typed (_, _, pr) ->

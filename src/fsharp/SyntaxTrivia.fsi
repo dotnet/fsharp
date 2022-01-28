@@ -43,3 +43,12 @@ type SynExprIfThenElseTrivia =
         /// The syntax range from the beginning of the `if` keyword till the end of the `then` keyword.
         IfToThenRange: range
     }
+
+/// Represents additional information for SynExpr.Lambda
+[<NoEquality; NoComparison>]
+type SynExprLambdaTrivia =
+    {
+        /// The syntax range of the `->` token.
+        ArrowRange: range option
+    }
+    static member Zero: SynExprLambdaTrivia

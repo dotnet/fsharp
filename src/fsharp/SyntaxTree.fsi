@@ -694,10 +694,10 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
-        range: range
+        range: range *
+        trivia: SynExprLambdaTrivia
 
     /// F# syntax: function pat1 -> expr | ... | patN -> exprN
     | MatchLambda of

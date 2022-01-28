@@ -2302,7 +2302,7 @@ module Lambdas =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.Lambda(arrow = Some mArrow)
+                expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
             )
         ]) ])) ->
             assertRange (1, 6) (1, 8) mArrow
@@ -2319,7 +2319,7 @@ module Lambdas =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.Lambda(arrow = Some mArrow)
+                expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
             )
         ]) ])) ->
             assertRange (2, 28) (2, 30) mArrow
@@ -2334,7 +2334,7 @@ module Lambdas =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.Lambda(arrow = Some mArrow)
+                expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
             )
         ]) ])) ->
             assertRange (1, 14) (1, 16) mArrow
@@ -2349,7 +2349,7 @@ module Lambdas =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.Lambda(arrow = Some mArrow)
+                expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
             )
         ]) ])) ->
             assertRange (1, 11) (1, 13) mArrow
@@ -2368,7 +2368,7 @@ module Lambdas =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.DoExpr(
-                expr = SynExpr.Lambda(arrow = Some mArrow)
+                expr = SynExpr.Lambda(trivia={ ArrowRange = Some mArrow })
             )
         ]) ])) ->
             assertRange (4, 4) (4, 6) mArrow

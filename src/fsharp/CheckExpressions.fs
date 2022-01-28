@@ -2559,7 +2559,7 @@ module EventDeclarationNormalization =
 
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
-                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), _, trueRhsExpr, _, m) ->
+                   | SynExpr.Lambda (args=SynSimplePats.SimplePats([], _); body=trueRhsExpr; range=m) ->
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -6215,7 +6215,7 @@ and RewriteRangeExpr expr =
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, spats, _, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names

@@ -1319,7 +1319,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
-            | SynExpr.Lambda (_, _, pats, _, e, _, _) ->
+            | SynExpr.Lambda (args=pats; body=e) ->
                 walkSimplePats pats
                 walkExpr e
             | SynExpr.New (_, t, e, _)
