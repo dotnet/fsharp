@@ -427,7 +427,7 @@ module Set =
     /// <example id="set-filter">
     /// <code lang="fsharp">
     /// let set = Set.empty.Add(1).Add(2).Add(3).Add(4)
-    /// printfn $"The set with even numbers is {Set.filter (fun x -> x % 2 = 0) set" 
+    /// printfn $"The set with even numbers is {Set.filter (fun x -> x % 2 = 0) set}" 
     /// </code>
     /// The sample evaluates to the following output: <c>The set with even numbers is set [2; 4]</c>
     /// </example>
