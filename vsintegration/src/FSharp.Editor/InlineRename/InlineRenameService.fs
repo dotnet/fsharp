@@ -89,7 +89,7 @@ type internal InlineRenameInfo
     override _.FullDisplayName = try symbolUse.Symbol.FullName with _ -> symbolUse.Symbol.DisplayName
     override _.Glyph = Glyph.MethodPublic
     override _.GetFinalSymbolName replacementText = replacementText
-    override _.DefinitionLocations = ImmutableArray.Create(new FSharpDocumentSpan(document, triggerSpan))
+    override _.DefinitionLocations = ImmutableArray.Create(new FSharpInlineRenameLocation(document, triggerSpan))
 
     override _.GetReferenceEditSpan(location, cancellationToken) =
         let text = getDocumentText location.Document cancellationToken
@@ -156,5 +156,5 @@ type internal InlineRenameService
         asyncMaybe {
             return! InlineRenameService.GetInlineRenameInfo(document, position)
         }
-        |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)
+        |> Async.map (Option.defaultValue null)
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
