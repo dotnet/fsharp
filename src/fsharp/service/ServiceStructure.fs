@@ -528,7 +528,7 @@ module Structure =
                     parseAttributes attrs
             | SynTypeDefnSimpleRepr.Union (_, cases, ur) ->
                 rcheck Scope.UnionDefn Collapse.Same ur ur
-                for SynUnionCase (attrs, _, _, _, _, cr) in cases do
+                for SynUnionCase (attributes=attrs; range=cr) in cases do
                     rcheck Scope.UnionCase Collapse.Below cr cr
                     parseAttributes attrs
             | _ -> ()

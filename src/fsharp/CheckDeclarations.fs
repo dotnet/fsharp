@@ -469,7 +469,7 @@ module TcRecdUnionAndEnumDeclarations =
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m, _)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -2911,7 +2911,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -2922,7 +2922,7 @@ module TcExceptionDeclarations =
         let doc = doc.ToXmlDoc(true, Some [])
         Construct.NewExn cpath id vis repr attrs doc
 
-    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(_, _, args, _, _, _), reprIdOpt, _, _, m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
         let g = cenv.g 
         let args = match args with SynUnionCaseKind.Fields args -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
         let ad = env.AccessRights
@@ -3111,7 +3111,7 @@ module EstablishTypeDefinitionCores =
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
 
-              for SynUnionCase (_, _, args, _, _, m) in unionCases do 
+              for SynUnionCase (caseType=args; range=m) in unionCases do 
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
                   for SynField(_, _, _, ty, _, _, _, m) in flds do 
@@ -5225,7 +5225,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _, doc, vis, m)) = exnRepr
+                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
                       decls, (false, false)
@@ -5562,7 +5562,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _repr, doc, vis, m)) = repr
+                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, None, members, None, m)) ]
                   decls, (false, false, attrs)

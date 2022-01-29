@@ -2289,7 +2289,7 @@ tyconDefnOrSpfnSimpleRepr:
            SynTypeDefnSimpleRepr.Enum ($3 |> List.choose (function 
                                               | Choice1Of2 data ->  
                                                 Some(data) 
-                                              | Choice2Of2(SynUnionCase(_, _, _, _, _, m)) -> 
+                                              | Choice2Of2(SynUnionCase(range=m)) -> 
                                                 errorR(Error(FSComp.SR.parsAllEnumFieldsRequireValues(), m)); None),
                            mWhole)
        ) else 
@@ -2499,45 +2499,56 @@ unionTypeRepr:
   | firstUnionCaseDecl 
      { [$1] } 
 
-barAndgrabXmlDoc : 
+barAndgrabXmlDoc: 
   | BAR
-     { grabXmlDoc(parseState, [], 1) }
+     { let mBar = rhs parseState 1
+       grabXmlDoc(parseState, [], 1), mBar }
 
 attrUnionCaseDecls: 
   | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls
-     { (fun xmlDoc -> $1 xmlDoc  :: $3 $2) } 
+     { (fun xmlDocAndBar -> $1 xmlDocAndBar  :: $3 $2) } 
 
   | attrUnionCaseDecl
-     { (fun xmlDoc -> [ $1 xmlDoc ]) }
+     { (fun xmlDocAndBar -> [ $1 xmlDocAndBar ]) }
 
 /* The core of a union case definition */
 attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs parseState 3
-        (fun xmlDoc -> Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl))) }
+        (fun (xmlDoc, mBar) ->
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName OF unionCaseRepr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
-        (fun xmlDoc -> Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields $5, xmlDoc, None, mDecl))) }
+        (fun (xmlDoc, mBar) ->
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields $5, xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName OF recover
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 4
-        (fun xmlDoc -> Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl))) }
+        (fun (xmlDoc, mBar) -> 
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName COLON topType
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
         let mDecl = rhs2 parseState 1 5
-        (fun xmlDoc -> Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.FullType $5, xmlDoc, None, mDecl))) }
+        (fun (xmlDoc, mBar) -> 
+            let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+            Choice2Of2 (SynUnionCase ( $1, $3, SynUnionCaseKind.FullType $5, xmlDoc, None, mDecl, trivia))) }
 
   | opt_attributes opt_access unionCaseName EQUALS constant
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mEquals = rhs parseState 4
         let mDecl = rhs2 parseState 1 5
-        (fun xmlDoc -> Choice1Of2 (SynEnumCase ( $1, $3, mEquals, fst $5, snd $5, xmlDoc, mDecl))) } 
+        (fun (xmlDoc, mBar) -> 
+            let trivia: SynEnumCaseTrivia = { BarRange = Some mBar; EqualsRange = mEquals }
+            Choice1Of2 (SynEnumCase ( $1, $3, fst $5, snd $5, xmlDoc, mDecl, trivia))) } 
 
 /* The name of a union case */
 unionCaseName: 
@@ -2552,22 +2563,26 @@ unionCaseName:
 
 firstUnionCaseDeclOfMany: 
   | ident opt_OBLOCKSEP
-      { Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields [], grabXmlDoc(parseState, [], 1), None, rhs parseState 1)) }
+      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+        Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields [], grabXmlDoc(parseState, [], 1), None, rhs parseState 1, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
-        Choice1Of2 (SynEnumCase ([], $1, mEquals, fst $3, snd $3, grabXmlDoc(parseState, [], 1), rhs2 parseState 1 3)) }
+        let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, grabXmlDoc(parseState, [], 1), rhs2 parseState 1 3, trivia)) }
 
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
 
 firstUnionCaseDecl: 
   | ident OF unionCaseRepr  
-     { Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields $3, grabXmlDoc(parseState, [], 1), None, rhs2 parseState 1 3)) }
+     { let trivia: SynUnionCaseTrivia = { BarRange = None } 
+       Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields $3, grabXmlDoc(parseState, [], 1), None, rhs2 parseState 1 3, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
-        Choice1Of2 (SynEnumCase ([], $1, mEquals, fst $3, snd $3, grabXmlDoc(parseState, [], 1), rhs2 parseState 1 3))  }
+        let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, grabXmlDoc(parseState, [], 1), rhs2 parseState 1 3, trivia))  }
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements
@@ -2632,13 +2647,13 @@ exconCore:
 /* Part of an exception definition */
 exconIntro:
   | ident
-      { SynUnionCase([], $1, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState) }
+      { SynUnionCase([], $1, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
   | ident OF unionCaseRepr
-      { SynUnionCase([], $1, SynUnionCaseKind.Fields $3, PreXmlDoc.Empty, None, lhs parseState) }
+      { SynUnionCase([], $1, SynUnionCaseKind.Fields $3, PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
   | ident OF recover
-      { SynUnionCase([], $1, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState) }
+      { SynUnionCase([], $1, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
 
 exconRepr: 
   | /* EMPTY */

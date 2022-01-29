@@ -677,7 +677,7 @@ module ParsedInput =
             | SynUnionCaseKind.Fields fields -> List.tryPick walkField fields
             | SynUnionCaseKind.FullType(t, _) -> walkType t
 
-        and walkUnionCase (SynUnionCase(Attributes attrs, _, t, _, _, _)) = 
+        and walkUnionCase (SynUnionCase(attributes=Attributes attrs; caseType=t)) = 
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkUnionCaseType t)
 
         and walkTypeDefnSimple = function
@@ -1482,7 +1482,7 @@ module ParsedInput =
             | SynUnionCaseKind.Fields fields -> List.iter walkField fields
             | SynUnionCaseKind.FullType (t, _) -> walkType t
     
-        and walkUnionCase (SynUnionCase(Attributes attrs, _, t, _, _, _)) =
+        and walkUnionCase (SynUnionCase(attributes=Attributes attrs; caseType=t)) =
             List.iter walkAttribute attrs
             walkUnionCaseType t
     

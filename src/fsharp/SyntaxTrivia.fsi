@@ -63,3 +63,21 @@ type SynMatchClauseTrivia =
         BarRange: range option
     }
     static member Zero: SynMatchClauseTrivia
+
+/// Represents additional information for 
+[<NoEquality; NoComparison>]
+type SynEnumCaseTrivia =
+    {
+        /// The syntax range of the `|` token.
+        BarRange: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range
+    }
+
+/// Represents additional information for SynUnionCase
+[<NoEquality; NoComparison>]
+type SynUnionCaseTrivia =
+    {
+        /// The syntax range of the `|` token.
+        BarRange: range option
+    }

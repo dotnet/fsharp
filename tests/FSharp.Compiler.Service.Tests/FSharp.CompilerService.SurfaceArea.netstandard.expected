@@ -6118,11 +6118,11 @@ FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynConst get_value()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynConst value
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynEnumCase NewSynEnumCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Syntax.SynEnumCase NewSynEnumCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range, FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia)
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia get_trivia()
+FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia trivia
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range Range
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range equalsRange
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_equalsRange()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range get_valueRange()
 FSharp.Compiler.Syntax.SynEnumCase: FSharp.Compiler.Text.Range range
@@ -8833,9 +8833,11 @@ FSharp.Compiler.Syntax.SynTypeDefnSimpleRepr: System.String ToString()
 FSharp.Compiler.Syntax.SynUnionCase
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.Ident ident
-FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynUnionCase NewSynUnionCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Syntax.SynUnionCaseKind, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynUnionCase NewSynUnionCase(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynAttributeList], FSharp.Compiler.Syntax.Ident, FSharp.Compiler.Syntax.SynUnionCaseKind, FSharp.Compiler.Xml.PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia)
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynUnionCaseKind caseType
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Syntax.SynUnionCaseKind get_caseType()
+FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia get_trivia()
+FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia trivia
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynUnionCase: FSharp.Compiler.Text.Range get_range()
@@ -9054,6 +9056,13 @@ FSharp.Compiler.Syntax.TyparStaticReq: Int32 GetHashCode(System.Collections.IEqu
 FSharp.Compiler.Syntax.TyparStaticReq: Int32 Tag
 FSharp.Compiler.Syntax.TyparStaticReq: Int32 get_Tag()
 FSharp.Compiler.Syntax.TyparStaticReq: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: FSharp.Compiler.Text.Range EqualsRange
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: FSharp.Compiler.Text.Range get_EqualsRange()
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] BarRange
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynEnumCaseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia: Boolean IsElif
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia: Boolean get_IsElif()
@@ -9101,6 +9110,11 @@ FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia
+FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] BarRange
+FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
+FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.Text.ISourceText
 FSharp.Compiler.Text.ISourceText: Boolean ContentEquals(FSharp.Compiler.Text.ISourceText)
 FSharp.Compiler.Text.ISourceText: Boolean SubTextEquals(System.String, Int32)

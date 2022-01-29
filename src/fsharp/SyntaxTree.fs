@@ -1398,11 +1398,11 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident *
-        equalsRange: range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynEnumCaseTrivia
 
     member this.Range =
         match this with
@@ -1417,7 +1417,8 @@ type SynUnionCase =
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynUnionCaseTrivia
 
     member this.Range =
         match this with

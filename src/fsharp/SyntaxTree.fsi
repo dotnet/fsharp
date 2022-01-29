@@ -1562,11 +1562,11 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident *
-        equalsRange: range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynEnumCaseTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1581,7 +1581,8 @@ type SynUnionCase =
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynUnionCaseTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

@@ -34,3 +34,11 @@ type SynMatchClauseTrivia =
     { ArrowRange: range option
       BarRange: range option }
     static member Zero: SynMatchClauseTrivia = { ArrowRange = None; BarRange = None }
+
+[<NoEquality; NoComparison>]
+type SynEnumCaseTrivia =
+    { BarRange: range option
+      EqualsRange: range }
+
+[<NoEquality; NoComparison>]
+type SynUnionCaseTrivia = { BarRange: range option }
