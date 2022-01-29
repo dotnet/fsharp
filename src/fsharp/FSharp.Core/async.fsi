@@ -1142,7 +1142,7 @@ namespace Microsoft.FSharp.Control
             /// open System.Net
             /// open System
             /// let client = new WebClient()
-            /// Uri("https://www.w3.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronouslyl
+            /// Uri("https://www.w3.com") |> fun x -> client.AsyncDownloadFile(x, "output.html") |> Async.RunSynchronously
             /// </code>
             /// This will download the server response as a file and output it as output.html
             /// </example>
