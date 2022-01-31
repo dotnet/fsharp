@@ -5,6 +5,7 @@ namespace rec FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SyntaxTrivia
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison>]
@@ -693,10 +694,10 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
-        range: range
+        range: range *
+        trivia: SynExprLambdaTrivia
 
     /// F# syntax: function pat1 -> expr | ... | patN -> exprN
     | MatchLambda of
@@ -760,15 +761,12 @@ type SynExpr =
 
     /// F# syntax: try expr with pat -> expr
     | TryWith of
-        tryKeywordRange: range *
         tryExpr: SynExpr *
-        tryRange: range *
-        withKeywordRange: range *
         withCases: SynMatchClause list *
-        withRange: range *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        withDebugPoint: DebugPointAtWith
+        withDebugPoint: DebugPointAtWith *
+        trivia: SynExprTryWithTrivia
 
     /// F# syntax: try expr finally expr
     | TryFinally of
@@ -776,7 +774,8 @@ type SynExpr =
         finallyExpr: SynExpr *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        finallyDebugPoint: DebugPointAtFinally
+        finallyDebugPoint: DebugPointAtFinally *
+        trivia: SynExprTryFinallyTrivia
 
     /// F# syntax: lazy expr
     | Lazy of
@@ -796,17 +795,13 @@ type SynExpr =
     /// F# syntax: if expr then expr
     /// F# syntax: if expr then expr else expr
     | IfThenElse of
-        ifKeyword: range *
-        isElif: bool *
         ifExpr: SynExpr *
-        thenKeyword: range *
         thenExpr: SynExpr *
-        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
-        ifToThenRange: range *
-        range: range
+        range: range *
+        trivia: SynExprIfThenElseTrivia
 
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
@@ -1321,10 +1316,10 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointAtTarget
+        debugPoint: DebugPointAtTarget *
+        trivia: SynMatchClauseTrivia
 
     /// Gets the syntax range of part of this construct
     member RangeOfGuardAndRhs: range
@@ -1567,11 +1562,11 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident *
-        equalsRange: range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynEnumCaseTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1586,7 +1581,8 @@ type SynUnionCase =
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynUnionCaseTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

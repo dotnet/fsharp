@@ -802,7 +802,7 @@ module InterfaceStubGenerator =
                     walkExpr synExpr
                 | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
+                | SynExpr.Lambda (body=synExpr) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
@@ -830,13 +830,13 @@ module InterfaceStubGenerator =
                 | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
-                | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 
+                | SynExpr.TryFinally (tryExpr=synExpr1; finallyExpr=synExpr2) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (ifExpr=synExpr1; thenExpr=synExpr2; elseExpr=synExprOpt) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]

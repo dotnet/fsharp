@@ -5,6 +5,7 @@ module FSharp.Compiler.SyntaxTreeOps
 open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
@@ -179,7 +180,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
             | SynPat.Wild _ -> None
             | _ ->
                 Some (fun e ->
-                    let clause = SynMatchClause(p, None, None, e, m, DebugPointAtTarget.No)
+                    let clause = SynMatchClause(p, None, e, m, DebugPointAtTarget.No, SynMatchClauseTrivia.Zero)
                     let artificialMatchRange = (unionRanges m e.Range).MakeSynthetic()
                     SynExpr.Match (artificialMatchRange, DebugPointAtBinding.NoneAtInvisible, item, artificialMatchRange, [clause], artificialMatchRange))
 
@@ -224,7 +225,7 @@ let rec SimplePatsOfPat synArgNameGenerator p =
 
 let PushPatternToExpr synArgNameGenerator isMember pat (rhs: SynExpr) =
     let nowPats, laterF = SimplePatsOfPat synArgNameGenerator pat
-    nowPats, SynExpr.Lambda (isMember, false, nowPats, None, appFunOpt laterF rhs, None, rhs.Range)
+    nowPats, SynExpr.Lambda (isMember, false, nowPats, appFunOpt laterF rhs, None, rhs.Range, SynExprLambdaTrivia.Zero)
 
 let private isSimplePattern pat =
     let _nowPats, laterF = SimplePatsOfPat (SynArgNameGenerator()) pat
@@ -253,8 +254,8 @@ let PushCurriedPatternsToExpr synArgNameGenerator wholem isMember pats arrow rhs
         match spatsl with
         | [] -> rhs
         | h :: t ->
-            let expr = List.foldBack (fun spats e -> SynExpr.Lambda (isMember, true, spats, arrow, e, None, wholem)) t rhs
-            let expr = SynExpr.Lambda (isMember, false, h, arrow, expr, Some (pats, rhs), wholem)
+            let expr = List.foldBack (fun spats e -> SynExpr.Lambda (isMember, true, spats, e, None, wholem, { ArrowRange = arrow })) t rhs
+            let expr = SynExpr.Lambda (isMember, false, h, expr, Some (pats, rhs), wholem, { ArrowRange = arrow })
             expr
     spatsl, expr
 
@@ -325,7 +326,7 @@ let mkSynUnit m = SynExpr.Const (SynConst.Unit, m)
 let mkSynUnitPat m = SynPat.Const(SynConst.Unit, m)
 
 let mkSynDelay m e =
-    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynCompGenSimplePatVar (mkSynId m "unitVar")], m), None, e, None, m)
+    SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynCompGenSimplePatVar (mkSynId m "unitVar")], m), e, None, m, SynExprLambdaTrivia.Zero)
 
 let mkSynAssign (l: SynExpr) (r: SynExpr) =
     let m = unionRanges l.Range r.Range
@@ -509,7 +510,7 @@ module SynInfo =
         if retInfo.Attributes.Length > 0 then [] else
         let rec loop e =
             match e with
-            | SynExpr.Lambda (false, _, spats, _, rest, _, _) ->
+            | SynExpr.Lambda (fromMethod=false; args=spats; body=rest) ->
                 InferSynArgInfoFromSimplePats spats :: loop rest
             | _ -> []
         loop origRhsExpr
@@ -625,7 +626,7 @@ let rec synExprContainsError inpExpr =
     and walkBinds es = es |> List.exists walkBind
 
     and walkMatchClauses cl =
-        cl |> List.exists (fun (SynMatchClause(_, whenExpr, _, e, _, _)) -> walkExprOpt whenExpr || walkExpr e)
+        cl |> List.exists (fun (SynMatchClause(whenExpr=whenExpr; resultExpr=e)) -> walkExprOpt whenExpr || walkExpr e)
 
     and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
 
@@ -716,7 +717,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TryWith (tryExpr=e; withCases=cl) ->
               walkExpr e  || walkMatchClauses cl
 
-          | SynExpr.TryFinally (e1, e2, _, _, _) ->
+          | SynExpr.TryFinally (tryExpr=e1; finallyExpr=e2) ->
               walkExpr e1 || walkExpr e2
 
           | SynExpr.Sequential (_, _, e1, e2, _) ->
@@ -725,7 +726,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.SequentialOrImplicitYield (_, e1, e2, _, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.IfThenElse (_, _, e1, _, e2, _, e3opt, _, _, _, _) ->
+          | SynExpr.IfThenElse (ifExpr=e1; thenExpr=e2; elseExpr=e3opt) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 
           | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 

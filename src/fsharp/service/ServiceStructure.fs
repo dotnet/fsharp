@@ -319,7 +319,7 @@ module Structure =
                     rcheck Scope.ObjExpr Collapse.Below wholeRange collapse
                 parseBindings bindings
                 parseExprInterfaces extraImpls
-            | SynExpr.TryWith (tryExpr=e; withCases=matchClauses; range=wholeRange; tryDebugPoint=tryPoint; withDebugPoint=withPoint) ->
+            | SynExpr.TryWith (e, matchClauses, wholeRange, tryPoint, withPoint, _trivia) ->
                 match tryPoint, withPoint with
                 | DebugPointAtTry.Yes tryRange,  DebugPointAtWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange
@@ -334,7 +334,7 @@ module Structure =
                 | _ -> ()
                 parseExpr e
                 List.iter parseMatchClause matchClauses
-            | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint) ->
+            | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint, _trivia) ->
                 match tryPoint, finallyPoint with
                 | DebugPointAtTry.Yes tryRange, DebugPointAtFinally.Yes finallyRange ->
                     let collapse = Range.endToEnd tryRange finallyExpr.Range
@@ -346,7 +346,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (_, _, ifExpr, _, thenExpr, _, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
+            | SynExpr.IfThenElse (ifExpr=ifExpr; thenExpr=thenExpr; elseExpr=elseExprOpt; spIfToThen=spIfToThen; range=r; trivia=trivia) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->
                     // Outline the entire IfThenElse
@@ -354,8 +354,8 @@ module Structure =
                     let collapse = Range.endToEnd  ifExpr.Range r
                     rcheck Scope.IfThenElse Collapse.Below fullrange collapse
                     // Outline the `then` scope
-                    let thenRange = Range.endToEnd (Range.modEnd -4  ifToThenRange)   thenExpr.Range
-                    let thenCollapse = Range.endToEnd ifToThenRange thenExpr.Range
+                    let thenRange = Range.endToEnd (Range.modEnd -4 trivia.IfToThenRange)   thenExpr.Range
+                    let thenCollapse = Range.endToEnd trivia.IfToThenRange thenExpr.Range
                     rcheck Scope.ThenInIfThenElse Collapse.Below thenRange thenCollapse
                 | _ -> ()
                 parseExpr ifExpr
@@ -375,7 +375,7 @@ module Structure =
             | SynExpr.While (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
-            | SynExpr.Lambda (_, _, pats, _, e, _, r) ->
+            | SynExpr.Lambda (args=pats; body=e; range=r) ->
                 match pats with
                 | SynSimplePats.SimplePats (_, pr)
                 | SynSimplePats.Typed (_, _, pr) ->
@@ -405,7 +405,7 @@ module Structure =
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
             | _ -> ()
 
-        and parseMatchClause (SynMatchClause(synPat, _, _, e, _r, _) as clause) =
+        and parseMatchClause (SynMatchClause(pat=synPat; resultExpr=e) as clause) =
             let rec getLastPat = function
                 | SynPat.Or(_, pat, _) -> getLastPat pat
                 | x -> x
@@ -528,7 +528,7 @@ module Structure =
                     parseAttributes attrs
             | SynTypeDefnSimpleRepr.Union (_, cases, ur) ->
                 rcheck Scope.UnionDefn Collapse.Same ur ur
-                for SynUnionCase (attrs, _, _, _, _, cr) in cases do
+                for SynUnionCase (attributes=attrs; range=cr) in cases do
                     rcheck Scope.UnionCase Collapse.Below cr cr
                     parseAttributes attrs
             | _ -> ()
