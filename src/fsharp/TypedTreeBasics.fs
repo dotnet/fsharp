@@ -445,7 +445,14 @@ let canAccessFrom (TAccess x) cpath =
     x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
 let canAccessFromEverywhere (TAccess x) = x.IsEmpty
+
 let canAccessFromSomewhere (TAccess _) = true
+
+let hasInternalsVisibleToAttribute _ivts = false // TBD
+
+let canAccessFromSomewhereOutside ivts access = 
+    canAccessFromEverywhere access || hasInternalsVisibleToAttribute ivts
+
 let isLessAccessible (TAccess aa) (TAccess bb) = 
     not (aa |> List.forall(fun a -> bb |> List.exists (fun b -> canAccessCompPathFrom a b)))
 

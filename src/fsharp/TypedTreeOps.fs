@@ -5264,6 +5264,11 @@ and remapParentRef tyenv p =
     | ParentNone -> ParentNone
     | Parent x -> Parent (x |> remapTyconRef tyenv.tyconRefRemap)
 
+and filterImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) = 
+    let vals = x.AllValsAndMembers |> QueueList.filter fv
+    let tycons = x.AllEntities |> QueueList.filter ft
+    ModuleOrNamespaceType(x.ModuleOrNamespaceKind, vals, tycons)
+    
 and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) = 
     let vals = x.AllValsAndMembers |> QueueList.map fv
     let tycons = x.AllEntities |> QueueList.map ft
@@ -9046,26 +9051,58 @@ let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
     allRemap
 
 //--------------------------------------------------------------------------
-// Apply a "local to nonlocal" renaming to a module type. This can't use
-// remap_mspec since the remapping we want isn't to newly created nodes
-// but rather to remap to the nonlocal references. This is deliberately 
-// "breaking" the binding structure implicit in the module type, which is
-// the whole point - one things are rewritten to use non local references then
-// the elements can be copied at will, e.g. when inlining during optimization.
+// Apply a "local to nonlocal" renaming to a module type and restrict
+// at the assembly boundary.
 //------------------------------------------------------------------------ 
 
-
 let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) = 
-    let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
-    let typarsR = LazyWithContext.NotLazy tps'
-    let attribsR = d.entity_attribs |> remapAttribs ctxt tmenvinner
-    let tyconReprR = d.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner
-    let tyconAbbrevR = d.TypeAbbrev |> Option.map (remapType tmenvinner)
-    let tyconTcaugR = d.entity_tycon_tcaug |> remapTyconAug tmenvinner
+    let tps', tmenvinner =
+        tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
+
+    let typarsR =
+        // NOTE: existing checks enforce that everything involved in a typar is at 
+        // least as accessible as the type definition.  So no restricting is needed
+        // for typars.
+        LazyWithContext.NotLazy tps'
+
+    let attribsR =
+        d.entity_attribs
+        |> List.filter (restrictAttrib ctxt)
+        |> remapAttribs ctxt tmenvinner
+
+    let tyconReprR =
+        d.entity_tycon_repr
+        |> restrictTyconRepr ctxt d.TypeReprAccessibility
+        |> remapTyconRepr ctxt tmenvinner
+
+    let tyconAbbrevR =
+        d.TypeAbbrev
+        // Turns out prior to F# 4.1 public abbreviations of private things could
+        // occur, a deprecation warning is now given, e.g.
+        // 
+        //  type private CPrivate() = class end
+        // 
+        // type AbbreviationPublic = CPrivate
+        //
+        // TODO - in this case refuse to emit reference assemblies
+        |> Option.map (remapType tmenvinner)
+
+    let tyconTcaugR =
+        d.entity_tycon_tcaug
+        |> restrictTyconAug ctxt
+        |> remapTyconAug tmenvinner
+
     let modulContentsR = 
-        MaybeLazy.Strict (d.entity_modul_contents.Value
-                          |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv))
-    let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
+        d.entity_modul_contents.Value
+        |> restrictImmediateValsAndTycons ctxt
+        |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv)
+        |> MaybeLazy.Strict
+
+    let exnInfoR =
+        d.ExceptionInfo
+        |> restrictExnInfo ctxt
+        |> remapTyconExnInfo ctxt tmenvinner
+
     { d with 
           entity_typars = typarsR
           entity_attribs = attribsR
@@ -9077,6 +9114,61 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
             | Some dd ->
                 Some { dd with entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
             | _ -> None }
+
+and restrictAttrib _ctxt _inp = true
+    // TODO: filter the attribute  by structure, e.g. if any part of its specification is private
+
+and restrictExnInfo _ctxt inp = inp
+    // NOTE: existing checks enforce that the exception reprsentation is at least as
+    // acessible as the exception type, so there is nothing to do here.
+
+and restrictTyconAug ctxt (x: TyconAugmentation) =
+    { x with 
+          // TODO: filter the generated hash/compare/equality
+          //
+          //tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+          //tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+          //tcaug_compare_withc = x.tcaug_compare_withc |> Option.map(remapValRef tmenv)
+          //tcaug_hash_and_equals_withc = x.tcaug_hash_and_equals_withc |> Option.map (mapTriple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv))
+
+          // TODO: filter the members
+          //tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
+          //tcaug_adhoc_list = x.tcaug_adhoc_list |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+
+          // Note, existing checks enforce that the base type is always as accessible as the type
+          // so no filtering needed for tcaug_super 
+          tcaug_interfaces =
+              x.tcaug_interfaces
+              |> List.filter (restrictInterface ctxt) } 
+
+and restrictInterface _ctxt (_ityp, _, _) = 
+    // TODO: check that ityp is at least as accessible as the enclosing type
+    true 
+
+and restrictTyconRepr _ctxt _reprAccess repr =
+    repr
+    // TBD
+//    match repr with
+//    | TFSharpObjectRepr of TyconObjModelData
+//    | TFSharpRecdRepr of TyconRecdFields
+//    | TFSharpUnionRepr of TyconUnionData 
+//    | TILObjectRepr of TILObjectReprData
+//    | TAsmRepr of ILType
+//    | TMeasureableRepr of TType
+//#if !NO_EXTENSIONTYPING
+//    | TProvidedTypeRepr of TProvidedTypeInfo
+//    | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
+//#endif
+//    | TNoRepr
+//    if canAccessFromSomewhereOutside "TBD" reprAccess then
+//        repr
+//    else TyconReprNone
+
+and restrictImmediateValsAndTycons _ctxt mty =
+    filterImmediateValsAndTycons
+        (fun tycon -> canAccessFromSomewhereOutside "TBD" tycon.Accessibility)
+        (fun vspec -> canAccessFromSomewhereOutside "TBD" vspec.Accessibility)
+        mty
 
 and remapTyconToNonLocal ctxt tmenv x = 
     x |> Construct.NewModifiedTycon (remapEntityDataToNonLocal ctxt tmenv)  

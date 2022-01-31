@@ -207,6 +207,8 @@ val canAccessFromEverywhere: Accessibility -> bool
 
 val canAccessFromSomewhere: Accessibility -> bool
 
+val canAccessFromSomewhereOutside: 'T -> Accessibility -> bool
+
 val isLessAccessible: Accessibility -> Accessibility -> bool
 
 /// Given (newPath, oldPath) replace oldPath by newPath in the TAccess.
