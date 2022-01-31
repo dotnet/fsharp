@@ -1091,7 +1091,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia))))
 
         // 'let binds in expr'
-        | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
+        | SynExpr.LetOrUse (isRec, false, binds, innerComp, m, trivia) ->
 
             // For 'query' check immediately
             if isQuery then
@@ -1118,7 +1118,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                         // error case
                         error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings(), mQueryOp)))
 
-            Some (trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill -> translatedCtxt (SynExpr.LetOrUse (isRec, false, binds, holeFill, m))))
+            Some (trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill -> translatedCtxt (SynExpr.LetOrUse (isRec, false, binds, holeFill, m, trivia))))
 
         // 'use x = expr in expr'
         | SynExpr.LetOrUse (isUse=true; bindings=[SynBinding (kind=SynBindingKind.Normal; headPat=pat; expr=rhsExpr; debugPoint=spBind)]; body=innerComp) ->
@@ -1566,11 +1566,11 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             | None -> None
             | Some elseExprOpt -> Some (SynExpr.IfThenElse (guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToEndOfElseBranch, trivia), None)
 
-        | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
+        | SynExpr.LetOrUse (isRec, false, binds, innerComp, m, trivia) ->
             match convertSimpleReturnToExpr varSpace innerComp with
             | None -> None
             | Some (_, Some _) -> None 
-            | Some (innerExpr, None) -> Some (SynExpr.LetOrUse (isRec, false, binds, innerExpr, m), None)
+            | Some (innerExpr, None) -> Some (SynExpr.LetOrUse (isRec, false, binds, innerExpr, m, trivia), None)
 
         | OptionalSequential (CustomOperationClause (nm, _, _, mClause, _), _) when customOperationMaintainsVarSpaceUsingBind nm -> 
 
@@ -1607,7 +1607,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.Sequential (_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
         | SynExpr.IfThenElse (thenExpr=thenComp; elseExpr=elseCompOpt) -> 
              isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
-        | SynExpr.LetOrUse (_, _, _, innerComp, _) -> isSimpleExpr innerComp
+        | SynExpr.LetOrUse (body=innerComp) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
         | SynExpr.Match (clauses=clauses) ->
             clauses |> List.forall (fun (SynMatchClause(resultExpr = innerComp)) -> isSimpleExpr innerComp)
@@ -1840,7 +1840,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             Some(mkCond spIfToThen DebugPointAtTarget.Yes mIfToEndOfElseBranch genOuterTy guardExpr' thenExpr elseExpr, tpenv)
 
         // 'let x = expr in expr'
-        | SynExpr.LetOrUse (_, false (* not a 'use' binding *), _, _, _) ->
+        | SynExpr.LetOrUse (isUse=false (* not a 'use' binding *)) ->
             TcLinearExprs 
                 (fun overallTy envinner tpenv e -> tcSequenceExprBody envinner overallTy.Commit tpenv e) 
                 cenv env overallTy 

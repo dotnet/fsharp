@@ -30,6 +30,10 @@ type SynExprLambdaTrivia =
     static member Zero: SynExprLambdaTrivia = { ArrowRange = None }
 
 [<NoEquality; NoComparison>]
+type SynExprLetOrUseTrivia =
+    { InKeyword: range option }
+
+[<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
     { ArrowRange: range option
       BarRange: range option }

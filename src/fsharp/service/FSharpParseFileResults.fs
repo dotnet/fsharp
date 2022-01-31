@@ -106,7 +106,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     walkBinding expr2 workingRange
 
 
-            | SynExpr.LetOrUse(_, _, bindings, bodyExpr, _) ->
+            | SynExpr.LetOrUse(bindings=bindings; body=bodyExpr) ->
                 let potentialNestedRange =
                     bindings
                     |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingWithRhs pos)
@@ -205,7 +205,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         // of the identifier of the function we're after
                         getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
 
-            | SynExpr.LetOrUse (_, _, bindings, body, range) when rangeContainsPos range pos  ->
+            | SynExpr.LetOrUse (bindings=bindings; body=body; range=range) when rangeContainsPos range pos  ->
                 let binding =
                     bindings
                     |> List.tryFind (fun x -> rangeContainsPos x.RangeOfBindingWithRhs pos)
@@ -631,7 +631,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                           yield! walkExprOpt true whenExpr
                           yield! walkExpr true tgtExpr 
 
-                  | SynExpr.LetOrUse (_, _, binds, bodyExpr, _) -> 
+                  | SynExpr.LetOrUse (bindings=binds; body=bodyExpr) -> 
                       yield! walkBinds binds  
                       yield! walkExpr true bodyExpr
 

@@ -757,7 +757,8 @@ type SynExpr =
         isUse: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprLetOrUseTrivia
 
     /// F# syntax: try expr with pat -> expr
     | TryWith of

@@ -479,7 +479,7 @@ module SyntaxTraversal =
 
                 | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> traverseSynExpr synExpr
 
-                | SynExpr.LetOrUse (_, isRecursive, synBindingList, synExpr, range) -> 
+                | SynExpr.LetOrUse (_, isRecursive, synBindingList, synExpr, range, _) -> 
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->
