@@ -157,10 +157,10 @@ let mkClassMemberLocalBindings(isStatic, initialRangeOpt, attrs, vis, BindingSet
    if isUse then errorR(Error(FSComp.SR.parsUseBindingsIllegalInImplicitClassConstructors(), wholeRange))
    SynMemberDefn.LetBindings (decls, isStatic, isRec, wholeRange)
 
-let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), body) = 
+let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), mIn, body) = 
    let ignoredFreeAttrs, decls = declsPreAttrs [] None 
    if not (isNil ignoredFreeAttrs) then warning(Error(FSComp.SR.parsAttributesIgnored(), mWhole))
-   SynExpr.LetOrUse (isRec, isUse, decls, body, mWhole) 
+   SynExpr.LetOrUse (isRec, isUse, decls, body, mWhole, { InKeyword = mIn }) 
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) = 
     if isUse then warning(Error(FSComp.SR.parsUseBindingsIllegalInModules(), mWhole))
@@ -1309,7 +1309,7 @@ moduleDefn:
 
   /* 'let' or 'do' definitions in #light */
   | opt_attributes opt_declVisibility hardwhiteLetBindings          %prec decl_let 
-      { let hwlb, m = $3
+      { let hwlb, m, _ = $3
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         parseState.ResetSynArgNameGenerator()
         mkDefnBindings (m, hwlb, $1, $2, m)  }
@@ -2711,7 +2711,8 @@ hardwhiteLetBindings:
       { let mLetKwd = rhs parseState 1 
         let isUse = $1
         let isRec = $2
-        $4 (if isUse then "use" else "let") mLetKwd  // report unterminated error 
+        let report, mIn = $4
+        report (if isUse then "use" else "let") mLetKwd  // report unterminated error 
         
         let localBindingsLastRangeOpt, localBindingsBuilder = $3
         
@@ -2729,7 +2730,9 @@ hardwhiteLetBindings:
             if not isRec && not (isNilOrSingleton binds) then
                 reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [], binds),
-          bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
+          bindingSetRange),
+          (unionRanges mLetKwd bindingSetRange),
+          mIn }
 
 
 /* A 'do ...' statement */
@@ -2752,7 +2755,7 @@ classDefnBindings:
      { $1 }
 
   | hardwhiteLetBindings
-     { let b, m = $1 in b } 
+     { let b, m, _ = $1 in b } 
 
   | hardwhiteDoBinding
      { fst $1 }
@@ -2761,7 +2764,10 @@ classDefnBindings:
 /* The terminator for a 'let ....' binding in the #light syntax */
 hardwhiteDefnBindingsTerminator:
   |  ODECLEND
-     { (fun _ m -> ()) }
+     { let mToken = rhs parseState 1
+       // In LexFilter.fs the IN token could have been transformed to an ODECLEND one.
+       let mIn = if (mToken.EndColumn - mToken.StartColumn) = 2 then Some mToken else None
+       (fun _ m -> ()), mIn }
 
   |  recover 
      { (fun kwd m ->
@@ -2771,7 +2777,7 @@ hardwhiteDefnBindingsTerminator:
              | "use!" -> FSComp.SR.parsUnmatchedUseBang() 
              | "use" -> FSComp.SR.parsUnmatchedUse() 
              | _ (*"let" *) -> FSComp.SR.parsUnmatchedLet()
-         reportParseErrorAt m msg) }
+         reportParseErrorAt m msg), None }
 
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
@@ -3489,12 +3495,12 @@ sequentialExpr:
       { SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range) }
 
   | hardwhiteLetBindings %prec prec_args_error
-     { let hwlb, m = $1
+     { let hwlb, m, mIn = $1
        let mLetKwd, isUse = match hwlb with (BindingSetPreAttrs(m, _, isUse, _, _))  -> m, isUse
        let usedKeyword = if isUse then "use" else "let"
        reportParseErrorAt mLetKwd (FSComp.SR.parsExpectedExpressionAfterLet(usedKeyword, usedKeyword))
        let fauxRange = m.EndRange // zero width range at end of m
-       mkLocalBindings (m, hwlb, arbExpr("seqExpr", fauxRange)) }
+       mkLocalBindings (m, hwlb, mIn, arbExpr("seqExpr", fauxRange)) }
 
 /* Use this as the last terminal when performing error recovery */
 /* The contract for using this is that (a) if EOF occurs then the */
@@ -3515,7 +3521,8 @@ moreBinders:
        SynExprAndBang(spBind, $1, true, $2, mEquals, $4, m) :: $6 }
 
   | OAND_BANG headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
-     { $5 "and!" (rhs parseState 1)  // report unterminated error
+     { let report, mIn = $5
+       report "and!" (rhs parseState 1)  // report unterminated error
        let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
        let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
@@ -3526,31 +3533,33 @@ moreBinders:
 
 declExpr:
   | defnBindings IN typedSequentialExpr  %prec expr_let 
-     { mkLocalBindings (unionRanges (rhs2 parseState 1 2) $3.Range, $1, $3) }
+     { let mIn = rhs parseState 2 |> Some
+       mkLocalBindings (unionRanges (rhs2 parseState 1 2) $3.Range, $1, mIn, $3) }
 
   | defnBindings IN error        %prec expr_let
-     { mkLocalBindings (rhs2 parseState 1 2, $1, arbExpr("declExpr1", (rhs parseState 3))) }
+     { let mIn = rhs parseState 2 |> Some
+       mkLocalBindings (rhs2 parseState 1 2, $1, mIn, arbExpr("declExpr1", (rhs parseState 3))) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
 */
 
   | hardwhiteLetBindings typedSequentialExprBlock  %prec expr_let 
-     { let hwlb, m = $1
-       mkLocalBindings (unionRanges m $2.Range, hwlb, $2) }
+     { let hwlb, m, mIn = $1
+       mkLocalBindings (unionRanges m $2.Range, hwlb, mIn, $2) }
 
   | hardwhiteLetBindings error        %prec expr_let
-     { let hwlb, m = $1
+     { let hwlb, m, mIn = $1
        reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m, _, _, _, _))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       mkLocalBindings (m, hwlb, arbExpr("declExpr2", (rhs parseState 2))) }
+       mkLocalBindings (m, hwlb, mIn, arbExpr("declExpr2", (rhs parseState 2))) }
 
   | hardwhiteLetBindings OBLOCKSEP typedSequentialExprBlock  %prec expr_let 
-     { let hwlb, m = $1
-       mkLocalBindings (unionRanges m $3.Range, hwlb, $3) }
+     { let hwlb, m, mIn = $1
+       mkLocalBindings (unionRanges m $3.Range, hwlb, mIn, $3) }
 
   | hardwhiteLetBindings OBLOCKSEP error        %prec expr_let
-     { let hwlb, m = $1
+     { let hwlb, m, mIn = $1
        //reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m, _, _, _, _))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
-       mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, arbExpr("declExpr3", (rhs parseState 3))) }
+       mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, mIn, arbExpr("declExpr3", (rhs parseState 3))) }
 
   | hardwhiteDoBinding %prec expr_let
      { let e = snd $1
@@ -3828,7 +3837,8 @@ declExpr:
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, Some mEquals, $4, $7, $8, m) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
-     { $5 (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error 
+     { let report, mIn = $5
+       report (if $1 = "use" then "use!" else "let!") (rhs parseState 1)  // report unterminated error 
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range

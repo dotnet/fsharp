@@ -53,6 +53,14 @@ type SynExprLambdaTrivia =
     }
     static member Zero: SynExprLambdaTrivia
 
+/// Represents additional information for SynExpr.Lambda
+[<NoEquality; NoComparison>]
+type SynExprLetOrUseTrivia =
+    {
+        /// The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
+
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =

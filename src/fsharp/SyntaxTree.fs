@@ -613,7 +613,8 @@ type SynExpr =
         isUse: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprLetOrUseTrivia
 
     | TryWith of
         tryExpr: SynExpr *

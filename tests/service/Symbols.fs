@@ -891,6 +891,83 @@ match! x with
             assertRange (5, 27) (5, 31) mWithSynInterfaceImpl
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExpr.LetOrUse contains the range of in keyword`` () =
+        let ast =
+            getParseResults "let x = 1 in ()"
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.LetOrUse(trivia={ InKeyword = Some mIn }))
+                    ])
+                ])) ->
+            assertRange (1, 10) (1, 12) mIn
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.LetOrUse with recursive binding contains the range of in keyword`` () =
+        let ast =
+            getParseResults """
+do
+    let rec f = ()
+    and g = () in
+    ()
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Do(expr = SynExpr.LetOrUse(bindings=[_;_]; trivia={ InKeyword = Some mIn })))
+                    ])
+                ])) ->
+            assertRange (4, 15) (4, 17) mIn
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``nested SynExpr.LetOrUse contains the range of in keyword`` () =
+        let ast =
+            getParseResults """
+let f () =
+    let x = 1 in // the "in" keyword is available in F#
+    let y = 2 in
+    x + y
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Let(bindings = [
+                          SynBinding(expr =
+                              SynExpr.LetOrUse(bindings=[_]; trivia={ InKeyword = Some mIn }; body=SynExpr.LetOrUse(trivia={ InKeyword = Some mInnerIn })))
+                        ])
+                    ])
+                ])) ->
+            assertRange (3, 14) (3, 16) mIn
+            assertRange (4, 14) (4, 16) mInnerIn
+        | _ -> Assert.Fail "Could not get valid AST"    
+
+    [<Test>]
+    let ``SynExpr.LetOrUse does not contain the range of in keyword`` () =
+        let ast =
+            getParseResults """
+do
+    let x = 1     
+    ()
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Do(expr = SynExpr.LetOrUse(trivia={ InKeyword = None })))
+                    ])
+                ])) ->
+            Assert.Pass()
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with
