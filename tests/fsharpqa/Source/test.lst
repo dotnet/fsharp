@@ -98,7 +98,6 @@ Conformance02			Conformance\DeclarationElements\FieldMembers
 Conformance02			Conformance\DeclarationElements\ImportDeclarations
 Conformance02			Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations
 Conformance02			Conformance\DeclarationElements\LetBindings\ActivePatternBindings
-Conformance02			Conformance\DeclarationElements\LetBindings\ArityInference
 Conformance02			Conformance\DeclarationElements\LetBindings\Basic
 Conformance02			Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters
 Conformance02			Conformance\DeclarationElements\LetBindings\TypeFunctions
