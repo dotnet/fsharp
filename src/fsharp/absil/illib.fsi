@@ -566,6 +566,8 @@ module internal NameMultiMap =
 
     val chooseRange: f:('T -> 'a option) -> m:NameMultiMap<'T> -> 'a list
 
+    val filterRange: f:('T -> bool) -> m:NameMultiMap<'T> -> NameMultiMap<'T>
+
     val map: f:('T -> 'a) -> m:NameMultiMap<'T> -> Map<string,'a list>
 
     val empty: NameMultiMap<'T>

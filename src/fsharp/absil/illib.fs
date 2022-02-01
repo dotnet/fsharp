@@ -1100,6 +1100,13 @@ module NameMultiMap =
     
     let chooseRange f (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
 
+    let filterRange (f: 'T -> bool) (m: NameMultiMap<'T>) : NameMultiMap<'T> =
+        m 
+        // Filter all the entries for each key
+        |> Map.map (fun _ l -> List.filter f l) 
+        // Remove the empty entries
+        |> Map.filter (fun _ l -> not (List.isEmpty l))
+
     let map f (m: NameMultiMap<'T>) = NameMap.map (List.map f) m 
 
     let empty : NameMultiMap<'T> = Map.empty

@@ -9124,50 +9124,121 @@ and restrictExnInfo _ctxt inp = inp
 
 and restrictTyconAug ctxt (x: TyconAugmentation) =
     { x with 
-          // TODO: filter the generated hash/compare/equality
-          //
-          //tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-          //tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-          //tcaug_compare_withc = x.tcaug_compare_withc |> Option.map(remapValRef tmenv)
-          //tcaug_hash_and_equals_withc = x.tcaug_hash_and_equals_withc |> Option.map (mapTriple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv))
+          tcaug_equals = 
+              match x.tcaug_equals with 
+              | None -> None
+              | Some (vref1, vref2) ->
+                  if canAccessFromSomewhereOutside "TODO" vref1.Accessibility &&
+                     canAccessFromSomewhereOutside "TODO" vref2.Accessibility then
+                     Some (vref1, vref2)
+                  else
+                     None
 
-          // TODO: filter the members
-          //tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
-          //tcaug_adhoc_list = x.tcaug_adhoc_list |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+          tcaug_compare = 
+              match x.tcaug_compare with 
+              | None -> None
+              | Some (vref1, vref2) ->
+                  if canAccessFromSomewhereOutside "TODO" vref1.Accessibility &&
+                     canAccessFromSomewhereOutside "TODO" vref2.Accessibility then
+                     Some (vref1, vref2)
+                  else
+                     None
+
+          tcaug_compare_withc =
+              match x.tcaug_compare_withc with 
+              | None -> None
+              | Some vref ->
+                  if canAccessFromSomewhereOutside "TODO" vref.Accessibility then
+                     Some vref
+                  else
+                     None
+
+          tcaug_hash_and_equals_withc =
+              match x.tcaug_hash_and_equals_withc with 
+              | None -> None
+              | Some (vref1, vref2, vref3) ->
+                  if canAccessFromSomewhereOutside "TODO" vref1.Accessibility &&
+                     canAccessFromSomewhereOutside "TODO" vref2.Accessibility &&
+                     canAccessFromSomewhereOutside "TODO" vref3.Accessibility then
+                     Some (vref1, vref2, vref3)
+                  else
+                     None
+
+          tcaug_adhoc =
+              x.tcaug_adhoc 
+              |> NameMultiMap.filterRange (fun vref -> canAccessFromSomewhereOutside "TODO" vref.Accessibility)
+
+          tcaug_adhoc_list = 
+              x.tcaug_adhoc_list 
+              |> ResizeArray.filter (fun (_flag, vref) -> canAccessFromSomewhereOutside "TODO" vref.Accessibility)
 
           // Note, existing checks enforce that the base type is always as accessible as the type
           // so no filtering needed for tcaug_super 
-          tcaug_interfaces =
-              x.tcaug_interfaces
-              |> List.filter (restrictInterface ctxt) } 
+          //tcaug_interfaces =
+          //    x.tcaug_interfaces
+          //    |> List.filter (restrictInterface ctxt) 
+          } 
 
-and restrictInterface _ctxt (_ityp, _, _) = 
-    // TODO: check that ityp is at least as accessible as the enclosing type
-    true 
+//and restrictInterface _ctxt (_ityp, _, _) = 
+//    // TODO: check that ityp is at least as accessible as the enclosing type
+//    true 
 
-and restrictTyconRepr _ctxt _reprAccess repr =
-    repr
-    // TBD
-//    match repr with
-//    | TFSharpObjectRepr of TyconObjModelData
-//    | TFSharpRecdRepr of TyconRecdFields
-//    | TFSharpUnionRepr of TyconUnionData 
-//    | TILObjectRepr of TILObjectReprData
-//    | TAsmRepr of ILType
-//    | TMeasureableRepr of TType
-//#if !NO_EXTENSIONTYPING
-//    | TProvidedTypeRepr of TProvidedTypeInfo
-//    | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
-//#endif
-//    | TNoRepr
-//    if canAccessFromSomewhereOutside "TBD" reprAccess then
-//        repr
-//    else TyconReprNone
+and restrictTyconRepr ctxt reprAccess repr =
+    match repr with
+    | TFSharpObjectRepr data ->
+        TFSharpObjectRepr
+            { data with
+                  /// The declared abstract slots of the class, interface or struct 
+                  fsobjmodel_vslots = data.fsobjmodel_vslots |> List.filter (fun vref -> canAccessFromSomewhereOutside "TODO" vref.Accessibility)
+
+                  /// The fields of the class, struct or enum 
+                  fsobjmodel_rfields = data.fsobjmodel_rfields |> restrictRecordFields ctxt reprAccess
+            }
+
+    | TFSharpRecdRepr flds -> 
+        TFSharpRecdRepr (flds |> restrictRecordFields ctxt reprAccess)
+
+    | TFSharpUnionRepr unionData -> 
+        if canAccessFromSomewhereOutside "TODO" reprAccess then
+            repr
+        else
+            TNoRepr
+        
+    | TILObjectRepr _ -> failwith "TODO"
+    | TAsmRepr _ -> failwith "TODO"
+    | TMeasureableRepr typ -> failwith "TODO"
+#if !NO_EXTENSIONTYPING
+    | TProvidedTypeRepr _info -> failwith "TODO"
+    | TProvidedNamespaceRepr (env, typs) -> failwith "TODO"
+#endif
+    | TNoRepr -> TNoRepr
+    //if canAccessFromSomewhereOutside "TODO" reprAccess then
+    //    repr
+    //else TyconReprNone
+
+and restrictRecordFields _ctxt _reprAccess fields = 
+    { 
+      FieldsByIndex = fields.FieldsByIndex |> Array.filter (fun fld -> canAccessFromSomewhereOutside "TODO" fld.Accessibility)
+      FieldsByName = fields.FieldsByName |> NameMap.filterRange (fun fld -> canAccessFromSomewhereOutside "TODO" fld.Accessibility)
+    }
+
+and restrictUnionData _ctxt _reprAccess unionData = 
+    { 
+      /// The cases contained in the discriminated union. 
+      CasesTable = 
+            { 
+              CasesByIndex = unionData.CasesTable.CasesByIndex |> 
+              CasesByName: NameMap<UnionCase>
+            }
+
+      /// The ILX data structure representing the discriminated union. 
+      CompiledRepresentation: IlxUnionRef cache 
+    }
 
 and restrictImmediateValsAndTycons _ctxt mty =
     filterImmediateValsAndTycons
-        (fun tycon -> canAccessFromSomewhereOutside "TBD" tycon.Accessibility)
-        (fun vspec -> canAccessFromSomewhereOutside "TBD" vspec.Accessibility)
+        (fun tycon -> canAccessFromSomewhereOutside "TODO" tycon.Accessibility)
+        (fun vspec -> canAccessFromSomewhereOutside "TODO" vspec.Accessibility)
         mty
 
 and remapTyconToNonLocal ctxt tmenv x = 

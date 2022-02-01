@@ -1,9 +1,3 @@
-
-
-
-
-open System
-
 module M
 
 type ClassPublic() = class end
@@ -33,23 +27,18 @@ type private PrivateAttribute () =
     inherit Attribute()
 
 [<AttributeUsage(AttributeTargets.All)>]
-type PublicWithPrivateConstructorAttribute internal () =
+type PublicWithInternalConstructorAttribute internal () =
     inherit Attribute()
 
 [<AttributeUsage(AttributeTargets.All)>]
-type PublicWithPrivateSetterPropertyAttribute() =
+type PublicWithInternalSetterPropertyAttribute() =
     inherit Attribute()
     member val internal Prop1 : int = 0 with get, set
 
-// [<AttributeUsage(AttributeTargets.All)>]
-// type PublicAttrributeWithPrivateSetterField() =
-//     inherit Attribute()
-//     member val private Prop1 : int = 0 with get, set
-
 [<PublicAttribute()>] // KEEP
 [<PrivateAttribute()>] // note: this is allowed! accessibility of attributes is implied by structure of attribute! CUT
-[<PublicWithPrivateConstructor()>] // note: this is allowed!  accessibility of attributes is implied by structure of attribute! CUT
-[<PublicWithPrivateSetterProperty(Prop1=4)>]  // note: this is allowed!  accessibility of attributes is implied by structure of attribute! CUT
+[<PublicWithInternalConstructorAttribute()>] // note: this is allowed!  accessibility of attributes is implied by structure of attribute! CUT
+[<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]  // note: this is allowed!  accessibility of attributes is implied by structure of attribute! CUT
 type ClassPublicWithPrivateAttributes() = class end
 
 type ClassPublicWithPrivateInterface() =
@@ -72,11 +61,27 @@ type ClassPublicWithPrivateInterface() =
     //    - a public class implements this interface
     //    - what ends up in the reference assembly? 
 
+
+
+type private ClassPrivateUsedInPrivateFieldOfPublicStruct = // This must be kept!
+  member private x.P = 1
+
+[<Struct>]
+type private StructPrivateUsedInPrivateFieldOfPublicStruct = // This must be kept!
+  val private X: int   // This must be kept!  Computation of "has default value" and "unmanaged" depend on this!
+
+[<Struct>]
+type S = 
+   val private X1: ClassPrivateUsedInPrivateFieldOfPublicStruct
+   val private X2: StructPrivateUsedInPrivateFieldOfPublicStruct
+
+
+
 type RecordPublic =
-    { FPublic: ClassPublic() }   
+    { FPublic: ClassPublic }   
 
 type RecordPublicPrivate =                         // CUT
-    private { FRecordPublicPrivate: ClassPrivate() }   // CUT
+    private { FRecordPublicPrivate: ClassPrivate }   // CUT
 
 type private RecordPrivate =              // CUT
     { FRecordPrivate: ClassPrivate() }        // CUT
@@ -109,18 +114,15 @@ type private UnionPrivate =                           // CUT
 [<Struct>]
 type StructUnionPublic =
     | StructUnionPublicCase1 of ClassPublic
-    | StructUnionPublicCase2 of ClassPublic
 
 [<Struct>]
-type StructUnionPublicInternal =
+type StructUnionPublicPrivate =
     private                                            // CUT
-    | StructUnionPublicInternalCase1 of ClassPrivate       // CUT
-    | StructUnionPublicInternalCase2 of ClassPrivate       // CUT
+    | StructUnionPublicPrivateCase1 of ClassPrivate       // CUT
 
 [<Struct>]
 type private StructUnionPrivate =                     // CUT
     | StructUnionPrivateCase1 of ClassPrivate             // CUT
-    | StructUnionPrivateCase2 of ClassPrivate            // CUT
 
 type private InterfacePrivate = 
    interface
