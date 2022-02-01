@@ -2597,14 +2597,16 @@ unionCaseName:
 firstUnionCaseDeclOfMany: 
   | ident opt_OBLOCKSEP
       { let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs parseState 1) |> unionRangeWithXmlDoc xmlDoc
-        Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields [], grabXmlDoc(parseState, [], 1), None, mDecl, trivia)) }
+        Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
         let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs2 parseState 1 3) |> unionRangeWithXmlDoc xmlDoc
-        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, grabXmlDoc(parseState, [], 1), mDecl, trivia)) }
+        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, xmlDoc, mDecl, trivia)) }
 
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
@@ -2612,14 +2614,16 @@ firstUnionCaseDeclOfMany:
 firstUnionCaseDecl: 
   | ident OF unionCaseRepr  
      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+       let xmlDoc = grabXmlDoc(parseState, [], 1)
        let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-       Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields $3, grabXmlDoc(parseState, [], 1), None, mDecl, trivia)) }
+       Choice2Of2 (SynUnionCase ( [], $1, SynUnionCaseKind.Fields $3, xmlDoc, None, mDecl, trivia)) }
 
   | ident EQUALS constant opt_OBLOCKSEP
       { let mEquals = rhs parseState 2
         let trivia: SynEnumCaseTrivia = { BarRange = None; EqualsRange = mEquals }
+        let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = rhs2 parseState 1 3 |> unionRangeWithXmlDoc xmlDoc
-        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, grabXmlDoc(parseState, [], 1), mDecl, trivia))  }
+        Choice1Of2 (SynEnumCase ([], $1, fst $3, snd $3, xmlDoc, mDecl, trivia))  }
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements
