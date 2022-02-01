@@ -13,6 +13,13 @@ module AssemblyCheck =
     let private versionOne = Version(1, 0, 0, 0)
     let private commitHashPattern = new Regex(@"Commit Hash: (<developer build>)|([0-9a-fA-F]{40})", RegexOptions.Compiled)
     let private devVersionPattern = new Regex(@"-(ci|dev)", RegexOptions.Compiled)
+    let skipVerifyEmbeddedPdb =
+        let thisDir = Assembly.GetExecutingAssembly().Location
+        let lines = File.ReadAllLines(Path.Combine(Path.GetDirectoryName(thisDir), "SkipVerifyEmbeddedPdb.txt"))
+        let hs = Collections.Generic.HashSet()
+        for line in lines do
+            hs.Add(line.ToUpperInvariant()) |>ignore
+        hs
 
     let verifyEmbeddedPdb (filename:string)  =
         let isManagedDll =
@@ -24,31 +31,34 @@ module AssemblyCheck =
             | :? System.BadImageFormatException -> false       // uninterested in embedded pdbs for native dlls
 
         if isManagedDll then
-            use fileStream = File.OpenRead(filename)
-            let reader = new PEReader(fileStream)
-            let mutable hasEmbeddedPdb = false
+            if skipVerifyEmbeddedPdb.Contains(Path.GetFileName(filename).ToUpperInvariant()) then
+                true
+            else
+                use fileStream = File.OpenRead(filename)
+                let reader = new PEReader(fileStream)
+                let mutable hasEmbeddedPdb = false
 
-            try
-                for entry in reader.ReadDebugDirectory() do
-                    match entry.Type with
-                    | DebugDirectoryEntryType.CodeView ->
-                        let _ = reader.ReadCodeViewDebugDirectoryData(entry)
-                        ()
+                try
+                    for entry in reader.ReadDebugDirectory() do
+                        match entry.Type with
+                        | DebugDirectoryEntryType.CodeView ->
+                            let _ = reader.ReadCodeViewDebugDirectoryData(entry)
+                            ()
 
-                    | DebugDirectoryEntryType.EmbeddedPortablePdb ->
-                        let _ = reader.ReadEmbeddedPortablePdbDebugDirectoryData(entry)
-                        hasEmbeddedPdb <- true
-                        ()
+                        | DebugDirectoryEntryType.EmbeddedPortablePdb ->
+                            let _ = reader.ReadEmbeddedPortablePdbDebugDirectoryData(entry)
+                            hasEmbeddedPdb <- true
+                            ()
 
-                    | DebugDirectoryEntryType.PdbChecksum ->
-                        let _ = reader.ReadPdbChecksumDebugDirectoryData(entry)
-                        ()
+                        | DebugDirectoryEntryType.PdbChecksum ->
+                            let _ = reader.ReadPdbChecksumDebugDirectoryData(entry)
+                            ()
 
-                    | _ -> ()
-            with
-            | e -> printfn "Error validating assembly %s\nMessage: %s" filename (e.ToString())
+                        | _ -> ()
+                with
+                | e -> printfn "Error validating assembly %s\nMessage: %s" filename (e.ToString())
 
-            hasEmbeddedPdb
+                hasEmbeddedPdb
         else
             true
 
