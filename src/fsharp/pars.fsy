@@ -3600,7 +3600,7 @@ moreBinders:
   | AND_BANG headBindingPattern EQUALS typedSequentialExprBlock IN moreBinders %prec expr_let
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
-       let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
+       let m = unionRanges (rhs parseState 1) $4.Range
        SynExprAndBang(spBind, $1, true, $2, mEquals, $4, m) :: $6 }
 
   | OAND_BANG headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders %prec expr_let
@@ -3608,7 +3608,7 @@ moreBinders:
        report "and!" (rhs parseState 1)  // report unterminated error
        let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5) (* TODO Pretty sure this is wrong *)
        let mEquals = rhs parseState 3
-       let m = rhs parseState 1 (* TODO Pretty sure this is wrong *)
+       let m = unionRanges (rhs parseState 1) $4.Range
        SynExprAndBang(spBind, $1, true, $2, mEquals, $4, m) :: $7 }
 
   | %prec prec_no_more_attr_bindings

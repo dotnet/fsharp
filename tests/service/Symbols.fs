@@ -3246,4 +3246,55 @@ let meh =
             assertRange (7, 8) (7, 14) mMember3
         | _ ->
             Assert.Fail "Could not get valid AST"
-            
+
+module ComputationExpressions =
+    [<Test>]
+    let ``SynExprAndBang range starts at and! and ends after expression`` () =
+        let ast =
+            getParseResults """
+async {
+    let! bar = getBar ()
+
+    and! foo = getFoo ()
+
+    return bar
+}
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.DoExpr (expr = SynExpr.App(argExpr = SynExpr.ComputationExpr(expr = SynExpr.LetOrUseBang(andBangs = [
+                    SynExprAndBang(range = mAndBang)
+                    ]))))
+                ])
+            ])) ->
+            assertRange (5, 4) (5, 24) mAndBang
+        | _ ->
+            Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``multiple SynExprAndBang have range that starts at and! and ends after expression`` () =
+        let ast =
+            getParseResults """
+async {
+    let! bar = getBar ()
+    and! foo = getFoo () in
+    and! meh = getMeh ()
+    return bar
+}
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.DoExpr (expr = SynExpr.App(argExpr = SynExpr.ComputationExpr(expr = SynExpr.LetOrUseBang(andBangs = [
+                    SynExprAndBang(range = mAndBang1)
+                    SynExprAndBang(range = mAndBang2)
+                    ]))))
+                ])
+            ])) ->
+            assertRange (4, 4) (4, 24) mAndBang1
+            assertRange (5, 4) (5, 24) mAndBang2
+        | _ ->
+            Assert.Fail "Could not get valid AST"
