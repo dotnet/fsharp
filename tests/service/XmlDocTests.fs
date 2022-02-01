@@ -97,7 +97,7 @@ let (|Members|MemberSigs|) = function
 
     | x -> failwith $"Unexpected ParsedInput %A{x}"
 
-let (|Lets|LetBindings|ValSig|LetOrUse|) = function
+let (|Decls|LetBindings|ValSig|LetOrUse|) = function
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) ->
@@ -115,7 +115,7 @@ let (|Lets|LetBindings|ValSig|LetOrUse|) = function
 
     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = decls)])) ->
-        Lets(decls)
+        Decls(decls)
 
      | ParsedInput.SigFile(ParsedSigFileInput(modules = [
          SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
@@ -561,8 +561,8 @@ let y = x
     |]
 
     match parseResults.ParseTree with
-    | Lets([SynModuleDecl.Let(range = range1; bindings = [binding1])
-            SynModuleDecl.Let(range = range2; bindings = [binding2])]) ->
+    | Decls([SynModuleDecl.Let(range = range1; bindings = [binding1])
+             SynModuleDecl.Let(range = range2; bindings = [binding2])]) ->
         assertRange (2, 0) (6, 9) range1
         assertRange (2, 0) (6, 9) binding1.RangeOfBindingWithRhs
         assertRange (8, 0) (12, 9) range2
