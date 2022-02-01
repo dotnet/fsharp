@@ -90,7 +90,10 @@ let rec IsControlFlowExpression e =
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
 
-let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, xmlDoc, None, ty.Range)
+let inline unionRangeWithXmlDoc (xmlDoc: PreXmlDoc) range =
+    if xmlDoc.IsEmpty then range else unionRanges xmlDoc.Range range
+
+let mkSynAnonField (ty: SynType, xmlDoc) = SynField([], false, None, ty, false, xmlDoc, None, unionRangeWithXmlDoc xmlDoc ty.Range)
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
@@ -567,9 +570,10 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
-let mkSynBinding (xmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, mEquals, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
+let mkSynBinding (xmlDoc: PreXmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, mEquals, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
     let info = SynInfo.InferSynValData (memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
+    let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, mEquals, rhsExpr, mBind, spBind)
 
 let NonVirtualMemberFlags k : SynMemberFlags =

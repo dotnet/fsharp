@@ -63,6 +63,8 @@ type public PreXmlDoc =
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 
+    member internal Range: Range
+
     member IsEmpty: bool
 
     member internal MarkAsInvalid: unit -> unit
