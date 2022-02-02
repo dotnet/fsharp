@@ -968,6 +968,25 @@ do
             Assert.Pass()
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynExpr.LetOrUse where body expr starts with token of two characters does not contain the range of in keyword`` () =
+        let ast =
+            getParseResults """
+do
+    let e1 = e :?> Collections.DictionaryEntry
+    e1.Key, e1.Value
+"""
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Do(expr = SynExpr.LetOrUse(trivia={ InKeyword = None })))
+                    ])
+                ])) ->
+            Assert.Pass()
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Strings =
     let getBindingExpressionValue (parseResults: ParsedInput) =
         match parseResults with
