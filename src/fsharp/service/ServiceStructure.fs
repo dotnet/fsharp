@@ -407,7 +407,7 @@ module Structure =
 
         and parseMatchClause (SynMatchClause(pat=synPat; resultExpr=e) as clause) =
             let rec getLastPat = function
-                | SynPat.Or(_, pat, _) -> getLastPat pat
+                | SynPat.Or(rhsPat=pat) -> getLastPat pat
                 | x -> x
 
             let synPat = getLastPat synPat

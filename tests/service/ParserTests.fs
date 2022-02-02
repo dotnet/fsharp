@@ -115,7 +115,7 @@ match () with
     match getSingleExprInModule parseResults with
     | SynExpr.Match (clauses=[ SynMatchClause (pat=pat) ]) ->
         match pat with
-        | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _), _), _) -> ()
+        | SynPat.FromParseError (SynPat.Paren (SynPat.Or (SynPat.Named _, SynPat.Named _, _, _), _), _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
 
@@ -132,7 +132,7 @@ match () with
         match pat with
         | SynPat.Or
             (SynPat.FromParseError (SynPat.Paren (SynPat.FromParseError (SynPat.Wild _, _), _), _),
-             SynPat.Named _, _) -> ()
+             SynPat.Named _, _, _) -> ()
         | _ -> failwith "Unexpected pattern"
     | _ -> failwith "Unexpected tree"
 

@@ -3199,7 +3199,8 @@ headBindingPattern:
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
   | headBindingPattern BAR headBindingPattern  
-      { SynPat.Or($1, $3, rhs2 parseState 1 3) }
+      { let mBar = rhs parseState 2
+        SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
       { SynPat.LongIdent (LongIdentWithDots(mkSynCaseName (rhs parseState 2) opNameCons, []), None, None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
@@ -3423,7 +3424,8 @@ parenPattern:
       { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
   | parenPattern BAR parenPattern  
-      { SynPat.Or($1, $3, rhs2 parseState 1 3) }
+      { let mBar = rhs parseState 2
+        SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | tupleParenPatternElements 
       { SynPat.Tuple(false, List.rev $1, lhs parseState) }

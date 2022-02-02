@@ -2928,6 +2928,26 @@ match x with
             assertRange (3, 7) (3, 8) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynPat.Or contains the range of the bar`` () =
+        let parseResults = 
+            getParseResults
+                """
+match x with
+| A
+| B -> ()
+| _ -> ()
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Match(clauses = [ SynMatchClause(pat = SynPat.Or(trivia={ BarRange = mBar })) ; _ ])
+            )
+        ]) ])) ->
+            assertRange (4, 0) (4, 1) mBar
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module Exceptions =
     [<Test>]
     let ``SynExceptionDefn should contains the range of the with keyword`` () =
