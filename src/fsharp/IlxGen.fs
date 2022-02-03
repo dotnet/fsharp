@@ -245,12 +245,6 @@ type cenv =
       /// The options for ILX code generation
       opts: IlxGenOptions
 
-      /// Collection of all debug points available for inlined code
-      namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
-
-      // /// Unnamed extra debug points that have been emitted
-      //emittedPriorDebugPoints: HashSet<NamedDebugPointKey>
-
       /// Cache the generation of the "unit" type
       mutable ilUnitTy: ILType option
 
@@ -2320,30 +2314,6 @@ let rec GenExpr cenv cgbuf eenv (expr: Expr) sequel =
 and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
     let g = cenv.g
         
-    // Check for the '__debugPoint" construct for inlined code
-    match expr with
-    | Expr.Sequential((DebugPointExpr g debugPointName) as dpExpr, codeExpr, NormalSeq, m) ->
-        match cenv.namedDebugPointsForInlinedCode.TryGetValue({Range=m; Name=debugPointName}) with
-        | false, _ ->
-            // printfn $"---- Unfound debug point {debugPointName} at {m}"
-            // for KeyValue(k,v) in cenv.namedDebugPointsForInlinedCode do
-            //     printfn $"{k.Range} , {k.Name} -> {v}"
-            let others =
-                [ for k in cenv.namedDebugPointsForInlinedCode.Keys do
-                      if Range.equals m k.Range then
-                          yield k.Name ]
-                |> String.concat ","
-            informationalWarning(Error(FSComp.SR.ilxGenUnknownDebugPoint(debugPointName, others), dpExpr.Range))
-        | true, dp ->
-            // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
-            CG.EmitDebugPoint cgbuf dp
-        GenExpr cenv cgbuf eenv codeExpr sequel
-        true
-
-    | _ ->
-
-    //ProcessDebugPointForExpr cenv cgbuf expr
-
     match (if compileSequenceExpressions then LowerComputedListOrArrayExpr cenv.tcVal g cenv.amap expr else None) with
     | Some altExpr ->
         GenExpr cenv cgbuf eenv altExpr sequel
@@ -7435,7 +7405,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 /// Generate the namespace fragments in a single file
 and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedImplFileAfterOptimization) =
-    let (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, _)) = implFile.ImplFile
+    let (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = implFile.ImplFile
     let optimizeDuringCodeGen = implFile.OptimizeDuringCodeGen
     let g = cenv.g
     let m = qname.Range
@@ -8707,19 +8677,11 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
 
     /// Generate ILX code for an assembly fragment
     member _.GenerateCode (codeGenOpts, typedAssembly: TypedAssemblyAfterOptimization, assemAttribs, moduleAttribs) =
-        let namedDebugPointsForInlinedCode =
-            let (TypedAssemblyAfterOptimization impls) = typedAssembly
-            [| for impl in impls do
-                  let (TImplFile(namedDebugPointsForInlinedCode=dps)) = impl.ImplFile
-                  for KeyValue(k,v) in dps do
-                      yield (k,v) |]
-            |> Map
         let cenv: cenv =
             { g=tcGlobals
               tcVal = tcVal
               viewCcu = ccu
               ilUnitTy = None
-              namedDebugPointsForInlinedCode = namedDebugPointsForInlinedCode
               //emittedPriorDebugPoints = HashSet()
               amap = amap
               casApplied = casApplied

@@ -229,8 +229,6 @@ type TcFileState =
       /// The set of active conditional defines. The value is None when conditional erasure is disabled in tooling.
       conditionalDefines: string list option
             
-      namedDebugPointsForInlinedCode: Dictionary<NamedDebugPointKey, range>
-
       isInternalTestSpanStackReferring: bool
       // forward call 
       TcSequenceExpressionEntry: TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv

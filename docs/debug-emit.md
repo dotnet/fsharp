@@ -195,7 +195,7 @@ Other computation expressions such as `async { .. }` or `builder { ... }` get de
 
 * For every `builder.Bind`, `builder.BindReturn` and similar call that corresponds to a `let` where there would be a debug point, a debug point is added immediately prior to the call.
 
-* For every `builder.For` call, a debug point covering the `for` keyword is added immediately prior to the call.  No debug point is added for the `builder.For` call itself even if used in statement position. The `ForLoop.InOrToKeyword` named debug point is associated with the `in` or `to` keyword and made available to inline code using `__debugPoint`.
+* For every `builder.For` call, a debug point covering the `for` keyword is added immediately prior to the call.  No debug point is added for the `builder.For` call itself even if used in statement position.
 
 * For every `builder.While` call, a debug point covering the `while` keyword plus guard expression is added immediately prior to the execution of the guard within the guard lambda expression. No debug point is added for the `builder.While` call itself even if used in statement position.
 
@@ -213,7 +213,20 @@ One approach is to inline the `builder.While` method, and apply `[<InlineIfLambd
 as at some points inlining fails to fully flatten. Builders implemented with resumable code tend to be much better in this regards as
 more complete inlining and code-flattening is applied.
 
-## Implementation of debug points in the compiler
+### Intended debug points for implicit constructors
+
+* The `let` and `do` bindings of an implicit constructor generally gets debug points as if it were a function.
+* `inherits SubClass(expr)` gets a debug point. If there is no inherits, an initial debug point is placed over the text of the arguments.
+
+e.g.
+```fsharp
+type C(args) =        // debug point over `(args)`
+    let x = v         // debug point over `let x = v`
+    let f x = x + 1
+    member _.P = x + f 4
+```
+
+## Internal implementation of debug points in the compiler
 
 Most (but not all) debug points are noted by the parser by adding `DebugPointAtTry`, `DebugPointAtWith`, `DebugPointAtFinally`, `DebugPointAtFor`, `DebugPointAtWhile`, `DebugPointAtBinding` or `DebugPointAtLeaf`.
 

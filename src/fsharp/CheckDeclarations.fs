@@ -975,8 +975,13 @@ module IncrClassChecking =
                         ValReprInfo(tpNames@ValReprInfo.InferTyparInfo copyOfTyconTypars, args, ret)
                                           
                     let prelimTyschemeG = TypeScheme(copyOfTyconTypars@tps, memberTauTy)
+
+                    // NOTE: putting isCompilerGenerated=true here is strange.  The method is not public, nor is
+                    // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
                     let memberValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
+
                     let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
+
                     reportIfUnused()
                     InMethod(isStatic, methodVal, topValInfo)
 
@@ -1301,7 +1306,9 @@ module IncrClassChecking =
                      | _, (Expr.Lambda _ | Expr.TyLambda _) -> v.Range
                      | DebugPointAtBinding.Yes m, _ -> m 
                      | _ -> v.Range
+
                 let assignExpr = reps.MakeValueAssign (Some thisVal) thisTyInst NoSafeInitInfo v rhsExpr m
+
                 let adjustSafeInitFieldExprOpt = 
                     if isStatic then 
                         match safeStaticInitInfo with 
@@ -1315,7 +1322,16 @@ module IncrClassChecking =
                         None
 
                 (isPriorToSuperInit, (fun e -> 
-                     let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
+                     let e =
+                         match adjustSafeInitFieldExprOpt with
+                         | None -> e
+                         | Some adjustExpr -> mkCompGenSequential m adjustExpr e
+
+                     let assignExpr =
+                         match spBind with
+                         | DebugPointAtBinding.Yes _ -> mkDebugPoint m assignExpr
+                         | _ -> assignExpr
+
                      mkSequential m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
@@ -1344,7 +1360,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential doExpr.Range (Expr.DebugPoint(DebugPointAtLeafExpr.Yes doExpr.Range, doExpr)) e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -5969,8 +5985,7 @@ let TypeCheckOneImplFile
             | _ -> ()
         | _ -> ())
 
-    let namedDebugPointsForInlinedCode = cenv.namedDebugPointsForInlinedCode |> Seq.toArray |> Array.map (fun (KeyValue(k,v)) -> (k,v)) |> Map
-    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
 
     return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 

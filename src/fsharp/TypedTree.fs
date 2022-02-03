@@ -5197,8 +5197,7 @@ type TypedImplFile =
         implExprWithSig: ModuleOrNamespaceExprWithSig *
         hasExplicitEntryPoint: bool *
         isScript: bool *
-        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
-        namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
+        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo>
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
