@@ -443,6 +443,11 @@ try {
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
+    $nativeToolsDir = InitializeNativeTools
+    write-host "Native tools: $nativeToolsDir"
+    $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
+    $env:PERL5LIB = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\vendor\lib"
+
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
@@ -501,8 +506,6 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlPackageRoot = "$nugetPackages\StrawberryPerl\5.28.0.1";
-        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
@@ -510,8 +513,7 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
-        Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }
 
