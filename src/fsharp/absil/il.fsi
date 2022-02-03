@@ -1310,12 +1310,12 @@ type ILTypeDef =
     internal new:
         name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs *
         extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs *
-        events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
+        events: ILEventDefs * properties: ILPropertyDefs * isAttribute: bool * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs *
           extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs *
-          events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
+          events: ILEventDefs * properties: ILPropertyDefs * isAttribute: bool * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
     member Name: string
     member Attributes: TypeAttributes
@@ -1348,6 +1348,7 @@ type ILTypeDef =
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding
+    member IsAttribute: bool
 
     member internal WithAccess: ILTypeDefAccess -> ILTypeDef
     member internal WithNestedAccess: ILMemberAccess -> ILTypeDef
@@ -1366,7 +1367,7 @@ type ILTypeDef =
     member With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes *
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs *
                  ?nestedTypes:ILTypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs *
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
+                 ?properties:ILPropertyDefs * ?isAttribute:bool * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
 
 /// Represents a prefix of information for ILTypeDef.
 ///

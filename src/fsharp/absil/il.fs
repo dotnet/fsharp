@@ -2102,12 +2102,12 @@ let convertInitSemantics (init: ILTypeInit) =
 [<NoComparison; NoEquality>]
 type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes, genericParams: ILGenericParameterDefs,
                extends: ILType option, methods: ILMethodDefs, nestedTypes: ILTypeDefs, fields: ILFieldDefs, methodImpls: ILMethodImplDefs,
-               events: ILEventDefs, properties: ILPropertyDefs, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
+               events: ILEventDefs, properties: ILPropertyDefs, isAttribute: bool, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     let mutable customAttrsStored = customAttrsStored
 
-    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =
-       ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, isAttribute, securityDecls, customAttrs) =
+       ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, isAttribute, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
     member _.Name = name
     member _.Attributes = attributes
@@ -2122,10 +2122,11 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     member _.MethodImpls = methodImpls
     member _.Events = events
     member _.Properties = properties
+    member _.IsAttribute = isAttribute
     member _.CustomAttrsStored = customAttrsStored
     member _.MetadataIndex = metadataIndex
 
-    member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?customAttrs, ?securityDecls) =
+    member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?isAttribute, ?customAttrs, ?securityDecls) =
         ILTypeDef(name=defaultArg name x.Name,
                   attributes=defaultArg attributes x.Attributes,
                   layout=defaultArg layout x.Layout,
@@ -2139,6 +2140,7 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   methodImpls = defaultArg methodImpls x.MethodImpls,
                   events = defaultArg events x.Events,
                   properties = defaultArg properties x.Properties,
+                  isAttribute = defaultArg isAttribute x.IsAttribute,
                   customAttrs = defaultArg customAttrs x.CustomAttrs)
 
     member x.CustomAttrs =
@@ -3345,6 +3347,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
         methodImpls=emptyILMethodImpls,
         properties=props,
         events=events,
+        isAttribute=false,
         securityDecls=emptyILSecurityDecls)
 
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
@@ -3362,6 +3365,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm, size, pack) =
               methodImpls=emptyILMethodImpls,
               properties=emptyILProperties,
               events=emptyILEvents,
+              isAttribute=false,
               securityDecls=emptyILSecurityDecls)
 
 

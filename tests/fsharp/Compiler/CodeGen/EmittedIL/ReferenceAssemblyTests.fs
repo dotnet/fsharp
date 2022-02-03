@@ -490,12 +490,17 @@ extends [runtime]System.Object
         FSharp """
 module ReferenceAssembly
 
-open System.Runtime.CompilerServices
+type MyAttribute() =
+    inherit System.Attribute()
+    member val internal Prop1 : int = 0 with get, set
 
-[<assembly: InternalsVisibleTo("Test")>]
-do ()
+type MySecondaryAttribute() =
+    inherit MyAttribute()
+    member val internal Prop1 : int = 0 with get, set
 
-let internal foo () = ()
+type NotAnAttribute() =
+    member val internal Prop1 : int = 0 with get, set
+
 """
         |> withOptions ["--refonly"]
         |> compile
@@ -503,19 +508,5 @@ let internal foo () = ()
         |> verifyIL [
             ".custom instance void [runtime]System.Runtime.CompilerServices.InternalsVisibleToAttribute::.ctor(string) = ( 01 00 04 54 65 73 74 00 00 )"
             referenceAssemblyAttributeExpectedIL
-            """
-.class public abstract auto ansi sealed ReferenceAssembly
-        extends [runtime]System.Object
-{
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .method assembly static void  foo() cil managed
-    {
-        
-    .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  throw
-    } 
-    
-} 
-            """]
+            """ foo """]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

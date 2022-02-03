@@ -4951,6 +4951,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   nestedTypes = emptyILTypeDefs,
                   implements = ilInterfaceTys,
                   extends = Some super,
+                  isAttribute = false,
                   securityDecls = emptyILSecurityDecls)
             .WithSealed(true)
             .WithSpecialName(true)
@@ -5192,6 +5193,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
               nestedTypes=emptyILTypeDefs,
               implements = ilIntfTys,
               extends= Some ext,
+              isAttribute=false,
               securityDecls= emptyILSecurityDecls)
         .WithSealed(true)
         .WithSerializable(true)
@@ -8371,6 +8373,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                    else
                        ILTypeInit.BeforeField
 
+               let isAttribute = ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
+
                let tdef = mkILGenericClass (ilTypeName, access, ilGenParams, ilBaseTy, ilIntfTys,
                                             mkILMethods ilMethods, ilFields, emptyILTypeDefs, ilProperties, ilEvents, mkILCustomAttrs ilAttrs,
                                             typeDefTrigger)
@@ -8383,7 +8387,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                        .WithSerializable(isSerializable)
                        .WithAbstract(isAbstract)
                        .WithImport(isComInteropTy g thisTy)
-                       .With(methodImpls=mkILMethodImpls methodImpls)
+                       .With(methodImpls=mkILMethodImpls methodImpls, isAttribute=isAttribute)
 
                let tdLayout, tdEncoding =
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -8496,6 +8500,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              nestedTypes=emptyILTypeDefs,
                              implements = ilIntfTys,
                              extends= Some (if tycon.IsStructOrEnumTycon then g.iltyp_ValueType else g.ilg.typ_Object),
+                             isAttribute=false,
                              securityDecls= emptyILSecurityDecls)
                          .WithLayout(layout)
                          .WithSerializable(isSerializable)

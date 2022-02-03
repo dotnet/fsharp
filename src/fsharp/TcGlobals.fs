@@ -1146,6 +1146,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val system_GenericIComparable_tcref = findSysTyconRef sys "IComparable`1"
   member val system_GenericIEquatable_tcref = findSysTyconRef sys "IEquatable`1"
   member val mk_IComparable_ty    = mkSysNonGenericTy sys "IComparable"
+  member val mk_Attribute_ty = mkSysNonGenericTy sys "Attribute"
   member val system_LinqExpression_tcref = v_linqExpression_tcr
 
   member val mk_IStructuralComparable_ty = mkSysNonGenericTy sysCollections "IStructuralComparable"
