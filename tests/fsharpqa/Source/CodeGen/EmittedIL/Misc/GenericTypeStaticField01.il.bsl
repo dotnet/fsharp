@@ -36,13 +36,13 @@
   // Offset: 0x00000608 Length: 0x000001E1
 }
 .module GenericTypeStaticField01.exe
-// MVID: {61F2D6A5-1E75-7E6B-A745-0383A5D6F261}
+// MVID: {61FC3629-1E75-7E6B-A745-03832936FC61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F00000
+// Image base: 0x05580000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -76,6 +76,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
+      .line 3,3 : 10,41 ''
       IL_0000:  newobj     instance void class GenericTypeStaticField01/Foo`1<!a>::.ctor()
       IL_0005:  stsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
       IL_000a:  ldc.i4.1
@@ -141,6 +142,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
+      .line 7,7 : 10,44 ''
       IL_0000:  newobj     instance void class GenericTypeStaticField01/Bar`2<!a,!b>::.ctor()
       IL_0005:  stsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
       IL_000a:  ldc.i4.1

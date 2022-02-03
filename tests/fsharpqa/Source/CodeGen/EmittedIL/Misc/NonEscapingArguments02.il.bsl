@@ -36,13 +36,13 @@
   // Offset: 0x00000360 Length: 0x0000019E
 }
 .module NonEscapingArguments02.dll
-// MVID: {61F2D6A5-BB56-6582-A745-0383A5D6F261}
+// MVID: {61FC3629-BB56-6582-A745-03832936FC61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C70000
+// Image base: 0x00FC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -67,6 +67,7 @@
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
+      .line 6,6 : 5,36 ''
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
       IL_000a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)

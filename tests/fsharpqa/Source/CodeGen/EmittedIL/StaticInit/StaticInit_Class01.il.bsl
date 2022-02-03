@@ -36,13 +36,13 @@
   // Offset: 0x00000338 Length: 0x000000AD
 }
 .module StaticInit_Class01.dll
-// MVID: {61F2D6A5-EC34-E66E-A745-0383A5D6F261}
+// MVID: {61FC3629-EC34-E66E-A745-03832936FC61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07370000
+// Image base: 0x07570000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -129,6 +129,7 @@
   {
     // Code size       24 (0x18)
     .maxstack  8
+    .line 6,6 : 12,30 ''
     IL_0000:  ldstr      "1"
     IL_0005:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_000a:  stsfld     int32 StaticInit_ClassS01/C::x

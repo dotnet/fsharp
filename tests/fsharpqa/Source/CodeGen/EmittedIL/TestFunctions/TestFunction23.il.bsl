@@ -36,13 +36,13 @@
   // Offset: 0x00000340 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {61F2D6A5-A643-451C-A745-0383A5D6F261}
+// MVID: {61FC3629-A643-451C-A745-03832936FC61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x073A0000
+// Image base: 0x07640000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -68,9 +68,11 @@
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
+      .line 6,6 : 5,38 ''
       IL_0008:  ldarg.0
       IL_0009:  call       string [mscorlib]System.Console::ReadLine()
       IL_000e:  stfld      string TestFunction23/C::x
+      .line 8,8 : 5,38 ''
       IL_0013:  ldarg.0
       IL_0014:  call       string [mscorlib]System.Console::ReadLine()
       IL_0019:  stfld      string TestFunction23/C::x@8
