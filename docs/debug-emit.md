@@ -43,6 +43,8 @@ Emitted debug information includes:
 * The attributes on IL methods such as `CompilerGeneratedAttribute` and `DebuggerNonUserCodeAttribute`, wee below
 * We add some codegen to give better debug experiences, see below.
 
+We almost always now emit the [Portable PDB](https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md) format.
+
 ## Design-time services
 
 IDE tooling performs queries into the F# language service, notably:
@@ -79,34 +81,56 @@ This means there is an invariant that `ValidateBreakpointLocation` and the emitt
 
 > NOTE: The IL code can and does contain extra debug points that don't pass ValidateBreakpointLocation. It won't be possible to set a breakpoint for these, but they will appear in stepping.
 
-### Intended debug points for control-flow constructs
+### Intended debug points based on syntax
 
-The intended debug points for control-flow constructs are as follows:
+The intended debug points for constructs are determined by syntax as follows.  Processing depends on whether a construct is being processed as "control-flow" or not. This means at least one debug point will be placed, either over the whole expression or some of its parts.
+
+* The bodies of functions, methods, lambdas and initialization code for top-level-bindings are all processed as control flow
+
+* Each CAPITAL-EXPR below is processed as control-flow (the bodies of loops, conditionals etc.)
+
+* Leaf expressions are the other composite expressions like applications that are not covered by the other constructs.
+
+* The sub-expressions of leaf expressions are not processed as control-flow.
 
 |  Construct   | Debug points     |
 |:-----------|:----------------|
-| `let ..`    |   See below |
-| `let rec ..`   | Implicit on body |
-| `if .. then ..`   | `if .. then` and implicit on body |
-| `if .. then .. else ..`    | `if .. then` and implicit on branches |
-| `match .. with ..`   | `match .. with` and `when` patterns and implicit on case targets |
-| `while .. do ..`   | `while .. do` and implicit on body |
-| `for .. do`  | `for .. do` and implicit on body |
-| `try .. with ..`  | `try` and `with` and implicit on body and handler |
-| `try .. finally ..`   | `try` and `finally` and implicit on body and handler |
-| `use ..` | See below for `let` |
-| `expr1; expr` sequential | On `expr1` and implicit on `expr2` |
-| `expr1 &#124;> expr2` | On `expr1` and `expr2` |
-| `(expr1a, expr1b) &#124;&#124;> expr2` | On `expr1a`, `expr1b` and `expr2` |
-| `(expr1a, expr1b, expr1c) &#124;&#124;&#124;> expr2` | On `expr1a`, `expr1b` and `expr2` |
-| `yield expr` | On `yield expr` |
-| `return expr` | On `return expr` |
+| `let x = leaf-expr in BODY-EXPR`  |  Debug point over `let x = leaf-expr`.  |
+| `let x = NON-LEAF-EXPR in BODY-EXPR`  |   |
+| `let f x = BODY-EXPR in BODY-EXPR`    |    |
+| `let rec f x = BODY-EXPR and g x = BODY-EXPR in BODY-EXPR`   |  |
+| `if guard-expr then THEN-EXPR`   | Debug point over `if guard-expr then` |
+| `if guard-expr then THEN-EXPR else ELSE-EXPR`    | Debug point over `if .. then` |
+| `match .. with ...`   | Debug point over `match .. with`  |
+| `... -> TARGET-EXPR`   |   |
+| `... when WHEN-EXPR -> TARGET-EXPR`   |   |
+| `while .. do BODY-EXPR`   | Debug point over `while .. do` |
+| `for .. in collection-expr do BODY-EXPR`  | Debug points over `for`, `in` and `collection-expr`   |
+| `try TRY-EXPR with .. -> HANDLER-EXPR`  | Debug points over `try` and `with` |
+| `try TRY-EXPR finally .. -> FINALLY-EXPR`   | Debug points `try` and `finally` |
+| `use x = leaf-expr in BODY-EXPR`  |  Debug point over `let x = leaf-expr`.  |
+| `use x = NON-LEAF-EXPR in BODY-EXPR`  |   |
+| `EXPR; EXPR` | |
+| `(fun .. -> BODY-EXPR)` | Not a leaf, do not produce a debug point on outer expression, but include them on BODY-EXPR |
+| `{ new C(args) with member ... = BODY-EXPR }` | |
+| Pipe `EXPR1 &amp;&amp; EXPR2` | |
+| Pipe `EXPR1 &#124;&#124; EXPR2` | |
+| Pipe `EXPR1 &#124;> EXPR2` |  |
+| Pipe `(EXPR1, EXPR2) &#124;&#124;> EXPR3` |  |
+| Pipe `(EXPR1, EXPR2, EXPR3) &#124;&#124;&#124;> EXPR4` | |
+| `yield EXPR` | |
+| `yield! EXPR` | |
+| `return EXPR` | |
+| `return! EXPR` | |
+| `[ BODY ]` | See notes below. If a computed list expression with yields (explicit or implicit) then process as control-flow. Otherwise treat as leaf |
+| `[| BODY |]` | See notes below. If a computed list expression with yields (explicit or implicit) then process as control-flow. Otherwise treat as leaf |
+| `seq { BODY }` | See notes below |
+| `builder { BODY }` | See notes below |
+| `f expr`, `new C(args)`, constants or other leaf | Debug point when being processed as control-flow. The sub-expressions are processed as non-control-flow. |
 
-Other non-control-flow expression (e.g. a constant or a call) get a debug point when used in statement position (e.g. as the implementation of a method, or the body of a `while`).
+#### Intended debug points for let-bindings
 
-### Intended debug points for let-bindings
-
-`let` bindings get immediate debug points if the thing is not a function and the implementation is not control flow. For example
+Simple `let` bindings get debug points that extend over the `let` (if the thing is not a function and the implementation is a leaf expression):
 
 ```fsharp
 let f () =
@@ -117,16 +141,16 @@ let f () =
     ...
 ```
 
-### Intended debug points for nested control-flow
+#### Intended debug points for nested control-flow
 
-Debug points are not generally emitted for non-statement constructs, e.g. consider:
+Debug points are not generally emitted for constituent parts of non-leaf constructs, in particular function applications, e.g. consider:
 
 ```fsharp
 let h1 x = g (f x)
 let h2 x = x |> f |> g
 ```
 
-Here `g (f x)` gets one debug point. Note that the corresponding pipelining gets three debug points.
+Here `g (f x)` gets one debug point covering the whole expression. The corresponding pipelining gets three debug points.
 
 If however a nested expression is control-flow, then debug points start being emitted again e.g.
 
@@ -136,11 +160,11 @@ let h3 x = f (if today then 1 else 2)
 
 Here debug points are at `if today then` and `1` and `2` and all of `f (if today then 1 else 2)`
 
-> NOTE: these debug points are overlapping
+> NOTE: these debug points are overlapping. That's life.
 
 ### Intended debug points for `[...]`, `[| ... |]` code
 
-The intended debug points for these constructs are the same as for the expressions inside the constructs. For example
+The intended debug points for computed list and array expressions are the same as for the expressions inside the constructs. For example
 
 ```fsharp
 let x = [ for i in 1 .. 10 do yield 1 ]
@@ -181,14 +205,17 @@ Other computation expressions such as `async { .. }` or `builder { ... }` get de
 
 * No debug point is added for the `builder.Run`, `builder.Run` or `builder.Delay` calls at the entrance to the computation expression, nor the `builder.Delay` calls implied by `try/with` or `try/finally` or sequential `Combine` calls.
 
-* The debug points are largely lost during de-sugaring
-* The computations are often "cold-start" anyway, leading to a two-phase debug problem
+The computations are often "cold-start" anyway, leading to a two-phase debug problem.
 
-See further below. In practice debug points can often be placed for user code, e.g. sequential imperative statements or `let` bindings. However debug points for control constructs are often lossy or buggy.
+The "step-into" and "step-over" behaviour for computation expressions is often buggy because it is performed with respect to the de-sugaring and inlining rather than the original source.
+For example, a "step over" on a "while" with a non-inlined `builder.While` will step over the whole call, when the used expects it to step the loop.
+One approach is to inline the `builder.While` method, and apply `[<InlineIfLambda>]` to the body function. This however has only limited success
+as at some points inlining fails to fully flatten. Builders implemented with resumable code tend to be much better in this regards as
+more complete inlining and code-flattening is applied.
 
 ## Implementation of debug points in the compiler
 
-Most (but not all) debug points are noted by the parser by adding `DebugPointAtTarget`, `DebugPointAtSwitch`, `DebugPointAtSequential`, `DebugPointAtTry`, `DebugPointAtWith`, `DebugPointAtFinally`, `DebugPointAtFor`, `DebugPointAtWhile` or `DebugPointAtBinding`.
+Most (but not all) debug points are noted by the parser by adding `DebugPointAtTry`, `DebugPointAtWith`, `DebugPointAtFinally`, `DebugPointAtFor`, `DebugPointAtWhile`, `DebugPointAtBinding` or `DebugPointAtLeaf`.
 
 These are then used by `ValidateBreakpointLocation`. These same values are also propagated unchanged all the way through to `IlxGen.fs` for actual code generation, and used for IL emit, e.g. a simple case like this:
 
@@ -198,19 +225,7 @@ These are then used by `ValidateBreakpointLocation`. These same values are also 
     | DebugPointAtTry.No -> ...
     ...
 ```
-
 For many constructs this is adequate. However, in practice the situation is far more complicated.
-
-### Internals: Implicit debug points
-
-Internally in the compiler, some debug points are implicit. In particular, whenever a non-control-flow expression (e.g. a constant or a call) is used in statement position (e.g. as the implementation of a method, or the body of a `while`) then there is an implicit debug point.
-
-* "Statement position" is tracked by the `spAlways` argument within ValidateBreakpointLocation ([permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/service/FSharpParseFileResults.fs#L481))
-* "Statement position" is similarly tracked by `SPAlways` within IlxGen.fs [permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/IlxGen.fs#L2290)
-
-Implicit debug points but they also arise in some code-generated constructs or in backup paths in the compiler implementation. In general we want to remove or reduce the occurrence of these and make things more explicit. However they still exist, especially for "lowered" constructs.  
-
-> For example, `DebugPointAtTry.Body` represents a debug point implicitly located on the body of the try (rather than a `try` keyword).  Searching the source code, this is generated in the "try/finally" implied by a "use x = ..." construct ([permalink](https://github.com/dotnet/fsharp/blob/24979b692fc88dc75e2467e30b75667058fd9504/src/fsharp/CheckExpressions.fs#L10337)).  Is a debug point even needed here? Yes, because otherwise the body of the "using" wouldn't get a debug point.
 
 ### Internals: Debug points for `[...]`, `[| ... |]` 
 
@@ -316,7 +331,7 @@ If carefully used this would allow reasonable debugging across multiple-phase bo
 
 ### FeeFee and F00F00 debug points (Hidden and JustMyCodeWithNoSource)
 
-Some fragments of code use constructs generate calls and other IL code that should not have debug points and not participate in "Step Into", for example. These are generated in IlxGen as "FeeFee" debug points. See the [old blog post on this](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
+Some fragments of code use constructs generate calls and other IL code that should not have debug points and not participate in "Step Into", for example. These are generated in IlxGen as "FeeFee" debug points. See the [the Portable PDB spec linked here](https://docs.microsoft.com/en-us/dotnet/api/system.reflection.metadata.sequencepoint.hiddenline?view=net-5.0).
 
 > TODO: There is also the future prospect of generating `JustMyCodeWithNoSource` (0xF00F00) debug points but these are not yet emitted by F#.  We should check what this is and when the C# compiler emits these.
 

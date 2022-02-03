@@ -151,6 +151,8 @@ val arbExpr: debugStr:string * range:range -> SynExpr
 
 val unionRangeWithListBy: projectRangeFromThing:('a -> range) -> m:range -> listOfThing:'a list -> range
 
+val inline unionRangeWithXmlDoc: xmlDoc:PreXmlDoc -> range:range -> range
+
 val mkAttributeList: attrs:SynAttribute list -> range:range -> SynAttributeList list
 
 val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list

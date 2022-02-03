@@ -44,7 +44,7 @@ let ``Visit union definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynUnionCase (_, id1, _, _, _, _); SynUnionCase (_, id2, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynUnionCase (ident=id1); SynUnionCase (ident=id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit union definition"
 
 [<Test>]

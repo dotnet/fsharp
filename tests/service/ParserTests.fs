@@ -88,7 +88,7 @@ match () with
 """
 
     match getSingleExprInModule parseResults with
-    | SynExpr.Match (clauses=[ SynMatchClause (SynPat.Or _, _, _, SynExpr.Const _, _, _) ]) -> ()
+    | SynExpr.Match (clauses=[ SynMatchClause (pat=SynPat.Or _;resultExpr=SynExpr.Const _) ]) -> ()
     | _ -> failwith "Unexpected tree"
 
 [<Test>]
