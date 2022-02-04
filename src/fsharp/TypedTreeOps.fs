@@ -9783,11 +9783,6 @@ let (|ResumeAtExpr|_|) g expr =
     | ValApp g g.cgh__resumeAt_vref (_, [pcExpr], _m) -> Some pcExpr
     | _ -> None
 
-let (|DebugPointExpr|_|) g expr =
-    match expr with
-    | ValApp g g.cgh__debugPoint_vref (_, [StringExpr debugPointName], _m) -> Some debugPointName
-    | _ -> None
-
 // Detect sequencing constructs in state machine code
 let (|SequentialResumableCode|_|) (g: TcGlobals) expr = 
     match expr with
