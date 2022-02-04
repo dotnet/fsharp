@@ -36,13 +36,13 @@
   // Offset: 0x000001F8 Length: 0x0000007A
 }
 .module GenIter01.exe
-// MVID: {61FD4A6D-F836-DC98-A745-03836D4AFD61}
+// MVID: {61FDB6C7-F836-DC98-A745-0383C7B6FD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067C0000
+// Image base: 0x06B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,8 +83,8 @@
       IL_0017:  ldloc.1
       IL_0018:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_001d:  stloc.3
-      .line 6,6 : 12,23 ''
       IL_001e:  ldloca.s   V_0
+      .line 6,6 : 12,23 ''
       IL_0020:  ldloc.3
       IL_0021:  ldloc.3
       IL_0022:  mul
