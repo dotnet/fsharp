@@ -157,13 +157,21 @@ let mkClassMemberLocalBindings(isStatic, initialRangeOpt, attrs, vis, BindingSet
    if isUse then errorR(Error(FSComp.SR.parsUseBindingsIllegalInImplicitClassConstructors(), wholeRange))
    SynMemberDefn.LetBindings (decls, isStatic, isRec, wholeRange)
 
-let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), mIn, body) = 
+let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), mIn, body: SynExpr) = 
    let ignoredFreeAttrs, decls = declsPreAttrs [] None
    let mWhole =
        match decls with
        | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
        | _ -> mWhole
    if not (isNil ignoredFreeAttrs) then warning(Error(FSComp.SR.parsAttributesIgnored(), mWhole))
+   let mIn =
+       mIn
+       |> Option.bind (fun (mIn: range) -> 
+           if Position.posEq mIn.Start body.Range.Start then
+              None
+           else
+              Some mIn)
+
    SynExpr.LetOrUse (isRec, isUse, decls, body, mWhole, { InKeyword = mIn }) 
 
 let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) = 
