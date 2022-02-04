@@ -108,7 +108,7 @@ The intended debug points for constructs are determined by syntax as follows.  P
 | `for .. in collection-expr do BODY-EXPR`  | Debug points over `for`, `in` and `collection-expr`   |
 | `try TRY-EXPR with .. -> HANDLER-EXPR`  | Debug points over `try` and `with` |
 | `try TRY-EXPR finally .. -> FINALLY-EXPR`   | Debug points `try` and `finally` |
-| `use x = leaf-expr in BODY-EXPR`  |  Debug point over `let x = leaf-expr`.  |
+| `use x = leaf-expr in BODY-EXPR`  |  Debug point over `use x = leaf-expr`.  |
 | `use x = NON-LEAF-EXPR in BODY-EXPR`  |   |
 | `EXPR; EXPR` | |
 | `(fun .. -> BODY-EXPR)` | Not a leaf, do not produce a debug point on outer expression, but include them on BODY-EXPR |
@@ -118,10 +118,10 @@ The intended debug points for constructs are determined by syntax as follows.  P
 | Pipe `EXPR1 &#124;> EXPR2` |  |
 | Pipe `(EXPR1, EXPR2) &#124;&#124;> EXPR3` |  |
 | Pipe `(EXPR1, EXPR2, EXPR3) &#124;&#124;&#124;> EXPR4` | |
-| `yield EXPR` | |
-| `yield! EXPR` | |
-| `return EXPR` | |
-| `return! EXPR` | |
+| `yield leaf-expr` | Debug point over 'yield expr' |
+| `yield! leaf-expr` | Debug point over 'yield! expr' |
+| `return leaf-expr` | Debug point over 'return expr' |
+| `return! leaf-expr` | Debug point over 'return! expr' |
 | `[ BODY ]` | See notes below. If a computed list expression with yields (explicit or implicit) then process as control-flow. Otherwise treat as leaf |
 | `[| BODY |]` | See notes below. If a computed list expression with yields (explicit or implicit) then process as control-flow. Otherwise treat as leaf |
 | `seq { BODY }` | See notes below |

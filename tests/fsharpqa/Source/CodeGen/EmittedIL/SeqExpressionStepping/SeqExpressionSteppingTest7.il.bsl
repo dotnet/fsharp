@@ -36,13 +36,13 @@
   // Offset: 0x00000858 Length: 0x000003BA
 }
 .module SeqExpressionSteppingTest7.exe
-// MVID: {61EFEC61-2432-93C3-A745-038361ECEF61}
+// MVID: {61FD4A6D-2432-93C3-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06830000
+// Image base: 0x07240000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,7 +80,7 @@
     IL_000d:  ldc.i4.1
     IL_000e:  brfalse.s  IL_0033
 
-    .line 5,5 : 44,55 ''
+    .line 5,5 : 37,55 ''
     IL_0010:  ldstr      ""
     IL_0015:  stloc.1
     IL_0016:  ldloca.s   V_0
@@ -801,8 +801,8 @@
       IL_0023:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_0028:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_002d:  pop
+      .line 75,75 : 13,20 ''
       IL_002e:  ldloca.s   V_0
-      .line 75,75 : 19,20 ''
       IL_0030:  ldloc.3
       IL_0031:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0036:  nop

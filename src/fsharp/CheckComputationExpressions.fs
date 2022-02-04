@@ -754,7 +754,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
     let addBindDebugPoint spBind e =
         match spBind with
         | DebugPointAtBinding.Yes m ->
-            SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes m, true), e)
+            SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, e)
         | _ -> e
 
     let emptyVarSpace = LazyWithContext.NotLazy ([], env)
@@ -982,7 +982,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                         let forCall =
                             match spFor with
                             | DebugPointAtFor.Yes _ ->
-                                SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mFor, true), forCall)
+                                SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFor, false, forCall)
                             | DebugPointAtFor.No -> forCall
 
                         translatedCtxt forCall))
@@ -1011,7 +1011,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let guardExpr = 
                 match spWhile with
                 | DebugPointAtWhile.Yes _ ->
-                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mWhile, true), guardExpr)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
             Some(trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
@@ -1029,7 +1029,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let unwindExpr2 =
                 match spFinally with
                 | DebugPointAtFinally.Yes _ ->
-                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mFinally, false), unwindExpr)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mFinally, true, unwindExpr)
                 | DebugPointAtFinally.No -> unwindExpr
 
             if isQuery then error(Error(FSComp.SR.tcNoTryFinallyInQuery(), mTry))
@@ -1045,7 +1045,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let innerExpr =
                 match spTry with
                 | DebugPointAtTry.Yes _ ->
-                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
                 | _ -> innerExpr
                 
             Some (translatedCtxt 
@@ -1412,7 +1412,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let innerExpr =
                 match spTry with
                 | DebugPointAtTry.Yes _ ->
-                    SynExpr.DebugPoint(Some (DebugPointAtLeafExpr.Yes mTry, false), innerExpr)
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mTry, true, innerExpr)
                 | _ -> innerExpr
                 
             let callExpr = 
@@ -1423,40 +1423,52 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
             Some(translatedCtxt callExpr)
 
-        | SynExpr.YieldOrReturnFrom ((true, _), yieldExpr, m) -> 
-            let yieldFromExpr = mkSourceExpr yieldExpr
+        | SynExpr.YieldOrReturnFrom ((true, _), synYieldExpr, m) -> 
+            let yieldFromExpr = mkSourceExpr synYieldExpr
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "YieldFrom" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("YieldFrom"), m))
 
+            let yieldFromCall = mkSynCall "YieldFrom" m [yieldFromExpr]
+
             let yieldFromCall =
-                mkSynCall "YieldFrom" m [yieldFromExpr]
-                |> fun e -> SynExpr.DebugPoint(None, e)
+                if IsControlFlowExpression synYieldExpr then
+                    yieldFromCall
+                else
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldFromCall)
 
             Some (translatedCtxt yieldFromCall)
   
-        | SynExpr.YieldOrReturnFrom ((false, _), returnedExpr, m) -> 
-            let returnFromExpr = mkSourceExpr returnedExpr
+        | SynExpr.YieldOrReturnFrom ((false, _), synReturnExpr, m) -> 
+            let returnFromExpr = mkSourceExpr synReturnExpr
             if isQuery then error(Error(FSComp.SR.tcReturnMayNotBeUsedInQueries(), m))
 
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFrom" builderTy) then 
-                errorR(Error(FSComp.SR.tcRequireBuilderMethod("ReturnFrom"), m))
-                Some (translatedCtxt returnFromExpr)
-            else
-                let returnFromCall =
-                    mkSynCall "ReturnFrom" m [returnFromExpr]
-                    |> fun e -> SynExpr.DebugPoint(None, e)
-                Some (translatedCtxt returnFromCall)
+                error(Error(FSComp.SR.tcRequireBuilderMethod("ReturnFrom"), m))
 
-        | SynExpr.YieldOrReturn ((isYield, _), yieldOrReturnExpr, m) -> 
+            let returnFromCall = mkSynCall "ReturnFrom" m [returnFromExpr]
+
+            let returnFromCall =
+                if IsControlFlowExpression synReturnExpr then
+                    returnFromCall
+                else
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnFromCall)
+
+            Some (translatedCtxt returnFromCall)
+
+        | SynExpr.YieldOrReturn ((isYield, _), synYieldOrReturnExpr, m) -> 
             let methName = (if isYield then "Yield" else "Return")
             if isQuery && not isYield then error(Error(FSComp.SR.tcReturnMayNotBeUsedInQueries(), m))
 
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad methName builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod(methName), m))
 
+            let yieldOrReturnCall = mkSynCall methName m [synYieldOrReturnExpr]
+                
             let yieldOrReturnCall =
-                mkSynCall methName m [yieldOrReturnExpr]
-                |> fun e -> SynExpr.DebugPoint(None, e)
+                if IsControlFlowExpression synYieldOrReturnExpr then
+                    yieldOrReturnCall
+                else
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
 
@@ -1655,7 +1667,10 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
     and convertSimpleReturnToExpr varSpace innerComp =
         match innerComp with 
-        | SynExpr.YieldOrReturn ((false, _), returnExpr, _) -> Some (returnExpr, None)
+        | SynExpr.YieldOrReturn ((false, _), returnExpr, m) ->
+            let returnExpr = SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes m, false, returnExpr)
+            Some (returnExpr, None)
+
         | SynExpr.Match (mMatch, spMatch, mWith, expr, clauses, m) ->
             let clauses = 
                 clauses |> List.map (fun (SynMatchClause(pat, cond, innerComp2, patm, sp, trivia)) -> 
@@ -1957,11 +1972,14 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             error(Error(FSComp.SR.tcDoBangIllegalInSequenceExpression(), m))
 
         | SynExpr.Sequential (sp, true, innerComp1, innerComp2, m) -> 
+            let env1 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
+
+            let res, tpenv = tcSequenceExprBodyAsSequenceOrStatement env1 genOuterTy tpenv innerComp1 
+
+            let env2 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
+
             // "expr; cexpr" is treated as sequential execution
             // "cexpr; cexpr" is treated as append
-            let env1 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressExpr -> true | _ -> false) }
-            let res, tpenv = tcSequenceExprBodyAsSequenceOrStatement env1 genOuterTy tpenv innerComp1 
-            let env2 = { env with eIsControlFlow = (match sp with DebugPointAtSequential.SuppressNeither | DebugPointAtSequential.SuppressStmt -> true | _ -> false) }
             match res with 
             | Choice1Of2 innerExpr1 -> 
                 let innerExpr2, tpenv = tcSequenceExprBody env2 genOuterTy tpenv innerComp2
@@ -1995,20 +2013,28 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             let bindPatTy = NewInferenceType ()
             let inputExprTy = NewInferenceType ()
             let pat', _, vspecs, envinner, tpenv = TcMatchPattern cenv bindPatTy env tpenv (pat, None)
+
             UnifyTypes cenv env m inputExprTy bindPatTy
+
             let inputExpr, tpenv =
                 let env = { env with eIsControlFlow = true }
                 TcExpr cenv (MustEqual inputExprTy) env tpenv rhsExpr
+
             let innerExpr, tpenv =
                 let envinner = { envinner with eIsControlFlow = true }
                 tcSequenceExprBody envinner genOuterTy tpenv innerComp
+
             let mBind = 
                 match spBind with 
                 | DebugPointAtBinding.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Binding)
                 | _ -> inputExpr.Range
+
             let inputExprMark = inputExpr.Range
+
             let matchv, matchExpr = compileSeqExprMatchClauses cenv envinner inputExprMark (pat', vspecs) innerExpr (Some inputExpr) bindPatTy genOuterTy 
+
             let consumeExpr = mkLambda mBind matchv (matchExpr, genOuterTy)
+
             // The 'mBind' is attached to the lambda
             Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
 
@@ -2017,37 +2043,63 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
         | SynExpr.Match (_mMatch, spMatch, expr, _mWith, clauses, _m) ->
             let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
+
             let tclauses, tpenv = 
                 (tpenv, clauses) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _)) ->
-                      let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
-                      let envinner = match sp with DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true } | DebugPointAtTarget.No -> envinner
+                      let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
+                      let envinner =
+                          match sp with
+                          | DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true }
+                          | DebugPointAtTarget.No -> envinner
                       let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-                      TClause(pat', cond', TTarget(vspecs, innerExpr, None), pat'.Range), tpenv)
+                      TClause(patR, condR, TTarget(vspecs, innerExpr, None), patR.Range), tpenv)
+
             let inputExprTy = tyOfExpr cenv.g inputExpr
             let inputExprMark = inputExpr.Range
             let matchv, matchExpr = CompilePatternForMatchClauses cenv env inputExprMark inputExprMark true ThrowIncompleteMatchException (Some inputExpr) inputExprTy genOuterTy tclauses 
+
             Some(mkLet spMatch inputExprMark matchv inputExpr matchExpr, tpenv)
 
         | SynExpr.TryWith (trivia={ TryToWithRange = mTryToWith }) ->
             error(Error(FSComp.SR.tcTryIllegalInSequenceExpression(), mTryToWith))
 
-        | SynExpr.YieldOrReturnFrom ((isYield, _), yieldExpr, m) -> 
-            let env = { env with eIsControlFlow = true }
-            let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv yieldExpr
+        | SynExpr.YieldOrReturnFrom ((isYield, _), synYieldExpr, m) -> 
+            let env = { env with eIsControlFlow = false }
+            let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
             if not isYield then errorR(Error(FSComp.SR.tcUseYieldBangForMultipleResults(), m)) 
 
             AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genOuterTy genExprTy
-            Some(mkCoerceExpr(resultExpr, genOuterTy, m, genExprTy), tpenv)
 
-        | SynExpr.YieldOrReturn ((isYield, _), yieldExpr, m) -> 
-            let env = { env with eIsControlFlow = true }
+            let resultExpr = mkCoerceExpr(resultExpr, genOuterTy, m, genExprTy)
+
+            let resultExpr =
+                if IsControlFlowExpression synYieldExpr then
+                    resultExpr
+                else
+                    mkDebugPoint m resultExpr
+
+            Some(resultExpr, tpenv)
+
+        | SynExpr.YieldOrReturn ((isYield, _), synYieldExpr, m) -> 
+            let env = { env with eIsControlFlow = false }
             let genResultTy = NewInferenceType ()
+
             if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
+
             UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
 
-            let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv yieldExpr
-            Some(mkCallSeqSingleton cenv.g m genResultTy resultExpr, tpenv )
+            let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv synYieldExpr
+
+            let resultExpr = mkCallSeqSingleton cenv.g m genResultTy resultExpr
+
+            let resultExpr =
+                if IsControlFlowExpression synYieldExpr then
+                    resultExpr
+                else
+                    mkDebugPoint m resultExpr
+
+            Some(resultExpr, tpenv )
 
         | _ -> None
                 
@@ -2065,7 +2117,9 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
         match tryTcSequenceExprBody env genOuterTy tpenv comp with 
         | Some (expr, tpenv) -> Choice1Of2 expr, tpenv
         | None -> 
+
             let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
+
             if enableImplicitYield then 
                 let hasTypeUnit, expr, tpenv = TryTcStmt cenv env tpenv comp
                 if hasTypeUnit then 
@@ -2092,7 +2146,9 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
     | None ->
 
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
+
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
+
     match comp with 
     | SynExpr.New _ -> 
         errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
@@ -2122,9 +2178,9 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         let exprTy = mkSeqTy cenv.g genCollElemTy
 
         let expr, tpenv = TcExpr cenv (MustEqual exprTy) env tpenv replacementExpr
+
         let expr = 
             if cenv.g.compilingFslib then 
-                //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
                 expr 
             else 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the

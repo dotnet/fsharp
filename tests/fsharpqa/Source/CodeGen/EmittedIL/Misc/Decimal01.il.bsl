@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 5:0:0:0
 }
 .assembly extern netstandard
 {
@@ -41,13 +41,13 @@
   // Offset: 0x00000140 Length: 0x00000050
 }
 .module Decimal01.exe
-// MVID: {61F02896-F150-FA46-A745-03839628F061}
+// MVID: {60B68B7F-F150-FA46-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C60000
+// Image base: 0x05600000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

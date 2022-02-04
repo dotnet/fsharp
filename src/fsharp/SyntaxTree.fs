@@ -849,7 +849,8 @@ type SynExpr =
         range: range
 
     | DebugPoint of
-        debugPoint: (DebugPointAtLeafExpr * bool) option *
+        debugPoint: DebugPointAtLeafExpr *
+        isControlFlow: bool *
         innerExpr: SynExpr
 
     member e.Range =
@@ -922,7 +923,7 @@ type SynExpr =
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
-        | SynExpr.DebugPoint (_, innerExpr) -> innerExpr.Range
+        | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with

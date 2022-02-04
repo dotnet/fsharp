@@ -510,13 +510,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                             | SynInterpolatedStringPart.String _ -> ()
                                             | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield fillExpr ]
 
-                  | SynExpr.DebugPoint (dpOpt, innerExpr) ->
-                      match dpOpt with 
-                      | Some (DebugPointAtLeafExpr.Yes m, isExpr) ->
-                          yield! checkRange m
-                          yield! walkExpr (not isExpr) innerExpr
-                      | None ->
-                          yield! walkExpr true innerExpr
+                  | SynExpr.DebugPoint (DebugPointAtLeafExpr.Yes m, isControlFlow, innerExpr) ->
+                       yield! checkRange m
+                       yield! walkExpr isControlFlow innerExpr
 
                   | SynExpr.YieldOrReturn (_, e, m) ->
                       yield! checkRange m

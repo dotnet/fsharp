@@ -5749,15 +5749,10 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcNonControlFlowExpr env <| fun env ->
         TcAssertExpr cenv overallTy env m tpenv x
 
-    | SynExpr.DebugPoint (dpOpt, innerExpr) ->
-        match dpOpt with 
-        | Some (dp , isExpr)->
-            let env = if isExpr then { env with eIsControlFlow = false } else { env with eIsControlFlow = true } 
-            let innerExprR, tpenv = TcExpr cenv overallTy env tpenv innerExpr
-            Expr.DebugPoint (dp, innerExprR), tpenv
-        | None ->
-            let env = { env with eIsControlFlow = true }
-            TcExpr cenv overallTy env tpenv innerExpr
+    | SynExpr.DebugPoint (dp, isControlFlow, innerExpr) ->
+        let env = { env with eIsControlFlow = isControlFlow }
+        let innerExprR, tpenv = TcExpr cenv overallTy env tpenv innerExpr
+        Expr.DebugPoint (dp, innerExprR), tpenv
 
     | SynExpr.Fixed (_, m) ->
         error(Error(FSComp.SR.tcFixedNotAllowed(), m))
@@ -8618,7 +8613,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.InferredUpcast (synExpr, _)
         | SynExpr.InferredDowncast (synExpr, _)
         | SynExpr.AddressOf (_, synExpr, _, _)
-        | SynExpr.DebugPoint (_, synExpr)
+        | SynExpr.DebugPoint (_, _, synExpr)
         | SynExpr.Quote (_, _, synExpr, _, _) -> isSimpleArgument synExpr
 
         | SynExpr.InterpolatedString _

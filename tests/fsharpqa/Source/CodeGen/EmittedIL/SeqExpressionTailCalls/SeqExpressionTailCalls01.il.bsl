@@ -36,13 +36,13 @@
   // Offset: 0x00000220 Length: 0x0000008C
 }
 .module SeqExpressionTailCalls01.exe
-// MVID: {61E07031-093A-A6BE-A745-03833170E061}
+// MVID: {61FD4A6D-093A-A6BE-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06830000
+// Image base: 0x05DB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -116,18 +116,18 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
+      .line 3,3 : 25,32 ''
       IL_0025:  ldarg.0
       IL_0026:  ldc.i4.1
       IL_0027:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::pc
       IL_002c:  ldarg.0
-      .line 3,3 : 31,32 ''
       IL_002d:  ldarg.0
       IL_002e:  ldfld      int32 SeqExpressionTailCalls01/rwalk@3::x
       IL_0033:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::current
       IL_0038:  ldc.i4.1
       IL_0039:  ret
 
-      .line 3,3 : 41,52 ''
+      .line 3,3 : 34,52 ''
       IL_003a:  ldarg.0
       IL_003b:  ldc.i4.2
       IL_003c:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::pc

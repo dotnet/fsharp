@@ -736,7 +736,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.YieldOrReturnFrom (_, e, _)
           | SynExpr.DoBang (e, _)
           | SynExpr.Fixed (e, _)
-          | SynExpr.DebugPoint (_, e)
+          | SynExpr.DebugPoint (_, _, e)
           | SynExpr.Paren (e, _, _, _) ->
               walkExpr e
 

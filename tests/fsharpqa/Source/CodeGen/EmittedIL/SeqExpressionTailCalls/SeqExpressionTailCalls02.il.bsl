@@ -36,13 +36,13 @@
   // Offset: 0x00000258 Length: 0x0000009E
 }
 .module SeqExpressionTailCalls02.exe
-// MVID: {61E07031-093A-EC43-A745-03833170E061}
+// MVID: {61FD4A6D-093A-EC43-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05230000
+// Image base: 0x052F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -116,18 +116,18 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
+      .line 5,5 : 26,33 ''
       IL_0025:  ldarg.0
       IL_0026:  ldc.i4.1
       IL_0027:  stfld      int32 SeqExpressionTailCalls02/rwalk1@5::pc
       IL_002c:  ldarg.0
-      .line 5,5 : 32,33 ''
       IL_002d:  ldarg.0
       IL_002e:  ldfld      int32 SeqExpressionTailCalls02/rwalk1@5::x
       IL_0033:  stfld      int32 SeqExpressionTailCalls02/rwalk1@5::current
       IL_0038:  ldc.i4.1
       IL_0039:  ret
 
-      .line 5,5 : 42,54 ''
+      .line 5,5 : 35,54 ''
       IL_003a:  ldarg.0
       IL_003b:  ldc.i4.2
       IL_003c:  stfld      int32 SeqExpressionTailCalls02/rwalk1@5::pc
@@ -300,18 +300,18 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
+      .line 6,6 : 26,33 ''
       IL_0025:  ldarg.0
       IL_0026:  ldc.i4.1
       IL_0027:  stfld      int32 SeqExpressionTailCalls02/rwalk2@6::pc
       IL_002c:  ldarg.0
-      .line 6,6 : 32,33 ''
       IL_002d:  ldarg.0
       IL_002e:  ldfld      int32 SeqExpressionTailCalls02/rwalk2@6::x
       IL_0033:  stfld      int32 SeqExpressionTailCalls02/rwalk2@6::current
       IL_0038:  ldc.i4.1
       IL_0039:  ret
 
-      .line 6,6 : 42,54 ''
+      .line 6,6 : 35,54 ''
       IL_003a:  ldarg.0
       IL_003b:  ldc.i4.2
       IL_003c:  stfld      int32 SeqExpressionTailCalls02/rwalk2@6::pc

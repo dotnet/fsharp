@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 5:0:0:0
 }
 .assembly AsyncExpressionSteppingTest1
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest1.dll
-// MVID: {61F2D6A5-6394-B5D4-A745-0383A5D6F261}
+// MVID: {611B0EC4-6394-B5D4-A745-0383C40E1B61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F60000
+// Image base: 0x06680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

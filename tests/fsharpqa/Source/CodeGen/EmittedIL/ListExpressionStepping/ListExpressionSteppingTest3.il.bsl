@@ -36,13 +36,13 @@
   // Offset: 0x00000280 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest3.exe
-// MVID: {61F02896-AE45-39B4-A745-03839628F061}
+// MVID: {61FD4A6D-AE45-39B4-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06FB0000
+// Image base: 0x06BE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -84,8 +84,8 @@
       IL_001d:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_0022:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0027:  pop
+      .line 10,10 : 14,21 ''
       IL_0028:  ldloca.s   V_1
-      .line 10,10 : 20,21 ''
       IL_002a:  ldloc.0
       IL_002b:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>::Add(!0)
       IL_0030:  nop

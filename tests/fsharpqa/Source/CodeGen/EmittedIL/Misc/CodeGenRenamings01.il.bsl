@@ -36,13 +36,13 @@
   // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {61F02896-8173-986B-A745-03839628F061}
+// MVID: {61FD4A6C-8173-986B-A745-03836C4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05910000
+// Image base: 0x07220000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -111,11 +111,11 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
+      .line 9,9 : 18,30 ''
       IL_0025:  ldarg.0
       IL_0026:  ldc.i4.1
       IL_0027:  stfld      int32 CodeGenRenamings01/seq1@9::pc
       IL_002c:  ldarg.0
-      .line 9,9 : 25,29 ''
       IL_002d:  ldc.i4.1
       IL_002e:  ldc.i4.1
       IL_002f:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
@@ -124,11 +124,11 @@
       IL_0039:  ldc.i4.1
       IL_003a:  ret
 
+      .line 9,9 : 32,44 ''
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.2
       IL_003d:  stfld      int32 CodeGenRenamings01/seq1@9::pc
       IL_0042:  ldarg.0
-      .line 9,9 : 39,43 ''
       IL_0043:  ldc.i4.2
       IL_0044:  ldc.i4.2
       IL_0045:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,

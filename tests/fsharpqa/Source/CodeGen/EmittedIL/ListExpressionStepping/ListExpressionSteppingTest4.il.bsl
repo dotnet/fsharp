@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest4.exe
-// MVID: {61F02896-3154-FA67-A745-03839628F061}
+// MVID: {61FD4A6D-3154-FA67-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06FE0000
+// Image base: 0x07210000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,8 +83,8 @@
       IL_0016:  ldloc.2
       IL_0017:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
       IL_001c:  nop
+      .line 10,10 : 11,19 ''
       IL_001d:  ldloca.s   V_0
-      .line 10,10 : 17,19 ''
       IL_001f:  ldloc.1
       IL_0020:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
       IL_0025:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
@@ -96,8 +96,8 @@
       IL_0032:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
       IL_0037:  add
       IL_0038:  stloc.3
+      .line 12,12 : 11,18 ''
       IL_0039:  ldloca.s   V_0
-      .line 12,12 : 17,18 ''
       IL_003b:  ldloc.3
       IL_003c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0041:  nop

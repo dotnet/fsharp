@@ -467,7 +467,7 @@ module SyntaxTraversal =
 
                 | SynExpr.Fixed (synExpr, _range) -> traverseSynExpr synExpr
 
-                | SynExpr.DebugPoint (_, synExpr) -> traverseSynExpr synExpr
+                | SynExpr.DebugPoint (_, _, synExpr) -> traverseSynExpr synExpr
 
                 | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                     if isInfix then
