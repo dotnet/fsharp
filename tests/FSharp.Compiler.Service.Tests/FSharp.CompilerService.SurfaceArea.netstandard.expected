@@ -6243,8 +6243,10 @@ FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.SynExpr get_innerExpr()
 FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.SynExpr innerExpr
-FSharp.Compiler.Syntax.SynExpr+DebugPoint: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.DebugPointAtLeafExpr,System.Boolean]] debugPoint
-FSharp.Compiler.Syntax.SynExpr+DebugPoint: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.DebugPointAtLeafExpr,System.Boolean]] get_debugPoint()
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: Boolean get_isControlFlow()
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: Boolean isControlFlow
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.DebugPointAtLeafExpr debugPoint
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.DebugPointAtLeafExpr get_debugPoint()
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Text.Range get_range()
@@ -6924,7 +6926,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListCom
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAssert(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewComputationExpr(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewConst(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDebugPoint(Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.DebugPointAtLeafExpr,System.Boolean]], FSharp.Compiler.Syntax.SynExpr)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDebugPoint(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, Boolean, FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDiscardAfterMissingQualificationAfterDot(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDo(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDoBang(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
