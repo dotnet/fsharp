@@ -47,7 +47,7 @@
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <SubDir>Shipping\</SubDir>
       <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
-      <Replacement1>$(FSharpCorePreviewPackageVersionValue)</Replacement1>
+      <Replacement1>$(FSCorePackageVersionValue)-$(VersionSuffix)</Replacement1>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
