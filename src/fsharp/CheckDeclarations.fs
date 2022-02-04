@@ -753,7 +753,7 @@ module IncrClassChecking =
             let ctorTy = mkFunTy argty objTy    
             // REVIEW: no attributes can currently be specified for the implicit constructor 
             let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
-            let memberFlags = CtorMemberFlags 
+            let memberFlags = CtorMemberFlags SynMemberFlagsTrivia.Zero
                                   
             let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
             let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
@@ -781,8 +781,8 @@ module IncrClassChecking =
                 let cctorTy = mkFunTy cenv.g.unit_ty cenv.g.unit_ty
                 let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
                 let id = ident ("cctor", m)
-                CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
-                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], ClassCtorMemberFlags, valSynData, id, false)
+                CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
+                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
                 let partialValReprInfo = TranslateTopValSynInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = TypeScheme(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG partialValReprInfo
@@ -954,7 +954,7 @@ module IncrClassChecking =
                     let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo 0 v.Type v.Range
 
                     let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
-                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberKind.Member
+                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
                     let id = mkSynId v.Range name
                     let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 

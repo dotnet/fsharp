@@ -383,7 +383,8 @@ module SyntaxTraversal =
                     ] |> pick expr
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; members=ms; extraImpls=ifaces) ->
+                    let binds = unionBindingAndMembers binds ms
                     let result = 
                         ifaces 
                         |> Seq.map (fun (SynInterfaceImpl(interfaceTy=ty)) -> ty)
