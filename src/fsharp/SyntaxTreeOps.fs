@@ -70,17 +70,51 @@ let (|SingleIdent|_|) inp =
     | SynExpr.Ident id -> Some id
     | _ -> None
 
-/// This affects placement of sequence points
+let (|SynBinOp|_|) input =
+    match input with
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
+        Some (synId, x1, x2)
+    | _ -> None
+
+let (|SynPipeRight|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_PipeRight" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynPipeRight2|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight2" -> 
+        Some (x1a, x1b, x2)
+    | _ -> None
+
+let (|SynPipeRight3|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight3" -> 
+        Some (x1a, x1b, x1c, x2)
+    | _ -> None
+
+let (|SynAndAlso|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanAnd" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynOrElse|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanOr" -> Some (x1, x2)
+    | _ -> None
+
+/// This affects placement of debug points
 let rec IsControlFlowExpression e =
     match e with
-    // We do allow breakpoints on the creation of a delegate or object using an object expression
-    //| SynExpr.ObjExpr _
-
-    // These expressions create an object, but we do not allow breakpoints on the creation of the lambda, only on the execution
-    // of its body.
+    | SynOrElse _
+    | SynAndAlso _
+    | SynPipeRight _
+    | SynPipeRight2 _
+    | SynPipeRight3 _
     | SynExpr.MatchLambda _
     | SynExpr.Lambda _
-    
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
@@ -787,39 +821,3 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
-
-let (|SynBinOp|_|) input =
-    match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
-        Some (synId, x1, x2)
-    | _ -> None
-
-let (|SynPipeRight|_|) input =
-    match input with
-    | SynBinOp (synId, x1, x2) when synId.idText = "op_PipeRight" -> Some (x1, x2)
-    | _ -> None
-
-let (|SynPipeRight2|_|) input =
-    match input with
-    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), x2) 
-        when synId.idText = "op_PipeRight2" -> 
-        Some (x1a, x1b, x2)
-    | _ -> None
-
-let (|SynPipeRight3|_|) input =
-    match input with
-    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), x2) 
-        when synId.idText = "op_PipeRight3" -> 
-        Some (x1a, x1b, x1c, x2)
-    | _ -> None
-
-let (|SynAndAlso|_|) input =
-    match input with
-    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanAnd" -> Some (x1, x2)
-    | _ -> None
-
-let (|SynOrElse|_|) input =
-    match input with
-    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanOr" -> Some (x1, x2)
-    | _ -> None
-

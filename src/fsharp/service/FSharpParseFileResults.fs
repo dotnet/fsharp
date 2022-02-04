@@ -527,6 +527,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! checkRange e.Range
                       yield! walkExpr false e
 
+                  | SynOrElse (e1, e2) 
                   | SynAndAlso (e1, e2) ->
                       yield! walkExpr true e1
                       yield! walkExpr true e2
