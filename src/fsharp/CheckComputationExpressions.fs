@@ -942,7 +942,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             Some (trans CompExprTranslationPass.Initial q varSpaceInner consumingExpr translatedCtxt)
 
 
-        | SynExpr.ForEach (spFor, _spIn, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _mEntireForEach) -> 
+        | SynExpr.ForEach (spFor, spIn, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _mEntireForEach) -> 
             let sourceExpr =
                 match RewriteRangeExpr sourceExpr with
                 | Some e -> e
@@ -953,6 +953,13 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 match spFor with
                 | DebugPointAtFor.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.For)
                 | DebugPointAtFor.No -> pat.Range
+
+            // For computation expressions, 'in' or 'to' is hit on each MoveNext.   
+            // To support this a named debug point for the "in" keyword is available to inlined code.
+            match spIn with
+            | DebugPointAtInOrTo.Yes mIn ->
+                cenv.namedDebugPointsForInlinedCode[{Range=mFor; Name="ForLoop.InOrToKeyword"}] <- mIn
+            | _ -> ()
 
             let mPat = pat.Range
 

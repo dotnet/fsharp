@@ -83,7 +83,10 @@ module StateMachineHelpers =
     /// Statically determines whether resumable code is being used
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __useResumableCode<'T> : bool = false
-        
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __debugPoint (_name: string) : unit = ()
+
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let __resumableEntry () : int option = 
         failwith "__resumableEntry should always be guarded by __useResumableCode and only used in valid state machine implementations"
@@ -327,7 +330,9 @@ module ResumableCode =
             // ... and its body is a while loop that advances the enumerator and runs the body on each element.
             (fun e ->
                 While(
-                    (fun () -> e.MoveNext()), 
+                    (fun () -> 
+                        __debugPoint "ForLoop.InOrToKeyword"
+                        e.MoveNext()), 
                     ResumableCode<'Data, unit>(fun sm -> 
                         (body e.Current).Invoke(&sm)))))
 

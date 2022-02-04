@@ -5985,7 +5985,13 @@ let TypeCheckOneImplFile
             | _ -> ()
         | _ -> ())
 
-    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
+    let namedDebugPointsForInlinedCode =
+       cenv.namedDebugPointsForInlinedCode
+       |> Seq.toArray
+       |> Array.map (fun (KeyValue(k,v)) -> (k,v))
+       |> Map
+
+    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 

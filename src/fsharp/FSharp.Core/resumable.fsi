@@ -129,6 +129,19 @@ type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>>
 module StateMachineHelpers = 
 
     /// <summary>
+    /// Indicates a named debug point arising from the context of inlined code to implement a computation expression.
+    /// </summary>
+    /// <remarks>
+    /// If the code was ultimately inlined from a "for .. in .. do" or "for .. = .. to .. do" construct in a computation expression,
+    /// the name "ForLoop.InOrToKeyword" can be used.
+    ///
+    /// If the name doesn't correspond to a known debug point arising from the original source context, then no
+    /// debug point is emitted. If opt-in warning 3514 is enabled a warning is emitted.
+    /// </remarks>
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __debugPoint: string -> unit
+
+    /// <summary>
     /// When used in a conditional, statically determines whether the 'then' branch
     /// represents valid resumable code and provides an alternative implementation
     /// if not.

@@ -2483,6 +2483,9 @@ val (|StructStateMachineExpr|_|):
 /// Recognise a sequential or binding construct in a resumable code
 val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
 
+/// Recognise a '__debugPoint' expression
+val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string option
+
 /// Recognise a '__resumeAt' expression
 val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr option
 

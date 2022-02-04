@@ -732,6 +732,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__debugPoint_info       = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__debugPoint"                         , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
@@ -1543,6 +1544,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
+  member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info
 

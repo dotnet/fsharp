@@ -3973,7 +3973,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
 and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
-    let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = implFile
+    let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, mexprR, minfo = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3992,7 +3992,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
     let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
+    env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode), minfo, hidden
 
 /// Entry point
 let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
