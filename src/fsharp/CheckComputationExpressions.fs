@@ -1900,13 +1900,13 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             // This transformation is visible in quotations and thus needs to remain.
             | (TPat_as (TPat_wild _, PBind (v, _), _), 
                 vs, 
-                Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yieldExpr], _mYield)) 
+                DebugPoints(Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
                     when vs.Length = 1 && valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
                     
                 // The debug point mFor is attached to the 'map'
                 // The debug point mIn is attached to the lambda
                 // Note: the 'yield' part of the debug point for 'yield expr' is currently lost in debug points. 
-                let lam = mkLambda mIn v (yieldExpr, genEnumElemTy)
+                let lam = mkLambda mIn v (recreate yieldExpr, genEnumElemTy)
                 let enumExpr = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g enumElemTy) (tyOfExpr cenv.g enumExpr) enumExpr
                 Some(mkCallSeqMap cenv.g mFor enumElemTy genEnumElemTy lam enumExpr, tpenv)
 

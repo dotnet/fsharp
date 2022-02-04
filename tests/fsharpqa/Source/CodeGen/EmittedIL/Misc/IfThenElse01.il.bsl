@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 5:0:0:0
 }
 .assembly IfThenElse01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000208 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {61FD8A9D-2D6C-0B5D-A745-03839D8AFD61}
+// MVID: {611C4D7C-2D6C-0B5D-A745-03837C4D1C61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07450000
+// Image base: 0x06B70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
