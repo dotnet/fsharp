@@ -1090,12 +1090,12 @@ module ForLoopRegularCode =
             printfn $"hello, x = {x}"
             printfn $"hello, x = {x}"
 
-    testSimpleForEachSeqLoopWithOneStatement [1..3]
-    testSimpleForEachSeqLoopWithTwoStatements [1..3]
-    testSimpleForEachArrayLoopWithOneStatement [|1..3|]
-    testSimpleForEachArrayLoopWithTwoStatements [|1..3|]
-    testSimpleForEachListLoopWithOneStatement [1..3]
-    testSimpleForEachListLoopWithTwoStatements [1..3]
+    testSimpleForEachSeqLoopWithOneStatement [1;2;3]
+    testSimpleForEachSeqLoopWithTwoStatements [1;2;3]
+    testSimpleForEachArrayLoopWithOneStatement [|1;2;3|]
+    testSimpleForEachArrayLoopWithTwoStatements [|1;2;3|]
+    testSimpleForEachListLoopWithOneStatement [1;2;3]
+    testSimpleForEachListLoopWithTwoStatements [1;2;3]
     testSimpleForEachStringLoopWithOneStatement "123"
     testSimpleForEachStringLoopWithTwoStatements "123"
     testSimpleForEachIntRangeLoopWithOneStatement (1, 3)
@@ -1193,12 +1193,12 @@ module ForLoopInGeneratedList =
             printfn $"hello, x = {x}"
             yield x + 1 ]
 
-    testSimpleListEachSeqLoopWithOneStatement [1..3]
-    testSimpleListEachSeqLoopWithTwoStatements [1..3]
-    testSimpleListEachArrayLoopWithOneStatement [|1..3|]
-    testSimpleListEachArrayLoopWithTwoStatements [|1..3|]
-    testSimpleListEachListLoopWithOneStatement [1..3]
-    testSimpleListEachListLoopWithTwoStatements [1..3]
+    testSimpleListEachSeqLoopWithOneStatement [1;2;3]
+    testSimpleListEachSeqLoopWithTwoStatements [1;2;3]
+    testSimpleListEachArrayLoopWithOneStatement [|1;2;3|]
+    testSimpleListEachArrayLoopWithTwoStatements [|1;2;3|]
+    testSimpleListEachListLoopWithOneStatement [1;2;3]
+    testSimpleListEachListLoopWithTwoStatements [1;2;3]
     testSimpleListEachStringLoopWithOneStatement "123"
     testSimpleListEachStringLoopWithTwoStatements "123"
     testSimpleListEachIntRangeLoopWithOneStatement (1, 3)
@@ -1347,12 +1347,12 @@ module ForLoopTaskCode =
             return 1
         }
 
-    testSimpleTaskEachSeqLoopWithOneStatement [1..3] |> fun t -> t.Result
-    testSimpleTaskEachSeqLoopWithTwoStatements [1..3] |> fun t -> t.Result
-    testSimpleTaskEachArrayLoopWithOneStatement [|1..3|] |> fun t -> t.Result
-    testSimpleTaskEachArrayLoopWithTwoStatements [|1..3|] |> fun t -> t.Result
-    testSimpleTaskEachListLoopWithOneStatement [1..3] |> fun t -> t.Result
-    testSimpleTaskEachListLoopWithTwoStatements [1..3] |> fun t -> t.Result
+    testSimpleTaskEachSeqLoopWithOneStatement [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachSeqLoopWithTwoStatements [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachArrayLoopWithOneStatement [|1;2;3|] |> fun t -> t.Result
+    testSimpleTaskEachArrayLoopWithTwoStatements [|1;2;3|] |> fun t -> t.Result
+    testSimpleTaskEachListLoopWithOneStatement [1;2;3] |> fun t -> t.Result
+    testSimpleTaskEachListLoopWithTwoStatements [1;2;3] |> fun t -> t.Result
     testSimpleTaskEachStringLoopWithOneStatement "123" |> fun t -> t.Result
     testSimpleTaskEachStringLoopWithTwoStatements "123" |> fun t -> t.Result
     testSimpleTaskEachIntRangeLoopWithOneStatement (1, 3) |> fun t -> t.Result
@@ -1505,12 +1505,12 @@ module ForLoopSeqCode =
             yield 1
         }
 
-    testSimpleSeqEachSeqLoopWithOneStatement [1..3] |> Seq.toList
-    testSimpleSeqEachSeqLoopWithTwoStatements [1..3] |> Seq.toList
-    testSimpleSeqEachArrayLoopWithOneStatement [|1..3|] |> Seq.toList
-    testSimpleSeqEachArrayLoopWithTwoStatements [|1..3|] |> Seq.toList
-    testSimpleSeqEachListLoopWithOneStatement [1..3] |> Seq.toList
-    testSimpleSeqEachListLoopWithTwoStatements [1..3] |> Seq.toList
+    testSimpleSeqEachSeqLoopWithOneStatement [1;2;3] |> Seq.toList
+    testSimpleSeqEachSeqLoopWithTwoStatements [1;2;3] |> Seq.toList
+    testSimpleSeqEachArrayLoopWithOneStatement [|1;2;3|] |> Seq.toList
+    testSimpleSeqEachArrayLoopWithTwoStatements [|1;2;3|] |> Seq.toList
+    testSimpleSeqEachListLoopWithOneStatement [1;2;3] |> Seq.toList
+    testSimpleSeqEachListLoopWithTwoStatements [1;2;3] |> Seq.toList
     testSimpleSeqEachStringLoopWithOneStatement "123" |> Seq.toList
     testSimpleSeqEachStringLoopWithTwoStatements "123" |> Seq.toList
     testSimpleSeqEachIntRangeLoopWithOneStatement (1, 3) |> Seq.toList
@@ -1663,12 +1663,12 @@ module ForLoopAsyncCode =
             return 1
         }
 
-    testSimpleAsyncEachSeqLoopWithOneStatement [1..3] |> Async.RunSynchronously
-    testSimpleAsyncEachSeqLoopWithTwoStatements [1..3] |> Async.RunSynchronously
-    testSimpleAsyncEachArrayLoopWithOneStatement [|1..3|] |> Async.RunSynchronously
-    testSimpleAsyncEachArrayLoopWithTwoStatements [|1..3|] |> Async.RunSynchronously
-    testSimpleAsyncEachListLoopWithOneStatement [1..3] |> Async.RunSynchronously
-    testSimpleAsyncEachListLoopWithTwoStatements [1..3] |> Async.RunSynchronously
+    testSimpleAsyncEachSeqLoopWithOneStatement [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachSeqLoopWithTwoStatements [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachArrayLoopWithOneStatement [|1;2;3|] |> Async.RunSynchronously
+    testSimpleAsyncEachArrayLoopWithTwoStatements [|1;2;3|] |> Async.RunSynchronously
+    testSimpleAsyncEachListLoopWithOneStatement [1;2;3] |> Async.RunSynchronously
+    testSimpleAsyncEachListLoopWithTwoStatements [1;2;3] |> Async.RunSynchronously
     testSimpleAsyncEachStringLoopWithOneStatement "123" |> Async.RunSynchronously
     testSimpleAsyncEachStringLoopWithTwoStatements "123" |> Async.RunSynchronously
     testSimpleAsyncEachIntRangeLoopWithOneStatement (1, 3) |> Async.RunSynchronously
@@ -2051,12 +2051,12 @@ module ForLoopCancellableCode =
             return 1
         }
 
-    testSimpleCancellableEachSeqLoopWithOneStatement [1..3] |> Cancellable.runWithoutCancellation
-    testSimpleCancellableEachSeqLoopWithTwoStatements [1..3] |> Cancellable.runWithoutCancellation
-    testSimpleCancellableEachArrayLoopWithOneStatement [|1..3|] |> Cancellable.runWithoutCancellation
-    testSimpleCancellableEachArrayLoopWithTwoStatements [|1..3|] |> Cancellable.runWithoutCancellation
-    testSimpleCancellableEachListLoopWithOneStatement [1..3] |> Cancellable.runWithoutCancellation
-    testSimpleCancellableEachListLoopWithTwoStatements [1..3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachSeqLoopWithOneStatement [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachSeqLoopWithTwoStatements [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachArrayLoopWithOneStatement [|1;2;3|] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachArrayLoopWithTwoStatements [|1;2;3|] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachListLoopWithOneStatement [1;2;3] |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachListLoopWithTwoStatements [1;2;3] |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachStringLoopWithOneStatement "123" |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachStringLoopWithTwoStatements "123" |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntRangeLoopWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
