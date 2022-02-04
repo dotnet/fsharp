@@ -2107,8 +2107,26 @@ module MutRecBindingChecking =
                                 mkUnit g tcref.Range, false, None, defnCs
                             else
                                 let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
-                                // If there is no 'inherits' add a debug point at the entry to the constructor over the type name itself.
-                                let inheritsExpr = mkDebugPoint tcref.Range inheritsExpr
+
+                                // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
+                                let addDebugPointAtImplicitCtorArguments =
+                                    defnCs |> List.forall (fun defnC ->
+                                        match defnC with
+                                        | Phase2CIncrClassBindings binds -> 
+                                            binds |> List.forall (fun bind ->
+                                                match bind with
+                                                | IncrClassBindingGroup(binds, isStatic, _) -> 
+                                                    isStatic || 
+                                                    binds |> List.forall (IncrClassReprInfo.IsMethodRepr cenv)
+                                                | IncrClassDo(_, isStatic) ->
+                                                    isStatic)
+                                        | _ -> true) 
+
+                                let inheritsExpr =
+                                    if addDebugPointAtImplicitCtorArguments then
+                                        mkDebugPoint tcref.Range inheritsExpr
+                                    else
+                                        inheritsExpr
                                 inheritsExpr, false, None, defnCs
                        
                     let envForTycon = MakeInnerEnvForTyconRef envForDecls tcref false 

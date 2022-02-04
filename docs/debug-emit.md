@@ -220,10 +220,20 @@ more complete inlining and code-flattening is applied.
 
 e.g.
 ```fsharp
-type C(args) =        // debug point over `(args)`
-    let x = v         // debug point over `let x = v`
+type C(args) =        
+    let x = 1+1         // debug point over `let x = 1+1` as the only side effect
     let f x = x + 1
     member _.P = x + f 4
+
+type C(args) =        
+    do printfn "hello"         // debug point over `printfn "hello"` as side effect
+    static do printfn "hello"         // debug point over `printfn "hello"` as side effect for static init
+    let f x = x + 1
+    member _.P = x + f 4
+
+type C(args) =        // debug point over `(args)` since there's no other place to stop on object construction
+    let f x = x + 1
+    member _.P = 4
 ```
 
 ## Internal implementation of debug points in the compiler

@@ -130,14 +130,27 @@ let rec IsControlFlowExpression e =
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
 
-// The debug point for a 'let' extends to include the 'let' if we're not defining a function and the r.h.s. is not a control-flow
-// expression
+// The syntactic criteria for when a debug point for a 'let' is extended to include
+// the 'let' - which happens if we're not defining a function, or a type function,
+// and the r.h.s. is not a control-flow expression.  This is a syntactic criteria known
+// to both ValidateBreakpointLocation and the parser that is marking up debug points.
+//
+// For example
+//    let x = 1 + 1
+// gets extended to inludde the 'let x'.
+//
+// A corner case: some things that look like simple value bindings get generalized, e.g.
+//    let empty = []
+//    let Null = null
+// and get compiled as generic methods that return different type instantiations of the given value.
+// However these do not have side-effect and do not get a debug point recognised by ValidateBreakpointLocation.
+
 let IsDebugPointBinding synPat synExpr =
     not (IsControlFlowExpression synExpr) &&
     // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
     let isFunction = 
         match synPat with 
-        | SynPat.LongIdent (argPats=SynArgPats.Pats args) when not (List.isEmpty args) -> true
+        | SynPat.LongIdent (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
         | _ -> false
     not isFunction
 

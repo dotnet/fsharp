@@ -45,13 +45,13 @@
   // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {61F2D6A6-4EE5-349F-A745-0383A6D6F261}
+// MVID: {61FD32BA-4EE5-349F-A745-0383BA32FD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C30000
+// Image base: 0x05B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1512,7 +1512,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       212 (0xd4)
+    // Code size       210 (0xd2)
     .maxstack  8
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> factorsOf300,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> uniqueFactors,
@@ -1547,85 +1547,81 @@
     IL_0023:  dup
     IL_0024:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::factorsOf300@9
     IL_0029:  stloc.0
-    .line 11,15 : 1,20 ''
-    IL_002a:  nop
     .line 12,12 : 5,10 ''
-    IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0030:  stloc.s    V_8
-    IL_0032:  ldloc.s    V_8
-    IL_0034:  ldnull
+    IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_002f:  stloc.s    V_8
+    IL_0031:  ldloc.s    V_8
+    IL_0033:  ldnull
+    IL_0034:  ldc.i4.0
     IL_0035:  ldc.i4.0
-    IL_0036:  ldc.i4.0
-    IL_0037:  newobj     instance void Linq101SetOperators01/'Pipe #1 input at line 12@13'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_0036:  newobj     instance void Linq101SetOperators01/'Pipe #1 input at line 12@13'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                   int32,
                                                                                                   int32)
-    IL_003c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0041:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Distinct<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
-    IL_0046:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_004b:  stloc.s    'Pipe #1 input at line 12'
+    IL_003b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0040:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Distinct<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
+    IL_0045:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_004a:  stloc.s    'Pipe #1 input at line 12'
     .line 15,15 : 10,20 ''
-    IL_004d:  ldloc.s    'Pipe #1 input at line 12'
-    IL_004f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0054:  dup
-    IL_0055:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::uniqueFactors@11
-    IL_005a:  stloc.1
+    IL_004c:  ldloc.s    'Pipe #1 input at line 12'
+    IL_004e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0053:  dup
+    IL_0054:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::uniqueFactors@11
+    IL_0059:  stloc.1
     .line 18,18 : 1,32 ''
-    IL_005b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
-    IL_0060:  dup
-    IL_0061:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::products@18
-    IL_0066:  stloc.2
-    .line 20,25 : 1,20 ''
-    IL_0067:  nop
+    IL_005a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
+    IL_005f:  dup
+    IL_0060:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::products@18
+    IL_0065:  stloc.2
     .line 21,21 : 5,10 ''
-    IL_0068:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_006d:  stloc.s    V_10
-    IL_006f:  ldloc.s    V_10
+    IL_0066:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_006b:  stloc.s    V_10
+    IL_006d:  ldloc.s    V_10
+    IL_006f:  ldnull
+    IL_0070:  ldc.i4.0
     IL_0071:  ldnull
-    IL_0072:  ldc.i4.0
-    IL_0073:  ldnull
-    IL_0074:  newobj     instance void Linq101SetOperators01/'Pipe #2 input at line 21@23'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
+    IL_0072:  newobj     instance void Linq101SetOperators01/'Pipe #2 input at line 21@23'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                                   int32,
                                                                                                   string)
-    IL_0079:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_007e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Distinct<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
-    IL_0083:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0088:  stloc.s    'Pipe #2 input at line 21'
+    IL_0077:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_007c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Distinct<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
+    IL_0081:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0086:  stloc.s    'Pipe #2 input at line 21'
     .line 25,25 : 10,20 ''
-    IL_008a:  ldloc.s    'Pipe #2 input at line 21'
-    IL_008c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0091:  dup
-    IL_0092:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::categoryNames@20
-    IL_0097:  stloc.3
+    IL_0088:  ldloc.s    'Pipe #2 input at line 21'
+    IL_008a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_008f:  dup
+    IL_0090:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::categoryNames@20
+    IL_0095:  stloc.3
     .line 28,28 : 1,34 ''
-    IL_0098:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
-    IL_009d:  dup
-    IL_009e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customers@28
-    IL_00a3:  stloc.s    customers
+    IL_0096:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
+    IL_009b:  dup
+    IL_009c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customers@28
+    IL_00a1:  stloc.s    customers
     .line 31,31 : 5,10 ''
-    IL_00a5:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_00aa:  stloc.s    V_11
-    IL_00ac:  ldnull
-    IL_00ad:  ldc.i4.0
-    IL_00ae:  ldc.i4.0
-    IL_00af:  newobj     instance void Linq101SetOperators01/productFirstChars@33::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
+    IL_00a3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_00a8:  stloc.s    V_11
+    IL_00aa:  ldnull
+    IL_00ab:  ldc.i4.0
+    IL_00ac:  ldc.i4.0
+    IL_00ad:  newobj     instance void Linq101SetOperators01/productFirstChars@33::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                          int32,
                                                                                          char)
-    IL_00b4:  dup
-    IL_00b5:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<char> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::productFirstChars@30
-    IL_00ba:  stloc.s    productFirstChars
+    IL_00b2:  dup
+    IL_00b3:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<char> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::productFirstChars@30
+    IL_00b8:  stloc.s    productFirstChars
     .line 37,37 : 5,10 ''
-    IL_00bc:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_00c1:  stloc.s    V_12
-    IL_00c3:  ldnull
-    IL_00c4:  ldc.i4.0
-    IL_00c5:  ldc.i4.0
-    IL_00c6:  newobj     instance void Linq101SetOperators01/customerFirstChars@39::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>,
+    IL_00ba:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_00bf:  stloc.s    V_12
+    IL_00c1:  ldnull
+    IL_00c2:  ldc.i4.0
+    IL_00c3:  ldc.i4.0
+    IL_00c4:  newobj     instance void Linq101SetOperators01/customerFirstChars@39::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>,
                                                                                           int32,
                                                                                           char)
-    IL_00cb:  dup
-    IL_00cc:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<char> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customerFirstChars@36
-    IL_00d1:  stloc.s    customerFirstChars
-    IL_00d3:  ret
+    IL_00c9:  dup
+    IL_00ca:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<char> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customerFirstChars@36
+    IL_00cf:  stloc.s    customerFirstChars
+    IL_00d1:  ret
   } // end of method $Linq101SetOperators01::main@
 
 } // end of class '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01
