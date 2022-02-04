@@ -124,8 +124,6 @@ type cenv =
       addFieldNeverAttrs: ILFieldDef -> ILFieldDef
 
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
-
-      addMethodGeneratedAttrsIfNoDebugPoints: bool -> ILMethodDef -> ILMethodDef
     }
 
     override _.ToString() = "<cenv>"
@@ -134,14 +132,13 @@ type cenv =
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 
     tdef.With(methods = (tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods))
 
-let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, addMethodGeneratedAttrsIfNoDebugPoints) =
+let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs) =
     { ilg = ilg
       tref_Func = Array.init 10 (fun i -> mkFuncTypeRef ilg.fsharpCoreAssemblyScopeRef (i+1))
       mkILTyFuncTy = ILType.Boxed (mkILNonGenericTySpec (mkILTyRef (ilg.fsharpCoreAssemblyScopeRef, fsharpCoreNamespace + ".FSharpTypeFunc"))) 
       addMethodGeneratedAttrs = addMethodGeneratedAttrs
       addFieldGeneratedAttrs = addFieldGeneratedAttrs
-      addFieldNeverAttrs = addFieldNeverAttrs
-      addMethodGeneratedAttrsIfNoDebugPoints = addMethodGeneratedAttrsIfNoDebugPoints }
+      addFieldNeverAttrs = addFieldNeverAttrs }
 
 let mkILTyFuncTy cenv = cenv.mkILTyFuncTy
 let mkILFuncTy cenv dty rty = mkILBoxedTy cenv.tref_Func.[0] [dty;rty]
@@ -359,7 +356,7 @@ let mkILCloFldDefs cenv flds =
 // it's a type abstraction or a term abstraction.
 // -------------------------------------------------------------------- 
 
-let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo = 
+let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo = 
     let newTypeDefs = 
 
       // the following are shared between cases 1 && 2 
@@ -415,7 +412,6 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
                // maxstack may increase by 1 due to environment loads 
                MaxStack=il.MaxStack+1 }
 
-
       match tyargsl, tmargsl, laterStruct with 
       // CASE 1 - Type abstraction 
       | _ :: _, [], _ ->
@@ -441,7 +437,7 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
               
               let laterCode = rewriteCodeToAccessArgsFromEnv laterCloSpec [(0, selfFreeVar)]
               let laterTypeDefs = 
-                convIlxClosureDef cenv debuginfo encl
+                convIlxClosureDef cenv encl
                   (td.With(genericParams=laterGenericParams, name=laterTypeName, methods=emptyILMethods, fields=emptyILFields))
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -462,7 +458,7 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
               let nowCode = mkILMethodBody (false, [], nowFields.Length + 1, nonBranchingInstrsToCode nowInstrs, cloDebugRange, cloImports)
 
               let nowTypeDefs = 
-                convIlxClosureDef cenv debuginfo encl td
+                convIlxClosureDef cenv encl td
                     {clo with cloStructure=nowStruct 
                               cloCode=notlazy nowCode}
 
@@ -481,7 +477,6 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
                    [], 
                    mkILReturn(cenv.ilg.typ_Object), 
                    MethodBody.IL (notlazy convil))
-                 |> cenv.addMethodGeneratedAttrsIfNoDebugPoints debuginfo
 
               let ctorMethodDef = 
                   mkILStorageCtor 
@@ -517,7 +512,7 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
                      .WithEncoding(ILDefaultPInvokeEncoding.Ansi)
               [ cloTypeDef]
 
-    // CASE 2 - Term Application 
+    // CASE 2 - Term abstraction
       |  [], (_ :: _ as nowParams), _ ->
           let nowReturnTy = mkTyOfLambdas cenv laterStruct
           
@@ -549,14 +544,14 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
               let nowCode =  mkILMethodBody (false, [], argToFreeVarMap.Length + nowFields.Length, nonBranchingInstrsToCode nowInstrs, cloDebugRange, cloImports)
 
               let nowTypeDefs = 
-                convIlxClosureDef cenv debuginfo encl td
+                convIlxClosureDef cenv encl td
                     {clo with cloStructure=nowStruct
                               cloCode=notlazy nowCode}
 
               let laterCode = rewriteCodeToAccessArgsFromEnv laterCloSpec argToFreeVarMap
 
               let laterTypeDefs = 
-                convIlxClosureDef cenv debuginfo encl
+                convIlxClosureDef cenv encl
                   (td.With(genericParams=laterGenericParams, name=laterTypeName, methods=emptyILMethods, fields=emptyILFields))
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -580,7 +575,6 @@ let rec convIlxClosureDef cenv debuginfo encl (td: ILTypeDef) clo =
                            nowParams, 
                            mkILReturn nowReturnTy, 
                            MethodBody.IL (notlazy convil))
-                        |> cenv.addMethodGeneratedAttrsIfNoDebugPoints debuginfo
 
                     let ctorMethodDef = 
                         mkILStorageCtor 

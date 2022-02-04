@@ -64,10 +64,10 @@ let mkSynDoBinding (vis, strict, expr, m) =
              (if strict then SynBindingKind.Do else SynBindingKind.StandaloneExpression),
              false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
              (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m),
-             None, None, expr, m, DebugPointAtBinding.ImplicitAtDo)
+             None, None, expr, m, DebugPointAtBinding.NoneAtDo)
 
 let mkSynDoDecl (e: SynExpr) = 
-    SynModuleDecl.DoExpr(DebugPointAtBinding.ImplicitAtDo, e, e.Range)
+    SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, e, e.Range)
 
 let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
 
@@ -2781,7 +2781,7 @@ hardwhiteDoBinding:
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator          
       { let mLetKwd = rhs parseState 1 
         let bindingSetRange = unionRanges mLetKwd $2.Range 
-        let seqPt = DebugPointAtBinding.ImplicitAtDo 
+        let seqPt = DebugPointAtBinding.NoneAtDo 
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
         BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, true, $2, bindingSetRange)]), bindingSetRange), $2 }
@@ -3904,7 +3904,7 @@ declExpr:
        SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, Some mEquals, $4, [], SynExpr.ImplicitZero m, mAll) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let 
-     { let spBind = DebugPointAtBinding.ImplicitAtDo
+     { let spBind = DebugPointAtBinding.NoneAtDo
        SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), None, $2, [], $5, unionRanges (rhs parseState 1) $5.Range) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let 

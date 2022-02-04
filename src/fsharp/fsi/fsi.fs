@@ -1473,7 +1473,7 @@ type internal FsiDynamicCompiler
         let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
         let args = SynExpr.Const (SynConst.Unit, m)
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
-        SynModuleDecl.DoExpr(DebugPointAtBinding.ImplicitAtDo, breakStatement, m)
+        SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, breakStatement, m)
 
     member _.EvalRequireReference (ctok, istate, m, path) =
         if FileSystem.IsInvalidPathShim(path) then

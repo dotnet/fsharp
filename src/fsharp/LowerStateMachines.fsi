@@ -2,8 +2,6 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
-open System.Collections.Generic
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 

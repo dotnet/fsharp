@@ -219,7 +219,7 @@ type DebugPointAtWhile =
 type DebugPointAtBinding =
     | Yes of range: range
 
-    | ImplicitAtDo
+    | NoneAtDo
 
     | NoneAtLet
 

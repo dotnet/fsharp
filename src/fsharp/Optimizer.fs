@@ -2066,7 +2066,6 @@ let rec IsDebugPipeRightExpr cenv expr =
         else false
     | _ -> false
 
-
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard <| fun () ->

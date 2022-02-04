@@ -229,3 +229,7 @@ module public FSharpExprPatterns =
 
     /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
     val (|WitnessArg|_|): FSharpExpr -> int option
+
+    /// Matches an expression with a debug point
+    val (|DebugPoint|_|): FSharpExpr -> (DebugPointAtLeafExpr * FSharpExpr) option 
+

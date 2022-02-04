@@ -2297,7 +2297,7 @@ let ComputeDebugPointForBinding g bind =
         match spBind, stripExpr e with
         | DebugPointAtBinding.NoneAtInvisible, _ -> false, None
         | DebugPointAtBinding.NoneAtSticky, _ -> true, None
-        | DebugPointAtBinding.ImplicitAtDo, _ -> false, None
+        | DebugPointAtBinding.NoneAtDo, _ -> false, None
         | DebugPointAtBinding.NoneAtLet, _ -> false, None
         // Don't emit debug points for lambdas.
         | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None
@@ -2321,6 +2321,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
     match expr with
     | Expr.Sequential((DebugPointExpr g debugPointName) as dpExpr, codeExpr, NormalSeq, m) ->
         match cenv.namedDebugPointsForInlinedCode.TryGetValue({Range=m; Name=debugPointName}) with
+        | false, _ when debugPointName = "" ->
+            CG.EmitDebugPoint cgbuf m
         | false, _ ->
             // printfn $"---- Unfound debug point {debugPointName} at {m}"
             // for KeyValue(k,v) in cenv.namedDebugPointsForInlinedCode do
@@ -2331,6 +2333,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
                           yield k.Name ]
                 |> String.concat ","
             informationalWarning(Error(FSComp.SR.ilxGenUnknownDebugPoint(debugPointName, others), dpExpr.Range))
+            CG.EmitDebugPoint cgbuf m
         | true, dp ->
             // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
             CG.EmitDebugPoint cgbuf dp
@@ -2815,7 +2818,7 @@ and GenLinearExpr cenv cgbuf eenv expr sequel preSteps (contf: FakeUnit -> FakeU
 
         match spBind with
         | DebugPointAtBinding.Yes m -> CG.EmitDebugPoint cgbuf m
-        | DebugPointAtBinding.ImplicitAtDo
+        | DebugPointAtBinding.NoneAtDo
         | DebugPointAtBinding.NoneAtLet
         | DebugPointAtBinding.NoneAtInvisible
         | DebugPointAtBinding.NoneAtSticky -> ()
@@ -5030,7 +5033,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
         .WithEncoding(ILDefaultPInvokeEncoding.Auto)
         .WithInitSemantics(ILTypeInit.BeforeField)
 
-  let tdefs = EraseClosures.convIlxClosureDef g.ilxPubCloEnv cenv.opts.generateDebugSymbols tref.Enclosing tdef cloInfo
+  let tdefs = EraseClosures.convIlxClosureDef g.ilxPubCloEnv tref.Enclosing tdef cloInfo
   tdefs
 
 and GenStaticDelegateClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, ext, ilIntfTys, staticCloInfo) =

@@ -800,18 +800,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
 
-  // If generating debug information, then code that has no debug points apart from OxFEEFEE
-  // get CompilerGeneratedAttribute and DebuggerNonUserCodeAttribute, e.g. for lambdas
-  // from computation expressions.
-  let addMethodGeneratedAttrsIfNoDebugPoints debuginfo (mdef:ILMethodDef) =
-      if noDebugAttributes || not debuginfo then
-          mdef
-      else
-          match mdef.Body with 
-          | MethodBody.IL ilBody when ilBody.Value.Code.Instrs |> Array.forall (function I_seqpoint sp -> sp.Line = 0xFEEFEE | _ -> true) ->
-              mdef.With(customAttrs = addGeneratedAttrs mdef.CustomAttrs)
-          | _ -> mdef
-
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
 
   let addFieldGeneratedAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addGeneratedAttrs fdef.CustomAttrs)
@@ -1596,7 +1584,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
 
   member val ilxPubCloEnv =
-      EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, addMethodGeneratedAttrsIfNoDebugPoints)
+      EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 

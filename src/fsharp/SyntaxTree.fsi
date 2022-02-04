@@ -289,7 +289,7 @@ type DebugPointAtBinding =
     | Yes of range: range
 
     // Indicates the omission of a debug point for a binding for a 'do expr'
-    | ImplicitAtDo
+    | NoneAtDo
 
     // Indicates the omission of a debug point for a binding for a 'let e = expr' where
     // 'expr' has immediate control flow

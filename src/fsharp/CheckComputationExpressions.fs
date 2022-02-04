@@ -1133,8 +1133,8 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 | SynExpr.DoBang (rhsExpr, m) -> 
                     let sp = 
                         match sp with 
-                        | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.ImplicitAtDo 
-                        | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.ImplicitAtDo 
+                        | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo 
+                        | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo 
                         | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
                         | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
                     Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), None, rhsExpr, [], innerComp2, m)) translatedCtxt)
@@ -1604,7 +1604,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy with
                         | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
                         | _ -> SynExpr.YieldOrReturn ((false, true), SynExpr.Const (SynConst.Unit, m), m)
-                let letBangBind = SynExpr.LetOrUseBang (DebugPointAtBinding.ImplicitAtDo, false, false, SynPat.Const(SynConst.Unit, mUnit), None, rhsExpr, [], bodyExpr, m)
+                let letBangBind = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtDo, false, false, SynPat.Const(SynConst.Unit, mUnit), None, rhsExpr, [], bodyExpr, m)
                 trans CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
 
             // "expr;" in final position is treated as { expr; zero }

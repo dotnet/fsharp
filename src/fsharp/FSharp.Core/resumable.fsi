@@ -129,14 +129,22 @@ type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>>
 module StateMachineHelpers = 
 
     /// <summary>
-    /// Indicates a named debug point arising from the context of inlined code to implement a computation expression.
+    /// Indicates a named debug point arising from the context of inlined code.
     /// </summary>
     /// <remarks>
-    /// If the code was ultimately inlined from a "for .. in .. do" or "for .. = .. to .. do" construct in a computation expression,
-    /// the name "ForLoop.InOrToKeyword" can be used.
+    /// Only a limited range of debug point names are supported.
     ///
-    /// If the name doesn't correspond to a known debug point arising from the original source context, then no
-    /// debug point is emitted. If opt-in warning 3514 is enabled a warning is emitted.
+    /// If the debug point name is the empty string then the range used for the debug point will be
+    /// the range of the outermost expression prior to inlining.
+    ///
+    /// If the debug point name is <c>ForLoop.InOrToKeyword</c> and the code was ultimately
+    /// from a <c>for .. in .. do</c> or <c>for .. = .. to .. do</c> construct in a computation expression,
+    /// de-sugared to an inlined <c>builder.For</c> call, then the name "ForLoop.InOrToKeyword" can be used.
+    /// The range of the debug point will be precisely the range of the <c>in</c> or <c>to</c> keyword.
+    ///
+    /// If the name doesn't correspond to a known debug point arising from the original source context, then
+    /// an opt-in warning 3514 is emitted, and the range used for the debug point will be
+    /// the range of the root expression prior to inlining.
     /// </remarks>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __debugPoint: string -> unit
