@@ -35,11 +35,19 @@
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <Pattern1>{{FSharpCoreShippedPackageVersionValue}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedPackageVersionValue)</Replacement1>
-      <Pattern2>{{FSharpCorePreviewPackageVersionValue}}</Pattern2>
-      <Replacement2>$(FSharpCorePreviewPackageVersionValue)</Replacement2>
-      <Pattern3>{{FSCorePackageVersionValue}}</Pattern3>
-      <Replacement3>$(FSCorePackageVersionValue)</Replacement3>
+      <Replacement1>$(FSharpCorePreviewPackageVersionValue)</Replacement1>
+    </NoneSubstituteText>
+    <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
+      <SubDir>Release\</SubDir>
+      <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
+      <Replacement1>$(FSCorePackageVersionValue)</Replacement1>
+    </NoneSubstituteText>
+    <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
+      <SubDir>Shipping\</SubDir>
+      <Pattern1>{{FSCorePackageVersionValue}}</Pattern1>
+      <Replacement1>$(FSharpCorePreviewPackageVersionValue)</Replacement1>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

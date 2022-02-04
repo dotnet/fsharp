@@ -58,7 +58,9 @@
         <file src="$artifactsPackagesDir$Release\FSharp.Core.$fSharpCorePackageVersion$*nupkg"             target="contentFiles\Release" />
         <file src="$artifactsPackagesDir$Shipping\FSharp.Compiler.Service.$fSharpCompilerServicePreviewPackageVersion$*nupkg"
                                                                                                            target="contentFiles\Shipping" />
-        <file src="$artifactsPackagesDir$Release\FSharp.Compiler.Service.$fSharpCompilerServicePackageVersion$*nupkg"
-        	                                                                                                 target="contentFiles\Release" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Shipping\Microsoft.FSharp.NetSdk.props"
+                                                                                                           target="contentFiles\Shipping" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Release\Microsoft.FSharp.NetSdk.props"
+        	                                                                                               target="contentFiles\Release" />
     </files>
 </package>
