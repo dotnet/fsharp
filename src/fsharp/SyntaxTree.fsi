@@ -1210,7 +1210,8 @@ type SynPat =
     | Or of
         lhsPat: SynPat *
         rhsPat: SynPat *
-        range: range
+        range: range *
+        trivia: SynPatOrTrivia
 
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of

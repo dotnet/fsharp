@@ -89,3 +89,11 @@ type SynUnionCaseTrivia =
         /// The syntax range of the `|` token.
         BarRange: range option
     }
+
+/// Represents additional information for SynPat.Or
+[<NoEquality; NoComparison>]
+type SynPatOrTrivia =
+    {
+        /// The syntax range of the `|` token.
+        BarRange: range
+    }

@@ -629,7 +629,7 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynPat p :: origPath
                 match p with
                 | SynPat.Paren (p, _) -> traversePat path p
-                | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick (traversePat path)
+                | SynPat.Or (p1, p2, _, _) -> [ p1; p2] |> List.tryPick (traversePat path)
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
