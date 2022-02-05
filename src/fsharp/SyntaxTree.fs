@@ -1609,12 +1609,11 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
-        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     member this.Range =
         match this with

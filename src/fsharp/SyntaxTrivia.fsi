@@ -97,3 +97,16 @@ type SynPatOrTrivia =
         /// The syntax range of the `|` token.
         BarRange: range
     }
+
+/// Represents additional information for SynTypeDefn
+[<NoEquality; NoComparison>]
+type SynTypeDefnTrivia =
+    {
+        /// The syntax range of the `type` keyword.
+        TypeKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+        /// The syntax range of the `with` keyword
+        WithKeyword: range option
+    }
+    static member Zero: SynTypeDefnTrivia

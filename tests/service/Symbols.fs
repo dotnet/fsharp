@@ -360,8 +360,8 @@ type X = delegate of string -> string
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
-                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
-                                          typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)) ]
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)
+                                          trivia={ EqualsRange = Some mEquals }) ]
             )
         ]) ])) ->
             assertRange (2, 7) (2, 8) mEquals
@@ -380,8 +380,8 @@ type Foobar () =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
-                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
-                                          typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Class)) ]
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Class)
+                                          trivia={ EqualsRange = Some mEquals }) ]
             )
         ]) ])) ->
             assertRange (2, 15) (2, 16) mEquals
@@ -400,12 +400,12 @@ type Bear =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
-                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
-                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
                                               SynTypeDefnSimpleRepr.Enum(cases = [
                                                   SynEnumCase(trivia={ EqualsRange = mEqualsEnumCase1 })
                                                   SynEnumCase(trivia={ EqualsRange = mEqualsEnumCase2 })
-                                              ]))) ]
+                                              ]))
+                                          trivia={ EqualsRange = Some mEquals }) ]
             )
         ]) ])) ->
             assertRange (2, 10) (2, 11) mEquals
@@ -426,8 +426,8 @@ type Shape =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
-                typeDefns = [ SynTypeDefn(equalsRange = Some mEquals
-                                          typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Union _)) ]
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Union _)
+                                          trivia={ EqualsRange = Some mEquals }) ]
             )
         ]) ])) ->
             assertRange (2, 11) (2, 12) mEquals
@@ -467,7 +467,8 @@ type Foo =
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(
-                typeDefns = [ SynTypeDefn(typeRepr=SynTypeDefnRepr.Simple(simpleRepr= SynTypeDefnSimpleRepr.Record _); withKeyword= Some mWithKeyword) ]
+                typeDefns = [ SynTypeDefn(typeRepr=SynTypeDefnRepr.Simple(simpleRepr= SynTypeDefnSimpleRepr.Record _)
+                                          trivia={ WithKeyword = Some mWithKeyword }) ]
             )
         ]) ])) ->
             assertRange (4, 4) (4, 8) mWithKeyword
@@ -618,6 +619,46 @@ type Foo() =
              ]) ])) ->
             assertRange (5, 8) (5, 12) mWith
             assertRange (6, 8) (6, 11) mAnd
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with XmlDoc contains the range of the type keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+/// Doc
+// noDoc
+type A = B
+and C = D
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType })
+                              SynTypeDefn(trivia={ TypeKeyword = None }) ]
+            )
+        ]) ])) ->
+            assertRange (4, 0) (4, 4) mType
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with attribute contains the range of the type keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+[<MyAttribute>]
+// noDoc
+type A = B
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType }) ]
+            )
+        ]) ])) ->
+            assertRange (4, 0) (4, 4) mType
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SyntaxExpressions =

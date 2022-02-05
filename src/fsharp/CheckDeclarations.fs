@@ -25,6 +25,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -5564,7 +5565,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
                   let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, None, members, None, m)) ]
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.HashDirective _ -> 
