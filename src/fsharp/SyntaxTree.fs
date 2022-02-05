@@ -1244,10 +1244,10 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
-        equalsRange: range option *
         expr: SynExpr  *
         range: range *
-        debugPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding *
+        trivia: SynBindingTrivia
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1609,12 +1609,11 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
-        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     member this.Range =
         match this with

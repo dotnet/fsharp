@@ -570,11 +570,11 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
-let mkSynBinding (xmlDoc: PreXmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, mEquals, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
+let mkSynBinding (xmlDoc: PreXmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia) =
     let info = SynInfo.InferSynValData (memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
-    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, mEquals, rhsExpr, mBind, spBind)
+    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     { MemberKind=k

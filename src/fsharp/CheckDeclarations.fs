@@ -25,6 +25,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -4718,7 +4719,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> true 
                             | _ -> false
                         let attribs = mkAttributeList attribs mWholeAutoProp
-                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, synExpr, synExpr.Range, [], attribs, None)
+                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
@@ -4753,7 +4754,7 @@ module TcDeclarations =
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4766,7 +4767,7 @@ module TcDeclarations =
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
@@ -5282,7 +5283,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
 let ElimModuleDoBinding bind =
     match bind with 
     | SynModuleDecl.DoExpr (spExpr, expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, None, expr, m, spExpr)
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, spExpr, SynBindingTrivia.Zero)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
@@ -5564,7 +5565,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
                   let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, None, members, None, m)) ]
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.HashDirective _ -> 
