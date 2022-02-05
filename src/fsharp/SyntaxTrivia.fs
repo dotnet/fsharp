@@ -59,3 +59,11 @@ type SynTypeDefnTrivia =
         { TypeKeyword = None
           EqualsRange = None
           WithKeyword = None }
+
+[<NoEquality; NoComparison>]
+type SynBindingTrivia =
+    { LetKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynBindingTrivia =
+        { LetKeyword = None
+          EqualsRange = None }

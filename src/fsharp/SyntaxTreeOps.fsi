@@ -5,6 +5,7 @@ module internal FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 
 [<Class>]
 type SynArgNameGenerator =
@@ -242,8 +243,9 @@ val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list *
 val mkSynBinding:
     xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * mEquals: Range option * origRhsExpr:SynExpr * mRhs:range *
-      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option 
+      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option *
+      trivia: SynBindingTrivia
         -> SynBinding
 
 val NonVirtualMemberFlags: k:SynMemberKind -> SynMemberFlags

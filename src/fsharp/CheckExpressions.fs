@@ -2492,7 +2492,7 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding cenv (env: TcEnv) binding =
         match binding with
-        | SynBinding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, _, rhsExpr, mBinding, spBind) ->
+        | SynBinding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind, _) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) =
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData p (NormalizedBindingRhs ([], retInfo, rhsExpr))
             let paramNames = Some valSynData.SynValInfo.ArgNames

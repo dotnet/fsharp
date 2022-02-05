@@ -110,3 +110,14 @@ type SynTypeDefnTrivia =
         WithKeyword: range option
     }
     static member Zero: SynTypeDefnTrivia
+
+/// Represents additional information for SynBinding
+[<NoEquality; NoComparison>]
+type SynBindingTrivia =
+    {
+        /// The syntax range of the `let` keyword.
+        LetKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynBindingTrivia
