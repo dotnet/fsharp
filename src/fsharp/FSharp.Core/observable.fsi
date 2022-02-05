@@ -25,7 +25,38 @@ module Observable =
     ///
     /// <returns>An Observable that propagates information from both sources.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// open System
+    /// 
+    /// let createTimer interval =
+    ///     let timer = new Timers.Timer(interval)
+    ///     timer.AutoReset &lt;- true
+    ///     timer.Enabled &lt;- true
+    ///     Observable.Create(fun observer -> timer.Elapsed.Subscribe(observer))
+    /// 
+    /// let observableFirstTimer = createTimer 1000
+    /// let observableSecondTimer = createTimer 3000
+    /// 
+    /// let result = Observable.merge observableFirstTimer observableSecondTimer
+    /// 
+    /// result.Subscribe(fun output -> printfn $"Output - {output.SignalTime} ")
+    /// |> ignore
+    /// 
+    /// Console.ReadLine() |> ignore
+    /// </code>
+    /// The sample will merge all events at a given interval and output it to the stream: <c>
+    /// Output - 2/5/2022 3:49:37 AM
+    /// Output - 2/5/2022 3:49:38 AM
+    /// Output - 2/5/2022 3:49:39 AM
+    /// Output - 2/5/2022 3:49:39 AM
+    /// Output - 2/5/2022 3:49:40 AM
+    /// Output - 2/5/2022 3:49:41 AM
+    /// Output - 2/5/2022 3:49:42 AM
+    /// Output - 2/5/2022 3:49:42 AM
+    /// </c>
+    /// </example>
     [<CompiledName("Merge")>]
     val merge: source1:IObservable<'T> -> source2:IObservable<'T> -> IObservable<'T>
 
@@ -38,7 +69,19 @@ module Observable =
     ///
     /// <returns>An Observable of the type specified by <c>mapping</c>.</returns> 
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    ///
+    /// let multiplyByTwo = fun number -> number * 2
+    /// let map = Observable.map multiplyByTwo observableNumbers
+    ///
+    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// </code>
+    /// The sample will output: <c>2 4 6 8 10</c>
+    /// </example>
     [<CompiledName("Map")>]
     val map: mapping:('T -> 'U) -> source:IObservable<'T> -> IObservable<'U>
 
@@ -54,7 +97,19 @@ module Observable =
     ///
     /// <returns>An Observable that filters observations based on <c>filter</c>.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    ///
+    /// let getEvenNumbers = fun number -> number % 2 = 0
+    /// let map = Observable.filter multiplyByTwo observableNumbers
+    ///
+    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// </code>
+    /// The sample will output: <c>2 4</c>
+    /// </example>
     [<CompiledName("Filter")>]
     val filter: predicate:('T -> bool) -> source:IObservable<'T> -> IObservable<'T>
 
@@ -73,7 +128,24 @@ module Observable =
     /// <returns>A tuple of Observables.  The first triggers when the predicate returns true, and
     /// the second triggers when the predicate returns false.</returns> 
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// 
+    /// let isEvenNumber = fun number -> number % 2 = 0
+    /// let initialState = 2
+    /// 
+    /// let leftPartition, rightPartition =
+    ///     Observable.partition isEvenNumber observableNumbers
+    /// 
+    /// leftPartition.Subscribe(fun x -> printfn $"Left partition: {x}") |> ignore
+    /// 
+    /// rightPartition.Subscribe(fun x -> printfn $"Right partition: {x}") |> ignore
+    /// </code>
+    /// The sample evaluates to: <c>Left partition: 2, 4, Right partition: 1, 3, 5</c>
+    /// </example>
     [<CompiledName("Partition")>]
     val partition: predicate:('T -> bool) -> source:IObservable<'T> -> (IObservable<'T> * IObservable<'T>)
 
@@ -92,7 +164,36 @@ module Observable =
     /// <returns>A tuple of Observables.  The first triggers when <c>splitter</c> returns Choice1of2
     /// and the second triggers when <c>splitter</c> returns Choice2of2.</returns> 
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// 
+    /// let getEvenNumbers number =
+    ///     match number % 2 = 0 with
+    ///     | true -> Choice1Of2 number
+    ///     | false -> Choice2Of2 $"{number} is not an even number"
+    /// 
+    /// let evenSplit, printOddNumbers = Observable.split getEvenNumbers observableNumbers
+    /// 
+    /// let printOutput observable functionName =
+    ///     use subscription =
+    ///         Observable.subscribe
+    ///             (fun output -> printfn $"{functionName} - Split output: {output}. Type: {output.GetType()}")
+    ///             observable
+    /// 
+    ///     subscription
+    /// 
+    /// printOutput evenSplit (nameof evenSplit) |> ignore
+    /// printOutput printOddNumbers (nameof printOddNumbers) |> ignore
+    /// </code>
+    /// The sample evaluates to: <c>evenSplit - Split output: 2. Type: System.Int32
+    /// evenSplit - Split output: 4. Type: System.Int32
+    /// printOddNumbers - Split output: 1 is not an even number. Type: System.String
+    /// printOddNumbers - Split output: 3 is not an even number. Type: System.String
+    /// printOddNumbers - Split output: 5 is not an even number. Type: System.String</c>
+    /// </example>
     [<CompiledName("Split")>]
     val split: splitter:('T -> Choice<'U1,'U2>) -> source:IObservable<'T> -> (IObservable<'U1> * IObservable<'U2>)
 
@@ -107,7 +208,23 @@ module Observable =
     ///
     /// <returns>An Observable that only propagates some of the observations from the source.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// 
+    /// let getOddNumbers number =
+    ///     match number with
+    ///     | _ when number % 2 = 0 -> None
+    ///     | _ -> Some number
+    /// 
+    /// let map = Observable.choose getOddNumbers observableNumbers
+    /// 
+    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// </code>
+    /// The sample will output: <c>1 3 5</c>
+    /// </example>
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> source:IObservable<'T> -> IObservable<'U>
 
@@ -126,7 +243,20 @@ module Observable =
     ///
     /// <returns>An Observable that triggers on the updated state values.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// 
+    /// let multiplyBy number = fun y -> number * y
+    /// let initialState = 2
+    /// let scan = Observable.scan multiplyBy initialState observableNumbers
+    /// 
+    /// scan.Subscribe(fun x -> printf "%A " x) |> ignore
+    /// </code>
+    /// The sample evaluates to: <c>2 4 12 48 240</c>
+    /// </example>
     [<CompiledName("Scan")>]
     val scan: collector:('U -> 'T -> 'U) -> state:'U -> source:IObservable<'T> -> IObservable<'U> 
 
@@ -136,7 +266,16 @@ module Observable =
     /// <param name="callback">The function to be called on each observation.</param>
     /// <param name="source">The input Observable.</param>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// let multiplyByTwo = fun number -> printf $"{number * 2} "
+    /// Observable.add multiplyByTwo observableNumbers
+    /// </code>
+    /// The sample evaluates to: <c>2 4 6 8 10</c>
+    /// </example>
     [<CompiledName("Add")>]
     val add : callback:('T -> unit) -> source:IObservable<'T> -> unit
 
@@ -148,7 +287,18 @@ module Observable =
     ///
     /// <returns>An object that will remove the callback if disposed.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// open System.Reactive.Linq
+    /// let numbers = seq { 1..3 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// let printOutput observable =
+    ///     use subscription = Observable.subscribe (fun x -> printfn "%A" x) observable
+    ///     subscription
+    /// printOutput observableNumbers |> ignore
+    /// </code>
+    /// The sample evaluates to: <c>1, 2, 3</c>
+    /// </example>
     [<CompiledName("Subscribe")>]
     val subscribe : callback:('T -> unit) -> source:IObservable<'T> -> System.IDisposable
 
@@ -164,6 +314,19 @@ module Observable =
     ///
     /// <returns>An Observable that triggers on successive pairs of observations from the input Observable.</returns>
     /// 
-    /// <example-tbd></example-tbd>
+    /// <example>
+    /// <code lang="fsharp">
+    /// /// open System.Reactive.Linq
+    /// let numbers = seq { 1..5 }
+    /// let observableNumbers = Observable.ToObservable numbers
+    /// 
+    /// let pairWise = Observable.pairwise observableNumbers
+    /// 
+    /// pairWise.Subscribe(fun pair -> printf $"{pair} ")
+    /// |> ignore
+    /// </code>
+    /// The sample evaluates to: <c>(1, 2), (2, 3), (3, 4), (4, 5)</c>
+    /// </example>
+    [<CompiledName("Pairwise")>]
     [<CompiledName("Pairwise")>]
     val pairwise: source:IObservable<'T> -> IObservable<'T * 'T>
