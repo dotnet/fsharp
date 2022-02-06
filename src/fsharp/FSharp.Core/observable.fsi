@@ -328,5 +328,4 @@ module Observable =
     /// The sample evaluates to: <c>(1, 2), (2, 3), (3, 4), (4, 5)</c>
     /// </example>
     [<CompiledName("Pairwise")>]
-    [<CompiledName("Pairwise")>]
     val pairwise: source:IObservable<'T> -> IObservable<'T * 'T>
