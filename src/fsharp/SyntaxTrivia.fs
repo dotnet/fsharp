@@ -46,3 +46,24 @@ type SynEnumCaseTrivia =
 
 [<NoEquality; NoComparison>]
 type SynUnionCaseTrivia = { BarRange: range option }
+
+[<NoEquality; NoComparison>]
+type SynPatOrTrivia = { BarRange: range }
+
+[<NoEquality; NoComparison>]
+type SynTypeDefnTrivia =
+    { TypeKeyword: range option
+      EqualsRange: range option
+      WithKeyword: range option }
+    static member Zero: SynTypeDefnTrivia =
+        { TypeKeyword = None
+          EqualsRange = None
+          WithKeyword = None }
+
+[<NoEquality; NoComparison>]
+type SynBindingTrivia =
+    { LetKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynBindingTrivia =
+        { LetKeyword = None
+          EqualsRange = None }
