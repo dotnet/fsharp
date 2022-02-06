@@ -21,15 +21,16 @@ let ListExpressionSteppingTest1 () = [ yield 1 ]
         ListExpressionSteppingTest1() cil managed
 {
   
-        .maxstack  4
-        .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0)
-        IL_0000:  ldloca.s   V_0
-        IL_0002:  ldc.i4.1
-        IL_0003:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-        IL_0008:  nop
-        IL_0009:  ldloca.s   V_0
-        IL_000b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-        IL_0010:  ret
+  .maxstack  4
+  .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0)
+  IL_0000:  nop
+  IL_0001:  ldloca.s   V_0
+  IL_0003:  ldc.i4.1
+  IL_0004:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+  IL_0009:  nop
+  IL_000a:  ldloca.s   V_0
+  IL_000c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+  IL_0011:  ret
 } 
             """
             ])
