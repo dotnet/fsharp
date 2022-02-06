@@ -67,3 +67,17 @@ type SynBindingTrivia =
     static member Zero: SynBindingTrivia =
         { LetKeyword = None
           EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynMemberFlagsTrivia =
+    { MemberRange: range option
+      OverrideRange: range option
+      AbstractRange: range option
+      StaticRange: range option
+      DefaultRange: range option }
+    static member Zero: SynMemberFlagsTrivia =
+        { MemberRange = None
+          OverrideRange = None
+          AbstractRange = None
+          StaticRange = None
+          DefaultRange = None }

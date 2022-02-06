@@ -27,6 +27,7 @@ open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
@@ -5733,7 +5734,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
       )
 
-    | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, extraImpls, mNewExpr, m) ->
+    | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, members, extraImpls, mNewExpr, m) ->
+      let binds = unionBindingAndMembers binds members
       TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
@@ -5994,7 +5996,8 @@ and TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImp
 
     // Work out the type of any interfaces to implement
     let extraImpls, tpenv =
-        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, overrides, m)) ->
+        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, bindings, members, m)) ->
+            let overrides = unionBindingAndMembers bindings members
             let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
             if not (isInterfaceTy cenv.g intfTy) then
                 error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
@@ -6748,7 +6751,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo, bind) =
             | SynPat.Named (id, _, _, _), None ->
                 let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
                 let logicalMethId = id
-                let memberFlags = OverrideMemberFlags SynMemberKind.Member
+                let memberFlags = OverrideMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member
                 bindingRhs, logicalMethId, memberFlags
 
             | SynPat.InstanceMember(thisId, memberId, _, _, _), Some memberFlags ->
@@ -8452,7 +8455,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
 
     let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
 
-    let memberFlags = StaticMemberFlags SynMemberKind.Member
+    let memberFlags = StaticMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member
     let logicalCompiledName = ComputeLogicalName id memberFlags
     let traitInfo = TTrait(argTys, logicalCompiledName, memberFlags, argTys, Some retTy, sln)
 

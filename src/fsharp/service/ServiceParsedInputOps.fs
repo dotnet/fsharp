@@ -567,7 +567,8 @@ module ParsedInput =
                 ifPosInRange r (fun _ ->
                     fields |> List.tryPick (fun (SynExprRecordField(expr=e)) -> e |> Option.bind (walkExprWithKind parentKind)))
             | SynExpr.New (_, t, e, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
-            | SynExpr.ObjExpr (objType=ty; bindings=bindings; extraImpls=ifaces) -> 
+            | SynExpr.ObjExpr (objType=ty; bindings=bindings; members=ms; extraImpls=ifaces) ->
+                let bindings = unionBindingAndMembers bindings ms
                 walkType ty
                 |> Option.orElseWith (fun () -> List.tryPick walkBinding bindings)
                 |> Option.orElseWith (fun () -> List.tryPick walkInterfaceImpl ifaces)
@@ -1337,7 +1338,8 @@ module ParsedInput =
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident
-            | SynExpr.ObjExpr (objType=ty; argOptions=argOpt; bindings=bindings; extraImpls=ifaces) ->
+            | SynExpr.ObjExpr (objType=ty; argOptions=argOpt; bindings=bindings; members=ms; extraImpls=ifaces) ->
+                let bindings = unionBindingAndMembers bindings ms
                 argOpt |> Option.iter (fun (e, ident) ->
                     walkExpr e
                     ident |> Option.iter addIdent)
