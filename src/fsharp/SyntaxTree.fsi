@@ -621,6 +621,7 @@ type SynExpr =
         argOptions:(SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -1310,6 +1311,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 /// Represents a clause in a 'match' expression
@@ -1408,7 +1410,7 @@ type SynBindingReturnInfo =
         attributes: SynAttributes
 
 /// Represents the flags for a 'member' declaration
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       /// The member is an instance member (non-static)
@@ -1425,6 +1427,9 @@ type SynMemberFlags =
 
       /// The kind of the member
       MemberKind: SynMemberKind
+      
+      /// Additional information
+      Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs

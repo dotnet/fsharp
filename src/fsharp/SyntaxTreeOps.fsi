@@ -248,21 +248,35 @@ val mkSynBinding:
       trivia: SynBindingTrivia
         -> SynBinding
 
-val NonVirtualMemberFlags: k:SynMemberKind -> SynMemberFlags
+val NonVirtualMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val CtorMemberFlags: SynMemberFlags
+val CtorMemberFlags: trivia:SynMemberFlagsTrivia -> SynMemberFlags
 
-val ClassCtorMemberFlags: SynMemberFlags
+val ClassCtorMemberFlags: trivia:SynMemberFlagsTrivia -> SynMemberFlags
 
-val OverrideMemberFlags: k:SynMemberKind -> SynMemberFlags
+val OverrideMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: k:SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: k:SynMemberKind -> SynMemberFlags
+val StaticMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
+
+val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
+
+val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia
+
+val StaticMemberSynMemberFlagsTrivia: mStatic: range -> mMember: range -> SynMemberFlagsTrivia
+
+val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
+
+val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
+
+val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
 
 val inferredTyparDecls: SynValTyparDecls
 
 val noInferredTypars: SynValTyparDecls
+
+val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn list -> SynBinding list
 
 val synExprContainsError: inpExpr:SynExpr -> bool
 
@@ -273,4 +287,3 @@ val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
 val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
-

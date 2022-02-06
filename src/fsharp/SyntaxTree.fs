@@ -509,6 +509,7 @@ type SynExpr =
         argOptions:(SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -1177,6 +1178,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1266,7 +1268,7 @@ type SynBindingReturnInfo =
         range: range *
         attributes: SynAttributes
 
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       IsInstance: bool
@@ -1278,7 +1280,26 @@ type SynMemberFlags =
       IsFinal: bool
 
       MemberKind: SynMemberKind
+      
+      Trivia: SynMemberFlagsTrivia
     }
+    
+    override this.Equals other =
+        match other with
+        | :? SynMemberFlags as other ->
+            this.IsInstance = other.IsInstance
+            && this.IsDispatchSlot = other.IsDispatchSlot
+            && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
+            && this.IsFinal = other.IsFinal
+            && this.MemberKind = other.MemberKind
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.IsInstance +
+        hash this.IsDispatchSlot +
+        hash this.IsOverrideOrExplicitImpl +
+        hash this.IsFinal +
+        hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberKind =
