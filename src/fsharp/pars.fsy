@@ -3011,11 +3011,11 @@ localBinding:
         let bindingPat, mBindLhs = $3
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
-            let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mEquals = rhs parseState 5
             let zeroWidthAtEnd = mEquals.EndRange
             let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
+            let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
