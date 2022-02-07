@@ -854,10 +854,10 @@ moduleSpfn:
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let attr1, attr2, isInline, isMutable, vis2, id, xmlDoc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
-        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
-        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
+        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc xmlDoc
+        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, xmlDoc, vis2, konst, None, m) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -1052,7 +1052,7 @@ classSpfnMembersAtLeastOne:
 classMemberSpfn:
   | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
+       let isInline, xmlDoc, vis2, id, explicitValTyparDecls, (ty, arity), optLiteralValue = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, getSetRangeOpt, getSet = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
@@ -1061,8 +1061,8 @@ classMemberSpfn:
            | None -> unionRanges m ty.Range
            | Some m2 -> unionRanges m m2
            |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-           |> unionRangeWithXmlDoc doc
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWith, wholeRange)
+           |> unionRangeWithXmlDoc xmlDoc
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, xmlDoc, vis2, optLiteralValue, mWith, wholeRange)
        let _, flags = $3 
        SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), wholeRange) }
 
@@ -1093,10 +1093,10 @@ classMemberSpfn:
        SynMemberSig.NestedType($5, rhs2 parseState 1 5) }
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
-     { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
+     { let vis, xmlDoc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
        let m = unionRanges (rhs parseState 1) ty.Range 
        let isInline = false 
-       let valSpfn = SynValSig ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
+       let valSpfn = SynValSig ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, xmlDoc, vis, None, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
 
 
@@ -1651,9 +1651,10 @@ tyconDefn:
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel (k, memberCtorPattern :: cspec, m)
          | _ -> reportParseErrorAt (rhs2 parseState 1 5) (FSComp.SR.parsOnlyClassCanTakeValueArguments()); tcDefRepr
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
-       let mWhole = (declRange, members)
-                    ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-                    |> unionRangeWithXmlDoc xmlDoc
+       let mWhole =
+           (declRange, members)
+           ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
+           |> unionRangeWithXmlDoc xmlDoc
        let trivia = { TypeKeyword = None; EqualsRange = Some mEquals; WithKeyword = mWith }
        SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole, trivia) }
 
@@ -1869,8 +1870,8 @@ memberCore:
                  let attrs = attrs @ optAttrs
   
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                 let binding = mkSynBinding (xmlDoc, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, None, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
-                 let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, _, _, _, mBindLhs, spBind)) = binding 
+                 let binding = mkSynBinding (xmlDoc, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
+                 let (SynBinding (vis, _, isInline, _, attrs, xmlDoc, valSynData, headPat, _, _, mBindLhs, spBind, _)) = binding 
                  let memberKind = 
                        let getset = 
                              let rec go p = 
@@ -1880,7 +1881,7 @@ memberCore:
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
                                  | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
-                             go pv 
+                             go headPat 
                        if getset = "get" then
                            if hasGet then 
                                reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
@@ -1919,9 +1920,9 @@ memberCore:
   
                  // REDO with the correct member kind 
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                 let binding = mkSynBinding (PreXmlDoc.Empty, bindingPat) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, mEquals, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind), trivia)
+                 let binding = mkSynBinding (PreXmlDoc.Empty, bindingPat) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind), trivia)
   
-                 let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) = binding
+                 let (SynBinding (vis, _, isInline, _, attrs, xmlDoc, valSynData, headPat, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) = binding
                  let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
               
                  let (SynValData(_, valSynInfo, _)) = valSynData 
@@ -1980,9 +1981,9 @@ memberCore:
                  let bindingPatAdjusted, xmlDocAdjusted = 
   
                      let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, mEquals, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member), trivia)
+                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
   
-                     let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
+                     let (SynBinding (_, _, _, _, _, xmlDoc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                  
                      let lidOuter, lidVisOuter = 
                          match bindingPatOuter with 
@@ -2028,7 +2029,7 @@ memberCore:
                          | SynPat.Wild(m) ->  SynPat.Wild(m)
                          | _ -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
-                     go pv, PreXmlDoc.Merge doc2 doc
+                     go headPat, PreXmlDoc.Merge xmlDoc2 xmlDoc
   
                  let binding = SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mWholeBindLhs, spBind, trivia)
                  let memberRange = unionRanges rangeStart mWhole |> unionRangeWithXmlDoc xmlDocAdjusted
@@ -2080,7 +2081,7 @@ classDefnMember:
         
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
-       let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
+       let isInline, xmlDoc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
        let mWith, getSetRangeOpt, getSet = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
@@ -2088,9 +2089,9 @@ classDefnMember:
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
            | Some m2 -> unionRanges m m2
-           |> unionRangeWithXmlDoc doc
+           |> unionRangeWithXmlDoc xmlDoc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), wholeRange))
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWith, wholeRange)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, xmlDoc, None, None, mWith, wholeRange)
        [ SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags $3 (getSetAdjuster arity), wholeRange) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
@@ -2880,7 +2881,7 @@ cPrototype:
             let binding =
                 mkSynBinding 
                     (xmlDoc, bindingPat) 
-                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, None, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -3000,7 +3001,7 @@ localBinding:
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
-            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, Some mEquals, rhsExpr, mRhs, opts, attrs, None, trivia))
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, rhsExpr, mRhs, opts, attrs, None, trivia))
         localBindingRange, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
@@ -3014,7 +3015,8 @@ localBinding:
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
-            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, Some mEquals, rhsExpr, mRhs, [], attrs, None, trivia))
+            let trivia =  { LetKeyword = Some mLetKwd; EqualsRange = None }
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
@@ -3027,7 +3029,8 @@ localBinding:
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
             let trivia = { LetKeyword = Some mLetKwd; EqualsRange = None }
-            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, None, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None, trivia))
+            let rhsExpr = arbExpr("localBinding2", mRhs)
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
 /* A single expression with an optional type annotation, and an optional static optimization block */
@@ -5318,7 +5321,7 @@ atomTypeOrAnonRecdType:
      { let flds, isStruct = $1
        let flds2 = 
            flds |> List.choose (function 
-             | (SynField([], false, Some id, ty, false, _xmldoc, None, _m)) -> Some (id, ty) 
+             | (SynField([], false, Some id, ty, false, _, None, _m)) -> Some (id, ty) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd (isStruct, flds2, rhs parseState 1) }  
 
