@@ -1136,8 +1136,8 @@ let canGenMethodDef (td: ILTypeDef) cenv (md: ILMethodDef) =
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
-    //          member val internal Prop1 : int = 0 with get, set    
-    //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>] 
+    //          member val internal Prop1 : int = 0 with get, set
+    //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
     else if td.IsAttribute && md.IsSpecialName && (not md.IsConstructor) && (not md.IsClassInitializer) then
         true
@@ -1167,13 +1167,16 @@ let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
         | _ -> false
 
 let canGenPropertyDef cenv (prop: ILPropertyDef) =
-    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
-    // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
-    // Only generate property if we have at least getter or setter, otherwise, we skip.
-    [| prop.GetMethod; prop.SetMethod |]
-    |> Array.choose id
-    |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
-    |> Array.exists (function | Ok _ -> true | _ -> false)
+    if not cenv.referenceAssemblyOnly then
+        true
+    else
+        // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+        // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
+        // Only generate property if we have at least getter or setter, otherwise, we skip.
+        [| prop.GetMethod; prop.SetMethod |]
+        |> Array.choose id
+        |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
+        |> Array.exists (function | Ok _ -> true | _ -> false)
 
 let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
@@ -1268,8 +1271,9 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
                 (UnsharedRow
                     [| SimpleIndex (TableNames.TypeDef, tidx)
                        SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
-        
+
         let props = td.Properties.AsList
+
         if not (isNil props) then
             AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
         let events = td.Events.AsList
@@ -2734,7 +2738,7 @@ and GetPropertyAsPropertyRow cenv env (prop: ILPropertyDef) =
 
 /// ILPropertyDef --> Property Row + MethodSemantics entries
 and GenPropertyPass3 cenv env (prop: ILPropertyDef) =
-    if canGenPropertyDef cenv prop then   
+    if canGenPropertyDef cenv prop then
     // REVIEW: We do double check here (via canGenerateProperty and GenPropertyMethodSemanticsPass3).
         let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
         prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001)

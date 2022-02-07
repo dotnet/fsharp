@@ -662,8 +662,9 @@ type MType() =
 
   } 
   
- }"""
-           """.class auto ansi serializable nested public MType
+ }
+            """
+            """.class auto ansi serializable nested public MType
            extends [runtime]System.Object
           {
             .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
@@ -702,5 +703,5 @@ type MType() =
           } 
 
         }"""
-    ]
+        ]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.
