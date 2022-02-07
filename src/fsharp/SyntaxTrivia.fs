@@ -81,3 +81,8 @@ type SynMemberFlagsTrivia =
           AbstractRange = None
           StaticRange = None
           DefaultRange = None }
+
+[<NoEquality; NoComparison>]
+type SynExprAndBangTrivia =
+    { EqualsRange: range
+      InKeyword: range option }
