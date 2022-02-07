@@ -1082,8 +1082,64 @@ let GetTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
-let canGenMethodDef cenv (md: ILMethodDef) =
-    if not cenv.referenceAssemblyOnly  then
+exception MethodDefNotFound
+let FindMethodDefIdx cenv mdkey =
+    try cenv.methodDefIdxsByKey.GetTableEntry mdkey
+    with :? KeyNotFoundException ->
+      let typeNameOfIdx i =
+        match
+           (cenv.typeDefs.dict
+             |> Seq.fold (fun sofar kvp ->
+                let tkey2 = kvp.Key
+                let tidx2 = kvp.Value
+                if i = tidx2 then
+                    if sofar = None then
+                        Some tkey2
+                    else failwith "multiple type names map to index"
+                else sofar) None) with
+          | Some x -> x
+          | None -> raise MethodDefNotFound
+      let (TdKey (tenc, tname)) = typeNameOfIdx mdkey.TypeIdx
+      dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
+      dprintn ("generic arity: "+string mdkey.GenericArity)
+      cenv.methodDefIdxsByKey.dict |> Seq.iter (fun (KeyValue(mdkey2, _)) ->
+          if mdkey2.TypeIdx = mdkey.TypeIdx && mdkey.Name = mdkey2.Name then
+              let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
+              dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
+              dprintn ("generic arity: "+string mdkey2.GenericArity)
+              dprintn (sprintf "mdkey2: %+A" mdkey2))
+      raise MethodDefNotFound
+
+// --------------------------------------------------------------------
+// ILMethodRef --> ILMethodDef.
+//
+// Only successfully converts ILMethodRef's referring to
+// methods in the module being emitted.
+// --------------------------------------------------------------------
+let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
+    let tref = mref.DeclaringTypeRef
+    try
+        if not (isTypeRefLocal tref) then
+             Result.Error $"method referred to by method impl, event or property is not in a type defined in this module, method ref is %A{mref}"
+        else
+            let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
+            let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
+            let idx = FindMethodDefIdx cenv mdkey
+            Ok idx
+    with e ->
+        Result.Error $"Error in GetMethodRefAsMethodDefIdx for mref = %A{(mref.Name, tref.Name)}, error: %s{e.Message}"
+
+let canGenMethodDef (td: ILTypeDef) cenv (md: ILMethodDef) =
+    if not cenv.referenceAssemblyOnly then
+        true
+    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    //      [<AttributeUsage(AttributeTargets.All)>]
+    //      type PublicWithInternalSetterPropertyAttribute() =
+    //          inherit Attribute()
+    //          member val internal Prop1 : int = 0 with get, set    
+    //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>] 
+    //      type ClassPublicWithAttributes() = class end
+    else if td.IsAttribute && md.IsSpecialName && (not md.IsConstructor) && (not md.IsClassInitializer) then
         true
     else
         match md.Access with
@@ -1091,13 +1147,16 @@ let canGenMethodDef cenv (md: ILMethodDef) =
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
             when md.IsVirtual || md.IsAbstract || md.IsNewSlot || md.IsFinal -> true
-        // When emitting a reference assembly, we only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
+        // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
 let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
-    if not cenv.referenceAssemblyOnly || td.IsStruct then
+    if not cenv.referenceAssemblyOnly then
+        true
+    // We want to explicitly generate fields for struct types and attributes, since they can be part of `unmanaged constraint`.
+    else if td.IsStruct || td.IsAttribute then
         true
     else
         match fd.Access with
@@ -1106,6 +1165,15 @@ let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
+
+let canGenPropertyDef cenv (prop: ILPropertyDef) =
+    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+    // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
+    // Only generate property if we have at least getter or setter, otherwise, we skip.
+    [| prop.GetMethod; prop.SetMethod |]
+    |> Array.choose id
+    |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
+    |> Array.exists (function | Ok _ -> true | _ -> false)
 
 let rec GetTypeDefAsRow cenv env _enc (td: ILTypeDef) =
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
@@ -1148,8 +1216,8 @@ and GenFieldDefPass2 td cenv tidx fd =
 and GetKeyForMethodDef cenv tidx (md: ILMethodDef) =
     MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
-and GenMethodDefPass2 cenv tidx md =
-    if canGenMethodDef cenv md then
+and GenMethodDefPass2 td cenv tidx md =
+    if canGenMethodDef td cenv md then
         let idx =
           cenv.methodDefIdxsByKey.AddUniqueEntry
              "method"
@@ -1168,7 +1236,8 @@ and GetKeyForPropertyDef tidx (x: ILPropertyDef) =
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
 
 and GenPropertyDefPass2 cenv tidx x =
-    ignore (cenv.propertyDefs.AddUniqueEntry "property" (fun (PropKey (_, n, _, _)) -> n) (GetKeyForPropertyDef tidx x))
+    if canGenPropertyDef cenv x then
+        ignore (cenv.propertyDefs.AddUniqueEntry "property" (fun (PropKey (_, n, _, _)) -> n) (GetKeyForPropertyDef tidx x))
 
 and GetTypeAsImplementsRow cenv env tidx ty =
     let tdorTag, tdorRow = GetTypeAsTypeDefOrRef cenv env ty
@@ -1199,6 +1268,7 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
                 (UnsharedRow
                     [| SimpleIndex (TableNames.TypeDef, tidx)
                        SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
+        
         let props = td.Properties.AsList
         if not (isNil props) then
             AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
@@ -1213,7 +1283,7 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
         props |> List.iter (GenPropertyDefPass2 cenv tidx)
         events |> List.iter (GenEventDefPass2 cenv tidx)
         td.Fields.AsList |> List.iter (GenFieldDefPass2 td cenv tidx)
-        td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
+        td.Methods |> Seq.iter (GenMethodDefPass2 td cenv tidx)
         td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
@@ -1224,35 +1294,6 @@ and GenTypeDefsPass2 pidx enc cenv tds =
 //=====================================================================
 // Pass 3 - write details of methods, fields, IL code, custom attrs etc.
 //=====================================================================
-
-exception MethodDefNotFound
-let FindMethodDefIdx cenv mdkey =
-    try cenv.methodDefIdxsByKey.GetTableEntry mdkey
-    with :? KeyNotFoundException ->
-      let typeNameOfIdx i =
-        match
-           (cenv.typeDefs.dict
-             |> Seq.fold (fun sofar kvp ->
-                let tkey2 = kvp.Key
-                let tidx2 = kvp.Value
-                if i = tidx2 then
-                    if sofar = None then
-                        Some tkey2
-                    else failwith "multiple type names map to index"
-                else sofar) None) with
-          | Some x -> x
-          | None -> raise MethodDefNotFound
-      let (TdKey (tenc, tname)) = typeNameOfIdx mdkey.TypeIdx
-      dprintn ("The local method '"+(String.concat "." (tenc@[tname]))+"'::'"+mdkey.Name+"' was referenced but not declared")
-      dprintn ("generic arity: "+string mdkey.GenericArity)
-      cenv.methodDefIdxsByKey.dict |> Seq.iter (fun (KeyValue(mdkey2, _)) ->
-          if mdkey2.TypeIdx = mdkey.TypeIdx && mdkey.Name = mdkey2.Name then
-              let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
-              dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
-              dprintn ("generic arity: "+string mdkey2.GenericArity)
-              dprintn (sprintf "mdkey2: %+A" mdkey2))
-      raise MethodDefNotFound
-
 
 let rec GetMethodDefIdx cenv md =
     cenv.methodDefIdxs.[md]
@@ -1266,39 +1307,10 @@ and FindFieldDefIdx cenv fdkey =
 and GetFieldDefAsFieldDefIdx cenv tidx fd =
     FindFieldDefIdx cenv (GetKeyForFieldDef tidx fd)
 
-// --------------------------------------------------------------------
-// ILMethodRef --> ILMethodDef.
-//
-// Only successfully converts ILMethodRef's referring to
-// methods in the module being emitted.
-// --------------------------------------------------------------------
-
-let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
-    let tref = mref.DeclaringTypeRef
-    try
-        if not (isTypeRefLocal tref) then
-             Result.Error $"method referred to by method impl, event or property is not in a type defined in this module, method ref is %A{mref}"
-        else
-            let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
-            let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
-            let idx = FindMethodDefIdx cenv mdkey
-            Ok idx
-    with e ->
-        Result.Error $"Error in GetMethodRefAsMethodDefIdx for mref = %A{(mref.Name, tref.Name)}, error: %s{e.Message}"
-
 let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
     match TryGetMethodRefAsMethodDefIdx cenv mref with
     | Result.Error msg -> failwith msg
     | Ok idx -> idx
-
-let canGenPropertyDef cenv (prop: ILPropertyDef) =
-    // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
-    // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
-    // Only generate property if we have at least getter or setter, otherwise, we skip.
-    [| prop.GetMethod; prop.SetMethod |]
-    |> Array.choose id
-    |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
-    |> Array.exists (function | Ok _ -> true | _ -> false)
     
 let rec MethodRefInfoAsMemberRefRow cenv env fenv (nm, ty, callconv, args, ret, varargs, genarity) =
     MemberRefRow(GetTypeAsMemberRefParent cenv env ty,
@@ -2638,8 +2650,8 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
 
-let GenMethodDefPass3 cenv env (md: ILMethodDef) =
-    if canGenMethodDef cenv md then
+let GenMethodDefPass3 td cenv env (md: ILMethodDef) =
+    if canGenMethodDef td cenv md then
         let midx = GetMethodDefIdx cenv md
         let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
         if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
@@ -2686,8 +2698,8 @@ let GenMethodDefPass3 cenv env (md: ILMethodDef) =
                       SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
         | _ -> ()
 
-let GenMethodDefPass4 cenv env md =
-    if canGenMethodDef cenv md then
+let GenMethodDefPass4 td cenv env md =
+    if canGenMethodDef td cenv md then
         let midx = GetMethodDefIdx cenv md
         List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
@@ -2808,7 +2820,7 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
         td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
         td.Events.AsList |> List.iter (GenEventPass3 cenv env)
         td.Fields.AsList |> List.iter (GenFieldDefPass3 td cenv env)
-        td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
+        td.Methods |> Seq.iter (GenMethodDefPass3 td cenv env)
         td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
     // ClassLayout entry if needed
         match td.Layout with
@@ -2840,7 +2852,7 @@ let rec GenTypeDefPass4 enc cenv (td: ILTypeDef) =
    try
         let env = envForTypeDef td
         let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env)
+        td.Methods |> Seq.iter (GenMethodDefPass4 td cenv env)
         List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) td.GenericParams
         GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
    with e ->

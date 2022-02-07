@@ -430,7 +430,7 @@ let test() =
         |> ignore
 
     [<Test>]
-    let ``Internal DU type doesn't generate anything without IVT`` () =
+    let ``Internal DU type doesn't generate any properties/methods without IVT`` () =
         FSharp """
 module ReferenceAssembly
 [<NoComparison;NoEquality>]
@@ -442,11 +442,25 @@ type internal RingState<'item> = | Writable of 'item
         |> verifyIL [
             referenceAssemblyAttributeExpectedIL
             """
-.class public abstract auto ansi sealed ReferenceAssembly
+.class auto autochar serializable sealed nested assembly beforefieldinit RingState`1<item>
 extends [runtime]System.Object
-{
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-}"""]
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [runtime]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   
+                                                                                          61 79 28 29 2C 6E 71 7D 00 00 )                   
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 21 00 00 00 00 00 )                         
+    .method public strict virtual instance string 
+   ToString() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+  } """]
 
     [<Test>]
     let ``Types with internal-only properties and methods don't generate anything without IVT`` () =
@@ -486,27 +500,207 @@ extends [runtime]System.Object
   }"""]
 
     [<Test>]
-    let ``Internal function is emitted when IVT is present`` () =
+    let ``Properties, getters, setters are emitted for internal properties`` () =
         FSharp """
 module ReferenceAssembly
 
+[<System.AttributeUsage(System.AttributeTargets.All)>]
 type MyAttribute() =
     inherit System.Attribute()
     member val internal Prop1 : int = 0 with get, set
 
+[<System.AttributeUsage(System.AttributeTargets.All)>]
 type MySecondaryAttribute() =
     inherit MyAttribute()
     member val internal Prop1 : int = 0 with get, set
-
-type NotAnAttribute() =
-    member val internal Prop1 : int = 0 with get, set
-
-"""
+        """
         |> withOptions ["--refonly"]
         |> compile
         |> shouldSucceed
         |> verifyIL [
-            ".custom instance void [runtime]System.Runtime.CompilerServices.InternalsVisibleToAttribute::.ctor(string) = ( 01 00 04 54 65 73 74 00 00 )"
             referenceAssemblyAttributeExpectedIL
-            """ foo """]
+            """.class auto ansi serializable nested public MyAttribute
+extends [runtime]System.Attribute
+  {
+    .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 FF 7F 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 Prop1@
+    .method public specialname rtspecialname 
+   instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+   instance int32  get_Prop1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+   instance void  set_Prop1(int32 v) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .property instance int32 Prop1()
+    {
+      .set instance void ReferenceAssembly/MyAttribute::set_Prop1(int32)
+      .get instance int32 ReferenceAssembly/MyAttribute::get_Prop1()
+    } 
+  }"""
+            """.class auto ansi serializable nested public MySecondaryAttribute
+extends ReferenceAssembly/MyAttribute
+  {
+    .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 FF 7F 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 Prop1@
+    .method public specialname rtspecialname 
+   instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+   instance int32  get_Prop1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+   instance void  set_Prop1(int32 v) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .property instance int32 Prop1()
+    {
+      .set instance void ReferenceAssembly/MySecondaryAttribute::set_Prop1(int32)
+      .get instance int32 ReferenceAssembly/MySecondaryAttribute::get_Prop1()
+    } 
+  }
+  """
+        ]
+    
+    [<Test>]
+    let ``Internal and private fields are emitted for structs`` () =
+        FSharp """
+module ReferenceAssembly
+
+[<NoEquality; NoComparison>]
+type AStruct =
+    struct
+        [<DefaultValue>] val mutable internal myInt : int
+        [<DefaultValue>] val mutable private myInt2 : int
+    end
+    """
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class sequential ansi serializable sealed nested public AStruct
+            extends [runtime]System.ValueType
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoEqualityAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoComparisonAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 myInt
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.DefaultValueAttribute::.ctor() = ( 01 00 00 00 ) 
+    .field assembly int32 myInt2
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.DefaultValueAttribute::.ctor() = ( 01 00 00 00 ) 
+  }"""
+        ]
+    [<Test>]
+    let ``Only public properties are emitted on non-IVT assemblies`` () =
+        FSharp """
+module ReferenceAssembly
+
+type NotAnAttribute() =
+    member val internal Prop1 : int = 0 with get, set
+
+type MType() =
+    member val public PubProp1 : int = 0 with get, set
+    member val internal IntProp1 : int = 0 with get, set
+    member val private PrivProp1 : int = 0 with get, set
+    """
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class auto ansi serializable nested public NotAnAttribute
+            extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public specialname rtspecialname 
+               instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+  } 
+  
+ }"""
+           """.class auto ansi serializable nested public MType
+           extends [runtime]System.Object
+          {
+            .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+            .method public specialname rtspecialname 
+                      instance void  .ctor() cil managed
+            {
+      
+              .maxstack  8
+              IL_0000:  ldnull
+              IL_0001:  throw
+            } 
+
+            .method public hidebysig specialname 
+                      instance int32  get_PubProp1() cil managed
+            {
+      
+              .maxstack  8
+              IL_0000:  ldnull
+              IL_0001:  throw
+            } 
+
+            .method public hidebysig specialname 
+                      instance void  set_PubProp1(int32 v) cil managed
+            {
+      
+              .maxstack  8
+              IL_0000:  ldnull
+              IL_0001:  throw
+            } 
+
+            .property instance int32 PubProp1()
+            {
+              .set instance void ReferenceAssembly/MType::set_PubProp1(int32)
+              .get instance int32 ReferenceAssembly/MType::get_PubProp1()
+            } 
+          } 
+
+        }"""
+    ]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.
