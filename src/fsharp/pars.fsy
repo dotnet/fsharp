@@ -1854,7 +1854,7 @@ memberCore:
        (fun visNoLongerUsed memFlagsBuilder attrs rangeStart -> 
              let mutable hasGet = false
              let mutable hasSet = false
-             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
+             let xmlDocAtMember = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
              
              let tryMkSynMemberDefnMember 
                  (withPropertyKeyword: PropertyKeyword option)
@@ -1870,8 +1870,8 @@ memberCore:
                  let attrs = attrs @ optAttrs
   
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                 let binding = mkSynBinding (xmlDoc, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
-                 let (SynBinding (vis, _, isInline, _, attrs, xmlDoc, valSynData, headPat, _, _, mBindLhs, spBind, _)) = binding 
+                 let binding = mkSynBinding (xmlDocAtMember, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
+                 let (SynBinding (vis, _, isInline, _, attrs, _, _, headPat, _, _, mBindLhs, _, _)) = binding 
                  let memberKind = 
                        let getset = 
                              let rec go p = 
@@ -1981,7 +1981,7 @@ memberCore:
                  let bindingPatAdjusted, xmlDocAdjusted = 
   
                      let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
+                     let bindingOuter = mkSynBinding (xmlDocAtMember, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
   
                      let (SynBinding (_, _, _, _, _, xmlDoc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                  
@@ -3015,7 +3015,7 @@ localBinding:
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
-            let trivia =  { LetKeyword = Some mLetKwd; EqualsRange = None }
+            let trivia =  { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
