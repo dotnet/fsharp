@@ -5,6 +5,7 @@ module internal FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 
 [<Class>]
 type SynArgNameGenerator =
@@ -246,25 +247,40 @@ val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list *
 val mkSynBinding:
     xmlDoc:PreXmlDoc * headPat:SynPat ->
       vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * mEquals: Range option * origRhsExpr:SynExpr * mRhs:range *
-      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option 
+      spBind:DebugPointAtBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:SynMemberFlags option *
+      trivia: SynBindingTrivia
         -> SynBinding
 
-val NonVirtualMemberFlags: k:SynMemberKind -> SynMemberFlags
+val NonVirtualMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val CtorMemberFlags: SynMemberFlags
+val CtorMemberFlags: trivia:SynMemberFlagsTrivia -> SynMemberFlags
 
-val ClassCtorMemberFlags: SynMemberFlags
+val ClassCtorMemberFlags: trivia:SynMemberFlagsTrivia -> SynMemberFlags
 
-val OverrideMemberFlags: k:SynMemberKind -> SynMemberFlags
+val OverrideMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: k:SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: k:SynMemberKind -> SynMemberFlags
+val StaticMemberFlags: trivia:SynMemberFlagsTrivia -> k:SynMemberKind -> SynMemberFlags
+
+val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
+
+val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia
+
+val StaticMemberSynMemberFlagsTrivia: mStatic: range -> mMember: range -> SynMemberFlagsTrivia
+
+val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
+
+val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
+
+val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
 
 val inferredTyparDecls: SynValTyparDecls
 
 val noInferredTypars: SynValTyparDecls
+
+val unionBindingAndMembers: bindings: SynBinding list -> members: SynMemberDefn list -> SynBinding list
 
 val synExprContainsError: inpExpr:SynExpr -> bool
 
@@ -284,4 +300,3 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
-

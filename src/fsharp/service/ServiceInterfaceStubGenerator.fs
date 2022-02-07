@@ -776,7 +776,8 @@ module InterfaceStubGenerator =
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; members=ms; extraImpls=ifaces) ->
+                    let binds = unionBindingAndMembers binds ms
                     match baseCallOpt with
                     | None -> 
                         if rangeContainsPos ty.Range pos then

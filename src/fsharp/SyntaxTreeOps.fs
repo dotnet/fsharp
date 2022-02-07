@@ -634,57 +634,109 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 
-let mkSynBinding (xmlDoc: PreXmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, mEquals, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt) =
+let mkSynBinding (xmlDoc: PreXmlDoc, headPat) (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia) =
     let info = SynInfo.InferSynValData (memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
-    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, mEquals, rhsExpr, mBind, spBind)
+    SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
-let NonVirtualMemberFlags k : SynMemberFlags =
+let NonVirtualMemberFlags trivia k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
 
-let CtorMemberFlags : SynMemberFlags =
+let CtorMemberFlags trivia : SynMemberFlags =
     { MemberKind=SynMemberKind.Constructor
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
 
-let ClassCtorMemberFlags : SynMemberFlags =
+let ClassCtorMemberFlags trivia : SynMemberFlags =
     { MemberKind=SynMemberKind.ClassConstructor
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
 
-let OverrideMemberFlags k : SynMemberFlags =
+let OverrideMemberFlags trivia k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=true
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
 
-let AbstractMemberFlags k : SynMemberFlags =
+let AbstractMemberFlags trivia k : SynMemberFlags =
     { MemberKind=k
       IsInstance=true
       IsDispatchSlot=true
       IsOverrideOrExplicitImpl=false
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
 
-let StaticMemberFlags k : SynMemberFlags =
+let StaticMemberFlags trivia k : SynMemberFlags =
     { MemberKind=k
       IsInstance=false
       IsDispatchSlot=false
       IsOverrideOrExplicitImpl=false
-      IsFinal=false }
+      IsFinal=false
+      Trivia=trivia }
+
+let MemberSynMemberFlagsTrivia (mMember: range) : SynMemberFlagsTrivia =
+    { MemberRange = Some mMember
+      OverrideRange = None
+      AbstractRange = None
+      StaticRange = None
+      DefaultRange = None }
+
+let OverrideSynMemberFlagsTrivia (mOverride: range) : SynMemberFlagsTrivia =
+    { MemberRange = None
+      OverrideRange = Some mOverride
+      AbstractRange = None
+      StaticRange = None
+      DefaultRange = None }
+
+let StaticMemberSynMemberFlagsTrivia (mStatic: range) (mMember: range) : SynMemberFlagsTrivia =
+    { MemberRange = Some mMember
+      OverrideRange = None
+      AbstractRange = None
+      StaticRange = Some mStatic
+      DefaultRange = None }
+
+let DefaultSynMemberFlagsTrivia (mDefault: range) : SynMemberFlagsTrivia =
+    { MemberRange = None
+      OverrideRange = None
+      AbstractRange = None
+      StaticRange = None
+      DefaultRange = Some mDefault }
+
+let AbstractSynMemberFlagsTrivia (mAbstract: range) : SynMemberFlagsTrivia =
+    { MemberRange = None
+      OverrideRange = None
+      AbstractRange = Some mAbstract
+      StaticRange = None
+      DefaultRange = None }
+
+let AbstractMemberSynMemberFlagsTrivia (mAbstract: range) (mMember: range) : SynMemberFlagsTrivia =
+    { MemberRange = Some mMember
+      OverrideRange = None
+      AbstractRange = Some mAbstract
+      StaticRange = None
+      DefaultRange = None }
 
 let inferredTyparDecls = SynValTyparDecls(None, true)
 
 let noInferredTypars = SynValTyparDecls(None, false)
+
+let unionBindingAndMembers (bindings: SynBinding list) (members: SynMemberDefn list): SynBinding list =
+    [ yield! bindings
+      yield! List.choose (function | SynMemberDefn.Member(b,_) -> Some b | _ -> None) members ]
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (SynBinding(expr=synExpr)) = walkExpr synExpr
@@ -761,7 +813,8 @@ let rec synExprContainsError inpExpr =
               let flds = fs |> List.choose (fun (SynExprRecordField(expr=v)) -> v)
               walkExprs flds
 
-          | SynExpr.ObjExpr (bindings=bs; extraImpls=is) ->
+          | SynExpr.ObjExpr (bindings=bs; members=ms; extraImpls=is) ->
+              let bs = unionBindingAndMembers bs ms
               walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
 
           | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)

@@ -309,7 +309,8 @@ module Structure =
                 parseExpr e
             | SynExpr.ComputationExpr (_, e, _r) as _c ->
                 parseExpr e
-            | SynExpr.ObjExpr (argOptions=argOpt; bindings=bindings; extraImpls=extraImpls; newExprRange=newRange; range=wholeRange) as _objExpr ->
+            | SynExpr.ObjExpr (argOptions=argOpt; bindings=bindings; members=ms; extraImpls=extraImpls; newExprRange=newRange; range=wholeRange) as _objExpr ->
+                let bindings = unionBindingAndMembers bindings ms
                 match argOpt with
                 | Some (args, _) ->
                     let collapse = Range.endToEnd args.Range wholeRange
@@ -407,7 +408,7 @@ module Structure =
 
         and parseMatchClause (SynMatchClause(pat=synPat; resultExpr=e) as clause) =
             let rec getLastPat = function
-                | SynPat.Or(_, pat, _) -> getLastPat pat
+                | SynPat.Or(rhsPat=pat) -> getLastPat pat
                 | x -> x
 
             let synPat = getLastPat synPat

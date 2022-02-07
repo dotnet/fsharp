@@ -383,7 +383,8 @@ module SyntaxTraversal =
                     ] |> pick expr
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; members=ms; extraImpls=ifaces) ->
+                    let binds = unionBindingAndMembers binds ms
                     let result = 
                         ifaces 
                         |> Seq.map (fun (SynInterfaceImpl(interfaceTy=ty)) -> ty)
@@ -631,7 +632,7 @@ module SyntaxTraversal =
                 let path = SyntaxNode.SynPat p :: origPath
                 match p with
                 | SynPat.Paren (p, _) -> traversePat path p
-                | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick (traversePat path)
+                | SynPat.Or (p1, p2, _, _) -> [ p1; p2] |> List.tryPick (traversePat path)
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
@@ -710,7 +711,7 @@ module SyntaxTraversal =
 #endif
                         )
 
-        and traverseSynTypeDefn origPath (SynTypeDefn(synComponentInfo, _, synTypeDefnRepr, _, synMemberDefns, _, tRange) as tydef) =
+        and traverseSynTypeDefn origPath (SynTypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, _, tRange, _) as tydef) =
             let path = SyntaxNode.SynTypeDefn tydef :: origPath
             
             match visitor.VisitComponentInfo (origPath, synComponentInfo) with

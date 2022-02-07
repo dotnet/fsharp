@@ -622,6 +622,7 @@ type SynExpr =
         argOptions:(SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -1219,7 +1220,8 @@ type SynPat =
     | Or of
         lhsPat: SynPat *
         rhsPat: SynPat *
-        range: range
+        range: range *
+        trivia: SynPatOrTrivia
 
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of
@@ -1318,6 +1320,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 /// Represents a clause in a 'match' expression
@@ -1392,10 +1395,10 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
-        equalsRange: range option *
         expr: SynExpr  *
         range: range *
-        debugPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding *
+        trivia: SynBindingTrivia
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1416,7 +1419,7 @@ type SynBindingReturnInfo =
         attributes: SynAttributes
 
 /// Represents the flags for a 'member' declaration
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       /// The member is an instance member (non-static)
@@ -1433,6 +1436,9 @@ type SynMemberFlags =
 
       /// The kind of the member
       MemberKind: SynMemberKind
+      
+      /// Additional information
+      Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
@@ -1801,12 +1807,11 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
-        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

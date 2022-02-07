@@ -582,7 +582,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       | None -> ()
                       yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
 
-                  | SynExpr.ObjExpr (argOptions=args; bindings=bs; extraImpls=is) -> 
+                  | SynExpr.ObjExpr (argOptions=args; bindings=bs; members=ms; extraImpls=is) ->
+                      let bs = unionBindingAndMembers bs ms
                       match args with
                       | None -> ()
                       | Some (arg, _) -> yield! walkExpr false arg

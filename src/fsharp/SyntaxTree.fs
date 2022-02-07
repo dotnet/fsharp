@@ -511,6 +511,7 @@ type SynExpr =
         argOptions:(SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -1083,7 +1084,8 @@ type SynPat =
     | Or of
         lhsPat: SynPat *
         rhsPat: SynPat *
-        range: range
+        range: range *
+        trivia: SynPatOrTrivia
 
     | Ands of
         pats: SynPat list *
@@ -1186,6 +1188,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1253,10 +1256,10 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
-        equalsRange: range option *
         expr: SynExpr  *
         range: range *
-        debugPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding *
+        trivia: SynBindingTrivia
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1275,7 +1278,7 @@ type SynBindingReturnInfo =
         range: range *
         attributes: SynAttributes
 
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       IsInstance: bool
@@ -1287,7 +1290,26 @@ type SynMemberFlags =
       IsFinal: bool
 
       MemberKind: SynMemberKind
+      
+      Trivia: SynMemberFlagsTrivia
     }
+    
+    override this.Equals other =
+        match other with
+        | :? SynMemberFlags as other ->
+            this.IsInstance = other.IsInstance
+            && this.IsDispatchSlot = other.IsDispatchSlot
+            && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
+            && this.IsFinal = other.IsFinal
+            && this.MemberKind = other.MemberKind
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.IsInstance +
+        hash this.IsDispatchSlot +
+        hash this.IsOverrideOrExplicitImpl +
+        hash this.IsFinal +
+        hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberKind =
@@ -1618,12 +1640,11 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
-        withKeyword: range option *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     member this.Range =
         match this with
