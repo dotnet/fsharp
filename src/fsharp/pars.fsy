@@ -854,10 +854,10 @@ moduleSpfn:
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attr1, attr2, isInline, isMutable, vis2, id, xmlDoc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), konst = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
-        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc xmlDoc
-        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, xmlDoc, vis2, konst, None, m) 
+        let m = rhs2 parseState 1 11 |> unionRangeWithXmlDoc doc
+        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, None, m) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -1651,10 +1651,9 @@ tyconDefn:
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel (k, memberCtorPattern :: cspec, m)
          | _ -> reportParseErrorAt (rhs2 parseState 1 5) (FSComp.SR.parsOnlyClassCanTakeValueArguments()); tcDefRepr
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
-       let mWhole =
-           (declRange, members)
-           ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-           |> unionRangeWithXmlDoc xmlDoc
+       let mWhole = (declRange, members)
+                    ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
+                    |> unionRangeWithXmlDoc xmlDoc
        let trivia = { TypeKeyword = None; EqualsRange = Some mEquals; WithKeyword = mWith }
        SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole, trivia) }
 
@@ -1871,7 +1870,7 @@ memberCore:
   
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
                  let binding = mkSynBinding (xmlDoc, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
-                 let (SynBinding (vis, _, isInline, _, attrs, _, _, pv, _, _, mBindLhs, _, _)) = binding 
+                 let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, _, _, mBindLhs, spBind, _)) = binding 
                  let memberKind = 
                        let getset = 
                              let rec go p = 
@@ -1981,7 +1980,7 @@ memberCore:
                  let bindingPatAdjusted, xmlDocAdjusted = 
   
                      let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
+                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member), trivia)
   
                      let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                  
@@ -2878,10 +2877,9 @@ cPrototype:
             let bindingPat = SynPat.LongIdent (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
-            let binding =
-                mkSynBinding 
-                    (xmlDoc, bindingPat) 
-                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+            let binding = mkSynBinding 
+                              (xmlDoc, bindingPat) 
+                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -3011,11 +3009,11 @@ localBinding:
         let bindingPat, mBindLhs = $3
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
-            let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mEquals = rhs parseState 5
             let zeroWidthAtEnd = mEquals.EndRange
-            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
             let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
+            let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
+            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
