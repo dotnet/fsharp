@@ -138,3 +138,13 @@ type SynMemberFlagsTrivia =
         DefaultRange: range option
     }
     static member Zero: SynMemberFlagsTrivia
+
+/// Represents additional information for SynExprAndBang
+[<NoEquality; NoComparison>]
+type SynExprAndBangTrivia =
+    {
+        /// The syntax range of the `=` token.
+        EqualsRange: range
+        /// The syntax range of the `in` keyword.
+        InKeyword: range option
+    }
