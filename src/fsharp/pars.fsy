@@ -1871,7 +1871,7 @@ memberCore:
   
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
                  let binding = mkSynBinding (xmlDocAtMember, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
-                 let (SynBinding (vis, _, isInline, _, attrs, _, _, headPat, _, _, mBindLhs, _, _)) = binding 
+                 let (SynBinding (vis, _, isInline, _, attrs, _, _, pv, _, _, mBindLhs, _, _)) = binding 
                  let memberKind = 
                        let getset = 
                              let rec go p = 
@@ -1881,7 +1881,7 @@ memberCore:
                                  | SynPat.Typed (p, _, _) -> go p
                                  | SynPat.Attrib (p, _, _) -> go p
                                  | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
-                             go headPat 
+                             go pv 
                        if getset = "get" then
                            if hasGet then 
                                reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
@@ -1922,7 +1922,7 @@ memberCore:
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
                  let binding = mkSynBinding (PreXmlDoc.Empty, bindingPat) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind), trivia)
   
-                 let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, headPat, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) = binding
+                 let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) = binding
                  let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
               
                  let (SynValData(_, valSynInfo, _)) = valSynData 
@@ -2029,7 +2029,7 @@ memberCore:
                          | SynPat.Wild(m) ->  SynPat.Wild(m)
                          | _ -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
   
-                     go headPat, PreXmlDoc.Merge doc2 doc
+                     go pv, PreXmlDoc.Merge doc2 doc
   
                  let binding = SynBinding (vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mWholeBindLhs, spBind, trivia)
                  let memberRange = unionRanges rangeStart mWhole |> unionRangeWithXmlDoc xmlDocAdjusted
