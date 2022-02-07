@@ -963,9 +963,9 @@ type SynExprAndBang =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: range *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprAndBangTrivia
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
