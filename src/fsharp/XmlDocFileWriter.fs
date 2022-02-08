@@ -106,7 +106,7 @@ module XmlDocWriter =
 
         doModule generatedCcu.Contents
 
-        use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.OpenOrCreate).GetWriter()
+        use os = FileSystem.OpenFileForWriteShim(xmlfile, FileMode.Create).GetWriter()
 
         fprintfn os "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
         fprintfn os "<doc>"
