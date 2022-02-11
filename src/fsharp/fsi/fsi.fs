@@ -30,7 +30,8 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILRuntimeWriter
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
+//open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
@@ -222,6 +223,130 @@ type internal FsiTimeReporter(outWriter: TextWriter) =
 
     member tr.TimeOpIf flag f = if flag then tr.TimeOp f else f ()
 
+#if !SINGLE_ASSEMBLY
+type ILDynamicEmitEnv =
+    { ilg: ILGlobals
+      resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option
+      TypeMap: Zmap<string, Type * ILTypeRef> }
+
+    member _.convAssemblyRef (aref: ILAssemblyRef) =
+        let asmName = AssemblyName()
+        asmName.Name <- aref.Name
+        (match aref.PublicKey with
+         | None -> ()
+         | Some (PublicKey bytes) -> asmName.SetPublicKey bytes
+         | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken bytes)
+        let setVersion (version: ILVersionInfo) =
+           asmName.Version <- Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
+        Option.iter setVersion aref.Version
+        //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL
+        //Option.iter (fun name -> asmName.CultureInfo <- System.Globalization.CultureInfo.CreateSpecificCulture name) aref.Locale
+        asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
+        asmName
+
+    member cenv.convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
+        let assembly =
+            match cenv.resolveAssemblyRef asmref with
+            | Some (Choice1Of2 path) ->
+                // asmRef is a path but the runtime is smarter with assembly names so make one
+                let asmName = AssemblyName.GetAssemblyName(path)
+                asmName.CodeBase <- path
+                FileSystem.AssemblyLoader.AssemblyLoad asmName
+            | Some (Choice2Of2 assembly) ->
+                assembly
+            | None ->
+                let asmName = cenv.convAssemblyRef asmref
+                FileSystem.AssemblyLoader.AssemblyLoad asmName
+        let typT = assembly.GetType qualifiedName
+        match typT with
+        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+        | res -> res
+
+    /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
+    // This ought to be an adequate substitute for this whole function, but it needs
+    // to be thoroughly tested.
+    //    Type.GetType(tref.QualifiedName)
+    // []              , name -> name
+    // [ns]            , name -> ns+name
+    // [ns;typeA;typeB], name -> ns+typeA+typeB+name
+    member cenv.convTypeRefAux (tref: ILTypeRef) =
+        let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
+        match tref.Scope with
+        | ILScopeRef.Assembly asmref ->
+            cenv.convResolveAssemblyRef asmref qualifiedName
+        | ILScopeRef.Module _
+        | ILScopeRef.Local _ ->
+            let typT = Type.GetType qualifiedName
+            match typT with
+            | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+            | res -> res
+        | ILScopeRef.PrimaryAssembly ->
+            cenv.convResolveAssemblyRef cenv.ilg.primaryAssemblyRef qualifiedName
+
+    member emEnv.LookupTypeRef (tref: ILTypeRef) =
+        let key = tref.BasicQualifiedName
+        //printfn $"lookup {tref.BasicQualifiedName}"
+        //if not (emEnv.TypeMap.ContainsKey(key)) then
+            //printfn $"keys = %A{[ for (KeyValue(k,_)) in emEnv.TypeMap -> k ]}"
+            
+        let typ, _ = emEnv.TypeMap.[key]
+        typ
+
+    member emEnv.LookupType (ty: ILType) = 
+        let rec convTypeSpec (tspec: ILTypeSpec) =
+            let tref = tspec.TypeRef
+            let typT =
+                if tref.Scope.IsLocalRef then 
+                    emEnv.LookupTypeRef tref
+                else
+                    emEnv.convTypeRefAux tref
+            let tyargs = List.map convTypeAux tspec.GenericArgs
+            let res =
+                match isNil tyargs, typT.IsGenericType with
+                | _, true -> typT.MakeGenericType(List.toArray tyargs)
+                | true, false -> typT
+                | _, false -> null
+            match res with
+            | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+            | _ -> res
+
+        and convTypeAux ty =
+            match ty with
+            | ILType.Void -> Type.GetType("System.Void")
+            | ILType.Array (shape, eltType) ->
+                let baseT = convTypeAux eltType
+                if shape.Rank=1 then baseT.MakeArrayType()
+                else baseT.MakeArrayType shape.Rank
+            | ILType.Value tspec -> convTypeSpec tspec
+            | ILType.Boxed tspec -> convTypeSpec tspec
+            | ILType.Ptr eltType ->
+                let baseT = convTypeAux eltType
+                baseT.MakePointerType()
+            | ILType.Byref eltType ->
+                let baseT = convTypeAux eltType
+                baseT.MakeByRefType()
+            | ILType.TypeVar _tv -> failwith "open generic type"
+            | ILType.Modified (_, _, modifiedTy) ->
+                convTypeAux modifiedTy
+            | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
+        convTypeAux ty
+
+    member emEnv.AddTypeDef (asm: Assembly) ilScopeRef enc (tdef: ILTypeDef) =
+        let tref = mkRefForNestedILTypeDef ilScopeRef (enc, tdef)
+        let key = tref.BasicQualifiedName
+        let typ = asm.GetType(key)
+        //printfn "Adding %s --> %s" key typ.FullName
+        let tref = ILTypeRef.Create(ilScopeRef, [ for e in enc -> e.Name ], typ.Name)
+        let emEnv =
+            { emEnv with 
+                TypeMap = Zmap.add key (typ, tref) emEnv.TypeMap }
+        emEnv.AddTypeDefs asm ilScopeRef (enc@[tdef]) tdef.NestedTypes.AsList
+
+    member emEnv.AddTypeDefs asm ilScopeRef enc (tdefs: ILTypeDef list) =
+        (emEnv, tdefs) ||> List.fold (fun emEnv tdef -> emEnv.AddTypeDef asm ilScopeRef enc tdef)
+
+
+#endif
 
 type internal FsiValuePrinterMode =
     | PrintExpr
@@ -312,7 +437,7 @@ type FsiEvaluationSessionHostConfig () =
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
-type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: TcConfigBuilder, g: TcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter: TextWriter) =
+type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, _tcConfigB: TcConfigBuilder, _g: TcGlobals, _generateDebugInfo, _resolveAssemblyRef, outWriter: TextWriter) =
 
     /// This printer is used by F# Interactive if no other printers apply.
     let DefaultPrintingIntercept (ienv: IEnvironment) (obj:obj) =
@@ -383,12 +508,16 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
               ShowIEnumerable = fsi.ShowIEnumerable; }
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
-    member _.GetEvaluationContext emEnv =
+#if DYNAMIC_ASSEMBLY
+    member _.GetEvaluationContext (emEnv: ILReflectEmitEnv) =
         let cenv = { ilg = g.ilg ; emitTailcalls= tcConfigB.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=g.TryFindSysILTypeRef }
-        { LookupFieldRef = LookupFieldRef emEnv >> Option.get
-          LookupMethodRef = LookupMethodRef emEnv >> Option.get
-          LookupTypeRef = LookupTypeRef cenv emEnv
+        { LookupTypeRef = LookupTypeRef cenv emEnv
           LookupType = LookupType cenv emEnv }
+#else
+    member _.GetEvaluationContext (emEnv: ILDynamicEmitEnv) =
+        { LookupTypeRef = emEnv.LookupTypeRef
+          LookupType = emEnv.LookupType }
+#endif
 
     /// Generate a layout for an actual F# value, where we know the value has the given static type.
     member _.PrintValue (printMode, opts:FormatOptions, x:obj, ty:Type) =
@@ -447,13 +576,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
                                     StringLimit = max 0 (opts.PrintWidth-4) // 4 allows for an indent of 2 and 2 quotes (rough)
                                     PrintSize = opts.PrintSize / declaredValueReductionFactor } // print less
             let res    =
-                try  ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, v)
+                try
+                    ilxGenerator.LookupGeneratedValue (valuePrinter.GetEvaluationContext emEnv, v)
                 with e ->
-                    assert false
-#if DEBUG
-                    //fprintfn fsiConsoleOutput.Out "lookGenerateVal: failed on v=%+A v.Name=%s" v v.LogicalName
-#endif
-                    None // lookup may fail
+                    None
             match res with
             | None             -> None
             | Some (obj,objTy) ->
@@ -983,11 +1109,16 @@ type internal FsiInteractionStepStatus =
     | CompletedWithAlreadyReportedError
     | CompletedWithReportedError of exn
 
+
 [<AutoSerializable(false)>]
 [<NoEquality; NoComparison>]
 type internal FsiDynamicCompilerState =
     { optEnv    : Optimizer.IncrementalOptimizationEnv
-      emEnv     : emEnv
+#if SINGLE_ASSEMBLY
+      emEnv     : ILDynamicEmitEnv
+#else
+      emEnv     : ILDynamicEmitEnv
+#endif
       tcGlobals : TcGlobals
       tcState   : TcState
       tcImports   : TcImports
@@ -1106,7 +1237,7 @@ type internal FsiDynamicCompiler
                         tcGlobals: TcGlobals,
                         fsiOptions : FsiCommandLineOptions,
                         fsiConsoleOutput : FsiConsoleOutput,
-                        fsiCollectible: bool,
+                        _fsiCollectible: bool,
                         niceNameGen,
                         resolveAssemblyRef) =
 
@@ -1118,7 +1249,10 @@ type internal FsiDynamicCompiler
     let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
+
     let mutable prevIt : ValRef option = None
+
+    let dynamicAssemblies = ResizeArray<Assembly>()
 
     let mutable needsPackageResolution = false
 
@@ -1126,7 +1260,7 @@ type internal FsiDynamicCompiler
 
     let valuePrinter = FsiValuePrinter(fsi, tcConfigB, tcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter)
 
-    let assemblyBuilder,moduleBuilder = mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
+    //let assemblyBuilder,moduleBuilder = mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
 
     let rangeStdin = rangeN stdinMockFilename 0
 
@@ -1175,20 +1309,101 @@ type internal FsiDynamicCompiler
 
         ReportTime tcConfig "Reflection.Emit";
 
+#if SINGLE_ASSEMBLY
         let emEnv,execs = emitModuleFragment(ilGlobals, tcConfig.emitTailcalls, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolveAssemblyRef, tcGlobals.TryFindSysILTypeRef)
+#else
+        // Generate assemblies into their respective fragments
+        let assemblyName = ilxMainModule.ManifestOfAssembly.Name + string fragmentId
+
+        let ilxMainModule = { ilxMainModule with Manifest = Some { ilxMainModule.Manifest.Value with Name = assemblyName } }
+
+        let rwTypeRef (tref: ILTypeRef) =
+            if tref.Scope.IsLocalRef then
+                let nm = tref.BasicQualifiedName
+                if emEnv.TypeMap.ContainsKey(nm) then 
+                    let _, tgt = emEnv.TypeMap.[nm]
+                    //printfn $"rewriting {tref.QualifiedName} to {tgt.QualifiedName}"
+                    tgt
+                else
+                    //printfn $"no rewrite found for {nm}, assuming in this fragment"
+                    tref 
+            else
+                tref
+
+        // Rewrite target types to their respective assemblies
+        let ilxMainModule = ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized rwTypeRef        
+
+        let opts = 
+            { ilg = tcGlobals.ilg
+              pdbfile = None // TODO
+              emitTailcalls = tcConfig.emitTailcalls
+              deterministic = tcConfig.deterministic
+              showTimes = tcConfig.showTimes
+              portablePDB = true // tcConfig.portablePDB
+              embeddedPDB = true // tcConfig.embeddedPDB
+              embedAllSource = tcConfig.embedAllSource
+              embedSourceList = tcConfig.embedSourceList
+              sourceLink = tcConfig.sourceLink
+              checksumAlgorithm = tcConfig.checksumAlgorithm
+              signer = None
+              dumpDebugInfo = tcConfig.dumpDebugInfo
+              pathMap = tcConfig.pathMap }
+
+        let normalizeAssemblyRefs = id
+
+        let bytes = 
+            let stream = new MemoryStream()
+            WriteILBinaryStream (stream, opts, ilxMainModule, normalizeAssemblyRefs)
+            stream.Close()
+            stream.ToArray()
+
+        let asm = System.Reflection.Assembly.Load(bytes)
+
+        dynamicAssemblies.Add(asm)
+        
+        let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName(asm.GetName()))
+
+        let entries =
+            let rec loop enc (tdef: ILTypeDef) =
+                [ for mdef in tdef.Methods do
+                    if mdef.IsEntryPoint then
+                       yield mkRefForILMethod ilScopeRef (enc, tdef) mdef
+                  for ntdef in tdef.NestedTypes do
+                    yield! loop (enc@[tdef]) ntdef  ]
+            [ for tdef in ilxMainModule.TypeDefs do yield! loop [] tdef ]
+                                
+        let execs = 
+            [ for edef in entries -> 
+                  (fun () -> 
+                      let typ = asm.GetType(edef.DeclaringTypeRef.BasicQualifiedName)
+                      try
+                          ignore (typ.InvokeMember (edef.Name, BindingFlags.InvokeMethod ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Static, null, null, [| |], Globalization.CultureInfo.InvariantCulture))
+                          None
+                      with :? TargetInvocationException as e ->
+                          Some e.InnerException) ]
+
+        let emEnv = emEnv.AddTypeDefs asm ilScopeRef [] ilxMainModule.TypeDefs.AsList
+#endif
 
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Explicitly register the resources with the QuotationPickler module
         // We would save them as resources into the dynamic assembly but there is missing
         // functionality System.Reflection for dynamic modules that means they can't be read back out
+#if SINGLE_ASSEMBLY
         let cenv = { ilg = ilGlobals ; emitTailcalls = tcConfig.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
         for referencedTypeDefs, bytes in codegenResults.quotationResourceInfo do
             let referencedTypes =
                 [| for tref in referencedTypeDefs do
                       yield LookupTypeRef cenv emEnv tref  |]
             Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes, referencedTypes);
-
+#else
+        for referencedTypeDefs, bytes in codegenResults.quotationResourceInfo do
+            let referencedTypes =
+                [| for tref in referencedTypeDefs do
+                      yield emEnv.LookupTypeRef tref  |]
+            Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (asm, fragName, bytes, referencedTypes);
+#endif
 
         ReportTime tcConfig "Run Bindings";
         timeReporter.TimeOpIf istate.timing (fun () ->
@@ -1392,9 +1607,15 @@ type internal FsiDynamicCompiler
             let nextState, addedType = addTypeToEnvironment state ilTy
             nextState, addedTypes @ [addedType]) (istate, [])
 
+#if SINGLE_ASSEMBLY
     member _.DynamicAssemblyName = assemblyName
 
     member _.DynamicAssembly = (assemblyBuilder :> Assembly)
+#else
+    member _.FindDynamicAssembly(simpleAssemName) =
+        //printfn $"searching for {simpleAssemName}"
+        dynamicAssemblies |> ResizeArray.tryFind (fun asm -> asm.GetName().Name = simpleAssemName)
+#endif
 
     member _.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs) =
         let i = nextFragmentId()
@@ -1708,7 +1929,7 @@ type internal FsiDynamicCompiler
     member _.GetInitialInteractiveState () =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-        let emEnv = emEnv0
+        let emEnv0 = { ilg = tcGlobals.ilg; resolveAssemblyRef = resolveAssemblyRef; TypeMap = Zmap.empty  ComparisonIdentity.Structural<string> }
         let tcEnv, openDecls0 = GetInitialTcEnv (assemblyName, rangeStdin, tcConfig, tcImports, tcGlobals)
         let ccuName = assemblyName
 
@@ -1716,7 +1937,7 @@ type internal FsiDynamicCompiler
 
         let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
         {optEnv    = optEnv0
-         emEnv     = emEnv
+         emEnv     = emEnv0
          tcGlobals = tcGlobals
          tcState   = tcState
          tcImports = tcImports
@@ -1896,7 +2117,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
            try
                // Grab the name of the assembly
@@ -1911,9 +2132,16 @@ module internal MagicAssemblyResolution =
                   simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                   (runningOnMono && simpleAssemName = "UIAutomationWinforms") then null
                else
+#if SINGLE_ASSEMBLY
                // Special case: Is this the global unique dynamic assembly for FSI code? In this case just
                // return the dynamic assembly itself.
                if fsiDynamicCompiler.DynamicAssemblyName = simpleAssemName then fsiDynamicCompiler.DynamicAssembly else
+#else
+               match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
+               | Some asm -> asm
+               | None ->
+
+#endif
 
                // Otherwise continue
                let assemblyReferenceTextDll = (simpleAssemName + ".dll")
@@ -2974,8 +3202,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.CurrentPartialAssemblySignature =
         fsiDynamicCompiler.CurrentPartialAssemblySignature fsiInteractionProcessor.CurrentState
 
+#if SINGLE_ASSEMBLY
     member x.DynamicAssembly =
         fsiDynamicCompiler.DynamicAssembly
+#endif
 
     /// A host calls this to determine if the --gui parameter is active
     member x.IsGui = fsiOptions.Gui

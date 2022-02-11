@@ -17,26 +17,23 @@ type cenv =
       generatePdb: bool
       resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option }
 
-type emEnv
+type ILReflectEmitEnv
 
-val emEnv0: emEnv
+val emEnv0: ILReflectEmitEnv
 
 val emitModuleFragment: 
     ilg: ILGlobals *
     emitTailcalls: bool *
-    emEnv: emEnv *
+    emEnv: ILReflectEmitEnv *
     asmB: AssemblyBuilder *
     modB: ModuleBuilder *
     modul: ILModuleDef *
     debugInfo: bool *
     resolveAssemblyRef: (ILAssemblyRef -> Choice<string,Assembly> option) *
     tryFindSysILTypeRef: (string -> ILTypeRef option) ->
-      emEnv * (unit -> exn option) list
+      ILReflectEmitEnv * (unit -> exn option) list
 
-val LookupTypeRef: cenv: cenv -> emEnv: emEnv -> tref: ILTypeRef -> System.Type
+val LookupTypeRef: cenv: cenv -> emEnv: ILReflectEmitEnv -> tref: ILTypeRef -> System.Type
 
-val LookupType: cenv: cenv -> emEnv: emEnv -> ty: ILType -> System.Type
+val LookupType: cenv: cenv -> emEnv: ILReflectEmitEnv -> ty: ILType -> System.Type
 
-val LookupFieldRef: emEnv: emEnv -> fref: ILFieldRef -> FieldInfo option
-
-val LookupMethodRef: emEnv: emEnv -> mref: ILMethodRef -> MethodInfo option

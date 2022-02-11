@@ -359,7 +359,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
 [<AutoSerializable(false)>]
-type emEnv =
+type ILReflectEmitEnv =
     { emTypMap: Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) >
       emConsMap: Zmap<ILMethodRef, ConstructorBuilder>
       emMethMap: Zmap<ILMethodRef, MethodBuilder>
@@ -2133,8 +2133,4 @@ let emitModuleFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilder, modB: 
 // So Type lookup will return the proper Type not TypeBuilder.
 let LookupTypeRef cenv emEnv tref = convCreatedTypeRef cenv emEnv tref
 let LookupType cenv emEnv ty = convCreatedType cenv emEnv ty
-
-// Lookups of ILFieldRef and MethodRef may require a similar non-Builder-fixup post Type-creation.
-let LookupFieldRef emEnv fref = Zmap.tryFind fref emEnv.emFieldMap |> Option.map (fun fieldBuilder -> fieldBuilder :> FieldInfo)
-let LookupMethodRef emEnv mref = Zmap.tryFind mref emEnv.emMethMap |> Option.map (fun methodBuilder -> methodBuilder :> MethodInfo)
 

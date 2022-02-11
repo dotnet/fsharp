@@ -8754,9 +8754,7 @@ open System
 
 /// The lookup* functions are the conversions available from ilreflect.
 type ExecutionContext =
-    { LookupFieldRef: ILFieldRef -> FieldInfo
-      LookupMethodRef: ILMethodRef -> MethodInfo
-      LookupTypeRef: ILTypeRef -> Type
+    { LookupTypeRef: ILTypeRef -> Type
       LookupType: ILType -> Type }
 
 // A helper to generate a default value for any System.Type. I couldn't find a System.Reflection
@@ -8778,7 +8776,7 @@ let LookupGeneratedValue (amap: ImportMap) (ctxt: ExecutionContext) eenv (v: Val
   try
     // Convert the v.Type into a System.Type according to ilxgen and ilreflect.
     let objTyp() =
-        let ilTy = GenType amap v.Range TypeReprEnv.Empty v.Type (* TypeReprEnv.Empty ok, not expecting typars *)
+        let ilTy = GenType amap v.Range TypeReprEnv.Empty v.Type
         ctxt.LookupType ilTy
     // Lookup the compiled v value (as an object).
     match StorageForVal amap.g v.Range v eenv with

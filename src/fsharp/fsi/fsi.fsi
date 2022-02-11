@@ -241,8 +241,10 @@ type FsiEvaluationSession =
     /// Get a handle to the resolved view of the current signature of the incrementally generated assembly.
     member CurrentPartialAssemblySignature: FSharpAssemblySignature
 
+#if SINGLE_ASSEMBLY
     /// Get a handle to the dynamically generated assembly
     member DynamicAssembly: System.Reflection.Assembly
+#endif
 
     /// A host calls this to determine if the --gui parameter is active
     member IsGui: bool
