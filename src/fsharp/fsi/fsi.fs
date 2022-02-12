@@ -1307,40 +1307,47 @@ type internal FsiDynamicCompiler
         ignore(fsiOptions)
 #endif
 
-        ReportTime tcConfig "Reflection.Emit";
+        ReportTime tcConfig "Reflection.Emit"
 
 #if SINGLE_ASSEMBLY
         let emEnv,execs = emitModuleFragment(ilGlobals, tcConfig.emitTailcalls, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolveAssemblyRef, tcGlobals.TryFindSysILTypeRef)
 #else
-        // Generate assemblies into their respective fragments
+        // Generate assemblies into multiple fragments
         let assemblyName = ilxMainModule.ManifestOfAssembly.Name + string fragmentId
 
+        // Adjust the assembly name of this fragment
         let ilxMainModule = { ilxMainModule with Manifest = Some { ilxMainModule.Manifest.Value with Name = assemblyName } }
 
-        let rwTypeRef (tref: ILTypeRef) =
-            if tref.Scope.IsLocalRef then
-                let nm = tref.BasicQualifiedName
-                if emEnv.TypeMap.ContainsKey(nm) then 
-                    let _, tgt = emEnv.TypeMap.[nm]
-                    //printfn $"rewriting {tref.QualifiedName} to {tgt.QualifiedName}"
-                    tgt
+        // Rewrite references to target types to their respective dynamic assemblies
+        let ilxMainModule =
+            ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized (fun tref ->
+                if tref.Scope.IsLocalRef then
+                    let nm = tref.BasicQualifiedName
+                    if emEnv.TypeMap.ContainsKey(nm) then 
+                        let _, tgt = emEnv.TypeMap.[nm]
+                        //printfn $"rewriting {tref.QualifiedName} to {tgt.QualifiedName}"
+                        tgt
+                    else
+                        //printfn $"no rewrite found for {nm}, assuming in this fragment"
+                        tref 
                 else
-                    //printfn $"no rewrite found for {nm}, assuming in this fragment"
-                    tref 
-            else
-                tref
-
-        // Rewrite target types to their respective assemblies
-        let ilxMainModule = ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized rwTypeRef        
+                    tref)
 
         let opts = 
             { ilg = tcGlobals.ilg
-              pdbfile = None // TODO
+              // This is not actually written, because we are writing to a stream,
+              // but needs to be set for some logic of ilwrite to function.
+              outfile = assemblyName + ".dll"
+              // This is not actually written, because we embed debug info,
+              // but needs to be set for some logic of ilwrite to function.
+              pdbfile = (if tcConfig.debuginfo then Some (assemblyName + ".pdb") else None)
               emitTailcalls = tcConfig.emitTailcalls
               deterministic = tcConfig.deterministic
               showTimes = tcConfig.showTimes
-              portablePDB = true // tcConfig.portablePDB
-              embeddedPDB = true // tcConfig.embeddedPDB
+              // we always use portable for F# Interactive debug emit
+              portablePDB = true
+              // we don't use embedded for F# Interactive debug emit
+              embeddedPDB = false
               embedAllSource = tcConfig.embedAllSource
               embedSourceList = tcConfig.embedSourceList
               sourceLink = tcConfig.sourceLink
@@ -1351,13 +1358,12 @@ type internal FsiDynamicCompiler
 
         let normalizeAssemblyRefs = id
 
-        let bytes = 
-            let stream = new MemoryStream()
-            WriteILBinaryStream (stream, opts, ilxMainModule, normalizeAssemblyRefs)
-            stream.Close()
-            stream.ToArray()
+        let assemblyBytes, pdbBytes = WriteILBinaryInMemory (opts, ilxMainModule, normalizeAssemblyRefs)
 
-        let asm = System.Reflection.Assembly.Load(bytes)
+        let asm =
+            match pdbBytes with
+            | None -> System.Reflection.Assembly.Load(assemblyBytes)
+            | Some pdbBytes -> System.Reflection.Assembly.Load(assemblyBytes, pdbBytes)
 
         dynamicAssemblies.Add(asm)
         

@@ -909,10 +909,10 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     | None ->
         try
             try
-                ILBinaryWriter.WriteILBinary
-                 (outfile,
-                  { ilg = tcGlobals.ilg
-                    pdbfile=pdbfile
+                ILBinaryWriter.WriteILBinaryFile
+                 ({ ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes

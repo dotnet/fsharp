@@ -203,15 +203,15 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
     }
 
 let pdbMagicNumber= 0x4244504dL
-let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
+let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (compressedStream: MemoryStream) =
     let iddPdbBuffer =
-        let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
+        let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(compressedStream.Length))
         let offset, size = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
         Buffer.BlockCopy(i32AsBytes (int pdbMagicNumber), 0, buffer, offset, size)
         let offset, size = (offset + size, sizeof<int32>)        // Uncompressed size
         Buffer.BlockCopy(i32AsBytes (int uncompressedLength), 0, buffer, offset, size)
-        let offset, size = (offset + size, int(stream.Length))   // Uncompressed size
-        Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
+        let offset, size = (offset + size, int(compressedStream.Length))   // Uncompressed size
+        Buffer.BlockCopy(compressedStream.ToArray(), 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0                                                    // Reserved
       iddMajorVersion = 0x0100                                                  // VersionMajor should be 0x0100
@@ -253,15 +253,15 @@ let pdbGetDebugInfo (contentId: byte[]) (timestamp: int32) (filepath: string)
                     (embeddedPdbChunk: BinaryChunk option)
                     (deterministicPdbChunk: BinaryChunk)
                     (checksumPdbChunk: BinaryChunk) (algorithmName:string) (checksum: byte [])
-                    (uncompressedLength: int64) (stream: MemoryStream option)
+                    (uncompressedLength: int64) (compressedStream: MemoryStream option)
                     (embeddedPdb: bool) (deterministic: bool) =
     [|  yield pdbGetCvDebugInfo contentId timestamp filepath cvChunk
         yield pdbChecksumDebugInfo timestamp checksumPdbChunk algorithmName checksum
         if embeddedPdb then
-            match stream, embeddedPdbChunk with
+            match compressedStream, embeddedPdbChunk with
             | None, _ | _, None -> ()
-            | Some s, Some chunk ->
-                yield pdbGetEmbeddedPdbDebugInfo chunk uncompressedLength s
+            | Some compressedStream, Some chunk ->
+                yield pdbGetEmbeddedPdbDebugInfo chunk uncompressedLength compressedStream
         if deterministic then
             yield pdbGetPdbDebugDeterministicInfo deterministicPdbChunk
     |]
@@ -369,6 +369,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
         let docLength = docs.Length + if String.IsNullOrEmpty sourceLink then 1 else 0
         metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
+          // For F# Interactive, file name 'stdin' gets generated for interactive inputs
             let handle =
                 match checkSum doc.File checksumAlgorithm with
                 | Some (hashAlg, checkSum) ->
@@ -728,23 +729,18 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
     let generator = PortablePdbGenerator (embedAllSource, embedSourceList, sourceLink, checksumAlgorithm, showTimes, info, pathMap)
     generator.Emit()
 
-let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
+let compressPortablePdbStream (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
     use compressionStream = new DeflateStream(compressedStream, CompressionMode.Compress,true)
     stream.WriteTo compressionStream
-    (uncompressedLength, contentId, compressedStream)
+    compressedStream
 
-let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum embeddedPdb deterministic =
-    try FileSystem.FileDeleteShim fpdb with _ -> ()
-    use fs = FileSystem.OpenFileForWriteShim(fpdb, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
-    stream.WriteTo fs
-    reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algorithmName checksum 0L None embeddedPdb deterministic
+let getInfoForPortablePdb (contentId: BlobContentId) pdbfile pathMap cvChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum embeddedPdb deterministic =
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) (PathMap.apply pathMap pdbfile) cvChunk None deterministicPdbChunk checksumPdbChunk algorithmName checksum 0L None embeddedPdb deterministic
 
-let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum embeddedPdb deterministic =
-    reportTime showTimes "PDB: Closed"
-    let fn = Path.GetFileName fpdb
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some stream) embeddedPdb deterministic
+let getInfoForEmbeddedPortablePdb (uncompressedLength: int64)  (contentId: BlobContentId) (compressedStream: MemoryStream) pdbfile cvChunk pdbChunk deterministicPdbChunk checksumPdbChunk algorithmName checksum deterministic =
+    let fn = Path.GetFileName pdbfile
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 contentId.Stamp) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algorithmName checksum uncompressedLength (Some compressedStream) true deterministic
 
 #if !FX_NO_PDB_WRITER
 
@@ -754,15 +750,15 @@ open Microsoft.Win32
 // PDB Writer.  The function [WritePdbInfo] abstracts the
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
-let writePdbInfo showTimes f fpdb info cvChunk =
+let writePdbInfo showTimes outfile pdbfile info cvChunk =
 
-    try FileSystem.FileDeleteShim fpdb with _ -> ()
+    try FileSystem.FileDeleteShim pdbfile with _ -> ()
 
     let pdbw =
         try
-            pdbInitialize f fpdb
+            pdbInitialize outfile pdbfile
         with _ -> 
-            error(Error(FSComp.SR.ilwriteErrorCreatingPdb fpdb, rangeCmdArgs))
+            error(Error(FSComp.SR.ilwriteErrorCreatingPdb pdbfile, rangeCmdArgs))
 
     match info.EntryPoint with
     | None -> ()
@@ -845,7 +841,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
     let res = pdbWriteDebugInfo pdbw
     for pdbDoc in docs do pdbCloseDocument pdbDoc
-    pdbClose pdbw f fpdb
+    pdbClose pdbw outfile pdbfile
 
     reportTime showTimes "PDB: Closed"
     [| { iddCharacteristics = res.iddCharacteristics

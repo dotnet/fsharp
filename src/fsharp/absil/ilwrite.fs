@@ -1488,24 +1488,28 @@ type ExceptionClauseSpec = int * int * int * int * ExceptionClauseKind
 [<Literal>]
 let CodeBufferCapacity = 200 
 
+/// Buffer to write results of emitting code into. Also record:
+///   - branch sources (where fixups will occur)
+///   - possible branch destinations
+///   - locations of embedded handles into the string table
+///   - the exception table
 type CodeBuffer =
+    {
+      code: ByteBuffer
 
-    // --------------------------------------------------------------------
-    // Buffer to write results of emitting code into. Also record:
-    //   - branch sources (where fixups will occur)
-    //   - possible branch destinations
-    //   - locations of embedded handles into the string table
-    //   - the exception table
-    // --------------------------------------------------------------------
-    { code: ByteBuffer
       /// (instruction; optional short form); start of instr in code buffer; code loc for the end of the instruction the fixup resides in ; where is the destination of the fixup
       mutable reqdBrFixups: ((int * int option) * int * ILCodeLabel list) list
+
       availBrFixups: Dictionary<ILCodeLabel, int>
+
       /// code loc to fixup in code buffer
       mutable reqdStringFixupsInMethod: (int * int) list
+
       /// data for exception handling clauses
       mutable seh: ExceptionClauseSpec list
-      seqpoints: ResizeArray<PdbDebugPoint> }
+
+      seqpoints: ResizeArray<PdbDebugPoint>
+    }
 
     interface IDisposable with
         member this.Dispose() =
@@ -1535,8 +1539,11 @@ type CodeBuffer =
               EndColumn=m.EndColumn }
 
     member codebuf.EmitByte x = codebuf.code.EmitIntAsByte x
+
     member codebuf.EmitUInt16 x = codebuf.code.EmitUInt16 x
+
     member codebuf.EmitInt32 x = codebuf.code.EmitInt32 x
+
     member codebuf.EmitInt64 x = codebuf.code.EmitInt64 x
 
     member codebuf.EmitUncodedToken u = codebuf.EmitInt32 u
@@ -1556,17 +1563,16 @@ type CodeBuffer =
         List.iter (fun _ -> codebuf.EmitInt32 0xdeadbbbb) tgs
 
     member codebuf.RecordReqdBrFixup i tg = codebuf.RecordReqdBrFixups i [tg]
+
     member codebuf.RecordAvailBrFixup tg =
         codebuf.availBrFixups.[tg] <- codebuf.code.Position
 
+/// Applying branch fixups. Use short versions of instructions
+/// wherever possible. Sadly we can only determine if we can use a short
+/// version after we've layed out the code for all other instructions.
+/// This in turn means that using a short version may change
+/// the various offsets into the code.
 module Codebuf =
-     // --------------------------------------------------------------------
-     // Applying branch fixups. Use short versions of instructions
-     // wherever possible. Sadly we can only determine if we can use a short
-     // version after we've layed out the code for all other instructions.
-     // This in turn means that using a short version may change
-     // the various offsets into the code.
-     // --------------------------------------------------------------------
 
     let binaryChop p (arr: 'T[]) =
         let rec go n m =
@@ -1726,7 +1732,6 @@ module Codebuf =
 
       newCode, newReqdStringFixups, newExnClauses, newSeqPoints, newScopes
 
-
     // --------------------------------------------------------------------
     // Structured residue of emitting instructions: SEH exception handling
     // and scopes for local variables.
@@ -1737,7 +1742,6 @@ module Codebuf =
     // nb. ECMA spec says the SEH blocks must be returned inside-out
     type SEHTree =
       | Node of ExceptionClauseSpec option * SEHTree list
-
 
     // --------------------------------------------------------------------
     // Table of encodings for instructions without arguments, also indexes
@@ -1799,9 +1803,6 @@ module Codebuf =
 
     let emitTailness (cenv: cenv) codebuf tl =
         if tl = Tailcall && cenv.emitTailcalls then emitInstrCode codebuf i_tail
-
-    //let emitAfterTailcall codebuf tl =
-    //    if tl = Tailcall then emitInstrCode codebuf i_ret
 
     let emitVolatility codebuf tl =
         if tl = Volatile then emitInstrCode codebuf i_volatile
@@ -3549,6 +3550,8 @@ let writePdb (
     embeddedPDB,
     pdbfile,
     outfile,
+    reopenOutput,
+    writePdbInMemory,
     signer: ILStrongNameSigner option,
     deterministic,
     pathMap,
@@ -3563,6 +3566,9 @@ let writePdb (
 
     if dumpDebugInfo then logDebugInfo outfile pdbData
 
+    // Used to capture the pdb file bytes in the case we're generating in-memory
+    let mutable pdbBytes = None
+
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
     | None -> ()
@@ -3570,52 +3576,58 @@ let writePdb (
     | Some fmdb when runningOnMono && not portablePDB ->
         writeMdbInfo fmdb outfile pdbData
 #endif
-    | Some fpdb ->
-        try
-            let idd =
-                match pdbOpt with
-                | Some (originalLength, contentId, stream, algorithmName, checkSum) ->
-                    if embeddedPDB then
-                        embedPortablePdbInfo originalLength contentId stream showTimes fpdb debugDataChunk debugEmbeddedPdbChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
+    | Some pdbfile ->
+        let idd =
+            match pdbOpt with
+            | Some (originalLength, contentId, stream: MemoryStream, algorithmName, checkSum) ->
+                if embeddedPDB then
+                    getInfoForEmbeddedPortablePdb originalLength contentId stream pdbfile debugDataChunk debugEmbeddedPdbChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum deterministic
+                else
+                    if writePdbInMemory then
+                        let ms = new MemoryStream()
+                        stream.WriteTo ms
+                        ms.Close()
+                        pdbBytes <- Some (ms.ToArray())
                     else
-                        writePortablePdbInfo contentId stream showTimes fpdb pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
-                | None ->
+                        try FileSystem.FileDeleteShim pdbfile with _ -> ()
+                        use fs = FileSystem.OpenFileForWriteShim(pdbfile, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
+                        stream.WriteTo fs
+                    getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
+            | None ->
 #if FX_NO_PDB_WRITER
-                    Array.empty<idd>
+                [| |]
 #else
-                    writePdbInfo showTimes outfile fpdb pdbData debugDataChunk
+                writePdbInfo showTimes outfile pdbfile pdbData debugDataChunk
 #endif
-            reportTime showTimes "Generate PDB Info"
+        reportTime showTimes "Generate PDB Info"
 
-            // Now we have the debug data we can go back and fill in the debug directory in the image
-            use fs2 = FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
-            let os2 = new BinaryWriter(fs2)
-            try
-                // write the IMAGE_DEBUG_DIRECTORY
-                os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                for i in idd do
-                    writeInt32 os2 i.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
-                    writeInt32 os2 i.iddTimestamp
-                    writeInt32AsUInt16 os2 i.iddMajorVersion
-                    writeInt32AsUInt16 os2 i.iddMinorVersion
-                    writeInt32 os2 i.iddType
-                    writeInt32 os2 i.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData
-                    writeInt32 os2 i.iddChunk.addr                // IMAGE_DEBUG_DIRECTORY.AddressOfRawData
-                    writeInt32 os2 (textV2P i.iddChunk.addr)      // IMAGE_DEBUG_DIRECTORY.PointerToRawData
+        // Now we have the debug data we can go back and fill in the debug directory in the image
+        use fs2 = reopenOutput()
+        let os2 = new BinaryWriter(fs2)
+        try
+            // write the IMAGE_DEBUG_DIRECTORY
+            os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
+            for i in idd do
+                writeInt32 os2 i.iddCharacteristics           // IMAGE_DEBUG_DIRECTORY.Characteristics
+                writeInt32 os2 i.iddTimestamp
+                writeInt32AsUInt16 os2 i.iddMajorVersion
+                writeInt32AsUInt16 os2 i.iddMinorVersion
+                writeInt32 os2 i.iddType
+                writeInt32 os2 i.iddData.Length               // IMAGE_DEBUG_DIRECTORY.SizeOfData
+                writeInt32 os2 i.iddChunk.addr                // IMAGE_DEBUG_DIRECTORY.AddressOfRawData
+                writeInt32 os2 (textV2P i.iddChunk.addr)      // IMAGE_DEBUG_DIRECTORY.PointerToRawData
 
-                // Write the Debug Data
-                for i in idd do
-                    if i.iddChunk.size <> 0 then
-                        // write the debug raw data as given us by the PDB writer
-                        os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
-                        if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
-                        writeBytes os2 i.iddData
-                os2.Dispose()
-            with e ->
-                failwith ("Error while writing debug directory entry: "+e.Message)
-                (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
-                reraise()
+            // Write the Debug Data
+            for i in idd do
+                if i.iddChunk.size <> 0 then
+                    // write the debug raw data as given us by the PDB writer
+                    os2.BaseStream.Seek (int64 (textV2P i.iddChunk.addr), SeekOrigin.Begin) |> ignore
+                    if i.iddChunk.size < i.iddData.Length then failwith "Debug data area is not big enough. Debug info may not be usable"
+                    writeBytes os2 i.iddData
+            os2.Dispose()
         with e ->
+            failwith ("Error while writing debug directory entry: "+e.Message)
+            (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
 
     reportTime showTimes "Finalize PDB"
@@ -3634,6 +3646,7 @@ let writePdb (
             ()
 
     reportTime showTimes "Signing Image"
+    pdbBytes
 
 let writeBinaryAux (
     stream: Stream,
@@ -3691,7 +3704,7 @@ let writeBinaryAux (
 
     let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
 
-          use os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
+          let os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
 
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
@@ -3700,7 +3713,6 @@ let writeBinaryAux (
           let isItanium = modul.Platform = Some IA64
 
           let numSections = 3 // .text, .sdata, .reloc
-
 
           // HEADERS
           let next = 0x0
@@ -3800,8 +3812,8 @@ let writeBinaryAux (
                     generatePortablePdb embedAllSource embedSourceList sourceLink checksumAlgorithm showTimes pdbData pathMap
 
                 if embeddedPDB then
-                    let uncompressedLength, contentId, stream = compressPortablePdbStream uncompressedLength contentId stream
-                    Some (uncompressedLength, contentId, stream, algorithmName, checkSum)
+                    let compressedStream = compressPortablePdbStream stream
+                    Some (uncompressedLength, contentId, compressedStream, algorithmName, checkSum)
                 else Some pdbStream
 
             | _ -> None
@@ -4343,35 +4355,40 @@ let writeBinaryFiles (outfile,
 
     let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
-            let res =
+            try 
                 writeBinaryAux(
                     stream, ilg, pdbfile, signer,
                     portablePDB, embeddedPDB, embedAllSource,
                     embedSourceList, sourceLink,
                     checksumAlgorithm, emitTailcalls, deterministic, showTimes, pathMap,
                     modul, normalizeAssemblyRefs)
+            finally
+                stream.Close()
 
-            try
-                FileSystemUtilities.setExecutablePermission outfile
-            with _ ->
-                ()
-
-            res
-        with
-        | _ ->
+        with _ ->
             try FileSystem.FileDeleteShim outfile with | _ -> ()
             reraise()
 
-    writePdb
-        (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile, outfile, signer, deterministic, pathMap,
-         pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-         debugDeterministicPdbChunk, textV2P)
+    try
+        FileSystemUtilities.setExecutablePermission outfile
+    with _ ->
+        ()
+
+    let reopenOutput () =
+        FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
+
+    writePdb (dumpDebugInfo, 
+        showTimes, portablePDB,
+        embeddedPDB, pdbfile, outfile,
+        reopenOutput, false, signer, deterministic, pathMap,
+        pdbData, pdbOpt, debugDirectoryChunk,
+        debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
+        debugDeterministicPdbChunk, textV2P) |> ignore
 
     mappings
 
-let writeBinaryStream (
+let writeBinaryInMemory (
     outfile: string,
-    stream: Stream,
     ilg: ILGlobals,
     pdbfile: string option,
     signer: ILStrongNameSigner option,
@@ -4388,7 +4405,8 @@ let writeBinaryStream (
     modul,
     normalizeAssemblyRefs) =
 
-    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
+    let stream = new MemoryStream()
+    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
         writeBinaryAux(stream, ilg,
             pdbfile, signer,
             portablePDB, embeddedPDB, embedAllSource,
@@ -4396,18 +4414,25 @@ let writeBinaryStream (
             checksumAlgorithm, emitTailcalls,
             deterministic, showTimes, pathMap, modul, normalizeAssemblyRefs)
 
-    writePdb
-        (dumpDebugInfo, showTimes, portablePDB, embeddedPDB, pdbfile,
-         outfile, signer, deterministic, pathMap,
-         pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk,
-         debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-         debugDeterministicPdbChunk, textV2P)
+    let reopenOutput () = stream
 
-    mappings
+    let pdbBytes =
+        writePdb (dumpDebugInfo,
+            showTimes, portablePDB, embeddedPDB, pdbfile,
+            outfile, reopenOutput, true,
+            signer, deterministic, pathMap,
+            pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk,
+            debugChecksumPdbChunk, debugEmbeddedPdbChunk,
+            debugDeterministicPdbChunk, textV2P)
+
+    stream.Close()
+    
+    stream.ToArray(), pdbBytes
 
 
 type options =
    { ilg: ILGlobals
+     outfile: string
      pdbfile: string option
      portablePDB: bool
      embeddedPDB: bool
@@ -4422,8 +4447,8 @@ type options =
      dumpDebugInfo: bool
      pathMap: PathMap }
 
-let WriteILBinary (outfile, options: options, inputModule, normalizeAssemblyRefs) =
-    writeBinaryFiles (outfile,
+let WriteILBinaryFile (options: options, inputModule, normalizeAssemblyRefs) =
+    writeBinaryFiles (options.outfile,
         options.ilg, options.pdbfile, options.signer,
         options.portablePDB, options.embeddedPDB,options.embedAllSource,
         options.embedSourceList, options.sourceLink, options.checksumAlgorithm,
@@ -4432,11 +4457,8 @@ let WriteILBinary (outfile, options: options, inputModule, normalizeAssemblyRefs
         inputModule, normalizeAssemblyRefs)
     |> ignore
 
-let WriteILBinaryStream (stream, options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
-    if options.pdbfile.IsSome then invalidArg "options" "can't emit PDB when writing to stream unless embedded"
-    let outfile = inputModule.Name // this is unused when writing to stream
-    writeBinaryStream (outfile,
-        stream,
+let WriteILBinaryInMemory (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
+    writeBinaryInMemory (options.outfile,
         options.ilg,
         options.pdbfile,
         options.signer,
@@ -4445,4 +4467,3 @@ let WriteILBinaryStream (stream, options: options, inputModule: ILModuleDef, nor
         options.emitTailcalls, options.deterministic,
         options.showTimes, options.dumpDebugInfo, options.pathMap,
         inputModule, normalizeAssemblyRefs)
-    |> ignore
