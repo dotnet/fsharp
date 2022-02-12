@@ -1295,13 +1295,13 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         ReportTime tcConfig "Assembly refs Normalised";
-        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
+        let ilxMainModule = Morphs.morphILScopeRefsInILModuleMemoized (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
         errorLogger.AbortOnError(fsiConsoleOutput);
 
 #if DEBUG
         if fsiOptions.ShowILCode then
             fsiConsoleOutput.uprintnfn "--------------------";
-            ILAsciiWriter.output_module outWriter ilGlobals mainmod3;
+            ILAsciiWriter.output_module outWriter ilGlobals ilxMainModule;
             fsiConsoleOutput.uprintnfn "--------------------"
 #else
         ignore(fsiOptions)
@@ -1310,7 +1310,7 @@ type internal FsiDynamicCompiler
         ReportTime tcConfig "Reflection.Emit"
 
 #if SINGLE_ASSEMBLY
-        let emEnv,execs = emitModuleFragment(ilGlobals, tcConfig.emitTailcalls, emEnv, assemblyBuilder, moduleBuilder, mainmod3, generateDebugInfo, resolveAssemblyRef, tcGlobals.TryFindSysILTypeRef)
+        let emEnv,execs = emitModuleFragment(ilGlobals, tcConfig.emitTailcalls, emEnv, assemblyBuilder, moduleBuilder, ilxMainModule, generateDebugInfo, resolveAssemblyRef, tcGlobals.TryFindSysILTypeRef)
 #else
         // Generate assemblies into multiple fragments
         let assemblyName = ilxMainModule.ManifestOfAssembly.Name + string fragmentId
@@ -1369,6 +1369,7 @@ type internal FsiDynamicCompiler
         
         let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName(asm.GetName()))
 
+        // Collect up the entry points for initialization
         let entries =
             let rec loop enc (tdef: ILTypeDef) =
                 [ for mdef in tdef.Methods do
@@ -1378,6 +1379,7 @@ type internal FsiDynamicCompiler
                     yield! loop (enc@[tdef]) ntdef  ]
             [ for tdef in ilxMainModule.TypeDefs do yield! loop [] tdef ]
                                 
+        // Make the 'exec' functions for the entry point initializations
         let execs = 
             [ for edef in entries -> 
                   (fun () -> 
@@ -1391,7 +1393,7 @@ type internal FsiDynamicCompiler
         let emEnv = emEnv.AddTypeDefs asm ilScopeRef [] ilxMainModule.TypeDefs.AsList
 #endif
 
-        errorLogger.AbortOnError(fsiConsoleOutput);
+        errorLogger.AbortOnError(fsiConsoleOutput)
 
         // Explicitly register the resources with the QuotationPickler module
         // We would save them as resources into the dynamic assembly but there is missing
