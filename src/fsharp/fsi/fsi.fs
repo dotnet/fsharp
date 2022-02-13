@@ -324,7 +324,7 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
 
     /// Map the given ILTypeRef to the appropriate assembly fragment
     member _.MapTypeRef (tref: ILTypeRef) =
-        if tref.Scope.IsLocalRef then
+        if tref.Scope.IsLocalRef && typeMap.ContainsKey(tref) then
             let _, tref = typeMap.[tref]
             tref
         else
