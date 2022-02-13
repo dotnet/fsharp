@@ -912,7 +912,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
-         CompilerOption("dynamicassembly", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleDynamicAsembly <- flag <> OptionSwitch.On),         None, Some(FSIstrings.SR.fsiUseSingleDynamicAssembly()))
+         CompilerOption("dynamicassembly", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleDynamicAsembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiUseSingleDynamicAssembly()))
         ]);
       ]
 
