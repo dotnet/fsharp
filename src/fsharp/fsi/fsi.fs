@@ -201,10 +201,7 @@ module internal Utilities =
 
     let getOutputDir (tcConfigB: TcConfigBuilder) =  tcConfigB.outputDir |> Option.defaultValue ""
 
-//----------------------------------------------------------------------------
-// Timing support
-//----------------------------------------------------------------------------
-
+/// Timing support
 [<AutoSerializable(false)>]
 type internal FsiTimeReporter(outWriter: TextWriter) =
     let stopwatch = Stopwatch()
@@ -225,26 +222,30 @@ type internal FsiTimeReporter(outWriter: TextWriter) =
 
     member tr.TimeOpIf flag f = if flag then tr.TimeOp f else f ()
 
-/// Manages the emit of one logical assembly into multiple assemblies
+/// Manages the emit of one logical assembly into multiple assemblies. Gives warnings
+/// on cross-fragment internal access.
 type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option) =
-    let TypeMap = Dictionary<ILTypeRef, Type * ILTypeRef>(HashIdentity.Structural)
+    let typeMap = Dictionary<ILTypeRef, Type * ILTypeRef>(HashIdentity.Structural)
     let internalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
-    let InternalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
-    let InternalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
+    let internalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
+    let internalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
 
+    /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
     let convAssemblyRef (aref: ILAssemblyRef) =
         let asmName = AssemblyName()
         asmName.Name <- aref.Name
-        (match aref.PublicKey with
-         | None -> ()
-         | Some (PublicKey bytes) -> asmName.SetPublicKey bytes
-         | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken bytes)
-        let setVersion (version: ILVersionInfo) =
-           asmName.Version <- Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
-        Option.iter setVersion aref.Version
+        match aref.PublicKey with
+        | None -> ()
+        | Some (PublicKey bytes) -> asmName.SetPublicKey bytes
+        | Some (PublicKeyToken bytes) -> asmName.SetPublicKeyToken bytes
+        match aref.Version with 
+        | None -> ()
+        | Some version ->
+            asmName.Version <- Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
         asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
         asmName
 
+    /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
     let convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
         let assembly =
             match resolveAssemblyRef asmref with
@@ -263,13 +264,7 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
         | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
         | res -> res
 
-    /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
-    // This ought to be an adequate substitute for this whole function, but it needs
-    // to be thoroughly tested.
-    //    Type.GetType(tref.QualifiedName)
-    // []              , name -> name
-    // [ns]            , name -> ns+name
-    // [ns;typeA;typeB], name -> ns+typeA+typeB+name
+    /// Convert an Abstract IL type reference to System.Type
     let convTypeRefAux (tref: ILTypeRef) =
         let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
         match tref.Scope with
@@ -284,63 +279,66 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
         | ILScopeRef.PrimaryAssembly ->
             convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
 
+    /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
+    let convTypeRef (tref: ILTypeRef) =
+        if tref.Scope.IsLocalRef then 
+            assert tref.Scope.IsLocalRef
+            let typ, _ = typeMap.[tref]
+            typ
+        else
+            convTypeRefAux tref
+
+    /// Convert an ILTypeSpec to a dynamic System.Type given the dynamic emit context
+    let rec convTypeSpec (tspec: ILTypeSpec) =
+        let tref = tspec.TypeRef
+        let typT = convTypeRef tref
+        let tyargs = List.map convTypeAux tspec.GenericArgs
+        let res =
+            match isNil tyargs, typT.IsGenericType with
+            | _, true -> typT.MakeGenericType(List.toArray tyargs)
+            | true, false -> typT
+            | _, false -> null
+        match res with
+        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+        | _ -> res
+
+    and convTypeAux ty =
+        match ty with
+        | ILType.Void -> Type.GetType("System.Void")
+        | ILType.Array (shape, eltType) ->
+            let baseT = convTypeAux eltType
+            if shape.Rank=1 then baseT.MakeArrayType()
+            else baseT.MakeArrayType shape.Rank
+        | ILType.Value tspec -> convTypeSpec tspec
+        | ILType.Boxed tspec -> convTypeSpec tspec
+        | ILType.Ptr eltType ->
+            let baseT = convTypeAux eltType
+            baseT.MakePointerType()
+        | ILType.Byref eltType ->
+            let baseT = convTypeAux eltType
+            baseT.MakeByRefType()
+        | ILType.TypeVar _tv -> failwith "open generic type"
+        | ILType.Modified (_, _, modifiedTy) ->
+            convTypeAux modifiedTy
+        | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
+
+    /// Map the given ILTypeRef to the appropriate assembly fragment
     member _.MapTypeRef (tref: ILTypeRef) =
         if tref.Scope.IsLocalRef then
-            //let key = tref.BasicQualifiedName
-            //printfn $"lookup {tref.BasicQualifiedName}"
-            //if not (emEnv.TypeMap.ContainsKey(key)) then
-                //printfn $"keys = %A{[ for (KeyValue(k,_)) in emEnv.TypeMap -> k ]}"
-            
-            let _, tref = TypeMap.[tref]
+            let _, tref = typeMap.[tref]
             tref
         else
             tref
 
+    /// Convert an ILTypeRef to a dynamic System.Type given the dynamic emit context
     member _.LookupTypeRef (tref: ILTypeRef) =
-        assert tref.Scope.IsLocalRef
-        let typ, _ = TypeMap.[tref]
-        typ
+        convTypeRef tref
 
+    /// Convert an ILType to a dynamic System.Type given the dynamic emit context
     member _.LookupType (ty: ILType) = 
-        let rec convTypeSpec (tspec: ILTypeSpec) =
-            let tref = tspec.TypeRef
-            let typT =
-                if tref.Scope.IsLocalRef then 
-                    let typ, _ = TypeMap.[tref]
-                    typ
-                else
-                    convTypeRefAux tref
-            let tyargs = List.map convTypeAux tspec.GenericArgs
-            let res =
-                match isNil tyargs, typT.IsGenericType with
-                | _, true -> typT.MakeGenericType(List.toArray tyargs)
-                | true, false -> typT
-                | _, false -> null
-            match res with
-            | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
-            | _ -> res
-
-        and convTypeAux ty =
-            match ty with
-            | ILType.Void -> Type.GetType("System.Void")
-            | ILType.Array (shape, eltType) ->
-                let baseT = convTypeAux eltType
-                if shape.Rank=1 then baseT.MakeArrayType()
-                else baseT.MakeArrayType shape.Rank
-            | ILType.Value tspec -> convTypeSpec tspec
-            | ILType.Boxed tspec -> convTypeSpec tspec
-            | ILType.Ptr eltType ->
-                let baseT = convTypeAux eltType
-                baseT.MakePointerType()
-            | ILType.Byref eltType ->
-                let baseT = convTypeAux eltType
-                baseT.MakeByRefType()
-            | ILType.TypeVar _tv -> failwith "open generic type"
-            | ILType.Modified (_, _, modifiedTy) ->
-                convTypeAux modifiedTy
-            | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
         convTypeAux ty
 
+    /// Record the given ILTypeDef in the dynamic emit context
     member emEnv.AddTypeDef (asm: Assembly) ilScopeRef enc (tdef: ILTypeDef) =
         let ltref = mkRefForNestedILTypeDef ILScopeRef.Local (enc, tdef)
         let tref = mkRefForNestedILTypeDef ilScopeRef (enc, tdef)
@@ -348,8 +346,9 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
         let typ = asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let tref = ILTypeRef.Create(ilScopeRef, [ for e in enc -> e.Name ], typ.Name)
-        TypeMap.Add(ltref, (typ, tref))
-        emEnv.AddTypeDefs asm ilScopeRef (enc@[tdef]) (tdef.NestedTypes.AsArray())
+        typeMap.Add(ltref, (typ, tref))
+        for ntdef in tdef.NestedTypes.AsArray() do
+            emEnv.AddTypeDef asm ilScopeRef (enc@[tdef]) ntdef
         
         // Record the internal things to give warnings for internal access across fragment boundaries
         for fdef in tdef.Fields.AsList() do
@@ -357,14 +356,14 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
             | ILMemberAccess.Public -> ()
             | _ ->
                 let lfref = mkRefForILField ILScopeRef.Local (enc, tdef) fdef
-                InternalFields.Add(lfref) |> ignore
+                internalFields.Add(lfref) |> ignore
 
         for mdef in tdef.Methods.AsArray() do
             match mdef.Access with
             | ILMemberAccess.Public -> ()
             | _ ->
                 let lmref = mkRefForILMethod ILScopeRef.Local (enc, tdef) mdef
-                InternalMethods.Add(lmref) |> ignore
+                internalMethods.Add(lmref) |> ignore
 
         match tdef.Access with
         | ILTypeDefAccess.Public 
@@ -372,18 +371,22 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
         | _ ->
             internalTypes.Add(ltref) |> ignore
 
-    member emEnv.AddTypeDefs asm ilScopeRef enc (tdefs: ILTypeDef[]) =
-        for tdef in tdefs do
-            emEnv.AddTypeDef asm ilScopeRef enc tdef
+    /// Record the given ILModuleDef (i.e. an assembly) in the dynamic emit context
+    member emEnv.AddModuleDef asm ilScopeRef (mdef: ILModuleDef) =
+        for tdef in mdef.TypeDefs.AsArray() do
+            emEnv.AddTypeDef asm ilScopeRef [] tdef
 
+    /// Check if an ILTypeRef is a reference to an already-emitted internal type within the dynamic emit context
     member _.IsLocalInternalType (tref: ILTypeRef) =
         tref.Scope.IsLocalRef && internalTypes.Contains(tref)
 
+    /// Check if an ILMethodRef is a reference to an already-emitted internal method within the dynamic emit context
     member _.IsLocalInternalMethod (mref: ILMethodRef) =
-        mref.DeclaringTypeRef.Scope.IsLocalRef && InternalMethods.Contains(mref)
+        mref.DeclaringTypeRef.Scope.IsLocalRef && internalMethods.Contains(mref)
 
+    /// Check if an ILFieldRef is a reference to an already-emitted internal field within the dynamic emit context
     member _.IsLocalInternalField (fref: ILFieldRef) =
-        fref.DeclaringTypeRef.Scope.IsLocalRef && InternalFields.Contains(fref)
+        fref.DeclaringTypeRef.Scope.IsLocalRef && internalFields.Contains(fref)
 
 type ILAssemblyEmitEnv =
     | SingleDynamicAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
@@ -1427,7 +1430,7 @@ type internal FsiDynamicCompiler
                         with :? TargetInvocationException as e ->
                             Some e.InnerException) ]
 
-        emEnv.AddTypeDefs asm ilScopeRef [] (ilxMainModule.TypeDefs.AsArray())
+        emEnv.AddModuleDef asm ilScopeRef ilxMainModule
 
         execs
 
