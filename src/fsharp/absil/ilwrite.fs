@@ -665,7 +665,7 @@ let GetTypeNameAsElemPair cenv n =
 
 let rec GenTypeDefPass1 enc cenv (td: ILTypeDef) =
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
+  GenTypeDefsPass1 (enc@[td.Name]) cenv (td.NestedTypes.AsList())
 
 and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
 
@@ -1166,10 +1166,10 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
               (UnsharedRow
                   [| SimpleIndex (TableNames.TypeDef, tidx)
                      SimpleIndex (TableNames.TypeDef, pidx) |]) |> ignore
-      let props = td.Properties.AsList
+      let props = td.Properties.AsList()
       if not (isNil props) then
           AddUnsharedRow cenv TableNames.PropertyMap (GetTypeDefAsPropertyMapRow cenv tidx) |> ignore
-      let events = td.Events.AsList
+      let events = td.Events.AsList()
       if not (isNil events) then
           AddUnsharedRow cenv TableNames.EventMap (GetTypeDefAsEventMapRow cenv tidx) |> ignore
 
@@ -1179,9 +1179,9 @@ and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
       td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
       props |> List.iter (GenPropertyDefPass2 cenv tidx)
       events |> List.iter (GenEventDefPass2 cenv tidx)
-      td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
+      td.Fields.AsList() |> List.iter (GenFieldDefPass2 cenv tidx)
       td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
-      td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
+      td.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
 
@@ -1386,7 +1386,7 @@ and GenCustomAttrPass3Or4 cenv hca attr =
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
 and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) =
-    attrs.AsArray |> Array.iter (GenCustomAttrPass3Or4 cenv hca)
+    attrs.AsArray() |> Array.iter (GenCustomAttrPass3Or4 cenv hca)
 
 // --------------------------------------------------------------------
 // ILSecurityDecl --> DeclSecurity rows
@@ -2482,7 +2482,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]
 
 let GenReturnPass3 cenv (returnv: ILReturn) =
-    if Option.isSome returnv.Marshal || not (Array.isEmpty returnv.CustomAttrs.AsArray) then
+    if Option.isSome returnv.Marshal || not (Array.isEmpty (returnv.CustomAttrs.AsArray())) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) returnv.CustomAttrs
         match returnv.Marshal with
@@ -2588,7 +2588,7 @@ let GenMethodDefPass3 cenv env (md: ILMethodDef) =
     GenReturnPass3 cenv md.Return
     md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param)
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx)
-    md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
+    md.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
     md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp)
     match md.Body with
     | MethodBody.PInvoke attrLazy ->
@@ -2742,11 +2742,11 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
    try
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
-      td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
-      td.Events.AsList |> List.iter (GenEventPass3 cenv env)
-      td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
+      td.Properties.AsList() |> List.iter (GenPropertyPass3 cenv env)
+      td.Events.AsList() |> List.iter (GenEventPass3 cenv env)
+      td.Fields.AsList() |> List.iter (GenFieldDefPass3 cenv env)
       td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
-      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
+      td.MethodImpls.AsList() |> List.iter (GenMethodImplPass3 cenv env td.GenericParams.Length tidx)
     // ClassLayout entry if needed
       match td.Layout with
       | ILTypeDefLayout.Auto -> ()
@@ -2758,10 +2758,10 @@ let rec GenTypeDefPass3 enc cenv (td: ILTypeDef) =
                        ULong (defaultArg layout.Size 0x0)
                        SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
 
-      td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
+      td.SecurityDecls.AsList() |> GenSecurityDeclsPass3 cenv (hds_TypeDef, tidx)
       td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef, tidx)
       td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef, tidx) gp)
-      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
+      td.NestedTypes.AsList() |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
@@ -2779,7 +2779,7 @@ let rec GenTypeDefPass4 enc cenv (td: ILTypeDef) =
        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env)
        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef, tidx) gp) td.GenericParams
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
+       GenTypeDefsPass4 (enc@[td.Name]) cenv (td.NestedTypes.AsList())
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()
@@ -2787,7 +2787,6 @@ let rec GenTypeDefPass4 enc cenv (td: ILTypeDef) =
 
 and GenTypeDefsPass4 enc cenv tds =
     List.iter (GenTypeDefPass4 enc cenv) tds
-
 
 let timestamp = absilWriteGetTimeStamp ()
 
@@ -2809,7 +2808,7 @@ let rec GenNestedExportedTypePass3 cenv cidx (ce: ILNestedExportedType) =
     GenNestedExportedTypesPass3 cenv nidx ce.Nested
 
 and GenNestedExportedTypesPass3 cenv nidx (nce: ILNestedExportedTypes) =
-    nce.AsList |> List.iter (GenNestedExportedTypePass3 cenv nidx)
+    nce.AsList() |> List.iter (GenNestedExportedTypePass3 cenv nidx)
 
 and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) =
     let nselem, nelem = GetTypeNameAsElemPair cenv ce.Name
@@ -2827,7 +2826,7 @@ and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) =
     GenNestedExportedTypesPass3 cenv cidx ce.Nested
 
 and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
-    List.iter (GenExportedTypePass3 cenv) ce.AsList
+    List.iter (GenExportedTypePass3 cenv) (ce.AsList())
 
 // --------------------------------------------------------------------
 // manifest --> generate Assembly row
@@ -2859,7 +2858,7 @@ and GetManifestAsAssemblyRow cenv m =
 
 and GenManifestPass3 cenv m =
     let aidx = AddUnsharedRow cenv TableNames.Assembly (GetManifestAsAssemblyRow cenv m)
-    GenSecurityDeclsPass3 cenv (hds_Assembly, aidx) m.SecurityDecls.AsList
+    GenSecurityDeclsPass3 cenv (hds_Assembly, aidx) (m.SecurityDecls.AsList())
     GenCustomAttrsPass3Or4 cenv (hca_Assembly, aidx) m.CustomAttrs
     GenExportedTypesPass3 cenv m.ExportedTypes
     // Record the entrypoint decl if needed.
@@ -2912,7 +2911,7 @@ let SortTableRows tab (rows: GenericRow[]) =
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) =
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
-    List.iter (GenResourcePass3 cenv) modul.Resources.AsList
+    List.iter (GenResourcePass3 cenv) (modul.Resources.AsList())
     let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
     reportTime cenv.showTimes "Module Generation Preparation"
     GenTypeDefsPass1 [] cenv tds

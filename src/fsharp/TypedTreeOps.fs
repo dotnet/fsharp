@@ -3084,10 +3084,10 @@ let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) =
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
 let HasILAttribute tref (attrs: ILAttributes) = 
-    attrs.AsArray |> Array.exists (isILAttrib tref) 
+    attrs.AsArray() |> Array.exists (isILAttrib tref) 
 
 let TryDecodeILAttribute tref (attrs: ILAttributes) = 
-    attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
+    attrs.AsArray() |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
 
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
@@ -3212,7 +3212,7 @@ let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) =
             a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m).IsSome
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
-        tdef.CustomAttrs.AsArray
+        tdef.CustomAttrs.AsArray()
         |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         tcref.Attribs

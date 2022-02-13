@@ -1562,11 +1562,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let gnested = TypeDefsBuilder()
 
     member b.Close() =
-        tdef.With(methods = mkILMethods (tdef.Methods.AsList @ ResizeArray.toList gmethods),
-                  fields = mkILFields (tdef.Fields.AsList @ ResizeArray.toList gfields),
-                  properties = mkILProperties (tdef.Properties.AsList @ HashRangeSorted gproperties ),
-                  events = mkILEvents (tdef.Events.AsList @ ResizeArray.toList gevents),
-                  nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList @ gnested.Close()))
+        tdef.With(methods = mkILMethods (tdef.Methods.AsList() @ ResizeArray.toList gmethods),
+                  fields = mkILFields (tdef.Fields.AsList() @ ResizeArray.toList gfields),
+                  properties = mkILProperties (tdef.Properties.AsList() @ HashRangeSorted gproperties ),
+                  events = mkILEvents (tdef.Events.AsList() @ ResizeArray.toList gevents),
+                  nestedTypes = mkILTypeDefs (tdef.NestedTypes.AsList() @ gnested.Close()))
 
     member b.AddEventDef edef = gevents.Add edef
 
@@ -1615,11 +1615,11 @@ and TypeDefsBuilder() =
               let tdef = b.Close()
               // Skip the <PrivateImplementationDetails$> type if it is empty
               if not eliminateIfEmpty
-                 || not tdef.NestedTypes.AsList.IsEmpty
-                 || not tdef.Fields.AsList.IsEmpty
-                 || not tdef.Events.AsList.IsEmpty
-                 || not tdef.Properties.AsList.IsEmpty
-                 || not (Array.isEmpty tdef.Methods.AsArray) then
+                 || not (tdef.NestedTypes.AsList()).IsEmpty
+                 || not (tdef.Fields.AsList()).IsEmpty
+                 || not (tdef.Events.AsList()).IsEmpty
+                 || not (tdef.Properties.AsList()).IsEmpty
+                 || not (Array.isEmpty (tdef.Methods.AsArray())) then
                   yield tdef ]
 
     member b.FindTypeDefBuilder nm =
@@ -1701,7 +1701,9 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilFieldDefs =
                 mkILFields
                     [ for _, fldName, fldTy in flds ->
-                        let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private)
+                        // The F# Interactive backend may split to multiple assemblies.
+                        let access = (if cenv.opts.isInteractive then ILMemberAccess.Public else  ILMemberAccess.Private)
+                        let fdef = mkILInstanceField (fldName, fldTy, None, access)
                         fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ]) ]
 
             // Generate property definitions for the fields compiled as properties
@@ -4699,7 +4701,7 @@ and GenFormalReturnType m cenv eenvFormal returnTy : ILReturn =
     | None -> ilRet
     | Some ty ->
     match GenReadOnlyAttributeIfNecessary cenv.g ty with
-    | Some attr -> ilRet.WithCustomAttrs (mkILCustomAttrs (ilRet.CustomAttrs.AsList @ [attr]))
+    | Some attr -> ilRet.WithCustomAttrs (mkILCustomAttrs (ilRet.CustomAttrs.AsList() @ [attr]))
     | None -> ilRet
 
 and instSlotParam inst (TSlotParam(nm, ty, inFlag, fl2, fl3, attrs)) =
@@ -5210,7 +5212,7 @@ and GenStaticDelegateClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, 
     // Apply the abstract attribute, turning the sealed class into abstract sealed (i.e. static class).
     // Remove the redundant constructor.
     tdefs |> List.map (fun td -> td.WithAbstract(true)
-                                   .With(methods= mkILMethodsFromArray (td.Methods.AsArray |> Array.filter (fun m -> not m.IsConstructor))))
+                                   .With(methods= mkILMethodsFromArray (td.Methods.AsArray() |> Array.filter (fun m -> not m.IsConstructor))))
 
 and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)

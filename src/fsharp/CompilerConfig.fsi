@@ -272,6 +272,7 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
+      mutable fsiSingleDynamicAsembly: bool
       rangeForErrors: range
       sdkDirOverride: string option
 

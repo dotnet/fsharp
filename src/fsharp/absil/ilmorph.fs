@@ -148,7 +148,7 @@ let cattr_ty2ty f (c: ILAttribute) =
 
 
 let cattrs_ty2ty f (cs: ILAttributes) =
-    mkILCustomAttrs (List.map (cattr_ty2ty f) cs.AsList)
+    mkILCustomAttrs (List.map (cattr_ty2ty f) (cs.AsList()))
 
 let fdef_ty2ty ftye (fd: ILFieldDef) = 
     fd.With(fieldType=ftye fd.FieldType,
@@ -197,13 +197,14 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
     | x -> x
 
 let return_ty2ty f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty f r.CustomAttrs)}
+
 let param_ty2ty f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty f p.CustomAttrs)}
 
-let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
-let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
+let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f (m.AsList()))
 
-(* use this when the conversion produces just one tye... *)
-let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
+let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f (m.AsList()))
+
+let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f (m.AsArray()))
 
 let locals_ty2ty f ls = List.map (local_ty2ty f) ls
 
@@ -254,10 +255,14 @@ let pdef_ty2ty f (p: ILPropertyDef) =
            args = List.map f p.Args,
            customAttrs = cattrs_ty2ty f p.CustomAttrs)
 
-let pdefs_ty2ty f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_ty2ty f) pdefs.AsList)
-let edefs_ty2ty f (edefs: ILEventDefs) = mkILEvents (List.map (edef_ty2ty f) edefs.AsList)
+let pdefs_ty2ty f (pdefs: ILPropertyDefs) =
+    mkILProperties (pdefs.AsList() |> List.map (pdef_ty2ty f))
 
-let mimpls_ty2ty f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_ty2ty f) mimpls.AsList)
+let edefs_ty2ty f (edefs: ILEventDefs) =
+    mkILEvents (edefs.AsList() |> List.map (edef_ty2ty f))
+
+let mimpls_ty2ty f (mimpls : ILMethodImplDefs) =
+    mkILMethodImpls (mimpls.AsList() |> List.map (mimpl_ty2ty f))
 
 let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (td: ILTypeDef) = 
    let ftye,fmdefs = fs 

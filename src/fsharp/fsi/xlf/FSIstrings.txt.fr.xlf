@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors</source>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Inclure l'URI de source de package au moment de la recherche des packages</target>
@@ -15,6 +20,11 @@
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
         <target state="translated">Échec de l'opération. Le texte d'erreur est affiché dans le flux d'erreur. Pour retourner le FSharpDiagnostic correspondant, utilisez EvalInteractionNonThrowing, EvalScriptNonThrowing ou EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiUseSingleDynamicAssembly">
+        <source>Use a single dynamic assembly</source>
+        <target state="new">Use a single dynamic assembly</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

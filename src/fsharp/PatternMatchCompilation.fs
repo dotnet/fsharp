@@ -270,7 +270,7 @@ let RefuteDiscrimSet g m path discrims =
                     let enumValues =
                         if tcref.IsILEnumTycon then
                             let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
-                            tdef.Fields.AsList
+                            tdef.Fields.AsList()
                             |> Seq.choose (fun ilField ->
                                 if ilField.IsStatic then
                                     ilField.LiteralValue |> Option.map (fun ilValue ->

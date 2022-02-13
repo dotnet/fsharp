@@ -480,6 +480,9 @@ type TcConfigBuilder =
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
 
+      // Is F# Interactive using multi-assembly emit?
+      mutable fsiSingleDynamicAsembly: bool
+
       /// specify the error range for FxResolver
       rangeForErrors: range
 
@@ -660,6 +663,7 @@ type TcConfigBuilder =
           shadowCopyReferences = false
           useSdkRefs = true
           fxResolver = None
+          fsiSingleDynamicAsembly = false
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty

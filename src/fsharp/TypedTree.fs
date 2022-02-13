@@ -5284,7 +5284,7 @@ type CcuThunk =
       name: CcuReference
     }
 
-    /// Dereference the asssembly reference 
+    /// Dereference the assembly reference 
     member ccu.Deref = 
         if isNull (ccu.target :> obj) then 
             raise(UnresolvedReferenceNoRange ccu.name)
@@ -5304,7 +5304,7 @@ type CcuThunk =
         with get() = ccu.Deref.UsesFSharp20PlusQuotations 
         and set v = ccu.Deref.UsesFSharp20PlusQuotations <- v
 
-    /// The short name of the asssembly being referenced
+    /// The short name of the assembly being referenced
     member ccu.AssemblyName = ccu.name
 
     /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 

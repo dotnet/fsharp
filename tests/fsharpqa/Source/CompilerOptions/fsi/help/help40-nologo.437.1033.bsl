@@ -103,3 +103,4 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --quotations-debug[+|-]                  Emit debug information in quotations
 --shadowcopyreferences[+|-]              Prevents references from being
                                          locked by the F# Interactive process
+--dynamicassembly[+|-]                   Use a single dynamic assembly
