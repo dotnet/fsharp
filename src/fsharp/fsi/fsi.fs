@@ -225,15 +225,14 @@ type internal FsiTimeReporter(outWriter: TextWriter) =
 
     member tr.TimeOpIf flag f = if flag then tr.TimeOp f else f ()
 
-type ILMultiInMemoryAssemblyEmitEnv =
-    { ilg: ILGlobals
-      resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option
-      TypeMap: Dictionary<ILTypeRef, Type * ILTypeRef>
-      InternalTypes: HashSet<ILTypeRef>
-      InternalMethods: HashSet<ILMethodRef>
-      InternalFields: HashSet<ILFieldRef> }
+/// Manages the emit of one logical assembly into multiple assemblies
+type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option) =
+    let TypeMap = Dictionary<ILTypeRef, Type * ILTypeRef>(HashIdentity.Structural)
+    let internalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
+    let InternalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
+    let InternalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
 
-    member _.convAssemblyRef (aref: ILAssemblyRef) =
+    let convAssemblyRef (aref: ILAssemblyRef) =
         let asmName = AssemblyName()
         asmName.Name <- aref.Name
         (match aref.PublicKey with
@@ -246,9 +245,9 @@ type ILMultiInMemoryAssemblyEmitEnv =
         asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
         asmName
 
-    member emEnv.convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
+    let convResolveAssemblyRef (asmref: ILAssemblyRef) qualifiedName =
         let assembly =
-            match emEnv.resolveAssemblyRef asmref with
+            match resolveAssemblyRef asmref with
             | Some (Choice1Of2 path) ->
                 // asmRef is a path but the runtime is smarter with assembly names so make one
                 let asmName = AssemblyName.GetAssemblyName(path)
@@ -257,7 +256,7 @@ type ILMultiInMemoryAssemblyEmitEnv =
             | Some (Choice2Of2 assembly) ->
                 assembly
             | None ->
-                let asmName = emEnv.convAssemblyRef asmref
+                let asmName = convAssemblyRef asmref
                 FileSystem.AssemblyLoader.AssemblyLoad asmName
         let typT = assembly.GetType qualifiedName
         match typT with
@@ -271,11 +270,11 @@ type ILMultiInMemoryAssemblyEmitEnv =
     // []              , name -> name
     // [ns]            , name -> ns+name
     // [ns;typeA;typeB], name -> ns+typeA+typeB+name
-    member emEnv.convTypeRefAux (tref: ILTypeRef) =
+    let convTypeRefAux (tref: ILTypeRef) =
         let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
         match tref.Scope with
         | ILScopeRef.Assembly asmref ->
-            emEnv.convResolveAssemblyRef asmref qualifiedName
+            convResolveAssemblyRef asmref qualifiedName
         | ILScopeRef.Module _
         | ILScopeRef.Local _ ->
             let typT = Type.GetType qualifiedName
@@ -283,26 +282,34 @@ type ILMultiInMemoryAssemblyEmitEnv =
             | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
             | res -> res
         | ILScopeRef.PrimaryAssembly ->
-            emEnv.convResolveAssemblyRef emEnv.ilg.primaryAssemblyRef qualifiedName
+            convResolveAssemblyRef ilg.primaryAssemblyRef qualifiedName
 
-    member emEnv.LookupTypeRef (tref: ILTypeRef) =
-        assert tref.Scope.IsLocalRef
-        //let key = tref.BasicQualifiedName
-        //printfn $"lookup {tref.BasicQualifiedName}"
-        //if not (emEnv.TypeMap.ContainsKey(key)) then
-            //printfn $"keys = %A{[ for (KeyValue(k,_)) in emEnv.TypeMap -> k ]}"
+    member _.MapTypeRef (tref: ILTypeRef) =
+        if tref.Scope.IsLocalRef then
+            //let key = tref.BasicQualifiedName
+            //printfn $"lookup {tref.BasicQualifiedName}"
+            //if not (emEnv.TypeMap.ContainsKey(key)) then
+                //printfn $"keys = %A{[ for (KeyValue(k,_)) in emEnv.TypeMap -> k ]}"
             
-        let typ, _ = emEnv.TypeMap.[tref]
+            let _, tref = TypeMap.[tref]
+            tref
+        else
+            tref
+
+    member _.LookupTypeRef (tref: ILTypeRef) =
+        assert tref.Scope.IsLocalRef
+        let typ, _ = TypeMap.[tref]
         typ
 
-    member emEnv.LookupType (ty: ILType) = 
+    member _.LookupType (ty: ILType) = 
         let rec convTypeSpec (tspec: ILTypeSpec) =
             let tref = tspec.TypeRef
             let typT =
                 if tref.Scope.IsLocalRef then 
-                    emEnv.LookupTypeRef tref
+                    let typ, _ = TypeMap.[tref]
+                    typ
                 else
-                    emEnv.convTypeRefAux tref
+                    convTypeRefAux tref
             let tyargs = List.map convTypeAux tspec.GenericArgs
             let res =
                 match isNil tyargs, typT.IsGenericType with
@@ -341,7 +348,7 @@ type ILMultiInMemoryAssemblyEmitEnv =
         let typ = asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let tref = ILTypeRef.Create(ilScopeRef, [ for e in enc -> e.Name ], typ.Name)
-        emEnv.TypeMap.Add(ltref, (typ, tref))
+        TypeMap.Add(ltref, (typ, tref))
         emEnv.AddTypeDefs asm ilScopeRef (enc@[tdef]) (tdef.NestedTypes.AsArray())
         
         // Record the internal things to give warnings for internal access across fragment boundaries
@@ -350,23 +357,33 @@ type ILMultiInMemoryAssemblyEmitEnv =
             | ILMemberAccess.Public -> ()
             | _ ->
                 let lfref = mkRefForILField ILScopeRef.Local (enc, tdef) fdef
-                emEnv.InternalFields.Add(lfref) |> ignore
+                InternalFields.Add(lfref) |> ignore
+
         for mdef in tdef.Methods.AsArray() do
             match mdef.Access with
             | ILMemberAccess.Public -> ()
             | _ ->
                 let lmref = mkRefForILMethod ILScopeRef.Local (enc, tdef) mdef
-                emEnv.InternalMethods.Add(lmref) |> ignore
+                InternalMethods.Add(lmref) |> ignore
+
         match tdef.Access with
         | ILTypeDefAccess.Public 
         | ILTypeDefAccess.Nested ILMemberAccess.Public -> ()
         | _ ->
-            emEnv.InternalTypes.Add(ltref) |> ignore
-            
+            internalTypes.Add(ltref) |> ignore
 
     member emEnv.AddTypeDefs asm ilScopeRef enc (tdefs: ILTypeDef[]) =
         for tdef in tdefs do
             emEnv.AddTypeDef asm ilScopeRef enc tdef
+
+    member _.IsLocalInternalType (tref: ILTypeRef) =
+        tref.Scope.IsLocalRef && internalTypes.Contains(tref)
+
+    member _.IsLocalInternalMethod (mref: ILMethodRef) =
+        mref.DeclaringTypeRef.Scope.IsLocalRef && InternalMethods.Contains(mref)
+
+    member _.IsLocalInternalField (fref: ILFieldRef) =
+        fref.DeclaringTypeRef.Scope.IsLocalRef && InternalFields.Contains(fref)
 
 type ILAssemblyEmitEnv =
     | SingleDynamicAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
@@ -1338,27 +1355,20 @@ type internal FsiDynamicCompiler
         let refs = computeILRefs ilGlobals ilxMainModule
 
         for tref in refs.TypeReferences do
-            if tref.Scope.IsLocalRef && emEnv.InternalTypes.Contains(tref) then
+            if emEnv.IsLocalInternalType(tref) then
                 warning(Error((FSIstrings.SR.fsiInternalAccess(tref.Name)), rangeStdin))
 
         for mref in refs.MethodReferences do
-            if mref.DeclaringTypeRef.Scope.IsLocalRef && emEnv.InternalMethods.Contains(mref) then
+            if emEnv.IsLocalInternalMethod(mref) then
                 warning(Error((FSIstrings.SR.fsiInternalAccess(mref.Name)), rangeStdin))
 
         for fref in refs.FieldReferences do
-            if fref.DeclaringTypeRef.Scope.IsLocalRef && emEnv.InternalFields.Contains(fref) then
+            if emEnv.IsLocalInternalField(fref) then
                 warning(Error((FSIstrings.SR.fsiInternalAccess(fref.Name)), rangeStdin))
 
         // Rewrite references to local types to their respective dynamic assemblies
         let ilxMainModule =
-            ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized (fun tref ->
-                if tref.Scope.IsLocalRef then
-                    //let nm = tref.BasicQualifiedName
-                    match emEnv.TypeMap.TryGetValue(tref) with
-                    | true, (_, tgt) -> tgt
-                    | _ -> tref 
-                else
-                    tref)
+            ilxMainModule |> Morphs.morphILTypeRefsInILModuleMemoized emEnv.MapTypeRef
 
         let opts = 
             { ilg = tcGlobals.ilg
@@ -2012,13 +2022,7 @@ type internal FsiDynamicCompiler
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleDynamicAssembly (cenv, emEnv)
             else
-                let emEnv = 
-                    { ilg = tcGlobals.ilg
-                      resolveAssemblyRef = resolveAssemblyRef
-                      TypeMap = Dictionary<ILTypeRef,_>(HashIdentity.Structural)
-                      InternalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
-                      InternalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
-                      InternalFields = HashSet<ILFieldRef>(HashIdentity.Structural) }
+                let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef)
                 MultipleInMemoryAssemblies emEnv
 
         let tcEnv, openDecls0 = GetInitialTcEnv (assemblyName, rangeStdin, tcConfig, tcImports, tcGlobals)
