@@ -178,154 +178,146 @@ module Nested =
         |> shouldSucceed
         |> verifyIL [
             referenceAssemblyAttributeExpectedIL
-            """.class public abstract auto ansi sealed ReferenceAssembly
+            """.class abstract auto ansi sealed nested public Nested
             extends [runtime]System.Object
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
-      .class abstract auto ansi sealed nested public Nested
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+    .class auto ansi serializable sealed nested public Test
               extends [runtime]System.Object
+              implements class [runtime]System.IEquatable`1<class ReferenceAssembly/Nested/Test>,
+                         [runtime]System.Collections.IStructuralEquatable,
+                         class [runtime]System.IComparable`1<class ReferenceAssembly/Nested/Test>,
+                         [runtime]System.IComparable,
+                         [runtime]System.Collections.IStructuralComparable
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
+      .method public hidebysig specialname 
+                 instance int32  get_x() cil managed
       {
-        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
-        .class auto ansi serializable sealed nested public Test
-                extends [runtime]System.Object
-                implements class [runtime]System.IEquatable`1<class ReferenceAssembly/Nested/Test>,
-                           [runtime]System.Collections.IStructuralEquatable,
-                           class [runtime]System.IComparable`1<class ReferenceAssembly/Nested/Test>,
-                           [runtime]System.IComparable,
-                           [runtime]System.Collections.IStructuralComparable
-        {
-          .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 )
-          .field assembly int32 x@
-          .custom instance void [runtime]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [runtime]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 )
-          .method public hidebysig specialname
-                   instance int32  get_x() cil managed
-          {
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .method public specialname rtspecialname 
+                 instance void  .ctor(int32 x) cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-          .method public specialname rtspecialname
-                   instance void  .ctor(int32 x) cil managed
-          {
+      .method public strict virtual instance string 
+                 ToString() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .method public hidebysig virtual final 
+                 instance int32  CompareTo(class ReferenceAssembly/Nested/Test obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-          .method public strict virtual instance string
-                   ToString() cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .method public hidebysig virtual final 
+                 instance int32  CompareTo(object obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .method public hidebysig virtual final 
+                 instance int32  CompareTo(object obj,
+                                           class [runtime]System.Collections.IComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-          .method public hidebysig virtual final
-                   instance int32  CompareTo(class ReferenceAssembly/Nested/Test obj) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .method public hidebysig virtual final 
+                 instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .method public hidebysig virtual final 
+                 instance int32  GetHashCode() cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-          .method public hidebysig virtual final
-                   instance int32  CompareTo(object obj) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .method public hidebysig virtual final 
+                 instance bool  Equals(object obj,
+                                       class [runtime]System.Collections.IEqualityComparer comp) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .method public hidebysig virtual final 
+                 instance bool  Equals(class ReferenceAssembly/Nested/Test obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-          .method public hidebysig virtual final
-                   instance int32  CompareTo(object obj,
-                                             class [runtime]System.Collections.IComparer comp) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .method public hidebysig virtual final 
+                 instance bool  Equals(object obj) cil managed
+      {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldnull
+        IL_0001:  throw
+      } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
+      .property instance int32 x()
+      {
+        .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                       int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
+        .get instance int32 ReferenceAssembly/Nested/Test::get_x()
+      } 
+    } 
 
-          .method public hidebysig virtual final
-                   instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .method public static void  test(class ReferenceAssembly/Nested/Test _x) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
 
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
-
-          .method public hidebysig virtual final
-                   instance int32  GetHashCode() cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
-
-          .method public hidebysig virtual final
-                   instance bool  Equals(object obj,
-                                         class [runtime]System.Collections.IEqualityComparer comp) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
-
-          .method public hidebysig virtual final
-                   instance bool  Equals(class ReferenceAssembly/Nested/Test obj) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
-
-          .method public hidebysig virtual final
-                   instance bool  Equals(object obj) cil managed
-          {
-             .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-
-             .maxstack  8
-             IL_0000:  ldnull
-             IL_0001:  throw
-          }
-
-          .property instance int32 x()
-          {
-             .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                         int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 )
-             .get instance int32 ReferenceAssembly/Nested/Test::get_x()
-          }
-        }
-
-        .method public static void  test(class ReferenceAssembly/Nested/Test _x) cil managed
-        {
-
-          .maxstack  8
-          IL_0000:  ldnull
-          IL_0001:  throw
-        }
-
-      }
-
-    }"""
+  } """
         ]
         |> ignore
 
@@ -520,13 +512,13 @@ type MySecondaryAttribute() =
         |> verifyIL [
             referenceAssemblyAttributeExpectedIL
             """.class auto ansi serializable nested public MyAttribute
-extends [runtime]System.Attribute
+            extends [runtime]System.Attribute
   {
     .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 FF 7F 00 00 00 00 ) 
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int32 Prop1@
     .method public specialname rtspecialname 
-   instance void  .ctor() cil managed
+               instance void  .ctor() cil managed
     {
       
       .maxstack  8
@@ -535,7 +527,7 @@ extends [runtime]System.Attribute
     } 
 
     .method assembly hidebysig specialname 
-   instance int32  get_Prop1() cil managed
+               instance int32  get_Prop1() cil managed
     {
       
       .maxstack  8
@@ -544,7 +536,42 @@ extends [runtime]System.Attribute
     } 
 
     .method assembly hidebysig specialname 
-   instance void  set_Prop1(int32 v) cil managed
+               instance void  set_Prop1(int32 v) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+  } 
+
+  .class auto ansi serializable nested public MySecondaryAttribute
+            extends ReferenceAssembly/MyAttribute
+  {
+    .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 FF 7F 00 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .field assembly int32 Prop1@
+    .method public specialname rtspecialname 
+               instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+               instance int32  get_Prop1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method assembly hidebysig specialname 
+               instance void  set_Prop1(int32 v) cil managed
     {
       
       .maxstack  8
@@ -557,47 +584,12 @@ extends [runtime]System.Attribute
       .set instance void ReferenceAssembly/MyAttribute::set_Prop1(int32)
       .get instance int32 ReferenceAssembly/MyAttribute::get_Prop1()
     } 
-  }"""
-            """.class auto ansi serializable nested public MySecondaryAttribute
-extends ReferenceAssembly/MyAttribute
-  {
-    .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 FF 7F 00 00 00 00 ) 
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-    .field assembly int32 Prop1@
-    .method public specialname rtspecialname 
-   instance void  .ctor() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  throw
-    } 
-
-    .method assembly hidebysig specialname 
-   instance int32  get_Prop1() cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  throw
-    } 
-
-    .method assembly hidebysig specialname 
-   instance void  set_Prop1(int32 v) cil managed
-    {
-      
-      .maxstack  8
-      IL_0000:  ldnull
-      IL_0001:  throw
-    } 
-
     .property instance int32 Prop1()
     {
       .set instance void ReferenceAssembly/MySecondaryAttribute::set_Prop1(int32)
       .get instance int32 ReferenceAssembly/MySecondaryAttribute::get_Prop1()
     } 
-  }
-  """
+  } """
         ]
     
     [<Test>]
@@ -661,47 +653,74 @@ type MType() =
     } 
 
   } 
-  
- }
-            """
+
+  .class auto ansi serializable nested public MType
+            extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public specialname rtspecialname 
+               instance void  .ctor() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method public hidebysig specialname 
+               instance int32  get_PubProp1() cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .method public hidebysig specialname 
+               instance void  set_PubProp1(int32 v) cil managed
+    {
+      
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
+
+    .property instance int32 PubProp1()
+    {
+      .set instance void ReferenceAssembly/MType::set_PubProp1(int32)
+      .get instance int32 ReferenceAssembly/MType::get_PubProp1()
+    } 
+  } """
+        ]
+    [<Test>]
+    let ``Only public events are emitted for non-IVT assembly`` () =
+        FSharp """
+module ReferenceAssembly
+
+type MType() =
+    let event1 = new Event<_>()
+    
+    [<CLIEvent>]
+    member private _.Event1 = event1.Publish
+    """
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
             """.class auto ansi serializable nested public MType
-           extends [runtime]System.Object
-          {
-            .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-            .method public specialname rtspecialname 
-                      instance void  .ctor() cil managed
-            {
+            extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+    .method public specialname rtspecialname 
+               instance void  .ctor() cil managed
+    {
       
-              .maxstack  8
-              IL_0000:  ldnull
-              IL_0001:  throw
-            } 
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    } 
 
-            .method public hidebysig specialname 
-                      instance int32  get_PubProp1() cil managed
-            {
-      
-              .maxstack  8
-              IL_0000:  ldnull
-              IL_0001:  throw
-            } 
-
-            .method public hidebysig specialname 
-                      instance void  set_PubProp1(int32 v) cil managed
-            {
-      
-              .maxstack  8
-              IL_0000:  ldnull
-              IL_0001:  throw
-            } 
-
-            .property instance int32 PubProp1()
-            {
-              .set instance void ReferenceAssembly/MType::set_PubProp1(int32)
-              .get instance int32 ReferenceAssembly/MType::get_PubProp1()
-            } 
-          } 
-
-        }"""
+  } """
         ]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

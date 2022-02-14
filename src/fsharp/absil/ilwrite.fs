@@ -1166,6 +1166,17 @@ let canGenFieldDef (td: ILTypeDef) cenv (fd: ILFieldDef) =
             when cenv.hasInternalsVisibleToAttrib -> true
         | _ -> false
 
+let canGenEventDef cenv (ev: ILEventDef) =
+    if not cenv.referenceAssemblyOnly then
+        true
+    else
+        // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
+        // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
+        // Only generate property if we have at least getter or setter, otherwise, we skip.
+        [| ev.AddMethod; ev.RemoveMethod |]
+        |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
+        |> Array.exists (function | Ok _ -> true | _ -> false)
+
 let canGenPropertyDef cenv (prop: ILPropertyDef) =
     if not cenv.referenceAssemblyOnly then
         true
@@ -1255,7 +1266,8 @@ and GetKeyForEvent tidx (x: ILEventDef) =
     EventKey (tidx, x.Name)
 
 and GenEventDefPass2 cenv tidx x =
-    ignore (cenv.eventDefs.AddUniqueEntry "event" (fun (EventKey(_, b)) -> b) (GetKeyForEvent tidx x))
+    if canGenEventDef cenv x then
+        ignore (cenv.eventDefs.AddUniqueEntry "event" (fun (EventKey(_, b)) -> b) (GetKeyForEvent tidx x))
 
 and GenTypeDefPass2 pidx enc cenv (td: ILTypeDef) =
    try
@@ -2772,12 +2784,13 @@ and GenEventAsEventRow cenv env (md: ILEventDef) =
           TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
 and GenEventPass3 cenv env (md: ILEventDef) =
-    let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env md)
-    md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008
-    md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010
-    Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) md.FireMethod
-    List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
-    GenCustomAttrsPass3Or4 cenv (hca_Event, eidx) md.CustomAttrs
+     if canGenEventDef cenv md then
+        let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env md)
+        md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008
+        md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010
+        Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) md.FireMethod
+        List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
+        GenCustomAttrsPass3Or4 cenv (hca_Event, eidx) md.CustomAttrs
 
 
 // --------------------------------------------------------------------
