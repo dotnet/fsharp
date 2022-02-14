@@ -218,51 +218,47 @@ module private rec CompilerAssertHelpers =
     let compile isExe options source f =
         compileAux isExe options source f
 
-    let rec evaluateCompilationRefs outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
-
-        match cmpl with
-        | Compilation(_, _, _, _, cmpls, _, _) ->
-            let compiledRefs =
-                cmpls
-                |> List.map (fun cmpl ->
-                        match cmpl with
-                        | CompilationReference (cmpl, staticLink) ->
-                            compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
-                        | TestCompilationReference (cmpl) ->
-                            let filename =
-                                match cmpl with
-                                | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> Path.GetRandomFileName()
-                            let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
-                            disposals.Add({ new IDisposable with
-                                                member _.Dispose() =
-                                                    try File.Delete tmp with | _ -> () })
-                            cmpl.EmitAsFile tmp
-                            (([||], tmp), []), false)
-
-            let compilationRefs =
-                compiledRefs
-                |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
-                    assertErrors 0 ignoreWarnings errors [||]
-                    let rOption = "-r:" + outputFilePath
-                    if staticLink then
-                        [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]
-                    else
-                        [rOption])
-                |> List.concat
-                |> Array.ofList
-
-            let deps =
-                compiledRefs
-                |> List.map (fun ((_, deps), _) -> deps)
-                |> List.concat
-                |> List.distinct
-
-            compilationRefs, deps
-
     let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+        let compilationRefs, deps =
+            match cmpl with
+            | Compilation(_, _, _, _, cmpls, _, _) ->
+                let compiledRefs =
+                    cmpls
+                    |> List.map (fun cmpl ->
+                            match cmpl with
+                            | CompilationReference (cmpl, staticLink) ->
+                                compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
+                            | TestCompilationReference (cmpl) ->
+                                let filename =
+                                 match cmpl with
+                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
+                                 | _ -> Path.GetRandomFileName()
+                                let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
+                                disposals.Add({ new IDisposable with
+                                                    member _.Dispose() =
+                                                        try File.Delete tmp with | _ -> () })
+                                cmpl.EmitAsFile tmp
+                                (([||], tmp), []), false)
 
-        let compilationRefs, deps = evaluateCompilationRefs outputPath disposals ignoreWarnings cmpl
+                let compilationRefs =
+                    compiledRefs
+                    |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
+                        assertErrors 0 ignoreWarnings errors [||]
+                        let rOption = "-r:" + outputFilePath
+                        if staticLink then
+                            [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]
+                        else
+                            [rOption])
+                    |> List.concat
+                    |> Array.ofList
+
+                let deps =
+                    compiledRefs
+                    |> List.map (fun ((_, deps), _) -> deps)
+                    |> List.concat
+                    |> List.distinct
+
+                compilationRefs, deps
 
         let isScript =
             match cmpl with
