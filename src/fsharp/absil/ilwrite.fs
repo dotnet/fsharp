@@ -3555,7 +3555,7 @@ let writePdb (
     deterministic,
     pathMap,
     pdbData,
-    pdbOpt,
+    pdbInfoOpt,
     debugDirectoryChunk,
     debugDataChunk,
     debugChecksumPdbChunk,
@@ -3577,7 +3577,7 @@ let writePdb (
 #endif
     | Some pdbfile ->
         let idd =
-            match pdbOpt with
+            match pdbInfoOpt with
             | Some (originalLength, contentId, stream: MemoryStream, algorithmName, checkSum) ->
                 if embeddedPDB then
                     getInfoForEmbeddedPortablePdb originalLength contentId stream pdbfile debugDataChunk debugEmbeddedPdbChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum deterministic
@@ -3701,7 +3701,7 @@ let writeBinaryAux (
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
 
-    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
+    let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
 
           let os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
 
@@ -3804,16 +3804,18 @@ let writeBinaryAux (
           let entrypointCodeChunk, next = chunk 0x06 next
           let globalpointerCodeChunk, next = chunk (if isItanium then 0x8 else 0x0) next
 
-          let pdbOpt =
-            match portablePDB with
-            | true ->
-                let uncompressedLength, contentId, stream, algorithmName, checkSum as pdbStream =
+          let pdbInfoOpt =
+            match pdbfile, portablePDB with
+            | Some _, true ->
+                let pdbInfo =
                     generatePortablePdb embedAllSource embedSourceList sourceLink checksumAlgorithm showTimes pdbData pathMap
 
                 if embeddedPDB then
+                    let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo
                     let compressedStream = compressPortablePdbStream stream
                     Some (uncompressedLength, contentId, compressedStream, algorithmName, checkSum)
-                else Some pdbStream
+                else
+                    Some pdbInfo
 
             | _ -> None
 
@@ -3839,7 +3841,7 @@ let writeBinaryAux (
                                             + debugDataJustInCase))) next
 
           let debugChecksumPdbChunk, next =
-              chunk (align 0x4 (match pdbOpt with
+              chunk (align 0x4 (match pdbInfoOpt with
                                 | Some (_, _, _, algorithmName, checkSum) ->
                                     let alg = System.Text.Encoding.UTF8.GetBytes(algorithmName)
                                     let size = alg.Length + 1 + checkSum.Length
@@ -3849,7 +3851,7 @@ let writeBinaryAux (
           let debugEmbeddedPdbChunk, next =
               if embeddedPDB then
                   let streamLength =
-                      match pdbOpt with
+                      match pdbInfoOpt with
                       | Some (_, _, stream, _, _) -> int stream.Length
                       | None -> 0
                   chunk (align 0x4 (match embeddedPDB with
@@ -4321,10 +4323,10 @@ let writeBinaryAux (
                  b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
-          pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
+          pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
     reportTime showTimes "Writing Image"
-    pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
+    pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
 let writeBinaryFiles (outfile,
     ilg: ILGlobals,
@@ -4352,7 +4354,7 @@ let writeBinaryFiles (outfile,
         with _ ->
             failwith ("Could not open file for writing (binary mode): " + outfile)
 
-    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
+    let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
             try 
                 writeBinaryAux(
@@ -4380,7 +4382,7 @@ let writeBinaryFiles (outfile,
         showTimes, portablePDB,
         embeddedPDB, pdbfile, outfile,
         reopenOutput, false, signer, deterministic, pathMap,
-        pdbData, pdbOpt, debugDirectoryChunk,
+        pdbData, pdbInfoOpt, debugDirectoryChunk,
         debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
         debugDeterministicPdbChunk, textV2P) |> ignore
 
@@ -4405,7 +4407,7 @@ let writeBinaryInMemory (
     normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
-    let pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
+    let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
         writeBinaryAux(stream, ilg,
             pdbfile, signer,
             portablePDB, embeddedPDB, embedAllSource,
@@ -4420,7 +4422,7 @@ let writeBinaryInMemory (
             showTimes, portablePDB, embeddedPDB, pdbfile,
             outfile, reopenOutput, true,
             signer, deterministic, pathMap,
-            pdbData, pdbOpt, debugDirectoryChunk, debugDataChunk,
+            pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk,
             debugChecksumPdbChunk, debugEmbeddedPdbChunk,
             debugDeterministicPdbChunk, textV2P)
 

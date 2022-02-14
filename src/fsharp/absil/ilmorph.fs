@@ -49,23 +49,23 @@ let code_instr2instr_ty2ty  (finstr,fty) (c:ILCode) =
 // Standard morphisms - mapping types etc.
 // -------------------------------------------------------------------- 
 
-let rec ty_tref2tref f x  = 
+let rec morphILTypeRefsInILType f x  = 
     match x with 
-    | ILType.Ptr t -> ILType.Ptr (ty_tref2tref f t)
+    | ILType.Ptr t -> ILType.Ptr (morphILTypeRefsInILType f t)
     | ILType.FunctionPointer x -> 
         ILType.FunctionPointer
           { x with 
-                ArgTypes=List.map (ty_tref2tref f) x.ArgTypes
-                ReturnType=ty_tref2tref f x.ReturnType}
-    | ILType.Byref t -> ILType.Byref (ty_tref2tref f t)
+                ArgTypes=List.map (morphILTypeRefsInILType f) x.ArgTypes
+                ReturnType=morphILTypeRefsInILType f x.ReturnType}
+    | ILType.Byref t -> ILType.Byref (morphILTypeRefsInILType f t)
     | ILType.Boxed cr -> mkILBoxedType (tspec_tref2tref f cr)
     | ILType.Value ir -> ILType.Value (tspec_tref2tref f ir)
-    | ILType.Array (s,ty) -> ILType.Array (s,ty_tref2tref f ty)
+    | ILType.Array (s,ty) -> ILType.Array (s,morphILTypeRefsInILType f ty)
     | ILType.TypeVar v ->  ILType.TypeVar v 
-    | ILType.Modified (req,tref,ty) ->  ILType.Modified (req, f tref, ty_tref2tref f ty) 
+    | ILType.Modified (req,tref,ty) ->  ILType.Modified (req, f tref, morphILTypeRefsInILType f ty) 
     | ILType.Void -> ILType.Void
 and tspec_tref2tref f (x:ILTypeSpec) = 
-    mkILTySpec(f x.TypeRef, List.map (ty_tref2tref f) x.GenericArgs)
+    mkILTySpec(f x.TypeRef, List.map (morphILTypeRefsInILType f) x.GenericArgs)
 
 let rec ty_scoref2scoref_tyvar2ty (_fscope,ftyvar as fs)x  = 
     match x with 
@@ -156,6 +156,7 @@ let fdef_ty2ty ftye (fd: ILFieldDef) =
 
 let local_ty2ty f (l: ILLocal) = {l with Type = f l.Type}
 let varargs_ty2ty f (varargs: ILVarArgs) = Option.map (List.map f) varargs
+
 (* REVIEW: convert varargs *)
 let morphILTypesInILInstr ((factualty,fformalty)) i = 
     let factualty = factualty (Some i) 
@@ -316,7 +317,7 @@ let morphILTypeInILModule ftye y =
     morphILInstrsAndILTypesInILModule (finstr,ftye) y
 
 let morphILTypeRefsInILModuleMemoized f modul = 
-    let fty = Tables.memoize (ty_tref2tref f)
+    let fty = Tables.memoize (morphILTypeRefsInILType f)
     morphILTypeInILModule (fun _ _ _ ty -> fty ty) modul
 
 let morphILScopeRefsInILModuleMemoized f modul = 

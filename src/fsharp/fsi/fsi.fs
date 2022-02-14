@@ -224,11 +224,18 @@ type internal FsiTimeReporter(outWriter: TextWriter) =
 
 /// Manages the emit of one logical assembly into multiple assemblies. Gives warnings
 /// on cross-fragment internal access.
-type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option) =
+type ILMultiInMemoryAssemblyEmitEnv(
+        ilg: ILGlobals,
+        resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option,
+        dynamicCcuName: string
+    ) =
+
     let typeMap = Dictionary<ILTypeRef, Type * ILTypeRef>(HashIdentity.Structural)
+    let reverseTypeMap = Dictionary<ILTypeRef, ILTypeRef>(HashIdentity.Structural)
     let internalTypes = HashSet<ILTypeRef>(HashIdentity.Structural)
     let internalMethods = HashSet<ILMethodRef>(HashIdentity.Structural)
     let internalFields = HashSet<ILFieldRef>(HashIdentity.Structural)
+    let dynamicCcuScopeRef = ILScopeRef.Assembly (IL.mkSimpleAssemblyRef dynamicCcuName)
 
     /// Convert an ILAssemblyRef to a dynamic System.Type given the dynamic emit context
     let convAssemblyRef (aref: ILAssemblyRef) =
@@ -325,8 +332,15 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
     /// Map the given ILTypeRef to the appropriate assembly fragment
     member _.MapTypeRef (tref: ILTypeRef) =
         if tref.Scope.IsLocalRef && typeMap.ContainsKey(tref) then
-            let _, tref = typeMap.[tref]
+            typeMap.[tref] |> snd
+        else
             tref
+
+    /// Map an ILTypeRef built from reflection over loaded assembly fragments back to an ILTypeRef suitable
+    /// to use on the F# compiler logic.
+    member _.ReverseMapTypeRef (tref: ILTypeRef) =
+        if reverseTypeMap.ContainsKey(tref) then
+            reverseTypeMap.[tref]
         else
             tref
 
@@ -346,7 +360,9 @@ type ILMultiInMemoryAssemblyEmitEnv(ilg: ILGlobals, resolveAssemblyRef: ILAssemb
         let typ = asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
         let tref = ILTypeRef.Create(ilScopeRef, [ for e in enc -> e.Name ], typ.Name)
+        let rtref = ILTypeRef.Create(dynamicCcuScopeRef, [ for e in enc -> e.Name ], typ.Name)
         typeMap.Add(ltref, (typ, tref))
+        reverseTypeMap.Add(tref, rtref)
         for ntdef in tdef.NestedTypes.AsArray() do
             emEnv.AddTypeDef asm ilScopeRef (enc@[tdef]) ntdef
         
@@ -721,15 +737,15 @@ type internal FsiConsoleOutput(tcConfigB, outWriter:TextWriter, errorWriter:Text
     let nullOut = new StreamWriter(Stream.Null) :> TextWriter
     let fprintfnn (os: TextWriter) fmt  = Printf.kfprintf (fun _ -> os.WriteLine(); os.WriteLine()) os fmt
     /// uprintf to write usual responses to stdout (suppressed by --quiet), with various pre/post newlines
-    member out.uprintf    fmt = fprintf   (if tcConfigB.noFeedback then nullOut else outWriter) fmt
-    member out.uprintfn   fmt = fprintfn  (if tcConfigB.noFeedback then nullOut else outWriter) fmt
-    member out.uprintfnn  fmt = fprintfnn (if tcConfigB.noFeedback then nullOut else outWriter) fmt
+    member _.uprintf    fmt = fprintf   (if tcConfigB.noFeedback then nullOut else outWriter) fmt
+    member _.uprintfn   fmt = fprintfn  (if tcConfigB.noFeedback then nullOut else outWriter) fmt
+    member _.uprintfnn  fmt = fprintfnn (if tcConfigB.noFeedback then nullOut else outWriter) fmt
     member out.uprintnf   fmt = out.uprintfn ""; out.uprintf   fmt
     member out.uprintnfn  fmt = out.uprintfn ""; out.uprintfn  fmt
     member out.uprintnfnn fmt = out.uprintfn ""; out.uprintfnn fmt
 
-    member out.Out = outWriter
-    member out.Error = errorWriter
+    member _.Out = outWriter
+    member _.Error = errorWriter
 
 
 /// This ErrorLogger reports all warnings, but raises StopProcessing on first error or early exit
@@ -1291,7 +1307,7 @@ type internal FsiDynamicCompiler
 
     let outfile = "TMPFSCI.exe"
 
-    let assemblyName = "FSI-ASSEMBLY"
+    let dynamicCcuName = "FSI-ASSEMBLY"
 
     let maxInternalsVisibleTo = 30 // In multi-assembly emit, how many future interactions can access internals with a warning
 
@@ -1299,6 +1315,8 @@ type internal FsiDynamicCompiler
 
     let mutable fragmentId = 0
 
+    static let mutable dynamicAssemblyId = 0
+    
     let mutable prevIt : ValRef option = None
 
     let dynamicAssemblies = ResizeArray<Assembly>()
@@ -1311,7 +1329,7 @@ type internal FsiDynamicCompiler
 
     let builders =
         if tcConfigB.fsiSingleDynamicAsembly then
-            let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (assemblyName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
+            let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
             dynamicAssemblies.Add(assemBuilder)
             Some (assemBuilder, moduleBuilder)
         else
@@ -1324,9 +1342,9 @@ type internal FsiDynamicCompiler
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())
 
     /// Add attributes
-    let CreateModuleFragment (tcConfigB: TcConfigBuilder, assemblyName, codegenResults) =
+    let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
         if progress then fprintfn fsiConsoleOutput.Out "Creating main module..."
-        let mainModule = mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfigB.target assemblyName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+        let mainModule = mkILSimpleModule dynamicCcuName (GetGeneratedILModuleName tcConfigB.target dynamicCcuName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule
           with Manifest =
                 (let man = mainModule.ManifestOfAssembly
@@ -1336,7 +1354,9 @@ type internal FsiDynamicCompiler
     let EmitInMemoryAssembly (tcConfig: TcConfig, emEnv: ILMultiInMemoryAssemblyEmitEnv, ilxMainModule: ILModuleDef) =
         
         // The name of the assembly is "FSI-ASSEMBLY1" etc
-        let assemblyName = ilxMainModule.ManifestOfAssembly.Name + string fragmentId
+        dynamicAssemblyId <- dynamicAssemblyId + 1
+
+        let multiAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string dynamicAssemblyId
 
         // Adjust the assembly name of this fragment, and add InternalsVisibleTo attributes to 
         // allow internals access by multiple future assemblies
@@ -1344,11 +1364,11 @@ type internal FsiDynamicCompiler
             let manifest = ilxMainModule.Manifest.Value
             let attrs =
                 [ for i in 1..maxInternalsVisibleTo do
-                    let fwdAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string (fragmentId + i)
+                    let fwdAssemblyName = ilxMainModule.ManifestOfAssembly.Name + string (dynamicAssemblyId + i)
                     tcGlobals.MakeInternalsVisibleToAttribute(fwdAssemblyName)
                     yield! manifest.CustomAttrs.AsList() ]
             { manifest with 
-                Name = assemblyName 
+                Name = multiAssemblyName 
                 CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs attrs)
             }
 
@@ -1377,10 +1397,10 @@ type internal FsiDynamicCompiler
             { ilg = tcGlobals.ilg
               // This is not actually written, because we are writing to a stream,
               // but needs to be set for some logic of ilwrite to function.
-              outfile = assemblyName + ".dll"
+              outfile = multiAssemblyName + ".dll"
               // This is not actually written, because we embed debug info,
               // but needs to be set for some logic of ilwrite to function.
-              pdbfile = (if tcConfig.debuginfo then Some (assemblyName + ".pdb") else None)
+              pdbfile = (if tcConfig.debuginfo then Some (multiAssemblyName + ".pdb") else None)
               emitTailcalls = tcConfig.emitTailcalls
               deterministic = tcConfig.deterministic
               showTimes = tcConfig.showTimes
@@ -1402,8 +1422,8 @@ type internal FsiDynamicCompiler
 
         let asm =
             match pdbBytes with
-            | None -> System.Reflection.Assembly.Load(assemblyBytes)
-            | Some pdbBytes -> System.Reflection.Assembly.Load(assemblyBytes, pdbBytes)
+            | None -> Assembly.Load(assemblyBytes)
+            | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
 
         dynamicAssemblies.Add(asm)
         
@@ -1448,7 +1468,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput)
 
         ReportTime tcConfig "Linking"
-        let ilxMainModule = CreateModuleFragment (tcConfigB, assemblyName, codegenResults)
+        let ilxMainModule = CreateModuleFragment (tcConfigB, dynamicCcuName, codegenResults)
 
         errorLogger.AbortOnError(fsiConsoleOutput)
 
@@ -1599,7 +1619,9 @@ type internal FsiDynamicCompiler
         | _ ->
             None
 
-    let nextFragmentId() = fragmentId <- fragmentId + 1; fragmentId
+    let nextFragmentId() =
+        fragmentId <- fragmentId + 1
+        fragmentId
 
     let mkFragmentPath  i =
         // NOTE: this text shows in exn traces and type names. Make it clear and fixed width
@@ -1682,7 +1704,8 @@ type internal FsiDynamicCompiler
                 | ValueSome tcref ->
                     match tcref.CompilationPath.ILScopeRef with
                     | ILScopeRef.Assembly aref ->
-                        (tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) :: ccuinfos
+                        let ccuinfo = tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)
+                        ccuinfo :: ccuinfos
                     | _ ->
                         ccuinfos
                 | _ ->
@@ -1702,13 +1725,18 @@ type internal FsiDynamicCompiler
             addCcusToIncrementalEnv state ccuinfos, ty
 
         let ilTys = convertReflectionTypeToILType reflectionTy
+        
+        // Rewrite references to dynamic assemblies to dynamicCcuName
+        let ilTys =
+            ilTys |> List.map (fun ilTy -> 
+                match istate.emEnv with 
+                | MultipleInMemoryAssemblies emEnv ->
+                    ilTy |> Morphs.morphILTypeRefsInILType emEnv.ReverseMapTypeRef
+                | _ -> ilTy)
 
-        ilTys
-        |> List.fold (fun (state, addedTypes) ilTy ->
+        ((istate, []), ilTys) ||> List.fold (fun (state, addedTypes) ilTy ->
             let nextState, addedType = addTypeToEnvironment state ilTy
-            nextState, addedTypes @ [addedType]) (istate, [])
-
-    member _.DynamicAssemblyName = assemblyName
+            nextState, addedTypes @ [addedType]) 
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
@@ -1797,8 +1825,8 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState
         let tcEnv,(_dllinfos,ccuinfos) =
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path)
-            with e ->
+                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, m, path)
+            with _ ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
         resolutions,
@@ -2025,11 +2053,11 @@ type internal FsiDynamicCompiler
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleDynamicAssembly (cenv, emEnv)
             else
-                let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef)
+                let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
                 MultipleInMemoryAssemblies emEnv
 
-        let tcEnv, openDecls0 = GetInitialTcEnv (assemblyName, rangeStdin, tcConfig, tcImports, tcGlobals)
-        let ccuName = assemblyName
+        let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin, tcConfig, tcImports, tcGlobals)
+        let ccuName = dynamicCcuName
 
         let tcState = GetInitialTcState (rangeStdin, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv, openDecls0)
 
@@ -3127,6 +3155,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useSimpleResolution <- true
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
+
+    // Preset: --dynamicassembly+ on .NET Framework
+    do if not isRunningOnCoreClr then
+        tcConfigB.fsiSingleDynamicAsembly <- true
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On
