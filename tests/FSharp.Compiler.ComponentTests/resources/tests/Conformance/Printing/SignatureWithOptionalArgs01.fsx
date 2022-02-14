@@ -39,6 +39,4 @@ type AsyncTimer(f, ?delay ) =
     
   member t.Stop() =  lock t (fun _ -> does_again <- false)
 
-;;
-
-exit 0;;
+()

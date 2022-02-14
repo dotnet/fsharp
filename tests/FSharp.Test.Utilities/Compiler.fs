@@ -256,6 +256,12 @@ module rec Compiler =
     let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
 
+    let withWarnOn  (cUnit: CompilationUnit) warning : CompilationUnit =
+        withOptionsHelper [ $"--warnon:{warning}" ] "withWarnOn is only supported for F#" cUnit
+
+    let withNoWarn warning (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--nowarn:{warning}" ] "withNoWarn is only supported for F#" cUnit
+
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit
@@ -538,6 +544,8 @@ module rec Compiler =
         match cUnit with
         | FS fs ->
             let source = getSource fs.Source
+
+            let _references = processReferences fs.References
 
             let options = fs.Options |> Array.ofList
 
