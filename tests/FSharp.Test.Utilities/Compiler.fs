@@ -38,21 +38,23 @@ module rec Compiler =
         override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
 
     type FSharpCompilationSource =
-        { Source:         TestType
-          Baseline:       Baseline option
-          Options:        string list
-          OutputType:     CompileOutput
-          OutputDirectory:DirectoryInfo option
-          SourceKind:     SourceKind
-          Name:           string option
-          IgnoreWarnings: bool
-          References:     CompilationUnit list }
+        { Source:          TestType
+          Baseline:        Baseline option
+          Options:         string list
+          OutputType:      CompileOutput
+          OutputDirectory: DirectoryInfo option
+          SourceKind:      SourceKind
+          Name:            string option
+          IgnoreWarnings:  bool
+          References:      CompilationUnit list }
+
         override this.ToString() = match this.Name with | Some n -> n | _ -> (sprintf "%A" this)
 
     type CSharpCompilationSource =
         { Source:          TestType
           LangVersion:     CSharpLanguageVersion
           TargetFramework: TargetFramework
+          OutputDirectory: DirectoryInfo option
           Name:            string option
           References:      CompilationUnit list }
 
@@ -71,7 +73,7 @@ module rec Compiler =
         | ActivePatternCase of string
         | UnionCase of string 
         | Field of string 
- 
+
         member this.FullName () =
             match this with
             | MemberOrFunctionOrValue fullname
@@ -98,6 +100,11 @@ module rec Compiler =
           StartColumn: int
           EndLine:     int
           EndColumn:   int }
+
+    type Disposable (dispose : unit -> unit) =
+        interface IDisposable with
+            member this.Dispose() = 
+                dispose()
 
     type ErrorInfo =
         { Error:   ErrorType
@@ -160,6 +167,7 @@ module rec Compiler =
             { Source          = Text source
               LangVersion     = CSharpLanguageVersion.CSharp9
               TargetFramework = TargetFramework.Current
+              OutputDirectory= None
               Name            = None
               References      = [] }
 
@@ -299,7 +307,7 @@ module rec Compiler =
                     | Some p -> p |> MetadataReference.CreateFromFile
         | _ -> failwith "Conversion isn't possible"
 
-    let private processReferences (references: CompilationUnit list) =
+    let private processReferences (references: CompilationUnit list) defaultOutputDirectory =
         let rec loop acc = function
             | [] -> List.rev acc
             | x::xs ->
@@ -309,16 +317,27 @@ module rec Compiler =
                     let source = getSource fs.Source
                     let options = fs.Options |> List.toArray
                     let name = defaultArg fs.Name null
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, fs.OutputDirectory) |> CompilationReference.CreateFSharp
+                    let outDir =
+                        match fs.OutputDirectory, defaultOutputDirectory with
+                        | Some _, _ -> fs.OutputDirectory
+                        | _, Some _ -> defaultOutputDirectory
+                        | _ -> None
+                    let cmpl =
+                        match outDir with
+                        | Some di -> Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, di) |> CompilationReference.CreateFSharp
+                        | _ -> Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
+
                 | CS cs ->
                     let refs = loop [] cs.References
                     let source = getSource cs.Source
                     let name = defaultArg cs.Name null
                     let metadataReferences = List.map asMetadataReference refs
-                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
-                            |> CompilationReference.Create
+                    let cmpl =
+                        CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
+                        |> CompilationReference.Create
                     loop (cmpl::acc) xs
+
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
@@ -350,10 +369,9 @@ module rec Compiler =
         let output = fs.OutputType
         let options = fs.Options |> Array.ofList
         let name = defaultArg fs.Name null
+        let references = processReferences fs.References fs.OutputDirectory
 
-        let references = processReferences fs.References
-
-        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory)
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory.Value)
 
         compileFSharpCompilation compilation fs.IgnoreWarnings
 
@@ -387,7 +405,7 @@ module rec Compiler =
         let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
 
         let additionalReferences =
-            match processReferences csSource.References with
+            match processReferences csSource.References csSource.OutputDirectory with
             | [] -> ImmutableArray.Empty
             | r  -> (List.map asMetadataReference r).ToImmutableArray().As<MetadataReference>()
 
@@ -543,15 +561,21 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs ->
-            let disposals = ResizeArray()
+            let disposals = ResizeArray<IDisposable>()
             try
-                let outputDirectory=fs.OutputDirectory
-                Directory.CreateDirectory(outputDirectory) |> ignore
+                let outputDirectory =
+                    match cmpl with
+                    | Compilation(_, _, _, _, _, _, Some outputDirectory) -> outputDirectory
+                    | Compilation(_, _, _, _, _, _, _) -> Directory(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
+
+                outputDirectory.Create()
+                disposals.Add(new Disposable(fun () -> outputDirectory.Delete()))
+
                 let source = getSource fs.Source
 
                 let _references = processReferences fs.References
 
-//@@@@@            let compilationRefs, deps = evaluateReferences outputPath disposals ignoreWarnings cmpl
+                let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
 
                 let options = fs.Options |> Array.ofList
 
@@ -574,7 +598,6 @@ module rec Compiler =
                     Success result
 
             finally
-                try Directory.Delete outputDirectory with | _ -> ()
                 disposals
                 |> Seq.iter (fun x -> x.Dispose())
 

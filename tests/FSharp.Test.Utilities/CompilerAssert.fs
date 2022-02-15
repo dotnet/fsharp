@@ -52,23 +52,21 @@ type CompilationReference =
 and Compilation =
     private Compilation of
         source: string *
-        SourceKind *
-        CompileOutput *
+        sourceKind: SourceKind *
+        outputType: CompileOutput *
         options: string[] *
         CompilationReference list *
         name: string option *
         outputDirectory: DirectoryInfo option with
 
-        static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?outputDirectory) =
+        static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?outputDirectory: DirectoryInfo) =
             let options = defaultArg options [||]
             let cmplRefs = defaultArg cmplRefs []
             let name =
                 match defaultArg name null with
                 | null -> None
                 | n -> Some n
-            let outputDirectory = defaultArg outputDirectory None
             Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
-
 
 module private rec CompilerAssertHelpers =
 
