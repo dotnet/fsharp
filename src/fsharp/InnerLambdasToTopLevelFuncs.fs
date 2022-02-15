@@ -1111,6 +1111,7 @@ module Pass4_RewriteAssembly =
         | LinearMatchExpr _ 
         | Expr.LetRec _ // note, Expr.LetRec not normally considered linear, but keeping it here as it's always been here
         | Expr.Let    _ 
+        | Expr.DebugPoint _
         | Expr.Sequential _ -> 
              TransLinearExpr penv z expr (fun res -> res)
 
@@ -1211,10 +1212,14 @@ module Pass4_RewriteAssembly =
     /// to represent the rebuild-the-term stack 
     and TransLinearExpr penv z expr (contf: Expr * RewriteState -> Expr * RewriteState) =
         match expr with
-        | Expr.Sequential (e1, e2, dir, spSeq, m) ->
+        | Expr.Sequential (e1, e2, dir, m) ->
             let e1, z = TransExpr penv z e1
             TransLinearExpr penv z e2 (contf << (fun (e2, z) ->
-                Expr.Sequential (e1, e2, dir, spSeq, m), z))
+                Expr.Sequential (e1, e2, dir, m), z))
+
+        | Expr.DebugPoint (dpm, innerExpr) ->
+            TransLinearExpr penv z innerExpr (contf << (fun (innerExprR, z) ->
+                Expr.DebugPoint (dpm, innerExprR), z))
 
          // letrec - pass_recbinds does the work
          | Expr.LetRec (binds, e, m, _) ->
@@ -1251,12 +1256,12 @@ module Pass4_RewriteAssembly =
                  let e = mkLetsFromBindings m rebinds e
                  MakePreDecs m pds (mkLetsFromBindings m binds e), z))
 
-         | LinearMatchExpr (spBind, exprm, dtree, tg1, e2, sp2, m2, ty) ->
+         | LinearMatchExpr (spBind, exprm, dtree, tg1, e2, m2, ty) ->
              let dtree, z = TransDecisionTree penv z dtree
              let tg1, z = TransDecisionTreeTarget penv z tg1
              // tailcall
              TransLinearExpr penv z e2 (contf << (fun (e2, z) ->
-                 rebuildLinearMatchExpr (spBind, exprm, dtree, tg1, e2, sp2, m2, ty), z))
+                 rebuildLinearMatchExpr (spBind, exprm, dtree, tg1, e2, m2, ty), z))
 
          | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
              let argsHead,z = List.mapFold (TransExpr penv) z argsHead
@@ -1290,21 +1295,21 @@ module Pass4_RewriteAssembly =
            let rest, z = TransDecisionTree penv z rest
            TDBind(bind, rest), z
 
-       | TDSwitch (sp, e, cases, dflt, m) ->
+       | TDSwitch (e, cases, dflt, m) ->
            let e, z = TransExpr penv z e
            let TransDecisionTreeCase penv z (TCase (discrim, dtree)) =
                let dtree, z = TransDecisionTree penv z dtree
                TCase(discrim, dtree), z
 
            let cases, z = List.mapFold (TransDecisionTreeCase penv) z cases
-           let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
-           TDSwitch (sp, e, cases, dflt, m), z
+           let dflt, z  = Option.mapFold (TransDecisionTree penv) z dflt
+           TDSwitch (e, cases, dflt, m), z
 
-    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget, flags)) =
+    and TransDecisionTreeTarget penv z (TTarget(vs, e, flags)) =
         let z = EnterInner z
         let e, z = TransExpr penv z e
         let z = ExitInner z
-        TTarget(vs, e, spTarget, flags), z
+        TTarget(vs, e, flags), z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind
 
@@ -1349,9 +1354,9 @@ module Pass4_RewriteAssembly =
             let rhs, z = TransModuleDef penv z rhs
             ModuleOrNamespaceBinding.Module(nm, rhs), z
 
-    let TransImplFile penv z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    let TransImplFile penv z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
         let moduleExpr, z = TransModuleExpr penv z moduleExpr
-        (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)), z
+        (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)), z
 
 //-------------------------------------------------------------------------
 // pass5: copyExpr

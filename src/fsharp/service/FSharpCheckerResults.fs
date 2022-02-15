@@ -2102,7 +2102,7 @@ type FSharpCheckFileResults
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
-                let (TImplFile (_, _, mexpr, _, _, _)) = implFile
+                let (TImplFile (implExprWithSig=mexpr)) = implFile
                 let ad =
                     match scopeOptX with
                     | Some scope -> scope.AccessRights

@@ -33,9 +33,9 @@ neg59.fs(89,15,89,18): typecheck error FS3141: 'try/finally' expressions may not
 
 neg59.fs(95,15,95,18): typecheck error FS3141: 'try/finally' expressions may not be used in queries
 
-neg59.fs(102,23,102,64): typecheck error FS3142: 'use' expressions may not be used in queries
+neg59.fs(102,15,102,64): typecheck error FS3142: 'use' expressions may not be used in queries
 
-neg59.fs(108,23,108,64): typecheck error FS3142: 'use' expressions may not be used in queries
+neg59.fs(108,15,108,64): typecheck error FS3142: 'use' expressions may not be used in queries
 
 neg59.fs(113,15,113,25): typecheck error FS3140: 'while' expressions may not be used in queries
 

@@ -407,7 +407,7 @@ module SyntaxTraversal =
                                 yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                     ] |> pick expr
 
-                | SynExpr.While (_sequencePointInfoForWhileLoop, synExpr, synExpr2, _range) -> 
+                | SynExpr.While (_spWhile, synExpr, synExpr2, _range) -> 
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
@@ -418,7 +418,7 @@ module SyntaxTraversal =
                      dive synExpr3 synExpr3.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.ForEach (_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, synPat, synExpr, synExpr2, _range) ->
+                | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, synPat, synExpr, synExpr2, _range) ->
                     [dive synPat synPat.Range traversePat
                      dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
@@ -467,6 +467,8 @@ module SyntaxTraversal =
                 | SynExpr.Assert (synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.Fixed (synExpr, _range) -> traverseSynExpr synExpr
+
+                | SynExpr.DebugPoint (_, _, synExpr) -> traverseSynExpr synExpr
 
                 | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                     if isInfix then

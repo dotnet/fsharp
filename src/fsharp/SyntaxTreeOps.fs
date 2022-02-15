@@ -70,10 +70,50 @@ let (|SingleIdent|_|) inp =
     | SynExpr.Ident id -> Some id
     | _ -> None
 
-/// This affects placement of sequence points
+let (|SynBinOp|_|) input =
+    match input with
+    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
+        Some (synId, x1, x2)
+    | _ -> None
+
+let (|SynPipeRight|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_PipeRight" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynPipeRight2|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight2" -> 
+        Some (x1a, x1b, x2)
+    | _ -> None
+
+let (|SynPipeRight3|_|) input =
+    match input with
+    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), x2) 
+        when synId.idText = "op_PipeRight3" -> 
+        Some (x1a, x1b, x1c, x2)
+    | _ -> None
+
+let (|SynAndAlso|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanAnd" -> Some (x1, x2)
+    | _ -> None
+
+let (|SynOrElse|_|) input =
+    match input with
+    | SynBinOp (synId, x1, x2) when synId.idText = "op_BooleanOr" -> Some (x1, x2)
+    | _ -> None
+
+/// This affects placement of debug points
 let rec IsControlFlowExpression e =
     match e with
-    | SynExpr.ObjExpr _
+    | SynOrElse _
+    | SynAndAlso _
+    | SynPipeRight _
+    | SynPipeRight2 _
+    | SynPipeRight3 _
+    | SynExpr.MatchLambda _
     | SynExpr.Lambda _
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
@@ -89,6 +129,30 @@ let rec IsControlFlowExpression e =
     | SynExpr.While _ -> true
     | SynExpr.Typed (e, _, _) -> IsControlFlowExpression e
     | _ -> false
+
+// The syntactic criteria for when a debug point for a 'let' is extended to include
+// the 'let' - which happens if we're not defining a function, or a type function,
+// and the r.h.s. is not a control-flow expression.  This is a syntactic criteria known
+// to both ValidateBreakpointLocation and the parser that is marking up debug points.
+//
+// For example
+//    let x = 1 + 1
+// gets extended to inludde the 'let x'.
+//
+// A corner case: some things that look like simple value bindings get generalized, e.g.
+//    let empty = []
+//    let Null = null
+// and get compiled as generic methods that return different type instantiations of the given value.
+// However these do not have side-effect and do not get a debug point recognised by ValidateBreakpointLocation.
+
+let IsDebugPointBinding synPat synExpr =
+    not (IsControlFlowExpression synExpr) &&
+    // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
+    let isFunction = 
+        match synPat with 
+        | SynPat.LongIdent (argPats=SynArgPats.Pats args; typarDecls=typarDecls) when not args.IsEmpty || typarDecls.IsSome -> true
+        | _ -> false
+    not isFunction
 
 let inline unionRangeWithXmlDoc (xmlDoc: PreXmlDoc) range =
     if xmlDoc.IsEmpty then range else unionRanges xmlDoc.Range range
@@ -724,6 +788,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.YieldOrReturnFrom (_, e, _)
           | SynExpr.DoBang (e, _)
           | SynExpr.Fixed (e, _)
+          | SynExpr.DebugPoint (_, _, e)
           | SynExpr.Paren (e, _, _, _) ->
               walkExpr e
 
@@ -752,7 +817,7 @@ let rec synExprContainsError inpExpr =
               let bs = unionBindingAndMembers bs ms
               walkBinds bs || walkBinds [ for SynInterfaceImpl(bindings=bs) in is do yield! bs  ]
 
-          | SynExpr.ForEach (_, _, _, _, e1, e2, _)
+          | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
           | SynExpr.While (_, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 
@@ -822,28 +887,3 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.String (s, _, _) -> s
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
-
-let (|SynBinOp|_|) input =
-    match input with
-    | SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, SynExpr.Ident synId, x1, _m1), x2, _m2) ->
-        Some (synId, x1, x2)
-    | _ -> None
-
-let (|SynPipeRight|_|) input =
-    match input with
-    | SynBinOp (synId, x1, x2) when synId.idText = "op_PipeRight" -> Some (x1, x2)
-    | _ -> None
-
-let (|SynPipeRight2|_|) input =
-    match input with
-    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b], _, _), _, _, _), x2) 
-        when synId.idText = "op_PipeRight2" -> 
-        Some (x1a, x1b, x2)
-    | _ -> None
-
-let (|SynPipeRight3|_|) input =
-    match input with
-    | SynBinOp (synId, SynExpr.Paren(SynExpr.Tuple(false, [x1a; x1b; x1c], _, _), _, _, _), x2) 
-        when synId.idText = "op_PipeRight3" -> 
-        Some (x1a, x1b, x1c, x2)
-    | _ -> None

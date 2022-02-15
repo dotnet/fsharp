@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ForLoop03
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000200 Length: 0x0000007B
 }
 .module ForLoop03.exe
-// MVID: {60BCDCE8-1757-791C-A745-0383E8DCBC60}
+// MVID: {61EFEC5E-1757-791C-A745-03835EECEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x066B0000
+// Image base: 0x06A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,28 +73,29 @@
     .line 10,10 : 4,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop03.fs'
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.0
-    .line 11,11 : 4,28 ''
+    .line 11,11 : 4,7 ''
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
     IL_0004:  br.s       IL_0040
 
-    .line 12,12 : 6,20 ''
+    .line 12,12 : 6,9 ''
     IL_0006:  call       class [mscorlib]System.Collections.Generic.List`1<int32> ForLoop03::get_ra()
     IL_000b:  stloc.2
-    .line 12,12 : 6,20 ''
+    .line 12,12 : 15,17 ''
     IL_000c:  ldloc.2
     IL_000d:  callvirt   instance valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<!0> class [mscorlib]System.Collections.Generic.List`1<int32>::GetEnumerator()
     IL_0012:  stloc.3
+    .line 12,12 : 12,14 ''
     .try
     {
       IL_0013:  ldloca.s   V_3
       IL_0015:  call       instance bool valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<int32>::MoveNext()
       IL_001a:  brfalse.s  IL_002c
 
-      .line 12,12 : 6,20 ''
       IL_001c:  ldloca.s   V_3
       IL_001e:  call       instance !0 valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<int32>::get_Current()
       IL_0023:  stloc.s    x
+      .line 13,13 : 10,20 ''
       IL_0025:  ldloc.0
       IL_0026:  ldc.i4.1
       IL_0027:  add
@@ -118,14 +119,14 @@
     IL_003d:  ldc.i4.1
     IL_003e:  add
     IL_003f:  stloc.1
-    .line 11,11 : 4,28 ''
+    .line 11,11 : 14,16 ''
     IL_0040:  ldloc.1
     IL_0041:  ldc.i4.1
     IL_0042:  ldc.i4     0x989680
     IL_0047:  add
     IL_0048:  blt.s      IL_0006
 
-    .line 14,14 : 4,20 ''
+    .line 14,14 : 4,22 ''
     IL_004a:  ldstr      "z = %d"
     IL_004f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_0054:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -165,7 +166,7 @@
     IL_0007:  dup
     IL_0008:  stsfld     class [mscorlib]System.Collections.Generic.List`1<int32> '<StartupCode$ForLoop03>'.$ForLoop03::ra@5
     IL_000d:  stloc.0
-    .line 6,6 : 1,20 ''
+    .line 6,6 : 1,4 ''
     IL_000e:  ldc.i4.0
     IL_000f:  stloc.1
     IL_0010:  br.s       IL_0021
@@ -178,7 +179,7 @@
     IL_001e:  ldc.i4.1
     IL_001f:  add
     IL_0020:  stloc.1
-    .line 6,6 : 1,20 ''
+    .line 6,6 : 11,13 ''
     IL_0021:  ldloc.1
     IL_0022:  ldc.i4.1
     IL_0023:  ldc.i4.s   100

@@ -578,6 +578,7 @@ type OptionalArgInfo =
         match defaultValueExpr with
         | Expr.Const _ -> Some defaultValueExpr
         | _ -> None
+    
     static member FieldInitForDefaultParameterValueAttrib attrib =
         match OptionalArgInfo.ValueOfDefaultParameterValueAttrib attrib with
         | Some (Expr.Const (ConstToILFieldInit fi, _, _)) -> Some fi
