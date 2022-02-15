@@ -248,9 +248,10 @@ These are then used by `ValidateBreakpointLocation`. These same values are also 
     | DebugPointAtTry.No -> ...
     ...
 ```
+
 For many constructs this is adequate. However, in practice the situation is far more complicated.
 
-### Internals: Debug points for `[...]`, `[| ... |]` 
+### Internals: Debug points for `[...]`, `[| ... |]`
 
 The internal implementation of debug points for list and array expressions is conceptually simple but a little complex.
 
@@ -290,67 +291,22 @@ Debug points for `seq { .. }` compiling to state machines poses similar problems
 
 Debug points for `task { .. }` poses much harder problems. We use "while" loops as an example:
 
-* The de-sugaring is for computation expressions, and in CheckComputationExpressions.fs "notes" the debug point ranges for the relevant constructs attaching them to the `task.While(...)` call ([example permalink](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/CheckComputationExpressions.fs#L960))
-* The code is then checked and optimized, and all the resumable code is inlined, e.g. [`task.While`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/FSharp.Core/tasks.fs#L64) becomes [`Resumable.While`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/FSharp.Core/resumable.fs#L176-L191) which contains a resumable code while loop.
-* When inlining the code for `task.While(...)` and all associated transitive inlining, the `remarkExpr` routine is invoked as usual to rewrite all ranges throughout all inlined code to be the range of the outer expression, that is, precisely the earlier noted range. Now [`remarkExpr` is "hacked" to note that the actual resumable "while" loop is being inlined at a noted range](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/TypedTreeOps.fs#L5827-L5832), and places a debug point for that resumable while loop.
-* The debug ranges are now attached to the resumable code which is then checked for resumable-code validity and emitted, e.g. see [this](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/LowerStateMachines.fs#L298)
-
-This however only works fully for those constructs with a single debug point that can be recovered. In particular `TryWith` and `TryFinally` have separate problems
-
-* `task.TryWith(...)` becomes a resumable code try/with, see [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/FSharp.Core/resumable.fs#L216-L230)
-* `task.TryFinally(...)` becomes a resumable code try/with, see [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/FSharp.Core/resumable.fs#L272-L305)
-* Some debug points associated with these `try/with` are suppressed in [`remarkExpr`](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/TypedTreeOps.fs#L5862-L5880)
-* The debug points for the `with` and `finally` are not currently recovered.
+* The de-sugaring is for computation expressions, and in CheckComputationExpressions.fs places a debug point for `while` directly before the evaluation of the guard
+* The code is then checked and optimized, and all the resumable code is inlined, and this debug point is preserved throughout this process.
 
 ### Internals: debug points for other computation expressions
 
 As mentioned above, other computation expressions such as `async { .. }` have significant problems with their debug points.
 
-> NOTE: A systematic solution for quality debugging of computation expressions and resumable code is still elusive.  It really needs the de-sugaring to explicitly or implicitly pass down the debug points through the process of inlining code.  For example consider the de-sugaring:
+The main problem is stepping: even after inlining the code for computation expressions is rarely "flattened" enough, so, for example, a "step-into" is required to get into the second part of an `expr1; expr2` construct (i.e. an `async.Combine(..., async.Delay(fun () -> ...)))`) where the user expects to press "step-over".  
 
-```fsharp
-   builder { for x in xs do ... } --> builder.For(xs, fun x -> ...)
-```
+Breakpoints tend to be less problematic.
 
-Here the debug points could be made explicit and passed as "compile-time parameters" (assuming inlining)
-
-```fsharp
-   builder { for[dp] x in xs do ... } --> builder.For(dp, xs, fun x -> ...)
-```
-
-These could then be used in the implementation:
-
-```fsharp
-type MuBuilder() =
-    // Some builder implementation of "For" - let's say it prints at each iteration of the loop
-    member inline _.For(dp, xs, f) =
-        for[dp] x in xs do
-           printfn "loop..."
-           f x
-```
-
-Adding such compile-time parameters would be over-kill, but it may be possible to augment the compiler to keep a well-specified environment through the process of inlining, e.g.
-
-```fsharp
-   builder { for[dp] x in xs do ... } --> builder.For["for-debug-point"-->dp](xs, fun x -> ...)
-```
-
-And then there is some way to access this and attach to various control constructs:
-
-```fsharp
-type MuBuilder() =
-    // Some builder implementation of "For" - let's say it prints at each iteration of the loop
-    member inline _.For(dp, xs, f) =
-        for["for-debug-point"] x in xs do
-           printfn "loop..."
-           f x
-```
-
-If carefully used this would allow reasonable debugging across multiple-phase boundaries.
+> NOTE: A systematic solution for quality debugging of computation expressions code is still elusive, and especially for `async { ... }`.  Extensive use of inlining and `InlineIfLambda` can succeed in flattening most simple computation expression code. This is however not yet fully applied to `async` programming.
 
 > NOTE: The use of library code to implement "async" and similar computation expressions also interacts badly with "Just My Code" debugging, see https://github.com/dotnet/fsharp/issues/5539 for example.
 
-> NOTE: The use of many functions to implement "async" and friends implements badly with "Step Into" and "Step Over" and related attributes, see for example https://github.com/dotnet/fsharp/issues/3359
+> NOTE: As mentioned, the use of many functions to implement "async" and friends implements badly with "Step Into" and "Step Over" and related attributes, see for example https://github.com/dotnet/fsharp/issues/3359
 
 ### FeeFee and F00F00 debug points (Hidden and JustMyCodeWithNoSource)
 
@@ -366,17 +322,21 @@ The F# compiler generates entire IL classes and methods for constructs such as r
 
 ### Generated "augment" methods for records, unions and structs
 
-We currently always emit a debug sequence point for all generated code coming from AugmentWithHashCompare.fs (also  anything coming out of optimization etc.)  The `SPAlways` at https://github.com/dotnet/fsharp/blob/main/src/fsharp/IlxGen.fs#L4801 has the effect that a debug point based on the range of the method will always appear.
+Generated methods for equality, hash and comparison on records, unions and structs do not get debug points at all.
+
+> NOTE: Methods without debug points (or with only 0xFEEFEE debug points) are shown as "no code available" in Visual Studio - or in Just My Code they are hidden altogether - and are removed from profiling traces (in profiling, their costs are added to the cost of the calling method).
+
+> TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing, however the absence of debug points should be sufficient to exclude these.
 
 ### Generated "New*", "Is*", "Tag" etc. for unions
 
-Discriminated unions generate `NewXYZ`, `IsXYZ`, `Tag` etc. members and the implementations of these lay down debug points. See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseUnions.fs#L644) for the data that drives this and track back and forth to the production and consumption points of that data.
+Discriminated unions generate `NewXYZ`, `IsXYZ`, `Tag` etc. members. These do not get debug points at all.
 
-These all get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`, e.g. [here (permalink)](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseUnions.fs#L635)
+These methods also get `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`, e.g. [here (permalink)](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseUnions.fs#L635)
 
-> TODO: generating debug points for these appears wrong, being assessed at time of writing
+> TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing, however the absence of debug points should be sufficient to exclude these.
 
-> TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing
+> TODO: the `NewABC` methods are missing `CompilerGeneratedAttribute`, and `DebuggerNonUserCodeAttribute`. However the absence of debug points should be sufficient to exclude these from code coverage and profiling.
 
 ### Generated closures for lambdas
 
@@ -392,7 +352,7 @@ The debug codegen involved in closures is as follows:
 |                 | `Specialize` method |  from body of closure  |                                        |
 |  Intermediate closure classes   |  For long curried closures `fun a b c d e f -> ...`.  | See [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L459) and [here](https://github.com/dotnet/fsharp/blob/db2c9da8d1e76d11217d6da53a64253fd0df0246/src/fsharp/ilx/EraseClosures.fs#L543).  | CompilerGenerated, DebuggerNonUserCode     |
 
-> TODO: generating debug points for the intermediate closures appears wrong, this is being assessed at time of writing
+Generated intermediate closure methods do not get debug points, and are labelled CompilerGenerated and DebuggerNonUserCode.
 
 > TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing
 
@@ -414,7 +374,7 @@ The debug points recovered for the generated state machine code for `seq { ... }
 
 > NOTE: it appears from the code that extraneous debug points are not being generated, which is good, though should be checked
 
-> TODO: we should likely be generating attributes for the `Close` and `get_CheckClose` and `.ctor` methods
+> TODO: we should likely be generating `CompilerGeneratedAttribute` and `DebuggerNonUserCodeAttribute` attributes for the `Close` and `get_CheckClose` and `.ctor` methods
 
 > TODO: we should also consider emitting `ExcludeFromCodeCoverageAttribute`, being assessed at time of writing
 
@@ -434,9 +394,18 @@ The debug points recovered for the generated state machine code for `seq { ... }
 
 > TODO: we should assess that only the "MoveNext" method gets any debug points at all
 
-### Generated code for delegate constructions `Func<int,int>(fun x y -> x + y)`
+> TODO: Currently stepping into a task-returning method needs a second `step-into` to get into the MoveNext method of the state machine.  We should emit the `StateMachineMethod` and `StateMachineHoistedLocalScopes` tables into the PDB to get better debugging into `task` methods. See https://github.com/dotnet/fsharp/issues/12000.
 
-A closure class is generated.
+### Generated code for delegate constructions `Func<int,int,int>(fun x y -> x + y)`
+
+A closure class is generated.  Consider the code
+
+```fsharp
+open System
+let d = Func<int,int,int>(fun x y -> x + y)
+```
+
+There is one debug point over all of `Func<int,int,int>(fun x y -> x + y)` and one over `x+y`.
 
 ### Generated code for constant-sized array and list expressions
 
@@ -485,7 +454,7 @@ Here the implicitly captured local is `y`, but `x` is **not** captured, instead 
 
 ### Provided code
 
-Code provided by erasing type providers has all debugging points removed.  It isn't possible to step into such code or if there are implicit debug points they will be the same range as the construct that was macro-expanded by the code erasure. 
+Code provided by erasing type providers has all debugging points removed.  It isn't possible to step into such code or if there are implicit debug points they will be the same range as the construct that was macro-expanded by the code erasure.
 
 > For example, a [provided if/then/else expression has no debug point](https://github.com/dotnet/fsharp/blob/main/src/fsharp/MethodCalls.fs#L1805)
 
