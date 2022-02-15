@@ -50,7 +50,7 @@ module FSharp.Compiler.ComponentTests.Conformance.Printing
 
         compilation
         |> withReferences [ library ]
-        |> runFsi
+        |> CompileAndRunAsFsx
 
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/Printing", Includes=[|"UnitsOfMeasuresGenericSignature01.fsx"|])>]
     let ``UnitsOfMeasuresGenericSignature01_fsx`` compilation =

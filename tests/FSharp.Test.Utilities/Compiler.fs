@@ -17,7 +17,7 @@ open System.Collections.Immutable
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
-
+open CompilerAssertHelpers
 
 module rec Compiler =
     type BaselineFile = { FilePath: string; Content: string option }
@@ -543,29 +543,41 @@ module rec Compiler =
     let runFsi (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs ->
-            let source = getSource fs.Source
+            let disposals = ResizeArray()
+            try
+                let outputDirectory=fs.OutputDirectory
+                Directory.CreateDirectory(outputDirectory) |> ignore
+                let source = getSource fs.Source
 
-            let _references = processReferences fs.References
+                let _references = processReferences fs.References
 
-            let options = fs.Options |> Array.ofList
+//@@@@@            let compilationRefs, deps = evaluateReferences outputPath disposals ignoreWarnings cmpl
 
-            let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+                let options = fs.Options |> Array.ofList
 
-            let result =
-                { OutputPath   = None
-                  Dependencies = []
-                  Adjust       = 0
-                  Diagnostics  = []
-                  Output       = None }
+                let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
-            if errors.Count > 0 then
-                let output = ExecutionOutput {
-                    ExitCode = -1
-                    StdOut   = String.Empty
-                    StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
-                Failure { result with Output = Some output }
-            else
-                Success result
+                let result =
+                    { OutputPath   = None
+                      Dependencies = []
+                      Adjust       = 0
+                      Diagnostics  = []
+                      Output       = None }
+
+                if errors.Count > 0 then
+                    let output = ExecutionOutput {
+                        ExitCode = -1
+                        StdOut   = String.Empty
+                        StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
+                    Failure { result with Output = Some output }
+                else
+                    Success result
+
+            finally
+                try Directory.Delete outputDirectory with | _ -> ()
+                disposals
+                |> Seq.iter (fun x -> x.Dispose())
+
         | _ -> failwith "FSI running only supports F#."
 
 
