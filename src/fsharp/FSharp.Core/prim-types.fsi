@@ -2766,9 +2766,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="left-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 13       // 00000000000000000000000000001101
-        /// let c = a &lt;&lt; 4   // 00000000000000000000000011010000
+        /// let c = a &lt;&lt;&lt; 4   // 00000000000000000000000011010000
         /// </code>
-        /// Evaluates to 206
+        /// Evaluates to 208
         /// </example>
         val inline (<<<): value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
@@ -2782,9 +2782,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="right-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 206      // 00000000000000000000000011010000
-        /// let c1 = a &gt;&gt; 2  // 00000000000000000000000000110100
+        /// let c1 = a &gt;&gt;&gt; 2  // 00000000000000000000000000110100
         /// // Evaluates to 51
-        /// let c2 = a &gt;&gt; 6  // 00000000000000000000000000000011
+        /// let c2 = a &gt;&gt;&gt; 6  // 00000000000000000000000000000011
         /// Evaluates to 3
         /// </code>
         /// </example>
