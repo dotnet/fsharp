@@ -563,22 +563,32 @@ module rec Compiler =
         | FS fs ->
             let disposals = ResizeArray<IDisposable>()
             try
-                let outputDirectory =
-                    match cmpl with
-                    | Compilation(_, _, _, _, _, _, Some outputDirectory) -> outputDirectory
-                    | Compilation(_, _, _, _, _, _, _) -> Directory(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
-
-                outputDirectory.Create()
-                disposals.Add(new Disposable(fun () -> outputDirectory.Delete()))
-
                 let source = getSource fs.Source
-
-                let _references = processReferences fs.References
-
-                let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
-
+                let name = fs.Name |> Option.defaultValue "unnamed"
                 let options = fs.Options |> Array.ofList
+                let outputDirectory =
+                    match fs.OutputDirectory with
+                    | Some di -> di
+                    | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
+                outputDirectory.Create()
+                disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
+                let references = processReferences fs.References (Some outputDirectory)
+                let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, references, name, outputDirectory)
+                let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
+                let options =
+                    let opts = new ResizeArray<string>(fs.Options)
+
+                    // For every built reference add a -I path so that fsi can find it easily
+                    for reference in references do
+                        match reference with
+                        | CompilationReference( cmpl, _) ->
+                            match cmpl with
+                            | Compilation(_source, _sourceKind, _outputType, _options, _references, _name, outputDirectory) ->
+                                if outputDirectory.IsSome then
+                                    opts.Add($"-I:\"{(outputDirectory.Value.FullName)}\"")
+                        | _ -> ()
+                    opts.ToArray()
                 let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
                 let result =

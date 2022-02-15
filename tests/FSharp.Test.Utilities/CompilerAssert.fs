@@ -166,16 +166,16 @@ module private rec CompilerAssertHelpers =
             try File.Delete inputFilePath with | _ -> ()
             try File.Delete outputFilePath with | _ -> ()
 
-    let compileDisposable outputPath isScript isExe options nameOpt source =
+    let compileDisposable (outputDirectory:DirectoryInfo) isScript isExe options nameOpt source =
         let ext =
             if isScript then ".fsx"
             else ".fs"
-        let inputFilePath = Path.ChangeExtension(Path.Combine(outputPath, Path.GetRandomFileName()), ext)
+        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, Path.GetRandomFileName()), ext)
         let name =
             match nameOpt with
             | Some name -> name
             | _ -> Path.GetRandomFileName()
-        let outputFilePath = Path.ChangeExtension (Path.Combine(outputPath, name), if isExe then ".exe" else ".dll")
+        let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         let o =
             { new IDisposable with
                 member _.Dispose() =
@@ -216,7 +216,7 @@ module private rec CompilerAssertHelpers =
     let compile isExe options source f =
         compileAux isExe options source f
 
-    let rec evaluateReferences outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
+    let rec evaluateReferences (outputPath:DirectoryInfo) (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : string[] * string list =
         match cmpl with
         | Compilation(_, _, _, _, cmpls, _, _) ->
             let compiledRefs =
@@ -230,10 +230,8 @@ module private rec CompilerAssertHelpers =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                 | _ -> Path.GetRandomFileName()
-                            let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
-                            disposals.Add({ new IDisposable with
-                                                member _.Dispose() =
-                                                    try File.Delete tmp with | _ -> () })
+                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
+                            disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
                             (([||], tmp), []), false)
 
@@ -257,9 +255,9 @@ module private rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
 
-        let compilationRefs, deps = evaluateReferences outputPath disposals ignoreWarnings cmpl
+        let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
 
         let isScript =
             match cmpl with
@@ -287,8 +285,8 @@ module private rec CompilerAssertHelpers =
             match cmpl with
             | Compilation(_, _, _, _, _, nameOpt, _) -> nameOpt
 
-        let disposal, res = compileDisposable outputPath isScript isExe (Array.append options compilationRefs) nameOpt source
-        disposals.Add disposal
+        let disposal, res = compileDisposable outputDirectory isScript isExe (Array.append options compilationRefs) nameOpt source
+        disposals.Add(disposal)
 
         let deps2 =
             compilationRefs
@@ -299,13 +297,13 @@ module private rec CompilerAssertHelpers =
         res, (deps @ deps2)
 
     let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let outputDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+        let outputDirectory = DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
         let disposals = ResizeArray()
         try
-            Directory.CreateDirectory(outputDirectory) |> ignore
+            Directory.CreateDirectory(outputDirectory.FullName) |> ignore
+            disposals.Add({ new IDisposable with member _.Dispose() = File.Delete (outputDirectory.FullName) })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
-            try Directory.Delete outputDirectory with | _ -> ()
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
@@ -315,10 +313,10 @@ module private rec CompilerAssertHelpers =
     let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> outputDirectory.FullName
-            | Compilation(_, _, _, _, _, _, _) -> Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
 
-        Directory.CreateDirectory(outputDirectory) |> ignore
+        outputDirectory.Create() |> ignore
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
