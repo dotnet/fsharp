@@ -948,7 +948,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
-         CompilerOption("refemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiUseSingleRefEmitAssembly()))
+#if NETSTANDARD
+         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmit()))
+#endif
+#if NETFX
+         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmitOnByDefault()))
+#endif
         ]);
       ]
 
@@ -3176,7 +3181,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
-    // Preset: --refemit+ on .NET Framework
+    // Preset: --legacyemit+ on .NET Framework
     do if not isRunningOnCoreClr then
         tcConfigB.fsiSingleRefEmitAssembly <- true
 

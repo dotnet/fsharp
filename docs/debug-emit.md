@@ -480,7 +480,3 @@ Some design-time services are un-implemented by F#:
 * Unimplemented: [Proximity expressions](https://github.com/dotnet/fsharp/issues/4271) (for Autos window)
 
 These are major holes in the F# experience and should be implemented.
-
-### Missing debug emit for F# Interactive
-
-For F# Interactive [we do not currently emit debug information for script code](https://github.com/dotnet/fsharp/issues/5457). This is because of a missing piece of functionality in the Reflection.Emit APIs, and means we have to change our approach to emitting code fragments in F# Interactive to no longer use dynamic assemblies.

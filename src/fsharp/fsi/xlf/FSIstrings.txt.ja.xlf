@@ -3,13 +3,18 @@
   <file datatype="xml" source-language="en" target-language="ja" original="../FSIstrings.resx">
     <body>
       <trans-unit id="fsiInternalAccess">
-        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--refemit' option.</source>
-        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--refemit' option.</target>
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--legacyemit' option.</source>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--legacyemit' option.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">パッケージの検索時にパッケージ ソースの URI を含める</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiLegacyEmitOnByDefault">
+        <source>Use a single dynamic assembly via reflection emit (on by default for .NET Framework)</source>
+        <target state="new">Use a single dynamic assembly via reflection emit (on by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -22,7 +27,7 @@
         <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームに出力されました。対応する FSharpDiagnostic を戻すには、EvalInteractionNonThrowing、EvalScriptNonThrowing、または EvalExpressionNonThrowing を使用します</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleRefEmitAssembly">
+      <trans-unit id="fsiLegacyEmit">
         <source>Use a single dynamic assembly via reflection emit</source>
         <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />

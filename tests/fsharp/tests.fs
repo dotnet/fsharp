@@ -1074,14 +1074,14 @@ module CoreTests =
     let ``printing-default-stdout-47 --langversion:4_7`` () =
          printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
-    // For this, check both with and without refemit
+    // For this, check both with and without legacyemit
     [<Test>]
-    let ``printing-default-stdout-50 --langversion:5_0 --refemit+`` () =
-         printing "--langversion:5.0 --refemit+ --debug+ --optimize-" "z.output.test.default.stdout.50.refemit.txt" "z.output.test.default.stdout.50.refemit.bsl" "z.output.test.default.stderr.refemit.txt" "z.output.test.default.stderr.refemit.bsl"
+    let ``printing-default-stdout-50 --langversion:5_0 --legacyemit+`` () =
+         printing "--langversion:5.0 --legacyemit+ --debug+ --optimize-" "z.output.test.default.stdout.50.legacyemit.txt" "z.output.test.default.stdout.50.legacyemit.bsl" "z.output.test.default.stderr.legacyemit.txt" "z.output.test.default.stderr.legacyemit.bsl"
 
     [<Test>]
-    let ``printing-default-stdout-50 --langversion:5_0 --refemit-`` () =
-         printing "--langversion:5.0 --refemit- --debug+ --optimize-" "z.output.test.default.stdout.50.refemitoff.txt" "z.output.test.default.stdout.50.refemitoff.bsl" "z.output.test.default.stderr.refemitoff.txt" "z.output.test.default.stderr.refemitoff.bsl"
+    let ``printing-default-stdout-50 --langversion:5_0 --legacyemit-`` () =
+         printing "--langversion:5.0 --legacyemit- --debug+ --optimize-" "z.output.test.default.stdout.50.legacyemitoff.txt" "z.output.test.default.stdout.50.legacyemitoff.bsl" "z.output.test.default.stderr.legacyemitoff.txt" "z.output.test.default.stderr.legacyemitoff.bsl"
 
     [<Test>]
     let ``printing-1000-stdout-47 --langversion:4_7`` () =
@@ -1108,12 +1108,12 @@ module CoreTests =
          printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
-    let ``printing-quiet-stdout --refemit+`` () =
+    let ``printing-quiet-stdout --legacyemit+`` () =
          printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
     [<Test>]
-    let ``printing-quiet-stdout --refemit-`` () =
-         printing "--quiet --refemit-" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
+    let ``printing-quiet-stdout --legacyemit-`` () =
+         printing "--quiet --legacyemit-" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
     type SigningType =
         | DelaySigned

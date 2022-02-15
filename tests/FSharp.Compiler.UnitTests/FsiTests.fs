@@ -18,7 +18,7 @@ module FsiTests =
 
         // Build command line arguments & start FSI session
         let argv = [| "C:\\fsi.exe" |]
-        let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--refemit" else "--refemit-" |]
+        let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--legacyemit" else "--legacyemit-" |]
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)
@@ -479,7 +479,7 @@ module FsiTests =
         Assert.shouldBe typeof<CustomType * CustomType2> boundValue.Value.ReflectionType
 
     [<Fact>]
-    let ``Creation of a bound value fails if the value contains types from a dynamic assembly using refemit`` () =
+    let ``Creation of a bound value fails if the value contains types from a dynamic assembly using legacyemit`` () =
         use fsiSession = createFsiSession true
 
         fsiSession.AddBoundValue("fsiSession", fsiSession)
