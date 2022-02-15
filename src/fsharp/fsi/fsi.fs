@@ -950,8 +950,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
 #if NETSTANDARD
          CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmit()))
-#endif
-#if NETFX
+#else
          CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmitOnByDefault()))
 #endif
         ]);
