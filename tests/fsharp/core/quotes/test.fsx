@@ -4132,6 +4132,20 @@ module Interpolation =
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 
+
+module TestTaskQuotationExecution = 
+
+    open System.Threading.Tasks
+
+    let q = <@ task.Run(task.Delay(fun () -> task.Return "bar")) @>
+
+    let task =
+        q
+        |> FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation
+        :?> Task<string>
+
+    check "vewhwveh" task.Result "bar"
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
