@@ -405,7 +405,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
         fref.DeclaringTypeRef.Scope.IsLocalRef && internalFields.Contains(fref)
 
 type ILAssemblyEmitEnv =
-    | SingleDynamicAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
+    | SingleRefEmitAssembly of ILDynamicAssemblyWriter.cenv * ILDynamicAssemblyEmitEnv
     | MultipleInMemoryAssemblies of ILMultiInMemoryAssemblyEmitEnv
 
 type internal FsiValuePrinterMode =
@@ -580,7 +580,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, outWriter: Te
     /// Get the evaluation context used when inverting the storage mapping of the ILDynamicAssemblyWriter.
     member _.GetEvaluationContext (emEnv: ILAssemblyEmitEnv) =
         match emEnv with 
-        | SingleDynamicAssembly (cenv, emEnv) ->
+        | SingleRefEmitAssembly (cenv, emEnv) ->
             { LookupTypeRef = LookupTypeRef cenv emEnv
               LookupType = LookupType cenv emEnv }
         | MultipleInMemoryAssemblies emEnv ->
@@ -1335,7 +1335,7 @@ type internal FsiDynamicCompiler
         else
             None
 
-    let rangeStdin = rangeN stdinMockFilename 0
+    let rangeStdin0 = rangeN stdinMockFilename 0
 
     //let _writer = moduleBuilder.GetSymWriter()
 
@@ -1491,13 +1491,13 @@ type internal FsiDynamicCompiler
 
         let emEnv, execs =
             match emEnv with 
-            | SingleDynamicAssembly (cenv, emEnv) ->
+            | SingleRefEmitAssembly (cenv, emEnv) ->
 
                 let assemblyBuilder, moduleBuilder = builders.Value
 
                 let emEnv, execs = EmitDynamicAssemblyFragment (ilGlobals, tcConfig.emitTailcalls, emEnv, assemblyBuilder, moduleBuilder, ilxMainModule, generateDebugInfo, cenv.resolveAssemblyRef, tcGlobals.TryFindSysILTypeRef)
 
-                SingleDynamicAssembly (cenv, emEnv), execs
+                SingleRefEmitAssembly (cenv, emEnv), execs
 
             | MultipleInMemoryAssemblies emEnv ->
 
@@ -1509,7 +1509,7 @@ type internal FsiDynamicCompiler
 
         // Explicitly register the resources with the QuotationPickler module
         match emEnv with
-        | SingleDynamicAssembly (cenv, emEnv) ->
+        | SingleRefEmitAssembly (cenv, emEnv) ->
 
             let assemblyBuilder, _moduleBuilder = builders.Value
 
@@ -1572,10 +1572,12 @@ type internal FsiDynamicCompiler
                     colorPrintL outWriter opts responseL
 
         // Build the new incremental state.
-        let istate = {istate with  optEnv    = optEnv
-                                   emEnv     = emEnv
-                                   ilxGenerator = ilxGenerator
-                                   tcState   = tcState  }
+        let istate =
+            { istate with
+                optEnv = optEnv
+                emEnv = emEnv
+                ilxGenerator = ilxGenerator
+                tcState = tcState }
 
         // Return the new state and the environment at the end of the last input, ready for further inputs.
         (istate,declaredImpls)
@@ -1602,13 +1604,11 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
-    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
+    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent, m) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-
-        let m = inputs |> List.tryLast |> function None -> rangeStdin | Some i -> i.Range
 
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
@@ -1632,9 +1632,9 @@ type internal FsiDynamicCompiler
         fragmentId <- fragmentId + 1
         fragmentId
 
-    let mkFragmentPath  i =
+    let mkFragmentPath m i =
         // NOTE: this text shows in exn traces and type names. Make it clear and fixed width
-        [mkSynId rangeStdin (FsiDynamicModulePrefix + sprintf "%04d" i)]
+        [mkSynId m (FsiDynamicModulePrefix + sprintf "%04d" i)]
 
     let processContents istate declaredImpls =
         let tcState = istate.tcState
@@ -1735,7 +1735,7 @@ type internal FsiDynamicCompiler
 
         let ilTys = convertReflectionTypeToILType reflectionTy
         
-        // Rewrite references to dynamic assemblies to dynamicCcuName
+        // Rewrite references to dynamic .NET assemblies back to dynamicCcuName
         let ilTys =
             ilTys |> List.map (fun ilTy -> 
                 match istate.emEnv with 
@@ -1752,27 +1752,28 @@ type internal FsiDynamicCompiler
     member _.FindDynamicAssembly(simpleAssemName) =
         dynamicAssemblies |> ResizeArray.tryFind (fun asm -> asm.GetName().Name = simpleAssemName)
 
-    member _.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs) =
+    member _.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs, m) =
         let i = nextFragmentId()
-        let prefix = mkFragmentPath i
+        let prefix = mkFragmentPath m i
         // Ensure the path includes the qualifying name
         let inputs = inputs |> List.map (PrependPathToInput prefix)
         let isIncrementalFragment = false
-        let istate,_,_ = ProcessInputs (ctok, errorLogger, istate, inputs, true, isIncrementalFragment, false, prefix)
+        let istate,_,_ = ProcessInputs (ctok, errorLogger, istate, inputs, true, isIncrementalFragment, false, prefix, m)
         istate
 
     /// Evaluate the given definitions and produce a new interactive state.
-    member _.EvalParsedDefinitions (ctok, errorLogger: ErrorLogger, istate, showTypes, isInteractiveItExpr, defs) =
+    member _.EvalParsedDefinitions (ctok, errorLogger: ErrorLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecl list) =
         let filename = stdinMockFilename
         let i = nextFragmentId()
-        let prefix = mkFragmentPath i
+        let m = match defs with [] -> rangeStdin0 | _ -> List.reduce unionRanges [for d in defs -> d.Range] 
+        let prefix = mkFragmentPath m i
         let prefixPath = pathOfLid prefix
-        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
+        let impl = SynModuleOrNamespace(prefix,(*isRec*)false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m)
         let isLastCompiland = true
         let isExe = false
-        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],(isLastCompiland, isExe) ))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe) ))
         let isIncrementalFragment = true
-        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix)
+        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
         processContents newState declaredImpls
@@ -1978,7 +1979,7 @@ type internal FsiDynamicCompiler
 
           errorLogger.AbortOnError(fsiConsoleOutput);
           let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
-          fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs)
+          fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
         let cenv = SymbolEnv(istate.tcGlobals, istate.tcState.Ccu, Some istate.tcState.CcuSig, istate.tcImports)
@@ -2028,9 +2029,10 @@ type internal FsiDynamicCompiler
             let amap = istate.tcImports.GetImportMap()
 
             let i = nextFragmentId()
-            let prefix = mkFragmentPath i
+            let m = rangeStdin0
+            let prefix = mkFragmentPath m i
             let prefixPath = pathOfLid prefix
-            let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
+            let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath)
 
             let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
@@ -2045,7 +2047,6 @@ type internal FsiDynamicCompiler
             let isIncrementalFragment = true
             let showTypes = false
             let declaredImpls = [impl]
-            let m = rangeStdin
             let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
             let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults, m)
             let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
@@ -2066,15 +2067,15 @@ type internal FsiDynamicCompiler
             if tcConfigB.fsiSingleRefEmitAssembly then
                 let cenv = { ilg = ilGlobals; emitTailcalls = tcConfig.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
-                SingleDynamicAssembly (cenv, emEnv)
+                SingleRefEmitAssembly (cenv, emEnv)
             else
                 let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
                 MultipleInMemoryAssemblies emEnv
 
-        let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin, tcConfig, tcImports, tcGlobals)
+        let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
         let ccuName = dynamicCcuName
 
-        let tcState = GetInitialTcState (rangeStdin, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv, openDecls0)
+        let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv, openDecls0)
 
         let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
 
@@ -2357,13 +2358,13 @@ module internal MagicAssemblyResolution =
                stopProcessingRecovery e range0
                null
 
-        let rangeStdin = rangeN stdinMockFilename 0
+        let rangeStdin0 = rangeN stdinMockFilename 0
 
         let resolveAssembly = ResolveEventHandler(fun _ args ->
             // Explanation: our understanding is that magic assembly resolution happens
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
-            ResolveAssembly (ctok, rangeStdin, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
+            ResolveAssembly (ctok, rangeStdin0, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
 
         AppDomain.CurrentDomain.add_AssemblyResolve(resolveAssembly)
 
@@ -2507,7 +2508,7 @@ type internal FsiInteractionProcessor
             stopProcessingRecovery e range0
             istate, CompletedWithReportedError e
 
-    let rangeStdin = rangeN stdinMockFilename 0
+    let rangeStdin0 = rangeN stdinMockFilename 0
 
     let ChangeDirectory (path:string) m =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2881,7 +2882,7 @@ type internal FsiInteractionProcessor
         | [] -> istate
         | sourceFile :: moreSourceFiles ->
             // Catch errors on a per-file basis, so results/bindings from pre-error files can be kept.
-            let istate,cont = InteractiveCatch errorLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin, errorLogger)) istate
+            let istate,cont = InteractiveCatch errorLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin0, errorLogger)) istate
             match cont with
               | Completed _                -> processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, errorLogger)
               | CompletedWithAlreadyReportedError -> istate // do not process any more files
@@ -2902,7 +2903,7 @@ type internal FsiInteractionProcessor
                     if isScript1 then
                         processor.EvalIncludedScripts (ctok, istate, sourceFiles, errorLogger)
                     else
-                        istate |> InteractiveCatch errorLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin, sourceFiles, lexResourceManager, errorLogger), Completed None) |> fst
+                        istate |> InteractiveCatch errorLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin0, sourceFiles, lexResourceManager, errorLogger), Completed None) |> fst
                 consume istate rest
 
         setCurrState (consume currState fsiOptions.SourceFiles)
@@ -3049,7 +3050,7 @@ type internal FsiInteractionProcessor
         let ad = tcState.TcEnvFromImpls.AccessRights
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
-        let nItems = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin) rangeStdin ad lid false
+        let nItems = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin0) rangeStdin0 ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName)
         let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
