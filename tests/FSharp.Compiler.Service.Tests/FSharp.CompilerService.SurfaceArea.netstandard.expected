@@ -4559,8 +4559,6 @@ FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] |WitnessArg|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr]] |AddressSet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr]] |Sequential|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr]] |TryFinally|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr]] |WhileLoop|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpType]] |UnionCaseTag|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpExpr,Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue],FSharp.Compiler.Symbols.FSharpExpr]]]] |DecisionTree|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr]] |Lambda|_|(FSharp.Compiler.Symbols.FSharpExpr)
@@ -4572,12 +4570,14 @@ FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |NewArray|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |NewRecord|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |NewTuple|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Syntax.DebugPointAtLeafExpr,FSharp.Compiler.Symbols.FSharpExpr]] |DebugPoint|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpGenericParameter],FSharp.Compiler.Symbols.FSharpExpr]] |TypeLambda|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr]],FSharp.Compiler.Symbols.FSharpExpr]] |LetRec|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Syntax.DebugPointAtBinding]],FSharp.Compiler.Symbols.FSharpExpr]] |LetRec|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Int32,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |DecisionTreeSuccess|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Object,FSharp.Compiler.Symbols.FSharpType]] |Const|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Tuple`2[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpExpr]] |Let|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.Tuple`3[FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Syntax.DebugPointAtBinding],FSharp.Compiler.Symbols.FSharpExpr]] |Let|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr]] |IfThenElse|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Syntax.DebugPointAtWhile]] |WhileLoop|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpUnionCase]] |UnionCaseTest|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpType,System.Int32]] |AnonRecordGet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[FSharp.Compiler.Symbols.FSharpExpr,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |Application|_|(FSharp.Compiler.Symbols.FSharpExpr)
@@ -4587,16 +4587,17 @@ FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpField]] |FSharpFieldGet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpType,System.String]] |ILFieldGet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.String,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |ILAsm|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,System.Boolean]] |FastIntegerForLoop|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Syntax.DebugPointAtTry,FSharp.Compiler.Syntax.DebugPointAtFinally]] |TryFinally|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpUnionCase,FSharp.Compiler.Symbols.FSharpField]] |UnionCaseGet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpExpr,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpObjectExprOverride],Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpType,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpObjectExprOverride]]]]] |ObjectExpr|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpField,FSharp.Compiler.Symbols.FSharpExpr]] |FSharpFieldSet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpType,System.String,FSharp.Compiler.Symbols.FSharpExpr]] |ILFieldSet|_|(FSharp.Compiler.Symbols.FSharpExpr)
-FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr]] |TryWith|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpType,FSharp.Compiler.Symbols.FSharpUnionCase,FSharp.Compiler.Symbols.FSharpField,FSharp.Compiler.Symbols.FSharpExpr]] |UnionCaseSet|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |Call|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpExpr,System.Boolean,FSharp.Compiler.Syntax.DebugPointAtFor,FSharp.Compiler.Syntax.DebugPointAtInOrTo]] |FastIntegerForLoop|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],System.String,FSharp.Compiler.Syntax.SynMemberFlags,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |TraitCall|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpExpr],FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Symbols.FSharpExpr]]] |CallWithWitnesses|_|(FSharp.Compiler.Symbols.FSharpExpr)
+FSharp.Compiler.Symbols.FSharpExprPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`7[FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Symbols.FSharpMemberOrFunctionOrValue,FSharp.Compiler.Symbols.FSharpExpr,FSharp.Compiler.Syntax.DebugPointAtTry,FSharp.Compiler.Syntax.DebugPointAtWith]] |TryWith|_|(FSharp.Compiler.Symbols.FSharpExpr)
 FSharp.Compiler.Symbols.FSharpField
 FSharp.Compiler.Symbols.FSharpField: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpField: Boolean IsAnonRecordField
@@ -5179,8 +5180,8 @@ FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean get_IsNoneAtLet()
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean get_IsNoneAtSticky()
 FSharp.Compiler.Syntax.DebugPointAtBinding: Boolean get_IsYes()
 FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding Combine(FSharp.Compiler.Syntax.DebugPointAtBinding)
-FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NoneAtDo
+FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NoneAtInvisible
 FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NoneAtLet
 FSharp.Compiler.Syntax.DebugPointAtBinding: FSharp.Compiler.Syntax.DebugPointAtBinding NoneAtSticky
@@ -5196,7 +5197,6 @@ FSharp.Compiler.Syntax.DebugPointAtBinding: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtBinding: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtBinding: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtFinally
-FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Body
 FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtFinally+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range get_range()
@@ -5204,16 +5204,12 @@ FSharp.Compiler.Syntax.DebugPointAtFinally+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtFinally)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsBody
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsNo
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean IsYes
-FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsBody()
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsNo()
 FSharp.Compiler.Syntax.DebugPointAtFinally: Boolean get_IsYes()
-FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally Body
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally No
-FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_Body()
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally get_No()
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally+Tags
 FSharp.Compiler.Syntax.DebugPointAtFinally: FSharp.Compiler.Syntax.DebugPointAtFinally+Yes
@@ -5244,29 +5240,63 @@ FSharp.Compiler.Syntax.DebugPointAtFor: Int32 GetHashCode(System.Collections.IEq
 FSharp.Compiler.Syntax.DebugPointAtFor: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtFor: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtFor: System.String ToString()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo
+FSharp.Compiler.Syntax.DebugPointAtInOrTo+Tags: Int32 No
+FSharp.Compiler.Syntax.DebugPointAtInOrTo+Tags: Int32 Yes
+FSharp.Compiler.Syntax.DebugPointAtInOrTo+Yes: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo+Yes: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtInOrTo)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean IsNo
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean IsYes
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean get_IsNo()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Boolean get_IsYes()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: FSharp.Compiler.Syntax.DebugPointAtInOrTo NewYes(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: FSharp.Compiler.Syntax.DebugPointAtInOrTo No
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: FSharp.Compiler.Syntax.DebugPointAtInOrTo get_No()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: FSharp.Compiler.Syntax.DebugPointAtInOrTo+Tags
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: FSharp.Compiler.Syntax.DebugPointAtInOrTo+Yes
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 GetHashCode()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 Tag
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: Int32 get_Tag()
+FSharp.Compiler.Syntax.DebugPointAtInOrTo: System.String ToString()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtLeafExpr)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Syntax.DebugPointAtLeafExpr NewYes(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range Item
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: FSharp.Compiler.Text.Range get_Item()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 Tag
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: Int32 get_Tag()
+FSharp.Compiler.Syntax.DebugPointAtLeafExpr: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtSequential
+FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressBoth
 FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressExpr
-FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential+Tags: Int32 SuppressStmt
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtSequential)
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressBoth
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressExpr
-FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean IsSuppressStmt
+FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsSuppressNeither()
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsSuppressBoth()
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsSuppressExpr()
-FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsSuppressNeither()
 FSharp.Compiler.Syntax.DebugPointAtSequential: Boolean get_IsSuppressStmt()
+FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential SuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential SuppressBoth
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential SuppressExpr
-FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential SuppressNeither
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential SuppressStmt
+FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_SuppressNeither()
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_SuppressBoth()
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_SuppressExpr()
-FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_SuppressNeither()
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential get_SuppressStmt()
 FSharp.Compiler.Syntax.DebugPointAtSequential: FSharp.Compiler.Syntax.DebugPointAtSequential+Tags
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 CompareTo(FSharp.Compiler.Syntax.DebugPointAtSequential)
@@ -5277,28 +5307,6 @@ FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 GetHashCode(System.Collecti
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtSequential: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtSequential: System.String ToString()
-FSharp.Compiler.Syntax.DebugPointAtSwitch
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags: Int32 No
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags: Int32 Yes
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes: FSharp.Compiler.Text.Range Item
-FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes: FSharp.Compiler.Text.Range get_Item()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtSwitch)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(System.Object)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean IsNo
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean IsYes
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean get_IsNo()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Boolean get_IsYes()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch NewYes(FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch No
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch get_No()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch+Tags
-FSharp.Compiler.Syntax.DebugPointAtSwitch: FSharp.Compiler.Syntax.DebugPointAtSwitch+Yes
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 GetHashCode()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 Tag
-FSharp.Compiler.Syntax.DebugPointAtSwitch: Int32 get_Tag()
-FSharp.Compiler.Syntax.DebugPointAtSwitch: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtTarget
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtTarget+Tags: Int32 Yes
@@ -5323,7 +5331,6 @@ FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 Tag
 FSharp.Compiler.Syntax.DebugPointAtTarget: Int32 get_Tag()
 FSharp.Compiler.Syntax.DebugPointAtTarget: System.String ToString()
 FSharp.Compiler.Syntax.DebugPointAtTry
-FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 Body
 FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 No
 FSharp.Compiler.Syntax.DebugPointAtTry+Tags: Int32 Yes
 FSharp.Compiler.Syntax.DebugPointAtTry+Yes: FSharp.Compiler.Text.Range get_range()
@@ -5331,16 +5338,12 @@ FSharp.Compiler.Syntax.DebugPointAtTry+Yes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(FSharp.Compiler.Syntax.DebugPointAtTry)
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(System.Object)
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.Syntax.DebugPointAtTry: Boolean IsBody
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean IsNo
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean IsYes
-FSharp.Compiler.Syntax.DebugPointAtTry: Boolean get_IsBody()
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean get_IsNo()
 FSharp.Compiler.Syntax.DebugPointAtTry: Boolean get_IsYes()
-FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry Body
 FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry NewYes(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry No
-FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry get_Body()
 FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry get_No()
 FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry+Tags
 FSharp.Compiler.Syntax.DebugPointAtTry: FSharp.Compiler.Syntax.DebugPointAtTry+Yes
@@ -6255,6 +6258,12 @@ FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Syntax.SynConst constant
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Syntax.SynConst get_constant()
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.SynExpr get_innerExpr()
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.SynExpr innerExpr
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: Boolean get_isControlFlow()
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: Boolean isControlFlow
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.DebugPointAtLeafExpr debugPoint
+FSharp.Compiler.Syntax.SynExpr+DebugPoint: FSharp.Compiler.Syntax.DebugPointAtLeafExpr get_debugPoint()
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Text.Range get_range()
@@ -6327,6 +6336,8 @@ FSharp.Compiler.Syntax.SynExpr+For: Boolean direction
 FSharp.Compiler.Syntax.SynExpr+For: Boolean get_direction()
 FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.DebugPointAtFor forDebugPoint
 FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.DebugPointAtFor get_forDebugPoint()
+FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.DebugPointAtInOrTo get_toDebugPoint()
+FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.DebugPointAtInOrTo toDebugPoint
 FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.Ident get_ident()
 FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.Ident ident
 FSharp.Compiler.Syntax.SynExpr+For: FSharp.Compiler.Syntax.SynExpr doBody
@@ -6343,6 +6354,8 @@ FSharp.Compiler.Syntax.SynExpr+ForEach: Boolean get_isFromSource()
 FSharp.Compiler.Syntax.SynExpr+ForEach: Boolean isFromSource
 FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.DebugPointAtFor forDebugPoint
 FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.DebugPointAtFor get_forDebugPoint()
+FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.DebugPointAtInOrTo get_inDebugPoint()
+FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.DebugPointAtInOrTo inDebugPoint
 FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.SeqExprOnly get_seqExprOnly()
 FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.SeqExprOnly seqExprOnly
 FSharp.Compiler.Syntax.SynExpr+ForEach: FSharp.Compiler.Syntax.SynExpr bodyExpr
@@ -6640,6 +6653,7 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArrayOrListComputed
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Assert
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ComputationExpr
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Const
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DebugPoint
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DiscardAfterMissingQualificationAfterDot
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Do
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DoBang
@@ -6798,6 +6812,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrListComputed
 FSharp.Compiler.Syntax.SynExpr: Boolean IsAssert
 FSharp.Compiler.Syntax.SynExpr: Boolean IsComputationExpr
 FSharp.Compiler.Syntax.SynExpr: Boolean IsConst
+FSharp.Compiler.Syntax.SynExpr: Boolean IsDebugPoint
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDiscardAfterMissingQualificationAfterDot
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDo
 FSharp.Compiler.Syntax.SynExpr: Boolean IsDoBang
@@ -6864,6 +6879,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrListComputed()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsAssert()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsComputationExpr()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsConst()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDebugPoint()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDiscardAfterMissingQualificationAfterDot()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDo()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsDoBang()
@@ -6929,6 +6945,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListCom
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAssert(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewComputationExpr(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewConst(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDebugPoint(FSharp.Compiler.Syntax.DebugPointAtLeafExpr, Boolean, FSharp.Compiler.Syntax.SynExpr)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDiscardAfterMissingQualificationAfterDot(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDo(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDoBang(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -6939,8 +6956,8 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotNamedIndexe
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.LongIdentWithDots, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDowncast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFixed(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFor(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewForEach(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.SeqExprOnly, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFor(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.DebugPointAtInOrTo, FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynExpr, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewForEach(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.DebugPointAtInOrTo, FSharp.Compiler.Syntax.SeqExprOnly, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFromParseError(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewIdent(FSharp.Compiler.Syntax.Ident)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewIfThenElse(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia)
@@ -6994,6 +7011,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArrayOrListComput
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Assert
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ComputationExpr
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Const
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DebugPoint
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Do
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DoBang

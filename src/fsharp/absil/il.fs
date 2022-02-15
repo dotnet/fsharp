@@ -1294,7 +1294,7 @@ type ILMethodBody =
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      DebugPoint: ILDebugPoint option
+      DebugRange: ILDebugPoint option
       DebugImports: ILDebugImports option
     }
 
@@ -1709,8 +1709,6 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     member x.Locals = match x.Body with | MethodBody.IL il -> il.Value.Locals | _ -> []
 
     member x.MethodBody = match x.Body with MethodBody.IL il -> il.Value | _ -> failwith "not IL"
-
-    member x.DebugPoint = x.MethodBody.DebugPoint
 
     member x.MaxStack = x.MethodBody.MaxStack
 
@@ -2998,7 +2996,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
       AggressiveInlining=false
       Locals= locals
       Code= code
-      DebugPoint=tag
+      DebugRange=tag
       DebugImports=imports }
 
 let mkMethodBody (zeroinit, locals, maxstack, code, tag, imports) =

@@ -781,7 +781,11 @@ type internal ILMethodBody =
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      DebugPoint: ILDebugPoint option
+      
+      /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
+      /// Additionally, if the range is not set, then no debug points are emitted.
+      DebugRange: ILDebugPoint option
+
       DebugImports: ILDebugImports option
     }
 

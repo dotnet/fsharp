@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ForLoop02
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000140 Length: 0x00000050
 }
 .module ForLoop02.exe
-// MVID: {60BCDCE8-1736-791C-A745-0383E8DCBC60}
+// MVID: {61E07031-1736-791C-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x068C0000
+// Image base: 0x07170000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -67,12 +67,12 @@
     .maxstack  5
     .locals init ([0] int32 wi)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 1,19 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop02.fs'
+    .line 5,5 : 1,4 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop02.fs'
     IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
     IL_0002:  br.s       IL_001e
 
-    .line 6,6 : 5,17 ''
+    .line 6,6 : 5,20 ''
     IL_0004:  ldstr      "%A"
     IL_0009:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000e:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -83,7 +83,7 @@
     IL_001b:  ldc.i4.1
     IL_001c:  add
     IL_001d:  stloc.0
-    .line 5,5 : 1,19 ''
+    .line 5,5 : 12,14 ''
     IL_001e:  ldloc.0
     IL_001f:  ldc.i4.1
     IL_0020:  ldc.i4.3

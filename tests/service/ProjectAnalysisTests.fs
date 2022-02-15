@@ -4621,7 +4621,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     // ThisValue in these cases, this is only used when the symbol
     // is implicit in the constructor
     match getExpr 4 with
-    | Let((b,_),_) ->
+    | Let((b,_, _),_) ->
         b.IsConstructorThisValue && not b.IsMemberThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true

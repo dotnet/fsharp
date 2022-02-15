@@ -2531,8 +2531,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 LocalSignatureToken=localToken
                 Params= [| |] (* REVIEW *)
                 RootScope = Some rootScope
-                Range=
-                  match ilmbody.DebugPoint with
+                DebugRange =
+                  match ilmbody.DebugRange with
                   | Some m when cenv.generatePdb ->
                       // table indexes are 1-based, document array indexes are 0-based
                       let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1
@@ -2557,7 +2557,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 LocalSignatureToken = 0x0                   // No locals it's abstract
                 Params = [| |]
                 RootScope = None
-                Range = None
+                DebugRange = None
                 DebugPoints = [| |] }
           0x0000
       | MethodBody.Native ->

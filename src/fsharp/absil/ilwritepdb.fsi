@@ -73,7 +73,7 @@ type PdbMethodData =
       LocalSignatureToken: int32
       Params: PdbLocalVar[]
       RootScope: PdbMethodScope option
-      Range: (PdbSourceLoc * PdbSourceLoc) option
+      DebugRange: (PdbSourceLoc * PdbSourceLoc) option
       DebugPoints: PdbDebugPoint[]
     }
 

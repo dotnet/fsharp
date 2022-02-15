@@ -297,6 +297,11 @@
         <target state="translated">無効なディレクティブ '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">再開可能なコード コンストラクト '{0}' は、 'if __useResumableCode then ...' によって保護されているインライン コードでのみ使用でき、コンポジション全体は有効な再開可能コードを形成する必要があります。</target>

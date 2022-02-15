@@ -103,8 +103,8 @@ type PdbMethodData =
       LocalSignatureToken: int32
       Params: PdbLocalVar array
       RootScope: PdbMethodScope option
-      Range: (PdbSourceLoc * PdbSourceLoc) option
-      DebugPoints: PdbDebugPoint []
+      DebugRange: (PdbSourceLoc * PdbSourceLoc) option
+      DebugPoints: PdbDebugPoint array
     }
 
 module SequencePoint =
@@ -573,7 +573,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
                 match minfo.DebugPoints with
                 | null -> Array.empty
                 | _ ->
-                    match minfo.Range with
+                    match minfo.DebugRange with
                     | None -> Array.empty
                     | Some _ -> minfo.DebugPoints
 
@@ -780,7 +780,7 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
 
           let sps = Array.sub allSps spOffset spCounts.[i]
           spOffset <- spOffset + spCounts.[i]
-          begin match minfo.Range with
+          begin match minfo.DebugRange with
           | None -> ()
           | Some (a,b) ->
               pdbOpenMethod pdbw minfo.MethToken
@@ -926,7 +926,7 @@ let writeMdbInfo fmdb f info =
         // We need this as an argument to 'OpenMethod' below. Using private class is ugly, but since we don't reference
         // the assembly, the only way to implement 'IMethodDef' interface would be dynamically using Reflection.Emit...
         let sm = createSourceMethodImpl meth.MethName meth.MethToken 0
-        match meth.Range with
+        match meth.DebugRange with
         | Some(mstart, _) ->
             // NOTE: 'meth.Params' is not needed, Mono debugger apparently reads this from meta-data
             let _, cue = getDocument mstart.Document
@@ -981,7 +981,7 @@ let logDebugInfo (outfile: string) (info: PdbData) =
     for meth in info.Methods do
       fprintfn sw " %s" meth.MethName
       fprintfn sw "     Params: %A" [ for p in meth.Params -> sprintf "%d: %s" p.Index p.Name ]
-      fprintfn sw "     Range: %A" (meth.Range |> Option.map (fun (f, t) ->
+      fprintfn sw "     Range: %A" (meth.DebugRange |> Option.map (fun (f, t) ->
                                       sprintf "[%d,%d:%d] - [%d,%d:%d]" f.Document f.Line f.Column t.Document t.Line t.Column))
       fprintfn sw "     Points:"
 

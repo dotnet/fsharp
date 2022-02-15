@@ -14,6 +14,13 @@ This document contains current and historical release notes information. They ar
 
 These release notes track our current efforts to document changes to the F# project over time. They are split into the language, core library, compiler/tools, and compiler service.
 
+### FSharp Compiler Service (main)
+
+* Some syntax tree nodes have changed, e.g. introduction of SyntaxTree trivia
+* Resolved expressions (FSharpExpr) now reveal debug points, you must match them explicitly using `DebugPoint(dp, expr)`
+* Some node types in FSharpExpr (e.g. Let, While, TryFinally, TryWith) reveal additional debug points
+* In FSharpExpr, FastIntegerForLoop has been renamed to IntegerForLoop 
+
 ### F# 6.0 / Visual Studio 17.0
 
 

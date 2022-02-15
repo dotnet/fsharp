@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Default
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000003F8 Length: 0x000000BA
 }
 .module Default.dll
-// MVID: {611C4D7D-AAA9-67BB-A745-03837D4D1C61}
+// MVID: {61E07031-AAA9-67BB-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x070A0000
+// Image base: 0x073F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -67,7 +67,6 @@
       IL_0001:  callvirt   instance void [mscorlib]System.Attribute::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 8,8 : 6,21 ''
       IL_0008:  ret
     } // end of method ExportAttribute::.ctor
 

@@ -1913,7 +1913,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
                                   tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
+                                  tcConfig.noDebugAttributes, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

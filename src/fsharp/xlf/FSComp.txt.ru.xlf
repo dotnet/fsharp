@@ -297,6 +297,11 @@
         <target state="translated">Недопустимая директива "#{0} {1}"</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">Конструкцию возобновляемого кода "{0}" можно использовать только во встроенном коде, защищенном с помощью "if __useResumableCode then ...", а общая композиция должна представлять собой допустимый возобновляемый код.</target>

@@ -2935,7 +2935,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              AggressiveInlining=aggressiveinline
              Locals=List.empty
              Code=code
-             DebugPoint=methRangePdbInfo
+             DebugRange=methRangePdbInfo
              DebugImports=None
            }
 
@@ -3061,7 +3061,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              AggressiveInlining=aggressiveinline
              Locals = locals
              Code=code
-             DebugPoint=methRangePdbInfo
+             DebugRange=methRangePdbInfo
              DebugImports = None
            })
 
