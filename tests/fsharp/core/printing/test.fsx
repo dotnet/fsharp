@@ -1086,7 +1086,7 @@ let ShortName = "hi"
 
 System.DayOfWeek.Tuesday
 ;;
-
+let internal f() = 1;; f();; // should give a warning in multi-assembly interactive emit
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)

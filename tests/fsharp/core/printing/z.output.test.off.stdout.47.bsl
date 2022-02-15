@@ -1728,4 +1728,8 @@ val ShortName: string = "hi"
 
 > val it: System.DayOfWeek = Tuesday
 
+> val internal f: unit -> int
+
+> val it: int = 1
+
 > > > 

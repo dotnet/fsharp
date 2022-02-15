@@ -481,7 +481,7 @@ type TcConfigBuilder =
       mutable fxResolver: FxResolver option
 
       // Is F# Interactive using multi-assembly emit?
-      mutable fsiSingleDynamicAsembly: bool
+      mutable fsiSingleAssemblyRefEmit: bool
 
       /// specify the error range for FxResolver
       rangeForErrors: range
@@ -663,7 +663,7 @@ type TcConfigBuilder =
           shadowCopyReferences = false
           useSdkRefs = true
           fxResolver = None
-          fsiSingleDynamicAsembly = false
+          fsiSingleAssemblyRefEmit = false
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty
@@ -925,6 +925,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
+    member _.fsiSingleAssemblyRefEmit = data.fsiSingleAssemblyRefEmit
     member x.FxResolver = data.FxResolver
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback

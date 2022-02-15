@@ -77,7 +77,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen =
                 Optimizer.OptimizeImplFile
                    (optSettings, ccu, tcGlobals, tcVal, importMap,
-                    optEnvFirstLoop, isIncrementalFragment,
+                    optEnvFirstLoop, isIncrementalFragment, tcConfig.fsiSingleAssemblyRefEmit,
                     tcConfig.emitTailcalls, hidden, implFile)
 
             let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile
@@ -96,7 +96,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     let (optEnvExtraLoop, implFile, _, _), _ =
                         Optimizer.OptimizeImplFile
                            (optSettings, ccu, tcGlobals, tcVal, importMap,
-                            optEnvExtraLoop, isIncrementalFragment,
+                            optEnvExtraLoop, isIncrementalFragment, tcConfig.fsiSingleAssemblyRefEmit,
                             tcConfig.emitTailcalls, hidden, implFile)
 
                     //PrintWholeAssemblyImplementation tcConfig outfile (sprintf "extra-loop-%d" n) implFile
@@ -127,7 +127,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                     let (optEnvFinalSimplify, implFile, _, _), _ =
                         Optimizer.OptimizeImplFile
                            (optSettings, ccu, tcGlobals, tcVal, importMap, optEnvFinalSimplify,
-                            isIncrementalFragment, tcConfig.emitTailcalls, hidden, implFile)
+                            isIncrementalFragment, tcConfig.fsiSingleAssemblyRefEmit, tcConfig.emitTailcalls, hidden, implFile)
 
                     //PrintWholeAssemblyImplementation tcConfig outfile "post-rec-opt" implFile
                     implFile, optEnvFinalSimplify

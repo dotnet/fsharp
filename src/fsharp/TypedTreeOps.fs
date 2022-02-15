@@ -4476,8 +4476,35 @@ let rec accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc =
     let acc = QueueList.foldBack accValHidingInfoAtAssemblyBoundary mty.AllValsAndMembers acc
     acc 
 
-let ComputeHidingInfoAtAssemblyBoundary mty acc = 
+let ComputeSignatureHidingInfoAtAssemblyBoundary mty acc = 
     accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc
+
+let rec accImplHidingInfoAtAssemblyBoundary mdef acc = 
+    match mdef with 
+    | TMDefRec(_isRec, _opens, tycons, mbinds, _m) -> 
+        let acc = List.foldBack accTyconHidingInfoAtAssemblyBoundary tycons acc
+        let acc =
+            (mbinds, acc) ||> List.foldBack (fun mbind acc ->
+                match mbind with
+                | ModuleOrNamespaceBinding.Binding bind -> 
+                    accValHidingInfoAtAssemblyBoundary bind.Var acc
+                | ModuleOrNamespaceBinding.Module(_mspec, def) -> 
+                    accImplHidingInfoAtAssemblyBoundary def acc)
+        acc
+
+    | TMAbstract mexpr -> 
+        accModuleOrNamespaceHidingInfoAtAssemblyBoundary mexpr.Type acc
+
+    | TMDefOpens _openDecls ->  acc
+
+    | TMDefLet(bind, _m) -> accValHidingInfoAtAssemblyBoundary bind.Var acc
+
+    | TMDefDo _ -> acc
+
+    | TMDefs defs -> List.foldBack accImplHidingInfoAtAssemblyBoundary defs acc
+
+let ComputeImplementationHidingInfoAtAssemblyBoundary mty acc = 
+    accImplHidingInfoAtAssemblyBoundary mty acc
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty

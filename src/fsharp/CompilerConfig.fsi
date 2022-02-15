@@ -272,7 +272,7 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
-      mutable fsiSingleDynamicAsembly: bool
+      mutable fsiSingleAssemblyRefEmit: bool
       rangeForErrors: range
       sdkDirOverride: string option
 
@@ -458,6 +458,9 @@ type TcConfig =
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool
+
+    /// Indicates if F# Interactive is using single-assembly emit where internals are available.
+    member fsiSingleAssemblyRefEmit: bool
 
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 

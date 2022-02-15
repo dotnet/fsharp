@@ -799,7 +799,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
 
     let optimizedImpls, optimizationData, _ =
         ApplyAllOptimizations
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+            (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile,
              importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)

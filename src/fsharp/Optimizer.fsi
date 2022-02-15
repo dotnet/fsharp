@@ -74,6 +74,7 @@ val internal OptimizeImplFile:
     Import.ImportMap *
     IncrementalOptimizationEnv *
     isIncrementalFragment: bool *
+    fsiSingleAssemblyRefEmit: bool *
     emitTailcalls: bool *
     SignatureHidingInfo * 
     TypedImplFile 

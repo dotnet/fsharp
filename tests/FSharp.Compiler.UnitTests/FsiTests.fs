@@ -18,7 +18,7 @@ module FsiTests =
 
         // Build command line arguments & start FSI session
         let argv = [| "C:\\fsi.exe" |]
-        let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--dynamicassembly" |]
+        let allArgs = Array.append argv [|"--noninteractive"; if useOneDynamicAssembly then "--refemit" else "--refemit-" |]
 
         let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
         FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)

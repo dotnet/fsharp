@@ -1210,7 +1210,10 @@ val ComputeRemappingFromImplementationToSignature: TcGlobals -> ModuleOrNamespac
 val ComputeRemappingFromInferredSignatureToExplicitSignature: TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 
 /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
-val ComputeHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+
+/// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
+val ComputeImplementationHidingInfoAtAssemblyBoundary: ModuleOrNamespaceExpr -> SignatureHidingInfo -> SignatureHidingInfo
 
 val mkRepackageRemapping: SignatureRepackageInfo -> Remap 
 

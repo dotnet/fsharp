@@ -1,9 +1,9 @@
 
 > val it: unit = ()
 
-> val repeatId: string = "A"
+> val repeatId: string
 
-> val repeatId: string = "B"
+> val repeatId: string
 
 namespace FSI_0005
   val x1: int
@@ -41,75 +41,40 @@ namespace FSI_0006
 > val x1: seq<string>
 val x2: seq<string>
 val x3: seq<string>
-val f1: System.Windows.Forms.Form = System.Windows.Forms.Form, Text: f1 form
-val fs: System.Windows.Forms.Form[] =
-  [|System.Windows.Forms.Form, Text: fs #0;
-    System.Windows.Forms.Form, Text: fs #1;
-    System.Windows.Forms.Form, Text: fs #2;
-    System.Windows.Forms.Form, Text: fs #3;
-    System.Windows.Forms.Form, Text: fs #4;
-    System.Windows.Forms.Form, Text: fs #5;
-    System.Windows.Forms.Form, Text: fs #6;
-    System.Windows.Forms.Form, Text: fs #7;
-    System.Windows.Forms.Form, Text: fs #8;
-    System.Windows.Forms.Form, Text: fs #9;
-    System.Windows.Forms.Form, Text: fs #10;
-    System.Windows.Forms.Form, Text: fs #11;
-    System.Windows.Forms.Form, Text: fs #12;
-    System.Windows.Forms.Form, Text: fs #13;
-    System.Windows.Forms.Form, Text: fs #14;
-    System.Windows.Forms.Form, Text: fs #15;
-    System.Windows.Forms.Form, Text: fs #16;
-    System.Windows.Forms.Form, Text: fs #17;
-    System.Windows.Forms.Form, Text: fs #18;
-    System.Windows.Forms.Form, Text: fs #19; ...|]
-val xs: string list =
-  ["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12"; "13";
-   "14"; "15"; "16"; "17"; "18"; "19"; ...]
-val xa: string[] =
-  [|"0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12"; "13";
-    "14"; "15"; "16"; "17"; "18"; "19"; ...|]
-val xa2: string[,] = [["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"]
-                      ["10"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
-                      ["20"; "21"; "22"; "23"; ...]
-                      ...]
-val sxs0: Set<string> = set []
+val f1: System.Windows.Forms.Form
+val fs: System.Windows.Forms.Form[]
+val xs: string list
+val xa: string[]
+val xa2: string[,]
+val sxs0: Set<string>
 
-> val sxs1: Set<string> = set ["0"]
+> val sxs1: Set<string>
 
-> val sxs2: Set<string> = set ["0"; "1"]
+> val sxs2: Set<string>
 
-> val sxs3: Set<string> = set ["0"; "1"; "2"]
+> val sxs3: Set<string>
 
-> val sxs4: Set<string> = set ["0"; "1"; "2"; "3"]
+> val sxs4: Set<string>
 
-> val sxs200: Set<string> =
-  set ["0"; "1"; "10"; "100"; "101"; "102"; "103"; "104"; "105"; ...]
+> val sxs200: Set<string>
 
-> val msxs0: Map<int,string> = map []
+> val msxs0: Map<int,string>
 
-> val msxs1: Map<int,string> = map [(0, "0")]
+> val msxs1: Map<int,string>
 
-> val msxs2: Map<int,string> = map [(0, "0"); (1, "1")]
+> val msxs2: Map<int,string>
 
-> val msxs3: Map<int,string> = map [(0, "0"); (1, "1"); (2, "2")]
+> val msxs3: Map<int,string>
 
-> val msxs4: Map<int,string> = map [(0, "0"); (1, "1"); (2, "2"); (3, "3")]
+> val msxs4: Map<int,string>
 
-> val msxs200: Map<int,string> =
-  map
-    [(0, "0"); (1, "1"); (2, "2"); (3, "3"); (4, "4"); (5, "5"); (6, "6");
-     (7, "7"); (8, "8"); ...]
+> val msxs200: Map<int,string>
 
 > module M =
-  val a: string = "sub-binding"
+  val a: string
   val b:
     (seq<string> * seq<string> * seq<string> * System.Windows.Forms.Form) option *
-    (string list * string list * string[,]) option =
-    (Some (<seq>, <seq>, <seq>, System.Windows.Forms.Form, Text: f1 form),
-     Some
-       (["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12";
-         "13"; "14"; "15"; "16"; ...], ..., ...))
+    (string list * string list * string[,]) option
 type T =
   new: a: int * b: int -> T
   member AMethod: x: int -> int
@@ -118,7 +83,7 @@ type T =
   static member StaticProperty: int
 val f_as_method: x: int -> int
 val f_as_thunk: (int -> int)
-val refCell: string ref = { contents = "value" }
+val refCell: string ref
 module D1 =
   val words: System.Collections.Generic.IDictionary<string,int>
   val words2000: System.Collections.Generic.IDictionary<int,string>
@@ -127,41 +92,14 @@ module D1 =
   val words: IDictionary<string,int>
   val words2000: IDictionary<int,string>
 val opt1: 'a option
-val opt1b: int option = None
+val opt1b: int option
 val opt4: 'a option option option option
-val opt4b: int option option option option = Some (Some (Some None))
-val opt5: int list option option option option option list =
-  [Some (Some (Some (Some None)));
-   Some (Some (Some (Some (Some [1; 2; 3; 4; 5; 6]))));
-   Some (Some (Some (Some ...))); ...]
+val opt4b: int option option option option
+val opt5: int list option option option option option list
 val mkStr: n: int -> string
-val strs: string[] =
-  [|""; "-"; "--"; "---"; "----"; "-----"; "------"; "-------"; "--------";
-    "---------"; "----------"; "-----------"; "------------"; "-------------";
-    "--------------"; "---------------"; "----------------";
-    "-----------------"; "------------------"; "-------------------"; ...|]
-val str7s: string[] =
-  [|""; "-------"; "--------------"; "---------------------";
-    "----------------------------"; "-----------------------------------";
-    "------------------------------------------";
-    "-------------------------------------------------";
-    "--------------------------------------------------------";
-    "---------------------------------------------------------------";
-    "----------------------------------------------------------------------";
-    "-------------------------------------------------------------"+[16 chars];
-    "-------------------------------------------------------------"+[23 chars];
-    "-------------------------------------------------------------"+[30 chars];
-    "-------------------------------------------------------------"+[37 chars];
-    "-------------------------------------------------------------"+[44 chars];
-    "-------------------------------------------------------------"+[51 chars];
-    "-------------------------------------------------------------"+[58 chars];
-    "-------------------------------------------------------------"+[65 chars];
-    "-------------------------------------------------------------"+[72 chars];
-    ...|]
-val grids: string[,] =
-  [[""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; ""; "";
-    ""; ...]
-   ...]
+val strs: string[]
+val str7s: string[]
+val grids: string[,]
 
 > type tree =
   | L
@@ -170,176 +108,65 @@ val mkT: w: int -> d: int -> tree
 val tree: w: int -> d: int -> tree
 
 > [Building 2 4...done]
-val tree_2_4: tree =
-  N [N [N [N [L; L]; N [L; L]]; N [N [L; L]; N [L; L]]];
-     N [N [N [L; ...]; ...]; ...]; ...]
+val tree_2_4: tree
 
 > [Building 2 6...done]
-val tree_2_6: tree =
-  N [N [N [N [N [N [L; L]; N [L; L]]; N [N [L; L]; N [L; L]]]; N [N ...; ...];
-           ...]; ...]; ...]
+val tree_2_6: tree
 
 > [Building 2 8...done]
-val tree_2_8: tree =
-  N [N [N [N [N [N [N [N [L; L]; N [L; L]]; N [N [L; L]; N [L; L; ...]; ...];
-                    ...]; ...]; ...]; ...]; ...]; ...]
+val tree_2_8: tree
 
 > [Building 2 10...done]
-val tree_2_10: tree =
-  N [N [N [N [N [N [N [N [N [N [L; L]; N [L; L]]; N [N [L; L]; N ...; ...];
-                          ...]; ...]; ...]; ...]; ...]; ...]; ...]; ...]
+val tree_2_10: tree
 
 > [Building 2 12...done]
-val tree_2_12: tree =
-  N [N [N [N [N [N [N [N [N [N [N [N [L; L]; N [L; L]]; N [N [L; ...]; ...];
-                                ...]; ...]; ...]; ...]; ...]; ...]; ...]; ...];
-        ...]; ...]
+val tree_2_12: tree
 
 > [Building 2 14...done]
-val tree_2_14: tree =
-  N [N [N [N [N [N [N [N [N [N [N [N [N [N [L; L]; N [L; L]]; N ...; ...]; ...];
-                                ...]; ...]; ...]; ...]; ...]; ...]; ...]; ...];
-        ...]; ...]
+val tree_2_14: tree
 
 > [Building 3 8...done]
-val tree_3_8: tree =
-  N [N [N [N [N [N [N [N [L; L; L]; N [L; L; L]; N [L; L; L]]; N ...; ...];
-                 ...]; ...]; ...]; ...]; ...]
+val tree_3_8: tree
 
 > [Building 4 8...done]
-val tree_4_8: tree =
-  N [N [N [N [N [N [N [N [L; L; L; L]; N [L; L; L; L]; N [L; L; ...]; ...];
-                    ...]; ...]; ...]; ...]; ...]; ...]
+val tree_4_8: tree
 
 > [Building 5 8...done]
-val tree_5_8: tree =
-  N [N [N [N [N [N [N [N [L; L; L; L; L]; N [L; L; L; L; L]; N ...; ...]; ...];
-                 ...]; ...]; ...]; ...]; ...]
+val tree_5_8: tree
 
 > [Building 6 8...done]
-val tree_6_8: tree =
-  N [N [N [N [N [N [N [N [L; L; L; L; L; L]; N [L; L; L; L; L; ...]; ...]; ...];
-                 ...]; ...]; ...]; ...]; ...]
+val tree_6_8: tree
 
 > [Building 5 3...done]
-val tree_5_3: tree =
-  N [N [N [L; L; L; L; L]; N [L; L; L; L; L]; N [L; L; L; L; L; ...]; ...];
-     ...]
+val tree_5_3: tree
 
 > > type X =
   | Var of int
   | Bop of int * X * X
 val generate: x: int -> X
 
-> val exps: X list =
-  [Bop (1, Var 0, Var 0); Var 2;
-   Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, ...)); ...]
+> val exps: X list
 
 > module Exprs =
-  val x1: X =
-    Bop
-      (213, Var 106,
-       Bop
-         (71,
-          Bop (35, Bop (17, Var 8, Bop (5, Var 2, Bop (1, Var 0, ...))), ...),
-          ...))
-  val x2: X = Var 21342314
-  val x3: X = Var 3214
-  val x4: X = Bop (1231357, Var 615678, Var 410452)
-  val x5: X =
-    Bop
-      (5234547, Bop (2617273, Var 1308636, Var 872424),
-       Bop (1744849, Var 872424, Var 581616))
-  val x6: X =
-    Bop
-      (923759825, Var 461879912, Bop (307919941, Var 153959970, Var 102639980))
-  val x7: X = Var 2435234
-  val x8: X =
-    Bop
-      (12396777, Var 6198388,
-       Bop
-         (4132259,
-          Bop
-            (2066129, Var 1033064,
-             Bop
-               (688709, Var 344354,
-                Bop (229569, Var 114784, Bop (76523, ..., ...)))), ...))
-  val x9: X =
-    Bop
-      (3333333, Var 1666666,
-       Bop
-         (1111111,
-          Bop
-            (555555, Bop (277777, Var 138888, Var 92592),
-             Bop (185185, Var 92592, Var 61728)), ...))
-  val x10: X =
-    Bop
-      (1312311237, Var 656155618,
-       Bop
-         (437437079,
-          Bop
-            (218718539,
-             Bop
-               (109359269, Var 54679634,
-                Bop (36453089, Var 18226544, Bop (12151029, Var 6075514, ...))),
-             ...), ...))
-  val x11: X =
-    Bop
-      (2147483647,
-       Bop
-         (1073741823,
-          Bop
-            (536870911,
-             Bop
-               (268435455,
-                Bop
-                  (134217727,
-                   Bop
-                     (67108863,
-                      Bop
-                        (33554431,
-                         Bop
-                           (16777215,
-                            Bop (8388607, Bop (4194303, ..., ...), ...), ...),
-                         ...), ...), ...), ...), ...), ...), ...)
+  val x1: X
+  val x2: X
+  val x3: X
+  val x4: X
+  val x5: X
+  val x6: X
+  val x7: X
+  val x8: X
+  val x9: X
+  val x10: X
+  val x11: X
 
 > type C =
   new: x: string -> C
   override ToString: unit -> string
-val c1: C = <ToString exception: Trouble_A>
-val csA: C[] =
-  [|<ToString exception: Trouble_0>; <ToString exception: Trouble_1>;
-    <ToString exception: Trouble_2>; <ToString exception: Trouble_3>;
-    <ToString exception: Trouble_4>; <ToString exception: Trouble_5>;
-    <ToString exception: Trouble_6>; <ToString exception: Trouble_7>;
-    <ToString exception: Trouble_8>; <ToString exception: Trouble_9>;
-    <ToString exception: Trouble_10>; <ToString exception: Trouble_11>;
-    <ToString exception: Trouble_12>; <ToString exception: Trouble_13>;
-    <ToString exception: Trouble_14>; <ToString exception: Trouble_15>;
-    <ToString exception: Trouble_16>; <ToString exception: Trouble_17>;
-    <ToString exception: Trouble_18>; <ToString exception: Trouble_19>; ...|]
-val csB: C[] =
-  [|<ToString exception: Trouble_0>; <ToString exception: Trouble_1>;
-    <ToString exception: Trouble_2>; <ToString exception: Trouble_3>;
-    <ToString exception: Trouble_4>; <ToString exception: Trouble_5>;
-    <ToString exception: Trouble_6>; <ToString exception: Trouble_7>;
-    <ToString exception: Trouble_8>; <ToString exception: Trouble_9>;
-    <ToString exception: Trouble_10>; <ToString exception: Trouble_11>;
-    <ToString exception: Trouble_12>; <ToString exception: Trouble_13>;
-    <ToString exception: Trouble_14>; <ToString exception: Trouble_15>;
-    <ToString exception: Trouble_16>; <ToString exception: Trouble_17>;
-    <ToString exception: Trouble_18>; <ToString exception: Trouble_19>; ...|]
-val csC: C[] =
-  [|<ToString exception: Trouble_0>; <ToString exception: Trouble_1>;
-    <ToString exception: Trouble_2>; <ToString exception: Trouble_3>;
-    <ToString exception: Trouble_4>; <ToString exception: Trouble_5>;
-    <ToString exception: Trouble_6>; <ToString exception: Trouble_7>;
-    <ToString exception: Trouble_8>; <ToString exception: Trouble_9>;
-    <ToString exception: Trouble_10>; <ToString exception: Trouble_11>;
-    <ToString exception: Trouble_12>; <ToString exception: Trouble_13>;
-    <ToString exception: Trouble_14>; <ToString exception: Trouble_15>;
-    <ToString exception: Trouble_16>; <ToString exception: Trouble_17>;
-    <ToString exception: Trouble_18>; <ToString exception: Trouble_19>; ...|]
+val c1: C
+val csA: C[]
+val csB: C[]
+val csC: C[]
 
 > exception Abc
 
@@ -351,29 +178,29 @@ val csC: C[] =
 
 > exception AbcException of System.Exception list
 
-> val exA1: exn = Abc
-val exA2: exn = AbcInt 2
-val exA3: exn = AbcString "3"
-val exA4: exn = AbcExn [Abc; AbcInt 2; AbcString "3"]
-val exA5: exn = AbcException [AbcExn [Abc; AbcInt 2; AbcString "3"]]
+> val exA1: exn
+val exA2: exn
+val exA3: exn
+val exA4: exn
+val exA5: exn
 exception Ex0
 exception ExUnit of unit
 exception ExUnits of unit * unit
 exception ExUnitOption of unit option
-val ex0: exn = Ex0
-val exU: exn = ExUnit ()
-val exUs: exn = ExUnits ((), ())
-val exUSome: exn = ExUnitOption (Some ())
-val exUNone: exn = ExUnitOption None
+val ex0: exn
+val exU: exn
+val exUs: exn
+val exUSome: exn
+val exUNone: exn
 type 'a T4063 = | AT4063 of 'a
 
-> val valAT3063_12: int T4063 = AT4063 12
+> val valAT3063_12: int T4063
 
-> val valAT3063_True: bool T4063 = AT4063 true
+> val valAT3063_True: bool T4063
 
-> val valAT3063_text: string T4063 = AT4063 "text"
+> val valAT3063_text: string T4063
 
-> val valAT3063_null: System.Object T4063 = AT4063 null
+> val valAT3063_null: System.Object T4063
 
 > type M4063<'a> =
   new: x: 'a -> M4063<'a>
@@ -399,10 +226,10 @@ type 'a T4063 = | AT4063 of 'a
 > val it: (unit -> string) = <fun:it@197>
 
 > module RepeatedModule =
-  val repeatedByteLiteral: byte[] = [|12uy; 13uy; 14uy|]
+  val repeatedByteLiteral: byte[]
 
 > module RepeatedModule =
-  val repeatedByteLiteral: byte[] = [|12uy; 13uy; 14uy|]
+  val repeatedByteLiteral: byte[]
 
 > val it: string = "Check #help"
 
@@ -415,6 +242,8 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
+    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #quit;;                                       // Exit
 
   F# Interactive command line options:
@@ -543,48 +372,21 @@ type 'a T1Pre with
     f8: int
     f9: int
   }
-val r10: r = { f0 = 0
-               f1 = 1
-               f2 = 2
-               f3 = 3
-               f4 = 4
-               f5 = 5
-               f6 = 6
-               f7 = 7
-               f8 = 8
-               f9 = 9 }
-val r10s: r[] = [|{ f0 = 0
-                    f1 = 1
-                    f2 = 2
-                    f3 = 3
-                    f4 = 4
-                    f5 = 5
-                    f6 = 6
-                    f7 = 7
-                    f8 = 8
-                    f9 = 9 }; ...|]
-val r10s': string * r[] = ("one extra node", [|{ f0 = 0
-                                                 f1 = 1
-                                                 f2 = 2
-                                                 f3 = 3
-                                                 f4 = 4
-                                                 f5 = 5
-                                                 f6 = 6
-                                                 f7 = 7
-                                                 f8 = 8
-                                                 f9 = ... }; ...|])
+val r10: r
+val r10s: r[]
+val r10s': string * r[]
 
-> val x1564_A1: int = 1
+> val x1564_A1: int
 
 
 --> Added '\' to library include path
 
-val x1564_A2: int = 2
+val x1564_A2: int
 
 
 --> Added '\' to library include path
 
-val x1564_A3: int = 3
+val x1564_A3: int
 
 > type internal Foo2 =
   private new: x: int * y: int * z: int -> Foo2 + 3 overloads
@@ -593,7 +395,7 @@ val x1564_A3: int = 3
   member private Prop3: int
 
 > module internal InternalM =
-  val x: int = 1
+  val x: int
   type Foo2 =
     private new: x: int * y: int * z: int -> Foo2 + 3 overloads
     member Prop1: int
@@ -636,7 +438,7 @@ val x1564_A3: int = 3
   type private T14 =
     new: unit -> T14
 module internal PrivateM =
-  val private x: int = 1
+  val private x: int
   type private Foo2 =
     new: x: int * y: int * z: int -> Foo2 + 3 overloads
     member Prop1: int
@@ -681,24 +483,15 @@ module internal PrivateM =
 
 > module Test4343a =
   val mk: i: int -> string
-  val x100: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[39 chars]
-  val x90: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[29 chars]
-  val x80: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[19 chars]
-  val x75: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[14 chars]
-  val x74: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[13 chars]
-  val x73: string =
-    "0123456789012345678901234567890123456789012345678901234567890"+[12 chars]
-  val x72: string =
-    "012345678901234567890123456789012345678901234567890123456789012345678901"
-  val x71: string =
-    "01234567890123456789012345678901234567890123456789012345678901234567890"
-  val x70: string =
-    "0123456789012345678901234567890123456789012345678901234567890123456789"
+  val x100: string
+  val x90: string
+  val x80: string
+  val x75: string
+  val x74: string
+  val x73: string
+  val x72: string
+  val x71: string
+  val x70: string
 module Test4343b =
   val fA: x: int -> int
   val fB: x: 'a -> y: 'a -> 'a list
@@ -711,43 +504,38 @@ module Test4343c =
   val typename<'a> : string
   val typename2<'a> : string * string
 module Test4343d =
-  val xList: int list = [1; 2; 3]
-  val xArray: int[] = [|1; 2; 3|]
-  val xString: string = "abcdef"
-  val xOption: int option = Some 12
-  val xArray2: (int * int)[,] = [[(0, 0); (0, 1)]
-                                 [(1, 0); (1, 1)]]
+  val xList: int list
+  val xArray: int[]
+  val xString: string
+  val xOption: int option
+  val xArray2: (int * int)[,]
   val xSeq: seq<int>
 module Test4343e =
   type C =
     new: x: int -> C
   val cA: C
   val cB: C
-  val cAB: C * C * C list =
-    (FSI_0091+Test4343e+C, FSI_0091+Test4343e+C,
-     [FSI_0091+Test4343e+C; FSI_0091+Test4343e+C])
+  val cAB: C * C * C list
   type D =
     new: x: int -> D
     override ToString: unit -> string
-  val dA: D = D(1)
-  val dB: D = D(2)
-  val dAB: D * D * D list = (D(1), D(2), [D(1); D(2)])
+  val dA: D
+  val dB: D
+  val dAB: D * D * D list
   module Generic =
     type CGeneric<'a> =
       new: x: 'a -> CGeneric<'a>
     val cA: C
     val cB: C
-    val cAB: C * C * C list =
-      (FSI_0091+Test4343e+C, FSI_0091+Test4343e+C,
-       [FSI_0091+Test4343e+C; FSI_0091+Test4343e+C])
+    val cAB: C * C * C list
     type D<'a> =
       new: x: 'a -> D<'a>
       override ToString: unit -> string
-    val dA: D<int> = D(1)
-    val dB: D<int> = D(2)
-    val dAB: D<int> * D<int> * D<int> list = (D(1), D(2), [D(1); D(2)])
-    val dC: D<bool> = D(True)
-    val boxed_dABC: obj list = [D(1); D(2); D(True)]
+    val dA: D<int>
+    val dB: D<int>
+    val dAB: D<int> * D<int> * D<int> list
+    val dC: D<bool>
+    val boxed_dABC: obj list
 type F1 =
   inherit System.Windows.Forms.Form
   interface System.IDisposable
@@ -789,46 +577,32 @@ type Either<'a,'b> =
   | This of 'a
   | That of 'b
 val catch: f: (unit -> 'a) -> Either<'a,(string * string)>
-val seqFindIndexFailure: Either<int,(string * string)> =
-  That
-    ("System.Collections.Generic.KeyNotFoundException",
-     "An index satisfying the predicate was not found in the collection.")
-val seqFindFailure: Either<int,(string * string)> =
-  That
-    ("System.Collections.Generic.KeyNotFoundException",
-     "An index satisfying the predicate was not found in the collection.")
-val seqPickFailure: Either<int,(string * string)> =
-  That
-    ("System.Collections.Generic.KeyNotFoundException",
-     "An index satisfying the predicate was not found in the collection.")
+val seqFindIndexFailure: Either<int,(string * string)>
+val seqFindFailure: Either<int,(string * string)>
+val seqPickFailure: Either<int,(string * string)>
 module Regression5218 =
-  val t1: int = 1
-  val t2: int * int = (1, 2)
-  val t3: int * int * int = (1, 2, 3)
-  val t4: int * int * int * int = (1, 2, 3, 4)
-  val t5: int * int * int * int * int = (1, 2, 3, 4, 5)
-  val t6: int * int * int * int * int * int = (1, 2, 3, 4, 5, 6)
-  val t7: int * int * int * int * int * int * int = (1, 2, 3, 4, 5, 6, 7)
-  val t8: int * int * int * int * int * int * int * int =
-    (1, 2, 3, 4, 5, 6, 7, 8)
-  val t9: int * int * int * int * int * int * int * int * int =
-    (1, 2, 3, 4, 5, 6, 7, 8, 9)
-  val t10: int * int * int * int * int * int * int * int * int * int =
-    (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-  val t11: int * int * int * int * int * int * int * int * int * int * int =
-    (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+  val t1: int
+  val t2: int * int
+  val t3: int * int * int
+  val t4: int * int * int * int
+  val t5: int * int * int * int * int
+  val t6: int * int * int * int * int * int
+  val t7: int * int * int * int * int * int * int
+  val t8: int * int * int * int * int * int * int * int
+  val t9: int * int * int * int * int * int * int * int * int
+  val t10: int * int * int * int * int * int * int * int * int * int
+  val t11: int * int * int * int * int * int * int * int * int * int * int
   val t12:
-    int * int * int * int * int * int * int * int * int * int * int * int =
-    (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+    int * int * int * int * int * int * int * int * int * int * int * int
   val t13:
     int * int * int * int * int * int * int * int * int * int * int * int *
-    int = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+    int
   val t14:
     int * int * int * int * int * int * int * int * int * int * int * int *
-    int * int = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+    int * int
   val t15:
     int * int * int * int * int * int * int * int * int * int * int * int *
-    int * int * int = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    int * int * int
 
 > module Regression3739 =
   type IB =
@@ -914,26 +688,26 @@ module Regression5218 =
 type Regression4469 =
   new: unit -> Regression4469
   member ToString: unit -> string
-val r4469: Regression4469 = FSI_0107+Regression4469
-val it: unit = ()
+val r4469: Regression4469
+val it: unit
 
 > Expect ABC = ABC
 val it: unit = ()
 
 > module Regression1019_short =
-  val double_nan: float = nan
-  val double_infinity: float = infinity
-  val single_nan: float32 = nanf
-  val single_infinity: float32 = infinityf
+  val double_nan: float
+  val double_infinity: float
+  val single_nan: float32
+  val single_infinity: float32
 module Regression1019_long =
-  val double_nan: float = nan
-  val double_infinity: float = infinity
-  val single_nan: float32 = nanf
-  val single_infinity: float32 = infinityf
+  val double_nan: float
+  val double_infinity: float
+  val single_nan: float32
+  val single_infinity: float32
 
 > val it: int ref = { contents = 1 }
 
-> val x: int ref = { contents = 1 }
+> val x: int ref
 val f: (unit -> int)
 
 > val it: int = 1
@@ -1663,11 +1437,9 @@ val f: (unit -> int)
 
 > val it: ('a -> 'a)
 
-> val note_ExpectDupMethod: string =
-  "Regression4927: Expect error due to duplicate methods in the "+[20 chars]
+> val note_ExpectDupMethod: string
 
-> > val note_ExpectDupProperty: string =
-  "Regression4927: Expect error due to duplicate properties in t"+[23 chars]
+> > val note_ExpectDupProperty: string
 
 > > > val it: string = "NOTE: Expect IAPrivate less accessible IBPublic"
 
@@ -1799,8 +1571,8 @@ type T =
   | Case5 of bool * string
   | Case6 of Val1: int * bool * string
   | Case7 of ``Big Name`` : int
-val namedFieldVar1: MyDU = Case1 (5, "")
-val namedFieldVar2: MyDU = Case7 25
+val namedFieldVar1: MyDU
+val namedFieldVar2: MyDU
 
 > exception MyNamedException1 of Val1: int * Val2: string
 exception MyNamedException2 of string * V2: bool * float
@@ -1809,16 +1581,16 @@ exception MyNamedException4 of bool
 exception MyNamedException5 of int * string
 exception MyNamedException6 of Val1: int * bool * string * Data8: float
 exception MyNamedException7 of ``Big Named Field`` : int
-val namedEx1: exn = MyNamedException1 (5, "")
-val namedEx2: exn = MyNamedException7 25
+val namedEx1: exn
+val namedEx2: exn
 
 > type optionRecord =
   { x: int option }
-val x: optionRecord = { x = None }
+val x: optionRecord
 
 > type optionRecord =
   { x: obj }
-val x: optionRecord = { x = null }
+val x: optionRecord
 
 > type RecordWithMembers =
   { x: obj }
@@ -1856,7 +1628,7 @@ val x: optionRecord = { x = null }
 type Int32 with
   member ExtrinsicExtensionMethod: unit -> int
 
-> val ``value with spaces in name`` : bool = true
+> val ``value with spaces in name`` : bool
 
 > val functionWhichTakesLongNameMixedParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
@@ -1922,29 +1694,29 @@ type Int32 with
   | B
 
 > module ``Module with spaces in name`` =
-  val x: int = 1
+  val x: int
 
 > module op_Addition =
-  val x: int = 1
+  val x: int
 
 > module ``land`` =
-  val x: int = 1
+  val x: int
 
 > val ``+`` : x: 'a -> y: 'b -> int
 
 > val (+) : x: int -> y: int -> int
 
-> val ``base`` : int = 2
+> val ``base`` : int
 
-> val (mod) : int = 2
+> val (mod) : int
 
-> val ``or`` : int = 2
+> val ``or`` : int
 
-> val ``land`` : int = 2
+> val ``land`` : int
 
-> val ``.ctor`` : int = 2
+> val ``.ctor`` : int
 
-> val ``.cctor`` : int = 2
+> val ``.cctor`` : int
 
 > [<Literal>]
 val SomeLiteralWithASomewhatLongName: string

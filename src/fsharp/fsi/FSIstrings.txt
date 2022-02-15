@@ -55,4 +55,4 @@ shadowCopyReferences,"Prevents references from being locked by the F# Interactiv
 fsiOperationCouldNotBeCompleted,"Operation could not be completed due to earlier error"
 fsiOperationFailed,"Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
 fsiUseSingleDynamicAssembly,"Use a single dynamic assembly"
-2303,fsiInternalAccess,"Accessing the internal type, method or field '%s' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors"
+2303,fsiInternalAccess,"Accessing the internal type, method or field '%s' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--refemit' option."
