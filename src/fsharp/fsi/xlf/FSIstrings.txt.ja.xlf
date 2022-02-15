@@ -22,9 +22,9 @@
         <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームに出力されました。対応する FSharpDiagnostic を戻すには、EvalInteractionNonThrowing、EvalScriptNonThrowing、または EvalExpressionNonThrowing を使用します</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleDynamicAssembly">
-        <source>Use a single dynamic assembly</source>
-        <target state="new">Use a single dynamic assembly</target>
+      <trans-unit id="fsiUseSingleRefEmitAssembly">
+        <source>Use a single dynamic assembly via reflection emit</source>
+        <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

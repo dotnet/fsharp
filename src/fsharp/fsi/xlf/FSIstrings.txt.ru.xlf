@@ -22,9 +22,9 @@
         <target state="translated">Не удалось выполнить операцию. Текст ошибки был выведен в потоке ошибок. Чтобы вернуть соответствующие сведения FSharpDiagnostic, используйте EvalInteractionNonThrowing, EvalScriptNonThrowing или EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleDynamicAssembly">
-        <source>Use a single dynamic assembly</source>
-        <target state="new">Use a single dynamic assembly</target>
+      <trans-unit id="fsiUseSingleRefEmitAssembly">
+        <source>Use a single dynamic assembly via reflection emit</source>
+        <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

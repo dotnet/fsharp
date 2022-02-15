@@ -22,9 +22,9 @@
         <target state="translated">作業失敗。錯誤文字已列印在錯誤串流中。若要傳回相對應的 FSharpDiagnostic，請使用 EvalInteractionNonThrowing、EvalScriptNonThrowing 或 EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleDynamicAssembly">
-        <source>Use a single dynamic assembly</source>
-        <target state="new">Use a single dynamic assembly</target>
+      <trans-unit id="fsiUseSingleRefEmitAssembly">
+        <source>Use a single dynamic assembly via reflection emit</source>
+        <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

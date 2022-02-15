@@ -3892,7 +3892,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleAssemblyRefEmit hidden (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleRefEmitAssembly hidden (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
     let env, mexprR, minfo =
         match mexpr with 
         // FSI compiles everything as if you're typing incrementally into one module.
@@ -3903,7 +3903,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleAssemblyRef
         | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
             let (def, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
             let minfo = minfo |> AbstractLazyModulInfoByHiding false hidden
-            let hidden = if fsiSingleAssemblyRefEmit then ComputeImplementationHidingInfoAtAssemblyBoundary def hidden else hidden
+            let hidden = if fsiSingleRefEmitAssembly then ComputeImplementationHidingInfoAtAssemblyBoundary def hidden else hidden
             let minfo = AbstractLazyModulInfoByHiding true hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, ModuleOrNamespaceExprWithSig(mty, def, m), minfo
@@ -3922,7 +3922,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleAssemblyRef
     env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiSingleAssemblyRefEmit, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiSingleRefEmitAssembly, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -3936,7 +3936,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard(OptimizerStackGuardDepth) 
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiSingleAssemblyRefEmit hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiSingleRefEmitAssembly hidden mimpls  
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

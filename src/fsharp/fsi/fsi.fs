@@ -948,7 +948,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
-         CompilerOption("refemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleAssemblyRefEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiUseSingleDynamicAssembly()))
+         CompilerOption("refemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiUseSingleRefEmitAssembly()))
         ]);
       ]
 
@@ -1328,7 +1328,7 @@ type internal FsiDynamicCompiler
     let valuePrinter = FsiValuePrinter(fsi, outWriter)
 
     let builders =
-        if tcConfigB.fsiSingleAssemblyRefEmit then
+        if tcConfigB.fsiSingleRefEmitAssembly then
             let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
             dynamicAssemblies.Add(assemBuilder)
             Some (assemBuilder, moduleBuilder)
@@ -2063,7 +2063,7 @@ type internal FsiDynamicCompiler
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
         let emEnv0 = 
-            if tcConfigB.fsiSingleAssemblyRefEmit then
+            if tcConfigB.fsiSingleRefEmitAssembly then
                 let cenv = { ilg = ilGlobals; emitTailcalls = tcConfig.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleDynamicAssembly (cenv, emEnv)
@@ -3177,7 +3177,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     // Preset: --refemit+ on .NET Framework
     do if not isRunningOnCoreClr then
-        tcConfigB.fsiSingleAssemblyRefEmit <- true
+        tcConfigB.fsiSingleRefEmitAssembly <- true
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On

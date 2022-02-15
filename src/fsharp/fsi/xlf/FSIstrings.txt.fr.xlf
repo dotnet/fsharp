@@ -22,9 +22,9 @@
         <target state="translated">Échec de l'opération. Le texte d'erreur est affiché dans le flux d'erreur. Pour retourner le FSharpDiagnostic correspondant, utilisez EvalInteractionNonThrowing, EvalScriptNonThrowing ou EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleDynamicAssembly">
-        <source>Use a single dynamic assembly</source>
-        <target state="new">Use a single dynamic assembly</target>
+      <trans-unit id="fsiUseSingleRefEmitAssembly">
+        <source>Use a single dynamic assembly via reflection emit</source>
+        <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

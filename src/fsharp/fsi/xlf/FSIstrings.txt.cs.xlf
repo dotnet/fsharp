@@ -22,9 +22,9 @@
         <target state="translated">Operace nebyla úspěšná. Text chyby se vytiskl do streamu chyb. Pokud chcete vrátit odpovídající FSharpDiagnostic, použijte EvalInteractionNonThrowing, EvalScriptNonThrowing nebo EvalExpressionNonThrowing.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiUseSingleDynamicAssembly">
-        <source>Use a single dynamic assembly</source>
-        <target state="new">Use a single dynamic assembly</target>
+      <trans-unit id="fsiUseSingleRefEmitAssembly">
+        <source>Use a single dynamic assembly via reflection emit</source>
+        <target state="new">Use a single dynamic assembly via reflection emit</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
