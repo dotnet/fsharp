@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction19
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000358 Length: 0x00000100
 }
 .module TestFunction19.exe
-// MVID: {60B68B97-A624-46AE-A745-0383978BB660}
+// MVID: {61F2D6A5-A624-46AE-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E60000
+// Image base: 0x06B00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,20 +64,17 @@
       // Code size       23 (0x17)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction19.fs'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction19.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 4,4 : 8,9 ''
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
       IL_000a:  stfld      int32 TestFunction19/C::x
-      .line 4,4 : 14,15 ''
       IL_000f:  ldarg.0
       IL_0010:  ldarg.2
       IL_0011:  stfld      int32 TestFunction19/C::y
-      .line 4,4 : 6,7 ''
       IL_0016:  ret
     } // end of method C::.ctor
 
@@ -140,7 +137,6 @@
     {
       // Code size       15 (0xf)
       .maxstack  8
-      .line 11,11 : 5,31 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> TestFunction19/'TestFunction19@11-1'::clo2
       IL_0006:  ldarg.1
@@ -178,8 +174,7 @@
     {
       // Code size       20 (0x14)
       .maxstack  6
-      .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
-      .line 11,11 : 5,31 ''
+      .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> TestFunction19/TestFunction19@11::clo1
       IL_0006:  ldarg.1
@@ -211,7 +206,7 @@
     IL_000a:  newobj     instance void TestFunction19/C::.ctor(int32,
                                                                int32)
     IL_000f:  stloc.1
-    .line 11,11 : 5,31 ''
+    .line 11,11 : 5,37 ''
     IL_0010:  ldstr      "c1 = %A, c2 = %A"
     IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Tuple`2<class TestFunction19/C,class TestFunction19/C>>::.ctor(string)
     IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction19/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

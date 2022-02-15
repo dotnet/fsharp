@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly AsyncExpressionSteppingTest6
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BE
 }
 .module AsyncExpressionSteppingTest6.dll
-// MVID: {611C52A3-6394-4FAD-A745-0383A3521C61}
+// MVID: {61F2D6A5-6394-4FAD-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B60000
+// Image base: 0x05370000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -82,8 +82,6 @@
       {
         // Code size       15 (0xf)
         .maxstack  8
-        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 10,10 : 17,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest6.fs'
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-1'::'value'
@@ -127,7 +125,8 @@
                  [2] int32 z,
                  [3] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_3,
                  [4] int32 V_4)
-        .line 5,5 : 17,30 ''
+        .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+        .line 5,5 : 17,30 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest6.fs'
         IL_0000:  ldc.i4.0
         IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
         IL_0006:  stloc.0
@@ -192,7 +191,6 @@
       {
         // Code size       15 (0xf)
         .maxstack  8
-        .line 20,20 : 17,25 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-5'::'value'
@@ -245,7 +243,7 @@
                  [1] int32 z,
                  [2] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_2,
                  [3] int32 V_3)
-        .line 18,18 : 17,31 ''
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  stloc.0
         .line 19,19 : 17,37 ''
@@ -308,7 +306,6 @@
       {
         // Code size       21 (0x15)
         .maxstack  8
-        .line 18,18 : 17,31 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-6'::computation
@@ -360,7 +357,7 @@
                  [2] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_2,
                  [3] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_3,
                  [4] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> V_4)
-        .line 15,15 : 17,31 ''
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  stloc.0
         .line 16,16 : 17,30 ''
@@ -432,7 +429,6 @@
       {
         // Code size       21 (0x15)
         .maxstack  8
-        .line 15,15 : 17,31 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-7'::computation
@@ -483,7 +479,7 @@
                  [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_1,
                  [2] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_2,
                  [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> V_3)
-        .line 14,14 : 17,31 ''
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  stloc.0
         .line 15,15 : 17,31 ''
@@ -545,7 +541,6 @@
       {
         // Code size       21 (0x15)
         .maxstack  8
-        .line 14,14 : 17,31 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-8'::computation
@@ -591,7 +586,7 @@
                  [1] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder V_1,
                  [2] class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> V_2,
                  [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> V_3)
-        .line 13,13 : 17,31 ''
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  stloc.0
         .line 14,14 : 17,31 ''
@@ -652,7 +647,6 @@
       {
         // Code size       21 (0x15)
         .maxstack  8
-        .line 13,13 : 17,31 ''
         IL_0000:  ldarg.1
         IL_0001:  ldarg.0
         IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-9'::computation

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly ListExpressionSteppingTest3
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000280 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest3.exe
-// MVID: {60B78A57-AE45-39B4-A745-0383578AB760}
+// MVID: {61FD4A6D-AE45-39B4-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06EB0000
+// Image base: 0x06BE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -91,9 +91,8 @@
       IL_0030:  nop
       .line 100001,100001 : 0,0 ''
       IL_0031:  nop
-      IL_0032:  br.s       IL_0007
+      IL_0032:  br.s       IL_0008
 
-      .line 7,10 : 9,23 ''
       IL_0034:  ldloca.s   V_1
       IL_0036:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>>::Close()
       IL_003b:  ret

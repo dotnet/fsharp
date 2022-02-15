@@ -297,6 +297,11 @@
         <target state="translated">無效的指示詞 '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
         <target state="translated">可繼續的程式碼構造 '{0}' 只能用於 'if __useResumableCode then ...' 所保護的內嵌程式碼中，且整體組合必須形成有效的可繼續程式碼。</target>

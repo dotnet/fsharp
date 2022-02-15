@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Hash07
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000220 Length: 0x000000AA
 }
 .module Hash07.dll
-// MVID: {60BE1F16-9642-7811-A745-0383161FBE60}
+// MVID: {619833D0-9642-7811-A745-0383D0339861}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06740000
+// Image base: 0x06B80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,7 +65,7 @@
       .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash07.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
-      .line 6,6 : 8,32 ''
+      .line 6,6 : 8,11 ''
       IL_0002:  ldc.i4.0
       IL_0003:  stloc.1
       IL_0004:  br.s       IL_0010
@@ -81,7 +81,7 @@
       IL_000d:  ldc.i4.1
       IL_000e:  add
       IL_000f:  stloc.1
-      .line 6,6 : 8,32 ''
+      .line 6,6 : 18,20 ''
       IL_0010:  ldloc.1
       IL_0011:  ldc.i4     0x989681
       IL_0016:  blt.s      IL_0006

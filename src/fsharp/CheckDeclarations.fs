@@ -976,8 +976,13 @@ module IncrClassChecking =
                         ValReprInfo(tpNames@ValReprInfo.InferTyparInfo copyOfTyconTypars, args, ret)
                                           
                     let prelimTyschemeG = TypeScheme(copyOfTyconTypars@tps, memberTauTy)
+
+                    // NOTE: putting isCompilerGenerated=true here is strange.  The method is not public, nor is
+                    // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
                     let memberValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
+
                     let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
+
                     reportIfUnused()
                     InMethod(isStatic, methodVal, topValInfo)
 
@@ -1144,6 +1149,7 @@ module IncrClassChecking =
                         Some (localRep.MakeValueGetAddress readonly thisValOpt thisTyInst safeStaticInitInfo v m)
 
                 | _ -> None
+
             RewriteExpr { PreIntercept = Some FixupExprNode 
                           PostTransform = (fun _ -> None)
                           PreInterceptBinding = None
@@ -1301,7 +1307,9 @@ module IncrClassChecking =
                      | _, (Expr.Lambda _ | Expr.TyLambda _) -> v.Range
                      | DebugPointAtBinding.Yes m, _ -> m 
                      | _ -> v.Range
+
                 let assignExpr = reps.MakeValueAssign (Some thisVal) thisTyInst NoSafeInitInfo v rhsExpr m
+
                 let adjustSafeInitFieldExprOpt = 
                     if isStatic then 
                         match safeStaticInitInfo with 
@@ -1315,8 +1323,17 @@ module IncrClassChecking =
                         None
 
                 (isPriorToSuperInit, (fun e -> 
-                     let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
-                     mkSequential DebugPointAtSequential.SuppressNeither m assignExpr e)), []
+                     let e =
+                         match adjustSafeInitFieldExprOpt with
+                         | None -> e
+                         | Some adjustExpr -> mkCompGenSequential m adjustExpr e
+
+                     let assignExpr =
+                         match spBind with
+                         | DebugPointAtBinding.Yes _ -> mkDebugPoint m assignExpr
+                         | _ -> assignExpr
+
+                     mkSequential m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
         /// binding in the implicit class construction sequence 
@@ -1344,7 +1361,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential doExpr.Range (Expr.DebugPoint(DebugPointAtLeafExpr.Yes doExpr.Range, doExpr)) e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1364,7 +1381,7 @@ module IncrClassChecking =
                       | Some v -> 
                         let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
 
@@ -1378,7 +1395,7 @@ module IncrClassChecking =
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
                       | NoSafeInitInfo ->  
@@ -1465,8 +1482,14 @@ module IncrClassChecking =
                     | _ -> 
                         inheritsExpr
 
-                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.SuppressNeither else DebugPointAtSequential.SuppressStmt)
-                mkSequential spAtSuperInit m inheritsExpr ctorBody
+                // Add the debug point
+                let inheritsExpr =
+                    if inheritsIsVisible then
+                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes inheritsExpr.Range, inheritsExpr)
+                    else
+                        inheritsExpr
+                
+                mkSequential m inheritsExpr ctorBody
 
             // Add the normal <let/do bindings> 
             let ctorBody = List.foldBack (fun (_, binder) acc -> binder acc) ctorInitActionsPre ctorBody
@@ -1873,7 +1896,7 @@ module MutRecBindingChecking =
                                 
                                     // Type check local recursive binding 
                                     let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo, NoNewSlots, ClassLetBinding isStatic, bind))
-                                    let binds, env, tpenv = TcLetrec ErrorOnOverrides cenv envForBinding tpenv (binds, scopem(*bindsm*), scopem)
+                                    let binds, env, tpenv = TcLetrecBindings ErrorOnOverrides cenv envForBinding tpenv (binds, scopem(*bindsm*), scopem)
                                     let bindRs = [IncrClassBindingGroup(binds, isStatic, true)]
                                     binds, bindRs, env, tpenv 
                                 else
@@ -2085,6 +2108,26 @@ module MutRecBindingChecking =
                                 mkUnit g tcref.Range, false, None, defnCs
                             else
                                 let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+
+                                // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
+                                let addDebugPointAtImplicitCtorArguments =
+                                    defnCs |> List.forall (fun defnC ->
+                                        match defnC with
+                                        | Phase2CIncrClassBindings binds -> 
+                                            binds |> List.forall (fun bind ->
+                                                match bind with
+                                                | IncrClassBindingGroup(binds, isStatic, _) -> 
+                                                    isStatic || 
+                                                    binds |> List.forall (IncrClassReprInfo.IsMethodRepr cenv)
+                                                | IncrClassDo(_, isStatic) ->
+                                                    isStatic)
+                                        | _ -> true) 
+
+                                let inheritsExpr =
+                                    if addDebugPointAtImplicitCtorArguments then
+                                        mkDebugPoint tcref.Range inheritsExpr
+                                    else
+                                        inheritsExpr
                                 inheritsExpr, false, None, defnCs
                        
                     let envForTycon = MakeInnerEnvForTyconRef envForDecls tcref false 
@@ -5366,7 +5409,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               if letrec then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
-                let binds, env, _ = TcLetrec WarnOnOverrides cenv env tpenv (binds, m, scopem)
+                let binds, env, _ = TcLetrecBindings WarnOnOverrides cenv env tpenv (binds, m, scopem)
                 return ((fun e -> TMDefRec(true, [], [], binds |> List.map ModuleOrNamespaceBinding.Binding, m) :: e), []), env, env
               else 
                 let binds, env, _ = TcLetBindings cenv env containerInfo ModuleOrMemberBinding tpenv (binds, m, scopem)
@@ -5710,7 +5753,8 @@ let emptyTcEnv g =
       eFamilyType = None
       eCtorInfo = None
       eCallerMemberName = None 
-      eLambdaArgInfos = [] }
+      eLambdaArgInfos = []
+      eIsControlFlow = false }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
@@ -5960,7 +6004,13 @@ let TypeCheckOneImplFile
             | _ -> ()
         | _ -> ())
 
-    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
+    let namedDebugPointsForInlinedCode =
+       cenv.namedDebugPointsForInlinedCode
+       |> Seq.toArray
+       |> Array.map (fun (KeyValue(k,v)) -> (k,v))
+       |> Map
+
+    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 

@@ -459,7 +459,7 @@ type TcConfigBuilder =
 
       /// if true, strip away data that would not be of use to end users, but is useful to us for debugging
       // REVIEW: "stripDebugData"?
-      mutable noDebugData: bool
+      mutable noDebugAttributes: bool
 
       /// if true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
@@ -654,7 +654,7 @@ type TcConfigBuilder =
 #endif
           pause = false
           alwaysCallVirt = true
-          noDebugData = false
+          noDebugAttributes = false
           emitDebugInfoInQuotations = false
           exename = None
           shadowCopyReferences = false
@@ -1037,7 +1037,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
-    member x.noDebugData = data.noDebugData
+    member x.noDebugAttributes = data.noDebugAttributes
     member x.isInteractive = data.isInteractive
     member x.isInvalidationSupported = data.isInvalidationSupported
     member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
