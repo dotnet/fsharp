@@ -17,7 +17,8 @@ open System.Collections.Immutable
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
-open CompilerAssertHelpers
+open FSharp.Test.CompilerAssertHelpers
+open TestFramework
 
 module rec Compiler =
     type BaselineFile = { FilePath: string; Content: string option }
@@ -369,7 +370,7 @@ module rec Compiler =
         let outputDirectory =
             match fs.OutputDirectory with
             | Some di -> di
-            | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let references = processReferences fs.References outputDirectory
         let compilation = Compilation.Create(source, sourceKind, output, options, references, name, outputDirectory)
@@ -378,7 +379,7 @@ module rec Compiler =
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
-        let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Guid.NewGuid().ToString() + ".tmp")
+        let outputPath = tryCreateTemporaryDirectory()
 
         Directory.CreateDirectory(outputPath) |> ignore
 
@@ -403,12 +404,12 @@ module rec Compiler =
     let private compileCSharp (csSource: CSharpCompilationSource) : TestResult =
 
         let source = getSource csSource.Source
-        let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
+        let name = defaultArg csSource.Name (tryCreateTemporaryFileName())
 
         let outputDirectory =
             match csSource.OutputDirectory with
             | Some di -> di
-            | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
+            | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let additionalReferences =
             match processReferences csSource.References outputDirectory with
@@ -575,7 +576,7 @@ module rec Compiler =
                 let outputDirectory =
                     match fs.OutputDirectory with
                     | Some di -> di
-                    | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
+                    | None -> DirectoryInfo(tryCreateTemporaryDirectory())
                 outputDirectory.Create()
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 

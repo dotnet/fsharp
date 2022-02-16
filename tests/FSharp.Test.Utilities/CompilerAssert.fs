@@ -68,7 +68,7 @@ and Compilation =
                 | n -> Some n
             Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
 
-module private rec CompilerAssertHelpers =
+module rec CompilerAssertHelpers =
 
     let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
@@ -170,11 +170,11 @@ module private rec CompilerAssertHelpers =
         let ext =
             if isScript then ".fsx"
             else ".fs"
-        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, Guid.NewGuid().ToString() + ".tmp"), ext)
+        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, tryCreateTemporaryFileName()), ext)
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> Guid.NewGuid().ToString() + ".tmp"
+            | _ -> tryCreateTemporaryFileName()
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         let o =
             { new IDisposable with
@@ -229,7 +229,7 @@ module private rec CompilerAssertHelpers =
                             let filename =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> Guid.NewGuid().ToString() + ".tmp"
+                                | _ -> tryCreateTemporaryFileName()
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
@@ -297,11 +297,10 @@ module private rec CompilerAssertHelpers =
         res, (deps @ deps2)
 
     let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let outputDirectory = DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
         let disposals = ResizeArray()
         try
-            Directory.CreateDirectory(outputDirectory.FullName) |> ignore
-            disposals.Add({ new IDisposable with member _.Dispose() = File.Delete (outputDirectory.FullName) })
+            let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
+            disposals.Add({ new IDisposable with member _.Dispose() = try File.Delete (outputDirectory.FullName) with | _ -> () })
             f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
             disposals
@@ -314,7 +313,7 @@ module private rec CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(_, _, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
+            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         outputDirectory.Create() |> ignore
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
