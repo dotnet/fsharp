@@ -170,11 +170,11 @@ module private rec CompilerAssertHelpers =
         let ext =
             if isScript then ".fsx"
             else ".fs"
-        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, Path.GetRandomFileName()), ext)
+        let inputFilePath = Path.ChangeExtension(Path.Combine(outputDirectory.FullName, Guid.NewGuid().ToString() + ".tmp"), ext)
         let name =
             match nameOpt with
             | Some name -> name
-            | _ -> Path.GetRandomFileName()
+            | _ -> Guid.NewGuid().ToString() + ".tmp"
         let outputFilePath = Path.ChangeExtension (Path.Combine(outputDirectory.FullName, name), if isExe then ".exe" else ".dll")
         let o =
             { new IDisposable with
@@ -229,7 +229,7 @@ module private rec CompilerAssertHelpers =
                             let filename =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
-                                | _ -> Path.GetRandomFileName()
+                                | _ -> Guid.NewGuid().ToString() + ".tmp"
                             let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
@@ -297,7 +297,7 @@ module private rec CompilerAssertHelpers =
         res, (deps @ deps2)
 
     let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let outputDirectory = DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
+        let outputDirectory = DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
         let disposals = ResizeArray()
         try
             Directory.CreateDirectory(outputDirectory.FullName) |> ignore
@@ -314,7 +314,7 @@ module private rec CompilerAssertHelpers =
         let outputDirectory =
             match cmpl with
             | Compilation(_, _, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
+            | Compilation(_, _, _, _, _, _, _) -> DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
 
         outputDirectory.Create() |> ignore
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl

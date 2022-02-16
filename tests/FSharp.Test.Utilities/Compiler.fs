@@ -318,14 +318,11 @@ module rec Compiler =
                     let options = fs.Options |> List.toArray
                     let name = defaultArg fs.Name null
                     let outDir =
-                        match fs.OutputDirectory, defaultOutputDirectory with
-                        | Some _, _ -> fs.OutputDirectory
-                        | _, Some _ -> defaultOutputDirectory
-                        | _ -> None
+                        match fs.OutputDirectory with
+                        | Some outputDirectory -> outputDirectory
+                        | _ -> defaultOutputDirectory
                     let cmpl =
-                        match outDir with
-                        | Some di -> Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, di) |> CompilationReference.CreateFSharp
-                        | _ -> Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name) |> CompilationReference.CreateFSharp
+                        Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, outDir) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
 
                 | CS cs ->
@@ -369,15 +366,19 @@ module rec Compiler =
         let output = fs.OutputType
         let options = fs.Options |> Array.ofList
         let name = defaultArg fs.Name null
-        let references = processReferences fs.References fs.OutputDirectory
+        let outputDirectory =
+            match fs.OutputDirectory with
+            | Some di -> di
+            | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
 
-        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory.Value)
+        let references = processReferences fs.References outputDirectory
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, outputDirectory)
 
         compileFSharpCompilation compilation fs.IgnoreWarnings
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
-        let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
+        let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Guid.NewGuid().ToString() + ".tmp")
 
         Directory.CreateDirectory(outputPath) |> ignore
 
@@ -404,8 +405,13 @@ module rec Compiler =
         let source = getSource csSource.Source
         let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
 
+        let outputDirectory =
+            match csSource.OutputDirectory with
+            | Some di -> di
+            | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
+
         let additionalReferences =
-            match processReferences csSource.References csSource.OutputDirectory with
+            match processReferences csSource.References outputDirectory with
             | [] -> ImmutableArray.Empty
             | r  -> (List.map asMetadataReference r).ToImmutableArray().As<MetadataReference>()
 
@@ -569,11 +575,11 @@ module rec Compiler =
                 let outputDirectory =
                     match fs.OutputDirectory with
                     | Some di -> di
-                    | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()))
+                    | None -> Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".tmp"))
                 outputDirectory.Create()
                 disposals.Add({ new IDisposable with member _.Dispose() = outputDirectory.Delete(true) })
 
-                let references = processReferences fs.References (Some outputDirectory)
+                let references = processReferences fs.References outputDirectory
                 let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, references, name, outputDirectory)
                 let _compilationRefs, _deps = evaluateReferences outputDirectory disposals fs.IgnoreWarnings cmpl
                 let options =
