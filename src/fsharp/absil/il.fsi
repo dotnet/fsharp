@@ -2015,23 +2015,27 @@ val NoMetadataIdx: int32
 //                        become ILScopeRef.Assembly m
 // --------------------------------------------------------------------
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILScopeRef: ILScopeRef -> ILScopeRef -> ILScopeRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
+/// the new scope.
+val internal rescopeILTypeRef: ILScopeRef -> ILTypeRef -> ILTypeRef
+
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILTypeSpec: ILScopeRef -> ILTypeSpec -> ILTypeSpec
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILType: ILScopeRef -> ILType -> ILType
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILMethodRef: ILScopeRef -> ILMethodRef -> ILMethodRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILFieldRef: ILScopeRef -> ILFieldRef -> ILFieldRef
 

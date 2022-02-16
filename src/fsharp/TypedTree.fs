@@ -1949,13 +1949,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity = 
         cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
+           LayeredMap.Empty.AddMany( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
         cacheOptByref &tyconsByAccessNamesCache (fun () -> 
-             LayeredMultiMap.Empty.AddAndMarkAsCollapsible (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
+             LayeredMultiMap.Empty.AddMany (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
 
     // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 

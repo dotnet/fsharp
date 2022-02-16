@@ -275,6 +275,18 @@ stdin(618,21): warning FS1172: Infix operator member '**' has no arguments. Expe
 stdin(623,17): warning FS0864: This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.
 
 
+  let x,f = it, (fun () -> !it);; // this will read from the static storage for 'it'
+  -------------------------^
+
+stdin(643,26): info FS3370: The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.
+
+
+  x := 3;;
+  --^^
+
+stdin(645,3): info FS3370: The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value <- expr'.
+
+
       member this.M() = "string"
   ----------------^
 

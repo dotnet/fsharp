@@ -3976,28 +3976,29 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleRefEmitAsse
     let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, mexprR, minfo = 
         match mexpr with 
-        // FSI compiles everything as if you're typing incrementally into one module.
+        // FSI compiles interactive fragments as if you're typing incrementally into one module.
+        //
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        // In incremental, multi-assembly mode no internals are accessible
+        // In F# interactive multi-assembly mode no internals are accessible across interactive fragments.
         | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
-            let (def, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
-            let minfo = minfo |> AbstractLazyModulInfoByHiding false hidden
-            let hidden = if fsiSingleRefEmitAssembly then ComputeImplementationHidingInfoAtAssemblyBoundary def hidden else hidden
+            // This optimizes and builds minfo ignoring the signature
+            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let minfo =
+                if fsiSingleRefEmitAssembly then
+                    AbstractLazyModulInfoByHiding false hidden minfo
+                else
+                    let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
+                    AbstractLazyModulInfoByHiding true hidden minfo
+            let env = BindValsInModuleOrNamespace cenv minfo env
+            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo
+        | _ ->
+            // This optimizes and builds minfo w.r.t. the signature
+            let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
             let minfo = AbstractLazyModulInfoByHiding true hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceExprWithSig(mty, def, m), minfo
-        | _ ->
-            let env, mexprR, minfo = 
-                let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
-                let env = BindValsInModuleOrNamespace cenv minfo env
-                let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
-                env, mexprR, minfo
-
-            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
-
-            let minfo = AbstractLazyModulInfoByHiding true hidden minfo
             env, mexprR, minfo
 
     let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)

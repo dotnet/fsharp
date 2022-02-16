@@ -359,8 +359,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
         let key = tref.BasicQualifiedName
         let typ = asm.GetType(key)
         //printfn "Adding %s --> %s" key typ.FullName
-        let tref = ILTypeRef.Create(ilScopeRef, [ for e in enc -> e.Name ], typ.Name)
-        let rtref = ILTypeRef.Create(dynamicCcuScopeRef, [ for e in enc -> e.Name ], typ.Name)
+        let rtref = rescopeILTypeRef dynamicCcuScopeRef tref
         typeMap.Add(ltref, (typ, tref))
         reverseTypeMap.Add(tref, rtref)
         for ntdef in tdef.NestedTypes.AsArray() do
@@ -1383,7 +1382,7 @@ type internal FsiDynamicCompiler
 
         for tref in refs.TypeReferences do
             if emEnv.IsLocalInternalType(tref) then
-                warning(Error((FSIstrings.SR.fsiInternalAccess(tref.Name)), m))
+                warning(Error((FSIstrings.SR.fsiInternalAccess(tref.FullName)), m))
 
         for mref in refs.MethodReferences do
             if emEnv.IsLocalInternalMethod(mref) then
@@ -1430,7 +1429,10 @@ type internal FsiDynamicCompiler
             | Some pdbBytes -> Assembly.Load(assemblyBytes, pdbBytes)
 
         dynamicAssemblies.Add(asm)
-        
+
+        let loadedTypes = [ for t in asm.GetTypes() -> t]
+        ignore loadedTypes
+
         let ilScopeRef = ILScopeRef.Assembly (ILAssemblyRef.FromAssemblyName(asm.GetName()))
 
         // Collect up the entry points for initialization
