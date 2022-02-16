@@ -115,7 +115,7 @@ For older project files, you may need to use ``<Private>true</Private>`` in your
 FSharp.Core.dll will normally appear in the `bin` output folder for your application. For example:
 
 ```
-    Directory of ...\ConsoleApplication3\bin\Debug\net5.0
+    Directory of ...\ConsoleApplication3\bin\Debug\net6.0
     
     18/04/2020  13:20             5,632 ConsoleApplication3.exe
     14/10/2020  12:12         1,400,472 FSharp.Core.dll
