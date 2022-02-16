@@ -625,7 +625,7 @@ let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s: string) = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
     if not <| FileSystem.FileExistsShim(path1) then
