@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Testfunction22h
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x00000056
 }
 .module Testfunction22h.exe
-// MVID: {611C4D9E-0266-39F6-A745-03839E4D1C61}
+// MVID: {620D7589-0266-39F6-A745-038389750D62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x066F0000
+// Image base: 0x062D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,9 +63,10 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       22 (0x16)
+    // Code size       32 (0x20)
     .maxstack  3
-    .locals init ([0] class [mscorlib]System.Exception V_0)
+    .locals init ([0] class [mscorlib]System.Exception V_0,
+             [1] class [mscorlib]System.Exception V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 3,3 : 1,4 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22h.fs'
     .try
@@ -73,21 +74,30 @@
       IL_0000:  nop
       .line 4,4 : 4,30 ''
       IL_0001:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0006:  leave.s    IL_0015
+      IL_0006:  leave.s    IL_001f
 
       .line 5,5 : 1,5 ''
     }  // end .try
-    catch [mscorlib]System.Object 
+    filter
     {
       IL_0008:  castclass  [mscorlib]System.Exception
       IL_000d:  stloc.0
+      .line 6,6 : 6,37 ''
+      IL_000e:  ldc.i4.1
+      .line 100001,100001 : 0,0 ''
+      IL_000f:  nop
+      IL_0010:  endfilter
+    }  // end filter
+    {  // handler
+      IL_0012:  castclass  [mscorlib]System.Exception
+      IL_0017:  stloc.1
       .line 6,6 : 11,37 ''
-      IL_000e:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0013:  leave.s    IL_0015
+      IL_0018:  call       void [mscorlib]System.Console::WriteLine()
+      IL_001d:  leave.s    IL_001f
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0015:  ret
+    IL_001f:  ret
   } // end of method $Testfunction22h::main@
 
 } // end of class '<StartupCode$Testfunction22h>'.$Testfunction22h
