@@ -55,7 +55,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
         <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
-        <PackageReference Include="Microsoft.NETCore.App.Ref" Version="5.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+        <PackageReference Include="Microsoft.NETCore.App.Ref" Version="6.0.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
