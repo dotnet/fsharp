@@ -3810,6 +3810,7 @@ and eligibleForFilter expr =
        | Expr.Op(TOp.UnionCaseFieldGet _, _, _, _) -> true
        | Expr.Op(TOp.ValFieldGet _, _, _, _) -> true
        | Expr.Op(TOp.TupleFieldGet _, _, _, _) -> true
+       | Expr.Op(TOp.Coerce _, _, _, _) -> true
        | Expr.Val _ -> true
        | _ -> false
    and checkDecisionTree dtree =
