@@ -17,7 +17,7 @@ let inline getTestsDirectory src dir = src ++ dir
 let tryCreateTemporaryDirectory () =
     let date() = DateTime.Now.ToString("yyyy-MM-dd")
     let now() = $"{date()}-{Guid.NewGuid().ToString()}"
-    let directory = Path.Combine(Path.GetTempPath(), now())
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
     Directory.CreateDirectory(directory).FullName
 
 // Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
