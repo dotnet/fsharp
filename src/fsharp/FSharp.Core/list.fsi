@@ -192,7 +192,7 @@ module List =
     /// </code>
     /// </example>
     /// 
-    /// <example id="choose-2">
+    /// <example id="choose-5">
     /// Using the identity function <c>id</c> (is defined like <c>fun x -> x</c>):
     /// <code lang="fsharp">
     /// 
@@ -201,7 +201,6 @@ module List =
     /// input1 |> List.choose id  // evaluates [1; 3]
     /// </code>
     /// </example>
-    /// <example id="choose-3">
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
