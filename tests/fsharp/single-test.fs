@@ -224,7 +224,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
                     if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "FSharp.Cambridge did not find artifacts directory --- has the location changed????"
                     let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Path.GetRandomFileName())
+                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Guid.NewGuid().ToString() + ".tmp")
                     if Directory.Exists(projectDirectory) then
                         loop ()
                     else
@@ -259,7 +259,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
-        let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
+        let projectFileName = Path.Combine(directory, Guid.NewGuid().ToString() + ".tmp" + ".fsproj")
         try
             // Clean up directory
             Directory.CreateDirectory(directory) |> ignore

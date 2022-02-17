@@ -5,6 +5,4 @@
 let x = seq { try yield 1; yield 2;  
               finally printfn "Done" }
 
-sprintf "x = %A" x
-
-exit 0
+sprintf "x = %A" x  |> ignore
