@@ -172,7 +172,7 @@ module List =
     /// [ "SpongeBob"; "Patrick" ]
     /// </code>
     /// </example>
-
+    /// <example id="choose-3">
     /// <code lang="fsharp">
     /// let input2: int option list = [] 
     ///
