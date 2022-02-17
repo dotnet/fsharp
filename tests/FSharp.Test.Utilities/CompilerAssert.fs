@@ -403,8 +403,15 @@ type CompilerAssert private () =
            executeBuiltAppNewProcessAndReturnResult outputFilePath
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
+
+        let copyDependenciesToOutputDir (outputFilePath:string) (deps: string list) =
+            let outputDirectory = Path.GetDirectoryName(outputFilePath)
+            for dep in deps do
+                let outputFilePath = Path.Combine(outputDirectory, Path.GetFileName(dep))
+                File.Copy(dep, outputFilePath)
+
         let ignoreWarnings = defaultArg ignoreWarnings false
-        let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
+        let beforeExecute = defaultArg beforeExecute copyDependenciesToOutputDir
         let newProcess = defaultArg newProcess false
         let onOutput = defaultArg onOutput (fun _ -> ())
         compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
