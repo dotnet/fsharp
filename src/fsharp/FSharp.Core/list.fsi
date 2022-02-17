@@ -172,6 +172,36 @@ module List =
     /// [ "SpongeBob"; "Patrick" ]
     /// </code>
     /// </example>
+
+    /// <code lang="fsharp">
+    /// let input2: int option list = [] 
+    ///
+    /// input2 |> List.choose id
+    /// Evaluates to:
+    /// empty list
+    /// </code>
+    /// </example>
+    /// <example id="choose-4">
+    /// Evaluates to
+    /// <code lang="fsharp">
+    /// let input3: string option list = [None; None]
+    ///
+    /// input3 |> List.choose id
+    /// Evaluates to
+    /// empty list
+    /// </code>
+    /// </example>
+    /// 
+    /// <example id="choose-2">
+    /// Using the identity function <c>id</c> (is defined like <c>fun x -> x</c>):
+    /// <code lang="fsharp">
+    /// 
+    /// let input1 = [ Some 1; None; Some 3; None ]
+    ///
+    /// input1 |> List.choose id  // evaluates [1; 3]
+    /// </code>
+    /// </example>
+    /// <example id="choose-3">
     [<CompiledName("Choose")>]
     val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
