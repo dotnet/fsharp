@@ -408,7 +408,8 @@ type CompilerAssert private () =
             let outputDirectory = Path.GetDirectoryName(outputFilePath)
             for dep in deps do
                 let outputFilePath = Path.Combine(outputDirectory, Path.GetFileName(dep))
-                File.Copy(dep, outputFilePath, overwrite=true)
+                if not (File.Exists(outputFilePath)) then
+                    File.Copy(dep, outputFilePath)
 
         let ignoreWarnings = defaultArg ignoreWarnings false
         let beforeExecute = defaultArg beforeExecute copyDependenciesToOutputDir
