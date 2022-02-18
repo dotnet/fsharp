@@ -148,3 +148,25 @@ type SynExprAndBangTrivia =
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+/// Represents additional information for SynModuleDecl.NestedModule
+[<NoEquality; NoComparison>]
+type SynModuleDeclNestedModuleTrivia =
+    {
+        /// The syntax range of the `module` keyword
+        ModuleKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynModuleDeclNestedModuleTrivia
+
+/// Represents additional information for SynModuleSigDecl.NestedModule
+[<NoEquality; NoComparison>]
+type SynModuleSigDeclNestedModuleTrivia =
+    {
+        /// The syntax range of the `module` keyword
+        ModuleKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynModuleSigDeclNestedModuleTrivia
