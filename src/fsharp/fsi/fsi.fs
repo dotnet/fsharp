@@ -948,9 +948,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
 #if NETSTANDARD
-         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmit()))
+         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.Off),         None, Some(FSIstrings.SR.fsiLegacyEmit()))
 #else
-         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiSingleRefEmitAssembly <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiLegacyEmitOnByDefault()))
+         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.Off),         None, Some(FSIstrings.SR.fsiLegacyEmitOnByDefault()))
 #endif
         ]);
       ]
@@ -1331,12 +1331,12 @@ type internal FsiDynamicCompiler
     let valuePrinter = FsiValuePrinter(fsi, outWriter)
 
     let builders =
-        if tcConfigB.fsiSingleRefEmitAssembly then
+        if tcConfigB.fsiMultiAssemblyEmit then
+            None
+        else
             let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
             dynamicAssemblies.Add(assemBuilder)
             Some (assemBuilder, moduleBuilder)
-        else
-            None
 
     let rangeStdin0 = rangeN stdinMockFilename 0
 
@@ -2070,13 +2070,13 @@ type internal FsiDynamicCompiler
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
         let emEnv0 = 
-            if tcConfigB.fsiSingleRefEmitAssembly then
+            if tcConfigB.fsiMultiAssemblyEmit then
+                let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
+                MultipleInMemoryAssemblies emEnv
+            else
                 let cenv = { ilg = ilGlobals; emitTailcalls = tcConfig.emitTailcalls; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
                 let emEnv = ILDynamicAssemblyWriter.emEnv0
                 SingleRefEmitAssembly (cenv, emEnv)
-            else
-                let emEnv = ILMultiInMemoryAssemblyEmitEnv(ilGlobals, resolveAssemblyRef, dynamicCcuName)
-                MultipleInMemoryAssemblies emEnv
 
         let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
         let ccuName = dynamicCcuName
@@ -3182,9 +3182,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
-    // Preset: --legacyemit+ on .NET Framework
+    // Preset: --legacyemit+ on .NET Framework and Mono
     do if not isRunningOnCoreClr then
-        tcConfigB.fsiSingleRefEmitAssembly <- true
+        tcConfigB.fsiMultiAssemblyEmit <- false
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On

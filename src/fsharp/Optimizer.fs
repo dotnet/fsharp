@@ -3972,7 +3972,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleRefEmitAssembly hidden implFile =
+and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
     let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
     let env, mexprR, minfo = 
         match mexpr with 
@@ -3986,27 +3986,33 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiSingleRefEmitAsse
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
             let minfo =
-                if fsiSingleRefEmitAssembly then
-                    AbstractLazyModulInfoByHiding false hidden minfo
-                else
+                if fsiMultiAssemblyEmit then
                     let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
                     AbstractLazyModulInfoByHiding true hidden minfo
+                else
+                    AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
             env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo
         | _ ->
             // This optimizes and builds minfo w.r.t. the signature
+            // In F# interactive multi-assembly mode no internals are accessible even within the 'env' used from module to module.
             let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
-            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
-            let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-            let env = BindValsInModuleOrNamespace cenv minfo env
-            env, mexprR, minfo
+            let hiddenExternal = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let minfoInternal = AbstractLazyModulInfoByHiding false hidden minfo
+            let minfoExternal = AbstractLazyModulInfoByHiding true hiddenExternal minfoInternal
+            let env =
+                if fsiMultiAssemblyEmit then
+                    BindValsInModuleOrNamespace cenv minfoExternal env
+                else
+                    BindValsInModuleOrNamespace cenv minfoInternal env
+            env, mexprR, minfoExternal
 
     let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiSingleRefEmitAssembly, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4020,7 +4026,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard(OptimizerStackGuardDepth) 
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiSingleRefEmitAssembly hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
