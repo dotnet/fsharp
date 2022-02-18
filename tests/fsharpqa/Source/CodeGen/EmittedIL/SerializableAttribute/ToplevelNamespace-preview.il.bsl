@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 6:0:0:0
 }
-.assembly ToplevelNamespace
+.assembly 'ToplevelNamespace-preview'
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,22 +27,22 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.ToplevelNamespace
+.mresource public 'FSharpSignatureData.ToplevelNamespace-preview'
 {
-  // Offset: 0x00000000 Length: 0x00001848
+  // Offset: 0x00000000 Length: 0x00001858
 }
-.mresource public FSharpOptimizationData.ToplevelNamespace
+.mresource public 'FSharpOptimizationData.ToplevelNamespace-preview'
 {
-  // Offset: 0x00001850 Length: 0x0000055C
+  // Offset: 0x00001860 Length: 0x00000564
 }
-.module ToplevelNamespace.dll
-// MVID: {620FB591-218B-729A-A745-038391B50F62}
+.module 'ToplevelNamespace-preview.dll'
+// MVID: {620FD84E-96BA-B011-A745-03834ED80F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06FC0000
+// Image base: 0x06A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -574,6 +574,20 @@
     IL_0001:  ldfld      int32 XYZ.MyExn::Data0@
     IL_0006:  ret
   } // end of method MyExn::get_Data0
+
+  .method public strict virtual instance string 
+          get_Message() cil managed
+  {
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    // Code size       22 (0x16)
+    .maxstack  8
+    IL_0000:  ldstr      "%+A"
+    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.MyExn>::.ctor(string)
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+    IL_000f:  ldarg.0
+    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>::Invoke(!0)
+    IL_0015:  ret
+  } // end of method MyExn::get_Message
 
   .method public hidebysig virtual instance int32 
           GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
@@ -1347,6 +1361,20 @@
       IL_0006:  ret
     } // end of method MyExn::get_Data0
 
+    .method public strict virtual instance string 
+            get_Message() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       22 (0x16)
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.ABC/MyExn>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>::Invoke(!0)
+      IL_0015:  ret
+    } // end of method MyExn::get_Message
+
     .method public hidebysig virtual instance int32 
             GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
@@ -2119,6 +2147,20 @@
         IL_0006:  ret
       } // end of method MyExn::get_Data0
 
+      .method public strict virtual instance string 
+              get_Message() cil managed
+      {
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       22 (0x16)
+        .maxstack  8
+        IL_0000:  ldstr      "%+A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.ABC/ABC/MyExn>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>::Invoke(!0)
+        IL_0015:  ret
+      } // end of method MyExn::get_Message
+
       .method public hidebysig virtual instance int32 
               GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
@@ -2419,7 +2461,7 @@
   } // end of property ABC::greeting
 } // end of class XYZ.ABC
 
-.class private abstract auto ansi sealed '<StartupCode$ToplevelNamespace>'.$ToplevelNamespace
+.class private abstract auto ansi sealed '<StartupCode$ToplevelNamespace-preview>'.$ToplevelNamespace
        extends [mscorlib]System.Object
 {
   .field static assembly int32 init@
@@ -2442,7 +2484,7 @@
     IL_000c:  ret
   } // end of method $ToplevelNamespace::.cctor
 
-} // end of class '<StartupCode$ToplevelNamespace>'.$ToplevelNamespace
+} // end of class '<StartupCode$ToplevelNamespace-preview>'.$ToplevelNamespace
 
 
 // =============================================================
