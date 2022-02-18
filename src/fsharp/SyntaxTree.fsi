@@ -1918,10 +1918,10 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
-        range: range
+        range: range *
+        trivia: SynModuleDeclNestedModuleTrivia
 
     /// A 'let' definition within a module
     | Let of
@@ -2003,9 +2003,9 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         moduleDecls: SynModuleSigDecl list *
-        range: range
+        range: range *
+        trivia: SynModuleSigDeclNestedModuleTrivia
 
     /// A 'val' definition within a module or namespace in a signature file, corresponding
     /// to a 'let' definition in the implementation
