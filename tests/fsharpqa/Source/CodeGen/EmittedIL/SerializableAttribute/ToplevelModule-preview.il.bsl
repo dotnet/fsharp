@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 6:0:0:0
 }
-.assembly TopLevelModule
+.assembly 'TopLevelModule-preview'
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,22 +27,22 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.TopLevelModule
+.mresource public 'FSharpSignatureData.TopLevelModule-preview'
 {
-  // Offset: 0x00000000 Length: 0x0000113D
+  // Offset: 0x00000000 Length: 0x0000114D
 }
-.mresource public FSharpOptimizationData.TopLevelModule
+.mresource public 'FSharpOptimizationData.TopLevelModule-preview'
 {
-  // Offset: 0x00001148 Length: 0x000003FD
+  // Offset: 0x00001158 Length: 0x00000405
 }
-.module TopLevelModule.dll
-// MVID: {620E3D71-37F5-C118-A745-0383713D0E62}
+.module 'TopLevelModule-preview.dll'
+// MVID: {620FD84C-A1E9-C7BD-A745-03834CD80F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07130000
+// Image base: 0x06ED0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1680,7 +1680,7 @@
   } // end of property ABC::greeting
 } // end of class ABC
 
-.class private abstract auto ansi sealed '<StartupCode$TopLevelModule>'.$ABC
+.class private abstract auto ansi sealed '<StartupCode$TopLevelModule-preview>'.$ABC
        extends [mscorlib]System.Object
 {
   .field static assembly int32 init@
@@ -1703,7 +1703,7 @@
     IL_000c:  ret
   } // end of method $ABC::.cctor
 
-} // end of class '<StartupCode$TopLevelModule>'.$ABC
+} // end of class '<StartupCode$TopLevelModule-preview>'.$ABC
 
 
 // =============================================================

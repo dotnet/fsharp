@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 6:0:0:0
 }
-.assembly ToplevelNamespace
+.assembly 'ToplevelNamespace-preview'
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,22 +27,22 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.ToplevelNamespace
+.mresource public 'FSharpSignatureData.ToplevelNamespace-preview'
 {
-  // Offset: 0x00000000 Length: 0x00001848
+  // Offset: 0x00000000 Length: 0x00001858
 }
-.mresource public FSharpOptimizationData.ToplevelNamespace
+.mresource public 'FSharpOptimizationData.ToplevelNamespace-preview'
 {
-  // Offset: 0x00001850 Length: 0x0000055C
+  // Offset: 0x00001860 Length: 0x00000564
 }
-.module ToplevelNamespace.dll
-// MVID: {620E3D73-218B-729A-A745-0383733D0E62}
+.module 'ToplevelNamespace-preview.dll'
+// MVID: {620FD84E-96BA-B011-A745-03834ED80F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D00000
+// Image base: 0x06A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -2461,7 +2461,7 @@
   } // end of property ABC::greeting
 } // end of class XYZ.ABC
 
-.class private abstract auto ansi sealed '<StartupCode$ToplevelNamespace>'.$ToplevelNamespace
+.class private abstract auto ansi sealed '<StartupCode$ToplevelNamespace-preview>'.$ToplevelNamespace
        extends [mscorlib]System.Object
 {
   .field static assembly int32 init@
@@ -2484,7 +2484,7 @@
     IL_000c:  ret
   } // end of method $ToplevelNamespace::.cctor
 
-} // end of class '<StartupCode$ToplevelNamespace>'.$ToplevelNamespace
+} // end of class '<StartupCode$ToplevelNamespace-preview>'.$ToplevelNamespace
 
 
 // =============================================================
