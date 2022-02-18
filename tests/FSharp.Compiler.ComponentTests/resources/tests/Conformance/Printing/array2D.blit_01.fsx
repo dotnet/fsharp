@@ -14,7 +14,7 @@
 //val b: string[,] = [["b00"; "b01"]
 //                    ["b10"; "b11"]
 //                    ["b20"; "b21"]]
-                      
+
 let a = Array2D.initBased 1 2 3 2 (fun a b -> "a" + string a + string b)
 
 let b = Array2D.initBased 0 0 3 2 (fun a b -> "b" + string a + string b)
@@ -23,6 +23,5 @@ Array2D.blit a 1 2 b 0 0 2 2;;
 
 b.[0,0] = "a12";;
 
-exit 0;;
 
 

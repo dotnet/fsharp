@@ -9,5 +9,5 @@ let test =
     sprintf "%3.1A" {1..3} = "seq\n  [1;\n   ...]"
 
 match test with
-| false -> exit 1
-| _     -> exit 0
+| false -> raise (new System.Exception("LazyValues03 failed - this should never be forced"))
+| _     -> ()

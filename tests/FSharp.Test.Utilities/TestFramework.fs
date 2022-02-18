@@ -15,9 +15,9 @@ let inline getTestsDirectory src dir = src ++ dir
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
 // Throws exception if it Fails
 let tryCreateTemporaryDirectory () =
-    let path = Path.GetTempPath()
-    let now = DateTime.Now.ToString("yyyy-MM-dd")
-    let directory = Path.Combine(path, "FSharp.Test.Utilities", now)
+    let date() = DateTime.Now.ToString("yyyy-MM-dd")
+    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
     Directory.CreateDirectory(directory).FullName
 
 // Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API

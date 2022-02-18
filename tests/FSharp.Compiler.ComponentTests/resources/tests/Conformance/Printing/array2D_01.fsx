@@ -13,6 +13,4 @@ let q = [s; s; s]
 let a = array2D q;;
 
 let v = a.[1,1] = 1;;
-exit 0;;
-
-
+if v then raise (new System.Exception($"Found '{a[1,1]}' instead of '2'"))
