@@ -3,6 +3,6 @@
 
 //<Expects status="success">val lazyExit: Lazy<string> = <unevaluated></Expects>
 
-let lazyExit = lazy (exit 1; "this should never be forced");;
+let _ = lazy (raise (new System.Exception("LazyValues03 failed - this should never be forced")));;
 
-exit 0;;
+()

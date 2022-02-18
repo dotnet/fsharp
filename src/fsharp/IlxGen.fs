@@ -7711,8 +7711,10 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     else
         [], [], []
 
-/// Generate a ToString method that calls 'sprintf "%A"'
-and GenToStringMethod cenv eenv ilThisTy m =
+and GenToStringMethod cenv eenv ilThisTy m = GenPrintingMethod cenv eenv "ToString" ilThisTy m
+
+/// Generate a ToString/get_Message method that calls 'sprintf "%A"'
+and GenPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
     [ match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind g.new_format_vref.Deref) with
@@ -7752,7 +7754,7 @@ and GenToStringMethod cenv eenv ilThisTy m =
 
                let ilMethodBody = mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
                
-               let mdef = mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+               let mdef = mkILNonGenericVirtualMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
                let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
                yield mdef
       | _ -> () ]
@@ -8435,12 +8437,21 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
 
         let ilTypeName = tref.Name
 
+        let ilMethodDefs =
+            [ ilCtorDef
+              yield! ilCtorDefNoArgs
+              yield! serializationRelatedMembers
+              yield! ilMethodDefsForProperties
+
+              if not (exnc.HasMember g "get_Message" []) && not (exnc.HasMember g "Message" [])  then
+                  yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m ]
+
         let interfaces = exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenv.tyenv)
         let tdef =
           mkILGenericClass
             (ilTypeName, access, [], g.iltyp_Exception,
              interfaces,
-             mkILMethods ([ilCtorDef] @ ilCtorDefNoArgs @ serializationRelatedMembers @ ilMethodDefsForProperties),
+             mkILMethods ilMethodDefs,
              mkILFields ilFieldDefs,
              emptyILTypeDefs,
              mkILProperties ilPropertyDefs,

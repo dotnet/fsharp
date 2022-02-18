@@ -4104,17 +4104,6 @@ FSharp.Compiler.IO.IFileSystem: System.String NormalizePathShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void CopyShim(System.String, System.String, Boolean)
 FSharp.Compiler.IO.IFileSystem: Void DirectoryDeleteShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void FileDeleteShim(System.String)
-FSharp.Compiler.IO.IllegalFileNameChar
-FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object)
-FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.IO.IllegalFileNameChar: Char Data1
-FSharp.Compiler.IO.IllegalFileNameChar: Char get_Data1()
-FSharp.Compiler.IO.IllegalFileNameChar: Int32 GetHashCode()
-FSharp.Compiler.IO.IllegalFileNameChar: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.IO.IllegalFileNameChar: System.String Data0
-FSharp.Compiler.IO.IllegalFileNameChar: System.String get_Data0()
-FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor()
-FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor(System.String, Char)
 FSharp.Compiler.IO.StreamExtensions
 FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadAllBytes(System.IO.Stream)
 FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadBytes(System.IO.Stream, Int32, Int32)
@@ -7571,12 +7560,12 @@ FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Boolean isContinuing
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Boolean isRecursive
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.Syntax.SynComponentInfo get_moduleInfo()
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.Syntax.SynComponentInfo moduleInfo
+FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia get_trivia()
+FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia trivia
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] decls
 FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_decls()
-FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
-FSharp.Compiler.Syntax.SynModuleDecl+NestedModule: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget get_target()
 FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget target
 FSharp.Compiler.Syntax.SynModuleDecl+Open: FSharp.Compiler.Text.Range get_range()
@@ -7622,7 +7611,7 @@ FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewHa
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewLet(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynBinding], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewModuleAbbrev(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNamespaceFragment(FSharp.Compiler.Syntax.SynModuleOrNamespace)
-FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNestedModule(FSharp.Compiler.Syntax.SynComponentInfo, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewNestedModule(FSharp.Compiler.Syntax.SynComponentInfo, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewOpen(FSharp.Compiler.Syntax.SynOpenDeclTarget, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl NewTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeDefn], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleDecl: FSharp.Compiler.Syntax.SynModuleDecl+Attributes
@@ -7743,12 +7732,12 @@ FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Boolean get_isRecursive()
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Boolean isRecursive
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.Syntax.SynComponentInfo get_moduleInfo()
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.Syntax.SynComponentInfo moduleInfo
+FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia get_trivia()
+FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia trivia
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl] get_moduleDecls()
 FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl] moduleDecls
-FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
-FSharp.Compiler.Syntax.SynModuleSigDecl+NestedModule: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
 FSharp.Compiler.Syntax.SynModuleSigDecl+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget get_target()
 FSharp.Compiler.Syntax.SynModuleSigDecl+Open: FSharp.Compiler.Syntax.SynOpenDeclTarget target
 FSharp.Compiler.Syntax.SynModuleSigDecl+Open: FSharp.Compiler.Text.Range get_range()
@@ -7789,7 +7778,7 @@ FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewModuleAbbrev(FSharp.Compiler.Syntax.Ident, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewNamespaceFragment(FSharp.Compiler.Syntax.SynModuleOrNamespaceSig)
-FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewNestedModule(FSharp.Compiler.Syntax.SynComponentInfo, Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewNestedModule(FSharp.Compiler.Syntax.SynComponentInfo, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleSigDecl], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia)
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewOpen(FSharp.Compiler.Syntax.SynOpenDeclTarget, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewTypes(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeDefnSig], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynModuleSigDecl: FSharp.Compiler.Syntax.SynModuleSigDecl NewVal(FSharp.Compiler.Syntax.SynValSig, FSharp.Compiler.Text.Range)
@@ -9186,6 +9175,24 @@ FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_StaticRange()
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] EqualsRange
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ModuleKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_EqualsRange()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ModuleKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynModuleDeclNestedModuleTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] EqualsRange
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ModuleKeyword
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_EqualsRange()
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ModuleKeyword()
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynModuleSigDeclNestedModuleTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: FSharp.Compiler.Text.Range BarRange
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: FSharp.Compiler.Text.Range get_BarRange()

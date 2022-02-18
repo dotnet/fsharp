@@ -1968,9 +1968,10 @@ module X =
 
         match parseResults with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-            SynModuleDecl.NestedModule(equalsRange = Some equalsM)
+            SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals })
         ]) ])) ->
-            assertRange (2, 9) (2, 10) equalsM
+            assertRange (2, 0) (2, 6) mModule
+            assertRange (2, 9) (2, 10) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]
@@ -1986,9 +1987,10 @@ module X =
 
         match parseResults with
         | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
-            SynModuleSigDecl.NestedModule(equalsRange = Some equalsM)
+            SynModuleSigDecl.NestedModule(trivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals })
         ]) ])) ->
-            assertRange (4, 9) (4, 10) equalsM
+            assertRange (4, 0) (4, 6) mModule
+            assertRange (4, 9) (4, 10) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
     [<Test>]

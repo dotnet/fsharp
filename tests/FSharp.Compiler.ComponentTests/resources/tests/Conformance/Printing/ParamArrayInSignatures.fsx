@@ -8,4 +8,3 @@
 type Heterogeneous =
     static member Echo([<System.ParamArray>] args: obj[]) = args
 
-#q;;
