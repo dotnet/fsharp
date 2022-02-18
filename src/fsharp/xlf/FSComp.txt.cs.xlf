@@ -132,6 +132,11 @@
         <target state="translated">atributy napravo od klíčového slova Module</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="new">automatic generation of 'Message' property for 'exception' declarations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">využití člena výchozího rozhraní</target>

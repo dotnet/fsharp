@@ -7709,7 +7709,8 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     else
         [], [], []
 
-and GenToStringMethod cenv eenv ilThisTy m = GenPrintingMethod cenv eenv "ToString" ilThisTy m
+and GenToStringMethod cenv eenv ilThisTy m =
+    GenPrintingMethod cenv eenv "ToString" ilThisTy m
 
 /// Generate a ToString/get_Message method that calls 'sprintf "%A"'
 and GenPrintingMethod cenv eenv methName ilThisTy m =
@@ -8441,10 +8442,13 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
               yield! serializationRelatedMembers
               yield! ilMethodDefsForProperties
 
-              if not (exnc.HasMember g "get_Message" []) && not (exnc.HasMember g "Message" [])  then
+              if cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting) &&
+                 not (exnc.HasMember g "get_Message" []) &&
+                 not (exnc.HasMember g "Message" []) then
                   yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m ]
 
         let interfaces = exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenv.tyenv)
+
         let tdef =
           mkILGenericClass
             (ilTypeName, access, [], g.iltyp_Exception,
@@ -8456,6 +8460,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
+
         let tdef = tdef.WithSerializable(true)
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 

@@ -45,6 +45,7 @@ type LanguageFeature =
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
+    | BetterExceptionPrinting
 
 /// LanguageVersion management
 type LanguageVersion (versionText) =
@@ -100,6 +101,7 @@ type LanguageVersion (versionText) =
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
+            LanguageFeature.BetterExceptionPrinting,previewVersion
         ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -196,6 +198,7 @@ type LanguageVersion (versionText) =
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
+        | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
