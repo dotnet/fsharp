@@ -19,7 +19,7 @@ etc.
 
 ## Compat switch
 
-There is a switch `fsi --legacyemit` that turns on or off the use of Reflection Emit into a single-dynamic-assembly generation.  THis is on by default for .NET Framework for compat reasons, and also there is no problem with generating debug information for refemit there.
+There is a switch `fsi --multiemit` that turns on the use of multi-assembly generation (when it is off, we use Reflection Emit for  single-dynamic-assembly generation).  This is on by default for .NET Core, and off by default for .NET Framework for compat reasons.
 
 ## Are multiple assemblies too costly?
 
@@ -27,7 +27,7 @@ There is general assumption in this that on modern dev machines (where users exe
 
 Quick check: adding 10,000 `let x = 1;;` interactions to .NET Core `dotnet fsi` adds about 300MB to the FSI.EXE process, meaning 30K/interaction. A budget of 1GB for interactive fragments (reasonable on a 64-bit machine), and an expected maximum of 10000 fragments before restart (that's a lot!), then each fragment can take up to 100K. This is well below the cost of a new assembly.
 
-Additionally, these costs are not substantially reduced if `--legacyemit` is enabled, so they've always been the approximate costs of F# Interactive fragment generation.
+Additionally, these costs are not substantially reduced if `--multiemit` is disabled, so they've always been the approximate costs of F# Interactive fragment generation.
 
 ## Internals and accessibility across fragments
 

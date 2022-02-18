@@ -350,17 +350,17 @@ stdin(844,6): error FS1209: Active pattern '|A|B|' is not a function
   let internal f() = 1;; f();; // should give a warning in multi-assembly interactive emit
   -----------------------^^^
 
-stdin(1089,24): warning FS2303: Accessing the internal type, method or field 'f' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--legacyemit' option.
+stdin(1089,24): warning FS2303: Accessing the internal type, method or field 'f' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.
 
 
   CPublic().MInternal();; // should give a warning in multi-assembly interactive emit
   ^^^^^^^^^^^^^^^^^^^^^
 
-stdin(1099,1): warning FS2303: Accessing the internal type, method or field 'MInternal' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--legacyemit' option.
+stdin(1099,1): warning FS2303: Accessing the internal type, method or field 'MInternal' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.
 
 
   CPublic2().MPublic();; // should give a warning in multi-assembly interactive emit
   ^^^^^^^^^^^^^^^^^^^^
 
-stdin(1105,1): warning FS2303: Accessing the internal type, method or field 'MPublic' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--legacyemit' option.
+stdin(1105,1): warning FS2303: Accessing the internal type, method or field 'MPublic' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.
 

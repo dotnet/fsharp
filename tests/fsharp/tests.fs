@@ -1076,7 +1076,7 @@ module CoreTests =
 
     [<Test>]
     let ``printing`` () =
-         runPrintingTest "--legacyemit+ --debug+" "output"
+         runPrintingTest "--multiemit- --debug+" "output"
 
     // F# 5.0 changed some things printing output
     [<Test>]
@@ -1086,20 +1086,20 @@ module CoreTests =
     // Output should not change with optimization off
     [<Test>]
     let ``printing-optimizeoff`` () =
-         runPrintingTest "--legacyemit+ --debug+ --optimize-" "output"
+         runPrintingTest "--multiemit- --debug+ --optimize-" "output"
 
     // Legacy one-dynamic-assembly emit is the default for .NET Framework, which these tests are using
     // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
     // as it feeds in many incremental fragments into stdin of the FSI process.
     [<Test>]
     let ``printing-legacyemitoff`` () =
-         runPrintingTest "--legacyemit- --debug+" "output.legacyemitoff"
+         runPrintingTest "--multiemit+ --debug+" "output.legacyemitoff"
 
     // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
     // needs to be tested with optimizations off.  The output should not change.
     [<Test>]
     let ``printing-legacyemitoff-optimizeoff`` () =
-         runPrintingTest "--legacyemit- --debug+ --optimize-" "output.legacyemitoff"
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.legacyemitoff"
 
     [<Test>]
     let ``printing-width-1000`` () =

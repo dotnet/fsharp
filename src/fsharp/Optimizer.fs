@@ -3974,38 +3974,39 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
    
 and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
     let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
-    let env, mexprR, minfo = 
+    let env, mexprR, minfo, hidden = 
         match mexpr with 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
         //
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        // In F# interactive multi-assembly mode no internals are accessible across interactive fragments.
         | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
             // This optimizes and builds minfo ignoring the signature
             let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
             let minfo =
+                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
+                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
                 if fsiMultiAssemblyEmit then
-                    let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
                     AbstractLazyModulInfoByHiding true hidden minfo
                 else
                     AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo
+            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo, hidden
         | _ ->
             // This optimizes and builds minfo w.r.t. the signature
-            // In F# interactive multi-assembly mode no internals are accessible even within the 'env' used from module to module.
             let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
-            let hiddenExternal = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
-            let minfoInternal = AbstractLazyModulInfoByHiding false hidden minfo
-            let minfoExternal = AbstractLazyModulInfoByHiding true hiddenExternal minfoInternal
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
             let env =
-                if fsiMultiAssemblyEmit then
+                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
+                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
+                if cenv.g.isInteractive && fsiMultiAssemblyEmit then
                     BindValsInModuleOrNamespace cenv minfoExternal env
                 else
-                    BindValsInModuleOrNamespace cenv minfoInternal env
-            env, mexprR, minfoExternal
+                    BindValsInModuleOrNamespace cenv minfo env
+            env, mexprR, minfoExternal, hidden
 
     let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 

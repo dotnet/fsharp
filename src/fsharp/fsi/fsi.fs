@@ -948,9 +948,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
 #if NETSTANDARD
-         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.Off),         None, Some(FSIstrings.SR.fsiLegacyEmit()))
+         CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOption()))
 #else
-         CompilerOption("legacyemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.Off),         None, Some(FSIstrings.SR.fsiLegacyEmitOnByDefault()))
+         CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOptionOffByDefault()))
 #endif
         ]);
       ]
@@ -3182,7 +3182,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do if isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
-    // Preset: --legacyemit+ on .NET Framework and Mono
+    // Preset: --multiemit- on .NET Framework and Mono
     do if not isRunningOnCoreClr then
         tcConfigB.fsiMultiAssemblyEmit <- false
 

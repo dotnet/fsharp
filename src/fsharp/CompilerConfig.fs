@@ -447,27 +447,27 @@ type TcConfigBuilder =
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
+
 #if !NO_EXTENSIONTYPING
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
 
-      /// pause between passes?
+      /// Pause between passes?
       mutable pause: bool
-      /// whenever possible, emit callvirt instead of call
+
+      /// Whenever possible, emit callvirt instead of call
       mutable alwaysCallVirt: bool
 
-      /// if true, strip away data that would not be of use to end users, but is useful to us for debugging
-      // REVIEW: "stripDebugData"?
+      /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
       mutable noDebugAttributes: bool
 
-      /// if true, indicates all type checking and code generation is in the context of fsi.exe
+      /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
+
       isInvalidationSupported: bool
 
-      /// used to log sqm data
-
-      /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
+      /// If true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations: bool
 
       mutable exename: string option
@@ -477,7 +477,9 @@ type TcConfigBuilder =
 
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
+
       mutable useSdkRefs: bool
+
       mutable fxResolver: FxResolver option
 
       // Is F# Interactive using multi-assembly emit?
