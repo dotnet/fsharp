@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {620E3D73-218B-729A-A745-0383733D0E62}
+// MVID: {620FB591-218B-729A-A745-038391B50F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D00000
+// Image base: 0x06FC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -574,20 +574,6 @@
     IL_0001:  ldfld      int32 XYZ.MyExn::Data0@
     IL_0006:  ret
   } // end of method MyExn::get_Data0
-
-  .method public strict virtual instance string 
-          get_Message() cil managed
-  {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       22 (0x16)
-    .maxstack  8
-    IL_0000:  ldstr      "%+A"
-    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.MyExn>::.ctor(string)
-    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-    IL_000f:  ldarg.0
-    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.MyExn,string>::Invoke(!0)
-    IL_0015:  ret
-  } // end of method MyExn::get_Message
 
   .method public hidebysig virtual instance int32 
           GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
@@ -1361,20 +1347,6 @@
       IL_0006:  ret
     } // end of method MyExn::get_Data0
 
-    .method public strict virtual instance string 
-            get_Message() cil managed
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       22 (0x16)
-      .maxstack  8
-      IL_0000:  ldstr      "%+A"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.ABC/MyExn>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-      IL_000f:  ldarg.0
-      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/MyExn,string>::Invoke(!0)
-      IL_0015:  ret
-    } // end of method MyExn::get_Message
-
     .method public hidebysig virtual instance int32 
             GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
@@ -2146,20 +2118,6 @@
         IL_0001:  ldfld      int32 XYZ.ABC/ABC/MyExn::Data0@
         IL_0006:  ret
       } // end of method MyExn::get_Data0
-
-      .method public strict virtual instance string 
-              get_Message() cil managed
-      {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       22 (0x16)
-        .maxstack  8
-        IL_0000:  ldstr      "%+A"
-        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class XYZ.ABC/ABC/MyExn>::.ctor(string)
-        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
-        IL_000f:  ldarg.0
-        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class XYZ.ABC/ABC/MyExn,string>::Invoke(!0)
-        IL_0015:  ret
-      } // end of method MyExn::get_Message
 
       .method public hidebysig virtual instance int32 
               GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
