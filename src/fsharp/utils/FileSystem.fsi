@@ -9,7 +9,7 @@ open System.Reflection
 open System.Text
 open System.Runtime.CompilerServices
 
-exception IllegalFileNameChar of string * char
+exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255

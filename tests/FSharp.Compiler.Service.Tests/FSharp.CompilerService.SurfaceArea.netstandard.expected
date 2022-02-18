@@ -4087,17 +4087,6 @@ FSharp.Compiler.IO.IFileSystem: System.String NormalizePathShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void CopyShim(System.String, System.String, Boolean)
 FSharp.Compiler.IO.IFileSystem: Void DirectoryDeleteShim(System.String)
 FSharp.Compiler.IO.IFileSystem: Void FileDeleteShim(System.String)
-FSharp.Compiler.IO.IllegalFileNameChar
-FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object)
-FSharp.Compiler.IO.IllegalFileNameChar: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.IO.IllegalFileNameChar: Char Data1
-FSharp.Compiler.IO.IllegalFileNameChar: Char get_Data1()
-FSharp.Compiler.IO.IllegalFileNameChar: Int32 GetHashCode()
-FSharp.Compiler.IO.IllegalFileNameChar: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.IO.IllegalFileNameChar: System.String Data0
-FSharp.Compiler.IO.IllegalFileNameChar: System.String get_Data0()
-FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor()
-FSharp.Compiler.IO.IllegalFileNameChar: Void .ctor(System.String, Char)
 FSharp.Compiler.IO.StreamExtensions
 FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadAllBytes(System.IO.Stream)
 FSharp.Compiler.IO.StreamExtensions: Byte[] Stream.ReadBytes(System.IO.Stream, Int32, Int32)
