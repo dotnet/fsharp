@@ -299,7 +299,7 @@
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
-        <target state="new">Unknown debug point '{0}'. The available debug points are '{1}'.</target>
+        <target state="translated">알 수 없는 디버그 지점 '{0}'. 사용 가능한 디버그 지점은 '{1}'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
