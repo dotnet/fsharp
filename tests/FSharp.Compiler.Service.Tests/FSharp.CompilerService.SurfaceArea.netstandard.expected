@@ -286,10 +286,8 @@ FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 GetHashCode(System.Collections.
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILAttribute: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILAttribute: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray
-FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] get_AsArray()
-FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList
-FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] get_AsList()
+FSharp.Compiler.AbstractIL.IL+ILAttributes: ILAttribute[] AsArray()
+FSharp.Compiler.AbstractIL.IL+ILAttributes: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribute] AsList()
 FSharp.Compiler.AbstractIL.IL+ILAttributesStored: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(ILCallingConv)
 FSharp.Compiler.AbstractIL.IL+ILCallingConv: Boolean Equals(System.Object)
@@ -788,11 +786,9 @@ FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.Reflection.MethodImplAttribute
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String Name
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILMethodDef: Void .ctor(System.String, System.Reflection.MethodAttributes, System.Reflection.MethodImplAttributes, ILCallingConv, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILParameter], ILReturn, System.Lazy`1[FSharp.Compiler.AbstractIL.IL+MethodBody], Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILGenericParameterDef], ILSecurityDecls, ILAttributes)
-FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] AsArray
-FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] get_AsArray()
-FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] AsList
+FSharp.Compiler.AbstractIL.IL+ILMethodDefs: ILMethodDef[] AsArray()
+FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] AsList()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] FindByName(System.String)
-FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] get_AsList()
 FSharp.Compiler.AbstractIL.IL+ILMethodDefs: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodDef] TryFindInstanceByNameAndCallingSignature(System.String, ILCallingSignature)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(ILMethodImplDef)
 FSharp.Compiler.AbstractIL.IL+ILMethodImplDef: Boolean Equals(System.Object)
@@ -1244,6 +1240,26 @@ FSharp.Compiler.AbstractIL.IL+ILPropertyDef: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: System.String get_Name()
 FSharp.Compiler.AbstractIL.IL+ILPropertyDef: Void .ctor(System.String, System.Reflection.PropertyAttributes, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILMethodRef], ILThisConvention, ILType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.AbstractIL.IL+ILFieldInit], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILType], ILAttributes)
 FSharp.Compiler.AbstractIL.IL+ILPropertyDefs: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(ILReferences)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILAssemblyRef[] AssemblyReferences
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILAssemblyRef[] get_AssemblyReferences()
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILFieldRef[] FieldReferences
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILFieldRef[] get_FieldReferences()
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILMethodRef[] MethodReferences
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILMethodRef[] get_MethodReferences()
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILModuleRef[] ModuleReferences
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILModuleRef[] get_ModuleReferences()
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILTypeRef[] TypeReferences
+FSharp.Compiler.AbstractIL.IL+ILReferences: ILTypeRef[] get_TypeReferences()
+FSharp.Compiler.AbstractIL.IL+ILReferences: Int32 CompareTo(ILReferences)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Int32 CompareTo(System.Object)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.AbstractIL.IL+ILReferences: Int32 GetHashCode()
+FSharp.Compiler.AbstractIL.IL+ILReferences: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.AbstractIL.IL+ILReferences: System.String ToString()
+FSharp.Compiler.AbstractIL.IL+ILReferences: Void .ctor(ILAssemblyRef[], ILModuleRef[], ILTypeRef[], ILMethodRef[], ILFieldRef[])
 FSharp.Compiler.AbstractIL.IL+ILResources: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributes CustomAttrs
 FSharp.Compiler.AbstractIL.IL+ILReturn: ILAttributes get_CustomAttrs()
@@ -1786,6 +1802,7 @@ FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPlatform
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPreTypeDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPropertyDef
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILPropertyDefs
+FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILReferences
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILResources
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILReturn
 FSharp.Compiler.AbstractIL.IL: FSharp.Compiler.AbstractIL.IL+ILScopeRef
@@ -4173,8 +4190,8 @@ FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Core.FS
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] LCID
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] get_LCID()
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Collections.Generic.IEnumerable`1[System.String] GetCompletions(System.String)
-FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Reflection.Assembly DynamicAssembly
-FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Reflection.Assembly get_DynamicAssembly()
+FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Reflection.Assembly[] DynamicAssemblies
+FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Reflection.Assembly[] get_DynamicAssemblies()
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.String FormatValue(System.Object, System.Type)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalExpressionNonThrowing(System.String)
 FSharp.Compiler.Interactive.Shell+FsiEvaluationSession: System.Tuple`2[Microsoft.FSharp.Core.FSharpChoice`2[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Interactive.Shell+FsiValue],System.Exception],FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] EvalInteractionNonThrowing(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])

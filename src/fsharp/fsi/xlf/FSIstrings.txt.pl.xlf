@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Uwzględnij identyfikator URI źródła pakietów podczas wyszukiwania pakietów</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
+        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
+        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -15,6 +25,11 @@
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
         <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpDiagnostic, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOption">
+        <source>Emit multiple assemblies (on by default)</source>
+        <target state="new">Emit multiple assemblies (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

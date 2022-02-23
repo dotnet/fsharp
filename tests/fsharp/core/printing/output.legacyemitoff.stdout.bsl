@@ -13,6 +13,8 @@ namespace FSI_0004
   val x7: System.Windows.Forms.Form
   val x8: int[,]
   val x9: Lazy<string>
+  type ClassInFile1 =
+    new: unit -> ClassInFile1
 
 namespace FSI_0005
   val x1: int
@@ -24,6 +26,8 @@ namespace FSI_0005
   val x7: System.Windows.Forms.Form
   val x8: int[,]
   val x9: Lazy<string>
+  type ClassInFile1 =
+    new: unit -> ClassInFile1
 
 namespace FSI_0005
   val x1: int
@@ -35,6 +39,8 @@ namespace FSI_0005
   val x7: System.Windows.Forms.Form
   val x8: int[,]
   val x9: Lazy<string>
+  type ClassInFile2 =
+    new: unit -> ClassInFile2
 
 > val x1: seq<string>
 val x2: seq<string>
@@ -4054,6 +4060,8 @@ type 'a T4063 = | AT4063 of 'a
     #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced
     #time ["on"|"off"];;                          // Toggle timing on/off
     #help;;                                       // Display help
+    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'
+    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version
     #quit;;                                       // Exit
 
   F# Interactive command line options:
@@ -6259,5 +6267,30 @@ val SomeLiteralWithASomewhatLongName2: string
 val ShortName: string = "hi"
 
 > val it: System.DayOfWeek = Tuesday
+
+> val internal f: unit -> int
+
+> val it: int = 1
+
+> type internal CInternal =
+  new: unit -> CInternal
+
+> val it: unit = ()
+
+> type internal CPublic =
+  new: unit -> CPublic
+  member MInternal: unit -> unit
+
+> val it: unit = ()
+
+> type internal CPublic2 =
+  new: unit -> CPublic2
+  member MPublic: unit -> int
+
+> val it: int = 1
+
+> val inst1: TestLoadFile.ClassInFile1
+
+> val inst2: TestLoadFile2.ClassInFile2
 
 > > > 

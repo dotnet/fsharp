@@ -799,7 +799,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
 
     let optimizedImpls, optimizationData, _ =
         ApplyAllOptimizations
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+            (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile,
              importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
@@ -909,10 +909,10 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     | None ->
         try
             try
-                ILBinaryWriter.WriteILBinary
-                 (outfile,
-                  { ilg = tcGlobals.ilg
-                    pdbfile=pdbfile
+                ILBinaryWriter.WriteILBinaryFile
+                 ({ ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes

@@ -1949,13 +1949,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity = 
         cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
+           LayeredMap.Empty.AddMany( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
         cacheOptByref &tyconsByAccessNamesCache (fun () -> 
-             LayeredMultiMap.Empty.AddAndMarkAsCollapsible (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
+             LayeredMultiMap.Empty.AddMany (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
 
     // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
@@ -5316,7 +5316,7 @@ type CcuThunk =
       name: CcuReference
     }
 
-    /// Dereference the asssembly reference 
+    /// Dereference the assembly reference 
     member ccu.Deref = 
         if isNull (ccu.target :> obj) then 
             raise(UnresolvedReferenceNoRange ccu.name)
@@ -5336,7 +5336,7 @@ type CcuThunk =
         with get() = ccu.Deref.UsesFSharp20PlusQuotations 
         and set v = ccu.Deref.UsesFSharp20PlusQuotations <- v
 
-    /// The short name of the asssembly being referenced
+    /// The short name of the assembly being referenced
     member ccu.AssemblyName = ccu.name
 
     /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
