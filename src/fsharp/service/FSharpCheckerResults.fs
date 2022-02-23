@@ -2265,7 +2265,8 @@ type FSharpCheckProjectResults
         let importMap = tcImports.GetImportMap()
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
         let tcConfig = getTcConfig()
-        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)
+        let isIncrementalFragment = false
+        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
         let mimpls =
             match optimizedImpls with
             | TypedAssemblyAfterOptimization files ->

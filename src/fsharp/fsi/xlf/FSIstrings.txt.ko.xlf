@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
+        <target state="new">Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">패키지를 검색할 때 패키지 원본 URI 포함</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
+        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
+        <target state="new">Emit multiple assemblies (off by default for .NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
@@ -15,6 +25,11 @@
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
         <target state="translated">작업이 실패했습니다. 오류 텍스트가 오류 스트림에 출력되었습니다. 해당 FSharpDiagnostic을 반환하려면 EvalInteractionNonThrowing, EvalScriptNonThrowing 또는 EvalExpressionNonThrowing을 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOption">
+        <source>Emit multiple assemblies (on by default)</source>
+        <target state="new">Emit multiple assemblies (on by default)</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

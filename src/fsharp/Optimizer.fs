@@ -3952,7 +3952,8 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
         let (defs, info), (env, bindInfosColl) = OptimizeModuleDefs cenv (env, bindInfosColl) defs 
         (TMDefs defs, info), (env, bindInfosColl)
 
-and OptimizeModuleBindings cenv (env, bindInfosColl) xs = List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
+and OptimizeModuleBindings cenv (env, bindInfosColl) xs =
+    List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
 and OptimizeModuleBinding cenv (env, bindInfosColl) x = 
     match x with
@@ -3971,30 +3972,48 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden implFile =
+and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
     let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
-    let env, mexprR, minfo = 
+    let env, mexprR, minfo, hidden = 
         match mexpr with 
-        // FSI: FSI compiles everything as if you're typing incrementally into one module 
-        // This means the fragment is not truly a constrained module as later fragments will be typechecked 
-        // against the internals of the module rather than the externals. Furthermore it would be wrong to apply 
-        // optimizations that did lots of reorganizing stuff to the internals of a module should we ever implement that. 
+        // FSI compiles interactive fragments as if you're typing incrementally into one module.
+        //
+        // This means the fragment is not constrained by its signature and later fragments will be typechecked 
+        // against the implementation of the module rather than the externals.
+        //
         | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
-            let (def, minfo), (env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
-            env, ModuleOrNamespaceExprWithSig(mty, def, m), minfo
-        | _ -> 
-            let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
+            // This optimizes and builds minfo ignoring the signature
+            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
+            let minfo =
+                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
+                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
+                if fsiMultiAssemblyEmit then
+                    AbstractLazyModulInfoByHiding true hidden minfo
+                else
+                    AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
-            env, mexprR, minfo
+            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo, hidden
+        | _ ->
+            // This optimizes and builds minfo w.r.t. the signature
+            let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
+            let env =
+                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
+                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
+                if cenv.g.isInteractive && fsiMultiAssemblyEmit then
+                    BindValsInModuleOrNamespace cenv minfoExternal env
+                else
+                    BindValsInModuleOrNamespace cenv minfo env
+            env, mexprR, minfoExternal, hidden
 
-    let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
+    let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-    let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode), minfo, hidden
+    env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -4008,7 +4027,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard(OptimizerStackGuardDepth) 
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

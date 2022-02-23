@@ -13,6 +13,9 @@ open FSharp.Compiler.AbstractIL.IL
 /// Morph each scope reference inside a type signature.
 val morphILScopeRefsInILTypeRef: (ILScopeRef -> ILScopeRef) -> ILTypeRef -> ILTypeRef 
 
+/// Morph each ILTypeRef inside an ILType
+val morphILTypeRefsInILType: (ILTypeRef -> ILTypeRef) -> ILType -> ILType
+
 /// Morph all type references throughout an entire module.
 val morphILTypeRefsInILModuleMemoized: (ILTypeRef -> ILTypeRef) ->  ILModuleDef ->  ILModuleDef
 

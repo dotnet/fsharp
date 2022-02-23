@@ -513,7 +513,7 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
 ///
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
     // We be very careful not to force a read of the type defs here
-    tdefs.AsArrayOfPreTypeDefs
+    tdefs.AsArrayOfPreTypeDefs()
     |> Array.map (fun pre -> (pre.Namespace, (pre.Name, notlazy(scoref, pre))))
     |> Array.toList
     |> ImportILTypeDefList amap m cpath enc
@@ -550,7 +550,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref: ILScopeRef) (expor
 
 /// Import the "exported types" table for multi-module assemblies. 
 let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) = 
-    [ for exportedType in exportedTypes.AsList do 
+    [ for exportedType in exportedTypes.AsList() do 
          yield! ImportILAssemblyExportedType amap m auxModLoader scoref exportedType ]
 
 /// Import both the main type definitions and the "exported types" table, i.e. all the 
@@ -566,13 +566,13 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndFo
     // Note 'td' may be in another module or another assembly!
     // Note: it is very important that we call auxModLoader lazily
     [ //printfn "reading forwarders..." 
-        for exportedType in exportedTypes.AsList do 
+        for exportedType in exportedTypes.AsList() do 
             let ns, n = splitILTypeName exportedType.Name
             //printfn "found forwarder for %s..." n
             let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create(exportedType.ScopeRef, [], exportedType.Name))
             yield (Array.ofList ns, n), tcref
             let rec nested (nets: ILNestedExportedTypes) enc = 
-                [ for net in nets.AsList do 
+                [ for net in nets.AsList() do 
                     
                     //printfn "found nested forwarder for %s..." net.Name
                     let tcref = lazy ImportILTypeRefUncached (amap()) m (ILTypeRef.Create (exportedType.ScopeRef, enc, net.Name))

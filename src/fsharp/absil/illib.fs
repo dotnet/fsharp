@@ -1134,11 +1134,9 @@ module MapAutoOpens =
         member x.Values = [ for KeyValue(_, v) in x -> v ]
 #endif
 
-        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
+        member x.AddMany (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
-
-        member x.MarkAsCollapsible () = x
+        member x.AddOrModify (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -1148,11 +1146,8 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = 
-        let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-        x.MarkAsCollapsible()
-
-    member _.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member x.AddMany (kvs: _[]) = 
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
     member _.TryFind k = contents.TryFind k
 
