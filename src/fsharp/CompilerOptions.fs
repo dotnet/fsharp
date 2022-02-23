@@ -294,10 +294,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               f (getSwitch opt); t
           | CompilerOption(s, _, OptionSet f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := true; t
+              f.Value <- true; t
           | CompilerOption(s, _, OptionClear f, d, _) :: _ when optToken = s && argString = "" ->
               reportDeprecatedOption d
-              f := false; t
+              f.Value <- false; t
           | CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
@@ -846,7 +846,8 @@ let setLanguageVersion specifiedVersion =
         exit 0
 
     if specifiedVersion = "?" then dumpAllowedValues ()
-    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then ()
+    elif not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
     languageVersion
 
 let languageFlags tcConfigB =
@@ -1200,7 +1201,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
     CompilerOption
        ("msbuildresolution", tagNone,
-        OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false),
+        OptionUnit (fun () -> tcConfigB.useSimpleResolution <- false),
         Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None)
 
     CompilerOption
@@ -1210,8 +1211,8 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("nodebugdata", tagNone,
-        OptionUnit (fun () -> tcConfigB.noDebugData<-true),
-        Some(InternalCommandLineOption("--nodebugdata", rangeCmdArgs)), None)
+        OptionUnit (fun () -> tcConfigB.noDebugAttributes <- true),
+        Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)), None)
 
     testFlag tcConfigB  ] @
 
@@ -1630,7 +1631,7 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let filename = outfile + ".terms"
-            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header).GetWriter()
+            use f = FileSystem.OpenFileForWriteShim(filename + "-" + string showTermFileCount + "-" + header, FileMode.Create).GetWriter()
             showTermFileCount <- showTermFileCount + 1
             LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else

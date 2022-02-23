@@ -20,9 +20,10 @@ let pretty () = true
 // --------------------------------------------------------------------
 
 let tyvar_generator =
-  let i = ref 0
+  let mutable i = 0
   fun n ->
-    incr i; n + string !i
+    i <- i + 1
+    n + string i
 
 // Carry an environment because the way we print method variables
 // depends on the gparams of the current scope.
@@ -303,7 +304,8 @@ and goutput_permission _env os p =
       output_bytes os b
       output_string os ")"
 
-and goutput_security_decls env os (ps: ILSecurityDecls) =  output_seq " " (goutput_permission env)  os ps.AsList
+and goutput_security_decls env os (ps: ILSecurityDecls) =
+    output_seq " " (goutput_permission env)  os (ps.AsList())
 
 and goutput_gparam env os (gf: ILGenericParameterDef) =
   output_string os (tyvar_generator gf.Name)
@@ -502,7 +504,7 @@ let goutput_custom_attr env os (attr: ILAttribute) =
   output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
-  Array.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsArray
+  Array.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) (attrs.AsArray())
 
 let goutput_fdef _tref env os (fd: ILFieldDef) =
   output_string os " .field "
@@ -583,7 +585,7 @@ let goutput_freevar env os l =
 let goutput_freevars env os ps =
   output_parens (output_seq ", " (goutput_freevar env)) os ps
 
-let output_source os (s:ILSourceMarker) =
+let output_source os (s:ILDebugPoint) =
   if s.Document.File <> "" then
     output_string os " .line "
     output_int os s.Line
@@ -914,13 +916,13 @@ let splitTypeLayout = function
   | ILTypeDefLayout.Explicit info -> "explicit", (fun os () -> output_type_layout_info os info)
 
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) =
-  List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
+  List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) (fdefs.AsList())
 
 let goutput_mdefs env os (mdefs: ILMethodDefs) =
-  Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsArray
+  Array.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) (mdefs.AsArray())
 
 let goutput_pdefs env os (pdefs: ILPropertyDefs) =
-  List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
+  List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) (pdefs.AsList())
 
 let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
   let env = ppenv_enter_tdef cd.GenericParams env
@@ -979,8 +981,9 @@ and goutput_lambdas env os lambdas =
        (goutput_lambdas env) os l
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
 
-and goutput_tdefs contents enc env os (td: ILTypeDefs) =
-  List.iter (goutput_tdef enc env contents os) td.AsList
+and goutput_tdefs contents enc env os (tds: ILTypeDefs) =
+  for td in tds.AsList() do
+      goutput_tdef enc env contents os td
 
 let output_ver os (version: ILVersionInfo) =
     output_string os " .ver "
@@ -1043,11 +1046,11 @@ let goutput_resource env os r =
 let goutput_manifest env os m =
   output_string os " .assembly "
   match m.AssemblyLongevity with
-            | ILAssemblyLongevity.Unspecified -> ()
-            | ILAssemblyLongevity.Library -> output_string os "library "
-            | ILAssemblyLongevity.PlatformAppDomain -> output_string os "platformappdomain "
-            | ILAssemblyLongevity.PlatformProcess -> output_string os "platformprocess "
-            | ILAssemblyLongevity.PlatformSystem  -> output_string os "platformmachine "
+  | ILAssemblyLongevity.Unspecified -> ()
+  | ILAssemblyLongevity.Library -> output_string os "library "
+  | ILAssemblyLongevity.PlatformAppDomain -> output_string os "platformappdomain "
+  | ILAssemblyLongevity.PlatformProcess -> output_string os "platformprocess "
+  | ILAssemblyLongevity.PlatformSystem  -> output_string os "platformmachine "
   output_sqstring os m.Name
   output_string os " { \n"
   output_string os ".hash algorithm "; output_i32 os m.AuxModuleHashAlgorithm; output_string os "\n"
@@ -1058,47 +1061,28 @@ let goutput_manifest env os m =
   output_string os " } \n"
 
 
-let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
-  try
+let output_module_fragment_aux os (ilg: ILGlobals) modul =
     let env = mk_ppenv ilg
     let env = ppenv_enter_modul env
     goutput_tdefs false [] env os modul.TypeDefs
     goutput_tdefs true [] env os modul.TypeDefs
-  with e ->
-    output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush()
-    reraise()
-
-let output_module_fragment os (ilg: ILGlobals) modul =
-  let refs = computeILRefs ilg modul
-  output_module_fragment_aux refs os ilg modul
-  refs
-
-let output_module_refs os refs =
-  List.iter (fun  x -> output_assemblyRef os x; output_string os "\n") refs.AssemblyReferences
-  List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
 
 let goutput_module_manifest env os modul =
-  output_string os " .module "; output_sqstring os modul.Name
-  goutput_custom_attrs env os modul.CustomAttrs
-  output_string os " .imagebase "; output_i32 os modul.ImageBase
-  output_string os " .file alignment "; output_i32 os modul.PhysicalAlignment
-  output_string os " .subsystem "; output_i32 os modul.SubSystemFlags
-  output_string os " .corflags "; output_i32 os ((if modul.IsILOnly then 0x0001 else 0) ||| (if modul.Is32Bit then 0x0002 else 0) ||| (if modul.Is32BitPreferred then 0x00020003 else 0))
-  List.iter (fun r -> goutput_resource env os r) modul.Resources.AsList
-  output_string os "\n"
-  output_option (goutput_manifest env) os modul.Manifest
+    output_string os " .module "; output_sqstring os modul.Name
+    goutput_custom_attrs env os modul.CustomAttrs
+    output_string os " .imagebase "; output_i32 os modul.ImageBase
+    output_string os " .file alignment "; output_i32 os modul.PhysicalAlignment
+    output_string os " .subsystem "; output_i32 os modul.SubSystemFlags
+    output_string os " .corflags "; output_i32 os ((if modul.IsILOnly then 0x0001 else 0) ||| (if modul.Is32Bit then 0x0002 else 0) ||| (if modul.Is32BitPreferred then 0x00020003 else 0))
+    List.iter (fun r -> goutput_resource env os r) (modul.Resources.AsList())
+    output_string os "\n"
+    output_option (goutput_manifest env) os modul.Manifest
 
 let output_module os (ilg: ILGlobals) modul =
-  try
-    let refs = computeILRefs ilg modul
     let env = mk_ppenv ilg
     let env = ppenv_enter_modul env
-    output_module_refs  os refs
     goutput_module_manifest env os modul
-    output_module_fragment_aux refs os ilg modul
-  with e ->
-    output_string os "*** Error during printing : "; output_string os (e.ToString()); os.Flush()
-    raise e
+    output_module_fragment_aux os ilg modul
 
 
 #endif

@@ -62,7 +62,12 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = if severity=FSharpDiagnosticSeverity.Warning then "warning" else "error"
+        let severity = 
+            match severity with
+            | FSharpDiagnosticSeverity.Warning -> "warning"
+            | FSharpDiagnosticSeverity.Error -> "error"
+            | FSharpDiagnosticSeverity.Info -> "info"
+            | FSharpDiagnosticSeverity.Hidden -> "hidden"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
@@ -97,7 +102,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 /// Use to reset error and warning handlers            
 [<Sealed>]
 type ErrorScope()  = 
-    let mutable errors = [] 
+    let mutable diags = [] 
     let mutable firstError = None
     let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let unwindEL =        
@@ -105,16 +110,14 @@ type ErrorScope()  =
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, severity) = 
                       let err = FSharpDiagnostic.CreateFromException(exn, severity, range.Zero, false)
-                      errors <- err :: errors
+                      diags <- err :: diags
                       if severity = FSharpDiagnosticSeverity.Error && firstError.IsNone then 
                           firstError <- Some err.Message
-                member x.ErrorCount = errors.Length })
+                member x.ErrorCount = diags.Length })
         
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
+    member x.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Warning)
-
-    member x.Diagnostics = errors
+    member x.Diagnostics = diags
 
     member x.TryGetFirstErrorText() =
         match x.Errors with 
@@ -165,13 +168,14 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpDiagnost
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
-    override x.DiagnosticSink(exn, severity) = 
-        if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Error)
+    override x.DiagnosticSink(err, severity) = 
+        if ReportDiagnosticAsError options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportWarning options exn then
-            diagnostics.Add(exn, FSharpDiagnosticSeverity.Warning)
-
+        elif ReportDiagnosticAsWarning options (err, severity) then
+            diagnostics.Add(err, FSharpDiagnosticSeverity.Warning)
+        elif ReportDiagnosticAsInfo options (err, severity) then
+            diagnostics.Add(err, severity)
     override x.ErrorCount = errorCount
 
     member x.GetDiagnostics() = diagnostics.ToArray()
@@ -180,10 +184,9 @@ module DiagnosticHelpers =
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, (exn, severity), suggestNames) = 
         [ let severity = 
-               if (severity = FSharpDiagnosticSeverity.Error) then severity 
-               elif ReportWarningAsError options exn then FSharpDiagnosticSeverity.Error
+               if ReportDiagnosticAsError options (exn, severity) then FSharpDiagnosticSeverity.Error
                else severity
-          if (severity = FSharpDiagnosticSeverity.Error || ReportWarning options exn) then 
+          if (severity = FSharpDiagnosticSeverity.Error || ReportDiagnosticAsWarning options (exn, severity)  || ReportDiagnosticAsInfo options (exn, severity)) then 
             let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
@@ -663,12 +666,12 @@ module internal SymbolHelpers =
             | _ -> ""
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
-            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DemangledModuleOrNamespaceName
+            if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
         | Item.TypeVar (id, _) -> id
         | Item.ArgName (id, _, _) -> id.idText
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
-        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).Name
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
         // unreachable 
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
@@ -795,7 +798,7 @@ module internal SymbolHelpers =
                 if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
                     let typeBeforeArguments = 
                         match tyconRef.TypeReprInfo with 
-                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                        | TProvidedTypeRepr info -> info.ProvidedType
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
                     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
@@ -868,10 +871,10 @@ module internal SymbolHelpers =
             GetF1Keyword g (Item.Value apref.ActivePatternVal)
 
         | Item.UnionCase(ucinfo, _) ->
-            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.Name |> Some
+            (ucinfo.TyconRef |> ticksAndArgCountTextOfTyconRef) + "."+ucinfo.DisplayName |> Some
 
         | Item.RecdField rfi ->
-            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.Name |> Some
+            (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef) + "." + rfi.DisplayName |> Some
         
         | Item.AnonRecdField _ -> None
         
@@ -906,7 +909,7 @@ module internal SymbolHelpers =
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
 #if !NO_EXTENSIONTYPING                
-                | TProvidedNamespaceExtensionPoint _ -> 
+                | TProvidedNamespaceRepr _ -> 
                     modref.CompilationPathOpt
                     |> Option.bind (fun path ->
                         // works similar to generation of xml-docs at tastops.fs, probably too similar

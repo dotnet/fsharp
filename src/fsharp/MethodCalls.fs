@@ -466,37 +466,42 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
         NameOpt=nmOpt
         CalledArgumentType=typeOfCalledArg })
 
+/// <summary>
 /// Represents the syntactic matching between a caller of a method and the called method.
 ///
 /// The constructor takes all the information about the caller and called side of a method, match up named arguments, property setters etc.,
 /// and returns a CalledMeth object for further analysis.
+/// </summary>
+/// <param name='infoReader'></param>
+/// <param name='nameEnv'></param>
+/// <param name='isCheckingAttributeCall'></param>
+/// <param name='freshenMethInfo'>A function to help generate fresh type variables the property setters methods in generic classes</param>
+/// <param name='m'>Range</param>
+/// <param name='ad'>The access domain of the place where the call is taking place</param>
+/// <param name='minfo'>The method we're attempting to call</param>
+/// <param name='calledTyArgs'>The 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call</param>
+/// <param name='callerTyArgs'>The 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call</param>
+/// <param name='pinfoOpt'>The property related to the method we're attempting to call, if any</param>
+/// <param name='callerObjArgTys'>The 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments</param>
+/// <param name='callerArgs'>A function to help generate fresh type variables the property setters methods in generic classes</param>
+/// <param name='allowParamArgs'>Do we allow the use of a param args method in its "expanded" form?</param>
+/// <param name='allowOutAndOptArgs'>Do we allow the use of the transformation that converts out arguments as tuple returns?</param>
+/// <param name='tyargsOpt'>Method parameters</param>
 type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       /// A function to help generate fresh type variables the property setters methods in generic classes
        freshenMethInfo,
-       /// Range
        m,
-       /// The access domain of the place where the call is taking place
        ad,
-       /// The method we're attempting to call
        minfo: MethInfo,
-       /// The 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
        calledTyArgs,
-       /// The 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
        callerTyArgs: TType list,
-       /// The property related to the method we're attempting to call, if any
        pinfoOpt: PropInfo option,
-       /// The types of the actual object argument, if any
        callerObjArgTys: TType list,
-       /// The 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
        callerArgs: CallerArgs<'T>,
-       /// Do we allow the use of a param args method in its "expanded" form?
        allowParamArgs: bool,
-       /// Do we allow the use of the transformation that converts out arguments as tuple returns?
        allowOutAndOptArgs: bool,
-       /// Method parameters
        tyargsOpt: TType option)    
     =
     let g = infoReader.g
@@ -527,12 +532,13 @@ type CalledMeth<'T>
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
                     
-                    // Check if all optional/out arguments are byref-out args
-                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
-                        unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
-                    // Check if all optional/out arguments are optional args
-                    elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
-                        unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
+                    let isOpt x = x.OptArgInfo.IsOptional
+                    let isOut x = x.IsOutArg && isByrefTy g x.CalledArgumentType
+
+                    // Check if all args are optional or byref-out args, same arg cannot be both.
+                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> isOpt x <> isOut x) then
+                        let unnamedCalledOptArgs, unnamedCalledOutArgs = unnamedCalledOptOrOutArgs |> List.partition isOpt
+                        unnamedCalledArgsTrimmed, unnamedCalledOptArgs, unnamedCalledOutArgs
                     // Otherwise drop them on the floor
                     else
                         unnamedCalledArgs, [], []
@@ -795,7 +801,7 @@ type ArgumentAnalysis =
     | NoInfo
     | ArgDoesNotMatch 
     | CallerLambdaHasArgTypes of TType list
-    | CalledArgMatchesType of TType
+    | CalledArgMatchesType of adjustedCalledArgTy: TType * noEagerConstraintApplication: bool
 
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
@@ -805,7 +811,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         | _ -> 0
     loop origRhsExpr
 
-let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad (arg: AssignedCalledArg<SynExpr>) =
+let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConstraintApplication (arg: AssignedCalledArg<SynExpr>) =
     let g = infoReader.g
 
     // Find the explicit lambda arguments of the caller. Ignore parentheses.
@@ -828,12 +834,18 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad (arg: Assign
             NoInfo
     else
         // not a lambda on the caller side - push information from caller to called
-        CalledArgMatchesType(adjustedCalledArgTy)  
+        CalledArgMatchesType(adjustedCalledArgTy, noEagerConstraintApplication)  
         
+let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
+    let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
 
-let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) ad =
-    let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader ad)
-    let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader ad arg))
+    // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+    // Tasks and Resumable Code RFC
+    if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+        errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), m))
+
+    let unnamedInfo = meth.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication)
+    let namedInfo = meth.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
        namedInfo |> List.existsSquared (function _, CallerLambdaHasArgTypes _ -> true | _ -> false) then 
         Some (unnamedInfo, namedInfo)
@@ -847,7 +859,7 @@ let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) ad =
 /// Is this a 'base' call (in the sense of C#) 
 let IsBaseCall objArgs = 
     match objArgs with 
-    | [Expr.Val (v, _, _)] when v.BaseOrThisInfo  = BaseVal -> true
+    | [Expr.Val (v, _, _)] when v.IsBaseVal -> true
     | _ -> false
     
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 
@@ -1451,7 +1463,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                     else
                         let calledNonOptTy = destNullableTy g calledArgTy
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                        let callerArgTy2 = tyOfExpr g callerArgExpr2
+                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
                 else
                     failwith "unreachable" // see case above
             
@@ -1482,7 +1495,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                             // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
                             let calledNonOptTy = destNullableTy g calledArgTy
                             let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                            let callerArgTy2 = tyOfExpr g callerArgExpr2
+                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
@@ -1791,7 +1805,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond DebugPointAtBinding.NoneAtSticky m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
@@ -1859,7 +1873,7 @@ module ProvidedMethodCalls =
                 let vT = addVar v
                 let e3T = exprToExpr  e3
                 removeVar v
-                let exprT = mkFastForLoop g (DebugPointAtFor.No, m, vT, e1T, true, e2T, e3T)
+                let exprT = mkFastForLoop g (DebugPointAtFor.No, DebugPointAtInOrTo.No, m, vT, e1T, true, e2T, e3T)
                 None, (exprT, tyOfExpr g exprT)
             | ProvidedNewDelegateExpr (delegateTy, boundVars, delegateBodyExpr) ->
                 let delegateTy, boundVars, delegateBodyExpr = exprType.PApply3((fun _ -> (delegateTy, boundVars, delegateBodyExpr)), m)

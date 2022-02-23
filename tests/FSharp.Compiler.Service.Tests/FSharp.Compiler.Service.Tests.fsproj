@@ -72,6 +72,15 @@
     <Compile Include="..\service\ParserTests.fs">
       <Link>ParserTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\XmlDocTests.fs">
+      <Link>XmlDocTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\XmlDocTests - Units of Measure.fs">
+      <Link>XmlDocTests - Units of Measure.fs</Link>
+    </Compile>
+    <Compile Include="..\service\PrettyNaming.fs">
+      <Link>PrettyNaming.fs</Link>
+    </Compile>
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
@@ -81,6 +90,7 @@
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
 </Project>

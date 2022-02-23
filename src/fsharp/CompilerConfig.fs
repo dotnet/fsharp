@@ -447,27 +447,27 @@ type TcConfigBuilder =
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
+
 #if !NO_EXTENSIONTYPING
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
 
-      /// pause between passes?
+      /// Pause between passes?
       mutable pause: bool
-      /// whenever possible, emit callvirt instead of call
+
+      /// Whenever possible, emit callvirt instead of call
       mutable alwaysCallVirt: bool
 
-      /// if true, strip away data that would not be of use to end users, but is useful to us for debugging
-      // REVIEW: "stripDebugData"?
-      mutable noDebugData: bool
+      /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
+      mutable noDebugAttributes: bool
 
-      /// if true, indicates all type checking and code generation is in the context of fsi.exe
+      /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
+
       isInvalidationSupported: bool
 
-      /// used to log sqm data
-
-      /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
+      /// If true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations: bool
 
       mutable exename: string option
@@ -477,8 +477,13 @@ type TcConfigBuilder =
 
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
+
       mutable useSdkRefs: bool
+
       mutable fxResolver: FxResolver option
+
+      // Is F# Interactive using multi-assembly emit?
+      mutable fsiMultiAssemblyEmit: bool
 
       /// specify the error range for FxResolver
       rangeForErrors: range
@@ -654,16 +659,17 @@ type TcConfigBuilder =
 #endif
           pause = false
           alwaysCallVirt = true
-          noDebugData = false
+          noDebugAttributes = false
           emitDebugInfoInQuotations = false
           exename = None
           shadowCopyReferences = false
           useSdkRefs = true
           fxResolver = None
+          fsiMultiAssemblyEmit = true
           internalTestSpanStackReferring = false
           noConditionalErasure = false
           pathMap = PathMap.empty
-          langVersion = LanguageVersion("default")
+          langVersion = LanguageVersion.Default
           implicitIncludeDir = implicitIncludeDir
           defaultFSharpBinariesDir = defaultFSharpBinariesDir
           reduceMemoryUsage = reduceMemoryUsage
@@ -860,8 +866,8 @@ type TcConfigBuilder =
 // TcConfig
 //--------------------------------------------------------------------------
 
-[<Sealed>]
 /// This type is immutable and must be kept as such. Do not extract or mutate the underlying data except by cloning it.
+[<Sealed>]
 type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // Validate the inputs - this helps ensure errors in options are shown in visual studio rather than only when built
@@ -921,6 +927,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
+    member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member x.FxResolver = data.FxResolver
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback
@@ -1037,7 +1044,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
-    member x.noDebugData = data.noDebugData
+    member x.noDebugAttributes = data.noDebugAttributes
     member x.isInteractive = data.isInteractive
     member x.isInvalidationSupported = data.isInvalidationSupported
     member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations

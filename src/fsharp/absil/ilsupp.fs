@@ -514,8 +514,8 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
     member x.Save(ulLinkedResourceBaseRVA: int32, pbLinkedResource: byte[], pUnlinkedResource: byte[], offset: int) =
         // Dump them to pUnlinkedResource
         // For each resource write header and data
-        let size = ref 0
-        let unlinkedResourceOffset = ref 0
+        let mutable size = 0
+        let mutable unlinkedResourceOffset = 0
         //resHdr.HeaderSize <- 32
         if Unchecked.defaultof<byte[]> <> wzType then
             resHdr.HeaderSize <- resHdr.HeaderSize + ((cType + 1) * 2) - 4
@@ -524,9 +524,9 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         let SaveChunk(p: byte[], sz: int) =
             if Unchecked.defaultof<byte[]> <>  pUnlinkedResource then
-                Bytes.blit p 0 pUnlinkedResource (!unlinkedResourceOffset + offset) sz
-                unlinkedResourceOffset := !unlinkedResourceOffset + sz
-            size := !size + sz
+                Bytes.blit p 0 pUnlinkedResource (unlinkedResourceOffset + offset) sz
+                unlinkedResourceOffset <- unlinkedResourceOffset + sz
+            size <- size + sz
 
             ()
 
@@ -569,7 +569,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         if dwFiller <> 0 then
             SaveChunk(bNil, 4 - dwFiller)
 
-        !size
+        size
 
 let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
    let resources =
@@ -997,7 +997,7 @@ type PdbMethod  = { symMethod: ISymbolMethod }
 type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
-type PdbSequencePoint =
+type PdbDebugPoint =
     { pdbSeqPointOffset: int
       pdbSeqPointDocument: PdbDocument
       pdbSeqPointLine: int
@@ -1072,7 +1072,7 @@ let pdbMethodGetToken (meth: PdbMethod) : int32 =
     let token = meth.symMethod.Token
     token.GetToken()
 
-let pdbMethodGetSequencePoints (meth: PdbMethod) : PdbSequencePoint[] =
+let pdbMethodGetDebugPoints (meth: PdbMethod) : PdbDebugPoint[] =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize
     let docs = Array.zeroCreate pSize

@@ -15,9 +15,9 @@ let inline getTestsDirectory src dir = src ++ dir
 // Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
 // Throws exception if it Fails
 let tryCreateTemporaryDirectory () =
-    let path = Path.GetTempPath()
-    let now = DateTime.Now.ToString("yyyy-MM-dd")
-    let directory = Path.Combine(path, "FSharp.Test.Utilities", now)
+    let date() = DateTime.Now.ToString("yyyy-MM-dd")
+    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
     Directory.CreateDirectory(directory).FullName
 
 // Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
@@ -216,6 +216,7 @@ type TestConfig =
       FSI : string
 #if !NETCOREAPP
       FSIANYCPU : string
+      FSCANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
@@ -335,8 +336,9 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
-    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
+    let FSCANYCPU = requireArtifact ("fscAnyCpu" ++ configurationName ++ fscArchitecture ++ "fscAnyCpu.exe")
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
@@ -360,6 +362,7 @@ let config configurationName envVars =
       FSC = FSC
       FSI = FSI
 #if !NETCOREAPP
+      FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -392,6 +395,7 @@ let logConfig (cfg: TestConfig) =
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
+    log "FSCANYCPU                = %s" cfg.FSCANYCPU
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags

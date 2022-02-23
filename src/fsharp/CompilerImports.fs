@@ -650,7 +650,7 @@ let MakeScopeRefForILModule (ilModule: ILModuleDef) =
     | None -> ILScopeRef.Module (mkRefToILModule ilModule)
 
 let GetCustomAttributesOfILModule (ilModule: ILModuleDef) =
-    (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList
+    (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList()
 
 let GetAutoOpenAttributes ilModule =
     ilModule |> GetCustomAttributesOfILModule |> List.choose TryFindAutoOpenAttr
@@ -669,7 +669,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
          member _.TryGetILModuleDef() = Some ilModule
 
          member _.GetRawFSharpSignatureData(m, ilShortAssemName, filename) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             let sigDataReaders =
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then
@@ -688,7 +688,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 
          member _.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =
             let optDataReaders =
-                ilModule.Resources.AsList
+                ilModule.Resources.AsList()
                 |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
 
             // Look for optimization data in a file
@@ -733,14 +733,14 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
          member _.TryGetILModuleDef() = Some ilModule
 
          member _.GetRawFSharpSignatureData(_, _, _) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             [ for iresource in resources do
                 if IsSignatureDataResource iresource then
                     let ccuName = GetSignatureDataResourceName iresource
                     yield (ccuName, fun () -> iresource.GetBytes()) ]
 
          member _.GetRawFSharpOptimizationData(_, _, _) =
-            ilModule.Resources.AsList
+            ilModule.Resources.AsList()
             |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
 
          member _.GetRawTypeForwarders() =
@@ -1303,12 +1303,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 match entity.TypeReprInfo with
                 // This is the first extension
                 | TNoRepr ->
-                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
+                    TProvidedNamespaceRepr(typeProviderEnvironment, [provider])
 
                 // Add to the existing list of extensions
-                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr ->
+                | TProvidedNamespaceRepr(resolutionFolder, prior) as repr ->
                     if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then
-                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider :: prior)
+                        TProvidedNamespaceRepr(resolutionFolder, provider :: prior)
                     else
                         repr
 
@@ -1499,7 +1499,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
         let phase2 () =
 #if !NO_EXTENSIONTYPING
-            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList(), ccu.Contents, invalidateCcu, m)
 #endif
             [ResolvedImportedAssembly ccuinfo]
         phase2
@@ -1593,7 +1593,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                      match ilModule.TryGetILModuleDef() with
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
-                         let tps = tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+                         let tps = tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList(), ccu.Contents, invalidateCcu, m)
                          ccuinfo.TypeProviders <- tps
 #else
                      ()
@@ -1913,7 +1913,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
                                   tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
+                                  tcConfig.noDebugAttributes, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
@@ -1977,7 +1977,5 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let buildTcEnv tcEnv asm =
-        AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-    let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
+    let _openDecls, tcEnv = (tcEnv, asms) ||> List.collectFold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes))
     tcEnv, (dllinfos, asms)

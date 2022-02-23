@@ -1,0 +1,66 @@
+ENTRYPOINT
+  false
+
+DOCUMENTS
+ [0] <elided-for-testing>
+     Type: None
+     Language: None
+     Vendor: None
+
+METHODS
+ f2
+     Params: []
+     Range: Some "[0,5:9] - [0,5:11]"
+     Points:
+      - Doc: 0 Offset:0 [5:5]-[5-15]
+      - Doc: 0 Offset:2 [6:5]-[6-14]
+      - Doc: 0 Offset:3 [16707566:0]-[16707566-0]
+      - Doc: 0 Offset:6 [7:9]-[7-21]
+      - Doc: 0 Offset:16 [8:9]-[8-18]
+      - Doc: 0 Offset:17 [16707566:0]-[16707566-0]
+      - Doc: 0 Offset:20 [9:12]-[9-24]
+      - Doc: 0 Offset:26 [10:12]-[10-22]
+      - Doc: 0 Offset:28 [11:12]-[11-14]
+      - Doc: 0 Offset:30 [13:12]-[13-24]
+      - Doc: 0 Offset:37 [14:12]-[14-22]
+      - Doc: 0 Offset:40 [15:12]-[15-14]
+      - Doc: 0 Offset:43 [17:9]-[17-21]
+      - Doc: 0 Offset:54 [18:9]-[18-18]
+      - Doc: 0 Offset:55 [16707566:0]-[16707566-0]
+      - Doc: 0 Offset:58 [19:12]-[19-24]
+      - Doc: 0 Offset:65 [20:12]-[20-22]
+      - Doc: 0 Offset:68 [21:12]-[21-14]
+      - Doc: 0 Offset:71 [23:12]-[23-24]
+      - Doc: 0 Offset:78 [24:12]-[24-22]
+      - Doc: 0 Offset:81 [25:12]-[25-14]
+     Scopes:
+      - [0-84]
+        - [1-15]
+          Locals: ["0: v1"]
+        - [15-25]
+          Locals: ["0: v1"; "1: v2"]
+        - [25-27]
+          Locals: ["0: v1 (shadowed)"; "1: v2"; "2: v1"]
+        - [27-30]
+          Locals: ["1: v2 (shadowed)"; "0: v1 (shadowed)"; "2: v1"; "3: v2"]
+        - [30-35]
+          Locals: ["0: v1"; "1: v2"]
+        - [35-38]
+          Locals: ["0: v1 (shadowed)"; "1: v2"; "4: v1"]
+        - [38-43]
+          Locals: ["1: v2 (shadowed)"; "0: v1 (shadowed)"; "4: v1"; "5: v2"]
+        - [43-52]
+          Locals: ["0: v1"]
+        - [52-63]
+          Locals: ["0: v1"; "6: v2"]
+        - [63-66]
+          Locals: ["0: v1 (shadowed)"; "6: v2"; "7: v1"]
+        - [66-71]
+          Locals: ["6: v2 (shadowed)"; "0: v1 (shadowed)"; "7: v1"; "8: v2"]
+        - [71-76]
+          Locals: ["0: v1"; "6: v2"]
+        - [76-79]
+          Locals: ["0: v1 (shadowed)"; "6: v2"; "9: v1"]
+        - [79-84]
+          Locals: ["6: v2 (shadowed)"; "0: v1 (shadowed)"; "9: v1"; "10: v2"]
+

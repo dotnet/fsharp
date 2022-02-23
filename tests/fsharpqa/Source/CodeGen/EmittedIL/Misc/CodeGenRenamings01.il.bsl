@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly CodeGenRenamings01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {611B0EC4-8173-986B-A745-0383C40E1B61}
+// MVID: {61FD4A6C-8173-986B-A745-03836C4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06620000
+// Image base: 0x07220000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -475,7 +475,7 @@
     IL_0038:  dup
     IL_0039:  stsfld     int32[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array@6
     IL_003e:  stloc.1
-    .line 7,7 : 1,27 ''
+    .line 7,7 : 12,27 ''
     IL_003f:  ldc.i4.1
     IL_0040:  ldc.i4.1
     IL_0041:  ldc.i4.s   10
@@ -503,6 +503,7 @@
     IL_0071:  dup
     IL_0072:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<int32,int32>> '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::list1@8
     IL_0077:  stloc.3
+    .line 9,9 : 12,46 ''
     IL_0078:  ldc.i4.0
     IL_0079:  ldnull
     IL_007a:  newobj     instance void CodeGenRenamings01/seq1@9::.ctor(int32,

@@ -8,6 +8,9 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
 open System
 open System.Diagnostics
+open System.Threading
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
@@ -385,6 +388,9 @@ module ErrorLoggerExtensions =
         member x.Warning exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Warning)
 
+        member x.InformationalWarning exn = 
+            x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Info)
+
         member x.Error   exn = 
             x.ErrorR exn
             raise (ReportedError (Some exn))
@@ -430,32 +436,37 @@ module ErrorLoggerExtensions =
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
     let oldBuildPhase = CompileThreadStatic.BuildPhaseUnchecked
-    
     CompileThreadStatic.BuildPhase <- phase
-
     { new IDisposable with 
-         member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase (* maybe null *) }
+         member x.Dispose() = CompileThreadStatic.BuildPhase <- oldBuildPhase }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #ErrorLogger) =
+let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer: ErrorLogger -> #ErrorLogger) =
     let oldErrorLogger = CompileThreadStatic.ErrorLogger
-    let newErrorLogger = errorLoggerTransformer oldErrorLogger
-    let mutable newInstalled = true
-    let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
-    let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
-                             member _.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
-                             member _.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
-
-    CompileThreadStatic.ErrorLogger <- chkErrorLogger
-
+    CompileThreadStatic.ErrorLogger <- errorLoggerTransformer oldErrorLogger
     { new IDisposable with 
          member _.Dispose() =
-            CompileThreadStatic.ErrorLogger <- oldErrorLogger
-            newInstalled <- false }
+            CompileThreadStatic.ErrorLogger <- oldErrorLogger }
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
 
 let SetThreadErrorLoggerNoUnwind errorLogger     = CompileThreadStatic.ErrorLogger <- errorLogger
+
+/// This represents the thread-local state established as each task function runs as part of the build.
+///
+/// Use to reset error and warning handlers.
+type CompilationGlobalsScope(errorLogger: ErrorLogger, buildPhase: BuildPhase) = 
+    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
+    let unwindBP = PushThreadBuildPhaseUntilUnwind buildPhase
+
+    member _.ErrorLogger = errorLogger
+    member _.BuildPhase = buildPhase
+
+    // Return the disposable object that cleans up
+    interface IDisposable with
+        member _.Dispose() =
+            unwindBP.Dispose()         
+            unwindEL.Dispose()
 
 // Global functions are still used by parser and TAST ops.
 
@@ -464,6 +475,9 @@ let errorR exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
+
+/// Raises a warning with error recovery and returns unit.
+let informationalWarning exn = CompileThreadStatic.ErrorLogger.InformationalWarning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn = CompileThreadStatic.ErrorLogger.Error exn
@@ -495,6 +509,8 @@ let libraryOnlyWarning m = warning(LibraryUseOnly m)
 let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()) m
 
 let mlCompatWarning s m = warning(UserCompilerMessage(FSComp.SR.mlCompatMessage s, 62, m))
+
+let mlCompatError s m = errorR(UserCompilerMessage(FSComp.SR.mlCompatError s, 62, m))
 
 let suppressErrorReporting f =
     let errorLogger = CompileThreadStatic.ErrorLogger
@@ -689,3 +705,36 @@ let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVer
     let featureStr = langVersion.GetFeatureString langFeature
     let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary(featureStr, suggestedVersionStr), m))
+
+/// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+type StackGuard(maxDepth: int) =
+
+    let mutable depth = 1
+
+    member _.Guard(f) =
+        depth <- depth + 1
+        try
+            if depth % maxDepth = 0 then 
+                let errorLogger = CompileThreadStatic.ErrorLogger
+                let buildPhase = CompileThreadStatic.BuildPhase
+                async { 
+                    do! Async.SwitchToNewThread()
+                    Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
+                    use _scope = new CompilationGlobalsScope(errorLogger, buildPhase)
+                    return f()
+                } |> Async.RunImmediate
+            else
+                f()
+        finally
+            depth <- depth - 1
+
+    static member val DefaultDepth =
+#if DEBUG
+        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 50
+#else
+        GetEnvInteger "FSHARP_DefaultStackGuardDepth" 100
+#endif
+
+    static member GetDepthOption (name: string) = 
+        GetEnvInteger ("FSHARP_" + name + "StackGuardDepth") StackGuard.DefaultDepth
+

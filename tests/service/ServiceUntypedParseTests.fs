@@ -22,10 +22,10 @@ let private (=>) (source: string) (expected: CompletionContext option) =
 
     let lines =
         use reader = new StringReader(source)
-        [| let line = ref (reader.ReadLine())
-           while not (isNull !line) do
-              yield !line
-              line := reader.ReadLine()
+        [| let mutable line = reader.ReadLine()
+           while not (isNull line) do
+              yield line
+              line <- reader.ReadLine()
            if source.EndsWith "\n" then
               yield "" |]
         
@@ -197,7 +197,7 @@ module TypeMemberRanges =
     let getTypeMemberRange source =
         let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
-        | [ SynModuleDecl.Types ([ SynTypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _, _) ], _) ] ->
+        | [ SynModuleDecl.Types (typeDefns=[ SynTypeDefn (typeRepr=SynTypeDefnRepr.ObjectModel (members=memberDecls)) ]) ] ->
             memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 

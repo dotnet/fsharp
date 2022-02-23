@@ -92,7 +92,7 @@ val mkInt64 : int64  * TypeData -> ExprData
 val mkUInt64 : uint64  * TypeData -> ExprData 
 val mkAddressOf : ExprData -> ExprData
 val mkSequential : ExprData * ExprData -> ExprData 
-val mkForLoop : ExprData * ExprData * ExprData -> ExprData 
+val mkIntegerForLoop : ExprData * ExprData * ExprData -> ExprData 
 val mkWhileLoop : ExprData * ExprData -> ExprData 
 val mkTryFinally : ExprData * ExprData -> ExprData 
 val mkTryWith : ExprData * VarData * ExprData * VarData * ExprData -> ExprData 

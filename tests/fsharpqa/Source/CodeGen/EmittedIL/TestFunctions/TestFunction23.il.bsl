@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction23
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000340 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {60B68B97-A643-451C-A745-0383978BB660}
+// MVID: {61FD32BA-A643-451C-A745-0383BA32FD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07240000
+// Image base: 0x07260000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -76,23 +76,26 @@
       IL_0013:  ldarg.0
       IL_0014:  call       string [mscorlib]System.Console::ReadLine()
       IL_0019:  stfld      string TestFunction23/C::x@8
-      .line 5,5 : 6,7 ''
       IL_001e:  ret
     } // end of method C::.ctor
 
     .method public hidebysig instance string 
             M() cil managed
     {
-      // Code size       18 (0x12)
-      .maxstack  8
-      .line 9,9 : 23,30 ''
+      // Code size       20 (0x14)
+      .maxstack  4
+      .locals init ([0] class TestFunction23/C self)
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      string TestFunction23/C::x@8
-      IL_0006:  ldarg.0
-      IL_0007:  callvirt   instance string TestFunction23/C::g()
-      IL_000c:  call       string [mscorlib]System.String::Concat(string,
+      IL_0001:  stloc.0
+      .line 9,9 : 23,30 ''
+      IL_0002:  ldarg.0
+      IL_0003:  ldfld      string TestFunction23/C::x@8
+      IL_0008:  ldarg.0
+      IL_0009:  callvirt   instance string TestFunction23/C::g()
+      IL_000e:  call       string [mscorlib]System.String::Concat(string,
                                                                   string)
-      IL_0011:  ret
+      IL_0013:  ret
     } // end of method C::M
 
     .method assembly hidebysig instance string 

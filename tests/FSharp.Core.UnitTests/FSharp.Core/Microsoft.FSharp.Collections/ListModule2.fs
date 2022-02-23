@@ -1091,7 +1091,7 @@ type ListModule02() =
         Assert.AreEqual([(1,2,3); (2,4,6); (3,6,9)], resultInt)
         
         // string List    
-        let resultStr = List.zip3[2;3;4;5] ["b";"c";"d";"e"] ["II"; "III"; "IV"; "V"]        
+        let resultStr = List.zip3 [2;3;4;5] ["b";"c";"d";"e"] ["II"; "III"; "IV"; "V"]        
         Assert.AreEqual([(2,"b","II");(3,"c","III");(4,"d","IV");(5,"e","V")], resultStr)
         
         // empty List     

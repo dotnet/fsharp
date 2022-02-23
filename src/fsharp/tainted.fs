@@ -144,7 +144,9 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         | Some x -> Some (Tainted(context,x))
 
     member this.PUntaint(f,range:range) = this.Protect f range
+
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
+
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 

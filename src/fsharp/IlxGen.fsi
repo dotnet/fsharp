@@ -31,7 +31,7 @@ type internal IlxGenOptions =
       mainMethodInfo: Attribs option
 
       /// Indicates if local optimizations are active
-      localOptimizationsAreOn: bool
+      localOptimizationsEnabled: bool
 
       /// Indicates if we are generating debug symbols or not
       generateDebugSymbols: bool
@@ -79,8 +79,6 @@ type public IlxGenResults =
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
     {
-      LookupFieldRef: ILFieldRef -> FieldInfo
-      LookupMethodRef: ILMethodRef -> MethodInfo
       LookupTypeRef: ILTypeRef -> Type
       LookupType: ILType -> Type
     } 

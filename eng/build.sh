@@ -240,29 +240,34 @@ function BuildSolution {
   node_reuse=false
 
   # build bootstrap tools
-  bootstrap_config=Proto
-  bootstrap_dir=$artifacts_dir/Bootstrap
-  if [[ "$force_bootstrap" == true ]]; then
-     rm -fr $bootstrap_dir
-  fi
-  if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
-    BuildMessage="Error building tools"
-    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-      /restore \
-      /p:Configuration=$bootstrap_config
+  # source_build=true means we are currently in the outer/wrapper source-build,
+  # and building bootstrap needs to wait. The source-build targets will run this
+  # script again without setting source_build=true when it is done setting up
+  # the build environment. See 'eng/SourceBuild.props'.
+  if [[ "$source_build" != true ]]; then
+    bootstrap_config=Proto
+    bootstrap_dir=$artifacts_dir/Bootstrap
+    if [[ "$force_bootstrap" == true ]]; then
+      rm -fr $bootstrap_dir
+    fi
+    if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+      BuildMessage="Error building tools"
+      MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config
 
-    mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net5.0 $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net5.0 $bootstrap_dir/fsyacc
-  fi
-  if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
-    BuildMessage="Error building bootstrap"
-    MSBuild "$repo_root/proto.proj" \
-      /restore \
-      /p:Configuration=$bootstrap_config \
+      mkdir -p "$bootstrap_dir"
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net5.0 $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net5.0 $bootstrap_dir/fsyacc
+    fi
+    if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+      BuildMessage="Error building bootstrap"
+      MSBuild "$repo_root/proto.proj" \
+        /restore \
+        /p:Configuration=$bootstrap_config
 
-
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net5.0 $bootstrap_dir/fsc
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net5.0 $bootstrap_dir/fsc
+    fi
   fi
 
   if [[ "$skip_build" != true ]]; then

@@ -29,12 +29,12 @@ type CancellationType() =
     member this.CancellationRegistration() =
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        let called = ref false
-        let r = token.Register(Action<obj>(fun _ -> called := true), null)
-        Assert.False(!called)
+        let mutable called = false
+        let r = token.Register(Action<obj>(fun _ -> called <- true), null)
+        Assert.False(called)
         r.Dispose()
         cts.Cancel()
-        Assert.False(!called)
+        Assert.False(called)
         
     [<Fact>]
     member this.CancellationWithCallbacks() =
@@ -43,12 +43,12 @@ type CancellationType() =
         let is1Called = ref false
         let is2Called = ref false
         let is3Called = ref false
-        let assertAndOff (expected:bool) (r:bool ref) = Assert.AreEqual(expected,!r); r := false
-        let r1 = cts1.Token.Register(Action<obj>(fun _ -> is1Called := true), null)
-        let r2 = cts1.Token.Register(Action<obj>(fun _ -> is2Called := true), null)
-        let r3 = cts2.Token.Register(Action<obj>(fun _ -> is3Called := true), null) 
-        Assert.False(!is1Called)
-        Assert.False(!is2Called)
+        let assertAndOff (expected:bool) (r:bool ref) = Assert.AreEqual(expected,r.Value); r.Value <- false
+        let r1 = cts1.Token.Register(Action<obj>(fun _ -> is1Called.Value <- true), null)
+        let r2 = cts1.Token.Register(Action<obj>(fun _ -> is2Called.Value <- true), null)
+        let r3 = cts2.Token.Register(Action<obj>(fun _ -> is3Called.Value <- true), null) 
+        Assert.False(is1Called.Value)
+        Assert.False(is2Called.Value)
         r2.Dispose()
         
         // Cancelling cts1: r2 is disposed and r3 is for cts2, only r1 should be called
@@ -59,7 +59,7 @@ type CancellationType() =
         Assert.True(cts1.Token.IsCancellationRequested)
         
         let isAnotherOneCalled = ref false
-        let _ = cts1.Token.Register(Action<obj>(fun _ -> isAnotherOneCalled := true), null)
+        let _ = cts1.Token.Register(Action<obj>(fun _ -> isAnotherOneCalled.Value <- true), null)
         assertAndOff true isAnotherOneCalled
         
         // Cancelling cts2: only r3 should be called
@@ -100,8 +100,8 @@ type CancellationType() =
     [<Fact>]    
     member this.CallbackOrder() = 
         use cts = new CancellationTokenSource()
-        let current = ref 0
-        let action (o:obj) = Assert.AreEqual(!current, (unbox o : int)); current := !current + 1
+        let mutable current = 0
+        let action (o:obj) = Assert.AreEqual(current, (unbox o : int)); current <- current + 1
         cts.Token.Register(Action<obj>(action), box 2) |> ignore
         cts.Token.Register(Action<obj>(action), box 1) |> ignore
         cts.Token.Register(Action<obj>(action), box 0) |> ignore
@@ -153,20 +153,20 @@ type CancellationType() =
             use ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(cts1.Token, cts2.Token)
             let linkedToken = ctsLinked.Token            
             Assert.True(linkedToken.IsCancellationRequested)
-            let doExec = ref false
-            linkedToken.Register(Action<obj>(fun _ -> doExec := true), null) |> ignore
-            Assert.True(!doExec)
+            let mutable doExec = false
+            linkedToken.Register(Action<obj>(fun _ -> doExec <- true), null) |> ignore
+            Assert.True(doExec)
             
         let () =
             use cts1 = new CancellationTokenSource()
             use cts2 = new CancellationTokenSource()
             use ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(cts1.Token, cts2.Token)
             let linkedToken = ctsLinked.Token            
-            let doExec = ref false
-            linkedToken.Register(Action<obj>(fun _ -> doExec := true), null) |> ignore
-            Assert.False(!doExec)
+            let mutable doExec = false
+            linkedToken.Register(Action<obj>(fun _ -> doExec <- true), null) |> ignore
+            Assert.False(doExec)
             cts1.Cancel()
-            Assert.True(!doExec)
+            Assert.True(doExec)
             
         let () =
             use cts1 = new CancellationTokenSource()
@@ -187,17 +187,18 @@ type CancellationType() =
     member this.TestCancellationRace() =
         use cts = new CancellationTokenSource()
         let token = cts.Token
-        let callbackRun = ref false
+        let lockObj = obj()
+        let mutable callbackRun = false
         let reg = token.Register(Action<obj>(fun _ ->
-                lock callbackRun (fun() ->
-                    Assert.False(!callbackRun, "Callback should run only once")
-                    callbackRun := true
+                lock lockObj (fun() ->
+                    Assert.False(callbackRun, "Callback should run only once")
+                    callbackRun <- true
                 )
             ), null)
-        Assert.False(!callbackRun)
+        Assert.False(callbackRun)
         let asyncs = seq { for i in 1..1000 do yield async { cts.Cancel() } }
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
-        Assert.True(!callbackRun, "Callback should run at least once")
+        Assert.True(callbackRun, "Callback should run at least once")
 
     [<Fact>]
     member this.TestRegistrationRace() =

@@ -34,6 +34,8 @@ open FSharp.Compiler.TypeRelations
 open System.Collections.Generic
 open System.Collections.ObjectModel
 
+let OptimizerStackGuardDepth = GetEnvInteger "FSHARP_Optimizer" 50
+
 #if DEBUG
 let verboseOptimizationInfo = 
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo")) with _ -> false
@@ -349,31 +351,36 @@ type OptimizationSettings =
         }
 
     /// Determines if JIT optimizations are enabled
-    member x.jitOpt() = match x.jitOptUser with Some f -> f | None -> jitOptDefault
+    member x.JitOptimizationsEnabled = match x.jitOptUser with Some f -> f | None -> jitOptDefault
 
     /// Determines if intra-assembly optimization is enabled
-    member x.localOpt () = match x.localOptUser with Some f -> f | None -> localOptDefault
+    member x.LocalOptimizationsEnabled = match x.localOptUser with Some f -> f | None -> localOptDefault
 
     /// Determines if cross-assembly optimization is enabled
     member x.crossAssemblyOpt () =
-        x.localOpt () && 
+        x.LocalOptimizationsEnabled && 
         x.crossAssemblyOptimizationUser |> Option.defaultValue crossAssemblyOptimizationDefault
 
     /// Determines if we should keep optimization values
     member x.KeepOptimizationValues = x.crossAssemblyOpt ()
 
     /// Determines if we should inline calls
-    member x.InlineLambdas = x.localOpt ()  
+    member x.InlineLambdas = x.LocalOptimizationsEnabled  
 
     /// Determines if we should eliminate unused bindings with no effect 
-    member x.EliminateUnusedBindings = x.localOpt () 
+    member x.EliminateUnusedBindings = x.LocalOptimizationsEnabled 
 
     /// Determines if we should arrange things so we debug points for pipelines x |> f1 |> f2
     /// including locals "<pipe1-input>", "<pipe1-stage1>" and so on.
     /// On by default for debug code.
     member x.DebugPointsForPipeRight =
-        not (x.localOpt ()) &&
+        not x.LocalOptimizationsEnabled &&
         x.debugPointsForPipeRight |> Option.defaultValue debugPointsForPipeRightDefault
+
+    /// Determines if we should eliminate for-loops around an expr if it has no effect 
+    ///
+    /// This optimization is off by default, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
+    member x.EliminateForLoop = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate try/with or try/finally around an expr if it has no effect 
     ///
@@ -381,27 +388,27 @@ type OptimizationSettings =
     member _.EliminateTryWithAndTryFinally = false 
 
     /// Determines if we should eliminate first part of sequential expression if it has no effect 
-    member x.EliminateSequential = x.localOpt () 
+    member x.EliminateSequential = x.LocalOptimizationsEnabled 
 
     /// Determines if we should determine branches in pattern matching based on known information, e.g.
     /// eliminate a "if true then .. else ... "
-    member x.EliminateSwitch = x.localOpt () 
+    member x.EliminateSwitch = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a record if the value is known to be a record with known info and the field is not mutable
-    member x.EliminateRecdFieldGet = x.localOpt () 
+    member x.EliminateRecdFieldGet = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a tuple if the value is known to be a tuple with known info
-    member x.EliminateTupleFieldGet = x.localOpt () 
+    member x.EliminateTupleFieldGet = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate gets on a union if the value is known to be that union case and the particular field has known info
-    member x.EliminateUnionCaseFieldGet () = x.localOpt () 
+    member x.EliminateUnionCaseFieldGet () = x.LocalOptimizationsEnabled
 
     /// Determines if we should eliminate non-compiler generated immediate bindings 
-    member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
+    member x.EliminateImmediatelyConsumedLocals() = x.LocalOptimizationsEnabled
 
     /// Determines if we should expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructuralValues() = x.localOpt () 
+    member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled 
 
 type cenv =
     { g: TcGlobals
@@ -422,6 +429,8 @@ type cenv =
       
       /// cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied: Dictionary<Stamp, bool>
+
+      stackGuard: StackGuard
 
     }
 
@@ -1193,7 +1202,7 @@ let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
         
           // Check for escape in lambda 
           | CurriedLambdaValue (_, _, _, expr, _) | ConstExprValue(_, expr) when 
-            (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
+            (let fvs = freeInExpr (if isNil boundTyVars then (CollectLocalsWithStackGuard()) else CollectTyparsAndLocals) expr
              (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
              (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              fvs.UsesMethodLocalConstructs) ->
@@ -1295,7 +1304,7 @@ let IsTyFuncValRefExpr = function
 
 /// Type applications of existing functions are always simple constants, with the exception of F# 'type functions' 
 let rec IsSmallConstExpr x =
-    match x with
+    match stripDebugPoints x with
     | Expr.Op (TOp.LValueOp (LAddrOf _, _), [], [], _) -> true // &x is always a constant
     | Expr.Val (v, _, _m) -> not v.IsMutable
     | Expr.App (fe, _, _tyargs, args, _) -> isNil args && not (IsTyFuncValRefExpr fe) && IsSmallConstExpr fe
@@ -1345,7 +1354,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 //   arbitrary-side-effect (e.g. 'non-termination' or 'fire the missiles')
 
 let IsDiscardableEffectExpr expr = 
-    match expr with 
+    match stripDebugPoints expr with 
     | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
     | _ -> false
 
@@ -1377,14 +1386,14 @@ let IlAssemblyCodeInstrHasEffect i =
 let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
 
 let rec ExprHasEffect g expr = 
-    match expr with 
+    match stripDebugPoints expr with 
     | Expr.Val (vref, _, _) -> vref.IsTypeFunction || vref.IsMutable
     | Expr.Quote _ 
     | Expr.Lambda _
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
-    /// type applications do not have effects, with the exception of type functions
-    | Expr.App (f0, _, _, [], _) -> (IsTyFuncValRefExpr f0) || ExprHasEffect g f0
+    // type applications do not have effects, with the exception of type functions
+    | Expr.App (f0, _, _, [], _) -> IsTyFuncValRefExpr f0 || ExprHasEffect g f0
     | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let (bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
@@ -1424,7 +1433,7 @@ and OpHasEffect g m op =
     | TOp.ExnFieldSet _
     | TOp.Coerce
     | TOp.Reraise
-    | TOp.For _ 
+    | TOp.IntegerForLoop _ 
     | TOp.While _
     | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
@@ -1437,7 +1446,8 @@ and OpHasEffect g m op =
     | TOp.ValFieldSet _ -> true
 
 
-let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
+let TryEliminateBinding cenv _env bind e2 _m =
+    let (TBind(vspec1, e1, spBind)) = bind
     // don't eliminate bindings if we're not optimizing AND the binding is not a compiler generated variable
     if not (cenv.optimizing && cenv.settings.EliminateImmediatelyConsumedLocals()) && 
        not vspec1.IsCompilerGenerated then 
@@ -1454,7 +1464,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
         let IsUniqueUse vspec2 args = 
               valEq vspec1 vspec2  
            // REVIEW: this looks slow. Look only for one variable instead 
-           && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
+           && (let fvs = accFreeInExprs (CollectLocalsWithStackGuard()) args emptyFreeVars
                not (Zset.contains vspec1 fvs.FreeLocals))
 
         // Immediate consumption of value as 2nd or subsequent argument to a construction or projection operation 
@@ -1465,53 +1475,54 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
               | argsrh :: argsrt when not (ExprHasEffect cenv.g argsrh) -> GetImmediateUseContext (argsrh :: rargsl) argsrt 
               | _ -> None
 
-        match stripExpr e2 with 
+        let (DebugPoints(e2, recreate0)) = e2
+        match e2 with 
 
          // Immediate consumption of value as itself 'let x = e in x'
          | Expr.Val (VRefLocal vspec2, _, _) 
              when IsUniqueUse vspec2 [] -> 
-               Some e1
+               Some (e1 |> recreate0)
 
          // Immediate consumption of function in an application in a sequential, e.g. 'let part1 = e in part1 arg; rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(Expr.App(Expr.Val (VRefLocal vspec2, _, _), f0ty, c, args, d), rest, NormalSeq, sp, m)  
+         | Expr.Sequential(DebugPoints(Expr.App(DebugPoints(Expr.Val (VRefLocal vspec2, _, _), recreate2), f0ty, c, args, d), recreate1), rest, NormalSeq, m)  
              when IsUniqueUse vspec2 (rest :: args) -> 
-               Some (Expr.Sequential(Expr.App(e1, f0ty, c, args, d), rest, NormalSeq, sp, m))
+               Some (Expr.Sequential(recreate1(Expr.App(recreate2 e1, f0ty, c, args, d)), rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of delegate via an application in a sequential, e.g. 'let part1 = e in part1.Invoke(args); rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(DelegateInvokeExpr cenv.g (invokeRef, f0ty, tyargs, Expr.Val (VRefLocal vspec2, _, _), args, _), rest, NormalSeq, sp, m)  
+         | Expr.Sequential(DebugPoints(DelegateInvokeExpr cenv.g (invokeRef, f0ty, tyargs, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), args, _), recreate1), rest, NormalSeq, m)  
              when IsUniqueUse vspec2 (rest :: args) -> 
-               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce cenv.g (invokeRef, e1, f0ty, tyargs, args, m)
-               Some (Expr.Sequential(invoke, rest, NormalSeq, sp, m))
+               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce cenv.g (invokeRef, recreate2 e1, f0ty, tyargs, args, m)
+               Some (Expr.Sequential(recreate1 invoke, rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
-         | Expr.Match (spMatch, _exprm, TDSwitch(sp, Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
+         | Expr.Match (spMatch, _exprm, TDSwitch(DebugPoints(Expr.Val (VRefLocal vspec2, _, _), recreate1), cases, dflt, _), targets, m, ty2)
              when (valEq vspec1 vspec2 &&
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
                    not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
               let spMatch = spBind.Combine spMatch
-              Some (Expr.Match (spMatch, e1.Range, TDSwitch(sp, e1, cases, dflt, m), targets, m, ty2))
+              Some (Expr.Match (spMatch, e1.Range, TDSwitch(recreate1 e1, cases, dflt, m), targets, m, ty2)  |> recreate0)
                
          // Immediate use of value as part of an application. 'let f = e in f ...' and 'let x = e in f ... x ...'
          // Note functions are evaluated before args 
          // Note: do not include functions with a single arg of unit type, introduced by abstractBigTargets 
          | Expr.App (f, f0ty, tyargs, args, m) ->
              match GetImmediateUseContext [] (f :: args) with 
-             | Some([], rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (e1, f0ty, [tyargs], rargs, m))
-             | Some(f :: largs, rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (f, f0ty, [tyargs], largs @ (e1 :: rargs), m))
+             | Some([], rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (e1, f0ty, [tyargs], rargs, m) |> recreate0)
+             | Some(f :: largs, rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (f, f0ty, [tyargs], largs @ (e1 :: rargs), m) |> recreate0)
              | None -> None
 
          // Bug 6311: a special case of nested elimination of locals (which really should be handled more generally)
          // 'let x = e in op[op[x;arg2];arg3]' --> op[op[e;arg2];arg3]
          // 'let x = e in op[op[arg1;x];arg3]' --> op[op[arg1;e];arg3] when arg1 has no side effects etc.
          // 'let x = e in op[op[arg1;arg2];x]' --> op[op[arg1;arg2];e] when arg1, arg2 have no side effects etc.
-         | Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2);arg3], m1) -> 
+         | Expr.Op (c1, tyargs1, [DebugPoints(Expr.Op (c2, tyargs2, [arg1;arg2], m2), recreate1);arg3], m1) -> 
              match GetImmediateUseContext [] [arg1;arg2;arg3] with 
-             | Some([], [arg2;arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [e1;arg2], m2);arg3], m1))
-             | Some([arg1], [arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;e1], m2);arg3], m1))
-             | Some([arg1;arg2], []) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2);e1], m1))
+             | Some([], [arg2;arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [e1;arg2], m2) |> recreate1; arg3], m1) |> recreate0)
+             | Some([arg1], [arg3]) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;e1], m2) |> recreate1; arg3], m1) |> recreate0)
+             | Some([arg1;arg2], []) -> Some (Expr.Op (c1, tyargs1, [Expr.Op (c2, tyargs2, [arg1;arg2], m2) |> recreate1; e1], m1) |> recreate0)
              | Some _ -> error(InternalError("unexpected return pattern from GetImmediateUseContext", m1))
              | None -> None
 
@@ -1519,7 +1530,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
          // 'let x = e in op[x;....]'
          | Expr.Op (c, tyargs, args, m) -> 
              match GetImmediateUseContext [] args with 
-             | Some(largs, rargs) -> Some (Expr.Op (c, tyargs, (largs @ (e1 :: rargs)), m))
+             | Some(largs, rargs) -> Some (Expr.Op (c, tyargs, (largs @ (e1 :: rargs)), m) |> recreate0)
              | None -> None
 
          | _ ->  
@@ -1532,7 +1543,7 @@ let TryEliminateLet cenv env bind e2 m =
 
 /// Detect the application of a value to an arbitrary number of arguments
 let rec (|KnownValApp|_|) expr = 
-    match stripExpr expr with
+    match stripDebugPoints expr with
     | Expr.Val (vref, _, _) -> Some(vref, [], [])
     | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> Some(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> None
@@ -1541,29 +1552,29 @@ let rec (|KnownValApp|_|) expr =
 /// check single case with bool const.
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
-    | TDSwitch(sp, expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
-        Some (sp, expr, testBool, caseTree, defaultTree, range)
+    | TDSwitch(expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
+        Some (expr, testBool, caseTree, defaultTree, range)
     | _ -> 
         None
 
 /// Check target that have a constant bool value
 let (|ConstantBoolTarget|_|) target =
     match target with
-    | TTarget([], Expr.Const (Const.Bool b, _, _), _, _) -> Some b
+    | TTarget([], Expr.Const (Const.Bool b, _, _), _) -> Some b
     | _ -> None
 
 /// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
 /// apart from one branch which defers to another expression
 let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, costOuterDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (_sp, _expr, [case], Some defaultTree, _range) -> 
+    | TDSwitch (_expr, [case], Some defaultTree, _range) -> 
         let tc1,ec1 = CountBoolLogicTree data case.CaseTree 
         let tc2, ec2 = CountBoolLogicTree data defaultTree 
         tc1 + tc2, ec1 + ec2
     | TDSuccess([], idx) -> 
         match targets.[idx] with
         | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
-        | TTarget([], _exp, _, _) -> costOuterCaseTree + costOuterDefaultTree, 10
+        | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
         | _ -> 100, 100 
     | _ -> 100, 100
 
@@ -1572,14 +1583,14 @@ let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, co
 /// depending on whether the target result was true/false
 let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool as data) tree =
     match tree with 
-    | TDSwitch (sp, expr, cases, defaultTree, range) -> 
+    | TDSwitch (expr, cases, defaultTree, range) -> 
         let cases2 = cases |> List.map (RewriteBoolLogicCase data)
         let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
-        TDSwitch (sp, expr, cases2, defaultTree2, range)
+        TDSwitch (expr, cases2, defaultTree2, range)
     | TDSuccess([], idx) -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
-        | TTarget([], exp, _, _) -> mkBoolSwitch DebugPointAtSwitch.No exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
+        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
     | _ -> failwith "CountBoolLogicTree should exclude this case"
 
@@ -1594,8 +1605,9 @@ let rec CombineBoolLogic expr =
     // try to find nested boolean switch
     match expr with
     | Expr.Match (outerSP, outerMatchRange, 
-                  TDBoolSwitch(_switchSP, Expr.Match (_innerSP, _innerMatchRange, innerTree, innerTargets, _innerDefaultRange, _innerMatchTy),
-                               outerTestBool, outerCaseTree, outerDefaultTree, _outerSwitchRange ), 
+                  TDBoolSwitch(
+                      DebugPoints(Expr.Match (_innerSP, _innerMatchRange, innerTree, innerTargets, _innerDefaultRange, _innerMatchTy), _),
+                      outerTestBool, outerCaseTree, outerDefaultTree, _outerSwitchRange ), 
                   outerTargets, outerDefaultRange, outerMatchTy) ->
        
         let costOuterCaseTree = match outerCaseTree with TDSuccess _ -> 0 | _ -> 1
@@ -1633,10 +1645,13 @@ let CanExpandStructuralBinding (v: Val) =
 
 let ExprIsValue = function Expr.Val _ -> true | _ -> false
 
-let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
+let MakeStructuralBindingTempVal (v: Val) i (arg: Expr) argTy =
     let name = v.LogicalName + "_" + string i
-    let v, ve = mkCompGenLocal arg.Range name argTy
-    ve, mkCompGenBind v arg
+    mkCompGenLocal arg.Range name argTy
+
+let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
+    let vi, vie = MakeStructuralBindingTempVal v i arg argTy
+    vie, mkCompGenBind vi arg
 
 let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
     let name = sprintf "%s_%d%s" v.LogicalName i suffixForTupleElementAssignmentTarget
@@ -1675,11 +1690,20 @@ let rec RearrangeTupleBindings expr fin =
         match RearrangeTupleBindings body fin with
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
-    | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
-    | Expr.Sequential (e1, e2, kind, sp, m) ->
+
+    | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) ->
+        Some (fin expr)
+
+    | Expr.Sequential (e1, e2, kind, m) ->
         match RearrangeTupleBindings e2 fin with
-        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | Some b -> Some (Expr.Sequential (e1, b, kind, m))
         | None -> None
+
+    | Expr.DebugPoint (dp, innerExpr) ->
+        match RearrangeTupleBindings innerExpr fin with
+        | Some innerExprR -> Some (Expr.DebugPoint (dp, innerExprR))
+        | None -> None
+
     | _ -> None
 
 // Attempts to rewrite tuple bindings containing ifs/matches by introducing a mutable local for each tuple element.
@@ -1718,9 +1742,9 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         match expr with
         | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
             // Recurse down every if/match branch
-            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp, flags)) ->
+            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, flags)) ->
                 match dive g m requisites targetExpr with
-                | Some rewritten -> TTarget (vals, rewritten, sp, flags) |> Some
+                | Some rewritten -> TTarget (vals, rewritten, flags) |> Some
                 | _ -> None)
 
             // If not all branches can be rewritten, keep the original expression as it is
@@ -1728,20 +1752,29 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
                 None
             else
                 Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
+
         | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
             // Replace tuple allocation with mutations of locals
             let _, _, _, vrefs = requisites.Value
             List.map2 (mkValSet m) vrefs tupleElements
-            |> mkSequentials DebugPointAtSequential.SuppressStmt g m
+            |> mkSequentials g m
             |> Some
-        | Expr.Sequential (e1, e2, kind, sp, m) ->
+
+        | Expr.Sequential (e1, e2, kind, m) ->
             match dive g m requisites e2 with
-            | Some rewritten -> Expr.Sequential (e1, rewritten, kind, sp, m) |> Some
+            | Some rewritten -> Expr.Sequential (e1, rewritten, kind, m) |> Some
             | _ -> None
+
+        | Expr.DebugPoint (dp, innerExpr) ->
+            match dive g m requisites innerExpr with
+            | Some innerExprR -> Expr.DebugPoint (dp, innerExprR) |> Some
+            | _ -> None
+
         | Expr.Let (bind, body, m, _) ->
             match dive g m requisites body with
             | Some rewritten -> mkLetBind m bind rewritten |> Some
             | _ -> None
+
         | _ -> None
 
     let requisites = lazy (
@@ -1758,15 +1791,20 @@ let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
         mkLetsBind m binds rhsAndTupleBinding |> Some
     | _ -> None
 
-let ExpandStructuralBinding cenv expr =
+let rec ExpandStructuralBinding cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _)
         when (isRefTupleTy cenv.g v.Type &&
               not (isRefTupleExpr rhs) &&
               CanExpandStructuralBinding v) ->
-        match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
-        | Some e -> ExpandStructuralBindingRaw cenv e
+        match RearrangeTupleBindings rhs (fun top -> mkLet DebugPointAtBinding.NoneAtLet m v top body) with
+        | Some e ->
+            let e2 = ExpandStructuralBindingRaw cenv e
+            // Preserve the outer debug point at the right point in the evaluation order
+            match tgtSeqPtOpt with
+            | DebugPointAtBinding.Yes dpm -> mkDebugPoint dpm e2
+            | _ -> e2
         | None ->
             // RearrangeTupleBindings could have failed because the rhs branches
             TryRewriteBranchingTupleBinding cenv.g v rhs tgtSeqPtOpt body m |> Option.defaultValue expr
@@ -1779,9 +1817,10 @@ let ExpandStructuralBinding cenv expr =
              cenv.g.unionCaseRefEq uc (mkSomeCase cenv.g) &&
              CanExpandStructuralBinding v ->
             let argTy = destOptionTy cenv.g v.Type 
-            let ve, bind = MakeStructuralBindingTemp v 0 arg argTy
-            let newExpr = mkSome cenv.g argTy ve m
-            mkLetBind m bind (mkLet tgtSeqPtOpt m v newExpr body)
+            let vi, vie = MakeStructuralBindingTempVal v 0 arg argTy
+            let newExpr = mkSome cenv.g argTy vie m
+            mkLet tgtSeqPtOpt m vi arg (mkLet DebugPointAtBinding.NoneAtLet m v newExpr body)
+
     | e ->
         ExpandStructuralBindingRaw cenv e
 
@@ -1896,13 +1935,24 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
 
     // match --> match
     | Expr.Match (spBind, exprm, pt, targets, m, _ty) ->
-        let targets = targets |> Array.map (fun (TTarget(vs, e, spTarget, flags)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs, e, spTarget, flags)))
+        let targets =
+            targets |> Array.map (fun (TTarget(vs, e, flags)) ->
+                match tryRewriteToSeqCombinators g e with
+                | None -> None
+                | Some e -> Some(TTarget(vs, e, flags)))
+
         if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
-            let ty = targets |> Array.pick (fun (TTarget(_, e, _, _)) -> Some(tyOfExpr g e))
+            let ty = targets |> Array.pick (fun (TTarget(_, e, _)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind, exprm, pt, targets, m, ty))
         else
             None
+
+    | Expr.DebugPoint (dp, innerExpr) -> 
+        match tryRewriteToSeqCombinators g innerExpr with 
+        | Some innerExprR ->    
+            Some (Expr.DebugPoint (dp, innerExprR))
+        | None -> None
 
     | _ -> 
         None
@@ -1918,7 +1968,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
     match expr with
     | QueryRun g (bodyOfRun, reqdResultInfo) -> 
         //printfn "found Query.Run"
-        match bodyOfRun with 
+        match stripDebugPoints bodyOfRun with 
         | Expr.Quote (quotedExpr, _, true, _, _) ->  // true = isFromQueryExpression
 
 
@@ -1929,7 +1979,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
             // try to rewrite the core into combinators approximating the compiled form of seq { ... }, which in turn
             // are eligible for state-machine representation. If that fails, we still rewrite to combinator form.
             let rec loopOuter (e: Expr) = 
-                match e with 
+                match stripDebugPoints e with 
 
                 | QueryFor g (qTy, _, resultElemTy, _, _)  
                 | QuerySelect g (qTy, _, resultElemTy, _, _) 
@@ -2002,8 +2052,23 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
                                               ilTy.TypeRef.Name = "System.String" -> true
             | _ -> false))
     
+let rec IsDebugPipeRightExpr cenv expr =
+    let g = cenv.g
+    match expr with
+    | Expr.DebugPoint (_, innerExpr) -> IsDebugPipeRightExpr cenv innerExpr
+    | Expr.App _ -> 
+        if cenv.settings.DebugPointsForPipeRight then
+            match expr with
+            | OpPipeRight g _ 
+            | OpPipeRight2 g _ 
+            | OpPipeRight3 g _  -> true
+            | _ -> false
+        else false
+    | _ -> false
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
+    cenv.stackGuard.Guard <| fun () ->
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
@@ -2011,11 +2076,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     let expr = stripExpr expr
 
+    if IsDebugPipeRightExpr cenv expr then OptimizeDebugPipeRights cenv env expr else 
+
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation 
     | LinearOpExpr _
     | LinearMatchExpr _
     | Expr.Sequential _ 
+    | Expr.DebugPoint _
     | Expr.Let _ ->  
         OptimizeLinearExpr cenv env expr id
 
@@ -2054,12 +2122,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             OptimizeFSharpDelegateInvoke cenv env (iref, delegatef, fty, tyargs, args, m) 
         | _ -> 
         let attempt = 
-            if cenv.settings.DebugPointsForPipeRight then
-                match expr with
-                | OpPipeRight cenv.g _ 
-                | OpPipeRight2 cenv.g _ 
-                | OpPipeRight3 cenv.g _  -> Some (OptimizeDebugPipeRights cenv env expr)
-                | _ -> None
+            if IsDebugPipeRightExpr cenv expr then
+                Some (OptimizeDebugPipeRights cenv env expr)
             else None
         match attempt with
         | Some res -> res
@@ -2238,8 +2302,8 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.While (spWhile, marker), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         OptimizeWhileLoop cenv { env with disableMethodSplitting=true } (spWhile, marker, e1, e2, m) 
 
-    | TOp.For (spStart, dir), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)] -> 
-        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spStart, v, e1, dir, e2, e3, m) 
+    | TOp.IntegerForLoop (spFor, spTo, dir), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)] -> 
+        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spFor, spTo, v, e1, dir, e2, e3, m) 
 
     | TOp.TryFinally (spTry, spFinally), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
         OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
@@ -2334,7 +2398,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     
-      | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
+      | TOp.Array | TOp.IntegerForLoop _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   
@@ -2418,7 +2482,7 @@ and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     | _ -> None
 
 /// Optimize/analyze a for-loop
-and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
+and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, m) =
     let e1R, e1info = OptimizeExpr cenv env e1 
     let e2R, e2info = OptimizeExpr cenv env e2 
     let env = BindInternalValToUnknown cenv v env 
@@ -2453,10 +2517,10 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
     let einfos = [e1info;e2info;e3info] 
     let eff = OrEffects einfos 
     (* neither bounds nor body has an effect, and loops always terminate, hence eliminate the loop *)
-    if not eff then 
+    if cenv.settings.EliminateForLoop && not eff then 
         mkUnit cenv.g m, { TotalSize=0; FunctionSize=0; HasEffect=false; MightMakeCriticalTailcall=false; Info=UnknownValue }
     else
-        let exprR = mkFor cenv.g (spStart, v, e1R, dir, e2R, e3R, m) 
+        let exprR = mkIntegerForLoop cenv.g (spFor, spTo, v, e1R, dir, e2R, e3R, m) 
         exprR, { TotalSize=AddTotalSizes einfos + forAndWhileLoopSize
                  FunctionSize=AddFunctionSizes einfos + forAndWhileLoopSize
                  HasEffect=eff
@@ -2487,7 +2551,7 @@ and OptimizeLinearExpr cenv env expr contf =
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
-    let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
+    let expr = DetectAndOptimizeForEachExpression cenv.g OptimizeAllForExpressions expr
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr 
     let expr = stripExpr expr
 
@@ -2510,17 +2574,19 @@ and OptimizeLinearExpr cenv env expr contf =
     | _ -> 
 
     match expr with 
-    | Expr.Sequential (e1, e2, flag, spSeq, m) -> 
+    | Expr.Sequential (e1, e2, flag, m) -> 
+
       let e1R, e1info = OptimizeExpr cenv env e1 
+
       OptimizeLinearExpr cenv env e2 (contf << (fun (e2R, e2info) -> 
         if (flag = NormalSeq) && 
            // Always eliminate '(); expr' sequences, even in debug code, to ensure that 
            // conditional method calls don't leave a dangling breakpoint (see FSharp 1.0 bug 6034)
-           (cenv.settings.EliminateSequential || (match e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) && 
+           (cenv.settings.EliminateSequential || (match stripDebugPoints e1R with Expr.Const (Const.Unit, _, _) -> true | _ -> false)) && 
            not e1info.HasEffect then 
             e2R, e2info
         else 
-            Expr.Sequential (e1R, e2R, flag, spSeq, m), 
+            Expr.Sequential (e1R, e2R, flag, m), 
             { TotalSize = e1info.TotalSize + e2info.TotalSize
               FunctionSize = e1info.FunctionSize + e2info.FunctionSize
               HasEffect = flag <> NormalSeq || e1info.HasEffect || e2info.HasEffect
@@ -2531,11 +2597,13 @@ and OptimizeLinearExpr cenv env expr contf =
               Info = UnknownValue }))
 
     | Expr.Let (bind, body, m, _) ->  
+
       let (bindR, bindingInfo), env = OptimizeBinding cenv false env bind 
+
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
         // Is it quadratic or quasi-quadratic?
-        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr CollectLocals bodyR).FreeLocals) (bindR, bindingInfo) then
+        if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
             exprR, 
@@ -2547,6 +2615,12 @@ and OptimizeLinearExpr cenv env expr contf =
         else 
             // On the way back up: Trim out any optimization info that involves escaping values on the way back up
             let evalueR = AbstractExprInfoByVars ([bindR.Var], []) bodyInfo.Info 
+
+            // Preserve the debug points for eliminated bindings that have debug points. 
+            let bodyR =
+                match bindR.DebugPoint with
+                | DebugPointAtBinding.Yes m -> mkDebugPoint m bodyR
+                | _ -> bodyR
             bodyR, 
             { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize - localVarSize // eliminated a local var
               FunctionSize = bindingInfo.FunctionSize + bodyInfo.FunctionSize - localVarSize (* eliminated a local var *) 
@@ -2554,7 +2628,7 @@ and OptimizeLinearExpr cenv env expr contf =
               MightMakeCriticalTailcall = bodyInfo.MightMakeCriticalTailcall // discard tailcall info from binding - not in tailcall position
               Info = evalueR } ))
 
-    | LinearMatchExpr (spMatch, exprm, dtree, tg1, e2, spTarget2, m, ty) ->
+    | LinearMatchExpr (spMatch, exprm, dtree, tg1, e2, m, ty) ->
          let dtreeR, dinfo = OptimizeDecisionTree cenv env m dtree
          let tg1, tg1info = OptimizeDecisionTreeTarget cenv env m tg1
          // tailcall
@@ -2562,7 +2636,7 @@ and OptimizeLinearExpr cenv env expr contf =
              // This ConsiderSplitToMethod is performed because it is present in OptimizeDecisionTreeTarget
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
-             let targetsR = [tg1; TTarget([], e2, spTarget2, None)]
+             let targetsR = [tg1; TTarget([], e2, None)]
              OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
@@ -2570,6 +2644,10 @@ and OptimizeLinearExpr cenv env expr contf =
          // tailcall
          OptimizeLinearExpr cenv env argLast (contf << (fun (argLastR, argLastInfo) ->
              OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsHeadR @ [argLastR], argsHeadInfosR @ [argLastInfo], m)))
+
+    | Expr.DebugPoint (m, innerExpr) when not (IsDebugPipeRightExpr cenv innerExpr)-> 
+        OptimizeLinearExpr cenv env innerExpr (contf << (fun (innerExprR, einfo) ->
+            Expr.DebugPoint (m, innerExprR), einfo))
 
     | _ -> contf (OptimizeExpr cenv env expr)
 
@@ -2585,12 +2663,11 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
           Info = UnknownValue } 
     // try-finally, so no effect means no exception can be raised, so just sequence the finally
     if cenv.settings.EliminateTryWithAndTryFinally && not e1info.HasEffect then 
-        let sp = 
+        let e1R2 = 
             match spTry with 
-            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.SuppressNeither 
-            | DebugPointAtTry.Body -> DebugPointAtSequential.SuppressNeither 
-            | DebugPointAtTry.No -> DebugPointAtSequential.SuppressStmt
-        Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
+            | DebugPointAtTry.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, e1R)
+            | DebugPointAtTry.No -> e1R
+        Expr.Sequential (e1R2, e2R, ThenDoSeq, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
         info
@@ -2641,14 +2718,12 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
         let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args 
         OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue 
 
-and CopyExprForInlining cenv isInlineIfLambda expr m = 
+and CopyExprForInlining cenv isInlineIfLambda expr (m: range) = 
     // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
     if isInlineIfLambda then
         expr
         |> copyExpr cenv.g CloneAll
     else
-        // Debug points are erased when doing inlining
-        // Locals are marked compiler generated when doing inlining
         expr
         |> copyExpr cenv.g CloneAllAndMarkExprValsAsCompilerGenerated
         |> remarkExpr m
@@ -3004,7 +3079,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
             
         let isBaseCall = not (List.isEmpty args) &&
                               match args.[0] with
-                              | Expr.Val (vref, _, _) when vref.BaseOrThisInfo = BaseVal -> true
+                              | Expr.Val (vref, _, _) when vref.IsBaseVal -> true
                               | _ -> false
         
         if isBaseCall then None else
@@ -3047,7 +3122,6 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         if isGetHashCode then None else
 
         // Inlining lambda 
-  (* ---------- printf "Inlining lambda near %a = %s\n" outputRange m (showL (exprL f2)) (* JAMES: *) ----------*)
         let f2R = CopyExprForInlining cenv false f2 m
 
         // Optimizing arguments after inlining
@@ -3055,6 +3129,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
         // REVIEW: this is a cheapshot way of optimizing the arg expressions as well without the restriction of recursive  
         // inlining kicking into effect 
         let argsR = args |> List.map (fun e -> let eR, _einfo = OptimizeExpr cenv env e in eR) 
+
         // Beta reduce. MakeApplicationAndBetaReduce cenv.g does all the hard work. 
         // Inlining: beta reducing 
         let exprR = MakeApplicationAndBetaReduce cenv.g (f2R, f2ty, [tyargs], argsR, m)
@@ -3099,20 +3174,22 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
         | Expr.Let (bind, bodyExpr, m, _) -> 
             let fs, remake = strip bodyExpr 
             fs, (remake >> mkLetBind m bind)
+
         | Expr.LetRec (binds, bodyExpr, m, _) -> 
             let fs, remake = strip bodyExpr 
             fs, (remake >> mkLetRecBinds m binds)
-        | Expr.Sequential (x1, bodyExpr, NormalSeq, sp, m) -> 
+
+        | Expr.Sequential (x1, bodyExpr, NormalSeq, m) -> 
             let fs, remake = strip bodyExpr 
-            fs, (remake >> (fun bodyExpr2 -> Expr.Sequential (x1, bodyExpr2, NormalSeq, sp, m)))
+            fs, (remake >> (fun bodyExpr2 -> Expr.Sequential (x1, bodyExpr2, NormalSeq, m)))
 
         // Matches which compute a different function on each branch are awkward, see above.
         | Expr.Match (spMatch, exprm, dtree, targets, dflt, _ty) when targets.Length <= 2 ->
             let fsl, targetRemakes = 
                 targets 
-                |> Array.map (fun (TTarget(vs, bodyExpr, spTarget, flags)) -> 
+                |> Array.map (fun (TTarget(vs, bodyExpr, flags)) -> 
                     let fs, remake = strip bodyExpr
-                    fs, (fun holes -> TTarget(vs, remake holes, spTarget, flags)))
+                    fs, (fun holes -> TTarget(vs, remake holes, flags)))
                 |> Array.unzip
 
             let fs = List.concat fsl 
@@ -3127,6 +3204,10 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
                 let tyR = tyOfExpr g targetsR.[0].TargetExpression
                 Expr.Match (spMatch, exprm, dtree, targetsR, dflt, tyR)
             fs, remake
+
+        | Expr.DebugPoint (dp, innerExpr) -> 
+            let fs, remake = strip innerExpr 
+            fs, (remake >> (fun innerExprR -> Expr.DebugPoint (dp, innerExprR)))
 
         | _ -> 
             [f], (fun newExprs -> (assert (newExprs.Length = 1)); List.head newExprs)
@@ -3244,7 +3325,16 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
 /// so we start with the full thing and descend down taking apps off the end first)
 /// The pipeline begins with a |>, ||> or |||>
 and getPipes g expr acc =
-    match expr with
+    // Note, we strip any outer debug points because we are replacing it with more specific debug points along
+    // the pipeline.
+    //
+    // For example
+    //    let test () = x |> f 
+    // initially has a debug point covering "x |> f", e.g.
+    //    let test () = DP(x |> f)
+    // This is dreplaced by
+    //    let test () = DP(x) |> DP(f)
+    match stripDebugPoints expr with
     | OpPipeRight g (resType, xExpr, fExpr, m) ->
         getPipes g xExpr (([xExpr.Range], resType, fExpr, m) :: acc) 
     | OpPipeRight2 g (resType, x1Expr, x2Expr, fExpr, m) ->
@@ -3279,7 +3369,7 @@ and OptimizeDebugPipeRights cenv env expr =
         let fType = tyOfExpr g fExpr
         let fR, finfo = OptimizeExpr cenv env fExpr
         let app = mkApps g ((fR, fType), [], prevInputs, fRange)
-        let expr = mkDebugPoint g fRange app
+        let expr = mkDebugPoint fRange app
         let info = CombineValueInfosUnknown [finfo; prevInputInfo]
         expr, info
 
@@ -3333,7 +3423,7 @@ and OptimizeDebugPipeRights cenv env expr =
             xs0R 
             inputVals
             pipesExprR
-    expr, pipesInfo
+    expr, { pipesInfo with HasEffect=true}
     
 and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m) =
     let g = cenv.g
@@ -3378,9 +3468,9 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
         
-        /// Set the flag on the value indicating that direct calls can avoid a tailcall (which are expensive on .NET x86)
-        /// MightMakeCriticalTailcall is true whenever the body of the method may itself do a useful tailcall, e.g. has
-        /// an application in the last position.
+        // Set the flag on the value indicating that direct calls can avoid a tailcall (which are expensive on .NET x86)
+        // MightMakeCriticalTailcall is true whenever the body of the method may itself do a useful tailcall, e.g. has
+        // an application in the last position.
         match vspec with 
         | Some v -> 
             if not bodyinfo.MightMakeCriticalTailcall then 
@@ -3487,7 +3577,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
      // We can only split an expression out as a method if certain conditions are met. 
      // It can't use any protected or base calls, rethrow(), byrefs etc.
     let m = e.Range
-    (let fvs = freeInExpr CollectLocals e
+    (let fvs = freeInExpr (CollectLocalsWithStackGuard()) e
      not fvs.UsesUnboundRethrow &&
      not fvs.UsesMethodLocalConstructs &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
@@ -3529,7 +3619,7 @@ and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
 
 and OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty) =
     let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtreeR, targetsR, dinfo, tinfos)
-    let newExpr2 = if not (cenv.settings.localOpt()) then newExpr else CombineBoolLogic newExpr
+    let newExpr2 = if not cenv.settings.LocalOptimizationsEnabled then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
 
 and CombineMatchInfos dinfo tinfo = 
@@ -3546,12 +3636,12 @@ and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) =
      expr, einfo
 
 /// Optimize/analyze a target of a decision tree
-and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget, flags)) = 
+and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, flags)) = 
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
-    TTarget(vs, exprR, spTarget, flags), 
+    TTarget(vs, exprR, flags), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect
@@ -3582,7 +3672,7 @@ and OptimizeDecisionTree cenv env m x =
         else 
             rest, rinfo
 
-    | TDSwitch (sp, e, cases, dflt, m) -> 
+    | TDSwitch (e, cases, dflt, m) -> 
         // We always duplicate boolean-typed guards prior to optimizing. This is work which really should be done in patcompile.fs
         // where we must duplicate "when" expressions to ensure uniqueness of bound variables.
         //
@@ -3590,7 +3680,7 @@ and OptimizeDecisionTree cenv env m x =
         // Hence we do it here. There is no doubt a better way to do this.
         let e = if typeEquiv cenv.g (tyOfExpr cenv.g e) cenv.g.bool_ty then copyExpr cenv.g CloneAll e else e
 
-        OptimizeSwitch cenv env (sp, e, cases, dflt, m)
+        OptimizeSwitch cenv env (e, cases, dflt, m)
 
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test, vinfo with 
@@ -3604,7 +3694,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 
-and OptimizeSwitch cenv env (sp, e, cases, dflt, m) =
+and OptimizeSwitch cenv env (e, cases, dflt, m) =
     let eR, einfo = OptimizeExpr cenv env e 
 
     let cases, dflt = 
@@ -3621,9 +3711,9 @@ and OptimizeSwitch cenv env (sp, e, cases, dflt, m) =
     // OK, see what weRre left with and continue
     match cases, dflt with 
     | [], Some case -> OptimizeDecisionTree cenv env m case
-    | _ -> OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m)
+    | _ -> OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m)
 
-and OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m) =
+and OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m) =
     let casesR, cinfos =
         cases 
         |> List.map (fun (TCase(discrim, e)) -> let eR, einfo = OptimizeDecisionTree cenv env m e in TCase(discrim, eR), einfo)
@@ -3635,7 +3725,7 @@ and OptimizeSwitchFallback cenv env (sp, eR, einfo, cases, dflt, m) =
     let size = (dinfos.Length + cinfos.Length) * 2
     let info = CombineValueInfosUnknown (einfo :: cinfos @ dinfos)
     let info = { info with TotalSize = info.TotalSize + size; FunctionSize = info.FunctionSize + size; }
-    TDSwitch (sp, eR, casesR, dfltR, m), info
+    TDSwitch (eR, casesR, dfltR, m), info
 
 and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
     try 
@@ -3754,9 +3844,9 @@ and OptimizeModuleExpr cenv env x =
          
         let _renaming, hidden as rpi = ComputeRemappingFromImplementationToSignature cenv.g def mty 
         let def = 
-            if not (cenv.settings.localOpt()) then def else 
+            if not cenv.settings.LocalOptimizationsEnabled then def else 
 
-            let fvs = freeInModuleOrNamespace CollectLocals def 
+            let fvs = freeInModuleOrNamespace (CollectLocalsWithStackGuard()) def 
             let dead = 
                 bindInfosColl |> List.filter (fun (bind, binfo) -> 
 
@@ -3794,11 +3884,12 @@ and OptimizeModuleExpr cenv env x =
 
             let rec elimModDef x =                  
                 match x with 
-                | TMDefRec(isRec, tycons, mbinds, m) -> 
+                | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
-                    TMDefRec(isRec, tycons, mbinds, m)
+                    TMDefRec(isRec, opens, tycons, mbinds, m)
                 | TMDefLet(bind, m) -> 
-                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], m) else x
+                    if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], [], m) else x
+                | TMDefOpens _ -> x
                 | TMDefDo _ -> x
                 | TMDefs defs -> TMDefs(List.map elimModDef defs) 
                 | TMAbstract _ -> x 
@@ -3822,17 +3913,17 @@ and OptimizeModuleExpr cenv env x =
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and OptimizeModuleDef cenv (env, bindInfosColl) x = 
-    match x with 
-    | TMDefRec(isRec, tycons, mbinds, m) -> 
-        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef x) env else env
+and OptimizeModuleDef cenv (env, bindInfosColl) input = 
+    match input with 
+    | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
+        let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef input) env else env
         let mbindInfos, (env, bindInfosColl) = OptimizeModuleBindings cenv (env, bindInfosColl) mbinds
         let mbinds, minfos = List.unzip mbindInfos
         let binds = minfos |> List.choose (function Choice1Of2 (x, _) -> Some x | _ -> None)
         let binfos = minfos |> List.choose (function Choice1Of2 (_, x) -> Some x | _ -> None)
         let minfos = minfos |> List.choose (function Choice2Of2 x -> Some x | _ -> None)
         
-        (TMDefRec(isRec, tycons, mbinds, m), 
+        (TMDefRec(isRec, opens, tycons, mbinds, m), 
          notlazy { ValInfos = ValInfos(List.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
@@ -3841,6 +3932,9 @@ and OptimizeModuleDef cenv (env, bindInfosColl) x =
         let mexpr, info = OptimizeModuleExpr cenv env mexpr
         let env = BindValsInModuleOrNamespace cenv info env
         (TMAbstract mexpr, info), (env, bindInfosColl)
+
+    | TMDefOpens _openDecls ->  
+        (input, EmptyModuleInfo), (env, bindInfosColl)
 
     | TMDefLet(bind, m) ->
         let bindR, binfo as bindInfo, env = OptimizeBinding cenv false env bind
@@ -3858,7 +3952,8 @@ and OptimizeModuleDef cenv (env, bindInfosColl) x =
         let (defs, info), (env, bindInfosColl) = OptimizeModuleDefs cenv (env, bindInfosColl) defs 
         (TMDefs defs, info), (env, bindInfosColl)
 
-and OptimizeModuleBindings cenv (env, bindInfosColl) xs = List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
+and OptimizeModuleBindings cenv (env, bindInfosColl) xs =
+    List.mapFold (OptimizeModuleBinding cenv) (env, bindInfosColl) xs
 
 and OptimizeModuleBinding cenv (env, bindInfosColl) x = 
     match x with
@@ -3877,29 +3972,48 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
-    let env, mexprR, minfo = 
+and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
+    let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let env, mexprR, minfo, hidden = 
         match mexpr with 
-        // FSI: FSI compiles everything as if you're typing incrementally into one module 
-        // This means the fragment is not truly a constrained module as later fragments will be typechecked 
-        // against the internals of the module rather than the externals. Furthermore it would be wrong to apply 
-        // optimizations that did lots of reorganizing stuff to the internals of a module should we ever implement that. 
+        // FSI compiles interactive fragments as if you're typing incrementally into one module.
+        //
+        // This means the fragment is not constrained by its signature and later fragments will be typechecked 
+        // against the implementation of the module rather than the externals.
+        //
         | ModuleOrNamespaceExprWithSig(mty, def, m) when isIncrementalFragment -> 
-            let (def, minfo), (env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
-            env, ModuleOrNamespaceExprWithSig(mty, def, m), minfo
-        | _ -> 
-            let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
+            // This optimizes and builds minfo ignoring the signature
+            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
+            let minfo =
+                // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
+                // In F# interactive single-assembly mode, internals are accessible across interactive fragments.
+                if fsiMultiAssemblyEmit then
+                    AbstractLazyModulInfoByHiding true hidden minfo
+                else
+                    AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
-            env, mexprR, minfo
+            env, ModuleOrNamespaceExprWithSig(mty, defR, m), minfo, hidden
+        | _ ->
+            // This optimizes and builds minfo w.r.t. the signature
+            let mexprR, minfo = OptimizeModuleExpr cenv env mexpr
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
+            let env =
+                // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
+                // In regular fsc compilation, internals are accessible in the 'env' used intra-assembly
+                if cenv.g.isInteractive && fsiMultiAssemblyEmit then
+                    BindValsInModuleOrNamespace cenv minfoExternal env
+                else
+                    BindValsInModuleOrNamespace cenv minfo env
+            env, mexprR, minfoExternal, hidden
 
-    let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
+    let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-    let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
+    env, implFileR, minfo, hidden
 
 /// Entry point
-let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, fsiMultiAssemblyEmit, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -3910,9 +4024,10 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
+          stackGuard = StackGuard(OptimizerStackGuardDepth) 
         }
 
-    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+    let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  
 
     let optimizeDuringCodeGen disableMethodSplitting expr =
         let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }

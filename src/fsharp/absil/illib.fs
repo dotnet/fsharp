@@ -70,7 +70,7 @@ module internal PervasiveAutoOpens =
             x.EndsWith(value, StringComparison.Ordinal)
 
     /// Get an initialization hole 
-    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+    let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
     let reportTime =
         let mutable tFirst =None
@@ -100,8 +100,8 @@ module internal PervasiveAutoOpens =
                 cancellationToken)
             task.Result
 
-[<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+[<Struct>]
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
@@ -504,8 +504,8 @@ module ResizeArray =
         // rounding down here is good because it ensures we don't go over
         let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
+        // chunk the provided input into arrays that are smaller than the LOH limit
+        // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
@@ -1130,11 +1130,13 @@ module MapAutoOpens =
         
         static member Empty : Map<'Key, 'Value> = Map.empty
     
-        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
+#if USE_SHIPPED_FSCORE        
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
+#endif
 
-        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
+        member x.AddMany (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-        member x.MarkAsCollapsible () = x
+        member x.AddOrModify (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -1142,19 +1144,15 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x.[k]))
 
-    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
+    member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = 
-        let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-        x.MarkAsCollapsible()
+    member x.AddMany (kvs: _[]) = 
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-    member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member _.TryFind k = contents.TryFind k
 
-    member x.TryFind k = contents.TryFind k
+    member _.TryGetValue k = contents.TryGetValue k
 
-    member x.TryGetValue k = contents.TryGetValue k
-
-    member x.Values = contents.Values |> List.concat
+    member _.Values = contents.Values |> List.concat
 
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
-

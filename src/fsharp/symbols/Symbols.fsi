@@ -93,7 +93,10 @@ type FSharpSymbol =
     /// Get the declaration location for the symbol
     member DeclarationLocation: range option
 
-    /// Gets the short display name for the symbol
+    /// Gets the display name for the symbol where double backticks are not added for non-identifiers
+    member DisplayNameCore: string
+
+    /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -582,6 +585,7 @@ type FSharpGenericParameter =
     /// Get the declared or inferred constraints for the type parameter
     member Constraints: IList<FSharpGenericParameterConstraint> 
 
+    member internal TypeParameter: Typar
 
 #if !NO_EXTENSIONTYPING
 /// A subtype of FSharpSymbol that represents a static parameter to an F# type provider
@@ -1094,6 +1098,8 @@ type FSharpType =
 
     /// Strip any outer abbreviations from the type
     member StripAbbreviations: unit -> FSharpType
+
+    member internal Type: TType
 
 /// Represents a custom attribute attached to F# source code or a compiler .NET component
 [<Class>]

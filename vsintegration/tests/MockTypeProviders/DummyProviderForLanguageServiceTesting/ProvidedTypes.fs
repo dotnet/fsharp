@@ -13031,7 +13031,7 @@ namespace ProviderImplementation.ProvidedTypes
              showTimes: bool
              dumpDebugInfo:bool }
 
-        let WriteILBinary (outfile, (args: options), modul) =
+        let WriteILBinaryFile (outfile, (args: options), modul) =
             writeBinaryAndReportMappings (outfile, 
                                           args.ilg, args.pdbfile, (* args.signer, *) args.portablePDB, args.embeddedPDB, args.embedAllSource, 
                                           args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
@@ -13339,7 +13339,7 @@ namespace ProviderImplementation.ProvidedTypes
         member _.Save() = 
             let il = mb.Content
             let options: BinaryWriter.options = { ilg = ilg; pdbfile = None; portablePDB = false; embeddedPDB = false; embedAllSource = false; embedSourceList = []; sourceLink = ""; emitTailcalls = true; deterministic = false; showTimes = false; dumpDebugInfo = false }
-            BinaryWriter.WriteILBinary (fileName, options, il)
+            BinaryWriter.WriteILBinaryFile (fileName, options, il)
         override _.ToString() = "builder for " + (assemblyName.ToString())
         
 

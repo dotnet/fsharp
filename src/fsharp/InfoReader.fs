@@ -66,7 +66,7 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let mdefs = tinfo.RawMetadata.Methods
-            let mdefs = match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm
+            let mdefs = match optFilter with None -> mdefs.AsList() | Some nm -> mdefs.FindByName nm
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -160,7 +160,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let pdefs = tinfo.RawMetadata.Properties
-            let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
+            let pdefs = match optFilter with None -> pdefs.AsList() | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pdef -> ILProp(ILPropInfo(tinfo, pdef))) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -312,7 +312,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let fdefs = tinfo.RawMetadata.Fields
-                let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
+                let fdefs = match optFilter with None -> fdefs.AsList() | Some nm -> fdefs.LookupByName nm
                 fdefs |> List.map (fun pd -> ILFieldInfo(tinfo, pd)) 
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
@@ -337,7 +337,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let edefs = tinfo.RawMetadata.Events
-                let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
+                let edefs = match optFilter with None -> edefs.AsList() | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
                     let ileinfo = ILEventInfo(tinfo, edef)
                     if IsILEventInfoAccessible g amap m ad ileinfo then 
@@ -421,7 +421,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m (interfaceTys: TType list) ty acc =
         match tryAppTy g ty with
         | ValueSome (tcref, _) when tcref.IsILTycon && tcref.ILTyconRawMetadata.IsInterface ->
-            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
+            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList()
             let mdefs = tcref.ILTyconRawMetadata.Methods
 
             // MethodImpls contains a list of methods that override.
@@ -537,7 +537,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
               // Remove any virtuals that are signature-equivalent to virtuals in subtypes, except for newslots
               // That is, keep if it's 
-              ///      (a) not virtual
+              //       (a) not virtual
               //       (b) is a new slot or 
               //       (c) not equivalent
               // We keep virtual finals around for error detection later on
@@ -939,18 +939,18 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
 /// Indicates if an event info is associated with a delegate type that is a "standard" .NET delegate type
 /// with a sender parameter.
 //
-/// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the 
-/// of the "Add" methods associated with events.  If you want to access it you
-/// can use AddHandler instead.
+// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the
+// of the "Add" methods associated with events.  If you want to access it you
+// can use AddHandler instead.
    
-/// The .NET Framework guidelines indicate that the delegate type used for
-/// an event should take two parameters, an "object source" parameter
-/// indicating the source of the event, and an "e" parameter that
-/// encapsulates any additional information about the event. The type of
-/// the "e" parameter should derive from the EventArgs class. For events
-/// that do not use any additional information, the .NET Framework has
-/// already defined an appropriate delegate type: EventHandler.
-/// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp) 
+// The .NET Framework guidelines indicate that the delegate type used for
+// an event should take two parameters, an "object source" parameter
+// indicating the source of the event, and an "e" parameter that
+// encapsulates any additional information about the event. The type of
+// the "e" parameter should derive from the EventArgs class. For events
+// that do not use any additional information, the .NET Framework has
+// already defined an appropriate delegate type: EventHandler.
+// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp)
 let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let dty = einfo.GetDelegateType(infoReader.amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with
@@ -1031,7 +1031,7 @@ let GetXmlDocSigOfRecdFieldRef (rfref: RecdFieldRef) =
     let tcref = rfref.TyconRef
     let ccuFileName = libFileOfEntityRef tcref 
     if rfref.RecdField.XmlDocSig = "" then
-        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.Name]
+        rfref.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfref.RecdField.LogicalName]
     Some (ccuFileName, rfref.RecdField.XmlDocSig)
 
 let GetXmlDocSigOfUnionCaseRef (ucref: UnionCaseRef) = 
@@ -1056,9 +1056,10 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | Some (ccuFileName, formalTypars, formalTypeInfo) ->
             let filminfo = ILMethInfo(g, formalTypeInfo.ToType, None, ilminfo.RawMetadata, fmtps) 
             let args = 
-                match ilminfo.IsILExtensionMethod with
-                | true -> filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
-                | false -> filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
+                if ilminfo.IsILExtensionMethod then
+                    filminfo.GetRawArgTypes(amap, m, minfo.FormalMethodInst)
+                else
+                    filminfo.GetParamTypes(amap, m, minfo.FormalMethodInst)
 
             // http://msdn.microsoft.com/en-us/library/fsbx0t7x.aspx
             // If the name of the item itself has periods, they are replaced by the hash-sign ('#'). 

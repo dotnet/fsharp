@@ -43,9 +43,9 @@ type OptimizationSettings =
     }
 
 
-    member jitOpt: unit -> bool 
+    member JitOptimizationsEnabled: bool 
 
-    member localOpt: unit -> bool 
+    member LocalOptimizationsEnabled: bool 
 
     static member Defaults: OptimizationSettings
 
@@ -74,6 +74,7 @@ val internal OptimizeImplFile:
     Import.ImportMap *
     IncrementalOptimizationEnv *
     isIncrementalFragment: bool *
+    fsiMultiAssemblyEmit: bool *
     emitTailcalls: bool *
     SignatureHidingInfo * 
     TypedImplFile 

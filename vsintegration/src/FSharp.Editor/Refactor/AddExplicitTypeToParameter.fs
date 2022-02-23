@@ -47,7 +47,7 @@ type internal FSharpAddExplicitTypeToParameterRefactoring
                 not funcOrValue.IsMember &&
                 not funcOrValue.IsMemberThisValue &&
                 not funcOrValue.IsConstructorThisValue &&
-                not (PrettyNaming.IsOperatorName funcOrValue.DisplayName)
+                not (PrettyNaming.IsOperatorDisplayName funcOrValue.DisplayName)
 
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as v when isValidParameterWithoutTypeAnnotation v symbolUse ->

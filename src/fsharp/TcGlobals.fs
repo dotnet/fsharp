@@ -114,6 +114,8 @@ type
 
 
 [<Literal>]
+let tname_InternalsVisibleToAttribute = "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+[<Literal>]
 let tname_DebuggerNonUserCodeAttribute = "System.Diagnostics.DebuggerNonUserCodeAttribute"
 [<Literal>]
 let tname_DebuggableAttribute_DebuggingModes = "DebuggingModes"
@@ -170,6 +172,8 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 let tname_AsyncCallback = "System.AsyncCallback"
 [<Literal>]
 let tname_IAsyncResult = "System.IAsyncResult"
+[<Literal>]
+let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -179,7 +183,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu,
-                      emitDebugInfoInQuotations: bool, noDebugData: bool,
+                      emitDebugInfoInQuotations: bool, noDebugAttributes: bool,
                       pathMap: PathMap, langVersion: LanguageVersion) =
 
   let vara = Construct.NewRigidTypar "a" envRange
@@ -556,6 +560,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
       AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
+  let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -641,6 +648,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_unchecked_unary_plus_info  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryPlus"                         , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)
   let v_unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  , None                 , Some "Not"    , [],     mk_unop_ty v_bool_ty)
+  let v_refcell_deref_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Dereference"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]], varaTy))
+  let v_refcell_assign_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ColonEquals"                       , None                 , None          , [vara],     ([[mkRefCellTy varaTy]; [varaTy]], v_unit_ty))
+  let v_refcell_incr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "incr"                                 , None                 , Some "Increment" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
+  let v_refcell_decr_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "decr"                                 , None                 , Some "Decrement" , [],     ([[mkRefCellTy v_int_ty]], v_unit_ty))
 
   let v_checked_addition_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
   let v_checked_subtraction_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)
@@ -723,6 +734,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy])))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__debugPoint_info       = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__debugPoint"                         , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
@@ -767,6 +779,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let tref_InternalsVisibleToAttribute = findSysILTypeRef tname_InternalsVisibleToAttribute
 
   let mutable generatedAttribsCache = []
   let mutable debuggerBrowsableNeverAttributeCache = None
@@ -779,16 +792,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     let attribs =
        match generatedAttribsCache with
        | [] ->
-           let res = [ if not noDebugData then
-                        yield mkCompilerGeneratedAttribute()
-                        yield mkDebuggerNonUserCodeAttribute()]
+           let res =
+               [ if not noDebugAttributes then
+                   mkCompilerGeneratedAttribute()
+                   mkDebuggerNonUserCodeAttribute()]
            generatedAttribsCache <- res
            res
        | res -> res
-    mkILCustomAttrs (attrs.AsList @ attribs)
+    mkILCustomAttrs (attrs.AsList() @ attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
+
   let addFieldGeneratedAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addGeneratedAttrs fdef.CustomAttrs)
 
   let tref_DebuggerBrowsableAttribute n =
@@ -805,7 +821,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           res
       | Some res -> res
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList() @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
@@ -926,6 +942,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             | true, builder -> builder tinst
             | _ -> TType_app (tcref, tinst)
 
+  // Adding an unnecessary "let" instead of inlining into a muiti-line pipelined compute-once "member val" that is too complex for @dsyme
+  let v_attribs_Unsupported = [
+        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+        tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+                              ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override x.ToString() = "<TcGlobals>"
   member _.ilg=ilg
@@ -1186,7 +1208,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsByRefLikeAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_IsReadOnlyAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
 
   member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
@@ -1204,6 +1225,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
   member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
   member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
+  member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
   member val attrib_ContextStaticAttribute  = tryFindSysAttrib "System.ContextStaticAttribute"
   member val attrib_FlagsAttribute          = findSysAttrib "System.FlagsAttribute"
   member val attrib_DefaultMemberAttribute  = findSysAttrib "System.Reflection.DefaultMemberAttribute"
@@ -1216,10 +1238,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
-  member val attribs_Unsupported = [
-        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
-        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
-                                   ] |> List.choose (Option.map (fun x -> x.TyconRef))
+  member val attribs_Unsupported = v_attribs_Unsupported
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1243,7 +1262,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ReflectedDefinitionAttribute           = mk_MFCore_attrib "ReflectedDefinitionAttribute"
   member val attrib_CompiledNameAttribute                  = mk_MFCore_attrib "CompiledNameAttribute"
   member val attrib_AutoOpenAttribute                      = mk_MFCore_attrib "AutoOpenAttribute"
-  member val attrib_InternalsVisibleToAttribute            = findSysAttrib "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
+  member val attrib_InternalsVisibleToAttribute            = findSysAttrib tname_InternalsVisibleToAttribute
   member val attrib_CompilationRepresentationAttribute     = mk_MFCore_attrib "CompilationRepresentationAttribute"
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
@@ -1317,6 +1336,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
+  member val refcell_deref_vref = ValRefForIntrinsic v_refcell_deref_info
+  member val refcell_assign_vref = ValRefForIntrinsic v_refcell_assign_info
+  member val refcell_incr_vref = ValRefForIntrinsic v_refcell_incr_info
+  member val refcell_decr_vref = ValRefForIntrinsic v_refcell_decr_info
 
   member _.bitwise_or_info            = v_bitwise_or_info
   member _.bitwise_and_info           = v_bitwise_and_info
@@ -1512,6 +1535,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
+  member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
   member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info
 
@@ -1571,8 +1595,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
 
-  member _.mkDebuggerHiddenAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
-
   member _.mkDebuggerDisplayAttribute s = mkILCustomAttribute (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
 
   member _.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute()
@@ -1598,6 +1620,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+
+  member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
+      mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
   /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.

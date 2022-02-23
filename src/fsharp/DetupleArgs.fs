@@ -5,13 +5,16 @@ module internal FSharp.Compiler.Detuple
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Xml
+
+let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
@@ -150,7 +153,7 @@ open FSharp.Compiler.TypedTreeOps
 let (|TyappAndApp|_|) e = 
     match e with 
     | Expr.App (f, fty, tys, args, m)       -> 
-        match stripExpr f with
+        match stripDebugPoints (stripExpr f) with
         | Expr.App (f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
@@ -174,16 +177,23 @@ module GlobalUsageAnalysis =
     ///      where first accessor in list applies first to the v/app.
     ///   (b) log it's binding site representation.
     type Results =
-       { ///  v -> context / APP inst args 
+       {
+         ///  v -> context / APP inst args 
          Uses     : Zmap<Val, (accessor list * TType list * Expr list) list>
+
          /// v -> binding repr 
          Defns     : Zmap<Val, Expr>                                        
+
          /// bound in a decision tree? 
-         DecisionTreeBindings    : Zset<Val>                                    
+         DecisionTreeBindings: Zset<Val>                                    
+
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val, bool * Vals>
-         TopLevelBindings : Zset<Val>
-         IterationIsAtTopLevel      : bool }
+         RecursiveBindings: Zmap<Val, bool * Vals>
+
+         TopLevelBindings: Zset<Val>
+
+         IterationIsAtTopLevel: bool
+       }
 
     let z0 =
        { Uses     = Zmap.empty valOrder
@@ -288,7 +298,7 @@ module GlobalUsageAnalysis =
           let context = []
           recognise context origExpr
 
-      let targetIntercept exprF z = function TTarget(_argvs, body, _, _) -> Some (foldUnderLambda exprF z body)
+      let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
       
       {ExprFolder0 with
@@ -841,10 +851,13 @@ let postTransformExpr (penv: penv) expr =
     | _ -> None
   
 let passImplFile penv assembly = 
-    assembly |> RewriteImplFile { PreIntercept =None
-                                  PreInterceptBinding=None
-                                  PostTransform= postTransformExpr penv
-                                  IsUnderQuotations=false } 
+    let rwenv =
+        { PreIntercept = None
+          PreInterceptBinding = None
+          PostTransform = postTransformExpr penv
+          RewriteQuotations = false
+          StackGuard = StackGuard(DetupleRewriteStackGuardDepth) } 
+    assembly |> RewriteImplFile rwenv
 
 //-------------------------------------------------------------------------
 // entry point

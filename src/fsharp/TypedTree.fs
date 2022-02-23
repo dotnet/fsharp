@@ -67,8 +67,8 @@ type ValMutability =
     | Immutable 
     | Mutable 
 
-[<RequireQualifiedAccess>]
 /// Indicates if a type parameter is needed at runtime and may not be eliminated
+[<RequireQualifiedAccess>]
 type TyparDynamicReq = 
 
     /// Indicates the type parameter is not needed at runtime and may be eliminated
@@ -92,8 +92,8 @@ type ValBaseOrThisInfo =
     /// Indicates the 'this' value specified in a memberm e.g. 'x' in 'member x.M() = 1'
     | MemberThisVal 
 
-[<Struct>]
 /// Flags on values
+[<Struct>]
 type ValFlags(flags: int64) = 
 
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
@@ -652,17 +652,31 @@ type Entity =
         | Some optData -> optData.entity_compiled_name <- name
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
-    /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName()
+    /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters.
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// No backticks are added for entities with non-identifier names
+    member x.DisplayNameCore = x.GetDisplayName(coreName=true)
 
-    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
+    /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayName = x.GetDisplayName(coreName=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars =
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
+    /// For modules the Module suffix is removed if FSharpModuleWithSuffix is used.
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
+    member x.DisplayNameWithStaticParameters =
+        x.GetDisplayName(coreName=false, withStaticParameters=true, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -671,43 +685,38 @@ type Entity =
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+    member x.GetDisplayName(coreName, ?withStaticParameters, ?withUnderscoreTypars) =
         let withStaticParameters = defaultArg withStaticParameters false
-        let withTypars = defaultArg withTypars false
         let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
-
-        let getName () =
-            match x.TyparsNoRange with 
-            | [] -> nm
-            | tps -> 
-                let nm = DemangleGenericTypeName nm
-                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
-                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
-                    nm + "<" + String.concat "," typearNames + ">"
-                else
-                    nm
-
+        if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName 
 #if !NO_EXTENSIONTYPING
-        if x.IsProvidedErasedTycon then 
+        elif x.IsProvidedErasedTycon then 
             let nm, args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
                 nm
-        else
-            getName ()
-#else
-        ignore withStaticParameters
-        getName ()
 #endif
-
+        else
+            ignore withStaticParameters
+            match x.TyparsNoRange with 
+            | [] -> nm
+            | tps -> 
+                let nm = DemangleGenericTypeName nm
+                let isArray = nm.StartsWithOrdinal("[") && nm.EndsWithOrdinal("]")
+                let nm = if coreName || isArray then nm else ConvertNameToDisplayName nm
+                if withUnderscoreTypars then
+                    let typarNames = tps |> List.map (fun _  -> "_")
+                    nm + "<" + String.concat "," typarNames + ">"
+                else
+                    nm
 
     /// The code location where the module, namespace or type is defined.
     member x.Range = 
 #if !NO_EXTENSIONTYPING    
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info ->
+        | TProvidedTypeRepr info ->
             match Construct.ComputeDefinitionLocationOfProvidedItem info.ProvidedType with
             | Some range -> range
             | None -> x.entity_range
@@ -747,7 +756,7 @@ type Entity =
     member x.XmlDoc = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info ->
+        | TProvidedTypeRepr info ->
             let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
             XmlDoc (lines, x.DefinitionRange)
         | _ -> 
@@ -865,26 +874,26 @@ type Entity =
     /// Indicates if the entity is a provided type or namespace definition
     member x.IsProvided = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint _ -> true
-        | TProvidedNamespaceExtensionPoint _ -> true
+        | TProvidedTypeRepr _ -> true
+        | TProvidedNamespaceRepr _ -> true
         | _ -> false
 
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvidedNamespace = 
         match x.TypeReprInfo with 
-        | TProvidedNamespaceExtensionPoint _ -> true
+        | TProvidedNamespaceRepr _ -> true
         | _ -> false
 
     /// Indicates if the entity is an erased provided type definition
     member x.IsProvidedErasedTycon = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsErased
+        | TProvidedTypeRepr info -> info.IsErased
         | _ -> false
 
     /// Indicates if the entity is a generated provided type definition, i.e. not erased.
     member x.IsProvidedGeneratedTycon = 
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsGenerated
+        | TProvidedTypeRepr info -> info.IsGenerated
         | _ -> false
 #endif
 
@@ -908,7 +917,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
+        | TFSharpRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
         | _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -944,12 +953,12 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TUnionRepr _ -> true | _ -> false
+    member x.IsUnionTycon = match x.TypeReprInfo with | TFSharpUnionRepr _ -> true | _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TUnionRepr x -> ValueSome x 
+        | TFSharpUnionRepr x -> ValueSome x 
         | _ -> ValueNone
 
     /// Get the union cases for a type, if any
@@ -1036,10 +1045,10 @@ type Entity =
     member x.ILTyconRawMetadata = let (TILObjectReprData(_, _, td)) = x.ILTyconInfo in td
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
-    member x.IsRecordTycon = match x.TypeReprInfo with | TRecdRepr _ -> true | _ -> false
+    member x.IsRecordTycon = match x.TypeReprInfo with | TFSharpRecdRepr _ -> true | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
-    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
+    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TFSharpRecdRepr _ | TFSharpUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1075,16 +1084,16 @@ type Entity =
     member x.IsHiddenReprTycon = match x.TypeAbbrev, x.TypeReprInfo with | None, TNoRepr -> true | _ -> false
 
     /// Indicates if this is an F#-defined interface type definition 
-    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconInterface -> true | _ -> false
+    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
 
     /// Indicates if this is an F#-defined delegate type definition 
-    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconDelegate _ -> true | _ -> false
+    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
 
     /// Indicates if this is an F#-defined enum type definition 
-    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconEnum -> true | _ -> false
+    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
 
     /// Indicates if this is an F#-defined class type definition 
-    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconClass -> true | _ -> false
+    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpClass -> true | _ -> false
 
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.IsILTycon && x.ILTyconRawMetadata.IsEnum
@@ -1093,8 +1102,8 @@ type Entity =
     member x.IsEnumTycon = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsEnum 
-        | TProvidedNamespaceExtensionPoint _ -> false
+        | TProvidedTypeRepr info -> info.IsEnum 
+        | TProvidedNamespaceRepr _ -> false
         | _ ->
 #endif
         x.IsILEnumTycon || x.IsFSharpEnumTycon
@@ -1103,12 +1112,12 @@ type Entity =
     /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
-        | TRecdRepr _ -> x.IsStructRecordOrUnionTycon
-        | TUnionRepr _ -> x.IsStructRecordOrUnionTycon
+        | TFSharpRecdRepr _ -> x.IsStructRecordOrUnionTycon
+        | TFSharpUnionRepr _ -> x.IsStructRecordOrUnionTycon
         | TFSharpObjectRepr info ->
             match info.fsobjmodel_kind with
-            | TTyconClass | TTyconInterface | TTyconDelegate _ -> false
-            | TTyconStruct | TTyconEnum -> true
+            | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
+            | TFSharpStruct | TFSharpEnum -> true
         | _ -> false
 
     /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition
@@ -1120,8 +1129,8 @@ type Entity =
     member x.IsStructOrEnumTycon = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsStructOrEnum 
-        | TProvidedNamespaceExtensionPoint _ -> false
+        | TProvidedTypeRepr info -> info.IsStructOrEnum 
+        | TProvidedNamespaceRepr _ -> false
         | _ ->
 #endif
         x.IsILStructOrEnumTycon || x.IsFSharpStructOrEnumTycon
@@ -1179,18 +1188,18 @@ type Entity =
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
         // We should never be computing this property for erased types
-        | TProvidedTypeExtensionPoint info when info.IsErased -> 
+        | TProvidedTypeRepr info when info.IsErased -> 
             failwith "No compiled representation for provided erased type"
         
         // Generated types that are not relocated just point straight to the generated backing assembly, computed from "st".
         // These are used when running F# Interactive, which does not use static linking of provider-generated assemblies,
         // and also for types with relocation suppressed.
-        | TProvidedTypeExtensionPoint info when info.IsGenerated && info.IsSuppressRelocate -> 
+        | TProvidedTypeRepr info when info.IsGenerated && info.IsSuppressRelocate -> 
             let st = info.ProvidedType
             let tref = GetILTypeRefOfProvidedType (st, x.Range)
             let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
             CompiledTypeRepr.ILAsmNamed(tref, boxity, None)
-        | TProvidedNamespaceExtensionPoint _ -> failwith "No compiled representation for provided namespace"
+        | TProvidedNamespaceRepr _ -> failwith "No compiled representation for provided namespace"
         | _ ->
 #endif
             let ilTypeRefForCompilationPath (CompPath(sref, p)) item = 
@@ -1375,10 +1384,10 @@ type TyconRepresentation =
     | TFSharpObjectRepr of TyconObjModelData
 
     /// Indicates the type is a record 
-    | TRecdRepr of TyconRecdFields
+    | TFSharpRecdRepr of TyconRecdFields
 
     /// Indicates the type is a discriminated union 
-    | TUnionRepr of TyconUnionData 
+    | TFSharpUnionRepr of TyconUnionData 
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -1390,15 +1399,15 @@ type TyconRepresentation =
     | TMeasureableRepr of TType
 
 #if !NO_EXTENSIONTYPING
-    /// TProvidedTypeExtensionPoint
+    /// TProvidedTypeRepr
     ///
     /// Indicates the representation information for a provided type. 
-    | TProvidedTypeExtensionPoint of TProvidedTypeInfo
+    | TProvidedTypeRepr of TProvidedTypeInfo
 
     /// Indicates the representation information for a provided namespace.  
     //
     // Note, the list could probably be a list of IProvidedNamespace rather than ITypeProvider
-    | TProvidedNamespaceExtensionPoint of ResolutionEnvironment * Tainted<ITypeProvider> list
+    | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
 #endif
 
     /// The 'NoRepr' value here has four meanings: 
@@ -1492,34 +1501,34 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconObjModelKind = 
-    /// Indicates the type is a class (also used for units-of-measure)
-    | TTyconClass 
+type TyconFSharpObjModelKind = 
+    /// Indicates the type is an F#-declared class (also used for units-of-measure)
+    | TFSharpClass 
 
-    /// Indicates the type is an interface 
-    | TTyconInterface 
+    /// Indicates the type is an F#-declared interface 
+    | TFSharpInterface 
 
-    /// Indicates the type is a struct 
-    | TTyconStruct 
+    /// Indicates the type is an F#-declared struct 
+    | TFSharpStruct 
 
-    /// Indicates the type is a delegate with the given Invoke signature 
-    | TTyconDelegate of slotSig: SlotSig 
+    /// Indicates the type is an F#-declared delegate with the given Invoke signature 
+    | TFSharpDelegate of slotSig: SlotSig 
 
-    /// Indicates the type is an enumeration 
-    | TTyconEnum
+    /// Indicates the type is an F#-declared enumeration 
+    | TFSharpEnum
     
     /// Indicates if the type definition is a value type
     member x.IsValueType =
         match x with 
-        | TTyconClass | TTyconInterface | TTyconDelegate _ -> false
-        | TTyconStruct | TTyconEnum -> true
+        | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
+        | TFSharpStruct | TFSharpEnum -> true
 
 /// Represents member values and class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TyconObjModelData = 
     { 
-      /// Indicates whether the type declaration is a class, interface, enum, delegate or struct 
-      fsobjmodel_kind: TyconObjModelKind
+      /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct 
+      fsobjmodel_kind: TyconFSharpObjModelKind
 
       /// The declared abstract slots of the class, interface or struct 
       fsobjmodel_vslots: ValRef list
@@ -1656,13 +1665,29 @@ type UnionCase =
         | Some (m, false) -> m
         | _ -> uc.Range 
 
+    /// Get the logical name of the union case
+    member uc.LogicalName = uc.Id.idText
+
+    /// Get the core of the display name of the union case
+    ///
+    /// Backticks and parens are not added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    member uc.DisplayNameCore = uc.LogicalName |> DecompileOpName
+
     /// Get the display name of the union case
-    member uc.DisplayName = uc.Id.idText
+    ///
+    /// Backticks and parens are added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    member uc.DisplayName = uc.LogicalName |> ConvertValNameToDisplayName false
 
     /// Get the name of the case in generated IL code.
+    /// Note logical names `op_Nil` and `op_ConsCons` become `Empty` and `Cons` respectively.
+    /// This is because this is how ILX union code gen expects to see them.
     member uc.CompiledName =
         let idText = uc.Id.idText
-        if idText = opNameCons then "Cons" 
+        if idText = opNameCons then "Cons"
         elif idText = opNameNil then "Empty"
         else idText
 
@@ -1684,7 +1709,7 @@ type UnionCase =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "UnionCase(" + x.DisplayName + ")"
+    override x.ToString() = "UnionCase(" + x.LogicalName + ")"
 
 /// Represents a class, struct or record field in an F# type definition.
 /// This may represent a "field" in either a struct, class, record or union.
@@ -1764,7 +1789,13 @@ type RecdField =
     member v.Id = v.rfield_id
 
     /// Name of the field 
-    member v.Name = v.rfield_id.idText
+    member v.LogicalName = v.rfield_id.idText
+
+    /// Name of the field. For fields this is the same as the logical name.
+    member v.DisplayNameCore = v.LogicalName
+
+    /// Name of the field 
+    member v.DisplayName = v.DisplayNameCore |> ConvertNameToDisplayName
 
       /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member v.IsCompilerGenerated = v.rfield_secret
@@ -1806,7 +1837,7 @@ type RecdField =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = x.Name
+    override x.ToString() = x.LogicalName
 
 /// Represents the implementation of an F# exception definition.
 [<NoEquality; NoComparison (*; StructuredFormatDisplay("{DebugText}") *) >]
@@ -1918,13 +1949,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity = 
         cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
+           LayeredMap.Empty.AddMany( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
         cacheOptByref &tyconsByAccessNamesCache (fun () -> 
-             LayeredMultiMap.Empty.AddAndMarkAsCollapsible (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
+             LayeredMultiMap.Empty.AddMany (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> Construct.KeyTyconByAccessNames tc.LogicalName tc)))
 
     // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
@@ -2700,6 +2731,15 @@ type Val =
     /// Indicates if this is a 'base' or 'this' value?
     member x.BaseOrThisInfo = x.val_flags.BaseOrThisInfo
 
+    /// Indicates if this is a 'this' value for an implicit ctor?
+    member x.IsCtorThisVal = (x.BaseOrThisInfo = CtorThisVal)
+
+    /// Indicates if this is a 'this' value for a member?
+    member x.IsMemberThisVal = (x.BaseOrThisInfo = MemberThisVal)
+
+    /// Indicates if this is a 'base' value?
+    member x.IsBaseVal = (x.BaseOrThisInfo = BaseVal)
+
     //  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.val_flags.IsTypeFunction
 
@@ -2875,16 +2915,22 @@ type Val =
 
     /// The name of the property.
     /// - If this is a property then this is 'Foo' 
-    ///  - If this is an implementation of an abstract slot then this is the name of the property implemented by the abstract slot
     member x.PropertyName = 
         let logicalName = x.LogicalName
         ChopPropertyName logicalName
 
-    /// The name of the method. 
-    ///   - If this is a property then this is 'Foo' 
+    /// The display name of the value or method but without operator names decompiled and without backticks etc.
+    /// This is very close to LogicalName except that properties have get_ removed.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    /// Note: here "Mangled" means "op_Addition"
+    ///
+    ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
-    ///   - If this is an operator then this is 'op_Addition'
-    member x.CoreDisplayName = 
+    ///   - If this is an active pattern               --> |A|_|
+    ///   - If this is an operator                     --> op_Addition
+    ///   - If this is an identifier needing backticks --> A-B
+    member x.DisplayNameCoreMangled = 
         match x.MemberInfo with 
         | Some membInfo -> 
             match membInfo.MemberFlags.MemberKind with 
@@ -2896,11 +2942,24 @@ type Val =
             | SynMemberKind.PropertyGet -> x.PropertyName
         | None -> x.LogicalName
 
-    ///   - If this is a property then this is 'Foo' 
+    /// The display name of the value or method with operator names decompiled but without backticks etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    member x.DisplayNameCore = 
+        x.DisplayNameCoreMangled |> DecompileOpName
+
+    /// The full text for the value to show in error messages and to use in code.
+    /// This includes backticks, parens etc.
+    ///
+    ///   - If this is a property                      --> Foo
     ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
-    ///   - If this is an operator then this is '(+)'
+    ///   - If this is an active pattern               --> (|A|_|)
+    ///   - If this is an operator                     --> (+)
+    ///   - If this is an identifier needing backticks --> ``A-B``
+    ///   - If this is a base value  --> base
+    ///   - If this is a value named ``base`` --> ``base``
     member x.DisplayName = 
-        DemangleOperatorName x.CoreDisplayName
+        ConvertValNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
@@ -3079,7 +3138,7 @@ type NonLocalEntityRef =
         // type provider type linking errors in F# 3.0.
         let m = range0
         match entity.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             let resolutionEnvironment = info.ResolutionEnvironment
             let st = info.ProvidedType
                         
@@ -3096,7 +3155,7 @@ type NonLocalEntityRef =
 
             tryResolveNestedTypeOf(entity, resolutionEnvironment, st, i)
 
-        | TProvidedNamespaceExtensionPoint(resolutionEnvironment, resolvers) -> 
+        | TProvidedNamespaceRepr(resolutionEnvironment, resolvers) -> 
 
             // In this case, we're still in the realm of extensible namespaces. 
             //     <----entity-->
@@ -3303,15 +3362,23 @@ type EntityRef =
     member x.CompiledName = x.Deref.CompiledName
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
+    ///
+    /// No backticks are added for entities with non-identifier names
+    member x.DisplayNameCore = x.Deref.DisplayNameCore
+
+    /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayName = x.Deref.DisplayName
 
-    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
-    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
-
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters
+    ///
+    /// Backticks are added implicitly for entities with non-identifier names
     member x.DisplayNameWithStaticParameters = x.Deref.DisplayNameWithStaticParameters
 
     /// The code location where the module, namespace or type is defined.
@@ -3580,7 +3647,7 @@ type EntityRef =
 
     member x.AllFieldAsRefList = x.AllFieldsAsList |> List.map x.MakeNestedRecdFieldRef
 
-    member x.MakeNestedRecdFieldRef (rf: RecdField) = RecdFieldRef (x, rf.Name)
+    member x.MakeNestedRecdFieldRef (rf: RecdField) = RecdFieldRef (x, rf.LogicalName)
 
     member x.MakeNestedUnionCaseRef (uc: UnionCase) = UnionCaseRef (x, uc.Id.idText)
 
@@ -3658,9 +3725,11 @@ type ValRef =
 
     member x.LogicalName = x.Deref.LogicalName
 
-    member x.DisplayName = x.Deref.DisplayName
+    member x.DisplayNameCoreMangled = x.Deref.DisplayNameCoreMangled
 
-    member x.CoreDisplayName = x.Deref.CoreDisplayName
+    member x.DisplayNameCore = x.Deref.DisplayNameCore
+
+    member x.DisplayName = x.Deref.DisplayName
 
     member x.Range = x.Deref.Range
 
@@ -3770,6 +3839,15 @@ type ValRef =
     /// Indicates if this is a 'base' or 'this' value?
     member x.BaseOrThisInfo = x.Deref.BaseOrThisInfo
 
+    /// Indicates if this is a 'base' value?
+    member x.IsBaseVal = x.Deref.IsBaseVal
+
+    /// Indicates if this is a 'this' value for an implicit ctor?
+    member x.IsCtorThisVal = x.Deref.IsCtorThisVal
+
+    /// Indicates if this is a 'this' value for a member?
+    member x.IsMemberThisVal = x.Deref.IsMemberThisVal
+
     ///  Indicates if this value was declared to be a type function, e.g. "let f<'a> = typeof<'a>"
     member x.IsTypeFunction = x.Deref.IsTypeFunction
 
@@ -3863,7 +3941,7 @@ type UnionCaseRef =
     member x.Index = 
         try 
            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            x.TyconRef.UnionCasesArray |> Array.findIndex (fun ucspec -> ucspec.DisplayName = x.CaseName) 
+            x.TyconRef.UnionCasesArray |> Array.findIndex (fun uc -> uc.LogicalName = x.CaseName) 
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
@@ -3889,8 +3967,11 @@ type RecdFieldRef =
     /// Get a reference to the type containing this union case
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
 
-    /// Get the name off the field
+    /// Get the name of the field
     member x.FieldName = let (RecdFieldRef(_, id)) = x in id
+
+    /// Get the name of the field, with backticks added for non-identifier names
+    member x.DisplayName = x.FieldName |> ConvertNameToDisplayName
 
     /// Get the Entity for the type containing this union case
     member x.Tycon = x.TyconRef.Deref
@@ -3923,7 +4004,7 @@ type RecdFieldRef =
         let (RecdFieldRef(tcref, id)) = x
         try 
             // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.Name = id)  
+            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.LogicalName = id)  
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
@@ -4226,7 +4307,7 @@ type DecisionTree =
     ///    cases -- The list of tests and their subsequent decision trees
     ///    default -- The default decision tree, if any
     ///    range -- (precise documentation needed)
-    | TDSwitch of debugPoint: DebugPointAtSwitch * input: Expr * cases: DecisionTreeCase list * defaultOpt: DecisionTree option * range: range
+    | TDSwitch of input: Expr * cases: DecisionTreeCase list * defaultOpt: DecisionTree option * range: range
 
     /// TDSuccess(results, targets)
     ///
@@ -4322,13 +4403,12 @@ type DecisionTreeTarget =
     | TTarget of 
         boundVals: Val list *
         targetExpr: Expr *
-        debugPoint: DebugPointAtTarget *
         isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    member x.TargetExpression = (let (TTarget(_, expr, _, _)) = x in expr)
+    member x.TargetExpression = (let (TTarget(_, expr, _)) = x in expr)
 
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
@@ -4488,7 +4568,6 @@ type Expr =
         expr1: Expr *
         expr2: Expr *
         kind: SequentialOpKind *
-        debugPoint: DebugPointAtSequential *
         range: range
 
     /// Lambda expressions. 
@@ -4574,7 +4653,7 @@ type Expr =
         range: range
 
     /// An intrinsic applied to some (strictly evaluated) arguments 
-    /// A few of intrinsics (TOp_try, TOp.While, TOp.For) expect arguments kept in a normal form involving lambdas 
+    /// A few of intrinsics (TOp_try, TOp.While, TOp.IntegerForLoop) expect arguments kept in a normal form involving lambdas 
     | Op of
         op: TOp *
         typeArgs: TypeInst *
@@ -4625,6 +4704,9 @@ type Expr =
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
 
+    /// Indicates a debug point should be placed prior to the expression. 
+    | DebugPoint of DebugPointAtLeafExpr * Expr
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member expr.DebugText = expr.ToDebugString(3)
 
@@ -4636,7 +4718,7 @@ type Expr =
         match expr with 
         | Const (c, _, _) -> c.ToString()
         | Val (v, _, _) -> v.LogicalName
-        | Sequential (e1, e2, _, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
+        | Sequential (e1, e2, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
         | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
         | TyLambda (_, tps, body, _, _) -> sprintf "TyLambda(%+A, " tps + body.ToDebugString(depth) + ")"
         | App (f, _, _, args, _) -> "App(" + f.ToDebugString(depth) + ", [" + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + "])"
@@ -4650,7 +4732,19 @@ type Expr =
         | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
+        | DebugPoint (DebugPointAtLeafExpr.Yes m, e) -> sprintf "DebugPoint(%s, " (m.ToShortString()) + e.ToDebugString(depth) + ")"
 
+    /// Get the mark/range/position information from an expression
+    member expr.Range =
+        match expr with
+        | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
+        | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, m) 
+        | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
+        | Expr.WitnessArg (_, m)
+        | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
+        | Expr.Link eref -> eref.Value.Range
+        | Expr.DebugPoint (_, e2) -> e2.Range
+    
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}") >]
 type TOp =
 
@@ -4679,16 +4773,16 @@ type TOp =
     | UInt16s of uint16[] 
 
     /// An operation representing a lambda-encoded while loop. The special while loop marker is used to mark compilations of 'foreach' expressions
-    | While of DebugPointAtWhile * SpecialWhileLoopMarker
+    | While of spWhile: DebugPointAtWhile * marker: SpecialWhileLoopMarker
 
-    /// An operation representing a lambda-encoded for loop
-    | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
+    /// An operation representing a lambda-encoded integer for-loop
+    | IntegerForLoop of spFor: DebugPointAtFor * spTo: DebugPointAtInOrTo * style: ForLoopStyle (* count up or down? *)
 
     /// An operation representing a lambda-encoded try/with
-    | TryWith of DebugPointAtTry * DebugPointAtWith
+    | TryWith of spTry: DebugPointAtTry * spWith: DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
-    | TryFinally of DebugPointAtTry * DebugPointAtFinally
+    | TryFinally of spTry: DebugPointAtTry * spFinally: DebugPointAtFinally
 
     /// Construct a record or object-model value. The ValRef is for self-referential class constructors, otherwise 
     /// it indicates that we're in a constructor and the purpose of the expression is to 
@@ -4790,7 +4884,7 @@ type TOp =
         | Bytes _ -> "Bytes(..)"
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
-        | For _ -> "For"
+        | IntegerForLoop _ -> "FastIntegerForLoop"
         | TryWith _ -> "TryWith"
         | TryFinally _ -> "TryFinally"
         | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
@@ -4996,6 +5090,39 @@ type ModuleOrNamespaceExprWithSig =
 
     override x.ToString() = "ModuleOrNamespaceExprWithSig(...)"
 
+/// Represents open declaration statement.
+type OpenDeclaration =
+    { /// Syntax after 'open' as it's presented in source code.
+      Target: SynOpenDeclTarget
+      
+      /// Full range of the open declaration.
+      Range: range option
+
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: ModuleOrNamespaceRef list 
+      
+      /// Types whose static content is opened with this declaration.
+      Types: TType list
+
+      /// Scope in which open declaration is visible.
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool
+    }
+
+    /// Create a new instance of OpenDeclaration.
+    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: range, isOwnNamespace: bool) =
+        { Target = target
+          Range =
+            match target with 
+            | SynOpenDeclTarget.ModuleOrNamespace (range=m)
+            | SynOpenDeclTarget.Type (range=m) -> Some m
+          Types = types
+          Modules = modules
+          AppliedScope = appliedScope
+          IsOwnNamespace = isOwnNamespace }
+    
 /// The contents of a module-or-namespace-fragment definition 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type ModuleOrNamespaceExpr = 
@@ -5005,6 +5132,9 @@ type ModuleOrNamespaceExpr =
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs of moduleOrNamespaceExprs: ModuleOrNamespaceExpr list  
 
+    /// Indicates the given 'open' declarations are active
+    | TMDefOpens of openDecls: OpenDeclaration list
+
     /// Indicates the module fragment is a 'let' definition 
     | TMDefLet of binding: Binding * range: range
 
@@ -5012,7 +5142,7 @@ type ModuleOrNamespaceExpr =
     | TMDefDo of expr: Expr * range: range
 
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
-    | TMDefRec of isRec: bool * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
+    | TMDefRec of isRec: bool * opens: OpenDeclaration list * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -5038,18 +5168,37 @@ type ModuleOrNamespaceBinding =
 
     override _.ToString() = "ModuleOrNamespaceBinding(...)"
 
+[<CustomEquality; CustomComparison; RequireQualifiedAccess>]
+type NamedDebugPointKey =
+    { Range: range
+      Name: string }
+    override x.GetHashCode() = hash x.Name + hash x.Range
+    override x.Equals(yobj: obj) = 
+        match yobj with 
+        | :? NamedDebugPointKey as y -> Range.equals x.Range y.Range && x.Name = y.Name
+        | _ -> false
+    interface IComparable with
+        member x.CompareTo(yobj: obj) =
+           match yobj with 
+           | :? NamedDebugPointKey as y ->  
+               let c = Range.rangeOrder.Compare(x.Range, y.Range) 
+               if c <> 0 then c else
+               compare x.Name y.Name
+           | _ -> -1
+
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
-/// TImplFile (qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
+/// TImplFile (qualifiedNameOfFile, pragmas, implExprWithSig, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFile = 
     | TImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
         pragmas: ScopedPragma list *
-        implementationExpressionWithSignature: ModuleOrNamespaceExprWithSig *
+        implExprWithSig: ModuleOrNamespaceExprWithSig *
         hasExplicitEntryPoint: bool *
         isScript: bool *
-        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo>
+        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
+        namedDebugPointsForInlinedCode: Map<NamedDebugPointKey, range>
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5142,22 +5291,22 @@ type CcuReference = string // ILAssemblyRef
 
 /// A relinkable handle to the contents of a compilation unit. Relinking is performed by mutation.
 //
-/// A compilation unit is, more or less, the new material created in one
-/// invocation of the compiler. Due to static linking assemblies may hold more 
-/// than one compilation unit (i.e. when two assemblies are merged into a compilation
-/// the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
-/// .NET assemblies. 
-/// 
-/// References to items such as type constructors are via 
-/// cross-compilation-unit thunks, which directly reference the data structures that define
-/// these modules. Thus, when saving out values to disk we only wish 
-/// to save out the "current" part of the term graph. When reading values
-/// back in we "fixup" the links to previously referenced modules.
-///
-/// All non-local accesses to the data structures are mediated
-/// by ccu-thunks. Ultimately, a ccu-thunk is either a (named) element of
-/// the data structure, or it is a delayed fixup, i.e. an invalid dangling
-/// reference that has not had an appropriate fixup applied.  
+// A compilation unit is, more or less, the new material created in one
+// invocation of the compiler. Due to static linking assemblies may hold more
+// than one compilation unit (i.e. when two assemblies are merged into a compilation
+// the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
+// .NET assemblies.
+//
+// References to items such as type constructors are via
+// cross-compilation-unit thunks, which directly reference the data structures that define
+// these modules. Thus, when saving out values to disk we only wish
+// to save out the "current" part of the term graph. When reading values
+// back in we "fixup" the links to previously referenced modules.
+//
+// All non-local accesses to the data structures are mediated
+// by ccu-thunks. Ultimately, a ccu-thunk is either a (named) element of
+// the data structure, or it is a delayed fixup, i.e. an invalid dangling
+// reference that has not had an appropriate fixup applied.
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuThunk = 
     {
@@ -5167,7 +5316,7 @@ type CcuThunk =
       name: CcuReference
     }
 
-    /// Dereference the asssembly reference 
+    /// Dereference the assembly reference 
     member ccu.Deref = 
         if isNull (ccu.target :> obj) then 
             raise(UnresolvedReferenceNoRange ccu.name)
@@ -5187,7 +5336,7 @@ type CcuThunk =
         with get() = ccu.Deref.UsesFSharp20PlusQuotations 
         and set v = ccu.Deref.UsesFSharp20PlusQuotations <- v
 
-    /// The short name of the asssembly being referenced
+    /// The short name of the assembly being referenced
     member ccu.AssemblyName = ccu.name
 
     /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
@@ -5437,7 +5586,7 @@ type Construct() =
                       | Some t -> importProvidedType t),
                   findOriginalException)
 
-        TProvidedTypeExtensionPoint 
+        TProvidedTypeRepr 
             { ResolutionEnvironment=resolutionEnvironment
               ProvidedType=st
               LazyBaseType=lazyBaseTy
@@ -5539,17 +5688,17 @@ type Construct() =
     /// Create the field tables for a record or class type
     static member MakeRecdFieldsTable ucs: TyconRecdFields = 
         { FieldsByIndex = Array.ofList ucs 
-          FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
+          FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.LogicalName) }
 
     /// Create the union case tables for a union type
     static member MakeUnionCases ucs: TyconUnionData = 
         { CasesTable = 
             { CasesByIndex = Array.ofList ucs 
-              CasesByName = NameMap.ofKeyedList (fun uc -> uc.DisplayName) ucs }
+              CasesByName = NameMap.ofKeyedList (fun uc -> uc.LogicalName) ucs }
           CompiledRepresentation=newCache() }
 
     /// Create a node for a union type
-    static member MakeUnionRepr ucs = TUnionRepr (Construct.MakeUnionCases ucs)
+    static member MakeUnionRepr ucs = TFSharpUnionRepr (Construct.MakeUnionCases ucs)
 
     /// Create a new type parameter node
     static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 

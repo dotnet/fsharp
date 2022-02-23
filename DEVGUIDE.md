@@ -11,7 +11,8 @@ We recommend the following overall workflow when developing for this repository:
 * Always keep your fork up to date
 
 Before updating your fork, run this command:
-```
+
+```shell
 git remote add upstream https://github.com/dotnet/fsharp.git
 ```
 
@@ -21,7 +22,7 @@ This will make management of multiple forks and your own work easier over time.
 
 We recommend the following commands to update your fork:
 
-```
+```shell
 git checkout main
 git clean -xdf
 git fetch upstream
@@ -31,7 +32,7 @@ git push
 
 Or more succinctly:
 
-```
+```shell
 git checkout main && git clean -xdf && git fetch upstream && git rebase upstream/main && git push
 ```
 
@@ -44,20 +45,26 @@ Install the latest released [Visual Studio](https://www.visualstudio.com/downloa
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
+You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
 
 Building is simple:
 
-    build.cmd
+```shell
+build.cmd
+```
 
 Desktop tests can be run with:
 
-    build.cmd -test -c Release
+```shell
+build.cmd -test -c Release
+```
 
 After you build the first time you can open and use this solution in Visual Studio:
 
-    .\VisualFSharp.sln
-    
+```shell
+.\VisualFSharp.sln
+```
+
 If you don't have everything installed yet, you'll get prompted by Visual Studio to install a few more things. This is because we use a `.vsconfig` file that specifies all our dependencies.
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
@@ -65,31 +72,37 @@ If you are just developing the core compiler and library then building ``FSharp.
 We recommend installing the latest released Visual Studio and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET Core 3 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
+* [.NET 6](https://dotnet.microsoft.com/download/dotnet/6.0)
 
 You'll need to pass an additional flag to the build script:
 
-    build.cmd -noVisualStudio
-    
+```shell
+build.cmd -noVisualStudio
+```
+
 You can open `FSharp.sln` in your editor of choice.
 
 ## Developing on Linux or macOS
 
 For Linux/Mac:
 
-    ./build.sh
+```shell
+./build.sh
+```
 
 Running tests:
 
-    ./build.sh --test
-    
+```shell
+./build.sh --test
+```
+
 You can then open `FSharp.sln` in your editor of choice.
 
 ## Testing from the command line
 
 You can find all test options as separate flags. For example `build -testAll`:
 
-```
+```shell
   -testAll                  Run all tests
   -testCambridge            Run Cambridge tests
   -testCompiler             Run FSharpCompiler unit tests
@@ -108,9 +121,11 @@ Running any of the above will build the latest changes and run tests against the
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
 
-    pushd src\fsharp\FSharp.Compiler.Service
-    msbuild FSharp.Compiler.Service.fsproj /t:UpdateXlf
-    popd
+```shell
+pushd src\fsharp\FSharp.Compiler.Service
+msbuild FSharp.Compiler.Service.fsproj /t:UpdateXlf
+popd
+```
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
@@ -128,13 +143,15 @@ Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling chan
 
 Alternatively, you can do this entirely via the command line if you prefer that:
 
-    devenv.exe /rootsuffix RoslynDev
+```shell
+devenv.exe /rootsuffix RoslynDev
+```
 
 ### Install your changes into a current Visual Studio installation
 
 If you'd like to "run with your changes", you can produce a VSIX and install it into your current Visual Studio instance:
 
-```
+```shell
 VSIXInstaller.exe /u:"VisualFSharp"
 VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
 ```
@@ -155,14 +172,14 @@ Or hard crash on launch ("Unknown Error").
 
 To fix this, delete these folders:
 
-- `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)RoslynDev`
-- `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
+* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)RoslynDev`
+* `%localappdata%\Microsoft\VisualStudio\<version>_(some number here)`
 
 Where `<version>` corresponds to the latest Visual Studio version on your machine.
 
 ## Additional resources
 
-The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://github.com/dotnet/fsharp/blob/main/docs/compiler-guide.md). Please read and contribute to that guide.
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](https://github.com/dotnet/fsharp/blob/main/docs/index.md). Please read and contribute to that guide.
 
 See the "Debugging The Compiler" section of this [article](https://medium.com/@willie.tetlow/f-mentorship-week-1-36f51d3812d4) for some examples.
 

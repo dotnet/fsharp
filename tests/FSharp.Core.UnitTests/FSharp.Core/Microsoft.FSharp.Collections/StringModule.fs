@@ -21,7 +21,7 @@ Make sure each method works on:
 type StringModule() =
 
     [<Fact>]
-    member this.Concat() =
+    member _.Concat() =
         /// This tests the three paths of String.concat w.r.t. array, list, seq
         let execTest f expected arg = 
             let r1 = f (List.toSeq arg)
@@ -45,27 +45,27 @@ type StringModule() =
         CheckThrowsArgumentNullException(fun () -> String.concat "%%%" null |> ignore)
 
     [<Fact>]
-    member this.Iter() =
-        let result = ref 0
-        do String.iter (fun c -> result := !result + (int c)) "foo"
-        Assert.AreEqual(324, !result)
+    member _.Iter() =
+        let mutable result = 0
+        do String.iter (fun c -> result <- result + (int c)) "foo"
+        Assert.AreEqual(324, result)
 
-        do result := 0
-        do String.iter (fun c -> result := !result + (int c)) null
-        Assert.AreEqual(0, !result)
-
-    [<Fact>]
-    member this.IterI() =
-        let result = ref 0
-        do String.iteri(fun i c -> result := !result + (i*(int c))) "foo"
-        Assert.AreEqual(333, !result)
-
-        result := 0
-        do String.iteri(fun i c -> result := !result + (i*(int c))) null
-        Assert.AreEqual(0, !result)
+        do result <- 0
+        do String.iter (fun c -> result <- result + (int c)) null
+        Assert.AreEqual(0, result)
 
     [<Fact>]
-    member this.Map() =
+    member _.IterI() =
+        let mutable result = 0
+        do String.iteri(fun i c -> result <- result + (i*(int c))) "foo"
+        Assert.AreEqual(333, result)
+
+        result <- 0
+        do String.iteri(fun i c -> result <- result + (i*(int c))) null
+        Assert.AreEqual(0, result)
+
+    [<Fact>]
+    member _.Map() =
         let e1 = String.map id "xyz"
         Assert.AreEqual("xyz", e1)
 
@@ -97,7 +97,7 @@ type StringModule() =
         Assert.AreEqual(e8, "bdfhj")
 
     [<Fact>]
-    member this.MapI() =
+    member _.MapI() =
         let e1 = String.mapi (fun _ c -> c) "12345"
         Assert.AreEqual("12345", e1)
 
@@ -129,7 +129,7 @@ type StringModule() =
         Assert.AreEqual(e9, "acfjo")
 
     [<Fact>]
-    member this.Filter() =
+    member _.Filter() =
         let e1 = String.filter (fun c -> true) "Taradiddle"
         Assert.AreEqual("Taradiddle", e1)
 
@@ -150,7 +150,7 @@ type StringModule() =
         Assert.AreEqual(String.replicate 5_000 "RCDR", e5)
 
     [<Fact>]
-    member this.Collect() =
+    member _.Collect() =
         let e1 = String.collect (fun c -> "a"+string c) "foo"
         Assert.AreEqual("afaoao", e1)
 
@@ -161,7 +161,7 @@ type StringModule() =
         Assert.AreEqual("", e3)
 
     [<Fact>]
-    member this.Init() =
+    member _.Init() =
         let e1 = String.init 0 (fun i -> "foo")
         Assert.AreEqual("", e1)
 
@@ -174,7 +174,7 @@ type StringModule() =
         CheckThrowsArgumentException(fun () -> String.init -1 (fun c -> "") |> ignore)
 
     [<Fact>]
-    member this.Replicate() = 
+    member _.Replicate() = 
         let e1 = String.replicate 0 "Snickersnee"
         Assert.AreEqual("", e1)
 
@@ -214,7 +214,7 @@ type StringModule() =
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
     [<Fact>]
-    member this.Forall() = 
+    member _.Forall() = 
         let e1 = String.forall (fun c -> true) ""
         Assert.AreEqual(true, e1)
 
@@ -234,7 +234,7 @@ type StringModule() =
         Assert.AreEqual(true, e6)
 
     [<Fact>]
-    member this.Exists() = 
+    member _.Exists() = 
         let e1 = String.exists (fun c -> true) ""
         Assert.AreEqual(false, e1)
 
@@ -251,7 +251,7 @@ type StringModule() =
         Assert.AreEqual(false, e5)
 
     [<Fact>]
-    member this.Length() = 
+    member _.Length() = 
         let e1 = String.length ""
         Assert.AreEqual(0, e1)
 
@@ -262,19 +262,19 @@ type StringModule() =
         Assert.AreEqual(0, e3)
 
     [<Fact>]
-    member this.``Slicing with both index reverse behaves as expected``()  = 
+    member _.``Slicing with both index reverse behaves as expected``()  = 
         let str = "abcde"
 
         Assert.AreEqual(str.[^3..^1], str.[1..3])
 
     [<Fact>]
-    member this.``Indexer with reverse index behaves as expected``() =
+    member _.``Indexer with reverse index behaves as expected``() =
         let str = "abcde"
 
         Assert.AreEqual(str.[^1], 'd')
 
     [<Fact>] 
-    member this.SlicingUnboundedEnd() = 
+    member _.SlicingUnboundedEnd() = 
         let str = "123456"
 
         Assert.AreEqual(str.[-1..], str)
@@ -287,7 +287,7 @@ type StringModule() =
 
     
     [<Fact>] 
-    member this.SlicingUnboundedStart() = 
+    member _.SlicingUnboundedStart() = 
         let str = "123456"
 
         Assert.AreEqual(str.[..(-1)], (""))
@@ -302,7 +302,7 @@ type StringModule() =
 
 
     [<Fact>]
-    member this.SlicingBoundedStartEnd() =
+    member _.SlicingBoundedStartEnd() =
         let str = "123456"
 
         Assert.AreEqual(str.[*], str)
@@ -328,7 +328,7 @@ type StringModule() =
 
 
     [<Fact>]
-    member this.SlicingEmptyString() = 
+    member _.SlicingEmptyString() = 
 
         let empty = ""
         Assert.AreEqual(empty.[*], (""))
@@ -340,7 +340,7 @@ type StringModule() =
 
 
     [<Fact>]
-    member this.SlicingOutOfBounds() = 
+    member _.SlicingOutOfBounds() = 
         let str = "123456"
        
         Assert.AreEqual(str.[..6], "123456")

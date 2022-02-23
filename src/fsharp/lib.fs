@@ -397,12 +397,12 @@ let inline cacheOptByref (cache: byref<'T option>) f =
 // REVIEW: this is only used because we want to mutate a record field,
 // and because you cannot take a byref<_> of such a thing directly,
 // we cannot use 'cacheOptByref'. If that is changed, this can be removed.
-let inline cacheOptRef cache f =
-    match !cache with
+let inline cacheOptRef (cache: _ ref) f =
+    match cache.Value with
     | Some v -> v
     | None ->
        let res = f()
-       cache := Some res
+       cache.Value <-  Some res
        res
 
 let inline tryGetCacheValue cache =
@@ -543,18 +543,6 @@ module UnmanagedProcessExecutionOptions =
                             "Unable to enable unmanaged process execution option TerminationOnCorruption. " +
                             "HeapSetInformation() returned FALSE; LastError = 0x" +
                             GetLastError().ToString("X").PadLeft(8, '0') + "."))
-
-[<RequireQualifiedAccess>]
-module StackGuard =
-
-    open System.Runtime.CompilerServices
-
-    [<Literal>]
-    let private MaxUncheckedRecursionDepth = 20
-
-    let EnsureSufficientExecutionStack recursionDepth =
-        if recursionDepth > MaxUncheckedRecursionDepth then
-            RuntimeHelpers.EnsureSufficientExecutionStack ()
 
 [<RequireQualifiedAccess>]
 type MaybeLazy<'T> =

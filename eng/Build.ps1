@@ -51,6 +51,7 @@ param (
     [switch]$testCambridge,
     [switch]$testCompiler,
     [switch]$testCompilerService,
+    [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testScripting,
@@ -70,48 +71,49 @@ $BuildMessage = ""
 
 function Print-Usage() {
     Write-Host "Common settings:"
-    Write-Host "  -configuration <value>    Build configuration: 'Debug' or 'Release' (short: -c)"
-    Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
-    Write-Host "  -deployExtensions         Deploy built vsixes"
-    Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
-    Write-Host "  -noLog                    Turn off logging (short: -nolog)"
-    Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
+    Write-Host "  -configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+    Write-Host "  -verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
+    Write-Host "  -deployExtensions             Deploy built vsixes"
+    Write-Host "  -binaryLog                    Create MSBuild binary log (short: -bl)"
+    Write-Host "  -noLog                        Turn off logging (short: -nolog)"
+    Write-Host "  -excludeCIBinaryLog           When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
-    Write-Host "  -restore                  Restore packages (short: -r)"
-    Write-Host "  -norestore                Don't restore packages"
-    Write-Host "  -build                    Build main solution (short: -b)"
-    Write-Host "  -rebuild                  Rebuild main solution"
-    Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
-    Write-Host "  -sign                     Sign our binaries"
-    Write-Host "  -publish                  Publish build artifacts (e.g. symbols)"
-    Write-Host "  -launch                   Launch Visual Studio in developer hive"
-    Write-Host "  -help                     Print help and exit"
+    Write-Host "  -restore                      Restore packages (short: -r)"
+    Write-Host "  -norestore                    Don't restore packages"
+    Write-Host "  -build                        Build main solution (short: -b)"
+    Write-Host "  -rebuild                      Rebuild main solution"
+    Write-Host "  -pack                         Build NuGet packages, VS insertion manifests and installer"
+    Write-Host "  -sign                         Sign our binaries"
+    Write-Host "  -publish                      Publish build artifacts (e.g. symbols)"
+    Write-Host "  -launch                       Launch Visual Studio in developer hive"
+    Write-Host "  -help                         Print help and exit"
     Write-Host ""
     Write-Host "Test actions"
-    Write-Host "  -testAll                  Run all tests"
-    Write-Host "  -testCambridge            Run Cambridge tests"
-    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
-    Write-Host "  -testCompilerService      Run FSharpCompilerService unit tests"
-    Write-Host "  -testDesktop              Run tests against full .NET Framework"
-    Write-Host "  -testCoreClr              Run tests against CoreCLR"
-    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
-    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
-    Write-Host "  -testScripting            Run Scripting tests"
-    Write-Host "  -testVs                   Run F# editor unit tests"
-    Write-Host "  -testpack                 Verify built packages"
-    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
+    Write-Host "  -testAll                      Run all tests"
+    Write-Host "  -testCambridge                Run Cambridge tests"
+    Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
+    Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
+    Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
+    Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testCoreClr                  Run tests against CoreCLR"
+    Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
+    Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testScripting                Run Scripting tests"
+    Write-Host "  -testVs                       Run F# editor unit tests"
+    Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
-    Write-Host "  -ci                       Set when running on CI server"
-    Write-Host "  -official                 Set when building an official build"
-    Write-Host "  -bootstrap                Build using a bootstrap compiler"
-    Write-Host "  -msbuildEngine <value>    Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
-    Write-Host "  -procdump                 Monitor test runs with procdump"
-    Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
-    Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
-    Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
-    Write-Host "  -sourceBuild              Simulate building for source-build."
+    Write-Host "  -ci                           Set when running on CI server"
+    Write-Host "  -official                     Set when building an official build"
+    Write-Host "  -bootstrap                    Build using a bootstrap compiler"
+    Write-Host "  -msbuildEngine <value>        Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
+    Write-Host "  -procdump                     Monitor test runs with procdump"
+    Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
+    Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
+    Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
+    Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -196,7 +198,7 @@ function Update-Arguments() {
 function BuildSolution([string] $solutionName) {
     Write-Host "${solutionName}:"
 
-    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
+    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot  $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
@@ -441,6 +443,11 @@ try {
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
+    $nativeToolsDir = InitializeNativeTools
+    write-host "Native tools: $nativeToolsDir"
+    $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
+    $env:PERL5LIB = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\vendor\lib"
+
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
@@ -460,6 +467,9 @@ try {
         }
     }
 
+    if ($pack) {
+        BuildSolution "Microsoft.FSharp.Compiler.sln"
+    }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
     }
@@ -496,8 +506,6 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlPackageRoot = "$nugetPackages\StrawberryPerl\5.28.0.1";
-        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
@@ -505,8 +513,7 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
-        Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }
 
@@ -521,6 +528,13 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
     }
+
+
+    if ($testCompilerComponentTests) {
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+    }
+
 
     if ($testCompilerService) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
