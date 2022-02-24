@@ -103,8 +103,8 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.fsproj"
-                      Condition="'$(TargetFramework)' =='net472'">
-        <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+                      Condition="'$(TargetFramework)' == 'net472'">
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
 
