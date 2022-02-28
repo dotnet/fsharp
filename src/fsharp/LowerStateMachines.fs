@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.LowerStateMachines
 
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -10,6 +11,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -47,9 +49,9 @@ let sm_verbose = false
 #endif
 
 let rec (|OptionalResumeAtExpr|) g expr =
-    match expr with
+    match stripDebugPoints expr with
     | IfUseResumableStateMachinesExpr g (OptionalResumeAtExpr g res, _) -> res
-    | Expr.Sequential(ResumeAtExpr g pcExpr, codeExpr, NormalSeq, _, _m) -> (Some pcExpr, codeExpr)
+    | Expr.Sequential(DebugPoints(ResumeAtExpr g pcExpr, _), codeExpr, NormalSeq, _m) -> (Some pcExpr, codeExpr)
     | _ -> (None, expr)
 
 /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
@@ -79,22 +81,22 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
         printfn "LowerStateMachine: found state variable %s" bind.Var.DisplayName
     
     let (TBind(v, e, sp)) = bind
-    let sp, spm =
+    let addDebugPoint innerExpr =
         match sp with
-        | DebugPointAtBinding.Yes m -> DebugPointAtSequential.SuppressNeither, m
-        | _ -> DebugPointAtSequential.SuppressStmt, e.Range
+        | DebugPointAtBinding.Yes m -> Expr.DebugPoint(DebugPointAtLeafExpr.Yes m, innerExpr)
+        | _ -> innerExpr
     let vref = mkLocalValRef v
     { resBody with
-        phase1 = mkSequential sp m (mkValSet spm vref e) resBody.phase1
+        phase1 = mkSequential m (mkValSet m vref e |> addDebugPoint) resBody.phase1
         phase2 = (fun ctxt ->
             let generateBody = resBody.phase2 ctxt
             let generate =
-                mkSequential sp m
-                    (mkValSet spm vref e)
+                mkSequential m
+                    (mkValSet m vref e |> addDebugPoint)
                     // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
                     // state machine locals.
                     (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
-                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty generateBody
+                        mkCond DebugPointAtBinding.NoneAtInvisible m g.bool_ty generateBody
                             (mkCompGenSequential m 
                                 (mkValSet m vref (mkDefault (m, vref.Type)))
                                 (mkTrue g m))
@@ -254,9 +256,9 @@ type LowerStateMachine(g: TcGlobals) =
             | Some bodyExpr2 -> Some (mkLetRecBinds m binds bodyExpr2)
             | None -> None
 
-        | Expr.Sequential (x1, bodyExpr, sp, ty, m) -> 
+        | Expr.Sequential (x1, bodyExpr, sp, m) -> 
             match TryReduceApp env bodyExpr args with 
-            | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, ty, m))
+            | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, m))
             | None -> None
 
         // This construct arises from the 'mkDefault' in the 'Throw' case of an incomplete pattern match
@@ -266,7 +268,7 @@ type LowerStateMachine(g: TcGlobals) =
         | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
             let mutable newTyOpt = None
             let targets2 = 
-                targets |> Array.choose (fun (TTarget(vs, targetExpr, spTarget, flags)) -> 
+                targets |> Array.choose (fun (TTarget(vs, targetExpr, flags)) -> 
                     // Incomplete exception matching expressions give rise to targets with I_throw. 
                     // and System.Runtime.ExceptionServices.ExceptionDispatchInfo::Throw(...)
                     // 
@@ -279,8 +281,8 @@ type LowerStateMachine(g: TcGlobals) =
                         | Expr.Op (TOp.ILAsm ([ I_throw ], [_oldTy]), a, b, c), Some newTy -> 
                             let targetExpr2 = Expr.Op (TOp.ILAsm ([ I_throw ], [newTy]), a, b, c) 
                             Some targetExpr2
-                        | Expr.Sequential (Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1, Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
-                            let targetExpr2 = Expr.Sequential (e1, Expr.Const (Const.Zero, m, newTy), a, b, c)
+                        | Expr.Sequential (DebugPoints((Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1), rebuild1), Expr.Const (Const.Zero, m, _oldTy), a, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
+                            let targetExpr2 = Expr.Sequential (e1, rebuild1 (Expr.Const (Const.Zero, m, newTy)), a, c)
                             Some targetExpr2
                         | _ ->
 
@@ -291,7 +293,7 @@ type LowerStateMachine(g: TcGlobals) =
                         | None -> 
                             None
                     match targetExpr2Opt with 
-                    | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, spTarget, flags))
+                    | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, flags))
                     | None -> None)
             if targets2.Length = targets.Length then 
                 Some (Expr.Match (spBind, exprm, dtree, targets2, m, ty))
@@ -311,6 +313,11 @@ type LowerStateMachine(g: TcGlobals) =
         | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
             match TryReduceApp env bodyExpr args with
             | Some bodyExpr2 -> Some (mkTryWith g (bodyExpr2, filterVar, filterExpr, handlerVar, handlerExpr, m, resTy, spTry, spWith))
+            | None -> None
+
+        | Expr.DebugPoint (dp, innerExpr) -> 
+            match TryReduceApp env innerExpr args with 
+            | Some innerExpr2 -> Some (Expr.DebugPoint (dp, innerExpr2))
             | None -> None
 
         | _ -> 
@@ -416,10 +423,9 @@ type LowerStateMachine(g: TcGlobals) =
         else
             let initLabel = generateCodeLabel()
             let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
-            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointAtTarget.No)
+            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m))
             let dtree =
                 TDSwitch(
-                    DebugPointAtSwitch.No, 
                     pcExpr,
                     [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
                         for pc in pcs do
@@ -482,8 +488,8 @@ type LowerStateMachine(g: TcGlobals) =
 
             // The expanded code for state machines may use for loops, however the
             // body must be synchronous.
-            | ForLoopExpr (sp1, sp2, e1, e2, v, e3, m) ->
-                ConvertResumableFastIntegerForLoop env pcValInfo (sp1, sp2, e1, e2, v, e3, m)
+            | IntegerForLoopExpr (sp1, sp2, style, e1, e2, v, e3, m) ->
+                ConvertResumableIntegerForLoop env pcValInfo (sp1, sp2, style, e1, e2, v, e3, m)
 
             // The expanded code for state machines may use try/with....
             | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
@@ -501,7 +507,10 @@ type LowerStateMachine(g: TcGlobals) =
                 ConvertResumableLet env pcValInfo (bind, bodyExpr, m)
 
             | Expr.LetRec _ ->
-                  Result.Error (FSComp.SR.reprResumableCodeContainsLetRec())
+                Result.Error (FSComp.SR.reprResumableCodeContainsLetRec())
+
+            | Expr.DebugPoint(dp, innerExpr) ->
+                ConvertResumableDebugPoint env pcValInfo (dp, innerExpr)
 
             // Arbitrary expression
             | _ -> 
@@ -542,7 +551,7 @@ type LowerStateMachine(g: TcGlobals) =
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
                 let lab = (match reenterLabOpt with Some l -> l | _ -> generateCodeLabel())
-                mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                mkCond DebugPointAtBinding.NoneAtSticky m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
             { phase1 = recreate None resNone.phase1 resSome.phase1
               phase2 = (fun ctxt ->
                 let generate2 = resSome.phase2 ctxt
@@ -605,6 +614,18 @@ type LowerStateMachine(g: TcGlobals) =
             |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
+    and ConvertResumableDebugPoint env pcValInfo (dp, innerExpr) =
+        let res1 = ConvertResumableCode env pcValInfo innerExpr
+        match res1 with 
+        | Result.Ok res1 ->
+            { res1 with 
+               phase1 = Expr.DebugPoint(dp, res1.phase1)
+               phase2 = (fun ctxt ->
+                let generate1 = res1.phase2 ctxt
+                Expr.DebugPoint(dp, generate1)) }
+            |> Result.Ok
+        | Result.Error err -> Result.Error err
+
     and ConvertResumableWhile env pcValInfo (sp1, sp2, guardExpr, bodyExpr, m) =
         if sm_verbose then printfn "WhileExpr" 
 
@@ -659,8 +680,8 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
-    and ConvertResumableFastIntegerForLoop env pcValInfo (sp1, sp2, e1, e2, v, e3, m) =
-        if sm_verbose then printfn "ForLoopExpr" 
+    and ConvertResumableIntegerForLoop env pcValInfo (spFor, spTo, style, e1, e2, v, e3, m) =
+        if sm_verbose then printfn "IntegerForLoopExpr" 
         let res1 = ConvertResumableCode env pcValInfo e1
         let res2 = ConvertResumableCode env pcValInfo e2
         let res3 = ConvertResumableCode env pcValInfo e3
@@ -670,7 +691,7 @@ type LowerStateMachine(g: TcGlobals) =
             if eps.Length > 0 then 
                 Result.Error(FSComp.SR.reprResumableCodeContainsFastIntegerForLoop())
             else
-                { phase1 = mkFor g (sp1, v, res1.phase1, sp2, res2.phase1, res3.phase1, m)
+                { phase1 = mkIntegerForLoop g (spFor, spTo, v, res1.phase1, style, res2.phase1, res3.phase1, m)
                   phase2 = (fun ctxt -> 
                         let e1R = res1.phase2 ctxt
                         let e2R = res2.phase2 ctxt
@@ -685,7 +706,7 @@ type LowerStateMachine(g: TcGlobals) =
                                     e3R 
                                     (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
 
-                        mkFor g (sp1, v, e1R, sp2, e2R, e3R2, m))
+                        mkIntegerForLoop g (spFor, spTo, v, e1R, style, e2R, e3R2, m))
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
                   thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
@@ -747,8 +768,9 @@ type LowerStateMachine(g: TcGlobals) =
         // lower all the targets. 
         let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
         let tglArray = 
-            targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> 
+            targets |> Array.map (fun (TTarget(_vs, targetExpr, _)) -> 
                 ConvertResumableCode env pcValInfo targetExpr)
+
         match (tglArray |> Array.forall (function Result.Ok _ -> true | Result.Error _ -> false)) with
         | true ->
             let tglArray = tglArray |> Array.map (function Result.Ok v -> v | _ -> failwith "unreachable")
@@ -756,25 +778,25 @@ type LowerStateMachine(g: TcGlobals) =
             let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
             let resumableVars =
                 (emptyFreeVars, Array.zip targets tglArray)
-                ||> Array.fold (fun fvs (TTarget(_vs, _, _spTarget, _), res) ->
+                ||> Array.fold (fun fvs (TTarget(_vs, _, _), res) ->
                     if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.resumableVars)
             let stateVars = 
-                (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
+                (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _), res) -> 
                     let stateVars = vs |> List.filter (fun v -> res.resumableVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
                     stateVars @ res.stateVars)
             let thisVars = tglArray |> Array.toList |> List.collect (fun res -> res.thisVars) 
             { phase1 = 
                 let gtgs =
-                    (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res -> 
+                    (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, _)) res -> 
                         let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
-                        TTarget(vs, res.phase1, spTarget, Some flags))
+                        TTarget(vs, res.phase1, Some flags))
                 primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
 
               phase2 = (fun ctxt ->
                             let gtgs =
-                                (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
+                                (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, _)) res ->
                                     let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
-                                    TTarget(vs, res.phase2 ctxt, spTarget, Some flags))
+                                    TTarget(vs, res.phase2 ctxt, Some flags))
                             let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
                             generate)
 

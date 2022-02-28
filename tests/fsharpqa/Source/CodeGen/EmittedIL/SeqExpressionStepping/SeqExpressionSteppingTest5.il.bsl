@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionSteppingTest5
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {611C4D82-2432-9401-A745-0383824D1C61}
+// MVID: {61FD4A6D-2432-9401-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04AD0000
+// Image base: 0x06FD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -136,6 +136,7 @@
         IL_0033:  ldc.i4.0
         IL_0034:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
         IL_0039:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
+        .line 6,6 : 15,18 ''
         IL_003e:  ldarg.0
         IL_003f:  ldc.i4.1
         IL_0040:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
@@ -212,7 +213,7 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       157 (0x9d)
+        // Code size       156 (0x9c)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [mscorlib]System.Exception e)
@@ -272,6 +273,7 @@
 
           .line 100001,100001 : 0,0 ''
           IL_004e:  nop
+          .line 12,12 : 15,22 ''
           IL_004f:  ldarg.0
           IL_0050:  ldc.i4.4
           IL_0051:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
@@ -300,7 +302,6 @@
         {
           IL_0083:  castclass  [mscorlib]System.Exception
           IL_0088:  stloc.1
-          .line 5,5 : 19,20 ''
           IL_0089:  ldloc.1
           IL_008a:  stloc.0
           IL_008b:  leave.s    IL_008d
@@ -310,20 +311,18 @@
         IL_008d:  nop
         IL_008e:  br         IL_0000
 
-        .line 5,5 : 19,20 ''
-        IL_0093:  nop
         .line 100001,100001 : 0,0 ''
-        IL_0094:  ldloc.0
-        IL_0095:  ldnull
-        IL_0096:  cgt.un
-        IL_0098:  brfalse.s  IL_009c
+        IL_0093:  ldloc.0
+        IL_0094:  ldnull
+        IL_0095:  cgt.un
+        IL_0097:  brfalse.s  IL_009b
 
         .line 100001,100001 : 0,0 ''
-        IL_009a:  ldloc.0
-        IL_009b:  throw
+        IL_0099:  ldloc.0
+        IL_009a:  throw
 
         .line 100001,100001 : 0,0 ''
-        IL_009c:  ret
+        IL_009b:  ret
       } // end of method f4@5::Close
 
       .method public strict virtual instance bool 

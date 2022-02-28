@@ -447,6 +447,12 @@
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
     </Compile>
+    <Compile Include="..\SyntaxTrivia.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTrivia.fsi</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTrivia.fs">
+      <Link>ParserAndUntypedAST\SyntaxTrivia.fs</Link>
+    </Compile>
     <Compile Include="..\SyntaxTree.fsi">
       <Link>ParserAndUntypedAST\SyntaxTree.fsi</Link>
     </Compile>
@@ -978,6 +984,12 @@
     <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="default.win32manifest">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

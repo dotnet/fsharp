@@ -73,7 +73,7 @@ type PdbMethodData =
       LocalSignatureToken: int32
       Params: PdbLocalVar[]
       RootScope: PdbMethodScope option
-      Range: (PdbSourceLoc * PdbSourceLoc) option
+      DebugRange: (PdbSourceLoc * PdbSourceLoc) option
       DebugPoints: PdbDebugPoint[]
     }
 
@@ -120,14 +120,14 @@ type HashAlgorithm =
 
 val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> int64 * BlobContentId * MemoryStream * string * byte[]
 
-val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> int64 * BlobContentId * MemoryStream
+val compressPortablePdbStream: stream:MemoryStream -> MemoryStream
 
-val embedPortablePdbInfo: uncompressedLength: int64 -> contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
+val getInfoForEmbeddedPortablePdb: uncompressedLength: int64 -> contentId: BlobContentId -> compressedStream: MemoryStream -> pdbfile: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> deterministic: bool -> idd[]
 
-val writePortablePdbInfo: contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
+val getInfoForPortablePdb: contentId: BlobContentId -> pdbfile: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
 
 #if !FX_NO_PDB_WRITER
-val writePdbInfo : showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
+val writePdbInfo : showTimes:bool -> outfile:string -> pdbfile:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
 #endif
 
 /// Check to see if a scope has a local with the same name as any of its children

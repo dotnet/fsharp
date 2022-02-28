@@ -532,12 +532,13 @@ type CalledMeth<'T>
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
                     
-                    // Check if all optional/out arguments are byref-out args
-                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
-                        unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
-                    // Check if all optional/out arguments are optional args
-                    elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
-                        unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
+                    let isOpt x = x.OptArgInfo.IsOptional
+                    let isOut x = x.IsOutArg && isByrefTy g x.CalledArgumentType
+
+                    // Check if all args are optional or byref-out args, same arg cannot be both.
+                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> isOpt x <> isOut x) then
+                        let unnamedCalledOptArgs, unnamedCalledOutArgs = unnamedCalledOptOrOutArgs |> List.partition isOpt
+                        unnamedCalledArgsTrimmed, unnamedCalledOptArgs, unnamedCalledOutArgs
                     // Otherwise drop them on the floor
                     else
                         unnamedCalledArgs, [], []
@@ -1804,7 +1805,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond DebugPointAtBinding.NoneAtSticky m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
@@ -1872,7 +1873,7 @@ module ProvidedMethodCalls =
                 let vT = addVar v
                 let e3T = exprToExpr  e3
                 removeVar v
-                let exprT = mkFastForLoop g (DebugPointAtFor.No, m, vT, e1T, true, e2T, e3T)
+                let exprT = mkFastForLoop g (DebugPointAtFor.No, DebugPointAtInOrTo.No, m, vT, e1T, true, e2T, e3T)
                 None, (exprT, tyOfExpr g exprT)
             | ProvidedNewDelegateExpr (delegateTy, boundVars, delegateBodyExpr) ->
                 let delegateTy, boundVars, delegateBodyExpr = exprType.PApply3((fun _ -> (delegateTy, boundVars, delegateBodyExpr)), m)

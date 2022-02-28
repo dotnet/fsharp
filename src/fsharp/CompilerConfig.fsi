@@ -261,7 +261,7 @@ type TcConfigBuilder =
 #endif
       mutable pause: bool
       mutable alwaysCallVirt: bool
-      mutable noDebugData: bool
+      mutable noDebugAttributes: bool
 
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
@@ -272,6 +272,7 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
+      mutable fsiMultiAssemblyEmit: bool
       rangeForErrors: range
       sdkDirOverride: string option
 
@@ -452,11 +453,14 @@ type TcConfig =
 #endif
     member pause: bool
     member alwaysCallVirt: bool
-    member noDebugData: bool
+    member noDebugAttributes: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool
+
+    /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
+    member fsiMultiAssemblyEmit: bool
 
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 

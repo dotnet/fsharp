@@ -193,8 +193,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
-        <source>Re-format indentation on paste</source>
-        <target state="translated">Ponownie formatuj wcięcia przy wklejaniu</target>
+        <source>Re-format indentation on paste (Experimental)</source>
+        <target state="translated">Ponowne formatowanie wcięcia przy wklejeniu (eksperymentalne)</target>
         <note />
       </trans-unit>
       <trans-unit id="Suggest_names_for_errors_code_fix">

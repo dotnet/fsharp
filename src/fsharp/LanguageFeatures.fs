@@ -45,6 +45,7 @@ type LanguageFeature =
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | MLCompatRevisions
+    | BetterExceptionPrinting
 
 /// LanguageVersion management
 type LanguageVersion (versionText) =
@@ -100,25 +101,28 @@ type LanguageVersion (versionText) =
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
+            LanguageFeature.BetterExceptionPrinting,previewVersion
         ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
 
-    let specified =
-        match versionText with
+    static let getVersionFromString (version:string) =
+        match version.ToUpperInvariant() with
         | "?" -> 0m
-        | "preview" -> previewVersion
-        | "default" -> defaultVersion
-        | "latest" -> latestVersion
-        | "latestmajor" -> latestMajorVersion
+        | "PREVIEW" -> previewVersion
+        | "DEFAULT" -> defaultVersion
+        | "LATEST" -> latestVersion
+        | "LATESTMAJOR" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
-        | "5.0" -> languageVersion50
-        | "6.0" -> languageVersion60
+        | "5.0" | "5" -> languageVersion50
+        | "6.0" | "6" -> languageVersion60
         | _ -> 0m
 
+    let specified = getVersionFromString versionText
+
     let versionToString v =
-        if v = previewVersion then "'preview'"
+        if v = previewVersion then "'PREVIEW'"
         else string v
 
     let specifiedString = versionToString specified
@@ -131,11 +135,8 @@ type LanguageVersion (versionText) =
 
     /// Has preview been explicitly specified
     member _.IsExplicitlySpecifiedAs50OrBefore() =
-        match versionText with
-        | "4.6" -> true
-        | "4.7" -> true
-        | "5.0" -> true
-        | _ -> false
+        let v = getVersionFromString versionText
+        v <> 0.0m && v <= 5.0m
 
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled =
@@ -143,9 +144,8 @@ type LanguageVersion (versionText) =
 
     /// Does the languageVersion support this version string
     member _.ContainsVersion version =
-        match version with
-        | "?" | "preview" | "default" | "latest" | "latestmajor" -> true
-        | _ -> languageVersions.Contains specified
+        let langVersion = getVersionFromString version
+        langVersion <> 0m && languageVersions.Contains langVersion
 
     /// Get a list of valid strings for help text
     member _.ValidOptions = validOptions
@@ -198,6 +198,7 @@ type LanguageVersion (versionText) =
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions()
+        | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -132,6 +132,11 @@
         <target state="translated">'module' 키워드 오른쪽에 있는 특성</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">'exception' 선언에 대한 'Message' 속성 자동 생성</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">기본 인터페이스 멤버 사용</target>
@@ -295,6 +300,11 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">잘못된 지시문 '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">알 수 없는 디버그 지점 '{0}'. 사용 가능한 디버그 지점은 '{1}'입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -7628,8 +7638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">구조체 형식을 선언하는 데 사용됩니다. 제네릭 매개 변수 제약 조건에서도 사용됩니다. 모듈 정의에서 OCaml 호환성에 대해 사용됩니다.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">구조체 유형을 선언하는 데 사용됩니다. 일반 매개 변수 제약 조건에서도 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

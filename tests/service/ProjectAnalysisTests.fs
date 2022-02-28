@@ -4621,7 +4621,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     // ThisValue in these cases, this is only used when the symbol
     // is implicit in the constructor
     match getExpr 4 with
-    | Let((b,_),_) ->
+    | Let((b,_, _),_) ->
         b.IsConstructorThisValue && not b.IsMemberThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
@@ -5664,6 +5664,7 @@ let checkContentAsScript content =
 [<Test>]
 let ``References from #r nuget are included in script project options`` () =
     let checkResults = checkContentAsScript """
+#i "nuget:https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json"
 #r "nuget: Dapper"
 """
     let assemblyNames =

@@ -132,6 +132,11 @@
         <target state="translated">Attribute rechts vom "Module"-Schlüsselwort</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">Automatische Generierung der Eigenschaft „Message“ für „exception“-Deklarationen</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
@@ -295,6 +300,11 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Ungültige Direktive "#{0} {1}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">Unbekannter Debugpunkt „{0}“. Die verfügbaren Debugpunkte sind „{1}“.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
@@ -7628,8 +7638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">Wird verwendet, um einen Strukturtyp zu deklarieren. Wird auch in generischen Parameterbeschränkungen verwendet. Wird für die OCaml-Kompatibilität in Moduldefinitionen verwendet.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">Verwendet zum Deklarieren eines Strukturtyps. Auch verwendet in generischen Parametereinschränkungen.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

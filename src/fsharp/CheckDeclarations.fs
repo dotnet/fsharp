@@ -25,6 +25,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -469,7 +470,7 @@ module TcRecdUnionAndEnumDeclarations =
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m, _)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -752,7 +753,7 @@ module IncrClassChecking =
             let ctorTy = mkFunTy argty objTy    
             // REVIEW: no attributes can currently be specified for the implicit constructor 
             let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
-            let memberFlags = CtorMemberFlags 
+            let memberFlags = CtorMemberFlags SynMemberFlagsTrivia.Zero
                                   
             let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
             let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
@@ -780,8 +781,8 @@ module IncrClassChecking =
                 let cctorTy = mkFunTy cenv.g.unit_ty cenv.g.unit_ty
                 let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
                 let id = ident ("cctor", m)
-                CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
-                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], ClassCtorMemberFlags, valSynData, id, false)
+                CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
+                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
                 let partialValReprInfo = TranslateTopValSynInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = TypeScheme(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG partialValReprInfo
@@ -953,7 +954,7 @@ module IncrClassChecking =
                     let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo 0 v.Type v.Range
 
                     let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
-                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberKind.Member
+                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
                     let id = mkSynId v.Range name
                     let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 
@@ -975,8 +976,13 @@ module IncrClassChecking =
                         ValReprInfo(tpNames@ValReprInfo.InferTyparInfo copyOfTyconTypars, args, ret)
                                           
                     let prelimTyschemeG = TypeScheme(copyOfTyconTypars@tps, memberTauTy)
+
+                    // NOTE: putting isCompilerGenerated=true here is strange.  The method is not public, nor is
+                    // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
                     let memberValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
+
                     let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
+
                     reportIfUnused()
                     InMethod(isStatic, methodVal, topValInfo)
 
@@ -1143,6 +1149,7 @@ module IncrClassChecking =
                         Some (localRep.MakeValueGetAddress readonly thisValOpt thisTyInst safeStaticInitInfo v m)
 
                 | _ -> None
+
             RewriteExpr { PreIntercept = Some FixupExprNode 
                           PostTransform = (fun _ -> None)
                           PreInterceptBinding = None
@@ -1300,7 +1307,9 @@ module IncrClassChecking =
                      | _, (Expr.Lambda _ | Expr.TyLambda _) -> v.Range
                      | DebugPointAtBinding.Yes m, _ -> m 
                      | _ -> v.Range
+
                 let assignExpr = reps.MakeValueAssign (Some thisVal) thisTyInst NoSafeInitInfo v rhsExpr m
+
                 let adjustSafeInitFieldExprOpt = 
                     if isStatic then 
                         match safeStaticInitInfo with 
@@ -1314,8 +1323,17 @@ module IncrClassChecking =
                         None
 
                 (isPriorToSuperInit, (fun e -> 
-                     let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
-                     mkSequential DebugPointAtSequential.SuppressNeither m assignExpr e)), []
+                     let e =
+                         match adjustSafeInitFieldExprOpt with
+                         | None -> e
+                         | Some adjustExpr -> mkCompGenSequential m adjustExpr e
+
+                     let assignExpr =
+                         match spBind with
+                         | DebugPointAtBinding.Yes _ -> mkDebugPoint m assignExpr
+                         | _ -> assignExpr
+
+                     mkSequential m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
         /// binding in the implicit class construction sequence 
@@ -1343,7 +1361,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential doExpr.Range (Expr.DebugPoint(DebugPointAtLeafExpr.Yes doExpr.Range, doExpr)) e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1363,7 +1381,7 @@ module IncrClassChecking =
                       | Some v -> 
                         let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
 
@@ -1377,7 +1395,7 @@ module IncrClassChecking =
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
                       | NoSafeInitInfo ->  
@@ -1464,8 +1482,14 @@ module IncrClassChecking =
                     | _ -> 
                         inheritsExpr
 
-                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.SuppressNeither else DebugPointAtSequential.SuppressStmt)
-                mkSequential spAtSuperInit m inheritsExpr ctorBody
+                // Add the debug point
+                let inheritsExpr =
+                    if inheritsIsVisible then
+                        Expr.DebugPoint(DebugPointAtLeafExpr.Yes inheritsExpr.Range, inheritsExpr)
+                    else
+                        inheritsExpr
+                
+                mkSequential m inheritsExpr ctorBody
 
             // Add the normal <let/do bindings> 
             let ctorBody = List.foldBack (fun (_, binder) acc -> binder acc) ctorInitActionsPre ctorBody
@@ -1872,7 +1896,7 @@ module MutRecBindingChecking =
                                 
                                     // Type check local recursive binding 
                                     let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo, NoNewSlots, ClassLetBinding isStatic, bind))
-                                    let binds, env, tpenv = TcLetrec ErrorOnOverrides cenv envForBinding tpenv (binds, scopem(*bindsm*), scopem)
+                                    let binds, env, tpenv = TcLetrecBindings ErrorOnOverrides cenv envForBinding tpenv (binds, scopem(*bindsm*), scopem)
                                     let bindRs = [IncrClassBindingGroup(binds, isStatic, true)]
                                     binds, bindRs, env, tpenv 
                                 else
@@ -2084,6 +2108,26 @@ module MutRecBindingChecking =
                                 mkUnit g tcref.Range, false, None, defnCs
                             else
                                 let inheritsExpr, _ = TcNewExpr cenv envForDecls tpenv g.obj_ty None true (SynExpr.Const (SynConst.Unit, tcref.Range)) tcref.Range
+
+                                // If there is no 'inherits' and no simple non-static 'let' of a non-method then add a debug point at the entry to the constructor over the type name itself.
+                                let addDebugPointAtImplicitCtorArguments =
+                                    defnCs |> List.forall (fun defnC ->
+                                        match defnC with
+                                        | Phase2CIncrClassBindings binds -> 
+                                            binds |> List.forall (fun bind ->
+                                                match bind with
+                                                | IncrClassBindingGroup(binds, isStatic, _) -> 
+                                                    isStatic || 
+                                                    binds |> List.forall (IncrClassReprInfo.IsMethodRepr cenv)
+                                                | IncrClassDo(_, isStatic) ->
+                                                    isStatic)
+                                        | _ -> true) 
+
+                                let inheritsExpr =
+                                    if addDebugPointAtImplicitCtorArguments then
+                                        mkDebugPoint tcref.Range inheritsExpr
+                                    else
+                                        inheritsExpr
                                 inheritsExpr, false, None, defnCs
                        
                     let envForTycon = MakeInnerEnvForTyconRef envForDecls tcref false 
@@ -2911,7 +2955,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -2922,7 +2966,7 @@ module TcExceptionDeclarations =
         let doc = doc.ToXmlDoc(true, Some [])
         Construct.NewExn cpath id vis repr attrs doc
 
-    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(_, _, args, _, _, _), reprIdOpt, _, _, m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
         let g = cenv.g 
         let args = match args with SynUnionCaseKind.Fields args -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
         let ad = env.AccessRights
@@ -3004,7 +3048,7 @@ module TcExceptionDeclarations =
         binds, exnc
 
 
-    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, aug, m), scopem) = 
+    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, _, aug, m), scopem) = 
         let binds1, exnc = TcExnDefnCore cenv envInitial parent core
         let envMutRec = AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
 
@@ -3111,7 +3155,7 @@ module EstablishTypeDefinitionCores =
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
 
-              for SynUnionCase (_, _, args, _, _, m) in unionCases do 
+              for SynUnionCase (caseType=args; range=m) in unionCases do 
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
                   for SynField(_, _, _, ty, _, _, _, m) in flds do 
@@ -4718,7 +4762,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> true 
                             | _ -> false
                         let attribs = mkAttributeList attribs mWholeAutoProp
-                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, synExpr, synExpr.Range, [], attribs, None)
+                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
@@ -4753,7 +4797,7 @@ module TcDeclarations =
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4766,7 +4810,7 @@ module TcDeclarations =
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
@@ -5067,10 +5111,10 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = List.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) idvs env
             return env
 
-        | SynModuleSigDecl.NestedModule(SynComponentInfo(attributes=Attributes attribs; longId=longPath; xmlDoc=xml; accessibility=vis; range=im) as compInfo, isRec, mEquals, mdefs, m) ->
+        | SynModuleSigDecl.NestedModule(SynComponentInfo(attributes=Attributes attribs; longId=longPath; xmlDoc=xml; accessibility=vis; range=im) as compInfo, isRec, mdefs, m, trivia) ->
             if isRec then 
                 // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
-                let modDecl = SynModuleSigDecl.NestedModule(compInfo, false, mEquals, mdefs, m)
+                let modDecl = SynModuleSigDecl.NestedModule(compInfo, false, mdefs, m, trivia)
 
                 return! TcSignatureElementsMutRec cenv parent typeNames endm None env [modDecl]
             else
@@ -5136,7 +5180,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let enclosingNamespacePath, defs = 
                 if kind.IsModule then 
                     let nsp, modName = List.frontAndBack longId
-                    let modDecl = [SynModuleSigDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, None, defs, m)] 
+                    let modDecl = [SynModuleSigDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, defs, m, SynModuleSigDeclNestedModuleTrivia.Zero)] 
                     nsp, modDecl
                 else 
                     longId, defs
@@ -5225,7 +5269,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _, doc, vis, m)) = exnRepr
+                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
                       decls, (false, false)
@@ -5282,7 +5326,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
 let ElimModuleDoBinding bind =
     match bind with 
     | SynModuleDecl.DoExpr (spExpr, expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, None, expr, m, spExpr)
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, spExpr, SynBindingTrivia.Zero)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
@@ -5365,7 +5409,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               if letrec then 
                 let scopem = unionRanges m scopem
                 let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(containerInfo, NoNewSlots, ModuleOrMemberBinding, bind))
-                let binds, env, _ = TcLetrec WarnOnOverrides cenv env tpenv (binds, m, scopem)
+                let binds, env, _ = TcLetrecBindings WarnOnOverrides cenv env tpenv (binds, m, scopem)
                 return ((fun e -> TMDefRec(true, [], [], binds |> List.map ModuleOrNamespaceBinding.Binding, m) :: e), []), env, env
               else 
                 let binds, env, _ = TcLetBindings cenv env containerInfo ModuleOrMemberBinding tpenv (binds, m, scopem)
@@ -5380,12 +5424,12 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.HashDirective _ -> 
           return (id, []), env, env
 
-      | SynModuleDecl.NestedModule(compInfo, isRec, mEquals, mdefs, isContinuingModule, m) ->
+      | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m, trivia) ->
 
           // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
           if isRec then 
               assert (not isContinuingModule)
-              let modDecl = SynModuleDecl.NestedModule(compInfo, false, mEquals, mdefs, isContinuingModule, m)
+              let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m, trivia)
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
               let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo
@@ -5449,7 +5493,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           let enclosingNamespacePath, defs = 
               if kind.IsModule then 
                   let nsp, modName = List.frontAndBack longId
-                  let modDecl = [SynModuleDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, None, defs, true, m)] 
+                  let modDecl = [SynModuleDecl.NestedModule(SynComponentInfo(attribs, None, [], [modName], xml, false, vis, m), false, defs, true, m, SynModuleDeclNestedModuleTrivia.Zero)] 
                   nsp, modDecl
               else 
                   longId, defs
@@ -5561,10 +5605,10 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange, ref [])) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
-              | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _repr, doc, vis, m)) = repr
+              | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
+                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, members, None, m)) ]
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.HashDirective _ -> 
@@ -5709,7 +5753,8 @@ let emptyTcEnv g =
       eFamilyType = None
       eCtorInfo = None
       eCallerMemberName = None 
-      eLambdaArgInfos = [] }
+      eLambdaArgInfos = []
+      eIsControlFlow = false }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.collectFold (fun env (ccu, autoOpens, internalsVisible) -> 
@@ -5959,7 +6004,13 @@ let TypeCheckOneImplFile
             | _ -> ()
         | _ -> ())
 
-    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
+    let namedDebugPointsForInlinedCode =
+       cenv.namedDebugPointsForInlinedCode
+       |> Seq.toArray
+       |> Array.map (fun (KeyValue(k,v)) -> (k,v))
+       |> Map
+
+    let implFile = TImplFile (qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 

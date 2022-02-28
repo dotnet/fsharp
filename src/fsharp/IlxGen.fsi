@@ -79,8 +79,6 @@ type public IlxGenResults =
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
     {
-      LookupFieldRef: ILFieldRef -> FieldInfo
-      LookupMethodRef: ILMethodRef -> MethodInfo
       LookupTypeRef: ILTypeRef -> Type
       LookupType: ILType -> Type
     } 

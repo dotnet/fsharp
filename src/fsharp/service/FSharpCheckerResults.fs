@@ -974,6 +974,9 @@ type internal TypeCheckInfo
                 Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
 
+            // No completion at '...: string'
+            | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
+
             // Completion at ' SomeMethod( ... ) ' with named arguments
             | Some(CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
@@ -1022,7 +1025,13 @@ type internal TypeCheckInfo
                         | _ -> false), denv, m)
 
             // Completion at '(x: ...)"
-            | Some CompletionContext.PatternType ->
+            | Some CompletionContext.PatternType
+            // Completion at  '| Case1 of ...'
+            | Some CompletionContext.UnionCaseFieldsDeclaration
+            // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
+            | Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
+            // Completion at 'Field1: ...'
+            | Some(CompletionContext.RecordField(RecordContext.Declaration false)) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items
@@ -1753,7 +1762,7 @@ module internal ParseAndCheckFile =
                 let isExe = options.IsExe
 
                 try
-                    ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
+                    ParseInput(lexfun, options.ErrorSeverityOptions, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e range0 // don't re-raise any exceptions, we must return None.
                     EmptyParsedInput(fileName, (isLastCompiland, isExe)))
@@ -2093,7 +2102,7 @@ type FSharpCheckFileResults
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
-                let (TImplFile (_, _, mexpr, _, _, _)) = implFile
+                let (TImplFile (implExprWithSig=mexpr)) = implFile
                 let ad =
                     match scopeOptX with
                     | Some scope -> scope.AccessRights
@@ -2256,7 +2265,8 @@ type FSharpCheckProjectResults
         let importMap = tcImports.GetImportMap()
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
         let tcConfig = getTcConfig()
-        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)
+        let isIncrementalFragment = false
+        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
         let mimpls =
             match optimizedImpls with
             | TypedAssemblyAfterOptimization files ->

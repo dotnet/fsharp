@@ -66,7 +66,7 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let mdefs = tinfo.RawMetadata.Methods
-            let mdefs = match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm
+            let mdefs = match optFilter with None -> mdefs.AsList() | Some nm -> mdefs.FindByName nm
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -160,7 +160,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g origTy
             let pdefs = tinfo.RawMetadata.Properties
-            let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
+            let pdefs = match optFilter with None -> pdefs.AsList() | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pdef -> ILProp(ILPropInfo(tinfo, pdef))) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -312,7 +312,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let fdefs = tinfo.RawMetadata.Fields
-                let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
+                let fdefs = match optFilter with None -> fdefs.AsList() | Some nm -> fdefs.LookupByName nm
                 fdefs |> List.map (fun pd -> ILFieldInfo(tinfo, pd)) 
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
@@ -337,7 +337,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
                 let edefs = tinfo.RawMetadata.Events
-                let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
+                let edefs = match optFilter with None -> edefs.AsList() | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
                     let ileinfo = ILEventInfo(tinfo, edef)
                     if IsILEventInfoAccessible g amap m ad ileinfo then 
@@ -421,7 +421,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m (interfaceTys: TType list) ty acc =
         match tryAppTy g ty with
         | ValueSome (tcref, _) when tcref.IsILTycon && tcref.ILTyconRawMetadata.IsInterface ->
-            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
+            let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList()
             let mdefs = tcref.ILTyconRawMetadata.Methods
 
             // MethodImpls contains a list of methods that override.

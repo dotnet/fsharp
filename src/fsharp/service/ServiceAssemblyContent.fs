@@ -153,7 +153,7 @@ module AssemblyContent =
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
-        let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
+        let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
         let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
