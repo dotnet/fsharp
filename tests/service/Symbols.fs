@@ -702,7 +702,7 @@ comp {
                     SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                         SynModuleDecl.DoExpr(expr = SynExpr.App(argExpr =
                             SynExpr.ComputationExpr(expr =
-                                SynExpr.LetOrUseBang(equalsRange = Some mLetBangEquals
+                                SynExpr.LetOrUseBang(trivia = { EqualsRange = Some mLetBangEquals }
                                                      andBangs = [ SynExprAndBang(trivia= { EqualsRange = mAndBangEquals }) ]))))
                     ])
                 ])) ->

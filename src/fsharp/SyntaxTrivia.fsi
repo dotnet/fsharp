@@ -53,13 +53,22 @@ type SynExprLambdaTrivia =
     }
     static member Zero: SynExprLambdaTrivia
 
-/// Represents additional information for SynExpr.Lambda
+/// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+/// Represents additional information for SynExpr.LetOrUseBang
+[<NoEquality; NoComparison>]
+type SynExprLetOrUseBangTrivia =
+    {
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynExprLetOrUseBangTrivia
 
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]

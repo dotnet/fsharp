@@ -1137,7 +1137,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                         | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo 
                         | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
                         | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
-                    Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), None, rhsExpr, [], innerComp2, m)) translatedCtxt)
+                    Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m, SynExprLetOrUseBangTrivia.Zero)) translatedCtxt)
 
                 // "expr; cexpr" is treated as sequential execution
                 | _ -> 
@@ -1555,7 +1555,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                             // Rebind using either for ... or let!....
                             let rebind = 
                                 if maintainsVarSpaceUsingBind then 
-                                    SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtLet, false, false, intoPat, None, dataCompAfterOp, [], contExpr, intoPat.Range) 
+                                    SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtLet, false, false, intoPat, dataCompAfterOp, [], contExpr, intoPat.Range, SynExprLetOrUseBangTrivia.Zero) 
                                 else 
                                     SynExpr.ForEach (DebugPointAtFor.No, DebugPointAtInOrTo.No, SeqExprOnly false, false, intoPat, dataCompAfterOp, contExpr, intoPat.Range)
 
@@ -1577,7 +1577,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             // Rebind using either for ... or let!....
             let rebind = 
                 if lastUsesBind then 
-                    SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtLet, false, false, varSpacePat, None, dataCompPrior, [], compClausesExpr, compClausesExpr.Range) 
+                    SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtLet, false, false, varSpacePat, dataCompPrior, [], compClausesExpr, compClausesExpr.Range, SynExprLetOrUseBangTrivia.Zero) 
                 else 
                     SynExpr.ForEach (DebugPointAtFor.No, DebugPointAtInOrTo.No, SeqExprOnly false, false, varSpacePat, dataCompPrior, compClausesExpr, compClausesExpr.Range)
             
@@ -1604,7 +1604,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy with
                         | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
                         | _ -> SynExpr.YieldOrReturn ((false, true), SynExpr.Const (SynConst.Unit, m), m)
-                let letBangBind = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtDo, false, false, SynPat.Const(SynConst.Unit, mUnit), None, rhsExpr, [], bodyExpr, m)
+                let letBangBind = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtDo, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, [], bodyExpr, m, SynExprLetOrUseBangTrivia.Zero)
                 trans CompExprTranslationPass.Initial q varSpace letBangBind translatedCtxt
 
             // "expr;" in final position is treated as { expr; zero }
