@@ -107,7 +107,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module TargetFrameworkUtil =
+    module public TargetFrameworkUtil =
 
         let private config = TestFramework.initializeSuite ()
 
