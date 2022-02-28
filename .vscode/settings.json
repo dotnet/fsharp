@@ -1,7 +1,15 @@
 {
-    "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.fsproj",
     "editor.trimAutoWhitespace": false,
     "files.trimTrailingWhitespace": false,
+    "files.associations": {
+        "*.csproj": "msbuild",
+        "*.fsproj": "msbuild",
+        "*.nuspec": "xml",
+        "*.props": "msbuild",
+        "*.targets": "msbuild",
+        "*.vsixmanifest": "xml",
+        "*.vstemplate": "xml",
+    },
     "FSharp.suggestGitignore": false,
     "FSharp.enableMSBuildProjectGraph": true,
     "FSharp.workspacePath": "FSharp.sln",
@@ -9,7 +17,9 @@
     "FSharp.excludeProjectDirectories": [
         ".git",
         "artifacts",
-        "tests/projects/"
+        "tests/projects",
+        "tests/benchmarks",
+        "tests/EndToEndBuildTests",
     ],
     "csharp.showOmnisharpLogOnError": false,
     "csharp.suppressBuildAssetsNotification": true,
@@ -20,6 +30,13 @@
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "razor.disabled": true,
+    "powershell.promptToUpdatePowerShell": false,
+    "powershell.integratedConsole.showOnStartup": false,
+    "powershell.startAutomatically": false,
+    "dotnet-test-explorer.testProjectPath": "tests/+(FSharp.Compiler.Service.Tests|FSharp.Compiler.UnitTests|FSharp.Core.UnitTests|FSharp.Build.UnitTests|FSharp.Compiler.ComponentTests)/*Tests.fsproj",
+    "dotnet-test-explorer.addProblems": true,
+    "dotnet-test-explorer.autoWatch": false,
+    "dotnet-test-explorer.treeMode": "merged",
     "testExplorer.useNativeTesting": true,
     "markdownlint.config": {
         "MD028": false,

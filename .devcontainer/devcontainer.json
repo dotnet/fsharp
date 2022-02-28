@@ -10,37 +10,8 @@
             "VARIANT": "6.0-focal"
         }
     },
-    // Set *default* container specific settings.json values on container create.
-    //
-    // Set .NET Core scripting as the default choice. Set that to true.
-    "settings": {
-        "search.exclude": {
-            "**/artifacts": true,
-            "**/.git": true
-        },
-        "editor.trimAutoWhitespace": false,
-        "files.trimTrailingWhitespace": false,
-        "FSharp.suggestGitignore": false,
-        "FSharp.enableMSBuildProjectGraph": true,
-        "FSharp.workspacePath": "FSharp.sln",
-        "FSharp.workspaceModePeekDeepLevel": 2,
-        "FSharp.excludeProjectDirectories": [
-            ".git",
-            "artifacts",
-            "tests/projects/"
-        ],
-        "csharp.showOmnisharpLogOnError": false,
-        "csharp.suppressBuildAssetsNotification": true,
-        "csharp.suppressDotnetInstallWarning": true,
-        "csharp.suppressDotnetRestoreNotification": true,
-        "csharp.suppressHiddenDiagnostics": true,
-        "omnisharp.autoStart": false,
-        "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
-        "omnisharp.disableMSBuildDiagnosticWarning": true,
-        "razor.disabled": true,
-        "dotnet-test-explorer.testProjectPath": "tests/**/*Tests.fsproj",
-        "testExplorer.useNativeTesting": true
-    },
+    // Default settings are set in .vscode/settings.json
+    "settings": {},
 
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
@@ -48,7 +19,8 @@
         "hbenl.vscode-test-explorer",
         "dotnet-test-explorer.testProjectPath",
         "Ionide.Ionide-fsharp",
-        "ms-dotnettools.csharp"
+        "ms-dotnettools.csharp",
+        "tintoy.msbuild-project-tools"
     ],
     "postCreateCommand": "./build.sh -c Debug"
 }
