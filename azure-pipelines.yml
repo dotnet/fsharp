@@ -94,7 +94,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            vmImage: $(MacOSMachineQueueName)
+            name: NetCore1ESPool-Svc-Internal
+            demands: ImageOverride -equals build.windows.10.amd64.vs2019
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
