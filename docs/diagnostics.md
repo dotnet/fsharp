@@ -21,7 +21,7 @@ and functions
 
 ## Diagnostic messages
 
-For the compiler, a key file is `FSComp.txt` olding most of the messages. There are also a few other similar files including some old error messages in `FSStrings.resx`.
+For the compiler, a key file is `FSComp.txt` holding most of the messages. There are also a few other similar files including some old error messages in `FSStrings.resx`.
 
 ## Adding Diagnostics
 
