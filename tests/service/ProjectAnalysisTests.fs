@@ -2219,6 +2219,7 @@ let ``Test Project13 all symbols`` () =
           ["type System.IComparable";
            "type System.IFormattable";
            "type System.IConvertible";
+           "type System.ISpanFormattable";
            "type System.Runtime.Serialization.ISerializable";
            "type System.IComparable<System.DateTime>";
            "type System.IEquatable<System.DateTime>"])
@@ -4199,12 +4200,22 @@ let ``Test project31 C# method attributes`` () =
 
         objMethodsAttributes
         |> set
-        |> shouldEqual
-              (set [
+        |> shouldEqual (set
+            [
 #if !NETCOREAPP
-                   "(SecuritySafeCriticalAttribute, [], [])";
+                "(SecuritySafeCriticalAttribute, [], [])"
+#else
+                "(NullableAttribute, [(type Microsoft.FSharp.Core.byte, 2uy)], [])";
+                "(NullableContextAttribute, [(type Microsoft.FSharp.Core.byte, 0uy)], [])"
+                "(NullableContextAttribute, [(type Microsoft.FSharp.Core.byte, 2uy)], [])"
+                "(SupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"windows\")],\n [])"
+                "(UnsupportedOSPlatformAttribute,\n [(type Microsoft.FSharp.Core.string, \"android\")], [])"
+                "(UnsupportedOSPlatformAttribute,\n [(type Microsoft.FSharp.Core.string, \"browser\")], [])"
+                "(UnsupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"ios\")],\n [])"
+                "(UnsupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"tvos\")],\n [])"
 #endif
-                   "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
+                "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"
+            ])
 
 [<Test>]
 #if NETCOREAPP
@@ -4240,12 +4251,23 @@ let ``Test project31 Format C# method attributes`` () =
 
         objMethodsAttributes
         |> set
-        |> shouldEqual
-              (set ["[<CLSCompliantAttribute (false)>]";
+        |> shouldEqual(
+            set
+                [
+                    "[<CLSCompliantAttribute (false)>]"
 #if !NETCOREAPP
-                    "[<Security.SecuritySafeCriticalAttribute ()>]";
+                    "[<Security.SecuritySafeCriticalAttribute ()>]"
+#else
+                    "[<Runtime.CompilerServices.NullableAttribute (2uy)>]"
+                    "[<Runtime.CompilerServices.NullableContextAttribute (0uy)>]"
+                    "[<Runtime.CompilerServices.NullableContextAttribute (2uy)>]"
+                    "[<Runtime.Versioning.SupportedOSPlatformAttribute (\"windows\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"android\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"browser\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"ios\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"tvos\")>]"
 #endif
-                    ])
+                ])
 
 module internal Project32 =
 
