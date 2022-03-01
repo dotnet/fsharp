@@ -15,6 +15,7 @@ open FSharp.Compiler.Text
 open TestFramework
 open FsUnit
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 type Async with
     static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
@@ -28,39 +29,6 @@ type Async with
             (fun _ -> ts.SetCanceled()),
             cancellationToken)
         task.Result
-
-#if NETCOREAPP
-let readRefs (folder : string) (projectFile: string) =
-    let runProcess (workingDir: string) (exePath: string) (args: string) =
-        let psi = ProcessStartInfo()
-        psi.FileName <- exePath
-        psi.WorkingDirectory <- workingDir
-        psi.RedirectStandardOutput <- false
-        psi.RedirectStandardError <- false
-        psi.Arguments <- args
-        psi.CreateNoWindow <- true
-        psi.UseShellExecute <- false
-
-        use p = new Process()
-        p.StartInfo <- psi
-        p.Start() |> ignore
-        p.WaitForExit()
-
-        let exitCode = p.ExitCode
-        exitCode, ()
-
-    let projFilePath = Path.Combine(folder, projectFile)
-    let runCmd exePath args = runProcess folder exePath ((args |> String.concat " ") + " -restore")
-    let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
-    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
-    match result with
-    | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
-        x
-        |> List.filter (fun s -> s.StartsWith("-r:", StringComparison.Ordinal))
-        |> List.map (fun s -> s.Replace("-r:", ""))
-    | _ -> []
-#endif
-
 
 // Create one global interactive checker instance
 let checker = FSharpChecker.Create()
@@ -107,17 +75,7 @@ let fsCoreDefaultReference() =
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
 let mkStandardProjectReferences () =
-#if NETCOREAPP
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
-            readRefs projDir file
-#else
-            [ yield sysLib "mscorlib"
-              yield sysLib "System"
-              yield sysLib "System.Core"
-              yield sysLib "System.Numerics"
-              yield fsCoreDefaultReference() ]
-#endif
+    TargetFrameworkUtil.currentReferences
 
 let mkProjectCommandLineArgsSilent (dllName, fileNames) =
   let args =
