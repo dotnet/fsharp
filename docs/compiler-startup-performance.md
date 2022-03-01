@@ -14,7 +14,7 @@ On all platforms, the following factors affect startup performance:
 
 * Time to open referenced assemblies (for example, `mscorlib.dll`, `FSharp.Core.dll`) and analyze them for the types and namespaces defined. This depends particularly on whether this is correctly done in an on-demand way.
 
-* Time to process "open" declarations are the top of each file. Processing these declarations have been observed to take time in some cases of  F# compilation.
+* Time to process "open" declarations at the top of each file. Processing these declarations have been observed to take time in some cases of  F# compilation.
 
 * Factors specific to the specific files being compiled.
 
