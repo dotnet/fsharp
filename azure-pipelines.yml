@@ -265,8 +265,9 @@ stages:
         # Linux
         - job: Linux
           pool:
-            name: NetCore1ESPool-Svc-Public
-            demands: ImageOverride -equals $(UbuntuMachineQueueName)
+            vmImage: ubuntu-latest
+            #            name: NetCore1ESPool-Svc-Public
+            #            demands: ImageOverride -equals $(UbuntuMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -427,8 +428,9 @@ stages:
         # Plain build Linux
         - job: Plain_Build_Linux
           pool:
-            name: NetCore1ESPool-Svc-Public
-            demands: ImageOverride -equals $(UbuntuMachineQueueName)
+            vmImage: ubuntu-latest
+            #            name: NetCore1ESPool-Svc-Public
+            #            demands: ImageOverride -equals $(UbuntuMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
