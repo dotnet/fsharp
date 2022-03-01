@@ -2214,15 +2214,19 @@ let ``Test Project13 all symbols`` () =
 
     let dtType = dtSymbol.Symbol:?> FSharpEntity
 
-    set [ for i in dtType.DeclaredInterfaces -> i.ToString() ] |> shouldEqual
-        (set
-          ["type System.IComparable";
-           "type System.IFormattable";
-           "type System.IConvertible";
-           "type System.ISpanFormattable";
-           "type System.Runtime.Serialization.ISerializable";
-           "type System.IComparable<System.DateTime>";
-           "type System.IEquatable<System.DateTime>"])
+    set [ for i in dtType.DeclaredInterfaces -> i.ToString() ] |> shouldEqual (
+        set
+            [
+                "type System.IComparable"
+                "type System.IFormattable"
+                "type System.IConvertible"
+#if NETCOREAPP
+                "type System.ISpanFormattable"
+#endif
+                "type System.Runtime.Serialization.ISerializable"
+                "type System.IComparable<System.DateTime>"
+                "type System.IEquatable<System.DateTime>"
+            ])
 
     dtType.BaseType.ToString() |> shouldEqual "Some(type System.ValueType)"
 
