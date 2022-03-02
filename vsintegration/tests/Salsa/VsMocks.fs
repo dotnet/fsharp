@@ -1647,13 +1647,7 @@ module internal VsActual =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar =
-            let var =
-                let v = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
-                if String.IsNullOrEmpty v then
-                    Environment.GetEnvironmentVariable("VS160COMNTOOLS")
-                else
-                    v
-
+            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
             if String.IsNullOrEmpty var then
                 Environment.GetEnvironmentVariable("VSAPPIDDIR")
             else

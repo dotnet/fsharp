@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);net5.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);net6.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>

@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="featureBetterExceptionPrinting">
         <source>automatic generation of 'Message' property for 'exception' declarations</source>
-        <target state="new">automatic generation of 'Message' property for 'exception' declarations</target>
+        <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
