@@ -1007,7 +1007,6 @@ namespace Microsoft.FSharp.Core
     /// <see cref="T:System.IntPtr"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type nativeint<[<Measure>] 'Measure> = nativeint
 
@@ -1017,7 +1016,6 @@ namespace Microsoft.FSharp.Core
     /// <see cref="T:System.UInt32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type uint<[<Measure>] 'Measure> = uint
 
@@ -1027,40 +1025,36 @@ namespace Microsoft.FSharp.Core
     /// <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type byte<[<Measure>] 'Measure> = byte
-
+    
     /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt16"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type uint16<[<Measure>] 'Measure> = uint16
-
+    
     /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt64"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type uint64<[<Measure>] 'Measure> = uint64
-
+    
     /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UIntPtr"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<MeasureAnnotatedAbbreviation>]
     type unativeint<[<Measure>] 'Measure> = unativeint
-
+    
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
