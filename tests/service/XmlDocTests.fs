@@ -485,6 +485,29 @@ type A = class end
                 failwith $"Unexpected ParsedInput %A{x}")
 
 [<Test>]
+let ``types 07``(): unit =
+    let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
+module Test
+
+type A
+
+///B
+and B = int -> int
+"""
+    checkResults
+    |> checkXmls ["B", [|"B"|]]
+
+    parseResults
+    |> checkParsingErrors [||]
+
+    match parseResults.ParseTree with
+    | TypeSigs(_, [SynTypeDefnSig(range = range1); SynTypeDefnSig(range = range2)]) ->
+        assertRange (4, 5) (4, 6) range1
+        assertRange (6, 0) (7, 18) range2
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
+
+[<Test>]
 let ``let bindings 01 - allowed positions``(): unit =
     let parseResults, checkResults = getParseAndCheckResults """
 ///f1
@@ -865,9 +888,11 @@ type B =
     |]
 
     match parseResults.ParseTree with
-    | Members(SynMemberDefn.Member(range = range; memberDefn = binding) :: _) ->
+    | Members(SynMemberDefn.Member(range = range; memberDefn = SynBinding(xmlDoc = xmlDoc) as binding) :: _) ->
         assertRange (3, 4) (10, 37) range
         assertRange (3, 4) (8, 37) binding.RangeOfBindingWithRhs
+        assertRange (3, 4) (4, 9) xmlDoc.Range
+        assertRange (3, 4) (4, 9) (xmlDoc.ToXmlDoc(false, None).Range)
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 
@@ -914,6 +939,30 @@ type A ///CTOR1
     match parseResults.ParseTree with
     | Members([SynMemberDefn.ImplicitCtor(range = range)]) ->
         assertRange (2, 5) (2, 6) range
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
+
+[<Test>]
+let ``type members 07 - explicit ctor``(): unit =
+    let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
+module Test
+
+type A =
+    ///ctor
+    new: unit -> A
+"""
+    checkResults
+    |> checkXmls [
+        "A", [||]
+        ".ctor", [|"ctor"|]
+       ]
+
+    parseResults
+    |> checkParsingErrors [||]
+
+    match parseResults.ParseTree with
+    | MemberSigs([SynMemberSig.Member(range = range)]) ->
+        assertRange (5, 4) (6, 18) range
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 

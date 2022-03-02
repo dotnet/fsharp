@@ -919,15 +919,15 @@ tyconSpfn:
         $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
       { let mWithKwd, members = $2
+        let (SynComponentInfo(range=range)) = $1
         let m =
             match members with
             | [] ->
                 match mWithKwd with
-                | None -> rhs parseState 1
-                | Some mWithKwd -> unionRanges (rhs parseState 1) mWithKwd
+                | None -> range
+                | Some mWithKwd -> unionRanges range mWithKwd
             | decls ->
-                let (SynComponentInfo(range=start)) = $1
-                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+                (range, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
         SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), mWithKwd, members, m) }
 
 
@@ -1096,7 +1096,7 @@ classMemberSpfn:
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
-       let m = unionRanges (rhs parseState 1) ty.Range 
+       let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false 
        let valSpfn = SynValSig ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
