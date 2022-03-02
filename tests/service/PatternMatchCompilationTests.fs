@@ -439,7 +439,9 @@ match Unchecked.defaultof<System.ValueType> with
 | g -> ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpErrors checkResults |> shouldEqual [
+        "(4,2--4,85): This rule will never be matched"
+    ]
 
 [<Test>]
 #if !NETCOREAPP
