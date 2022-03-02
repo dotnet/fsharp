@@ -36,13 +36,13 @@
   // Offset: 0x00000CE0 Length: 0x000002CB
 }
 .module CompiledNameAttribute04.exe
-// MVID: {61F2D6A5-34DF-584F-A745-0383A5D6F261}
+// MVID: {621F7961-34DF-584F-A745-038361791F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07550000
+// Image base: 0x05A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -214,29 +214,27 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       24 (0x18)
+      // Code size       17 (0x11)
       .maxstack  3
       .locals init ([0] valuetype CompiledNameAttribute04/S V_0,
                [1] valuetype CompiledNameAttribute04/S& V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype CompiledNameAttribute04/S>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0016
+      IL_0001:  isinst     CompiledNameAttribute04/S
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_000f
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  CompiledNameAttribute04/S
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
-      IL_0013:  stloc.1
-      IL_0014:  ldc.i4.1
-      IL_0015:  ret
+      IL_000a:  ldloca.s   V_0
+      IL_000c:  stloc.1
+      IL_000d:  ldc.i4.1
+      IL_000e:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0016:  ldc.i4.0
-      IL_0017:  ret
+      IL_000f:  ldc.i4.0
+      IL_0010:  ret
     } // end of method S::Equals
 
     .method public hidebysig instance !!a 
@@ -266,28 +264,26 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] valuetype CompiledNameAttribute04/S V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype CompiledNameAttribute04/S>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
+      IL_0001:  isinst     CompiledNameAttribute04/S
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  CompiledNameAttribute04/S
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
-      IL_0018:  ret
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
+      IL_0011:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method S::Equals
 
   } // end of class S

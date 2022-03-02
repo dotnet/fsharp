@@ -411,6 +411,180 @@ let rec removeActive x l =
     | [] -> []
     | Active(h, _, _) as p :: t -> if pathEq x h then t else p :: removeActive x t
 
+[<RequireQualifiedAccess>]
+type Implication =
+    /// Indicates that, for any inputs where the first test succeeds, the second test will succeed
+    | Succeeds
+    /// Indicates that, for any inputs where the first test succeeded, the second test will fail
+    | Fails
+    /// Indicates nothing in particular
+    | Nothing
+
+/// Work out what one successful type test implies about a null test
+///
+/// Example:
+///     match x with 
+///     | :? string -> ...
+///     | null -> ...
+/// For any inputs where ':? string' succeeds, 'null' will fail
+///
+/// Example:
+///     match x with 
+///     | :? option<int> -> ...
+///     | null -> ...
+/// Nothing can be learned.  If ':? option<int>' succeeds, 'null' may still have to be run.
+let computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 =
+    if TypeNullIsTrueValue g tgtTy1 then
+        Implication.Nothing
+    else
+        Implication.Fails
+
+/// Work out what a failing type test implies about a null test.
+///
+/// Example:
+///     match x with 
+///     | :? option<int> -> ...
+///     | null -> ...
+/// If ':? option<int>' fails then 'null' will fail
+let computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 =
+    if TypeNullIsTrueValue g tgtTy1 then
+        Implication.Fails
+    else
+        Implication.Nothing
+
+/// Work out what one successful null test implies about a type test.
+///
+/// Example:
+///     match x with 
+///     | null -> ...
+///     | :? string -> ...
+/// For any inputs where 'null' succeeds, ':? string' will fail
+///
+/// Example:
+///     match x with 
+///     | null -> ...
+///     | :? option<int> -> ...
+/// For any inputs where 'null' succeeds, ':? option<int>' will succeed
+let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
+    if TypeNullIsTrueValue g tgtTy2 then
+        Implication.Succeeds
+    else
+        Implication.Fails
+
+/// Work out what a failing null test implies about a type test. The answer is "nothing" but it's included for symmetry.
+let computeWhatFailingNullTestImpliesAboutTypeTest _g _tgtTy2 =
+    Implication.Nothing
+
+/// Work out what one successful type test implies about another type test
+let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
+    let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
+    let tgtTy2 = stripTyEqnsWrtErasure EraseAll g tgtTy2
+
+    //  A successful type test on any type implies all supertypes always succeed
+    //
+    // Example:
+    //     match x with 
+    //     | :? string -> ...
+    //     | :? IComparable -> ...
+    //
+    // Example:
+    //     match x with 
+    //     | :? string -> ...
+    //     | :? string -> ...
+    //
+    if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1 then
+        Implication.Succeeds
+
+    //  A successful type test on a sealed type implies all non-related types fail
+    //
+    // Example:
+    //     match x with 
+    //     | :? int -> ...
+    //     | :? string -> ...
+    //
+    // For any inputs where ':? int' succeeds, ':? string' will fail
+    //
+    // This doesn't apply to related types:
+    //     match x with 
+    //     | :? int -> ...
+    //     | :? IComparable -> ...
+    //
+    // Here IComparable neither fails nor is redundant
+    //
+    // This doesn't apply to unsealed types:
+    //     match x with 
+    //     | :? SomeClass -> ...
+    //     | :? SomeInterface -> ...
+    //
+    // This doesn't apply to types with null as true value:
+    //     match x with 
+    //     | :? option<int> -> ...
+    //     | :? option<string> -> ...
+    //
+    // Here on 'null' input the first pattern succeeds, and the second pattern will also succeed
+    elif isSealedTy g tgtTy1 &&
+         not (TypeNullIsTrueValue g tgtTy1) &&
+         not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1) then
+        Implication.Fails
+
+    //  A successful type test on an unsealed class type implies type tests on unrelated non-interface types always fail
+    //
+    // Example:
+    //     match x with 
+    //     | :? SomeUnsealedClass -> ...
+    //     | :? SomeUnrelatedClass -> ...
+    //
+    // For any inputs where ':? SomeUnsealedClass' succeeds, ':? SomeUnrelatedClass' will fail
+    //
+    // This doesn't apply to interfaces or null-as-true-value
+    elif not (isSealedTy g tgtTy1) &&
+         isClassTy g tgtTy1 &&
+         not (TypeNullIsTrueValue g tgtTy1) &&
+         not (isInterfaceTy g tgtTy2) &&
+         not (TypeFeasiblySubsumesType 0 g amap m tgtTy1 CanCoerce tgtTy2)  &&
+         not (TypeFeasiblySubsumesType 0 g amap m tgtTy2 CanCoerce tgtTy1) then
+        Implication.Fails
+
+    //  A successful type test on an interface type refutes sealed types that do not support that interface
+    //
+    // Example:
+    //     match x with 
+    //     | :? IComparable -> ...
+    //     | :? SomeOtherSealedClass -> ...
+    //
+    // For any inputs where ':? IComparable' succeeds, ':? SomeOtherSealedClass' will fail
+    //
+    // This doesn't apply to interfaces or null-as-true-value
+    elif isInterfaceTy g tgtTy1 &&
+         not (TypeNullIsTrueValue g tgtTy1) &&
+         isSealedTy g tgtTy2 &&
+         not (TypeFeasiblySubsumesType 0 g amap m tgtTy1 CanCoerce tgtTy2) then
+        Implication.Fails
+    else
+        Implication.Nothing
+
+/// Work out what one successful type test implies about another type test
+let computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
+    let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
+    let tgtTy2 = stripTyEqnsWrtErasure EraseAll g tgtTy2
+
+    //  A failing type test on any type implies all subtypes fail
+    //
+    // Example:
+    //     match x with 
+    //     | :? IComparable -> ...
+    //     | :? string -> ...
+    //
+    // Example:
+    //     match x with 
+    //     | :? string -> ...
+    //     | :? string -> ...
+    if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy1 tgtTy2 then
+        Implication.Fails
+    else
+        Implication.Nothing
+
+
 //---------------------------------------------------------------------------
 // Utilities
 //---------------------------------------------------------------------------
@@ -461,25 +635,32 @@ let discrimsEq (g: TcGlobals) d1 d2 =
   | _ -> false
 
 /// Redundancy of 'isinst' patterns
-let isDiscrimSubsumedBy g amap m d1 d2 =
-    (discrimsEq g d1 d2)
+let isDiscrimSubsumedBy g amap m discrim taken =
+    discrimsEq g discrim taken
     ||
-    (match d1, d2 with
-     | DecisionTreeTest.IsInst (_, tgty1), DecisionTreeTest.IsInst (_, tgty2) ->
-        TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgty2 tgty1
-     | _ -> false)
+    match taken, discrim with
+    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsInst (_, tgtTy2) ->
+        computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 = Implication.Fails
+    | DecisionTreeTest.IsNull _, DecisionTreeTest.IsInst (_, tgtTy2) ->
+        computeWhatFailingNullTestImpliesAboutTypeTest g tgtTy2 = Implication.Fails
+    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull _ ->
+        computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 = Implication.Fails
+    | _ ->
+        false
+
+type EdgeDiscrim = EdgeDiscrim of int * DecisionTreeTest * range
 
 /// Choose a set of investigations that can be performed simultaneously
-let rec chooseSimultaneousEdgeSet prevOpt f l =
+let rec chooseSimultaneousEdgeSet prev f l =
     match l with
     | [] -> [], []
     | h :: t ->
-        match f prevOpt h with
-        | Some x ->
-             let l, r = chooseSimultaneousEdgeSet (Some x) f t
-             x :: l, r
+        match f prev h with
+        | Some (EdgeDiscrim(_, discrim, _) as edge) ->
+             let l, r = chooseSimultaneousEdgeSet (discrim::prev) f t
+             edge :: l, r
         | None ->
-             let l, r = chooseSimultaneousEdgeSet prevOpt f t
+             let l, r = chooseSimultaneousEdgeSet prev f t
              l, h :: r
 
 /// Can we represent a integer discrimination as a 'switch'
@@ -491,14 +672,30 @@ let canCompactConstantClass c =
     | _ -> false
 
 /// Can two discriminators in a 'column' be decided simultaneously?
-let discrimsHaveSameSimultaneousClass g d1 d2 =
-    match d1, d2 with
-    | DecisionTreeTest.Const _, DecisionTreeTest.Const _
-    | DecisionTreeTest.IsNull, DecisionTreeTest.IsNull
-    | DecisionTreeTest.ArrayLength _, DecisionTreeTest.ArrayLength _
-    | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _
-    | DecisionTreeTest.IsInst _, DecisionTreeTest.IsInst _ -> true
-    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _), DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) ->
+let discrimWithinSimultaneousClass g amap m discrim prev =
+    match discrim, prev with
+    | _, [] -> true
+    | DecisionTreeTest.Const _, (DecisionTreeTest.Const _ :: _)
+    | DecisionTreeTest.ArrayLength _, (DecisionTreeTest.ArrayLength _ :: _)
+    | DecisionTreeTest.UnionCase _, (DecisionTreeTest.UnionCase _ :: _) -> true
+
+    | DecisionTreeTest.IsNull, _ ->
+        // Check that each previous test in the set, if successful, gives some information about this test
+        prev |> List.forall (fun edge -> 
+            match edge with
+            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 <> Implication.Nothing
+            | _ -> false)
+
+    | DecisionTreeTest.IsInst (_, tgtTy2), _ ->
+        // Check that each previous test in the set, if successful, gives some information about this test
+        prev |> List.forall (fun edge -> 
+            match edge with
+            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
+            | _ -> false)
+
+    | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _), (DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) :: _) ->
         match apatVrefOpt1, apatVrefOpt2 with
         | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
         | _ -> false (* for equality purposes these are considered different classes of discriminators! This is because adhoc computed patterns have no identity! *)
@@ -590,7 +787,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
-        TDSwitch(expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
+        TDSwitch(expr, [edge], Some (BuildSwitch None g expr edges dflt m), m)
 
 #if OPTIMIZE_LIST_MATCHING
     // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable
@@ -702,16 +899,15 @@ let mkFrontiers investigations clauseNumber =
      investigations |> List.map (fun (actives, valMap) -> Frontier(clauseNumber, actives, valMap))
 
 // Search for pattern decision points that are decided "one at a time" - i.e. where there is no
-// multi-way switching. For example partial active patterns or 'isinst' or 'null' test
-// or exception tests
+// multi-way switching. For example partial active patterns
 let rec investigationPoints inpPat =
     seq { 
         match inpPat with
         | TPat_query ((_, _, _, _, _, apinfo), subPat, _) ->
             yield not apinfo.IsTotal
             yield! investigationPoints subPat
-        | TPat_isinst (_, _, subPatOpt, _) -> 
-            yield true
+        | TPat_isinst (_, _tgtTy, subPatOpt, _) -> 
+            yield false
             match subPatOpt with 
             | None -> ()
             | Some subPat ->
@@ -727,17 +923,15 @@ let rec investigationPoints inpPat =
         | TPat_exnconstr(_, subPats, _) ->
             for subPat in subPats do 
                 yield! investigationPoints subPat
-            yield true
         | TPat_array (subPats, _, _)
         | TPat_unioncase (_, _, subPats, _) ->
             yield false
             for subPat in subPats do 
                 yield! investigationPoints subPat
         | TPat_range _
+        | TPat_null _ 
         | TPat_const _ ->
             yield false
-        | TPat_null _ ->
-            yield true
         | TPat_wild _
         | TPat_error _ -> ()
     }
@@ -786,8 +980,6 @@ let rec isPatternDisjunctive inpPat =
 //---------------------------------------------------------------------------
 // The algorithm
 //---------------------------------------------------------------------------
-
-type EdgeDiscrim = EdgeDiscrim of int * DecisionTreeTest * range
 
 let getDiscrim (EdgeDiscrim(_, discrim, _)) = discrim
 
@@ -991,12 +1183,12 @@ let CompilePatternBasic
     /// Record the clause numbers so we know which rule the TPat_query cam from, so that when we project through
     /// the frontier we only project the right rule.
     and ChooseSimultaneousEdges frontiers path =
-        frontiers |> chooseSimultaneousEdgeSet None (fun prevOpt (Frontier (i, active, _)) ->
+        frontiers |> chooseSimultaneousEdgeSet [] (fun prev (Frontier (i, active, _)) ->
             if isMemOfActives path active then
                 let _, patAtActive = lookupActive path active
                 match getDiscrimOfPattern patAtActive with
                 | Some discrim ->
-                    if (match prevOpt with None -> true | Some (EdgeDiscrim(_, discrimPrev, _)) -> discrimsHaveSameSimultaneousClass g discrim discrimPrev) then
+                    if discrimWithinSimultaneousClass g amap patAtActive.Range discrim prev then
                         Some (EdgeDiscrim(i, discrim, patAtActive.Range))
                     else
                         None
@@ -1023,7 +1215,7 @@ let CompilePatternBasic
           // This is really an optimization that could be done more effectively in opt.fs
           // if we flowed a bit of information through
 
-         | EdgeDiscrim(_i', DecisionTreeTest.IsInst (_srcty, tgty), m) :: _rest
+         | [EdgeDiscrim(_i', DecisionTreeTest.IsInst (_srcty, tgty), m)]
                     // check we can use a simple 'isinst' instruction
                     when isRefTy g tgty && canUseTypeTestFast g tgty && isNil origInputValTypars ->
 
@@ -1100,7 +1292,7 @@ let CompilePatternBasic
 
         ([], simulSetOfEdgeDiscrims) ||> List.collectFold (fun taken (EdgeDiscrim(i', discrim, m)) ->
              // Check to see if we've already collected the edge for this case, in which case skip it.
-             if List.exists (isDiscrimSubsumedBy g amap m discrim) taken  then
+             if taken |> List.exists (isDiscrimSubsumedBy g amap m discrim) then
                  // Skip this edge: it is refuted
                  ([], taken)
              else
@@ -1151,8 +1343,10 @@ let CompilePatternBasic
                  // Project a successful edge through the frontiers.
                  let investigation = Investigation(i', discrim, path)
 
-                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt investigation)
+                 let frontiers = frontiers |> List.collect (GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation)
+
                  let tree = InvestigateFrontiers refuted frontiers
+
                  // Bind the resVar for the union case, if we have one
                  let tree =
                      match ucaseBindOpt with
@@ -1193,7 +1387,7 @@ let CompilePatternBasic
                 Some(InvestigateFrontiers refuted fallthroughPathFrontiers)
 
     // Build a new frontier that represents the result of a successful investigation
-    and GenerateNewFrontiersAfterSuccessfulInvestigation inpExprOpt resPostBindOpt investigation frontier =
+    and GenerateNewFrontiersAfterSuccessfulInvestigation taken inpExprOpt resPostBindOpt investigation frontier =
         let (Investigation(iInvestigated, discrim, path)) = investigation
         let (Frontier (i, actives, valMap)) = frontier
 
@@ -1266,7 +1460,7 @@ let CompilePatternBasic
 
                     mkSubFrontiers path subAccess newActives argpats (fun path j -> PathUnionConstr(path, ucref1, tyargs, j))
                 | DecisionTreeTest.UnionCase _ ->
-                    // Successful union case tests DO refute all other union case tests (no overlapping union cases)
+                    // Successful union case tests refute all other union case tests (no overlapping union cases)
                     []
                 | _ ->
                     // Successful union case tests don't refute any other patterns
@@ -1274,52 +1468,82 @@ let CompilePatternBasic
 
             | TPat_array (argpats, ty, _) ->
                 match discrim with
-                | DecisionTreeTest.ArrayLength (n, _) when List.length argpats = n ->
-                    let subAccess j tpinst exprIn = mkCallArrayGet g exprm ty (accessf tpinst exprIn) (mkInt g exprm j)
-                    mkSubFrontiers path subAccess newActives argpats (fun path j -> PathArray(path, ty, List.length argpats, j))
-                // Successful length tests refute all other lengths
-                | DecisionTreeTest.ArrayLength _ ->
-                    []
+                | DecisionTreeTest.ArrayLength (n, _) ->
+                    if List.length argpats = n then
+                        let subAccess j tpinst exprIn = mkCallArrayGet g exprm ty (accessf tpinst exprIn) (mkInt g exprm j)
+                        mkSubFrontiers path subAccess newActives argpats (fun path j -> PathArray(path, ty, List.length argpats, j))
+                    else
+                        // Successful length tests refute all other lengths
+                        []
                 | _ ->
                     [frontier]
 
             | TPat_exnconstr (ecref, argpats, _) ->
+
+                let tgtTy1 = mkAppTy ecref []
+                if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (g.exn_ty, tgtTy1))) then [] else
+
                 match discrim with
-                | DecisionTreeTest.IsInst (_srcTy, tgtTy) when typeEquiv g (mkAppTy ecref []) tgtTy ->
-                    let subAccess j tpinst exprIn = mkExnCaseFieldGet(accessf tpinst exprIn, ecref, j, exprm)
-                    mkSubFrontiers path subAccess newActives argpats (fun path j -> PathExnConstr(path, ecref, j))
+                | DecisionTreeTest.IsInst (_srcTy, tgtTy2) ->
+                    if typeEquiv g tgtTy1 tgtTy2 then
+                        let subAccess j tpinst exprIn = mkExnCaseFieldGet(accessf tpinst exprIn, ecref, j, exprm)
+                        mkSubFrontiers path subAccess newActives argpats (fun path j -> PathExnConstr(path, ecref, j))
+                    else
+                        // Successful tests against F# exception definitions refute all other non-equivalent type tests
+                        // F# exception definitions are sealed.
+                        []
                 | _ ->
-                    // Successful type tests against one sealed type refute all other sealed types
-                    // REVIEW: Successful type tests against one sealed type should refute all other sealed types
                     [frontier]
 
-            | TPat_isinst (_srcty, tgtTy1, pbindOpt, _) ->
+            | TPat_isinst (srcTy1, tgtTy1, pbindOpt, m) ->
+
+                if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (srcTy1, tgtTy1))) then [] else
+
                 match discrim with
-                | DecisionTreeTest.IsInst (_srcTy, tgtTy2) when typeEquiv g tgtTy1 tgtTy2  ->
-                    match pbindOpt with
-                    | Some pbind ->
-                        let subAccess tpinst exprIn =
-                            // Fetch the result from the place where we saved it, if possible
-                            match inpExprOpt with
-                            | Some e -> e
-                            | _ ->
-                                // Otherwise call the helper
-                               mkCallUnboxFast g exprm (instType tpinst tgtTy1) (accessf tpinst exprIn)
-                        let subActive = Active(path, SubExpr(subAccess, ve), pbind)
-                        let subActives = BindProjectionPattern subActive (newActives, valMap)
-                        mkFrontiers subActives i
-                    | None ->
-                        [Frontier (i, newActives, valMap)]
+                | DecisionTreeTest.IsInst (_srcTy, tgtTy2) ->
+                    match computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 with
+                    | Implication.Succeeds -> 
+                        match pbindOpt with
+                        | Some pbind ->
+                            let subAccess tpinst exprIn =
+                                // Fetch the result from the place where we saved it, if possible
+                                match inpExprOpt with
+                                | Some e -> e
+                                | _ ->
+                                    // Otherwise call the helper
+                                   mkCallUnboxFast g exprm (instType tpinst tgtTy1) (accessf tpinst exprIn)
+                            let subActive = Active(path, SubExpr(subAccess, ve), pbind)
+                            let subActives = BindProjectionPattern subActive (newActives, valMap)
+                            mkFrontiers subActives i
+                        | None ->
+                            [Frontier (i, newActives, valMap)]
+                    | Implication.Fails ->
+                        []
+                    | Implication.Nothing ->
+                        [frontier]
+
+                | DecisionTreeTest.IsNull _ ->
+                    match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 with
+                    | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
+                    | Implication.Fails -> []
+                    | Implication.Nothing -> [frontier]
 
                 | _ ->
-                    // Successful type tests against other types don't refute anything
-                    // REVIEW: Successful type tests against, say, int should refute other unrelated types such as string
+                    // Successful type tests against other types don't refute other things
                     [frontier]
 
             | TPat_null _ ->
+
+                if taken |> List.exists (discrimsEq g DecisionTreeTest.IsNull) then [] else
+
                 match discrim with
                 | DecisionTreeTest.IsNull ->
                     [Frontier (i, newActives, valMap)]
+                | DecisionTreeTest.IsInst (_, tgtTy) -> 
+                    match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy with
+                    | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
+                    | Implication.Fails -> []
+                    | Implication.Nothing -> [frontier]
                 | _ ->
                     // Successful null tests don't refute any other patterns
                     [frontier]

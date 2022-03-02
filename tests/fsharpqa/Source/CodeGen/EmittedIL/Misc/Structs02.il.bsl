@@ -36,13 +36,13 @@
   // Offset: 0x00000780 Length: 0x00000237
 }
 .module Structs02.exe
-// MVID: {61EFEE1F-7040-5E27-A745-03831FEEEF61}
+// MVID: {621F7962-7040-5E27-A745-038362791F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07400000
+// Image base: 0x07210000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -211,36 +211,34 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       39 (0x27)
+      // Code size       32 (0x20)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro V_0,
                [1] valuetype Experiment.Test/Repro& V_1,
                [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype Experiment.Test/Repro>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0025
+      IL_0001:  isinst     Experiment.Test/Repro
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_001e
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  Experiment.Test/Repro
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
-      IL_0013:  stloc.1
-      IL_0014:  ldarg.2
-      IL_0015:  stloc.2
-      IL_0016:  ldarg.0
-      IL_0017:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_001c:  ldloc.1
-      IL_001d:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_0022:  ceq
-      IL_0024:  ret
+      IL_000a:  ldloca.s   V_0
+      IL_000c:  stloc.1
+      IL_000d:  ldarg.2
+      IL_000e:  stloc.2
+      IL_000f:  ldarg.0
+      IL_0010:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0015:  ldloc.1
+      IL_0016:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_001b:  ceq
+      IL_001d:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  ldc.i4.0
-      IL_0026:  ret
+      IL_001e:  ldc.i4.0
+      IL_001f:  ret
     } // end of method Repro::Equals
 
     .method public specialname rtspecialname 
@@ -313,28 +311,26 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype Experiment.Test/Repro>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
+      IL_0001:  isinst     Experiment.Test/Repro
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  Experiment.Test/Repro
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool Experiment.Test/Repro::Equals(valuetype Experiment.Test/Repro)
-      IL_0018:  ret
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  call       instance bool Experiment.Test/Repro::Equals(valuetype Experiment.Test/Repro)
+      IL_0011:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method Repro::Equals
 
     .property instance int32 hash()

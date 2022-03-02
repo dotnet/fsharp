@@ -41,13 +41,13 @@
   // Offset: 0x000007A8 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {61FC3629-05F6-D6CB-A745-03832936FC61}
+// MVID: {621F7972-05F6-D6CB-A745-038372791F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05360000
+// Image base: 0x06C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -174,7 +174,7 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       42 (0x2a)
+      // Code size       35 (0x23)
       .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C V_0,
                [1] valuetype StaticInit_Struct01/C& V_1,
@@ -182,30 +182,28 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StaticInit_Struct01/C>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0028
+      IL_0001:  isinst     StaticInit_Struct01/C
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0021
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  StaticInit_Struct01/C
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
-      IL_0013:  stloc.1
-      IL_0014:  ldarg.2
-      IL_0015:  stloc.2
-      IL_0016:  ldarg.0
-      IL_0017:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_001c:  ldloc.1
-      IL_001d:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0022:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
+      IL_000a:  ldloca.s   V_0
+      IL_000c:  stloc.1
+      IL_000d:  ldarg.2
+      IL_000e:  stloc.2
+      IL_000f:  ldarg.0
+      IL_0010:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0015:  ldloc.1
+      IL_0016:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_001b:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
                                                                      valuetype [netstandard]System.DateTime)
-      IL_0027:  ret
+      IL_0020:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0028:  ldc.i4.0
-      IL_0029:  ret
+      IL_0021:  ldc.i4.0
+      IL_0022:  ret
     } // end of method C::Equals
 
     .method public specialname rtspecialname 
@@ -270,28 +268,26 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StaticInit_Struct01/C>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
+      IL_0001:  isinst     StaticInit_Struct01/C
+      IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  StaticInit_Struct01/C
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool StaticInit_Struct01/C::Equals(valuetype StaticInit_Struct01/C)
-      IL_0018:  ret
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  call       instance bool StaticInit_Struct01/C::Equals(valuetype StaticInit_Struct01/C)
+      IL_0011:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method C::Equals
 
     .method private specialname rtspecialname static 

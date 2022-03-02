@@ -36,13 +36,13 @@
   // Offset: 0x00001850 Length: 0x0000055C
 }
 .module ToplevelNamespace.dll
-// MVID: {620FB591-218B-729A-A745-038391B50F62}
+// MVID: {621F796A-218B-729A-A745-03836A791F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06FC0000
+// Image base: 0x07440000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -633,16 +633,17 @@
                  class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       67 (0x43)
+    // Code size       70 (0x46)
     .maxstack  4
     .locals init ([0] class [mscorlib]System.Exception V_0,
              [1] class [mscorlib]System.Exception V_1,
-             [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+             [2] object V_2,
+             [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
     .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  cgt.un
-    IL_0004:  brfalse.s  IL_003b
+    IL_0004:  brfalse.s  IL_003e
 
     .line 100001,100001 : 0,0 ''
     IL_0006:  ldarg.1
@@ -650,97 +651,102 @@
     IL_000c:  stloc.0
     .line 100001,100001 : 0,0 ''
     IL_000d:  ldloc.0
-    IL_000e:  brfalse.s  IL_0039
+    IL_000e:  brfalse.s  IL_003c
 
     .line 100001,100001 : 0,0 ''
     IL_0010:  ldloc.0
     IL_0011:  stloc.1
     .line 100001,100001 : 0,0 ''
     IL_0012:  ldloc.0
-    IL_0013:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.MyExn>(object)
-    IL_0018:  brtrue.s   IL_001c
-
-    IL_001a:  br.s       IL_0037
-
-    .line 100001,100001 : 0,0 ''
-    IL_001c:  ldarg.2
-    IL_001d:  stloc.2
-    IL_001e:  ldarg.0
-    IL_001f:  castclass  XYZ.MyExn
-    IL_0024:  call       instance int32 XYZ.MyExn::get_Data0()
-    IL_0029:  ldloc.1
-    IL_002a:  castclass  XYZ.MyExn
-    IL_002f:  call       instance int32 XYZ.MyExn::get_Data0()
-    IL_0034:  ceq
-    IL_0036:  ret
+    IL_0013:  stloc.2
+    IL_0014:  ldloc.2
+    IL_0015:  isinst     XYZ.MyExn
+    IL_001a:  ldnull
+    IL_001b:  cgt.un
+    IL_001d:  brfalse.s  IL_003a
 
     .line 100001,100001 : 0,0 ''
-    IL_0037:  ldc.i4.0
-    IL_0038:  ret
+    IL_001f:  ldarg.2
+    IL_0020:  stloc.3
+    IL_0021:  ldarg.0
+    IL_0022:  castclass  XYZ.MyExn
+    IL_0027:  call       instance int32 XYZ.MyExn::get_Data0()
+    IL_002c:  ldloc.1
+    IL_002d:  castclass  XYZ.MyExn
+    IL_0032:  call       instance int32 XYZ.MyExn::get_Data0()
+    IL_0037:  ceq
+    IL_0039:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0039:  ldc.i4.0
-    IL_003a:  ret
+    IL_003a:  ldc.i4.0
+    IL_003b:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_003b:  ldarg.1
-    IL_003c:  ldnull
-    IL_003d:  cgt.un
-    IL_003f:  ldc.i4.0
-    IL_0040:  ceq
-    IL_0042:  ret
+    IL_003c:  ldc.i4.0
+    IL_003d:  ret
+
+    .line 100001,100001 : 0,0 ''
+    IL_003e:  ldarg.1
+    IL_003f:  ldnull
+    IL_0040:  cgt.un
+    IL_0042:  ldc.i4.0
+    IL_0043:  ceq
+    IL_0045:  ret
   } // end of method MyExn::Equals
 
   .method public hidebysig instance bool 
           Equals(class [mscorlib]System.Exception obj) cil managed
   {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       59 (0x3b)
-    .maxstack  8
+    // Code size       62 (0x3e)
+    .maxstack  4
+    .locals init ([0] object V_0)
     .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  cgt.un
-    IL_0004:  brfalse.s  IL_0033
+    IL_0004:  brfalse.s  IL_0036
 
     .line 100001,100001 : 0,0 ''
     IL_0006:  ldarg.1
     IL_0007:  ldnull
     IL_0008:  cgt.un
-    IL_000a:  brfalse.s  IL_0031
+    IL_000a:  brfalse.s  IL_0034
 
     .line 100001,100001 : 0,0 ''
     IL_000c:  ldarg.1
-    IL_000d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.MyExn>(object)
-    IL_0012:  brtrue.s   IL_0016
-
-    IL_0014:  br.s       IL_002f
-
-    .line 100001,100001 : 0,0 ''
-    IL_0016:  ldarg.0
-    IL_0017:  castclass  XYZ.MyExn
-    IL_001c:  call       instance int32 XYZ.MyExn::get_Data0()
-    IL_0021:  ldarg.1
-    IL_0022:  castclass  XYZ.MyExn
-    IL_0027:  call       instance int32 XYZ.MyExn::get_Data0()
-    IL_002c:  ceq
-    IL_002e:  ret
+    IL_000d:  stloc.0
+    IL_000e:  ldloc.0
+    IL_000f:  isinst     XYZ.MyExn
+    IL_0014:  ldnull
+    IL_0015:  cgt.un
+    IL_0017:  brfalse.s  IL_0032
 
     .line 100001,100001 : 0,0 ''
-    IL_002f:  ldc.i4.0
-    IL_0030:  ret
+    IL_0019:  ldarg.0
+    IL_001a:  castclass  XYZ.MyExn
+    IL_001f:  call       instance int32 XYZ.MyExn::get_Data0()
+    IL_0024:  ldarg.1
+    IL_0025:  castclass  XYZ.MyExn
+    IL_002a:  call       instance int32 XYZ.MyExn::get_Data0()
+    IL_002f:  ceq
+    IL_0031:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0031:  ldc.i4.0
-    IL_0032:  ret
+    IL_0032:  ldc.i4.0
+    IL_0033:  ret
 
     .line 100001,100001 : 0,0 ''
-    IL_0033:  ldarg.1
-    IL_0034:  ldnull
-    IL_0035:  cgt.un
-    IL_0037:  ldc.i4.0
-    IL_0038:  ceq
-    IL_003a:  ret
+    IL_0034:  ldc.i4.0
+    IL_0035:  ret
+
+    .line 100001,100001 : 0,0 ''
+    IL_0036:  ldarg.1
+    IL_0037:  ldnull
+    IL_0038:  cgt.un
+    IL_003a:  ldc.i4.0
+    IL_003b:  ceq
+    IL_003d:  ret
   } // end of method MyExn::Equals
 
   .method public hidebysig virtual instance bool 
@@ -1405,16 +1411,17 @@
                    class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       67 (0x43)
+      // Code size       70 (0x46)
       .maxstack  4
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [mscorlib]System.Exception V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+               [2] object V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_003b
+      IL_0004:  brfalse.s  IL_003e
 
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.1
@@ -1422,97 +1429,102 @@
       IL_000c:  stloc.0
       .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
-      IL_000e:  brfalse.s  IL_0039
+      IL_000e:  brfalse.s  IL_003c
 
       .line 100001,100001 : 0,0 ''
       IL_0010:  ldloc.0
       IL_0011:  stloc.1
       .line 100001,100001 : 0,0 ''
       IL_0012:  ldloc.0
-      IL_0013:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/MyExn>(object)
-      IL_0018:  brtrue.s   IL_001c
-
-      IL_001a:  br.s       IL_0037
-
-      .line 100001,100001 : 0,0 ''
-      IL_001c:  ldarg.2
-      IL_001d:  stloc.2
-      IL_001e:  ldarg.0
-      IL_001f:  castclass  XYZ.ABC/MyExn
-      IL_0024:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
-      IL_0029:  ldloc.1
-      IL_002a:  castclass  XYZ.ABC/MyExn
-      IL_002f:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
-      IL_0034:  ceq
-      IL_0036:  ret
+      IL_0013:  stloc.2
+      IL_0014:  ldloc.2
+      IL_0015:  isinst     XYZ.ABC/MyExn
+      IL_001a:  ldnull
+      IL_001b:  cgt.un
+      IL_001d:  brfalse.s  IL_003a
 
       .line 100001,100001 : 0,0 ''
-      IL_0037:  ldc.i4.0
-      IL_0038:  ret
+      IL_001f:  ldarg.2
+      IL_0020:  stloc.3
+      IL_0021:  ldarg.0
+      IL_0022:  castclass  XYZ.ABC/MyExn
+      IL_0027:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
+      IL_002c:  ldloc.1
+      IL_002d:  castclass  XYZ.ABC/MyExn
+      IL_0032:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
+      IL_0037:  ceq
+      IL_0039:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0039:  ldc.i4.0
-      IL_003a:  ret
+      IL_003a:  ldc.i4.0
+      IL_003b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003b:  ldarg.1
-      IL_003c:  ldnull
-      IL_003d:  cgt.un
-      IL_003f:  ldc.i4.0
-      IL_0040:  ceq
-      IL_0042:  ret
+      IL_003c:  ldc.i4.0
+      IL_003d:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_003e:  ldarg.1
+      IL_003f:  ldnull
+      IL_0040:  cgt.un
+      IL_0042:  ldc.i4.0
+      IL_0043:  ceq
+      IL_0045:  ret
     } // end of method MyExn::Equals
 
     .method public hidebysig instance bool 
             Equals(class [mscorlib]System.Exception obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       59 (0x3b)
-      .maxstack  8
+      // Code size       62 (0x3e)
+      .maxstack  4
+      .locals init ([0] object V_0)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0033
+      IL_0004:  brfalse.s  IL_0036
 
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldarg.1
       IL_0007:  ldnull
       IL_0008:  cgt.un
-      IL_000a:  brfalse.s  IL_0031
+      IL_000a:  brfalse.s  IL_0034
 
       .line 100001,100001 : 0,0 ''
       IL_000c:  ldarg.1
-      IL_000d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/MyExn>(object)
-      IL_0012:  brtrue.s   IL_0016
-
-      IL_0014:  br.s       IL_002f
-
-      .line 100001,100001 : 0,0 ''
-      IL_0016:  ldarg.0
-      IL_0017:  castclass  XYZ.ABC/MyExn
-      IL_001c:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
-      IL_0021:  ldarg.1
-      IL_0022:  castclass  XYZ.ABC/MyExn
-      IL_0027:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
-      IL_002c:  ceq
-      IL_002e:  ret
+      IL_000d:  stloc.0
+      IL_000e:  ldloc.0
+      IL_000f:  isinst     XYZ.ABC/MyExn
+      IL_0014:  ldnull
+      IL_0015:  cgt.un
+      IL_0017:  brfalse.s  IL_0032
 
       .line 100001,100001 : 0,0 ''
-      IL_002f:  ldc.i4.0
-      IL_0030:  ret
+      IL_0019:  ldarg.0
+      IL_001a:  castclass  XYZ.ABC/MyExn
+      IL_001f:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
+      IL_0024:  ldarg.1
+      IL_0025:  castclass  XYZ.ABC/MyExn
+      IL_002a:  call       instance int32 XYZ.ABC/MyExn::get_Data0()
+      IL_002f:  ceq
+      IL_0031:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0031:  ldc.i4.0
-      IL_0032:  ret
+      IL_0032:  ldc.i4.0
+      IL_0033:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0033:  ldarg.1
-      IL_0034:  ldnull
-      IL_0035:  cgt.un
-      IL_0037:  ldc.i4.0
-      IL_0038:  ceq
-      IL_003a:  ret
+      IL_0034:  ldc.i4.0
+      IL_0035:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0036:  ldarg.1
+      IL_0037:  ldnull
+      IL_0038:  cgt.un
+      IL_003a:  ldc.i4.0
+      IL_003b:  ceq
+      IL_003d:  ret
     } // end of method MyExn::Equals
 
     .method public hidebysig virtual instance bool 
@@ -2177,16 +2189,17 @@
                      class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       67 (0x43)
+        // Code size       70 (0x46)
         .maxstack  4
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [mscorlib]System.Exception V_1,
-                 [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+                 [2] object V_2,
+                 [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_003b
+        IL_0004:  brfalse.s  IL_003e
 
         .line 100001,100001 : 0,0 ''
         IL_0006:  ldarg.1
@@ -2194,97 +2207,102 @@
         IL_000c:  stloc.0
         .line 100001,100001 : 0,0 ''
         IL_000d:  ldloc.0
-        IL_000e:  brfalse.s  IL_0039
+        IL_000e:  brfalse.s  IL_003c
 
         .line 100001,100001 : 0,0 ''
         IL_0010:  ldloc.0
         IL_0011:  stloc.1
         .line 100001,100001 : 0,0 ''
         IL_0012:  ldloc.0
-        IL_0013:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/ABC/MyExn>(object)
-        IL_0018:  brtrue.s   IL_001c
-
-        IL_001a:  br.s       IL_0037
-
-        .line 100001,100001 : 0,0 ''
-        IL_001c:  ldarg.2
-        IL_001d:  stloc.2
-        IL_001e:  ldarg.0
-        IL_001f:  castclass  XYZ.ABC/ABC/MyExn
-        IL_0024:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
-        IL_0029:  ldloc.1
-        IL_002a:  castclass  XYZ.ABC/ABC/MyExn
-        IL_002f:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
-        IL_0034:  ceq
-        IL_0036:  ret
+        IL_0013:  stloc.2
+        IL_0014:  ldloc.2
+        IL_0015:  isinst     XYZ.ABC/ABC/MyExn
+        IL_001a:  ldnull
+        IL_001b:  cgt.un
+        IL_001d:  brfalse.s  IL_003a
 
         .line 100001,100001 : 0,0 ''
-        IL_0037:  ldc.i4.0
-        IL_0038:  ret
+        IL_001f:  ldarg.2
+        IL_0020:  stloc.3
+        IL_0021:  ldarg.0
+        IL_0022:  castclass  XYZ.ABC/ABC/MyExn
+        IL_0027:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
+        IL_002c:  ldloc.1
+        IL_002d:  castclass  XYZ.ABC/ABC/MyExn
+        IL_0032:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
+        IL_0037:  ceq
+        IL_0039:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0039:  ldc.i4.0
-        IL_003a:  ret
+        IL_003a:  ldc.i4.0
+        IL_003b:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_003b:  ldarg.1
-        IL_003c:  ldnull
-        IL_003d:  cgt.un
-        IL_003f:  ldc.i4.0
-        IL_0040:  ceq
-        IL_0042:  ret
+        IL_003c:  ldc.i4.0
+        IL_003d:  ret
+
+        .line 100001,100001 : 0,0 ''
+        IL_003e:  ldarg.1
+        IL_003f:  ldnull
+        IL_0040:  cgt.un
+        IL_0042:  ldc.i4.0
+        IL_0043:  ceq
+        IL_0045:  ret
       } // end of method MyExn::Equals
 
       .method public hidebysig instance bool 
               Equals(class [mscorlib]System.Exception obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       59 (0x3b)
-        .maxstack  8
+        // Code size       62 (0x3e)
+        .maxstack  4
+        .locals init ([0] object V_0)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0033
+        IL_0004:  brfalse.s  IL_0036
 
         .line 100001,100001 : 0,0 ''
         IL_0006:  ldarg.1
         IL_0007:  ldnull
         IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0031
+        IL_000a:  brfalse.s  IL_0034
 
         .line 100001,100001 : 0,0 ''
         IL_000c:  ldarg.1
-        IL_000d:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<class XYZ.ABC/ABC/MyExn>(object)
-        IL_0012:  brtrue.s   IL_0016
-
-        IL_0014:  br.s       IL_002f
-
-        .line 100001,100001 : 0,0 ''
-        IL_0016:  ldarg.0
-        IL_0017:  castclass  XYZ.ABC/ABC/MyExn
-        IL_001c:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
-        IL_0021:  ldarg.1
-        IL_0022:  castclass  XYZ.ABC/ABC/MyExn
-        IL_0027:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
-        IL_002c:  ceq
-        IL_002e:  ret
+        IL_000d:  stloc.0
+        IL_000e:  ldloc.0
+        IL_000f:  isinst     XYZ.ABC/ABC/MyExn
+        IL_0014:  ldnull
+        IL_0015:  cgt.un
+        IL_0017:  brfalse.s  IL_0032
 
         .line 100001,100001 : 0,0 ''
-        IL_002f:  ldc.i4.0
-        IL_0030:  ret
+        IL_0019:  ldarg.0
+        IL_001a:  castclass  XYZ.ABC/ABC/MyExn
+        IL_001f:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
+        IL_0024:  ldarg.1
+        IL_0025:  castclass  XYZ.ABC/ABC/MyExn
+        IL_002a:  call       instance int32 XYZ.ABC/ABC/MyExn::get_Data0()
+        IL_002f:  ceq
+        IL_0031:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0031:  ldc.i4.0
-        IL_0032:  ret
+        IL_0032:  ldc.i4.0
+        IL_0033:  ret
 
         .line 100001,100001 : 0,0 ''
-        IL_0033:  ldarg.1
-        IL_0034:  ldnull
-        IL_0035:  cgt.un
-        IL_0037:  ldc.i4.0
-        IL_0038:  ceq
-        IL_003a:  ret
+        IL_0034:  ldc.i4.0
+        IL_0035:  ret
+
+        .line 100001,100001 : 0,0 ''
+        IL_0036:  ldarg.1
+        IL_0037:  ldnull
+        IL_0038:  cgt.un
+        IL_003a:  ldc.i4.0
+        IL_003b:  ceq
+        IL_003d:  ret
       } // end of method MyExn::Equals
 
       .method public hidebysig virtual instance bool 
