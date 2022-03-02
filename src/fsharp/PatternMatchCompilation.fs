@@ -235,7 +235,7 @@ let RefuteDiscrimSet g m path discrims =
         match discrims with
         | [DecisionTreeTest.IsNull] ->
             snd(mkCompGenLocal m notNullText ty), false
-        | [DecisionTreeTest.IsInst _] ->
+        | DecisionTreeTest.IsInst _ :: _ ->
             snd(mkCompGenLocal m otherSubtypeText ty), false
         | DecisionTreeTest.Const c :: rest ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const c -> Some c | _ -> None) rest)
@@ -496,8 +496,8 @@ let discrimsHaveSameSimultaneousClass g d1 d2 =
     | DecisionTreeTest.Const _, DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull, DecisionTreeTest.IsNull
     | DecisionTreeTest.ArrayLength _, DecisionTreeTest.ArrayLength _
-    | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _  -> true
-    | DecisionTreeTest.IsInst _, DecisionTreeTest.IsInst _ -> false
+    | DecisionTreeTest.UnionCase _, DecisionTreeTest.UnionCase _
+    | DecisionTreeTest.IsInst _, DecisionTreeTest.IsInst _ -> true
     | DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt1, _, _), DecisionTreeTest.ActivePatternCase (_, _, _, apatVrefOpt2, _, _) ->
         match apatVrefOpt1, apatVrefOpt2 with
         | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
@@ -577,7 +577,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     if verbose then dprintf "--> BuildSwitch@%a, #edges = %A, dflt.IsSome = %A\n" outputRange m (List.length edges) (Option.isSome dflt)
     match edges, dflt with
     | [], None      -> failwith "internal error: no edges and no default"
-    | [], Some dflt -> dflt      (* NOTE: first time around, edges<>[] *)
+    | [], Some dflt -> dflt
 
     // Optimize the case where the match always succeeds
     | [TCase(_, tree)], None -> tree
@@ -1023,10 +1023,9 @@ let CompilePatternBasic
           // This is really an optimization that could be done more effectively in opt.fs
           // if we flowed a bit of information through
 
-
          | EdgeDiscrim(_i', DecisionTreeTest.IsInst (_srcty, tgty), m) :: _rest
-                    (* check we can use a simple 'isinst' instruction *)
-                    when canUseTypeTestFast g tgty && isNil origInputValTypars ->
+                    // check we can use a simple 'isinst' instruction
+                    when isRefTy g tgty && canUseTypeTestFast g tgty && isNil origInputValTypars ->
 
              let v, vExpr = mkCompGenLocal m "typeTestResult" tgty
              if origInputVal.IsMemberOrModuleBinding then
@@ -1314,7 +1313,7 @@ let CompilePatternBasic
 
                 | _ ->
                     // Successful type tests against other types don't refute anything
-                    // REVIEW: Successful type tests against one sealed type should refute all other sealed types
+                    // REVIEW: Successful type tests against, say, int should refute other unrelated types such as string
                     [frontier]
 
             | TPat_null _ ->

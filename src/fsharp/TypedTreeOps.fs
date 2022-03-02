@@ -8592,8 +8592,7 @@ let (|SpecialNotEquatableHeadType|_|) g ty =
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
      not (isTyparTy g ty) && 
-     not (TypeNullIsTrueValue g ty) && 
-     not (TypeNullNever g ty)
+     not (TypeNullIsTrueValue g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
 let canUseUnboxFast g m ty = 
