@@ -349,13 +349,10 @@ type
             |]
 
             match parseResults.ParseTree with
-            | Types(range, [TypeRange(typeRange, synComponentRange)]) ->
+            | Types(range, [TypeRange(typeRange, synComponentRange)])
+            | TypeSigs(range, [TypeSigRange(typeRange, synComponentRange)]) ->
                 assertRange (4, 0) (10, 14) range
                 assertRange (4, 0) (10, 14) typeRange
-                assertRange (10, 13) (10, 14) synComponentRange
-            | TypeSigs(range, [TypeSigRange(typeRange, synComponentRange)]) ->
-                assertRange (4, 0) (11, 0) range
-                assertRange (4, 0) (11, 0) typeRange
                 assertRange (10, 13) (10, 14) synComponentRange
             | x ->
                 failwith $"Unexpected ParsedInput %A{x}")
@@ -1057,7 +1054,7 @@ module M2 = type A
     match parseResults.ParseTree with
     | NestedModulesSigs(range1, range2) ->
         assertRange (2, 0) (6, 30) range1
-        assertRange (8, 0) (11, 0) range2
+        assertRange (8, 0) (10, 18) range2
     | x ->
         failwith $"Unexpected ParsedInput: %A{x}"
 
