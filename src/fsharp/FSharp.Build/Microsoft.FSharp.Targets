@@ -65,6 +65,8 @@ this file.
     <!-- Here we set the default value to true when nothing is set, it will be removed in a future release when we default to the net sdk compiler -->
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
         <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
+        <FSCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)' == 'true'">$(Fsc_DotNET_FSCorePreviewPackageVersionNumber)</FSCorePackageVersion>
+        <RestoreAdditionalProjectSources Condition="Exists('$(Fsc_DotNET__FSharpCoreLibraryPacksFolder)')">$(RestoreAdditionalProjectSources);$(Fsc_DotNET__FSharpCoreLibraryPacksFolder)</RestoreAdditionalProjectSources>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">

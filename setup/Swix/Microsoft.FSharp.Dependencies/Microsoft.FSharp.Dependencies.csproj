@@ -5,8 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <SwrProperty Include="ProjectDir=$(MSBuildThisFileDirectory)" />
-    <SwrProperty Include="SetupShimsDir=$(MSBuildThisFileDirectory)..\..\shims" />
+    <SwrProperty Include="SetupShimsDir=$(ArtifactsDir)bin\shims\$(Configuration)\$(TargetFramework)" />
     <SwrProperty Include="VSGeneralVersion=$(VSGeneralVersion)" />
     <SwrProperty Include="VsixVersion=$(VsixVersion)" />
   </ItemGroup>

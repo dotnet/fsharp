@@ -107,7 +107,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module TargetFrameworkUtil =
+    module public TargetFrameworkUtil =
 
         let private config = TestFramework.initializeSuite ()
 
@@ -179,7 +179,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
