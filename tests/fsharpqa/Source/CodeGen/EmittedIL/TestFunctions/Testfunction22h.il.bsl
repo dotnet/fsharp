@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x000000BA
 }
 .module Testfunction22h.exe
-// MVID: {621F7973-0266-39F6-A745-038373791F62}
+// MVID: {621FED72-0266-39F6-A745-038372ED1F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x063D0000
+// Image base: 0x05900000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -306,21 +306,20 @@
 
   .method public static void  test5() cil managed
   {
-    // Code size       105 (0x69)
+    // Code size       96 (0x60)
     .maxstack  3
     .locals init ([0] class [mscorlib]System.Exception V_0,
-             [1] class [mscorlib]System.ArgumentException V_1,
-             [2] class [mscorlib]System.ArgumentException a,
-             [3] object V_3,
-             [4] class [mscorlib]System.ArgumentException V_4,
-             [5] string msg)
+             [1] object V_1,
+             [2] object V_2,
+             [3] class [mscorlib]System.ArgumentException a,
+             [4] string msg)
     .line 32,32 : 4,7 ''
     .try
     {
       IL_0000:  nop
       .line 33,33 : 7,33 ''
       IL_0001:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0006:  leave.s    IL_0068
+      IL_0006:  leave.s    IL_005f
 
       .line 34,34 : 4,8 ''
     }  // end .try
@@ -328,65 +327,56 @@
     {
       IL_0008:  castclass  [mscorlib]System.Exception
       IL_000d:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_000e:  ldloc.0
-      IL_000f:  isinst     [mscorlib]System.ArgumentException
-      IL_0014:  stloc.1
-      .line 100001,100001 : 0,0 ''
-      IL_0015:  ldloc.1
-      IL_0016:  brfalse.s  IL_001a
-
-      IL_0018:  br.s       IL_0038
-
-      .line 100001,100001 : 0,0 ''
-      IL_001a:  ldloc.1
-      IL_001b:  stloc.3
-      IL_001c:  ldloc.3
-      IL_001d:  isinst     [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException
-      IL_0022:  ldnull
-      IL_0023:  cgt.un
-      IL_0025:  brfalse.s  IL_005d
-
-      IL_0027:  ldloc.0
-      IL_0028:  isinst     [mscorlib]System.ArgumentException
-      IL_002d:  stloc.s    V_4
-      .line 100001,100001 : 0,0 ''
-      IL_002f:  ldloc.s    V_4
-      IL_0031:  brfalse.s  IL_0047
+      IL_000f:  stloc.1
+      IL_0010:  ldloc.1
+      IL_0011:  isinst     [mscorlib]System.ArgumentException
+      IL_0016:  ldnull
+      IL_0017:  cgt.un
+      IL_0019:  brtrue.s   IL_002a
 
       .line 100001,100001 : 0,0 ''
-      IL_0033:  ldloc.s    V_4
-      IL_0035:  stloc.2
-      IL_0036:  br.s       IL_003a
+      IL_001b:  ldloc.0
+      IL_001c:  stloc.2
+      IL_001d:  ldloc.2
+      IL_001e:  isinst     [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException
+      IL_0023:  ldnull
+      IL_0024:  cgt.un
+      IL_0026:  brfalse.s  IL_0054
+
+      IL_0028:  br.s       IL_003e
 
       .line 100001,100001 : 0,0 ''
-      IL_0038:  ldloc.1
-      IL_0039:  stloc.2
+      IL_002a:  ldloc.0
+      IL_002b:  unbox.any  [mscorlib]System.ArgumentException
+      IL_0030:  stloc.3
       .line 36,36 : 45,80 ''
-      IL_003a:  ldloc.2
-      IL_003b:  callvirt   instance string [mscorlib]System.Exception::get_Message()
-      IL_0040:  call       void [mscorlib]System.Console::WriteLine(string)
-      IL_0045:  leave.s    IL_0068
+      IL_0031:  ldloc.3
+      IL_0032:  callvirt   instance string [mscorlib]System.Exception::get_Message()
+      IL_0037:  call       void [mscorlib]System.Console::WriteLine(string)
+      IL_003c:  leave.s    IL_005f
 
       .line 100001,100001 : 0,0 ''
-      IL_0047:  ldloc.0
-      IL_0048:  castclass  [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException
-      IL_004d:  call       instance string [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException::get_Data0()
-      IL_0052:  stloc.s    msg
+      IL_003e:  ldloc.0
+      IL_003f:  castclass  [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException
+      IL_0044:  call       instance string [FSharp.Core]Microsoft.FSharp.Core.MatchFailureException::get_Data0()
+      IL_0049:  stloc.s    msg
       .line 37,37 : 47,76 ''
-      IL_0054:  ldloc.s    msg
-      IL_0056:  call       void [mscorlib]System.Console::WriteLine(string)
-      IL_005b:  leave.s    IL_0068
+      IL_004b:  ldloc.s    msg
+      IL_004d:  call       void [mscorlib]System.Console::WriteLine(string)
+      IL_0052:  leave.s    IL_005f
 
       .line 100001,100001 : 0,0 ''
-      IL_005d:  rethrow
-      IL_005f:  ldnull
-      IL_0060:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_0065:  pop
-      IL_0066:  leave.s    IL_0068
+      IL_0054:  rethrow
+      IL_0056:  ldnull
+      IL_0057:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_005c:  pop
+      IL_005d:  leave.s    IL_005f
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0068:  ret
+    IL_005f:  ret
   } // end of method Testfunction22h::test5
 
 } // end of class Testfunction22h

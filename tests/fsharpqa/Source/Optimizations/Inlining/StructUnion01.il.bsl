@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly StructUnion01
 {
@@ -32,13 +32,13 @@
   // Offset: 0x00000880 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {60BE1F16-D3E9-6B24-A745-0383161FBE60}
+// MVID: {621FF1EF-D3E9-6B24-A745-0383EFF11F62}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x065C0000
+// Image base: 0x05A00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -374,38 +374,35 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       54 (0x36)
+      // Code size       47 (0x2f)
       .maxstack  4
       .locals init (valuetype StructUnion01/U V_0)
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructUnion01/U>(object)
-      IL_0006:  brtrue.s   IL_000a
+      IL_0001:  isinst     StructUnion01/U
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_002d
 
-      IL_0008:  br.s       IL_0034
-
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  StructUnion01/U
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  pop
-      IL_0013:  ldarg.0
+      IL_000a:  ldarg.0
+      IL_000b:  pop
+      IL_000c:  ldarg.0
+      IL_000d:  ldfld      int32 StructUnion01/U::item1
+      IL_0012:  ldloca.s   V_0
       IL_0014:  ldfld      int32 StructUnion01/U::item1
-      IL_0019:  ldloca.s   V_0
-      IL_001b:  ldfld      int32 StructUnion01/U::item1
-      IL_0020:  bne.un.s   IL_0032
+      IL_0019:  bne.un.s   IL_002b
 
-      IL_0022:  ldarg.0
+      IL_001b:  ldarg.0
+      IL_001c:  ldfld      int32 StructUnion01/U::item2
+      IL_0021:  ldloca.s   V_0
       IL_0023:  ldfld      int32 StructUnion01/U::item2
-      IL_0028:  ldloca.s   V_0
-      IL_002a:  ldfld      int32 StructUnion01/U::item2
-      IL_002f:  ceq
-      IL_0031:  ret
+      IL_0028:  ceq
+      IL_002a:  ret
 
-      IL_0032:  ldc.i4.0
-      IL_0033:  ret
+      IL_002b:  ldc.i4.0
+      IL_002c:  ret
 
-      IL_0034:  ldc.i4.0
-      IL_0035:  ret
+      IL_002d:  ldc.i4.0
+      IL_002e:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 
@@ -437,22 +434,22 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       25 (0x19)
-      .maxstack  8
+      // Code size       20 (0x14)
+      .maxstack  4
+      .locals init (valuetype StructUnion01/U V_0)
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructUnion01/U>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0017
+      IL_0001:  isinst     StructUnion01/U
+      IL_0006:  stloc.0
+      IL_0007:  ldloc.0
+      IL_0008:  brfalse.s  IL_0012
 
       IL_000a:  ldarg.0
-      IL_000b:  ldarg.1
-      IL_000c:  unbox.any  StructUnion01/U
-      IL_0011:  call       instance bool StructUnion01/U::Equals(valuetype StructUnion01/U)
-      IL_0016:  ret
+      IL_000b:  ldloc.0
+      IL_000c:  call       instance bool StructUnion01/U::Equals(valuetype StructUnion01/U)
+      IL_0011:  ret
 
-      IL_0017:  ldc.i4.0
-      IL_0018:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method U::Equals
 
     .property instance int32 Tag()

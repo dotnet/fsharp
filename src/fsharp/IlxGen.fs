@@ -7422,7 +7422,7 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                 let recBinds =
                     bindsRemaining
                     |> List.takeWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false)
-                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "unexpected")
+                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "GenModuleDef - unexpected")
                 let otherBinds =
                     bindsRemaining
                     |> List.skipWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) 
