@@ -36,13 +36,13 @@
   // Offset: 0x00000780 Length: 0x00000237
 }
 .module Structs02.exe
-// MVID: {621F7962-7040-5E27-A745-038362791F62}
+// MVID: {6220CCA3-7040-5E27-A745-0383A3CC2062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07210000
+// Image base: 0x06A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -211,34 +211,39 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       32 (0x20)
+      // Code size       42 (0x2a)
       .maxstack  4
-      .locals init ([0] valuetype Experiment.Test/Repro V_0,
-               [1] valuetype Experiment.Test/Repro& V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+      .locals init ([0] object V_0,
+               [1] valuetype Experiment.Test/Repro V_1,
+               [2] valuetype Experiment.Test/Repro& V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  isinst     Experiment.Test/Repro
-      IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
-      IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_001e
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     Experiment.Test/Repro
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0028
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldloca.s   V_0
-      IL_000c:  stloc.1
-      IL_000d:  ldarg.2
-      IL_000e:  stloc.2
-      IL_000f:  ldarg.0
-      IL_0010:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_0015:  ldloc.1
-      IL_0016:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_001b:  ceq
-      IL_001d:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  Experiment.Test/Repro
+      IL_0013:  stloc.1
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  stloc.2
+      IL_0017:  ldarg.2
+      IL_0018:  stloc.3
+      IL_0019:  ldarg.0
+      IL_001a:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_001f:  ldloc.2
+      IL_0020:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0025:  ceq
+      IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_001e:  ldc.i4.0
-      IL_001f:  ret
+      IL_0028:  ldc.i4.0
+      IL_0029:  ret
     } // end of method Repro::Equals
 
     .method public specialname rtspecialname 
@@ -311,26 +316,31 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       20 (0x14)
+      // Code size       30 (0x1e)
       .maxstack  4
-      .locals init ([0] valuetype Experiment.Test/Repro V_0)
+      .locals init ([0] object V_0,
+               [1] valuetype Experiment.Test/Repro V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  isinst     Experiment.Test/Repro
-      IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
-      IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_0012
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     Experiment.Test/Repro
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001c
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.0
-      IL_000b:  ldloc.0
-      IL_000c:  call       instance bool Experiment.Test/Repro::Equals(valuetype Experiment.Test/Repro)
-      IL_0011:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  Experiment.Test/Repro
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  call       instance bool Experiment.Test/Repro::Equals(valuetype Experiment.Test/Repro)
+      IL_001b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0012:  ldc.i4.0
-      IL_0013:  ret
+      IL_001c:  ldc.i4.0
+      IL_001d:  ret
     } // end of method Repro::Equals
 
     .property instance int32 hash()

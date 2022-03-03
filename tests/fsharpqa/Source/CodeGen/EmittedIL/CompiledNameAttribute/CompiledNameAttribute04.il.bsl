@@ -36,13 +36,13 @@
   // Offset: 0x00000CE0 Length: 0x000002CB
 }
 .module CompiledNameAttribute04.exe
-// MVID: {621F7961-34DF-584F-A745-038361791F62}
+// MVID: {6220CCA3-34DF-584F-A745-0383A3CC2062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A60000
+// Image base: 0x07130000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -214,27 +214,32 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       17 (0x11)
+      // Code size       27 (0x1b)
       .maxstack  3
-      .locals init ([0] valuetype CompiledNameAttribute04/S V_0,
-               [1] valuetype CompiledNameAttribute04/S& V_1)
+      .locals init ([0] object V_0,
+               [1] valuetype CompiledNameAttribute04/S V_1,
+               [2] valuetype CompiledNameAttribute04/S& V_2)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  isinst     CompiledNameAttribute04/S
-      IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
-      IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_000f
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     CompiledNameAttribute04/S
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0019
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldloca.s   V_0
-      IL_000c:  stloc.1
-      IL_000d:  ldc.i4.1
-      IL_000e:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  CompiledNameAttribute04/S
+      IL_0013:  stloc.1
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  stloc.2
+      IL_0017:  ldc.i4.1
+      IL_0018:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_000f:  ldc.i4.0
-      IL_0010:  ret
+      IL_0019:  ldc.i4.0
+      IL_001a:  ret
     } // end of method S::Equals
 
     .method public hidebysig instance !!a 
@@ -264,26 +269,31 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       20 (0x14)
+      // Code size       30 (0x1e)
       .maxstack  4
-      .locals init ([0] valuetype CompiledNameAttribute04/S V_0)
+      .locals init ([0] object V_0,
+               [1] valuetype CompiledNameAttribute04/S V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  isinst     CompiledNameAttribute04/S
-      IL_0006:  stloc.0
-      .line 100001,100001 : 0,0 ''
-      IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_0012
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     CompiledNameAttribute04/S
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001c
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.0
-      IL_000b:  ldloc.0
-      IL_000c:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
-      IL_0011:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  CompiledNameAttribute04/S
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
+      IL_001b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0012:  ldc.i4.0
-      IL_0013:  ret
+      IL_001c:  ldc.i4.0
+      IL_001d:  ret
     } // end of method S::Equals
 
   } // end of class S
