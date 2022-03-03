@@ -32,13 +32,13 @@
   // Offset: 0x00000880 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {6220D390-D3E9-6B24-A745-038390D32062}
+// MVID: {6220E4FA-D3E9-6B24-A745-0383FAE42062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D10000
+// Image base: 0x072B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -374,38 +374,36 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       55 (0x37)
+      // Code size       52 (0x34)
       .maxstack  4
       .locals init (valuetype StructUnion01/U V_0)
       IL_0000:  ldarg.1
       IL_0001:  isinst     StructUnion01/U
-      IL_0006:  ldnull
-      IL_0007:  cgt.un
-      IL_0009:  brfalse.s  IL_0035
+      IL_0006:  brfalse.s  IL_0032
 
-      IL_000b:  ldarg.1
-      IL_000c:  unbox.any  StructUnion01/U
-      IL_0011:  stloc.0
-      IL_0012:  ldarg.0
-      IL_0013:  pop
-      IL_0014:  ldarg.0
-      IL_0015:  ldfld      int32 StructUnion01/U::item1
-      IL_001a:  ldloca.s   V_0
-      IL_001c:  ldfld      int32 StructUnion01/U::item1
-      IL_0021:  bne.un.s   IL_0033
+      IL_0008:  ldarg.1
+      IL_0009:  unbox.any  StructUnion01/U
+      IL_000e:  stloc.0
+      IL_000f:  ldarg.0
+      IL_0010:  pop
+      IL_0011:  ldarg.0
+      IL_0012:  ldfld      int32 StructUnion01/U::item1
+      IL_0017:  ldloca.s   V_0
+      IL_0019:  ldfld      int32 StructUnion01/U::item1
+      IL_001e:  bne.un.s   IL_0030
 
-      IL_0023:  ldarg.0
-      IL_0024:  ldfld      int32 StructUnion01/U::item2
-      IL_0029:  ldloca.s   V_0
-      IL_002b:  ldfld      int32 StructUnion01/U::item2
-      IL_0030:  ceq
-      IL_0032:  ret
+      IL_0020:  ldarg.0
+      IL_0021:  ldfld      int32 StructUnion01/U::item2
+      IL_0026:  ldloca.s   V_0
+      IL_0028:  ldfld      int32 StructUnion01/U::item2
+      IL_002d:  ceq
+      IL_002f:  ret
 
-      IL_0033:  ldc.i4.0
-      IL_0034:  ret
+      IL_0030:  ldc.i4.0
+      IL_0031:  ret
 
-      IL_0035:  ldc.i4.0
-      IL_0036:  ret
+      IL_0032:  ldc.i4.0
+      IL_0033:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 
@@ -437,22 +435,20 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       26 (0x1a)
+      // Code size       23 (0x17)
       .maxstack  8
       IL_0000:  ldarg.1
       IL_0001:  isinst     StructUnion01/U
-      IL_0006:  ldnull
-      IL_0007:  cgt.un
-      IL_0009:  brfalse.s  IL_0018
+      IL_0006:  brfalse.s  IL_0015
 
-      IL_000b:  ldarg.0
-      IL_000c:  ldarg.1
-      IL_000d:  unbox.any  StructUnion01/U
-      IL_0012:  call       instance bool StructUnion01/U::Equals(valuetype StructUnion01/U)
-      IL_0017:  ret
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  unbox.any  StructUnion01/U
+      IL_000f:  call       instance bool StructUnion01/U::Equals(valuetype StructUnion01/U)
+      IL_0014:  ret
 
-      IL_0018:  ldc.i4.0
-      IL_0019:  ret
+      IL_0015:  ldc.i4.0
+      IL_0016:  ret
     } // end of method U::Equals
 
     .property instance int32 Tag()

@@ -4164,6 +4164,11 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
               GenSequel cenv eenv.cloc cgbuf sequel
           | _ -> failwith "Bad polymorphic IL instruction"
 
+    // ldnull; cgt.un then branch is used to test for null and can become a direct brtrue/brfalse
+    | [ AI_ldnull; AI_cgt_un ], [arg1], CmpThenBrOrContinue(1, [ I_brcmp (bi, label1) ]), _ ->
+
+        GenExpr cenv cgbuf eenv arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi, label1) ]))
+
     // Strip off any ("ceq" x false) when the sequel is a comparison branch and change the BI_brfalse to a BI_brtrue
     // This is the instruction sequence for "not"
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa)
@@ -4172,19 +4177,21 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
        CmpThenBrOrContinue(1, [I_brcmp (BI_brfalse | BI_brtrue as bi, label1) ]),
        _) ->
 
-            let bi = match bi with BI_brtrue -> BI_brfalse | _ -> BI_brtrue
-            GenExpr cenv cgbuf eenv arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi, label1) ]))
+        let bi = match bi with BI_brtrue -> BI_brfalse | _ -> BI_brtrue
+        GenExpr cenv cgbuf eenv arg1 (CmpThenBrOrContinue(pop 1, [ I_brcmp (bi, label1) ]))
 
     // Query; when do we get a 'ret' in IL assembly code?
     | [ I_ret ], [arg1], sequel, [_ilRetTy] ->
-          GenExpr cenv cgbuf eenv arg1 Continue
-          CG.EmitInstr cgbuf (pop 1) Push0 I_ret
-          GenSequelEndScopes cgbuf sequel
+
+        GenExpr cenv cgbuf eenv arg1 Continue
+        CG.EmitInstr cgbuf (pop 1) Push0 I_ret
+        GenSequelEndScopes cgbuf sequel
 
     // Query; when do we get a 'ret' in IL assembly code?
     | [ I_ret ], [], sequel, [_ilRetTy] ->
-          CG.EmitInstr cgbuf (pop 1) Push0 I_ret
-          GenSequelEndScopes cgbuf sequel
+
+        CG.EmitInstr cgbuf (pop 1) Push0 I_ret
+        GenSequelEndScopes cgbuf sequel
 
     // 'throw' instructions are a bit of a problem - e.g. let x = (throw ...) in ... expects a value *)
     // to be left on the stack. But dead-code checking by some versions of the .NET verifier *)
