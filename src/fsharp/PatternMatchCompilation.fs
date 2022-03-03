@@ -1480,8 +1480,9 @@ let CompilePatternBasic
 
             | TPat_exnconstr (ecref, argpats, _) ->
 
+                let srcTy1 = g.exn_ty
                 let tgtTy1 = mkAppTy ecref []
-                if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (g.exn_ty, tgtTy1))) then [] else
+                if taken |> List.exists (discrimsEq g (DecisionTreeTest.IsInst (srcTy1, tgtTy1))) then [] else
 
                 match discrim with
                 | DecisionTreeTest.IsInst (_srcTy, tgtTy2) ->
@@ -1492,6 +1493,13 @@ let CompilePatternBasic
                         // Successful tests against F# exception definitions refute all other non-equivalent type tests
                         // F# exception definitions are sealed.
                         []
+
+                | DecisionTreeTest.IsNull _ ->
+                    match computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 with
+                    | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
+                    | Implication.Fails -> []
+                    | Implication.Nothing -> [frontier]
+
                 | _ ->
                     [frontier]
 

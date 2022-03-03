@@ -79,64 +79,62 @@ let ApplyDefaults () =
             """
             (fun verifier -> verifier.VerifyIL [
             """
-.method public static void  ApplyDefaults() cil managed
-{
-  
-  .maxstack  5
-  .locals init (int32 V_0,
-           class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_1,
-           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
-           class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_3,
-           class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_4,
-           class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_5,
-           bool V_6)
-  IL_0000:  ldc.i4.0
-  IL_0001:  stloc.0
-  IL_0002:  br.s       IL_004b
+      .method public static void  ApplyDefaults() cil managed
+  {
     
-  IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> DontEliminateForLoops::get_unsolved()
-  IL_0009:  stloc.1
-  IL_000a:  ldsfld     class DontEliminateForLoops/ApplyDefaults@8 DontEliminateForLoops/ApplyDefaults@8::@_instance
-  IL_000f:  stloc.2
-  IL_0010:  ldloc.1
-  IL_0011:  stloc.3
-  IL_0012:  ldloc.3
-  IL_0013:  stloc.s    V_4
-  IL_0015:  ldloc.s    V_4
-  IL_0017:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
-  IL_001c:  stloc.s    V_5
-  IL_001e:  ldloc.s    V_5
-  IL_0020:  ldnull
-  IL_0021:  cgt.un
-  IL_0023:  brfalse.s  IL_0047
-    
-  IL_0025:  ldloc.s    V_4
-  IL_0027:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
-  IL_002c:  stloc.s    V_6
-  IL_002e:  ldloc.2
-  IL_002f:  ldloc.s    V_6
-  IL_0031:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-  IL_0036:  pop
-  IL_0037:  ldloc.s    V_5
-  IL_0039:  stloc.s    V_4
-  IL_003b:  ldloc.s    V_4
-  IL_003d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
-  IL_0042:  stloc.s    V_5
-  IL_0044:  nop
-  IL_0045:  br.s       IL_001e
-    
-  IL_0047:  ldloc.0
-  IL_0048:  ldc.i4.1
-  IL_0049:  add
-  IL_004a:  stloc.0
-  IL_004b:  ldloc.0
-  IL_004c:  ldc.i4.1
-  IL_004d:  ldc.i4.s   10
-  IL_004f:  add
-  IL_0050:  blt.s      IL_0004
-    
-  IL_0052:  ret
-} 
+    .maxstack  5
+    .locals init (int32 V_0,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_1,
+             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_3,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_4,
+             class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> V_5,
+             bool V_6)
+    IL_0000:  ldc.i4.0
+    IL_0001:  stloc.0
+    IL_0002:  br.s       IL_0048
+
+    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool> DontEliminateForLoops::get_unsolved()
+    IL_0009:  stloc.1
+    IL_000a:  ldsfld     class DontEliminateForLoops/ApplyDefaults@8 DontEliminateForLoops/ApplyDefaults@8::@_instance
+    IL_000f:  stloc.2
+    IL_0010:  ldloc.1
+    IL_0011:  stloc.3
+    IL_0012:  ldloc.3
+    IL_0013:  stloc.s    V_4
+    IL_0015:  ldloc.s    V_4
+    IL_0017:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
+    IL_001c:  stloc.s    V_5
+    IL_001e:  ldloc.s    V_5
+    IL_0020:  brfalse.s  IL_0044
+
+    IL_0022:  ldloc.s    V_4
+    IL_0024:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_HeadOrDefault()
+    IL_0029:  stloc.s    V_6
+    IL_002b:  ldloc.2
+    IL_002c:  ldloc.s    V_6
+    IL_002e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<bool,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0033:  pop
+    IL_0034:  ldloc.s    V_5
+    IL_0036:  stloc.s    V_4
+    IL_0038:  ldloc.s    V_4
+    IL_003a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<bool>::get_TailOrNull()
+    IL_003f:  stloc.s    V_5
+    IL_0041:  nop
+    IL_0042:  br.s       IL_001e
+
+    IL_0044:  ldloc.0
+    IL_0045:  ldc.i4.1
+    IL_0046:  add
+    IL_0047:  stloc.0
+    IL_0048:  ldloc.0
+    IL_0049:  ldc.i4.1
+    IL_004a:  ldc.i4.s   10
+    IL_004c:  add
+    IL_004d:  blt.s      IL_0004
+
+    IL_004f:  ret
+  } 
             """
             ])
 
