@@ -8610,7 +8610,7 @@ let canUseUnboxFast g m ty =
 // used for compiler-generated code.
 let mkIsInstConditional g m tgty vinpe v e2 e3 = 
     
-    if canUseTypeTestFast g tgty then 
+    if canUseTypeTestFast g tgty && isRefTy g tgty then 
 
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
         let tg2 = mbuilder.AddResultTarget(e2)
