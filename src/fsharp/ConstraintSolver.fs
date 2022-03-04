@@ -1234,7 +1234,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
                SolveNullnessEquiv csenv m2 trace ty1 ty2 nullness1 nullnessAfterSolution2
             )
 
-    | TType_var (tp1, nullness1), _ when not (IsRigid csenv r) ->
+    | TType_var (tp1, nullness1), _ when not (IsRigid csenv tp1) ->
         match nullness1.TryEvaluate(), (nullnessOfTy g sty2).TryEvaluate() with
         // Unifying 'T1? and 'T2? 
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
@@ -1248,7 +1248,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
            SolveNullnessEquiv csenv m2 trace ty1 ty2 nullnessAfterSolution1 (nullnessOfTy g sty2)
         )
 
-    | _, TType_var (tp2, nullness2) when not csenv.MatchingOnly && not (IsRigid csenv r) ->
+    | _, TType_var (tp2, nullness2) when not csenv.MatchingOnly && not (IsRigid csenv tp2) ->
         match (nullnessOfTy g sty1).TryEvaluate(), nullness2.TryEvaluate() with
         // Unifying 'T1? and 'T2? 
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
@@ -1398,12 +1398,12 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
         UnifyMeasures csenv trace ms1 ms2
 
     // Enforce the identities float=float<1>, float32=float32<1> and decimal=decimal<1> 
-    | _, TType_app (tc2, [ms2], nullness2)) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2]) ->
+    | _, TType_app (tc2, [ms2], nullness2) when tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty1 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms2]) ->
         SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms2 (TType_measure Measure.One) ++ (fun () -> 
            SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 (nullnessOfTy g sty1) nullness2
         )
 
-    | TType_app (tc1, [ms1], nullness1), _) when (tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1]) ->
+    | TType_app (tc1, [ms1], nullness1), _ when tc1.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc1 [ms1]) ->
         SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms1 (TType_measure Measure.One) ++ (fun () -> 
            SolveNullnessSubsumesNullness csenv m2 trace ty1 ty2 nullness1 (nullnessOfTy g sty2)
         )
@@ -3613,22 +3613,22 @@ let AddCxMethodConstraint denv css m trace traitInfo  =
 
 let AddCxTypeDefnSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeDefnSupportsNull csenv 0 m trace ty)
+    PostponeOnFailedMemberConstraintResolution csenv trace
+        (fun csenv -> SolveTypeDefnSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeDefnNotSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeDefnNotSupportsNull csenv 0 m trace ty)
+    PostponeOnFailedMemberConstraintResolution csenv trace
+        (fun csenv -> SolveTypeDefnNotSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeUseSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    PostponeOnFailedMemberConstraintResolution
-        (fun () -> SolveTypeUseSupportsNull csenv 0 m trace ty)
+    PostponeOnFailedMemberConstraintResolution csenv trace
+        (fun csenv -> SolveTypeUseSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 

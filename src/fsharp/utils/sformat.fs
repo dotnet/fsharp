@@ -116,7 +116,7 @@ type IEnvironment =
     abstract MaxColumns: int
     abstract MaxRows: int
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AutoOpen>]
 module NullShim =
     // Shim to match nullness checking library support in preview

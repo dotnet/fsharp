@@ -388,7 +388,7 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type, typB, typeDef) =
 #else
 let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type?, typB, typeDef) =
@@ -765,7 +765,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic,
                                 null,
                                 argTs,
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                                 (null: ParameterModifier[]))
 #else
                                 (null:ParameterModifier[]?))
@@ -779,7 +779,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo =
 #else
 let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo? =
@@ -839,7 +839,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) :
     | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
     | NonNull res -> res
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo =
 #else
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo? =

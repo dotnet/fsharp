@@ -802,7 +802,7 @@ type ISymUnmanagedWriter2 =
     abstract GetDebugInfo: iDD: ImageDebugDirectory byref *
                           cData: int *
                           pcData: int byref *
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                           [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[] -> unit
 #else
                           [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]data : byte[]? -> unit

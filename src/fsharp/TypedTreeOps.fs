@@ -6174,8 +6174,8 @@ let rec tyOfExpr g expr =
     | Expr.Quote (_, _, _, _, ty) 
     | Expr.Const (_, _, ty) -> ty
     | Expr.Val (vref, _, _) -> vref.Type
-    | Expr.Sequential (a, b, k, _, _) -> tyOfExpr g (match k with NormalSeq -> b | ThenDoSeq -> a)
-    | Expr.Lambda (_, _, _, vs, _, _, rty) -> (mkRefTupledVarsTy g vs --> rty)
+    | Expr.Sequential (a, b, k, _) -> tyOfExpr g (match k with NormalSeq -> b | ThenDoSeq -> a)
+    | Expr.Lambda (_, _, _, vs, _, _, rty) -> mkFunTy g (mkRefTupledVarsTy g vs) rty
     | Expr.TyLambda (_, tyvs, _, _, rty) -> (tyvs +-> rty)
     | Expr.Let (_, e, _, _) 
     | Expr.TyChoose (_, e, _)
@@ -7660,7 +7660,7 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string option = 
 #else
 let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) : string? option = 
@@ -9933,7 +9933,7 @@ let (|SequentialResumableCode|_|) (g: TcGlobals) expr =
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
-let isResumableCodeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.ResumableCode_tcr | _ -> false)
+let isResumableCodeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tyconRefEq g tcref g.ResumableCode_tcr | _ -> false)
 
 let rec isReturnsResumableCodeTy g ty = 
     if isFunTy g ty then isReturnsResumableCodeTy g (rangeOfFunTy g ty)

@@ -11,7 +11,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AutoOpen>]
 // Shim to match nullness checking library support in preview
 module UtilsFsi = 
@@ -54,7 +54,7 @@ type public Fsi () as this =
     let mutable treatWarningsAsErrors : bool = false
     let mutable utf8output : bool = false
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable codePage : string = null
     let mutable disabledWarnings : string = null
     let mutable dotnetFsiCompilerPath : string = null

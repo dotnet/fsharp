@@ -11,7 +11,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 // Shim to match nullness checking library support in preview
 [<AutoOpen>]
 module Utils = 
@@ -62,7 +62,7 @@ type public Fsc () as this =
     let mutable vserrors : bool = false
     let mutable utf8output : bool = false
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable baseAddress : string = null
     let mutable codePage : string = null
     let mutable debugType : string = null
@@ -139,7 +139,7 @@ type public Fsc () as this =
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let splitAndWsTrim (s:string) =
 #else
     let splitAndWsTrim (s:string?) =
@@ -207,7 +207,7 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
 // Platform
         builder.AppendSwitchIfNotNull("--platform:",
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
             let ToUpperInvariant (s:string) =
 #else
             let ToUpperInvariant (s:string?) =

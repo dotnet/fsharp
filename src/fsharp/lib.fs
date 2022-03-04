@@ -25,7 +25,7 @@ let condition s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 let dispose (x: IDisposable) =
 #else
 let dispose (x: IDisposable?) = 
@@ -472,7 +472,7 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still.
                         List.rev savedConts)
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
             let postOrQueue (sc: SynchronizationContext, cont) =
 #else
             let postOrQueue (sc: SynchronizationContext?, cont) =

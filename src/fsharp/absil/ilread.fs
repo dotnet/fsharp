@@ -732,7 +732,7 @@ type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag 
 
 let mkCacheInt32 lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable cache = null
 #else
     let mutable cache : ConcurrentDictionary<int32, _>? = null // TODO NULLNESS: this explicit annotation should not be needed
@@ -758,7 +758,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
 
 let mkCacheGeneric lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable cache = null
 #else
     let mutable cache : ConcurrentDictionary<_, _>? = null // TODO NULLNESS: this explicit annotation should not be needed

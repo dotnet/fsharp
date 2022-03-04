@@ -13,7 +13,7 @@ open System.Collections.Generic
 [<AutoOpen>]
 module internal ConsoleOptions =
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
   // Shim to match nullness checking library support in preview
   let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
@@ -45,7 +45,7 @@ type internal History() =
 
     member x.Clear() = list.Clear(); current <- -1
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member x.Add (line: string) =
 #else
     member x.Add (line: string?) = 
@@ -54,7 +54,7 @@ type internal History() =
         | Null | "" -> ()
         | NonNull line -> list.Add(line)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member x.AddLast (line: string) =
 #else
     member x.AddLast (line: string?) =  

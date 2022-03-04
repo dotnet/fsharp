@@ -5380,7 +5380,7 @@ type CcuThunk =
     {
       /// ccu.target is null when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs.
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
       mutable target: CcuData
 #else
       mutable target: CcuData?
@@ -5388,7 +5388,7 @@ type CcuThunk =
       name: CcuReference
     }
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     /// Dereference the assembly reference 
     member ccu.Deref = 
         if isNull (box ccu.target) then 

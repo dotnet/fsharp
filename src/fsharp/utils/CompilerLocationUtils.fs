@@ -105,7 +105,7 @@ module internal FSharpEnvironment =
                         let mutable uType = REG_SZ;
                         let mutable cbData = maxDataLength;
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                         let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData);
 #else
                         let res = RegQueryValueExW(hkey, nonNull<string> null, 0u, &uType, pathResult, &cbData); // TODO use of nonNull should not be required

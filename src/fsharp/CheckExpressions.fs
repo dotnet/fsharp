@@ -2163,7 +2163,7 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function (TyparConstraint.CoercesTo _) -> true | _ -> false) with 
             | [TyparConstraint.CoercesTo(cxty, _)], others -> 
                  // Throw away null constraints if they are implied 
-                 if others |> List.exists (function (TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValueOld cenv.g m cxty) | _ -> true) 
+                 if others |> List.exists (function TyparConstraint.SupportsNull _ -> not (TypeNullIsExtraValueOld cenv.g m cxty) | _ -> true) 
                  then None
                  else Some cxty
             | _ -> None
@@ -5670,7 +5670,7 @@ and TcPossiblyPropogatingExprLeafThenConvert isPropagating cenv (overallTy: Over
     match overallTy with
     | MustConvertTo(_, reqdTy) when cenv.g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
-            let exprTy = NewInferenceType()
+            let exprTy = NewInferenceType cenv.g
 
             // Here 'processExpr' will eventually do the unification with exprTy.
             let expr, tpenv = processExpr exprTy
@@ -7430,7 +7430,7 @@ and TcConstExpr cenv (overallTy: OverallTy) env m tpenv c =
 
     | _ ->
       TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
-        let cTy = NewInferenceType()
+        let cTy = NewInferenceType cenv.g
         let c' = TcConst cenv cTy m env c
         Expr.Const (c', m, cTy), cTy, tpenv)
 
@@ -8352,7 +8352,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                 mkConstrApp, [ucaseAppTy], [ for s, m in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
             | _ ->
                 let ucref = mkChoiceCaseRef g mItem aparity n
-                let _, _, tinst, _ = FreshenTyconRef2 mItem ucref.TyconRef
+                let _, _, tinst, _ = FreshenTyconRef2 g mItem ucref.TyconRef
                 let ucinfo = UnionCaseInfo (tinst, ucref)
                 ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
         | _ ->
@@ -8427,7 +8427,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
                             (currentIndex <> SEEN_NAMED_ARGUMENT) &&
                             (currentIndex < numArgTys) &&
                             match stripTyEqns g argTys.[currentIndex] with
-                            | TType_app(tcref, _) -> tyconRefEq g g.bool_tcr tcref || tyconRefEq g g.system_Bool_tcref tcref
+                            | TType_app(tcref, _, _) -> tyconRefEq g g.bool_tcr tcref || tyconRefEq g g.system_Bool_tcref tcref
                             | TType_var _ -> true
                             | _ -> false
 
@@ -8640,7 +8640,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
     let traitInfo = TTrait(argTys, logicalCompiledName, memberFlags, argTys, Some retTy, sln)
 
     let expr = Expr.Op (TOp.TraitCall traitInfo, [], ves, mItem)
-    let expr = mkLambdas mItem [] vs (expr, retTy)
+    let expr = mkLambdas g mItem [] vs (expr, retTy)
 
     let rec isSimpleArgument e =
         match e with
@@ -8722,7 +8722,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         let pred = (function DelayedApp (_, _, _, arg, _) -> isSimpleArgument arg | _ -> false)
         List.takeWhile pred delayed, List.skipWhile pred delayed
 
-    let intermediateTy = if isNil delayed2 then overallTy.Commit else NewInferenceType ()
+    let intermediateTy = if isNil delayed2 then overallTy.Commit else NewInferenceType g
 
     let resultExpr, tpenv = TcDelayed cenv (MustEqual intermediateTy) env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) ExprAtomicFlag.NonAtomic delayed1
 
@@ -9297,7 +9297,7 @@ and TcMethodApplication
                         curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
 
                 // The call lambda has function type
-                let exprTy = mkFunTy (NewInferenceType cenv.g) exprTy.Commit
+                let exprTy = mkFunTy cenv.g (NewInferenceType cenv.g) exprTy.Commit
 
                 (None, Some unnamedCurriedCallerArgs.Head.Head, MustEqual exprTy)
 

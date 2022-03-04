@@ -37,7 +37,7 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 /// Wraps access to a DependencyManager implementation
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
 #endif
 type IDependencyManagerProvider =
@@ -90,21 +90,21 @@ type DependencyProvider =
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
 
     /// Resolve reference for a list of package manager lines
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
 #else
     member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string?)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
 #endif
 
     /// Fetch a dependencymanager that supports a specific key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider
 #else
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider?
 #endif
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string -> string * IDependencyManagerProvider
 #else
     member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * path: string -> string? * IDependencyManagerProvider?

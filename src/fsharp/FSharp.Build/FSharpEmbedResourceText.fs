@@ -8,7 +8,7 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResourceText() =
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
 #else

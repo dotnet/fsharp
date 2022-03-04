@@ -523,7 +523,7 @@ module FSharpExprConvert =
     and ConvExprPrim (cenv: SymbolEnv) (env: ExprTranslationEnv) expr = 
         let g = cenv.g
         // Eliminate integer 'for' loops 
-       let expr = DetectAndOptimizeForEachExpression g OptimizeIntRangesOnly expr
+        let expr = DetectAndOptimizeForEachExpression g OptimizeIntRangesOnly expr
 
         // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
         // complete inference types.

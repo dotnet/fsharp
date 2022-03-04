@@ -1633,7 +1633,7 @@ tyconDefn:
        let (tcDefRepr:SynTypeDefnRepr), mWith ,members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
-       let trivia: SynTypeDefnTrivia = { TypeKeyword = None; EqualsRange = $2; WithKeyword = mWith }
+       let trivia: SynTypeDefnTrivia = { TypeKeyword = None; EqualsRange = Some (rhs parseState 2); WithKeyword = mWith }
        SynTypeDefn($1, tcDefRepr, members, None, mWhole, trivia) }
 
   | typeNameInfo tyconDefnAugmentation

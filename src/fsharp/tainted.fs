@@ -132,7 +132,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         Tainted(context, u)
 
     member this.PApplyArray(f, methodName, range:range) =        
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let a : 'U[] = this.Protect f range
 #else
         let a : 'U[]? = this.Protect f range
@@ -168,7 +168,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 
 module internal Tainted =
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let (|Null|NonNull|) (p:Tainted<'T>) : Choice<unit,Tainted<'T>> when 'T : null and 'T : not struct =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure id)
 #else

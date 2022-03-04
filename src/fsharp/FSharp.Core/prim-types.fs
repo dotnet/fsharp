@@ -3843,7 +3843,7 @@ namespace Microsoft.FSharp.Core
             | null -> false 
             | _ -> true
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+#if !NO_CHECKNULLS
 
         [<CompiledName("IsNullV")>]
         let inline isNullV (value : Nullable<'T>) = not value.HasValue
@@ -3930,7 +3930,7 @@ namespace Microsoft.FSharp.Core
         let inline nullArg (argumentName:string) = 
             raise (new System.ArgumentNullException(argumentName))        
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+#if !NO_CHECKNULLS
         [<CompiledName("NullArgCheck")>]
         let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : not null) = 
             match value with 
@@ -3999,7 +3999,7 @@ namespace Microsoft.FSharp.Core
         let inline defaultIfNone defaultValue arg = 
             match arg with None -> defaultValue | Some v -> v
         
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+#if !NO_CHECKNULLS
         [<CompiledName("DefaultIfNull")>]
         let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : not null) = 
             match arg with null -> defaultValue | _ -> (# "" arg : 'T #)

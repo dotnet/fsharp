@@ -87,7 +87,7 @@ module internal ExtensionTyping =
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
 
     and [<Sealed; Class>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedType =
@@ -95,7 +95,7 @@ module internal ExtensionTyping =
         member IsSuppressRelocate : bool
         member IsErased : bool
         member IsGenericType : bool
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         member Namespace : string
 #else
         member Namespace : string?
@@ -104,7 +104,7 @@ module internal ExtensionTyping =
         member IsArray : bool
         member GetInterfaces : unit -> ProvidedType[]
         member Assembly : ProvidedAssembly
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         member BaseType : ProvidedType
 #else
         member BaseType : ProvidedType?
@@ -157,12 +157,12 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
 
     and 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         IProvidedCustomAttributeProvider =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
 #else
         abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string? * int * int) option 
@@ -171,7 +171,7 @@ module internal ExtensionTyping =
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
         
     and [<Sealed; Class>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedAssembly = 
@@ -181,12 +181,12 @@ module internal ExtensionTyping =
         member Handle : System.Reflection.Assembly
 
     and [<AbstractClass>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMemberInfo = 
         member Name :string
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         member DeclaringType : ProvidedType
 #else
         member DeclaringType : ProvidedType?
@@ -194,7 +194,7 @@ module internal ExtensionTyping =
         interface IProvidedCustomAttributeProvider 
 
     and [<AbstractClass>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMethodBase = 
@@ -217,7 +217,7 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
 
     and [<Sealed; Class>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedMethodInfo = 
@@ -226,7 +226,7 @@ module internal ExtensionTyping =
         member MetadataToken : int
 
     and [<Sealed; Class>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedParameterInfo = 
@@ -240,7 +240,7 @@ module internal ExtensionTyping =
         interface IProvidedCustomAttributeProvider 
 
     and [<Class; Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedFieldInfo = 
@@ -259,13 +259,13 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
 
     and [<Class; Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedPropertyInfo = 
         inherit ProvidedMemberInfo
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         member GetGetMethod : unit -> ProvidedMethodInfo
 
         member GetSetMethod : unit -> ProvidedMethodInfo
@@ -288,7 +288,7 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool 
 
     and [<Class; Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedEventInfo = 
@@ -300,7 +300,7 @@ module internal ExtensionTyping =
         static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool 
 
     and [<Class; Sealed>] 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         [<AllowNullLiteral>]
 #endif
         ProvidedConstructorInfo = 
@@ -331,7 +331,7 @@ module internal ExtensionTyping =
         | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
         | ProvidedVarExpr of ProvidedVar
         
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
 #else
     and [<RequireQualifiedAccess; Class; Sealed>]
@@ -342,7 +342,7 @@ module internal ExtensionTyping =
         member UnderlyingExpressionString : string
         member GetExprType : unit -> ProvidedExprType option
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
 #else
     and [<RequireQualifiedAccess; Class; Sealed>]

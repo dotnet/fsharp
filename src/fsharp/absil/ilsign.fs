@@ -150,7 +150,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
     let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] = 
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let validateRSAField (field: byte[]) expected (name: string) =
 #else
         let validateRSAField (field: byte[]?) expected (name: string) =

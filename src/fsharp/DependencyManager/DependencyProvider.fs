@@ -76,7 +76,7 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     // Shim to match nullness checking library support in preview
     let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
@@ -122,7 +122,7 @@ type IResolveDependenciesResult =
     abstract Roots: seq<string>
 
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AllowNullLiteral>]
 #endif
 type IDependencyManagerProvider =
@@ -379,7 +379,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
 #else
     member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string? * IDependencyManagerProvider? =
@@ -406,7 +406,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
             null, null
 
     /// Fetch a dependencymanager that supports a specific key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
 #else
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider? =
@@ -430,7 +430,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                        packageManagerTextLines: (string * string) seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                        [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
 #else
                        [<Optional;DefaultParameterValue(null:string?)>]executionRid: string?,

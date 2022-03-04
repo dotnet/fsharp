@@ -1145,14 +1145,14 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | _ -> None
 
 #if !NO_EXTENSIONTYPING
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) =
 #else
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly?>) =
 #endif
         match assembly with
         | Tainted.Null -> false,None
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         | assembly ->
 #else
         | Tainted.NonNull assembly ->

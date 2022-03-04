@@ -2126,8 +2126,7 @@ module TastDefinitionPrinting =
                     modNameEqualsL
 
         let headerL =
-            let ty = generalizedTyconRef denv.g (mkLocalEntityRef mspec)
-            layoutAttribs denv None false ty mspec.TypeOrMeasureKind mspec.Attribs headerL
+            layoutAttribs denv None false mspec.TypeOrMeasureKind mspec.Attribs headerL
 
         let shouldShow (v: Val) =
             (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs)) &&

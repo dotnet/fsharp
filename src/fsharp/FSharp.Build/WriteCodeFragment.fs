@@ -12,7 +12,7 @@ open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AutoOpen>]
 // Shim to match nullness checking library support in preview
 module UtilsWriteCodeFragment = 
@@ -20,7 +20,7 @@ module UtilsWriteCodeFragment =
 #endif
 
 type WriteCodeFragment() =
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
     let mutable _outputDirectory : ITaskItem = null
@@ -139,7 +139,7 @@ type WriteCodeFragment() =
 
                 if _language.ToLowerInvariant() = "f#" then code.AppendLine("do()") |> ignore
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                 let fileName = _outputFile.ItemSpec
 
                 let outputFileItem =

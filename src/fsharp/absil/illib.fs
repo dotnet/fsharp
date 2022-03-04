@@ -36,7 +36,7 @@ module internal PervasiveAutoOpens =
 
     let inline isNotNull x = not (isNull x)
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     // Shim to match nullness checking library support in preview
     let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
     let inline nonNull<'T when 'T : null> (x: 'T) = x
@@ -110,7 +110,7 @@ module internal PervasiveAutoOpens =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     val mutable func : Func<'T>
 #else
     val mutable func : Func<'T> ?

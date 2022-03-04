@@ -47,6 +47,11 @@
         <target state="translated">F# 라이브러리의 'incr' 사용은 더 이상 사용되지 않습니다. https://aka.ms/fsharp-refcell-ops를 참조하세요. 예를 들어 'incr cell'을 'cell.Value &lt;- cell.Value + 1'로 변경하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValueNulls">
+        <source>Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</source>
+        <target state="new">Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="containerDeprecated">
         <source>The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead.</source>
         <target state="translated">'AssemblyKeyNameAttribute'는 사용되지 않습니다. 대신 'AssemblyKeyFileAttribute'를 사용하세요.</target>
@@ -60,6 +65,11 @@
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">사용 가능한 오버로드:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csDelegateComparisonConstraintInconsistent">
+        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
+        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
@@ -92,6 +102,11 @@
         <target state="translated">알려진 형식 매개 변수: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csNullNotNullConstraintInconsistent">
+        <source>The constraints 'null' and 'not null' are inconsistent</source>
+        <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
         <target state="translated">인덱스 {0}의 인수가 일치하지 않습니다.</target>
@@ -100,6 +115,21 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">'{0}' 인수가 일치하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csStructNullConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsExtraValue">
+        <source>The type '{0}' has 'null' as an extra value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as an extra value but a constraint does not permit this</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsTrueValue">
+        <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -115,6 +145,11 @@
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
         <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
@@ -200,6 +235,11 @@
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">nullable 선택적 interop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullnessChecking">
+        <source>nullness checking</source>
+        <target state="new">nullness checking</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
@@ -417,6 +457,11 @@
         <target state="translated">모든 컴파일 파일의 유추된 인터페이스를 관련 서명 파일로 인쇄합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCheckNulls">
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">언어 버전의 허용된 값을 표시하고 '최신' 또는 '미리 보기'와 같은 언어 버전을 지정합니다.</target>
@@ -607,6 +652,11 @@
         <target state="translated">형식 확장에 특성을 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDefaultStructConstructorCallNulls">
+        <source>Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</source>
+        <target state="new">Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">인덱싱에는 'expr1[expr2]' 구문이 사용됩니다. 인덱싱을 사용하도록 설정하기 위해 형식 주석을 추가하는 것을 고려하거나 함수를 호출하는 경우 공백을 추가하세요(예: 'expr1 [expr2]').</target>
@@ -732,6 +782,11 @@
         <target state="translated">'{0}' 값은 함수가 아니며 인덱스 표기법을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNullnessCheckingNotEnabled">
+        <source>The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</source>
+        <target state="new">The 'nullness checking' language feature is not enabled. This use of a nullness checking construct will be ignored.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">'expr1[expr2]' 구문은 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 인덱싱이나 슬라이싱을 하려면 인수 위치에 'expr1.[expr2]'를 사용해야 합니다. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction expr1 [expr2]').</target>
@@ -790,6 +845,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">이 식은 암시적으로 '{0}' 형식을 '{1}' 형식으로 변환 합니다. https://aka.ms/fsharp-implicit-convs 참조</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotHaveAnyNull">
+        <source>The type '{0}' does not support a nullness qualitification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">

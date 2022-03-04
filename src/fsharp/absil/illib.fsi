@@ -25,7 +25,7 @@ module internal PervasiveAutoOpens =
 
     val inline isNotNull: x:'a -> bool when 'a: null
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     val inline (|NonNullQuick|): 'T -> 'T when 'T : null
     val inline (|Null|NonNull|): 'T -> Choice<unit,'T> when 'T : null
     val inline nonNull: x:'T -> 'T when 'T : null

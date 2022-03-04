@@ -358,7 +358,7 @@ module MemoryMappedFileExtensions =
                     stream.Position <- stream.Position + length
                 )
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
 [<AutoOpen>]
 module internal FileSystemHelpers =
     // Shim to match nullness checking library support in preview
@@ -533,7 +533,7 @@ type DefaultFileSystem() as this =
 
     abstract IsInvalidPathShim: path: string -> bool
     default _.IsInvalidPathShim(path: string) =
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let isInvalidPath(p: string) = 
 #else
         let isInvalidPath(p: string?) = 
@@ -542,7 +542,7 @@ type DefaultFileSystem() as this =
             | Null | "" -> true
             | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let isInvalidFilename(p: string) = 
 #else
         let isInvalidFilename(p: string?) = 
@@ -551,7 +551,7 @@ type DefaultFileSystem() as this =
             | Null | "" -> true
             | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let isInvalidDirectory(d: string) = 
 #else
         let isInvalidDirectory(d: string?) = 

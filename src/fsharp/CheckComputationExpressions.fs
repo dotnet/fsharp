@@ -1939,7 +1939,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 | _ -> guardExprMark
 
             let innerDelayedExpr = mkSeqDelayedExpr mWhile innerExpr
-            Some(mkSeqGenerated cenv env guardExprMark genOuterTy guardLambdaExpr innerDelayedExpr, tpenv)
+            Some(mkSeqFromFunctions cenv env guardExprMark genOuterTy guardLambdaExpr innerDelayedExpr, tpenv)
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally, trivia) ->
             let env = { env with eIsControlFlow = true }
@@ -2169,7 +2169,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
-        let genCollElemTy = NewInferenceType ()
+        let genCollElemTy = NewInferenceType cenv.g
 
         let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 

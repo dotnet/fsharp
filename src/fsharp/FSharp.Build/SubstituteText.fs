@@ -10,7 +10,7 @@ open Microsoft.Build.Utilities
 
 type SubstituteText () =
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
     let mutable embeddedResources : ITaskItem[] = [||]

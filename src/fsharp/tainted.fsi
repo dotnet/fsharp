@@ -78,7 +78,7 @@ type internal Tainted<'T> =
     member PApplyWithProvider : ('T * ITypeProvider -> 'U) * range:range -> Tainted<'U>
 
     /// Apply an operation that returns an array. Unwrap array. Any exception will be attributed to the type provider with an error located at the given range.  String is method name of thing-returning-array, to diagnostically attribute if it is null
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     member PApplyArray : ('T -> 'U[]) * string * range:range -> Tainted<'U>[]
 #else
     member PApplyArray : ('T -> 'U[]?) * string * range:range -> Tainted<'U>[]
@@ -105,7 +105,7 @@ type internal Tainted<'T> =
 module internal Tainted =
 
     /// Test whether the tainted value is null
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     val (|Null|NonNull|) : Tainted<'T> -> Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct
 #else
     val (|Null|NonNull|) : Tainted<'T?> -> Choice<unit, Tainted<'T>> when 'T : not null and 'T : not struct

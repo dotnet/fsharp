@@ -2270,7 +2270,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly = 
 #else
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, _fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly? = 
@@ -2403,7 +2403,7 @@ type internal FsiStdinLexerProvider
         let initialLightSyntaxStatus = tcConfigB.light <> Some false
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string) =
 #else
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string?) =
@@ -2417,7 +2417,7 @@ type internal FsiStdinLexerProvider
             |  Some(Null) | None ->
                  if progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
             | Some input ->
 #else
             | Some (NonNull input) ->
@@ -2435,7 +2435,7 @@ type internal FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
     let removeZeroCharsFromString (str:string) =
 #else
     let removeZeroCharsFromString (str:string?) : string? =

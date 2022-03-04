@@ -48,7 +48,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let outputList = ResizeArray()
             let mutable errorslock = obj
             let mutable outputlock = obj
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
             let outputDataReceived (message: string) =
 #else
             let outputDataReceived (message: string?) =
@@ -58,7 +58,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 | NonNull message ->
                     lock outputlock (fun () -> outputList.Add(message))
 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
             let errorDataReceived (message: string) =
 #else
             let errorDataReceived (message: string?) =

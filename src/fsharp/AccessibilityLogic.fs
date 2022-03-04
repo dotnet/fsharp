@@ -372,7 +372,7 @@ let IsPropInfoAccessible g amap m ad = function
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+#if NO_CHECKNULLS
                 let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo) =
 #else
                 let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = // TODO NULLNESS: using ProvidedMethodBase? gives a nullness warning
