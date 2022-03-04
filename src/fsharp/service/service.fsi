@@ -402,14 +402,6 @@ type public FSharpChecker =
     /// The event will be raised on a background thread.
     member FileChecked: IEvent<string * FSharpProjectOptions>
 
-    /// Raised after the maxMB memory threshold limit is reached
-    member MaxMemoryReached: IEvent<unit>
-
-    /// <summary>
-    ///   A maximum number of megabytes of allocated memory. If the figure reported by <c>System.GC.GetTotalMemory(false)</c> goes over this limit, the FSharpChecker object will attempt to free memory and reduce cache sizes to a minimum.
-    /// </summary>
-    member MaxMemory: int with get, set
-
     /// Notify the host that a project has been fully checked in the background (using file contents provided by the file system API)
     ///
     /// The event may be raised on a background thread.

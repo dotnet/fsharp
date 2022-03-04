@@ -42,8 +42,6 @@ module EnvMisc =
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
-    let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
-    //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
 //----------------------------------------------------------------------------
 // BackgroundCompiler
@@ -269,7 +267,7 @@ type BackgroundCompiler(
                                 self.TryGetLogicalTimeStampForProject(cache, opts)
                             member x.FileName = nm }
                             
-                | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
+                | FSharpReferencedProject.PEReference(nm,getStamp,delayedReader) ->
                     yield
                         { new IProjectReference with 
                             member x.EvaluateRawContents() = 
@@ -285,7 +283,7 @@ type BackgroundCompiler(
                                     // continue to try to use an on-disk DLL
                                     return ProjectAssemblyDataResult.Unavailable false
                               }
-                            member x.TryGetLogicalTimeStamp _ = stamp |> Some
+                            member x.TryGetLogicalTimeStamp _ = getStamp() |> Some
                             member x.FileName = nm }
 
                 | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
@@ -1017,12 +1015,6 @@ type FSharpChecker(legacyReferenceResolver,
     // This cache is safe for concurrent access.
     let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing) 
 
-    let mutable maxMemoryReached = false
-
-    let mutable maxMB = maxMBDefault
-
-    let maxMemEvent = Event<unit>()
-
     /// Instantiate an interactive checker.    
     static member Create(
                          ?projectCacheSize, 
@@ -1089,7 +1081,6 @@ type FSharpChecker(legacyReferenceResolver,
     member ic.ParseFile(filename, sourceText, options, ?cache, ?userOpName: string) =
         let cache = defaultArg cache true
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseFile(filename, sourceText, options, cache, userOpName)
 
     member ic.ParseFileInProject(filename, source: string, options, ?cache: bool, ?userOpName: string) =
@@ -1197,16 +1188,6 @@ type FSharpChecker(legacyReferenceResolver,
         braceMatchCache.Clear(utok)
         backgroundCompiler.ClearCaches() 
 
-    member _.CheckMaxMemoryReached() =
-        if not maxMemoryReached && GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
-            Trace.TraceWarning("!!!!!!!! MAX MEMORY REACHED, DOWNSIZING F# COMPILER CACHES !!!!!!!!!!!!!!!")
-            // If the maxMB limit is reached, drastic action is taken
-            //   - reduce strong cache sizes to a minimum
-            maxMemoryReached <- true
-            braceMatchCache.Resize(AnyCallerThread, newKeepStrongly=10)
-            backgroundCompiler.DownsizeCaches()
-            maxMemEvent.Trigger( () )
-
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         ic.ClearCaches()
@@ -1239,36 +1220,31 @@ type FSharpChecker(legacyReferenceResolver,
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member _.CheckFileInProject(parseResults:FSharpParseFileResults, filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.CheckFileInProject(parseResults,filename,fileVersion,sourceText,options,userOpName)
         |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the 
     /// parse including the reconstructed types in the file.
-    member ic.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
+    member _.ParseAndCheckFileInProject(filename:string, fileVersion:int, sourceText:ISourceText, options:FSharpProjectOptions, ?userOpName: string) =        
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckFileInProject(filename, fileVersion, sourceText, options, userOpName)
         |> Async.AwaitNodeCode
             
-    member ic.ParseAndCheckProject(options, ?userOpName: string) =
+    member _.ParseAndCheckProject(options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
         |> Async.AwaitNodeCode
 
-    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
+    member _.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
         |> Async.AwaitNodeCode
 
-    member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
+    member _.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.CheckMaxMemoryReached()
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
         |> Async.AwaitNodeCode
 
@@ -1340,10 +1316,6 @@ type FSharpChecker(legacyReferenceResolver,
 
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
           
-    member _.MaxMemoryReached = maxMemEvent.Publish
-
-    member _.MaxMemory with get() = maxMB and set v = maxMB <- v
-    
     static member Instance with get() = globalInstance.Force()
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache

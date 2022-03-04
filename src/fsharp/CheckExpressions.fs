@@ -5097,7 +5097,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     // See FSharp 1.0 3502
                     let dtys, rty = stripFunTy cenv.g vexpty
 
-                    if dtys.Length = args.Length + 1 && isOptionTy cenv.g rty && isUnitTy cenv.g (destOptionTy cenv.g rty) then
+                    if dtys.Length = args.Length + 1 &&
+                       ((isOptionTy cenv.g rty && isUnitTy cenv.g (destOptionTy cenv.g rty)) ||
+                        (isValueOptionTy cenv.g rty && isUnitTy cenv.g (destValueOptionTy cenv.g rty))) then
                         args, SynPat.Const(SynConst.Unit, m)
                     else
                         List.frontAndBack args

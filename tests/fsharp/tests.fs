@@ -1645,7 +1645,7 @@ module CoreTests =
     let ``math-numbersVS2008-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI_BASIC
 
     [<Test>]
-    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSC_BASIC "preview"
 
 //BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
 //    [<Test>]

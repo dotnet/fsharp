@@ -1444,6 +1444,9 @@ val destOptionTy: TcGlobals -> TType -> TType
 /// Try to take apart an option type
 val tryDestOptionTy: TcGlobals -> TType -> ValueOption<TType>
 
+/// Try to take apart an option type
+val destValueOptionTy: TcGlobals -> TType -> TType
+
 /// Determine is a type is a System.Nullable type
 val isNullableTy: TcGlobals -> TType -> bool
 

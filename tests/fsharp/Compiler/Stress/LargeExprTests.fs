@@ -992,9 +992,6 @@ let main _ = 0
             """
 
     [<Test>]
-#if NETCOREAPP
-    [<Ignore("SKIPPED: https://github.com/dotnet/runtime/issues/47663")>]
-#endif
     let LargeRecordWithStringFieldsDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """

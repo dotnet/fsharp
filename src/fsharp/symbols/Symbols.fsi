@@ -585,6 +585,7 @@ type FSharpGenericParameter =
     /// Get the declared or inferred constraints for the type parameter
     member Constraints: IList<FSharpGenericParameterConstraint> 
 
+    member internal TypeParameter: Typar
 
 #if !NO_EXTENSIONTYPING
 /// A subtype of FSharpSymbol that represents a static parameter to an F# type provider
@@ -1103,6 +1104,8 @@ type FSharpType =
 
     /// Strip any outer abbreviations from the type
     member StripAbbreviations: unit -> FSharpType
+
+    member internal Type: TType
 
 /// Represents a custom attribute attached to F# source code or a compiler .NET component
 [<Class>]
