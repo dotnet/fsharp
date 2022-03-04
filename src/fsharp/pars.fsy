@@ -817,11 +817,10 @@ moduleSpfn:
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let mTc =
-            let keywordM = rhs parseState 3
-            (keywordM, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
+            (d3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range) |> unionRanges range
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr, withKeyword, members, mTc))
-        let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range)
+        let m = (mTc, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
   | opt_attributes opt_declVisibility exconSpfn
@@ -896,7 +895,16 @@ tyconSpfn:
         $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
       { let mWithKwd, members = $2
-        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState), lhs parseState), mWithKwd, members, lhs parseState) }
+        let m =
+            match members with
+            | [] ->
+                match mWithKwd with
+                | None -> rhs parseState 1
+                | Some mWithKwd -> unionRanges (rhs parseState 1) mWithKwd
+            | decls ->
+                let (SynComponentInfo(range=start)) = $1
+                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), mWithKwd, members, m) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -931,8 +939,14 @@ tyconSpfnRhs:
            SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), None, augmentation, mWhole)) }
 
   | tyconClassSpfn 
-     { let objectModelRange = lhs parseState 
-       let needsCheck, (kind, decls) = $1
+     {  let needsCheck, (kind, decls) = $1
+        let objectModelRange =
+            match decls with
+            | [] -> lhs parseState
+            | decls ->
+                let start = mkSynRange parseState.ResultStartPosition parseState.ResultStartPosition
+                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+
        (fun nameRange nameInfo mEquals augmentation -> 
            if needsCheck && isNil decls then
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition())

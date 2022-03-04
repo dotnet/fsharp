@@ -1967,27 +1967,33 @@ let ReportDiagnosticAsError options (err, severity) =
 // However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
-type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger: ErrorLogger) =
+type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger: ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
     override x.DiagnosticSink (phasedError, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
             errorLogger.DiagnosticSink (phasedError, severity)
         else
-          let report =
-            let warningNum = GetDiagnosticNumber phasedError
-            match GetRangeOfDiagnostic phasedError with
-            | Some m ->
-                not (scopedPragmas |> List.exists (fun pragma ->
-                    match pragma with
-                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
-                        warningNum = warningNumFromPragma &&
-                        (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        posGeq m.Start pragmaRange.Start))
-            | None -> true
-          if report then errorLogger.DiagnosticSink(phasedError, severity)
+            let report =
+                let warningNum = GetDiagnosticNumber phasedError
+                match GetRangeOfDiagnostic phasedError with
+                | Some m ->
+                    not (scopedPragmas |> List.exists (fun pragma ->
+                        match pragma with
+                        | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
+                            warningNum = warningNumFromPragma &&
+                            (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
+                            posGeq m.Start pragmaRange.Start))
+                | None -> true
+            if report then
+                if ReportDiagnosticAsError diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Error)
+                elif ReportDiagnosticAsWarning diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, FSharpDiagnosticSeverity.Warning)
+                elif ReportDiagnosticAsInfo diagnosticOptions (phasedError, severity) then
+                    errorLogger.DiagnosticSink(phasedError, severity)
 
     override x.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) =
-    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) :> ErrorLogger)
+let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions:FSharpDiagnosticOptions, errorLogger) =
+    (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, diagnosticOptions, errorLogger) :> ErrorLogger)

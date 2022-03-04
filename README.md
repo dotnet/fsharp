@@ -1,8 +1,8 @@
 # The F# compiler, F# core library, and F# editor tools
 
-You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET Core](https://dotnet.microsoft.com/).
+You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
 
-You will also need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
+You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
 
 ## Contributing
 
@@ -10,13 +10,13 @@ You will also need the latest .NET 5 SDK installed from [here](https://dotnet.mi
 
 Build from the command line:
 
-```
+```shell
 build.cmd
 ```
 
 The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
 
-```
+```shell
 build.cmd -noVisualStudio
 ```
 
@@ -26,7 +26,7 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```
+```shell
 ./build.sh
 ```
 
@@ -58,26 +58,26 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 ## Per-build NuGet packages
 
-Per-build [versions](https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-tools&view=versions&package=FSharp.Compiler.Service&protocolType=NuGet) of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json `
+Per-build [versions](https://dev.azure.com/dnceng/public/_packaging?_a=package&feed=dotnet-tools&view=versions&package=FSharp.Compiler.Service&protocolType=NuGet) of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json`
 
 ## Branches
 
 These are the branches in use:
 
 * `main`
-  - Almost all contributions go here.
-  - Able to be built, installed and used in the latest public Visual Studio release.
-  - May contain updated F# features and logic.
-  - Used to build nightly VSIX (see above).
+  * Almost all contributions go here.
+  * Able to be built, installed and used in the latest public Visual Studio release.
+  * May contain updated F# features and logic.
+  * Used to build nightly VSIX (see above).
 
 * `release/dev15.9`
-  - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
+  * Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
 
-* `release/dev16.x`
-  - Latest release branch for the particular point release of Visual Studio.
-  - Incorporates features and fixes from main up to a particular branch point, then selective cherry-picks.
-  - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
-  - Gets integrated back into main once the corresponding Visual Studio release is made.
+* `release/dev17.x`
+  * Latest release branch for the particular point release of Visual Studio.
+  * Incorporates features and fixes from main up to a particular branch point, then selective cherry-picks.
+  * May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
+  * Gets integrated back into main once the corresponding Visual Studio release is made.
 
 ## F# language and core library evolution
 
@@ -109,4 +109,3 @@ If you're curious about F# itself, check out these links:
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
-

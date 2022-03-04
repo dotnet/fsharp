@@ -168,7 +168,7 @@ let main argv = 0"""
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
             let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-            let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
+            let projectDirectory = Path.Combine(pathToTemp,Path.GetRandomFileName())
             let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
             try
                 try

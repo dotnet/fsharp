@@ -1447,7 +1447,7 @@ keywordDescriptionReturn,"Used to provide a value for the result of the containi
 keywordDescriptionReturnBang,"Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression."
 keywordDescriptionSelect,"Used in query expressions to specify what fields or columns to extract. Note that this is a contextual keyword, which means that it is not actually a reserved word and it only acts like a keyword in appropriate context."
 keywordDescriptionStatic,"Used to indicate a method or property that can be called without an instance of a type, or a value member that is shared among all instances of a type."
-keywordDescriptionStruct,"Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions."
+keywordDescriptionStruct,"Used to declare a structure type. Also used in generic parameter constraints."
 keywordDescriptionThen,"Used in conditional expressions. Also used to perform side effects after object construction."
 keywordDescriptionTo,"Used in for loops to indicate a range."
 keywordDescriptionTry,"Used to introduce a block of code that might generate an exception. Used together with with or finally."

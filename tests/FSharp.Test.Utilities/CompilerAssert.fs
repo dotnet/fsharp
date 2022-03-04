@@ -18,6 +18,14 @@ open NUnit.Framework
 open FSharp.Test.Utilities
 open TestFramework
 
+module private CompilerAssertHelpers =
+    // Unlike C# whose entrypoint is always string[] F# can make an entrypoint with 0 args, or with an array of string[]
+    let mkDefaultArgs (entryPoint:MethodInfo) : obj[] = [|
+        if entryPoint.GetParameters().Length = 1 then
+            yield Array.empty<string>
+    |]
+
+open CompilerAssertHelpers
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
 
@@ -41,7 +49,8 @@ type Worker () =
             |> Option.defaultValue null))
         let asm = Assembly.LoadFrom(assemblyPath)
         let entryPoint = asm.EntryPoint
-        (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+        let args = mkDefaultArgs entryPoint
+        (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
 
 type SourceKind =
     | Fs
@@ -63,12 +72,25 @@ type CompilationReference =
     static member Create(cmpl: TestCompilation) =
         TestCompilationReference cmpl
 
-and Compilation = private Compilation of source: string * SourceKind * CompileOutput * options: string[] * CompilationReference list * name: string option with
+and Compilation =
+    private Compilation of
+        source: string *
+        SourceKind *
+        CompileOutput *
+        options: string[] *
+        CompilationReference list *
+        name: string option *
+        outputDirectory: DirectoryInfo option with
 
-    static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name) =
-        let options = defaultArg options [||]
-        let cmplRefs = defaultArg cmplRefs []
-        Compilation(source, sourceKind, output, options, cmplRefs, name)
+        static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name, ?outputDirectory) =
+            let options = defaultArg options [||]
+            let cmplRefs = defaultArg cmplRefs []
+            let name =
+                match defaultArg name null with
+                | null -> None
+                | n -> Some n
+            let outputDirectory = defaultArg outputDirectory None
+            Compilation(source, sourceKind, output, options, cmplRefs, name, outputDirectory)
 
 [<Sealed;AbstractClass>]
 type CompilerAssert private () =
@@ -86,7 +108,8 @@ type CompilerAssert private () =
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+            let args = mkDefaultArgs entryPoint
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
             ctxt.Unload()
 #else
@@ -133,7 +156,6 @@ type CompilerAssert private () =
                yield inputFilePath; 
                yield "-o:" + outputFilePath; 
                yield (if isExe then "--target:exe" else "--target:library"); 
-               yield "--nowin32manifest" 
                yield! defaultProjectOptions.OtherOptions
                yield! options
              |]
@@ -202,7 +224,7 @@ type CompilerAssert private () =
     static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
-            | Compilation(_, _, _, _, cmpls, _) ->
+            | Compilation(_, _, _, _, cmpls, _, _) ->
                 let compiledRefs =
                     cmpls
                     |> List.map (fun cmpl ->
@@ -243,29 +265,29 @@ type CompilerAssert private () =
 
         let isScript =
             match cmpl with
-            | Compilation(_, kind, _, _, _, _) ->
+            | Compilation(_, kind, _, _, _, _, _) ->
                 match kind with
                 | Fs -> false
                 | Fsx -> true
 
         let isExe =
             match cmpl with
-            | Compilation(_, _, output, _, _, _) ->
+            | Compilation(_, _, output, _, _, _, _) ->
                 match output with
                 | Library -> false
                 | Exe -> true
 
         let source =
             match cmpl with
-            | Compilation(source, _, _, _, _, _) -> source
+            | Compilation(source, _, _, _, _, _, _) -> source
 
         let options =
             match cmpl with
-            | Compilation(_, _, _, options, _, _) -> options
+            | Compilation(_, _, _, options, _, _, _) -> options
 
         let nameOpt =
             match cmpl with
-            | Compilation(_, _, _, _, _, nameOpt) -> nameOpt
+            | Compilation(_, _, _, _, _, nameOpt, _) -> nameOpt
 
         let disposal, res = compileDisposable outputPath isScript isExe (Array.append options compilationRefs) nameOpt source
         disposals.Add disposal
@@ -279,13 +301,13 @@ type CompilerAssert private () =
         res, (deps @ deps2)
 
     static let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
-        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+        let outputDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
         let disposals = ResizeArray()
         try
-            Directory.CreateDirectory(compileDirectory) |> ignore
-            f (compileCompilationAux compileDirectory disposals ignoreWarnings cmpl)
+            Directory.CreateDirectory(outputDirectory) |> ignore
+            f (compileCompilationAux outputDirectory disposals ignoreWarnings cmpl)
         finally
-            try Directory.Delete compileDirectory with | _ -> ()
+            try Directory.Delete outputDirectory with | _ -> ()
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
@@ -293,9 +315,13 @@ type CompilerAssert private () =
     // The reason behind is so we can compose verification of test runs easier.
     // TODO: We must not rely on the filesystem when compiling
     static let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
-        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
-        Directory.CreateDirectory(compileDirectory) |> ignore
-        compileCompilationAux compileDirectory (ResizeArray()) ignoreWarnings cmpl
+        let outputDirectory =
+            match cmpl with
+            | Compilation(_, _, _, _, _, _, Some outputDirectory) -> outputDirectory.FullName
+            | Compilation(_, _, _, _, _, _, _) -> Path.Combine(Path.GetTempPath(), Path.GetRandomFileName())
+
+        Directory.CreateDirectory(outputDirectory) |> ignore
+        compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     static let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
         let out = Console.Out
