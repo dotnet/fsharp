@@ -60,7 +60,7 @@ open FSharp.Compiler.TypeRelations
 //     b) a lambda expression - rejected.
 //     c) none of the above - rejected as when checking outmost expressions.
 
-
+let PostInferenceChecksStackGuardDepth = GetEnvInteger "FSHARP_PostInferenceChecks" 50
 
 //--------------------------------------------------------------------------
 // check environment
@@ -207,6 +207,8 @@ type cenv =
       mutable potentialUnboundUsesOfVals: StampMap<range> 
 
       mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
+
+      stackGuard: StackGuard
 
       g: TcGlobals 
 
@@ -455,7 +457,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
            (v.IsBaseVal || isByrefLikeTy cenv.g m v.Type) &&
            not (ListSet.contains valEq v syntacticArgs)
 
-        let frees = freeInExpr CollectLocals body
+        let frees = freeInExpr (CollectLocalsWithStackGuard()) body
         let fvs   = frees.FreeLocals 
 
         if not allowProtected && frees.UsesMethodLocalConstructs  then
@@ -1093,6 +1095,10 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
 
 /// Check an expression, given information about the position of the expression
 and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limit =    
+    
+    // Guard the stack for deeply nested expressions
+    cenv.stackGuard.Guard <| fun () ->
+    
     let g = cenv.g
 
     let origExpr = stripExpr origExpr
@@ -2214,7 +2220,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.LogicalName) access m fieldTy
 
-    if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
+    if isByrefLikeTyconRef g m tcref then 
         // Permit Span fields in IsByRefLike types
         CheckTypePermitSpanLike cenv env m fieldTy
         if cenv.reportErrors then
@@ -2437,7 +2443,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix nm, m))
 
-    if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then 
+
+    if TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then 
         errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tycon.Range))
 
     if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then 
@@ -2603,22 +2610,23 @@ and CheckModuleSpec cenv env x =
 
 let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, mexpr, extraAttribs, isLastCompiland: bool*bool, isInternalTestSpanStackReferring) =
     let cenv = 
-        { g =g  
-          reportErrors=reportErrors 
+        { g = g  
+          reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          potentialUnboundUsesOfVals=Map.empty 
+          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth)
+          potentialUnboundUsesOfVals = Map.empty 
           anonRecdTypes = StampMap.Empty
-          usesQuotations=false 
-          infoReader=infoReader 
-          internalsVisibleToPaths=internalsVisibleToPaths
-          amap=amap 
-          denv=denv 
-          viewCcu= viewCcu
-          isLastCompiland=isLastCompiland
+          usesQuotations = false 
+          infoReader = infoReader 
+          internalsVisibleToPaths = internalsVisibleToPaths
+          amap = amap 
+          denv = denv 
+          viewCcu = viewCcu
+          isLastCompiland = isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           tcVal = tcValF
-          entryPointGiven=false}
+          entryPointGiven = false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
     // This is because pre-resolving allows tycon equality to be determined by pointer equality on the entities.

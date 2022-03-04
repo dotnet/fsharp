@@ -160,4 +160,19 @@ let f (x: TA) = ()
             [|
                 FSharpDiagnosticSeverity.Error, 3300, (6, 8, 6, 9), "The parameter 'x' has an invalid type 'TA'. This is not permitted by the rules of Common IL."
             |]
+
+    [<Test>]
+    let ``A custom IsByRefLikeAttribute can define a ref struct``() =
+        CompilerAssert.TypeCheckWithErrors """
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Struct)>]
+type IsByRefLikeAttribute() = inherit Attribute()
+
+[<IsByRefLike>]
+type T(span: Span<byte>) = struct end
+             """
+             [| |]
 #endif

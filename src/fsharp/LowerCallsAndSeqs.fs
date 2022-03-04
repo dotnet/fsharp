@@ -18,6 +18,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
+let LowerCallsAndSeqsRewriteStackGuardDepth = StackGuard.GetDepthOption "LowerCallsAndSeqsRewrite"
+
 //----------------------------------------------------------------------------
 // Eta-expansion of calls to top-level-methods
 
@@ -53,10 +55,13 @@ let InterceptExpr g cont expr =
 /// any known arguments.  The results are later optimized by the peephole
 /// optimizer in opt.fs
 let LowerImplFile g assembly =
-    RewriteImplFile { PreIntercept = Some(InterceptExpr g)
-                      PreInterceptBinding=None
-                      PostTransform= (fun _ -> None)
-                      IsUnderQuotations=false } assembly
+    let rwenv =
+        { PreIntercept = Some(InterceptExpr g)
+          PreInterceptBinding=None
+          PostTransform= (fun _ -> None)
+          RewriteQuotations=false
+          StackGuard = StackGuard(LowerCallsAndSeqsRewriteStackGuardDepth) }
+    assembly |> RewriteImplFile rwenv
 
 //----------------------------------------------------------------------------
 // General helpers

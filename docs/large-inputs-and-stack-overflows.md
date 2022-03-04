@@ -21,6 +21,13 @@ The compiler performs constant folding for large constants so there are no costs
 
 Many sources of `StackOverflow` exceptions prior to F# 4.7 when processing these kinds of constructs were resolved by processing them on the heap via continuation passing techniques. This avoids filling data on the stack and appears to have negligible effects on overall throughout or memory usage of the compiler.
 
+There are two techniques to deal with this
+
+1. Linearizing processing of specific input shapes, keeping stacks small
+2. Using stack guards to simply temporarily move to a new thread when a certain threshold is reached.
+
+## Linearizing processing if certain inputs
+
 Aside from array expressions, most of the previously-listed inputs are called "linear" expressions. This means that there is a single linear hole in the shape of expressions. For example:
 
 * `expr :: HOLE` (list expressions or other right-linear constructions)
@@ -79,4 +86,32 @@ Some common aspects of this style of programming are:
 * The processing of the second expression in a cons is tail-recursive
 
 The previous example is considered incomplete, because arbitrary _combinations_ of `let` and sequential expressions aren't going to be dealt with in a tail-recursive way. The compiler generally tries to do these combinations as well.
+
+## Stack Guards
+
+The `StackGuard` type is used to count synchronous recursive processing and move to a new thread if a limit is reached. Compilation globals are re-installed. Sample:
+
+```fsharp
+let TcStackGuardDepth = StackGuard.GetDepthOption "Tc"
+
+...
+   stackGuard = StackGuard(TcMaxStackGuardDepth)
+
+let rec ....
+
+and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
+
+    // Guard the stack for deeply nested expressions
+    cenv.stackGuard.Guard <| fun () ->
+
+    ...
+
+```
+
+Note stack guarding doesn't result in a tailcall so will appear in recursive stack frames, because a counter must be decremented after the call. This is used systematically for recursive processing of:
+
+* SyntaxTree SynExpr
+* TypedTree Expr
+
+We don't use it for other inputs.
 

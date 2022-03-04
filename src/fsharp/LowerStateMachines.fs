@@ -6,12 +6,15 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+
+let LowerStateMachineStackGuardDepth = GetEnvInteger "FSHARP_LowerStateMachine" 50
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
 
@@ -354,7 +357,8 @@ type LowerStateMachine(g: TcGlobals) =
         { PreIntercept = Some (fun cont e -> match TryReduceExpr env e [] id with Some e2 -> Some (cont e2) | None -> None)
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
-          IsUnderQuotations=true } 
+          RewriteQuotations=true 
+          StackGuard = StackGuard(LowerStateMachineStackGuardDepth) }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr

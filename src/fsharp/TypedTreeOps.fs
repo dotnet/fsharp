@@ -32,6 +32,10 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.ExtensionTyping
 #endif
 
+let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
+let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
+let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
+
 //---------------------------------------------------------------------------
 // Basic data structures
 //---------------------------------------------------------------------------
@@ -369,9 +373,9 @@ let remapTypes tyenv x =
     remapTypesAux tyenv x
 
 /// Use this one for any type that may be a forall type where the type variables may contain attributes 
-/// Logically speaking this is mutually recursive with remapAttrib defined much later in this file, 
+/// Logically speaking this is mutually recursive with remapAttribImpl defined much later in this file, 
 /// because types may contain forall types that contain attributes, which need to be remapped. 
-/// We currently break the recursion by passing in remapAttrib as a function parameter. 
+/// We currently break the recursion by passing in remapAttribImpl as a function parameter. 
 /// Use this one for any type that may be a forall type where the type variables may contain attributes 
 let remapTypeFull remapAttrib tyenv ty =
     if isRemapEmpty tyenv then ty else 
@@ -2018,7 +2022,8 @@ type FreeVarOptions =
       includeLocalTyconReprs: bool
       includeRecdFields: bool
       includeUnionCases: bool
-      includeLocals: bool }
+      includeLocals: bool
+      stackGuard: StackGuard option }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -2028,7 +2033,8 @@ let CollectAllNoCaching =
       includeRecdFields = true
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      stackGuard = None}
 
 let CollectTyparsNoCaching = 
     { canCache = false
@@ -2038,7 +2044,8 @@ let CollectTyparsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
-      includeLocals = false }
+      includeLocals = false
+      stackGuard = None }
 
 let CollectLocalsNoCaching = 
     { canCache = false
@@ -2048,7 +2055,8 @@ let CollectLocalsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false 
       includeUnionCases = false
-      includeLocals = true }
+      includeLocals = true
+      stackGuard = None }
 
 let CollectTyparsAndLocalsNoCaching = 
     { canCache = false
@@ -2058,7 +2066,8 @@ let CollectTyparsAndLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      stackGuard = None }
 
 let CollectAll =
     { canCache = false
@@ -2068,9 +2077,10 @@ let CollectAll =
       includeRecdFields = true 
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      stackGuard = None }
     
-let CollectTyparsAndLocals = // CollectAll
+let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
     { canCache = true // only cache for this one
       collectInTypes = true
       includeTypars = true
@@ -2078,13 +2088,21 @@ let CollectTyparsAndLocals = // CollectAll
       includeLocalTycons = false
       includeLocalTyconReprs = false
       includeRecdFields = false
-      includeUnionCases = false }
+      includeUnionCases = false
+      stackGuard = stackGuardOpt }
 
   
+let CollectTyparsAndLocals = CollectTyparsAndLocalsImpl None
+
 let CollectTypars = CollectTyparsAndLocals
 
 let CollectLocals = CollectTyparsAndLocals
 
+let CollectTyparsAndLocalsWithStackGuard() =
+    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth)
+    CollectTyparsAndLocalsImpl (Some stackGuard)
+
+let CollectLocalsWithStackGuard() = CollectTyparsAndLocalsWithStackGuard()
 
 let accFreeLocalTycon opts x acc = 
     if not opts.includeLocalTycons then acc else
@@ -3225,6 +3243,28 @@ let TyconRefHasAttribute g m attribSpec tcref =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Check if a type definition has an attribute with a specific full name
+let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
+    ignore m
+    match metadataOfTycon tcref.Deref with 
+#if !NO_EXTENSIONTYPING
+    | ProvidedTypeMetadata info -> 
+        let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
+        provAttribs.PUntaint((fun a ->
+            a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m).IsSome
+#endif
+    | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
+        tdef.CustomAttrs.AsArray
+        |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        tcref.Attribs
+        |> List.exists (fun attr ->
+            match attr.TyconRef.CompiledRepresentation with
+            | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) ->
+                typeRef.Enclosing.IsEmpty
+                && typeRef.Name = attrFullName
+            | CompiledTypeRepr.ILAsmOpen _ -> false)
+
 let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
     (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
     (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
@@ -3242,7 +3282,7 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
-           (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
+           (isStructTyconRef tcref && TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref)
        tcref.SetIsByRefLike res
        res
 
@@ -4780,8 +4820,14 @@ and accFreeInExprLinear (opts: FreeVarOptions) x acc contf =
         contf (accFreeInExpr opts x acc)
     
 and accFreeInExprNonLinear opts x acc =
-    match x with
+    
+    match opts.stackGuard with
+    | None -> accFreeInExprNonLinearImpl opts x acc
+    | Some stackGuard -> stackGuard.Guard (fun () -> accFreeInExprNonLinearImpl opts x acc)
 
+and accFreeInExprNonLinearImpl opts x acc =
+
+    match x with
     // BINDING CONSTRUCTS
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, vs, bodyExpr, _, rty) -> 
         unionFreeVars 
@@ -5231,36 +5277,42 @@ let tmenvCopyRemapAndBindTypars remapAttrib tmenv tps =
     let tmenvinner = tyenvinner 
     tps', tmenvinner
 
-let rec remapAttrib g tmenv (Attrib (tcref, kind, args, props, isGetOrSetAttr, targets, m)) = 
+type RemapContext =
+    { g: TcGlobals
+      stackGuard: StackGuard }
+
+let rec remapAttribImpl ctxt tmenv (Attrib (tcref, kind, args, props, isGetOrSetAttr, targets, m)) = 
     Attrib(remapTyconRef tmenv.tyconRefRemap tcref, 
            remapAttribKind tmenv kind, 
-           args |> List.map (remapAttribExpr g tmenv), 
-           props |> List.map (fun (AttribNamedArg(nm, ty, flg, expr)) -> AttribNamedArg(nm, remapType tmenv ty, flg, remapAttribExpr g tmenv expr)), 
+           args |> List.map (remapAttribExpr ctxt tmenv), 
+           props |> List.map (fun (AttribNamedArg(nm, ty, flg, expr)) -> AttribNamedArg(nm, remapType tmenv ty, flg, remapAttribExpr ctxt tmenv expr)), 
            isGetOrSetAttr, 
            targets, 
            m)
 
-and remapAttribExpr g tmenv (AttribExpr(e1, e2)) = 
-    AttribExpr(remapExpr g CloneAll tmenv e1, remapExpr g CloneAll tmenv e2)
+and remapAttribExpr ctxt tmenv (AttribExpr(e1, e2)) = 
+    AttribExpr(remapExprImpl ctxt CloneAll tmenv e1, remapExprImpl ctxt CloneAll tmenv e2)
     
-and remapAttribs g tmenv xs = List.map (remapAttrib g tmenv) xs
+and remapAttribs ctxt tmenv xs =
+    List.map (remapAttribImpl ctxt tmenv) xs
 
-and remapPossibleForallTy g tmenv ty = remapTypeFull (remapAttribs g tmenv) tmenv ty
+and remapPossibleForallTyImpl ctxt tmenv ty =
+    remapTypeFull (remapAttribs ctxt tmenv) tmenv ty
 
-and remapArgData g tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
-    { Attribs = remapAttribs g tmenv argInfo.Attribs; Name = argInfo.Name }
+and remapArgData ctxt tmenv (argInfo: ArgReprInfo) : ArgReprInfo =
+    { Attribs = remapAttribs ctxt tmenv argInfo.Attribs; Name = argInfo.Name }
 
-and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
-    ValReprInfo(tpNames, List.mapSquared (remapArgData g tmenv) arginfosl, remapArgData g tmenv retInfo)
+and remapValReprInfo ctxt tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
+    ValReprInfo(tpNames, List.mapSquared (remapArgData ctxt tmenv) arginfosl, remapArgData ctxt tmenv retInfo)
 
-and remapValData g tmenv (d: ValData) =
+and remapValData ctxt tmenv (d: ValData) =
     let ty = d.val_type
     let topValInfo = d.ValReprInfo
-    let tyR = ty |> remapPossibleForallTy g tmenv
+    let tyR = ty |> remapPossibleForallTyImpl ctxt tmenv
     let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
-    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
-    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty tyR tmenv)
-    let attribsR = d.Attribs |> remapAttribs g tmenv
+    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo ctxt tmenv)
+    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo ctxt d.val_range topValInfo ty tyR tmenv)
+    let attribsR = d.Attribs |> remapAttribs ctxt tmenv
     { d with 
         val_type = tyR
         val_opt_data =
@@ -5288,28 +5340,32 @@ and copyVal compgen (v: Val) =
     | OnlyCloneExprVals when v.IsMemberOrModuleBinding -> v
     | _ -> v |> Construct.NewModifiedVal id
 
-and fixupValData g compgen tmenv (v2: Val) =
+and fixupValData ctxt compgen tmenv (v2: Val) =
     // only fixup if we copy the value
     match compgen with 
     | OnlyCloneExprVals when v2.IsMemberOrModuleBinding -> ()
     | _ ->  
-        let newData = remapValData g tmenv v2 |> markAsCompGen compgen
+        let newData = remapValData ctxt tmenv v2 |> markAsCompGen compgen
         // uses the same stamp
         v2.SetData newData
     
-and copyAndRemapAndBindVals g compgen tmenv vs = 
+and copyAndRemapAndBindVals ctxt compgen tmenv vs = 
     let vs2 = vs |> List.map (copyVal compgen)
     let tmenvinner = bindLocalVals vs vs2 tmenv
-    vs2 |> List.iter (fixupValData g compgen tmenvinner)
+    vs2 |> List.iter (fixupValData ctxt compgen tmenvinner)
     vs2, tmenvinner
 
-and copyAndRemapAndBindVal g compgen tmenv v = 
+and copyAndRemapAndBindVal ctxt compgen tmenv v = 
     let v2 = v |> copyVal compgen
     let tmenvinner = bindLocalVal v v2 tmenv
-    fixupValData g compgen tmenvinner v2
+    fixupValData ctxt compgen tmenvinner v2
     v2, tmenvinner
     
-and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
+and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) expr =
+
+    // Guard against stack overflow, moving to a whole new stack if necessary
+    ctxt.stackGuard.Guard <| fun () ->
+
     match expr with
 
     // Handle the linear cases for arbitrary-sized inputs 
@@ -5317,27 +5373,27 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | LinearMatchExpr _ 
     | Expr.Sequential _  
     | Expr.Let _ -> 
-        remapLinearExpr g compgen tmenv expr (fun x -> x)
+        remapLinearExpr ctxt compgen tmenv expr (fun x -> x)
 
     // Binding constructs - see also dtrees below 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, vs, b, m, rty) -> 
-        remapLambaExpr g compgen tmenv (ctorThisValOpt, baseValOpt, vs, b, m, rty)
+        remapLambaExpr ctxt compgen tmenv (ctorThisValOpt, baseValOpt, vs, b, m, rty)
 
     | Expr.TyLambda (_, tps, b, m, rty) ->
-        let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv tps
-        mkTypeLambda m tps' (remapExpr g compgen tmenvinner b, remapType tmenvinner rty)
+        let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv tps
+        mkTypeLambda m tps' (remapExprImpl ctxt compgen tmenvinner b, remapType tmenvinner rty)
 
     | Expr.TyChoose (tps, b, m) ->
-        let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv tps
-        Expr.TyChoose (tps', remapExpr g compgen tmenvinner b, m)
+        let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv tps
+        Expr.TyChoose (tps', remapExprImpl ctxt compgen tmenvinner b, m)
 
     | Expr.LetRec (binds, e, m, _) ->  
-        let binds', tmenvinner = copyAndRemapAndBindBindings g compgen tmenv binds 
-        Expr.LetRec (binds', remapExpr g compgen tmenvinner e, m, Construct.NewFreeVarsCache())
+        let binds', tmenvinner = copyAndRemapAndBindBindings ctxt compgen tmenv binds 
+        Expr.LetRec (binds', remapExprImpl ctxt compgen tmenvinner e, m, Construct.NewFreeVarsCache())
 
     | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
-        primMkMatch (spBind, exprm, remapDecisionTree g compgen tmenv pt, 
-                     targets |> Array.map (remapTarget g compgen tmenv), 
+        primMkMatch (spBind, exprm, remapDecisionTree ctxt compgen tmenv pt, 
+                     targets |> Array.map (remapTarget ctxt compgen tmenv), 
                      m, remapType tmenv ty)
 
     | Expr.Val (vr, vf, m) -> 
@@ -5347,14 +5403,14 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         else Expr.Val (vr', vf', m)
 
     | Expr.Quote (a, dataCell, isFromQueryExpression, m, ty) ->  
-        remapQuoteExpr g compgen tmenv (a, dataCell, isFromQueryExpression, m, ty)
+        remapQuoteExpr ctxt compgen tmenv (a, dataCell, isFromQueryExpression, m, ty)
 
     | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
-        let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
+        let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal ctxt compgen) tmenv basev 
         mkObjExpr (remapType tmenv ty, basev', 
-                   remapExpr g compgen tmenv basecall, 
-                   List.map (remapMethod g compgen tmenvinner) overrides, 
-                   List.map (remapInterfaceImpl g compgen tmenvinner) iimpls, m) 
+                   remapExprImpl ctxt compgen tmenv basecall, 
+                   List.map (remapMethod ctxt compgen tmenvinner) overrides, 
+                   List.map (remapInterfaceImpl ctxt compgen tmenvinner) iimpls, m) 
 
     // Addresses of immutable field may "leak" across assembly boundaries - see CanTakeAddressOfRecdFieldRef below.
     // This is "ok", in the sense that it is always valid to fix these up to be uses
@@ -5363,34 +5419,34 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     
     | Expr.Op (TOp.ValFieldGetAddr (rfref, readonly), tinst, [arg], m) when 
           not rfref.RecdField.IsMutable && 
-          not (entityRefInThisAssembly g.compilingFslib rfref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingFslib rfref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
-        let arg = remapExpr g compgen tmenv arg 
+        let arg = remapExprImpl ctxt compgen tmenv arg 
         let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfRecdFieldRef rfref tinst)
         mkCompGenLet m tmp (mkRecdFieldGetViaExprAddr (arg, rfref, tinst, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (TOp.UnionCaseFieldGetAddr (uref, cidx, readonly), tinst, [arg], m) when 
           not (uref.FieldByIndex(cidx).IsMutable) && 
-          not (entityRefInThisAssembly g.compilingFslib uref.TyconRef) -> 
+          not (entityRefInThisAssembly ctxt.g.compilingFslib uref.TyconRef) -> 
 
         let tinst = remapTypes tmenv tinst 
-        let arg = remapExpr g compgen tmenv arg 
+        let arg = remapExprImpl ctxt compgen tmenv arg 
         let tmp, _ = mkMutableCompGenLocal m "copyOfStruct" (actualTyOfUnionFieldRef uref cidx tinst)
         mkCompGenLet m tmp (mkUnionCaseFieldGetProvenViaExprAddr (arg, uref, tinst, cidx, m)) (mkValAddr m readonly (mkLocalValRef tmp))
 
     | Expr.Op (op, tinst, args, m) -> 
-        remapOpExpr g compgen tmenv (op, tinst, args, m) expr
+        remapOpExpr ctxt compgen tmenv (op, tinst, args, m) expr
 
     | Expr.App (e1, e1ty, tyargs, args, m) -> 
-        remapAppExpr g compgen tmenv (e1, e1ty, tyargs, args, m) expr
+        remapAppExpr ctxt compgen tmenv (e1, e1ty, tyargs, args, m) expr
 
     | Expr.Link eref -> 
-        remapExpr g compgen tmenv eref.Value
+        remapExprImpl ctxt compgen tmenv eref.Value
 
     | Expr.StaticOptimization (cs, e2, e3, m) -> 
        // note that type instantiation typically resolve the static constraints here 
-       mkStaticOptimizationExpr g (List.map (remapConstraint tmenv) cs, remapExpr g compgen tmenv e2, remapExpr g compgen tmenv e3, m)
+       mkStaticOptimizationExpr ctxt.g (List.map (remapConstraint tmenv) cs, remapExprImpl ctxt compgen tmenv e2, remapExprImpl ctxt compgen tmenv e3, m)
 
     | Expr.Const (c, m, ty) -> 
         let ty' = remapType tmenv ty 
@@ -5400,78 +5456,78 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         let traitInfoR = remapTraitInfo tmenv traitInfo
         Expr.WitnessArg (traitInfoR, m)
 
-and remapLambaExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, b, m, rty) =
-    let ctorThisValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv ctorThisValOpt
-    let baseValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv baseValOpt
-    let vs, tmenv = copyAndRemapAndBindVals g compgen tmenv vs
-    let b = remapExpr g compgen tmenv b
+and remapLambaExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, b, m, rty) =
+    let ctorThisValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal ctxt compgen) tmenv ctorThisValOpt
+    let baseValOpt, tmenv = Option.mapFold (copyAndRemapAndBindVal ctxt compgen) tmenv baseValOpt
+    let vs, tmenv = copyAndRemapAndBindVals ctxt compgen tmenv vs
+    let b = remapExprImpl ctxt compgen tmenv b
     let rty = remapType tmenv rty
     Expr.Lambda (newUnique(), ctorThisValOpt, baseValOpt, vs, b, m, rty)
 
-and remapQuoteExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (a, dataCell, isFromQueryExpression, m, ty) =
-    let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, res)
+and remapQuoteExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (a, dataCell, isFromQueryExpression, m, ty) =
+    let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs ctxt compgen tmenv argExprs, res)
     let data' =
         match dataCell.Value with 
         | None -> None
         | Some (data1, data2) -> Some (doData data1, doData data2)
         // fix value of compgen for both original expression and pickled AST
     let compgen = fixValCopyFlagForQuotations compgen
-    Expr.Quote (remapExpr g compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
+    Expr.Quote (remapExprImpl ctxt compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
 
-and remapOpExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (op, tinst, args, m) origExpr =
+and remapOpExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (op, tinst, args, m) origExpr =
     let op' = remapOp tmenv op 
     let tinst' = remapTypes tmenv tinst 
-    let args' = remapExprs g compgen tmenv args 
+    let args' = remapExprs ctxt compgen tmenv args 
     if op === op' && tinst === tinst' && args === args' then origExpr 
     else Expr.Op (op', tinst', args', m)
 
-and remapAppExpr  (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) (e1, e1ty, tyargs, args, m) origExpr =
-    let e1' = remapExpr g compgen tmenv e1 
-    let e1ty' = remapPossibleForallTy g tmenv e1ty 
+and remapAppExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (e1, e1ty, tyargs, args, m) origExpr =
+    let e1' = remapExprImpl ctxt compgen tmenv e1 
+    let e1ty' = remapPossibleForallTyImpl ctxt tmenv e1ty 
     let tyargs' = remapTypes tmenv tyargs 
-    let args' = remapExprs g compgen tmenv args 
+    let args' = remapExprs ctxt compgen tmenv args 
     if e1 === e1' && e1ty === e1ty' && tyargs === tyargs' && args === args' then origExpr 
     else Expr.App (e1', e1ty', tyargs', args', m)
 
-and remapTarget g compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
-    let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
-    TTarget(vs', remapExpr g compgen tmenvinner e, spTarget, flags)
+and remapTarget ctxt compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
+    let vs', tmenvinner = copyAndRemapAndBindVals ctxt compgen tmenv vs 
+    TTarget(vs', remapExprImpl ctxt compgen tmenvinner e, spTarget, flags)
 
-and remapLinearExpr g compgen tmenv expr contf =
+and remapLinearExpr ctxt compgen tmenv expr contf =
 
     match expr with 
 
     | Expr.Let (bind, bodyExpr, m, _) ->  
-        let bind', tmenvinner = copyAndRemapAndBindBinding g compgen tmenv bind
+        let bind', tmenvinner = copyAndRemapAndBindBinding ctxt compgen tmenv bind
         // tailcall for the linear position
-        remapLinearExpr g compgen tmenvinner bodyExpr (contf << mkLetBind m bind')
+        remapLinearExpr ctxt compgen tmenvinner bodyExpr (contf << mkLetBind m bind')
 
     | Expr.Sequential (expr1, expr2, dir, spSeq, m) -> 
-        let expr1' = remapExpr g compgen tmenv expr1 
+        let expr1' = remapExprImpl ctxt compgen tmenv expr1 
         // tailcall for the linear position
-        remapLinearExpr g compgen tmenv expr2 (contf << (fun expr2' -> 
+        remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2' -> 
             if expr1 === expr1' && expr2 === expr2' then expr 
             else Expr.Sequential (expr1', expr2', dir, spSeq, m)))
 
     | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
-        let dtree' = remapDecisionTree g compgen tmenv dtree
-        let tg1' = remapTarget g compgen tmenv tg1
+        let dtree' = remapDecisionTree ctxt compgen tmenv dtree
+        let tg1' = remapTarget ctxt compgen tmenv tg1
         let ty' = remapType tmenv ty
         // tailcall for the linear position
-        remapLinearExpr g compgen tmenv expr2 (contf << (fun expr2' -> 
+        remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2' -> 
             rebuildLinearMatchExpr (spBind, exprm, dtree', tg1', expr2', sp2, m2, ty')))
 
     | LinearOpExpr (op, tyargs, argsFront, argLast, m) -> 
         let op' = remapOp tmenv op 
         let tinst' = remapTypes tmenv tyargs 
-        let argsFront' = remapExprs g compgen tmenv argsFront 
+        let argsFront' = remapExprs ctxt compgen tmenv argsFront 
         // tailcall for the linear position
-        remapLinearExpr g compgen tmenv argLast (contf << (fun argLast' -> 
+        remapLinearExpr ctxt compgen tmenv argLast (contf << (fun argLast' -> 
             if op === op' && tyargs === tinst' && argsFront === argsFront' && argLast === argLast' then expr 
             else rebuildLinearOpExpr (op', tinst', argsFront', argLast', m)))
 
     | _ -> 
-        contf (remapExpr g compgen tmenv expr) 
+        contf (remapExprImpl ctxt compgen tmenv expr) 
 
 and remapConstraint tyenv c = 
     match c with 
@@ -5510,14 +5566,14 @@ and remapValFlags tmenv x =
     | PossibleConstrainedCall ty -> PossibleConstrainedCall (remapType tmenv ty)
     | _ -> x
 
-and remapExprs g compgen tmenv es = List.mapq (remapExpr g compgen tmenv) es
+and remapExprs ctxt compgen tmenv es = List.mapq (remapExprImpl ctxt compgen tmenv) es
 
-and remapFlatExprs g compgen tmenv es = List.mapq (remapExpr g compgen tmenv) es
+and remapFlatExprs ctxt compgen tmenv es = List.mapq (remapExprImpl ctxt compgen tmenv) es
 
-and remapDecisionTree g compgen tmenv x =
+and remapDecisionTree ctxt compgen tmenv x =
     match x with 
     | TDSwitch(sp, e1, cases, dflt, m) -> 
-        let e1R = remapExpr g compgen tmenv e1
+        let e1R = remapExprImpl ctxt compgen tmenv e1
         let casesR =
             cases |> List.map (fun (TCase(test, subTree)) -> 
                 let testR = 
@@ -5529,81 +5585,81 @@ and remapDecisionTree g compgen tmenv x =
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
                     | DecisionTreeTest.Error(m) -> DecisionTreeTest.Error(m)
-                let subTreeR = remapDecisionTree g compgen tmenv subTree
+                let subTreeR = remapDecisionTree ctxt compgen tmenv subTree
                 TCase(testR, subTreeR))
-        let dfltR = Option.map (remapDecisionTree g compgen tmenv) dflt
+        let dfltR = Option.map (remapDecisionTree ctxt compgen tmenv) dflt
         TDSwitch(sp, e1R, casesR, dfltR, m)
 
     | TDSuccess (es, n) -> 
-        TDSuccess (remapFlatExprs g compgen tmenv es, n)
+        TDSuccess (remapFlatExprs ctxt compgen tmenv es, n)
 
     | TDBind (bind, rest) -> 
-        let bind', tmenvinner = copyAndRemapAndBindBinding g compgen tmenv bind
-        TDBind (bind', remapDecisionTree g compgen tmenvinner rest)
+        let bind', tmenvinner = copyAndRemapAndBindBinding ctxt compgen tmenv bind
+        TDBind (bind', remapDecisionTree ctxt compgen tmenvinner rest)
         
-and copyAndRemapAndBindBinding g compgen tmenv (bind: Binding) =
+and copyAndRemapAndBindBinding ctxt compgen tmenv (bind: Binding) =
     let v = bind.Var
-    let v', tmenv = copyAndRemapAndBindVal g compgen tmenv v
-    remapAndRenameBind g compgen tmenv bind v', tmenv
+    let v', tmenv = copyAndRemapAndBindVal ctxt compgen tmenv v
+    remapAndRenameBind ctxt compgen tmenv bind v', tmenv
 
-and copyAndRemapAndBindBindings g compgen tmenv binds = 
-    let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv (valsOfBinds binds)
-    remapAndRenameBinds g compgen tmenvinner binds vs', tmenvinner
+and copyAndRemapAndBindBindings ctxt compgen tmenv binds = 
+    let vs', tmenvinner = copyAndRemapAndBindVals ctxt compgen tmenv (valsOfBinds binds)
+    remapAndRenameBinds ctxt compgen tmenvinner binds vs', tmenvinner
 
-and remapAndRenameBinds g compgen tmenvinner binds vs' = List.map2 (remapAndRenameBind g compgen tmenvinner) binds vs'
-and remapAndRenameBind g compgen tmenvinner (TBind(_, repr, letSeqPtOpt)) v' = TBind(v', remapExpr g compgen tmenvinner repr, letSeqPtOpt)
+and remapAndRenameBinds ctxt compgen tmenvinner binds vs' = List.map2 (remapAndRenameBind ctxt compgen tmenvinner) binds vs'
+and remapAndRenameBind ctxt compgen tmenvinner (TBind(_, repr, letSeqPtOpt)) v' = TBind(v', remapExprImpl ctxt compgen tmenvinner repr, letSeqPtOpt)
 
-and remapMethod g compgen tmenv (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =
-    let attribs2 = attribs |> remapAttribs g tmenv
-    let slotsig2 = remapSlotSig (remapAttribs g tmenv) tmenv slotsig
-    let tps2, tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv tps
-    let vs2, tmenvinner2 = List.mapFold (copyAndRemapAndBindVals g compgen) tmenvinner vs
-    let e2 = remapExpr g compgen tmenvinner2 e
+and remapMethod ctxt compgen tmenv (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =
+    let attribs2 = attribs |> remapAttribs ctxt tmenv
+    let slotsig2 = remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig
+    let tps2, tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv tps
+    let vs2, tmenvinner2 = List.mapFold (copyAndRemapAndBindVals ctxt compgen) tmenvinner vs
+    let e2 = remapExprImpl ctxt compgen tmenvinner2 e
     TObjExprMethod(slotsig2, attribs2, tps2, vs2, e2, m)
 
-and remapInterfaceImpl g compgen tmenv (ty, overrides) =
-    (remapType tmenv ty, List.map (remapMethod g compgen tmenv) overrides)
+and remapInterfaceImpl ctxt compgen tmenv (ty, overrides) =
+    (remapType tmenv ty, List.map (remapMethod ctxt compgen tmenv) overrides)
 
-and remapRecdField g tmenv x = 
+and remapRecdField ctxt tmenv x = 
     { x with 
-          rfield_type = x.rfield_type |> remapPossibleForallTy g tmenv
-          rfield_pattribs = x.rfield_pattribs |> remapAttribs g tmenv
-          rfield_fattribs = x.rfield_fattribs |> remapAttribs g tmenv } 
+          rfield_type = x.rfield_type |> remapPossibleForallTyImpl ctxt tmenv
+          rfield_pattribs = x.rfield_pattribs |> remapAttribs ctxt tmenv
+          rfield_fattribs = x.rfield_fattribs |> remapAttribs ctxt tmenv } 
 
-and remapRecdFields g tmenv (x: TyconRecdFields) =
-    x.AllFieldsAsList |> List.map (remapRecdField g tmenv) |> Construct.MakeRecdFieldsTable 
+and remapRecdFields ctxt tmenv (x: TyconRecdFields) =
+    x.AllFieldsAsList |> List.map (remapRecdField ctxt tmenv) |> Construct.MakeRecdFieldsTable 
 
-and remapUnionCase g tmenv (x: UnionCase) = 
+and remapUnionCase ctxt tmenv (x: UnionCase) = 
     { x with 
-          FieldTable = x.FieldTable |> remapRecdFields g tmenv
+          FieldTable = x.FieldTable |> remapRecdFields ctxt tmenv
           ReturnType = x.ReturnType |> remapType tmenv
-          Attribs = x.Attribs |> remapAttribs g tmenv } 
+          Attribs = x.Attribs |> remapAttribs ctxt tmenv } 
 
-and remapUnionCases g tmenv (x: TyconUnionData) =
-    x.UnionCasesAsList |> List.map (remapUnionCase g tmenv) |> Construct.MakeUnionCases 
+and remapUnionCases ctxt tmenv (x: TyconUnionData) =
+    x.UnionCasesAsList |> List.map (remapUnionCase ctxt tmenv) |> Construct.MakeUnionCases 
 
-and remapFsObjData g tmenv x = 
+and remapFsObjData ctxt tmenv x = 
     { x with 
           fsobjmodel_kind = 
              (match x.fsobjmodel_kind with 
-              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
+              | TFSharpDelegate slotsig -> TFSharpDelegate (remapSlotSig (remapAttribs ctxt tmenv) tmenv slotsig)
               | TFSharpClass | TFSharpInterface | TFSharpStruct | TFSharpEnum -> x.fsobjmodel_kind)
           fsobjmodel_vslots = x.fsobjmodel_vslots |> List.map (remapValRef tmenv)
-          fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields g tmenv } 
+          fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields ctxt tmenv } 
 
 
-and remapTyconRepr g tmenv repr = 
+and remapTyconRepr ctxt tmenv repr = 
     match repr with 
-    | TFSharpObjectRepr x -> TFSharpObjectRepr (remapFsObjData g tmenv x)
-    | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields g tmenv x)
-    | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases g tmenv x)
+    | TFSharpObjectRepr x -> TFSharpObjectRepr (remapFsObjData ctxt tmenv x)
+    | TFSharpRecdRepr x -> TFSharpRecdRepr (remapRecdFields ctxt tmenv x)
+    | TFSharpUnionRepr x -> TFSharpUnionRepr (remapUnionCases ctxt tmenv x)
     | TILObjectRepr _ -> failwith "cannot remap IL type definitions"
 #if !NO_EXTENSIONTYPING
     | TProvidedNamespaceRepr _ -> repr
     | TProvidedTypeRepr info -> 
        TProvidedTypeRepr 
             { info with 
-                 LazyBaseType = info.LazyBaseType.Force (range0, g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
+                 LazyBaseType = info.LazyBaseType.Force (range0, ctxt.g.obj_ty) |> remapType tmenv |> LazyWithContext.NotLazy
                  // The load context for the provided type contains TyconRef objects. We must remap these.
                  // This is actually done on-demand (see the implementation of ProvidedTypeContext)
                  ProvidedType = 
@@ -5626,33 +5682,33 @@ and remapTyconAug tmenv (x: TyconAugmentation) =
           tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
           tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv)) } 
 
-and remapTyconExnInfo g tmenv inp =
+and remapTyconExnInfo ctxt tmenv inp =
     match inp with 
     | TExnAbbrevRepr x -> TExnAbbrevRepr (remapTyconRef tmenv.tyconRefRemap x)
-    | TExnFresh x -> TExnFresh (remapRecdFields g tmenv x)
+    | TExnFresh x -> TExnFresh (remapRecdFields ctxt tmenv x)
     | TExnAsmRepr _ | TExnNone -> inp 
 
-and remapMemberInfo g m topValInfo ty ty' tmenv x = 
+and remapMemberInfo ctxt m topValInfo ty ty' tmenv x = 
     // The slotsig in the ImplementedSlotSigs is w.r.t. the type variables in the value's type. 
     // REVIEW: this is a bit gross. It would be nice if the slotsig was standalone 
     assert (Option.isSome topValInfo)
-    let tpsOrig, _, _, _ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty m
-    let tps, _, _, _ = GetMemberTypeInFSharpForm g x.MemberFlags (Option.get topValInfo) ty' m
+    let tpsOrig, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty m
+    let tps, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty' m
     let renaming, _ = mkTyparToTyparRenaming tpsOrig tps 
     let tmenv = { tmenv with tpinst = tmenv.tpinst @ renaming } 
     { x with 
         ApparentEnclosingEntity = x.ApparentEnclosingEntity |> remapTyconRef tmenv.tyconRefRemap 
-        ImplementedSlotSigs = x.ImplementedSlotSigs |> List.map (remapSlotSig (remapAttribs g tmenv) tmenv)
+        ImplementedSlotSigs = x.ImplementedSlotSigs |> List.map (remapSlotSig (remapAttribs ctxt tmenv) tmenv)
     } 
 
-and copyAndRemapAndBindModTy g compgen tmenv mty = 
+and copyAndRemapAndBindModTy ctxt compgen tmenv mty = 
     let tycons = allEntitiesOfModuleOrNamespaceTy mty
     let vs = allValsOfModuleOrNamespaceTy mty
-    let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs
-    remapModTy g compgen tmenvinner mty, tmenvinner
+    let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs
+    remapModTy ctxt compgen tmenvinner mty, tmenvinner
 
-and remapModTy g _compgen tmenv mty = 
-    mapImmediateValsAndTycons (renameTycon g tmenv) (renameVal tmenv) mty 
+and remapModTy ctxt _compgen tmenv mty = 
+    mapImmediateValsAndTycons (renameTycon ctxt.g tmenv) (renameVal tmenv) mty 
 
 and renameTycon g tyenv x = 
     let tcref = 
@@ -5675,13 +5731,13 @@ and copyTycon compgen (tycon: Tycon) =
     | _ -> Construct.NewClonedTycon tycon
 
 /// This operates over a whole nested collection of tycons and vals simultaneously *)
-and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs = 
+and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs = 
     let tycons' = tycons |> List.map (copyTycon compgen)
 
     let tmenvinner = bindTycons tycons tycons' tmenv
     
     // Values need to be copied and renamed. 
-    let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenvinner vs
+    let vs', tmenvinner = copyAndRemapAndBindVals ctxt compgen tmenvinner vs
 
     // "if a type constructor is hidden then all its inner values and inner type constructors must also be hidden" 
     // Hence we can just lookup the inner tycon/value mappings in the tables. 
@@ -5706,16 +5762,16 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
                 mkLocalTyconRef tycon
         tcref.Deref
     (tycons, tycons') ||> List.iter2 (fun tcd tcd' ->
-        let lookupTycon tycon = lookupTycon g tycon
-        let tps', tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs g tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
+        let lookupTycon tycon = lookupTycon ctxt.g tycon
+        let tps', tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
         tcd'.entity_typars <- LazyWithContext.NotLazy tps'
-        tcd'.entity_attribs <- tcd.entity_attribs |> remapAttribs g tmenvinner2
-        tcd'.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr g tmenvinner2
+        tcd'.entity_attribs <- tcd.entity_attribs |> remapAttribs ctxt tmenvinner2
+        tcd'.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
         let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
         tcd'.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
         tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
                                                         |> mapImmediateValsAndTycons lookupTycon lookupVal)
-        let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo g tmenvinner2
+        let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
         match tcd'.entity_opt_data with
         | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR; entity_exn_info = exnInfoR }
         | _ -> 
@@ -5767,24 +5823,24 @@ and allValsOfModDef mdef =
           | TMAbstract(ModuleOrNamespaceExprWithSig(mty, _, _)) -> 
               yield! allValsOfModuleOrNamespaceTy mty }
 
-and remapAndBindModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef g compgen tmenv mdef
-    let mty, tmenv = copyAndRemapAndBindModTy g compgen tmenv mty
+and remapAndBindModuleOrNamespaceExprWithSig ctxt compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef
+    let mty, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv mty
     ModuleOrNamespaceExprWithSig(mty, mdef, m), tmenv
 
-and remapModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef g compgen tmenv mdef 
-    let mty = remapModTy g compgen tmenv mty 
+and remapModuleOrNamespaceExprWithSig ctxt compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef 
+    let mty = remapModTy ctxt compgen tmenv mty 
     ModuleOrNamespaceExprWithSig(mty, mdef, m)
 
-and copyAndRemapModDef g compgen tmenv mdef =
+and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
     let vs = allValsOfModDef mdef |> List.ofSeq
-    let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs
-    remapAndRenameModDef g compgen tmenvinner mdef
+    let _, _, tmenvinner = copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs
+    remapAndRenameModDef ctxt compgen tmenvinner mdef
 
-and remapAndRenameModDefs g compgen tmenv x = 
-    List.map (remapAndRenameModDef g compgen tmenv) x 
+and remapAndRenameModDefs ctxt compgen tmenv x = 
+    List.map (remapAndRenameModDef ctxt compgen tmenv) x 
 
 and remapOpenDeclarations tmenv opens =
     opens |> List.map (fun od -> 
@@ -5793,52 +5849,74 @@ and remapOpenDeclarations tmenv opens =
                 Types = od.Types |> List.map (remapType tmenv)
         })
 
-and remapAndRenameModDef g compgen tmenv mdef =
+and remapAndRenameModDef ctxt compgen tmenv mdef =
     match mdef with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         // Abstract (virtual) vslots in the tycons at TMDefRec nodes are binders. They also need to be copied and renamed. 
         let opensR = remapOpenDeclarations tmenv opens
-        let tyconsR = tycons |> List.map (renameTycon g tmenv)
-        let mbindsR = mbinds |> List.map (remapAndRenameModBind g compgen tmenv)
+        let tyconsR = tycons |> List.map (renameTycon ctxt.g tmenv)
+        let mbindsR = mbinds |> List.map (remapAndRenameModBind ctxt compgen tmenv)
         TMDefRec(isRec, opensR, tyconsR, mbindsR, m)
     | TMDefLet(bind, m) ->
         let v = bind.Var
-        let bind = remapAndRenameBind g compgen tmenv bind (renameVal tmenv v)
+        let bind = remapAndRenameBind ctxt compgen tmenv bind (renameVal tmenv v)
         TMDefLet(bind, m)
     | TMDefDo(e, m) ->
-        let e = remapExpr g compgen tmenv e
+        let e = remapExprImpl ctxt compgen tmenv e
         TMDefDo(e, m)
     | TMDefOpens opens ->
         let opens = remapOpenDeclarations tmenv opens
         TMDefOpens opens
     | TMDefs defs -> 
-        let defs = remapAndRenameModDefs g compgen tmenv defs
+        let defs = remapAndRenameModDefs ctxt compgen tmenv defs
         TMDefs defs
     | TMAbstract mexpr -> 
-        let mexpr = remapModuleOrNamespaceExprWithSig g compgen tmenv mexpr
+        let mexpr = remapModuleOrNamespaceExprWithSig ctxt compgen tmenv mexpr
         TMAbstract mexpr
 
-and remapAndRenameModBind g compgen tmenv x = 
+and remapAndRenameModBind ctxt compgen tmenv x = 
     match x with 
     | ModuleOrNamespaceBinding.Binding bind -> 
         let v2 = bind |> valOfBind |> renameVal tmenv
-        let bind2 = remapAndRenameBind g compgen tmenv bind v2
+        let bind2 = remapAndRenameBind ctxt compgen tmenv bind v2
         ModuleOrNamespaceBinding.Binding bind2
     | ModuleOrNamespaceBinding.Module(mspec, def) ->
-        let mspec = renameTycon g tmenv mspec
-        let def = remapAndRenameModDef g compgen tmenv def
+        let mspec = renameTycon ctxt.g tmenv mspec
+        let def = remapAndRenameModDef ctxt compgen tmenv def
         ModuleOrNamespaceBinding.Module(mspec, def)
 
-and remapImplFile g compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModuleOrNamespaceExprWithSig g compgen) tmenv mv
+and remapImplFile ctxt compgen tmenv mv = 
+    mapAccImplFile (remapAndBindModuleOrNamespaceExprWithSig ctxt compgen) tmenv mv
 
-let copyModuleOrNamespaceType g compgen mtyp = copyAndRemapAndBindModTy g compgen Remap.Empty mtyp |> fst
+// Entry points
 
-let copyExpr g compgen e = remapExpr g compgen Remap.Empty e    
+let remapAttrib g tmenv attrib = 
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapAttribImpl ctxt tmenv attrib
 
-let copyImplFile g compgen e = remapImplFile g compgen Remap.Empty e |> fst
+let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapExprImpl ctxt compgen tmenv expr
 
-let instExpr g tpinst e = remapExpr g CloneAll (mkInstRemap tpinst) e
+let remapPossibleForallTy g tmenv ty =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapPossibleForallTyImpl ctxt tmenv ty
+
+let copyModuleOrNamespaceType g compgen mtyp =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
+
+let copyExpr g compgen e =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapExprImpl ctxt compgen Remap.Empty e    
+
+let copyImplFile g compgen e =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapImplFile ctxt compgen Remap.Empty e |> fst
+
+let instExpr g tpinst e =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 //--------------------------------------------------------------------------
 // Replace Marks - adjust debugging marks when a lambda gets
@@ -6163,30 +6241,29 @@ let isExpansiveUnderInstantiation g fty0 tyargs pargs argsl =
      loop fty1 argsl)
     
 let rec mkExprAppAux g f fty argsl m =
-  match argsl with 
-  | [] -> f
-  | _ -> 
-      // Always combine the term application with a type application
-      //
-      // Combine the term application with a term application, but only when f' is an under-applied value of known arity
-      match f with 
-      | Expr.App (f', fty', tyargs, pargs, m2) 
+    match argsl with 
+    | [] -> f
+    | _ -> 
+        // Always combine the term application with a type application
+        //
+        // Combine the term application with a term application, but only when f' is an under-applied value of known arity
+        match f with 
+        | Expr.App (f0, fty0, tyargs, pargs, m2) 
              when
                  (isNil pargs ||
-                  (match stripExpr f' with 
+                  (match stripExpr f0 with 
                    | Expr.Val (v, _, _) -> 
                        match v.ValReprInfo with 
                        | Some info -> info.NumCurriedArgs > pargs.Length
                        | None -> false
                    | _ -> false)) &&
-                 not (isExpansiveUnderInstantiation g fty' tyargs pargs argsl) ->
-            primMkApp (f', fty') tyargs (pargs@argsl) (unionRanges m2 m)
+                 not (isExpansiveUnderInstantiation g fty0 tyargs pargs argsl) ->
+            primMkApp (f0, fty0) tyargs (pargs@argsl) (unionRanges m2 m)
 
-      | _ -> 
-          // Don't combine. 'f' is not an application
-          if not (isFunTy g fty) then error(InternalError("expected a function type", m))
-          primMkApp (f, fty) [] argsl m
-
+        | _ -> 
+            // Don't combine. 'f' is not an application
+            if not (isFunTy g fty) then error(InternalError("expected a function type", m))
+            primMkApp (f, fty) [] argsl m
 
 let rec mkAppsAux g f fty tyargsl argsl m =
   match tyargsl with 
@@ -6758,11 +6835,13 @@ let ExprFolder0 =
 type ExprFolders<'State> (folders: ExprFolder<'State>) =
     let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
     let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
+    let stackGuard = StackGuard(FoldExprStackGuardDepth)
 
     let rec exprsF z xs = 
         List.fold exprFClosure z xs
 
     and exprF (z: 'State) (x: Expr) =
+        stackGuard.Guard <| fun () ->
         folders.exprIntercept exprFClosure exprNoInterceptFClosure z x 
 
     and exprNoInterceptF (z: 'State) (x: Expr) = 
@@ -8833,7 +8912,8 @@ type ExprRewritingEnv =
     { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option
       PostTransform: Expr -> Expr option
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
-      IsUnderQuotations: bool }    
+      RewriteQuotations: bool
+      StackGuard: StackGuard }    
 
 let rec rewriteBind env bind = 
      match env.PreInterceptBinding with 
@@ -8849,18 +8929,19 @@ and rewriteBindStructure env (TBind(v, e, letSeqPtOpt)) =
 and rewriteBinds env binds = List.map (rewriteBind env) binds
 
 and RewriteExpr env expr =
-  match expr with 
-  | LinearOpExpr _ 
-  | LinearMatchExpr _ 
-  | Expr.Let _ 
-  | Expr.Sequential _ ->
-      rewriteLinearExpr env expr (fun e -> e)
-  | _ -> 
-      let expr = 
-         match preRewriteExpr env expr with 
-         | Some expr -> expr
-         | None -> rewriteExprStructure env expr
-      postRewriteExpr env expr 
+    env.StackGuard.Guard <| fun () ->
+    match expr with 
+    | LinearOpExpr _ 
+    | LinearMatchExpr _ 
+    | Expr.Let _ 
+    | Expr.Sequential _ ->
+        rewriteLinearExpr env expr (fun e -> e)
+    | _ -> 
+        let expr = 
+            match preRewriteExpr env expr with 
+            | Some expr -> expr
+            | None -> rewriteExprStructure env expr
+        postRewriteExpr env expr 
 
 and preRewriteExpr env expr = 
      match env.PreIntercept with 
@@ -8888,7 +8969,7 @@ and rewriteExprStructure env expr =
           match dataCell.Value with
           | None -> None
           | Some (data1, data2) -> Some(map3Of4 (rewriteExprs env) data1, map3Of4 (rewriteExprs env) data2)
-      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
+      Expr.Quote ((if env.RewriteQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
 
   | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
@@ -9075,17 +9156,17 @@ let MakeExportRemapping viewedCcu (mspec: ModuleOrNamespace) =
 //------------------------------------------------------------------------ 
 
 
-let rec remapEntityDataToNonLocal g tmenv (d: Entity) = 
-    let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv (d.entity_typars.Force(d.entity_range))
+let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) = 
+    let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs ctxt tmenv) tmenv (d.entity_typars.Force(d.entity_range))
     let typarsR = LazyWithContext.NotLazy tps'
-    let attribsR = d.entity_attribs |> remapAttribs g tmenvinner
-    let tyconReprR = d.entity_tycon_repr |> remapTyconRepr g tmenvinner
+    let attribsR = d.entity_attribs |> remapAttribs ctxt tmenvinner
+    let tyconReprR = d.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner
     let tyconAbbrevR = d.TypeAbbrev |> Option.map (remapType tmenvinner)
     let tyconTcaugR = d.entity_tycon_tcaug |> remapTyconAug tmenvinner
     let modulContentsR = 
         MaybeLazy.Strict (d.entity_modul_contents.Value
-                          |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv))
-    let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo g tmenvinner
+                          |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv))
+    let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
     { d with 
           entity_typars = typarsR
           entity_attribs = attribsR
@@ -9098,14 +9179,16 @@ let rec remapEntityDataToNonLocal g tmenv (d: Entity) =
                 Some { dd with entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
             | _ -> None }
 
-and remapTyconToNonLocal g tmenv x = 
-    x |> Construct.NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  
+and remapTyconToNonLocal ctxt tmenv x = 
+    x |> Construct.NewModifiedTycon (remapEntityDataToNonLocal ctxt tmenv)  
 
-and remapValToNonLocal g tmenv inp = 
+and remapValToNonLocal ctxt tmenv inp = 
     // creates a new stamp
-    inp |> Construct.NewModifiedVal (remapValData g tmenv)
+    inp |> Construct.NewModifiedVal (remapValData ctxt tmenv)
 
-let ApplyExportRemappingToEntity g tmenv x = remapTyconToNonLocal g tmenv x
+let ApplyExportRemappingToEntity g tmenv x =
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    remapTyconToNonLocal ctxt tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
 let isCompiledOrWitnessPassingConstraint (g: TcGlobals) cx = 

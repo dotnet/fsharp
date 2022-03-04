@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Wycinanie od końca wymaga języka w wersji 5.0, użyj parametru /langversion:preview.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">Funkcja „Przycinanie od końca” wymaga „podglądu” wersji językowej.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -433,8 +433,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Funkcja zarządzania pakietami wymaga języka w wersji 5.0, użyj parametru /langversion:preview</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">Funkcja „Zarządzanie pakietami” wymaga języka w wersji 5.0 lub nowszej</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -645,6 +645,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Nieprawidłowe wyrównanie w ciągu interpolowanym</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">Nieprawidłowa deklaracja elementu członkowskiego. Brak nazwy elementu członkowskiego lub ma ona nawiasy.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">

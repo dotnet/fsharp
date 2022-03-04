@@ -51,6 +51,12 @@ let mkNilListPat (g: TcGlobals) m ty = TPat_unioncase(g.nil_ucref, [ty], [], m)
 
 let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [ph;pt], unionRanges ph.Range pt.Range)
 
+#if DEBUG
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 40
+#else
+let TcStackGuardDepth = GetEnvInteger "FSHARP_TcStackGuardDepth" 80
+#endif
+
 //-------------------------------------------------------------------------
 // Errors.
 //-------------------------------------------------------------------------
@@ -358,6 +364,9 @@ type TcFileState =
       /// we infer type parameters
       mutable recUses: ValMultiMap<Expr ref * range * bool>
 
+      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+      stackGuard: StackGuard
+
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
@@ -421,6 +430,7 @@ type TcFileState =
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
+          stackGuard = StackGuard(TcStackGuardDepth)
           createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
@@ -2429,7 +2439,7 @@ module BindingNormalization =
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
             match pat with
             | SynPat.FromParseError(p, _) -> normPattern p
-            | SynPat.LongIdent (LongIdentWithDots(longId, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (LongIdentWithDots(longId, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -4011,7 +4021,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
 
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv valSpfn attrs =
-    let (SynValSig(_, id, ValTyparDecls (synTypars, synTyparConstraints, _), ty, valSynInfo, _, _, _, _, _, m)) = valSpfn
+    let (SynValSig(ident=id; explicitValDecls=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = valSpfn
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
     let enclosingDeclaredTypars, memberContainerInfo, thisTyOpt, declKind =
@@ -5003,7 +5013,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let pats', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (List.map (fun _ -> ty) pats) pats
         (fun values -> TPat_conjs(List.map (fun f -> f values) pats', m)), acc
 
-    | SynPat.LongIdent (LongIdentWithDots(longId, _), _, tyargs, args, vis, m) ->
+    | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, _); typarDecls=tyargs; argPats=args; accessibility=vis; range=m) ->
         if Option.isSome tyargs then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
         let warnOnUpperForId =
             match args with
@@ -5035,7 +5045,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.Const (c, m) -> SynExpr.Const (c, m)
             | SynPat.Named (id, _, None, _) -> SynExpr.Ident id
             | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
-            | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) ->
+            | SynPat.LongIdent (longDotId=LongIdentWithDots(longId, dotms) as lidwd; argPats=args; accessibility=None; range=m) ->
                 let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
                 let e =
                     if dotms.Length = longId.Length then
@@ -5399,7 +5409,11 @@ and TcExprFlex2 cenv desiredTy env isMethodArg tpenv synExpr =
     TcExpr cenv (MustConvertTo (isMethodArg, desiredTy)) env tpenv synExpr
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
-    // Start an error recovery handler
+
+    // Guard the stack for deeply nested expressions
+    cenv.stackGuard.Guard <| fun () ->
+
+    // Start an error recovery handler, and check for stack recursion depth, moving to a new stack if necessary.
     // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
     // So be careful!
     try
@@ -5697,7 +5711,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
-    | SynExpr.Match (spMatch, synInputExpr, synClauses, _m) ->
+    | SynExpr.Match (_mMatch, spMatch, synInputExpr, _mWith, synClauses, _m) ->
 
         let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv synInputExpr
         let mInputExpr = inputExpr.Range
@@ -5759,7 +5773,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
       )
 
-    | SynExpr.ObjExpr (synObjTy, argopt, binds, extraImpls, mNewExpr, m) ->
+    | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, extraImpls, mNewExpr, m) ->
       TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
@@ -5792,7 +5806,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
 
-    | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
+    | SynExpr.TryWith (_mTry, synBodyExpr, _mTryToWith, _mWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith)
 
     | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) ->
@@ -5884,7 +5898,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.LetOrUseBang  (range=m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
-    | SynExpr.MatchBang (_, _, _, m) ->
+    | SynExpr.MatchBang (range=m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     | SynExpr.IndexFromEnd (range=m)
@@ -6020,7 +6034,7 @@ and TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImp
 
     // Work out the type of any interfaces to implement
     let extraImpls, tpenv =
-        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, overrides, m)) ->
+        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, overrides, m)) ->
             let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
             if not (isInterfaceTy cenv.g intfTy) then
                 error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
@@ -9702,7 +9716,7 @@ and CheckRecursiveBindingIds binds =
             match b with
             | SynPat.Named(id, _, _, _)
             | SynPat.As(_, SynPat.Named(id, _, _, _), _)
-            | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) -> id.idText
+            | SynPat.LongIdent(longDotId=LongIdentWithDots([id], _)) -> id.idText
             | _ -> ""
         if nm <> "" && not (hashOfBinds.Add nm) then
             error(Duplicate("value", nm, m))
@@ -10960,6 +10974,8 @@ and AnalyzeRecursiveDecl
                  bindingAttribs, vis2, tcrefContainerInfo,
                  memberFlagsOpt, ty, bindingRhs, mBinding)
 
+        | SynPat.Paren(_, m) -> error(Error(FSComp.SR.tcInvalidMemberDeclNameMissingOrHasParen(), m))
+
         | _ -> error(Error(FSComp.SR.tcOnlySimplePatternsInLetRec(), mBinding))
 
     analyzeRecursiveDeclPat tpenv declPattern
@@ -11578,7 +11594,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
 
 let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, valSpfn) =
 
-  let (SynValSig (Attributes synAttrs, _, ValTyparDecls (synTypars, _, synCanInferTypars), _, _, isInline, mutableFlag, doc, vis, literalExprOpt, m)) = valSpfn
+  let (SynValSig (attributes=Attributes synAttrs; explicitValDecls=ValTyparDecls (synTypars, _, synCanInferTypars); isInline=isInline; isMutable=mutableFlag; xmlDoc=doc; accessibility=vis; synExpr=literalExprOpt; range=m)) = valSpfn
 
   GeneralizationHelpers.CheckDeclaredTyparsPermitted(memFlagsOpt, synTypars, m)
   let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)

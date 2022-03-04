@@ -13,6 +13,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Test.Compiler
 open FsUnit
 open NUnit.Framework
+open FSharp.Compiler.Diagnostics
 
 let getFieldXml symbolName fieldName checkResults =
     let field =
@@ -52,8 +53,8 @@ let checkSignatureAndImplementation code checkResultsAction parseResultsAction =
 let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
     parseResults.Diagnostics |> Array.map (fun x ->
         let range = x.Range
-        Error x.ErrorNumber, Line range.StartLine, Col range.StartColumn, Line range.EndLine, Col range.EndColumn, x.Message)
-
+        let error = mapDiagnosticSeverity x.Severity x.ErrorNumber
+        error, Line range.StartLine, Col range.StartColumn, Line range.EndLine, Col range.EndColumn, x.Message)
     |> shouldEqual expected
 
 [<Test>]
@@ -84,7 +85,7 @@ type A
     |> checkXml "A" [|"B"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``separated by // comment``(): unit =
@@ -97,7 +98,7 @@ module Test
 type A = class end
 """
         (checkXml "A" [|"B"|])
-        (checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``separated by //// comment``(): unit =
@@ -110,7 +111,7 @@ module Test
 type A = class end
 """
         (checkXml "A" [|"B"|])
-        (checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``separated by multiline comment``(): unit =
@@ -124,7 +125,7 @@ delimiter *)
 type A = class end
 """
         (checkXml "A" [|"B"|])
-        (checkParsingErrors [|Error 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 4, Col 0, Line 4, Col 4, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``separated by (*)``(): unit =
@@ -138,7 +139,7 @@ type A = class end
     |> checkXml "A" [|"B"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``types 01 - xml doc allowed positions``(): unit =
@@ -155,8 +156,8 @@ type
 """
         (checkXml "A" [|"A1"; "A2"|])
         (checkParsingErrors [|
-            Error 3520, Line 7, Col 4, Line 7, Col 9, "XML comment is not placed on a valid language element."
-            Error 3520, Line 9, Col 13, Line 9, Col 18, "XML comment is not placed on a valid language element."
+            Information 3520, Line 7, Col 4, Line 7, Col 9, "XML comment is not placed on a valid language element."
+            Information 3520, Line 9, Col 13, Line 9, Col 18, "XML comment is not placed on a valid language element."
          |])
 
 [<Test>]
@@ -185,7 +186,7 @@ and ///B1
     B = class end
 """
         (checkXml "B" [|"B1"; "B2"|])
-        (checkParsingErrors [|Error 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``types 04 - xml doc before/after 'and'``(): unit =
@@ -198,7 +199,7 @@ and ///B2
     B = class end
 """
         (checkXml "B" [|"B1"|])
-        (checkParsingErrors [|Error 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``types 05 - attributes after 'type'``(): unit =
@@ -210,7 +211,7 @@ type ///A2
      [<Attr>] A = class end
 """
         (checkXml "A" [|"A1"|])
-        (checkParsingErrors [|Error 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 5, Col 5, Line 5, Col 10, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``types 06 - xml doc after attribute``(): unit =
@@ -222,7 +223,7 @@ module Test
 type A = class end
 """
         (checkXml "A" [||])
-        (checkParsingErrors [|Error 3520, Line 5, Col 0, Line 5, Col 4, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 5, Col 0, Line 5, Col 4, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``let bindings 01 - allowed positions``(): unit =
@@ -238,9 +239,9 @@ let ///f2
 
     parseResults
     |> checkParsingErrors [|
-        Error 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
-        Error 3520, Line 4, Col 8, Line 4, Col 13, "XML comment is not placed on a valid language element."
-        Error 3520, Line 5, Col 15, Line 5, Col 20, "XML comment is not placed on a valid language element."
+        Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."
+        Information 3520, Line 4, Col 8, Line 4, Col 13, "XML comment is not placed on a valid language element."
+        Information 3520, Line 5, Col 15, Line 5, Col 20, "XML comment is not placed on a valid language element."
     |]
 
 [<Test>]
@@ -256,7 +257,7 @@ let x = 3
     |> checkXml "x" [|"X1"; "X2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 03 - 'let in'``(): unit =
@@ -281,8 +282,8 @@ let y = x
 
     parseResults
     |> checkParsingErrors [|
-        Error 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
-        Error 3520, Line 11, Col 0, Line 11, Col 5, "XML comment is not placed on a valid language element."
+        Information 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
+        Information 3520, Line 11, Col 0, Line 11, Col 5, "XML comment is not placed on a valid language element."
     |]
 
 [<Test>]
@@ -295,7 +296,7 @@ let ///X
     |> checkXml "x" [||]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 2, Col 4, Line 2, Col 8, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 04 - local binding``(): unit =
@@ -338,7 +339,7 @@ let x = 5
     |> checkXml "x" [||]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 3, Col 0, Line 3, Col 4, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 3, Col 0, Line 3, Col 4, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 07 - attribute after 'let'``(): unit =
@@ -351,7 +352,7 @@ let ///X2
     |> checkXml "x" [|"X1"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 3, Col 4, Line 3, Col 9, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 08 - xml doc before 'and'``(): unit =
@@ -381,7 +382,7 @@ and ///G1
     |> checkXml "g" [|"G1"; "G2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 10 - xml doc before/after 'and'``(): unit =
@@ -395,7 +396,7 @@ and ///G2
     |> checkXml "g" [|"G1"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 4, Col 4, Line 4, Col 9, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``let bindings 11 - in type``(): unit =
@@ -423,7 +424,7 @@ type A =
     |> checkXml "B" [|"B1"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``type members 02``(): unit =
@@ -443,8 +444,8 @@ type A =
 
     parseResults
     |> checkParsingErrors [|
-        Error 3520, Line 3, Col 19, Line 3, Col 24, "XML comment is not placed on a valid language element."
-        Error 3520, Line 9, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."
+        Information 3520, Line 3, Col 19, Line 3, Col 24, "XML comment is not placed on a valid language element."
+        Information 3520, Line 9, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."
     |]
 
 [<Test>]
@@ -460,7 +461,7 @@ type A =
     abstract member M: unit
 """
         (checkXml "get_M" [|"M1"; "M2"|])
-        (checkParsingErrors [|Error 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 8, Col 4, Line 8, Col 9, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``type members 04 - property accessors``(): unit =
@@ -485,9 +486,9 @@ type B =
 
     parseResults
     |> checkParsingErrors [|
-        Error 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."
-        Error 3520, Line 7, Col 16, Line 7, Col 22, "XML comment is not placed on a valid language element."
-        Error 3520, Line 9, Col 16, Line 9, Col 22, "XML comment is not placed on a valid language element."
+        Information 3520, Line 5, Col 11, Line 5, Col 16, "XML comment is not placed on a valid language element."
+        Information 3520, Line 7, Col 16, Line 7, Col 22, "XML comment is not placed on a valid language element."
+        Information 3520, Line 9, Col 16, Line 9, Col 22, "XML comment is not placed on a valid language element."
     |]
 
 [<Test>]
@@ -504,7 +505,7 @@ type A() =
     |> checkXml "get_B" [|"B1"; "B2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 6, Col 4, Line 6, Col 9, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``type members 06 - implicit ctor``(): unit =
@@ -522,7 +523,7 @@ type A ///CTOR1
        ]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 5, Col 7, Line 5, Col 15, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``record``(): unit =
@@ -540,7 +541,7 @@ type A =
 """
         (getFieldXml "A" "B" >>
          compareXml [|"B1"; "B2"|])
-        (checkParsingErrors [|Error 3520, Line 9, Col 8, Line 9, Col 13, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 9, Col 8, Line 9, Col 13, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``module 01``(): unit =
@@ -555,8 +556,8 @@ module
 """
         (checkXml "M" [|"M1"; "M2"|])
         (checkParsingErrors [|
-            Error 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
-            Error 3520, Line 7, Col 7, Line 7, Col 12, "XML comment is not placed on a valid language element."
+            Information 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."
+            Information 3520, Line 7, Col 7, Line 7, Col 12, "XML comment is not placed on a valid language element."
          |])
 
 [<Test>]
@@ -569,7 +570,7 @@ module ///M2
 """
         (checkXml "M" [|"M1"|])
         (checkParsingErrors [|
-            Error 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
+            Information 3520, Line 3, Col 7, Line 3, Col 12, "XML comment is not placed on a valid language element."
          |])
 
 [<Test>]
@@ -613,8 +614,8 @@ type A =
            "Two", [|"Two1"; "Two2"|]
        ])
        (checkParsingErrors [|
-            Error 3520, Line 8, Col 6, Line 8, Col 13, "XML comment is not placed on a valid language element."
-            Error 3520, Line 13, Col 6, Line 13, Col 13, "XML comment is not placed on a valid language element."
+            Information 3520, Line 8, Col 6, Line 8, Col 13, "XML comment is not placed on a valid language element."
+            Information 3520, Line 13, Col 6, Line 13, Col 13, "XML comment is not placed on a valid language element."
         |])
 
 [<Test>]
@@ -653,7 +654,7 @@ extern void E()
     |> checkXml "E" [|"E1"; "E2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 5, Col 0, Line 5, Col 5, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``exception 01 - allowed positions``(): unit =
@@ -669,8 +670,8 @@ exception ///E4
 """
         (checkXml "E" [|"E1"; "E2"|])
         (checkParsingErrors [|
-            Error 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
-            Error 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
+            Information 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."
+            Information 3520, Line 8, Col 10, Line 8, Col 15, "XML comment is not placed on a valid language element."
          |])
 
 [<Test>]
@@ -683,7 +684,7 @@ exception ///E
           E of string
 """
         (checkXml "E" [||])
-        (checkParsingErrors [|Error 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|])
+        (checkParsingErrors [|Information 3520, Line 4, Col 10, Line 4, Col 14, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``val 01 - type``(): unit =
@@ -700,7 +701,7 @@ type A =
 """
      (getFieldXml "A" "B" >>
       compareXml [|"B1"; "B2"|])
-     (checkParsingErrors [|Error 3520, Line 8, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."|])
+     (checkParsingErrors [|Information 3520, Line 8, Col 4, Line 9, Col 9, "XML comment is not placed on a valid language element."|])
 
 [<Test>]
 let ``val 02 - struct``(): unit =
@@ -719,7 +720,7 @@ type Point =
     |> compareXml [|"X1"; "X2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 7, Col 8, Line 7, Col 13, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 7, Col 8, Line 7, Col 13, "XML comment is not placed on a valid language element."|]
 
 [<Test>]
 let ``val 03 - module``(): unit =
@@ -736,4 +737,4 @@ val a: int
     |> checkXml "a" [|"A1"; "A2"|]
 
     parseResults
-    |> checkParsingErrors [|Error 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."|]
+    |> checkParsingErrors [|Information 3520, Line 7, Col 0, Line 7, Col 5, "XML comment is not placed on a valid language element."|]

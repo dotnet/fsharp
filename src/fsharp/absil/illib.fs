@@ -75,7 +75,7 @@ module internal PervasiveAutoOpens =
             x.EndsWith(value, StringComparison.Ordinal)
 
     /// Get an initialization hole 
-    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+    let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
     let reportTime =
         let mutable tFirst =None
@@ -1144,19 +1144,18 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x.[k]))
 
-    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
+    member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
     member x.AddAndMarkAsCollapsible (kvs: _[]) = 
         let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
         x.MarkAsCollapsible()
 
-    member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member _.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
 
-    member x.TryFind k = contents.TryFind k
+    member _.TryFind k = contents.TryFind k
 
-    member x.TryGetValue k = contents.TryGetValue k
+    member _.TryGetValue k = contents.TryGetValue k
 
-    member x.Values = contents.Values |> List.concat
+    member _.Values = contents.Values |> List.concat
 
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
-

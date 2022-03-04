@@ -453,6 +453,152 @@ type Person(name : string, age : int) =
             assertRange (5, 20) (5, 21) mEquals
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``SynTypeDefn with Augmentation contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Int32 with
+    member _.Zero = 0
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation mWithKeyword)) ]
+            )
+        ]) ])) ->
+            assertRange (2, 11) (2, 15) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynMemberDefn.Interface contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    interface Bar with
+        member Meh () = ()
+    interface Other
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members=[ SynMemberDefn.ImplicitCtor _
+                                                                                           SynMemberDefn.Interface(withKeyword=Some mWithKeyword)
+                                                                                           SynMemberDefn.Interface(withKeyword=None) ])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 18) (3, 22) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with AutoProperty contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    member val AutoProperty = autoProp with get, set
+    member val AutoProperty2 = autoProp
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
+                                                                                            SynMemberDefn.AutoProperty(withKeyword=Some mWith)
+                                                                                            SynMemberDefn.AutoProperty(withKeyword=None)])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 39) (3, 43) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefn with AbstractSlot contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    abstract member Bar : int with get,set
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
+                                                                                            SynMemberDefn.AbstractSlot(slotSig=SynValSig(withKeyword=Some mWith))])) ]
+            )
+        ]) ])) ->
+            assertRange (3, 30) (3, 34) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``read-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A read-only property.
+    member this.MyReadProperty with get () = myInternalValue
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    ) ])
+             ]) ])) ->
+            assertRange (4, 31) (4, 35) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``write-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A write-only property.
+    member this.MyWriteOnlyProperty with set (value) = myInternalValue <- value
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith)))) ])
+                    ) ])
+             ]) ])) ->
+            assertRange (4, 36) (4, 40) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``read/write property in SynMemberDefn.Member contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResults
+                """
+type Foo() =
+    // A read-write property.
+    member this.MyReadWriteProperty
+        with get () = myInternalValue
+        and set (value) = myInternalValue <- value
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(
+                typeDefns = [ SynTypeDefn(typeRepr =
+                    SynTypeDefnRepr.ObjectModel(members=[ _
+                                                          SynMemberDefn.Member(memberDefn=SynBinding(headPat=SynPat.LongIdent(propertyKeyword=Some(PropertyKeyword.With mWith))))
+                                                          SynMemberDefn.Member _ ])
+                    ) ])
+             ]) ])) ->
+            assertRange (5, 8) (5, 12) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SyntaxExpressions =
     [<Test>]
     let ``SynExpr.Do contains the range of the do keyword`` () =
@@ -615,6 +761,91 @@ for i = 1 to 10 do
                     ])
                 ])) ->
             assertRange (2, 6) (2, 7) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.TryWith contains the range of the try and with keyword`` () =
+        let ast =
+            """
+try
+    x
+with
+| ex -> y
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.TryWith(tryKeywordRange=mTry; withKeywordRange=mWith))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 3) mTry
+            assertRange (4, 0) (4, 4) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.Match contains the range of the match and with keyword`` () =
+        let ast =
+            """
+match x with
+| y -> z
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.Match(matchKeyword=mMatch; withKeyword=mWith))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 5) mMatch
+            assertRange (2, 8) (2, 12) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.MatchBang contains the range of the match and with keyword`` () =
+        let ast =
+            """
+match! x with
+| y -> z
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.MatchBang(matchKeyword=mMatch; withKeyword=mWith))
+                    ])
+                ])) ->
+            assertRange (2, 0) (2, 6) mMatch
+            assertRange (2, 9) (2, 13) mWith
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExpr.ObjExpr contains the range of with keyword`` () =
+        let ast =
+            """
+{ new obj() with
+    member x.ToString() = "INotifyEnumerableInternal"
+  interface INotifyEnumerableInternal<'T>
+  interface IEnumerable<_> with
+    member x.GetEnumerator() = null }
+"""
+            |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.DoExpr(expr =
+                            SynExpr.ObjExpr(withKeyword=Some mWithObjExpr; extraImpls=[ SynInterfaceImpl(withKeyword=None); SynInterfaceImpl(withKeyword=Some mWithSynInterfaceImpl) ]))
+                    ])
+                ])) ->
+            assertRange (2, 12) (2, 16) mWithObjExpr
+            assertRange (5, 27) (5, 31) mWithSynInterfaceImpl
         | _ -> Assert.Fail "Could not get valid AST"
 
 module Strings =
@@ -1119,6 +1350,117 @@ type Shape =
             )
         ]) ])) ->
             assertRange (4, 11) (4, 12) mEquals
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynTypeDefnSig should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+type Foo with
+    member Meh : unit -> unit
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules =[ SynModuleOrNamespaceSig(decls =[
+            SynModuleSigDecl.Types(
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.Simple _
+                                       withKeyword=Some mWithKeyword) ]
+            )
+        ]) ])) ->
+            assertRange (4, 9) (4, 13) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``SynExceptionSig should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+exception Foo with
+    member Meh : unit -> unit
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Exception(
+                exnSig=SynExceptionSig(withKeyword = Some mWithKeyword)
+            )
+        ]) ])) ->
+            assertRange (4, 14) (4, 18) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``memberSig of SynMemberSig.Member should contains the range of the with keyword`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+namespace X
+
+type Foo =
+    abstract member Bar : int with get,set
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(
+                types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[SynMemberSig.Member(memberSig=SynValSig(withKeyword=Some mWithKeyword))])) ]
+            )
+        ]) ])) ->
+            assertRange (5, 30) (5, 34) mWithKeyword
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of attribute should be included in SynExceptionDefnRepr and SynExceptionSig`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module internal FSharp.Compiler.ParseHelpers
+
+/// The error raised by the parse_error_rich function, which is called by the parser engine
+[<NoEquality; NoComparison>]
+exception SyntaxError of obj * range: range
+
+
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Exception(
+                    SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
+            ] ) ])) ->
+            assertRange (5, 0) (6, 43) mSynExceptionDefnRepr
+            assertRange (5, 0) (6, 43) mSynExceptionSig
+            assertRange (5, 0) (6, 43) mException
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Range of members should be included in SynExceptionSig and SynModuleSigDecl.Exception`` () =
+        let parseResults = 
+            getParseResultsOfSignatureFile
+                """
+module internal FSharp.Compiler.ParseHelpers
+
+exception SyntaxError of obj * range: range with
+    member Meh : string -> int
+
+open Foo
+"""
+
+        match parseResults with
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+            SynModuleOrNamespaceSig(decls=[
+                SynModuleSigDecl.Exception(
+                    SynExceptionSig(exnRepr=SynExceptionDefnRepr(range=mSynExceptionDefnRepr); range=mSynExceptionSig), mException)
+                SynModuleSigDecl.Open _
+            ] ) ])) ->
+            assertRange (4, 0) (4, 43) mSynExceptionDefnRepr
+            assertRange (4, 0) (5, 30) mSynExceptionSig
+            assertRange (4, 0) (5, 30) mException
         | _ -> Assert.Fail "Could not get valid AST"
 
 module SynMatchClause =

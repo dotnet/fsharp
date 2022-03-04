@@ -226,7 +226,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     | Some expr ->
                         getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
-            | SynExpr.Match (_, expr, clauses, range) when rangeContainsPos range pos ->
+            | SynExpr.Match (expr=expr; clauses=clauses; range=range) when rangeContainsPos range pos ->
                 if rangeContainsPos expr.Range pos then
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
                 else
@@ -446,7 +446,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   let isFunction = 
                       Option.isSome memFlagsOpt ||
                       match synPat with 
-                      | SynPat.LongIdent (_, _, _, SynArgPats.Pats args, _, _) when not (List.isEmpty args) -> true
+                      | SynPat.LongIdent (argPats=SynArgPats.Pats args) when not (List.isEmpty args) -> true
                       | _ -> false
                   if not isFunction then 
                       yield! walkBindSeqPt spInfo
@@ -588,12 +588,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       | None -> ()
                       yield! walkExprs (fs |> List.map (fun (_, _, e) -> e))
 
-                  | SynExpr.ObjExpr (_, args, bs, is, _, _) -> 
+                  | SynExpr.ObjExpr (argOptions=args; bindings=bs; extraImpls=is) -> 
                       match args with
                       | None -> ()
                       | Some (arg, _) -> yield! walkExpr false arg
                       yield! walkBinds bs  
-                      for SynInterfaceImpl(_, bs, _) in is do yield! walkBinds bs
+                      for SynInterfaceImpl(bindings=bs) in is do yield! walkBinds bs
 
                   | SynExpr.While (spWhile, e1, e2, _) -> 
                       yield! walkWhileSeqPt spWhile
@@ -624,7 +624,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.Lambda (body = bodyExpr) -> 
                       yield! walkExpr true bodyExpr 
 
-                  | SynExpr.Match (spBind, inpExpr, cl, _) ->
+                  | SynExpr.Match (matchDebugPoint=spBind; expr=inpExpr; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false inpExpr 
                       for SynMatchClause(_, whenExpr, _, tgtExpr, _, _) in cl do 
@@ -635,7 +635,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkBinds binds  
                       yield! walkExpr true bodyExpr
 
-                  | SynExpr.TryWith (tryExpr, _, cl, _, _, spTry, spWith) -> 
+                  | SynExpr.TryWith (tryExpr=tryExpr; withCases=cl; tryDebugPoint=spTry; withDebugPoint=spWith) -> 
                       yield! walkTrySeqPt spTry
                       yield! walkWithSeqPt spWith
                       yield! walkExpr true tryExpr 
@@ -687,7 +687,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                           yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
-                  | SynExpr.MatchBang (spBind, e, cl, _) ->
+                  | SynExpr.MatchBang (matchDebugPoint=spBind; expr=e; clauses=cl) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for SynMatchClause(_, whenExpr, _, e, _, _) in cl do 
@@ -713,7 +713,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynMemberDefn.AutoProperty(synExpr=synExpr) -> yield! walkExpr true synExpr
                   | SynMemberDefn.ImplicitCtor(_, _, _, _, _, m) -> yield! checkRange m
                   | SynMemberDefn.Member(bind, _) -> yield! walkBind bind
-                  | SynMemberDefn.Interface(_, Some membs, _) -> for m in membs do yield! walkMember m
+                  | SynMemberDefn.Interface(members=Some membs) -> for m in membs do yield! walkMember m
                   | SynMemberDefn.Inherit(_, _, m) -> 
                       // can break on the "inherit" clause
                       yield! checkRange m

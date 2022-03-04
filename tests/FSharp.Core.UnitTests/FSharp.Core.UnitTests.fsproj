@@ -38,6 +38,7 @@
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscriminatedUnionType.fs" />
     <Compile Include="FSharp.Core\RecordTypes.fs" />
+    <Compile Include="FSharp.Core\RefStructs.fs" />
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />
     <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />

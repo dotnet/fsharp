@@ -820,8 +820,11 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                     if sps.Length < 5000 then
                         pdbDefineSequencePoints pdbw (getDocument spset.[0].Document) sps)
 
+              // Avoid stack overflow when writing linearly nested scopes
+              let stackGuard = StackGuard(100)
               // Write the scopes
               let rec writePdbScope parent sco =
+                  stackGuard.Guard <| fun () ->
                   if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
                       // Only nest scopes if the child scope is a different size from
                       let nested =
@@ -1009,7 +1012,8 @@ let rec allNamesOfScope acc (scope: PdbMethodScope) =
 and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
     (acc, scopes) ||> Array.fold allNamesOfScope
 
-let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
+let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
+    stackGuard.Guard <| fun () ->
     // Check if child scopes are properly nested
     if scope.Children |> Array.forall (fun child ->
             child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
@@ -1024,7 +1028,7 @@ let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope)
         let renamed = [| for l in rename -> { l with Name = l.Name + " (shadowed)" } |]
 
         let localsToPush2 = [| yield! renamed; yield! unprocessed; yield! scope.Locals |]
-        let newChildren, splits = children |> Array.map (pushShadowedLocals localsToPush2) |> Array.unzip
+        let newChildren, splits = children |> Array.map (pushShadowedLocals stackGuard localsToPush2) |> Array.unzip
         
         // Check if a rename in any of the children forces a split
         if splits |> Array.exists id then
@@ -1058,5 +1062,7 @@ let rec pushShadowedLocals (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope)
 //  2. Adjust each child scope to also contain the locals from 'scope', 
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
-   let result, _ = pushShadowedLocals [| |] rootScope
-   result
+    // Avoid stack overflow when writing linearly nested scopes
+    let stackGuard = StackGuard(100)
+    let result, _ = pushShadowedLocals stackGuard [| |] rootScope
+    result

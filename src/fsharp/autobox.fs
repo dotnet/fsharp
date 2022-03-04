@@ -15,6 +15,8 @@ open FSharp.Compiler.TypeRelations
 //----------------------------------------------------------------------------
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
+let AutoboxRewriteStackGuardDepth = StackGuard.GetDepthOption "AutoboxRewrite"
+
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }
@@ -30,7 +32,7 @@ let DecideEscapes syntacticArgs body =
         v.ValReprInfo.IsNone &&
         not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
-    let frees = freeInExpr CollectLocals body
+    let frees = freeInExpr (CollectLocalsWithStackGuard()) body
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
@@ -190,6 +192,7 @@ let TransformImplFile g amap implFile =
               { PreIntercept = Some(TransformExpr g nvs)
                 PreInterceptBinding = Some(TransformBinding g nvs)
                 PostTransform = (fun _ -> None)
-                IsUnderQuotations = false } 
+                RewriteQuotations = false
+                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

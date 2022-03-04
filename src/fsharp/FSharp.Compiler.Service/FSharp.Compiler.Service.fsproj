@@ -21,7 +21,13 @@
     <NGenBinary>true</NGenBinary>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1 --times</OtherFlags>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --extraoptimizationloops:1 --times</OtherFlags>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
+    <!-- 1182: Unused variables -->
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+    <!-- 3390: xmlDocBadlyFormed -->
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>

@@ -1471,7 +1471,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                     else
                         let calledNonOptTy = destNullableTy g calledArgTy
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                        let callerArgTy2 = tyOfExpr g callerArgExpr2
+                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
                 else
                     failwith "unreachable" // see case above
             
@@ -1502,7 +1503,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                             // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
                             let calledNonOptTy = destNullableTy g calledArgTy
                             let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr2 m
+                            let callerArgTy2 = tyOfExpr g callerArgExpr2
+                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
                         let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr

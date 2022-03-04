@@ -26,11 +26,11 @@ open FSharp.Compiler.IO
 
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
-let FSC_BASIC = FSC_CORECLR
-let FSI_BASIC = FSI_CORECLR
+let FSC_OPTIMIZED = FSC_NETCORE (true, false)
+let FSI = FSI_NETCORE
 #else
-let FSC_BASIC = FSC_OPT_PLUS_DEBUG
-let FSI_BASIC = FSI_FILE
+let FSC_OPTIMIZED = FSC_NETFX (true, false)
+let FSI = FSI_NETFX
 #endif
 
 let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
@@ -147,11 +147,11 @@ let helloWorld p =
     peverify cfg (bincompat2 ++ "testlib_client.exe")
 
 [<Test>]
-let ``helloWorld fsc`` () = helloWorld FSC_BASIC
+let ``helloWorld fsc`` () = helloWorld FSC_OPTIMIZED
 
 #if !NETCOREAPP
 [<Test>]
-let ``helloWorld fsi`` () = helloWorld FSI_STDIN
+let ``helloWorld fsi`` () = helloWorld FSI_NETFX_STDIN
 #endif
 
 [<Test>]

@@ -4,7 +4,9 @@ module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Reflection
+open System.Runtime
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
@@ -30,7 +32,8 @@ let main(argv) =
             "fsc.exe"
 
     // Set the garbage collector to batch mode, which improves overall performance.
-    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
+    GCSettings.LatencyMode <- GCLatencyMode.Batch
+    Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -45,8 +48,8 @@ let main(argv) =
 
         // The F# compiler expects 'argv' to include the executable name, though it makes no use of it.
         let argv = Array.append [| compilerName |] argv
-
-        // Check for --pause as the very first step so that a compiler can be attached here.
+        
+        // Check for --pause as the very first step so that a debugger can be attached here.
         let pauseFlag = argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause")
         if pauseFlag then 
             System.Console.WriteLine("Press return to continue...")

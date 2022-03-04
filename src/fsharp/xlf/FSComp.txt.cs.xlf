@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Vytváření průřezů od konce vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">Funkce vytváření průřezů od konce vyžaduje jazykovou verzi preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -433,8 +433,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0 nebo vyšší.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -645,6 +645,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">Neplatné zarovnání v interpolovaném řetězci</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">Neplatná deklarace člena. Jeho jméno chybí nebo obsahuje závorky.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">

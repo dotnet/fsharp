@@ -385,7 +385,8 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // tcImplicitConversionUsedForMethodArg - off by default
+    | 3390 -> false // xmlDocBadlyFormed - off by default
+    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
     | _ -> 
         (severity = FSharpDiagnosticSeverity.Info) ||
         (severity = FSharpDiagnosticSeverity.Warning && level >= GetWarningLevel err)
@@ -1701,7 +1702,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then
+          if showAssertForUnexpectedException.Value then
               Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 

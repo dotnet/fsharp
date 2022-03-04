@@ -10,22 +10,6 @@ open System.Globalization
 open FSharp.Compiler.ErrorLogger
 open Internal.Utilities.Library
 
-/// This represents the thread-local state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger: ErrorLogger, phase: BuildPhase) = 
-    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind phase
-
-    member _.ErrorLogger = errorLogger
-    member _.Phase = phase
-
-    // Return the disposable object that cleans up
-    interface IDisposable with
-        member d.Dispose() =
-            unwindBP.Dispose()         
-            unwindEL.Dispose()
-
 [<NoEquality;NoComparison>]
 type NodeCode<'T> = Node of Async<'T>
 
@@ -89,7 +73,7 @@ type NodeCodeBuilder() =
         Node(
             async {
                 CompileThreadStatic.ErrorLogger <- value.ErrorLogger
-                CompileThreadStatic.BuildPhase <- value.Phase
+                CompileThreadStatic.BuildPhase <- value.BuildPhase
                 try
                     return! binder value |> Async.AwaitNodeCode
                 finally

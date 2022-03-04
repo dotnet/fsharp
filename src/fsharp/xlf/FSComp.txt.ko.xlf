@@ -288,8 +288,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">언어 버전 5.0이 필요한 끝 조각화에서는 /langversion:preview를 사용하세요.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">'끝에서부터 조각화' 기능을 사용하려면 언어 버전 '미리 보기'가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
@@ -433,8 +433,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">패키지 관리 기능을 사용하려면 언어 버전 5.0이 필요합니다. /langversion:preview를 사용하세요.</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">'패키지 관리' 기능을 사용하려면 언어 버전 5.0 이상이 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -645,6 +645,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">보간 문자열의 잘못된 정렬</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">멤버 선언이 잘못되었습니다. 멤버 이름이 없거나 괄호가 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidResumableConstruct">
