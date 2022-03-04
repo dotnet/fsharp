@@ -1,5 +1,4 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.108.0/containers/dotnetcore-3.1-fsharp
 {
     "name": "F# (.NET 6)",
     "build": {
@@ -24,7 +23,7 @@
         "Ionide.Ionide-fsharp",
         "tintoy.msbuild-project-tools"
     ],
-    "postCreateCommand": [
+    "onCreateCommand": [
         "/bin/bash",
         "./build.sh",
         "-c",
