@@ -214,9 +214,9 @@ namespace Microsoft.FSharp.Control
         member inline _.OnExceptionRaised econt =
             trampoline.OnExceptionRaised econt
 
+    /// Represents rarely changing components of an in-flight async computation
     [<NoEquality; NoComparison>]
     [<AutoSerializable(false)>]
-    /// Represents rarely changing components of an in-flight async computation
     type AsyncActivationAux =
         { /// The active cancellation token
           token: CancellationToken
@@ -230,9 +230,9 @@ namespace Microsoft.FSharp.Control
           /// Holds some commonly-allocated callbacks and a mutable location to use for a trampoline
           trampolineHolder: TrampolineHolder }
 
+    /// Represents context for an in-flight async computation
     [<NoEquality; NoComparison>]
     [<AutoSerializable(false)>]
-    /// Represents context for an in-flight async computation
     type AsyncActivationContents<'T> =
         { /// The success continuation
           cont: cont<'T>
@@ -678,7 +678,7 @@ namespace Microsoft.FSharp.Control
         ///   - Cancellation check after 'entering' the implied try/finally and before loop
         ///   - Do not apply 'GetEnumerator' with exception protection. However for an 'async'
         ///     in an 'async { ... }' the exception protection will be provided by the enclosing
-        //      Delay or Bind or similar construct.
+        ///      Delay or Bind or similar construct.
         ///   - Apply 'MoveNext' with exception protection
         ///   - Apply 'Current' with exception protection
 
@@ -987,8 +987,8 @@ namespace Microsoft.FSharp.Control
         [<DebuggerHidden>]
         let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
             // Reuse the current ThreadPool thread if possible.
-            match Thread.CurrentThread.IsThreadPoolThread, timeout with
-            | true, None -> RunImmediate cancellationToken computation
+            match SynchronizationContext.Current, Thread.CurrentThread.IsThreadPoolThread, timeout with
+            | null, true, None -> RunImmediate cancellationToken computation
             | _ -> QueueAsyncAndWaitForResultSynchronously cancellationToken computation timeout
 
         [<DebuggerHidden>]

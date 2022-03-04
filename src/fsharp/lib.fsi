@@ -4,7 +4,6 @@ module internal Internal.Utilities.Library.Extras
 
 open System.IO
 open System.Text
-open System.Globalization
 open System.Collections.Generic
 open Internal.Utilities.Collections
 
@@ -160,6 +159,24 @@ val p23: _x:'a * y:'b * _z:'c -> 'b
 
 val p33: _x:'a * _y:'b * z:'c -> 'c
 
+val p14: x1:'a * _x2:'b * _x3:'c * _x4:'d -> 'a
+
+val p24: _x1:'a * x2:'b * _x3:'c * _x4:'d -> 'b
+
+val p34: _x1:'a * _x2:'b * x3:'c * _x4:'d -> 'c
+
+val p44: _x1:'a * _x2:'b * _x3:'c * x4:'d -> 'd
+
+val p15: x1:'a * _x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'a
+
+val p25: _x1:'a * x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'b
+
+val p35: _x1:'a * _x2:'b * x3:'c * _x4:'d * _x5:'e -> 'c
+
+val p45: _x1:'a * _x2:'b * _x3:'c * x4:'d * _x5:'e -> 'd
+
+val p55: _x1:'a * _x2:'b * _x3:'c * _x4:'d * x5:'e -> 'e
+
 val map1Of2: f:('a -> 'b) -> a1:'a * a2:'c -> 'b * 'c
 
 val map2Of2: f:('a -> 'b) -> a1:'c * a2:'a -> 'c * 'b
@@ -242,7 +259,7 @@ val inline tryGetCacheValue: cache:cache<'a> -> NonNullSlot<'a> voption
 module AsyncUtil =
 
     /// Represents the reified result of an asynchronous computation.
-    [<NoEqualityAttribute; NoComparisonAttribute>]
+    [<NoEquality; NoComparison>]
     type AsyncResult<'T> =
         | AsyncOk of 'T
         | AsyncException of exn
@@ -250,7 +267,7 @@ module AsyncUtil =
         static member Commit: res:AsyncResult<'T> -> Async<'T>
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<SealedAttribute>]
+    [<Sealed>]
     type AsyncResultCell<'T> =
 
         new: unit -> AsyncResultCell<'T>
@@ -260,10 +277,7 @@ module AsyncUtil =
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
-module StackGuard =
-    val EnsureSufficientExecutionStack: recursionDepth:int -> unit
-
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccess>]
 type MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of System.Lazy<'T>

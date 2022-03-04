@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
 

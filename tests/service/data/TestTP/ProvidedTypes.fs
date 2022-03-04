@@ -5,6 +5,7 @@
 namespace ProviderImplementation.ProvidedTypes
 
 #nowarn "1182"
+#nowarn "3370"
 
 // This file contains a set of helper types and methods for providing types in an implementation
 // of ITypeProvider.
@@ -2530,7 +2531,7 @@ module internal AssemblyReader =
 
 
 #if DEBUG_INFO
-    type ILSourceMarker =
+    type ILDebugPoint =
         { sourceDocument: ILSourceDocument;
           sourceLine: int;
           sourceColumn: int;
@@ -2650,7 +2651,7 @@ module internal AssemblyReader =
 
       | I_break 
 #if EMIT_DEBUG_INFO
-      | I_seqpoint of ILSourceMarker
+      | I_seqpoint of ILDebugPoint
 #endif
       | I_arglist  
 
@@ -2710,7 +2711,7 @@ module internal AssemblyReader =
           Locals: ILLocals
           Code:  ILCode
 #if EMIT_DEBUG_INFO
-          SourceMarker: ILSourceMarker option 
+          DebugPoint: ILDebugPoint option 
 #endif
          }
 
@@ -10806,7 +10807,7 @@ namespace ProviderImplementation.ProvidedTypes
               /// data for exception handling clauses 
               mutable seh: ResizeArray<ExceptionClauseSpec>
 #if DEBUG_INFO
-              seqpoints: ResizeArray<PdbSequencePoint> 
+              seqpoints: ResizeArray<PdbDebugPoint> 
 #endif
              }
 
@@ -10824,7 +10825,7 @@ namespace ProviderImplementation.ProvidedTypes
             member codebuf.EmitExceptionClause seh = codebuf.seh.Add(seh)
 
 #if DEBUG_INFO
-            member codebuf.EmitSeqPoint cenv (m:ILSourceMarker)  = ()
+            member codebuf.EmitSeqPoint cenv (m:ILDebugPoint)  = ()
                 if cenv.generatePdb then 
                   // table indexes are 1-based, document array indexes are 0-based 
                   let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1  
@@ -11001,7 +11002,7 @@ namespace ProviderImplementation.ProvidedTypes
                   tab
               let newReqdStringFixups = Array.map (fun (origFixupLoc, stok) -> adjuster origFixupLoc, stok) origReqdStringFixups
 #if EMIT_DEBUG_INFO
-              let newSeqPoints = Array.map (fun (sp:PdbSequencePoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
+              let newSeqPoints = Array.map (fun (sp:PdbDebugPoint) -> {sp with Offset=adjuster sp.Offset}) origSeqPoints
 #endif
               let newExnClauses = 
                   origExnClauses |> Array.map (fun (st1, sz1, st2, sz2, kind) ->
@@ -11828,7 +11829,7 @@ namespace ProviderImplementation.ProvidedTypes
                         Params= [| |] (* REVIEW *)
                         RootScope = Some rootScope
                         Range=  
-                          match ilmbody.SourceMarker with 
+                          match ilmbody.DebugPoint with 
                           | Some m  when cenv.generatePdb -> 
                               // table indexes are 1-based, document array indexes are 0-based 
                               let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1 
@@ -11840,7 +11841,7 @@ namespace ProviderImplementation.ProvidedTypes
                                       Line=m.EndLine
                                       Column=m.EndColumn })
                           | _ -> None
-                        SequencePoints=seqpoints }
+                        DebugPoints=seqpoints }
 #endif
 
                   cenv.AddCode code
@@ -11856,7 +11857,7 @@ namespace ProviderImplementation.ProvidedTypes
                         Params = [| |]
                         RootScope = None
                         Range = None
-                        SequencePoints = [| |] }
+                        DebugPoints = [| |] }
                   0x0000
               | MethodBody.Native -> 
                   failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
@@ -14189,7 +14190,7 @@ namespace ProviderImplementation.ProvidedTypes
                     ilg.Emit(I_conv DT_I1)
                 elif t1 = typeof<byte> then
                     ilg.Emit(I_conv DT_U1)
-            /// emits given expression to corresponding IL
+            // emits given expression to corresponding IL
             match expr with
             | ForIntegerRangeLoop(loopVar, first, last, body) ->
                 // for(loopVar = first..last) body

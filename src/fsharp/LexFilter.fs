@@ -4,6 +4,7 @@
 /// Implements the offside rule and a couple of other lexical transformations.
 module internal FSharp.Compiler.LexFilter
 
+open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open Internal.Utilities.Library
@@ -57,11 +58,12 @@ type Context =
     | CtxtModuleBody of Position * bool 
     | CtxtNamespaceBody of Position 
     | CtxtException of Position 
-    | CtxtParen of Parser.token * Position 
+    | CtxtParen of token * Position 
     // Position is position of following token 
     | CtxtSeqBlock of FirstInSequence * Position * AddBlockEnd   
-    // first bool indicates "was this 'with' followed immediately by a '|'"? 
-    | CtxtMatchClauses of bool * Position   
+    // Indicates we're processing the second part of a match, after the 'with'
+    // First bool indicates "was this 'with' followed immediately by a '|'"?
+    | CtxtMatchClauses of bool * Position
 
     member c.StartPos = 
         match c with 
@@ -178,7 +180,23 @@ let infixTokenLength token =
     | INFIX_STAR_STAR_OP d -> d.Length
     | COLON_QMARK_GREATER -> 3
     | _ -> assert false; 1
+    
+/// Matches against a left-parenthesis-like token that is valid in expressions.
+//
+// LBRACK_LESS and GREATER_RBRACK are not here because adding them in these active patterns
+// causes more offside warnings, while removing them doesn't add offside warnings in attributes.
+let (|TokenLExprParen|_|) tok =
+    match tok with
+    | BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true
+        -> Some ()
+    | _ -> None
 
+/// Matches against a right-parenthesis-like token that is valid in expressions.
+let (|TokenRExprParen|_|) tok =
+    match tok with
+    | END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true
+        -> Some ()
+    | _ -> None
 
 /// Determine the tokens that may align with the 'if' of an 'if/then/elif/else' without closing
 /// the construct
@@ -198,6 +216,20 @@ let rec isIfBlockContinuator token =
     // The following arise during reprocessing of the inserted tokens, e.g. when we hit a DONE 
     | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
     | ODUMMY token -> isIfBlockContinuator token
+    | _ -> false
+
+/// Given LanguageFeature.RelaxWhitespace2,
+/// Determine the token that may align with the 'match' of a 'match/with' without closing
+/// the construct
+let rec isMatchBlockContinuator token =
+    match token with 
+    // These tokens may align with the "match" without closing the construct, e.g.
+    //         match ...
+    //         with ... 
+    | WITH -> true
+    // The following arise during reprocessing of the inserted tokens when we hit a DONE
+    | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
+    | ODUMMY token -> isMatchBlockContinuator token
     | _ -> false
 
 /// Determine the token that may align with the 'try' of a 'try/with' or 'try/finally' without closing
@@ -250,7 +282,7 @@ let rec isNamespaceContinuator token =
     //     ...
     //     namespace <-- here
     //     .... 
-    | Parser.EOF _ | NAMESPACE -> false 
+    | EOF _ | NAMESPACE -> false 
     | ODUMMY token -> isNamespaceContinuator token
     | _ -> true // anything else is a namespace continuator 
 
@@ -379,22 +411,22 @@ let isAtomicExprEndToken token =
 //--------------------------------------------------------------------------
 let parenTokensBalance t1 t2 = 
     match t1, t2 with 
-    | (LPAREN, RPAREN) 
-    | (LBRACE _, RBRACE _) 
-    | (LBRACE_BAR, BAR_RBRACE) 
-    | (LBRACK, RBRACK) 
-    | (INTERFACE, END) 
-    | (CLASS, END) 
-    | (SIG, END) 
-    | (STRUCT, END) 
-    | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
-    | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
-    | (INTERP_STRING_PART _, INTERP_STRING_PART _)
-    | (INTERP_STRING_PART _, INTERP_STRING_END _)
-    | (LBRACK_BAR, BAR_RBRACK)
-    | (LESS true, GREATER true) 
-    | (BEGIN, END) -> true 
-    | (LQUOTE q1, RQUOTE q2) when q1 = q2 -> true 
+    | LPAREN, RPAREN 
+    | LBRACE _, RBRACE _ 
+    | LBRACE_BAR, BAR_RBRACE 
+    | LBRACK, RBRACK 
+    | INTERFACE, END 
+    | CLASS, END 
+    | SIG, END 
+    | STRUCT, END 
+    | INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _
+    | INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _
+    | INTERP_STRING_PART _, INTERP_STRING_PART _
+    | INTERP_STRING_PART _, INTERP_STRING_END _
+    | LBRACK_BAR, BAR_RBRACK
+    | LESS true, GREATER true 
+    | BEGIN, END -> true 
+    | LQUOTE q1, RQUOTE q2 when q1 = q2 -> true 
     | _ -> false
     
 /// Used to save some aspects of the lexbuffer state
@@ -430,7 +462,7 @@ type TokenTupPool() =
     let maxSize = 100
 
     let mutable currentPoolSize = 0
-    let stack = System.Collections.Generic.Stack(10)
+    let stack = Stack(10)
 
     member this.Rent() = 
         if stack.Count = 0 then
@@ -485,7 +517,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
     if List.isEmpty angles then None else
 
     let afterOp = 
-        match (new System.String(Array.ofSeq afterAngles)) with 
+        match (System.String(Array.ofSeq afterAngles)) with 
          | "." -> Some DOT
          | "]" -> Some RBRACK
          | "-" -> Some MINUS
@@ -506,24 +538,24 @@ let (|TyparsCloseOp|_|) (txt: string) =
          | "" -> None
          | s -> 
              match List.ofSeq afterAngles with 
-              | ('=' :: _)
-              | ('!' :: '=' :: _)
-              | ('<' :: _)
-              | ('>' :: _)
-              | ('$' :: _) -> Some (INFIX_COMPARE_OP s)
-              | ('&' :: _) -> Some (INFIX_AMP_OP s)
-              | ('|' :: _) -> Some (INFIX_BAR_OP s)
-              | ('!' :: _)
-              | ('?' :: _)
-              | ('~' :: _) -> Some (PREFIX_OP s)
-              | ('@' :: _)
-              | ('^' :: _) -> Some (INFIX_AT_HAT_OP s)
-              | ('+' :: _)
-              | ('-' :: _) -> Some (PLUS_MINUS_OP s)
-              | ('*' :: '*' :: _) -> Some (INFIX_STAR_STAR_OP s)
-              | ('*' :: _)
-              | ('/' :: _)
-              | ('%' :: _) -> Some (INFIX_STAR_DIV_MOD_OP s)
+              | '=' :: _
+              | '!' :: '=' :: _
+              | '<' :: _
+              | '>' :: _
+              | '$' :: _ -> Some (INFIX_COMPARE_OP s)
+              | '&' :: _ -> Some (INFIX_AMP_OP s)
+              | '|' :: _ -> Some (INFIX_BAR_OP s)
+              | '!' :: _
+              | '?' :: _
+              | '~' :: _ -> Some (PREFIX_OP s)
+              | '@' :: _
+              | '^' :: _ -> Some (INFIX_AT_HAT_OP s)
+              | '+' :: _
+              | '-' :: _ -> Some (PLUS_MINUS_OP s)
+              | '*' :: '*' :: _ -> Some (INFIX_STAR_STAR_OP s)
+              | '*' :: _
+              | '/' :: _
+              | '%' :: _ -> Some (INFIX_STAR_DIV_MOD_OP s)
               | _ -> None
     Some([| for _c in angles do yield GREATER |], afterOp)
 
@@ -564,21 +596,28 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Make sure we don't report 'eof' when inserting a token, and set the positions to the 
     // last reported token position 
     let lexbufStateForInsertedDummyTokens (lastTokenStartPos, lastTokenEndPos) =
-        new LexbufState(lastTokenStartPos, lastTokenEndPos, false) 
+        LexbufState(lastTokenStartPos, lastTokenEndPos, false) 
 
     let getLexbufState() = 
-        new LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
+        LexbufState(lexbuf.StartPos, lexbuf.EndPos, lexbuf.IsPastEndOfStream)  
 
     let setLexbufState (p: LexbufState) =
         lexbuf.StartPos <- p.StartPos  
         lexbuf.EndPos <- p.EndPos
         lexbuf.IsPastEndOfStream <- p.PastEOF
 
+    let posOfTokenTup (tokenTup: TokenTup) = 
+        match tokenTup.Token with
+        // EOF token is processed as if on column -1 
+        // This forces the closure of all contexts. 
+        | EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne, tokenTup.LexbufState.EndPos.ColumnMinusOne 
+        | _ -> tokenTup.LexbufState.StartPos, tokenTup.LexbufState.EndPos
+
     let startPosOfTokenTup (tokenTup: TokenTup) = 
         match tokenTup.Token with
         // EOF token is processed as if on column -1 
         // This forces the closure of all contexts. 
-        | Parser.EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
+        | EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
         | _ -> tokenTup.LexbufState.StartPos 
 
     //----------------------------------------------------------------------------
@@ -600,8 +639,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         setLexbufState state
         let lastTokenEnd = state.EndPos
         let token = lexer lexbuf
-        // Now we've got the token, remember the lexbuf state, associating it with the token 
-        // and remembering it as the last observed lexbuf state for the wrapped lexer function. 
+
+        LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
+
+        // Now we've got the token, remember the lexbuf state, associating it with the token
+        // and remembering it as the last observed lexbuf state for the wrapped lexer function.
         let tokenLexbufState = getLexbufState()
         savedLexbufState <- tokenLexbufState
         haveLexbufState <- true
@@ -616,7 +658,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Fetch a raw token, either from the old lexer or from our delayedStack
     //--------------------------------------------------------------------------
 
-    let delayedStack = System.Collections.Generic.Stack<TokenTup>()
+    let delayedStack = Stack<TokenTup>()
     let mutable tokensThatNeedNoProcessingCount = 0
 
     let delayToken tokenTup = delayedStack.Push tokenTup 
@@ -667,7 +709,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                | (CtxtSeqBlock _ | CtxtDo _ | CtxtFor _) :: rest -> check rest
                | _ -> false
         match stack with 
-        | (CtxtVanilla _ :: rest) -> check rest
+        | CtxtVanilla _ :: rest -> check rest
         | _ -> false
 
     //----------------------------------------------------------------------------
@@ -676,6 +718,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     //
     // Undentation rules
     //--------------------------------------------------------------------------
+    
+    let relaxWhitespace2 = lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace2
+
+    //let indexerNotationWithoutDot = lexbuf.SupportsFeature LanguageFeature.IndexerNotationWithoutDot
 
     let pushCtxt tokenTup (newCtxt: Context) =
         let rec undentationLimit strict stack = 
@@ -683,14 +729,28 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             | _, [] -> PositionWithColumn(newCtxt.StartPos, -1) 
 
             // ignore Vanilla because a SeqBlock is always coming 
-            | _, (CtxtVanilla _ :: rest) -> undentationLimit strict rest
+            | _, CtxtVanilla _ :: rest -> undentationLimit strict rest
 
-            | _, (CtxtSeqBlock _ :: rest) when not strict -> undentationLimit strict rest
-            | _, (CtxtParen _ :: rest) when not strict -> undentationLimit strict rest
+            | _, CtxtSeqBlock _ :: rest when not strict -> undentationLimit strict rest
+            | _, CtxtParen _ :: rest when not strict -> undentationLimit strict rest
 
             // 'begin match' limited by minimum of two  
             // '(match' limited by minimum of two  
-            | _, (((CtxtMatch _) as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _rest)
+            | _, (CtxtMatch _ as ctxt1) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _
+                      -> if ctxt1.StartCol <= ctxt2.StartCol 
+                         then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
+                         else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol) 
+            // Insert this rule to allow
+            //     begin match 1 with
+            //     | 1 -> ()
+            //     | 2 ->
+            //       f() // <- No offside warning here
+            //     end
+            // when relaxWhitespace2
+            // Otherwise the rule of 'match ... with' limited by 'match' (given RelaxWhitespace2)
+            // will consider the CtxtMatch as the limiting context instead of allowing undentation until the parenthesis
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore11
+            | _, (CtxtMatchClauses _ as ctxt1) :: (CtxtMatch _) :: CtxtSeqBlock _ :: (CtxtParen ((BEGIN | LPAREN), _) as ctxt2) :: _ when relaxWhitespace2
                       -> if ctxt1.StartCol <= ctxt2.StartCol 
                          then PositionWithColumn(ctxt1.StartPos, ctxt1.StartCol) 
                          else PositionWithColumn(ctxt2.StartPos, ctxt2.StartCol) 
@@ -701,27 +761,49 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
              //     let f x = function   
              //     | Case1 -> ...       
              //     | Case2 -> ...       
-            | (CtxtMatchClauses _), (CtxtFunction _ :: CtxtSeqBlock _ :: (CtxtLetDecl _ as limitCtxt) :: _rest)
+            | CtxtMatchClauses _, CtxtFunction _ :: CtxtSeqBlock _ :: (CtxtLetDecl _ as limitCtxt) :: _rest
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // Otherwise 'function ...' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
-            | (CtxtMatchClauses _), (CtxtFunction _ :: rest)
+            | CtxtMatchClauses _, CtxtFunction _ :: rest
                       -> undentationLimit false rest
 
             // 'try ... with' limited by 'try'  
             | _, (CtxtMatchClauses _ :: (CtxtTry _ as limitCtxt) :: _rest)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
+            // 'match ... with' limited by 'match' (given RelaxWhitespace2)
+            | _, (CtxtMatchClauses _ :: (CtxtMatch _ as limitCtxt) :: _rest) when relaxWhitespace2
+                      -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
+
             // 'fun ->' places no limit until we hit a CtxtLetDecl etc... (Recursive) 
-            | _, (CtxtFun _ :: rest)
+            | _, CtxtFun _ :: rest
+                      -> undentationLimit false rest
+                      
+            // 'let ... = f ... begin'  limited by 'let' (given RelaxWhitespace2)
+            // 'let ('  (pattern match) limited by 'let' (given RelaxWhitespace2)
+            // 'let ['  (pattern match) limited by 'let' (given RelaxWhitespace2)
+            // 'let {'  (pattern match) limited by 'let' (given RelaxWhitespace2)
+            // 'let [|' (pattern match) limited by 'let' (given RelaxWhitespace2)
+            // 'let x : {|'             limited by 'let' (given RelaxWhitespace2)
+            // 'let x : Foo<'           limited by 'let' (given RelaxWhitespace2)
+            // 'let (ActivePattern <@'  limited by 'let' (given RelaxWhitespace2)
+            // 'let (ActivePattern <@@' limited by 'let' (given RelaxWhitespace2)
+            // Same for 'match', 'if', 'then', 'else', 'for', 'while', 'member', 'when', and everything: No need to specify rules like the 'then' and 'else's below over and over again
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2
+            | _, CtxtParen (TokenLExprParen, _) :: rest
+            // 'let x = { y =' limited by 'let'  (given RelaxWhitespace2) etc.
+            // 'let x = {| y =' limited by 'let' (given RelaxWhitespace2) etc.
+            // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2
+            | _, CtxtSeqBlock _ :: CtxtParen (TokenLExprParen, _) :: rest when relaxWhitespace2
                       -> undentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[|' places no limit until we hit a CtxtLetDecl etc... 
-            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)
-            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
-            | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _, CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest
+            | _, CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest
+            | _, CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest
                       -> undentationLimit false rest
 
             // MAJOR PERMITTED UNDENTATION This is allowing:
@@ -730,7 +812,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             //   x + x  
             // This is a serious thing to allow, but is required since there is no "return" in this language.
             // Without it there is no way of escaping special cases in large bits of code without indenting the main case.
-            | CtxtSeqBlock _, (CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _rest) 
+            | CtxtSeqBlock _, CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _rest 
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
             // Permitted inner-construct precise block alignment: 
@@ -741,7 +823,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             //           type ...
             //           with ... 
             //           end 
-            | CtxtWithAsAugment _, ((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _) as limitCtxt :: _rest)
+            | CtxtWithAsAugment _, (CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _ as limitCtxt :: _rest)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
 
             // Permit undentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
@@ -766,7 +848,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             //           ...           <-- this is before the "with"
             //         end
 
-            | _, ((CtxtWithAsAugment _ | CtxtThen _ | CtxtElse _ | CtxtDo _ ) :: rest)
+            | _, (CtxtWithAsAugment _ | CtxtThen _ | CtxtElse _ | CtxtDo _ ) :: rest
                       -> undentationLimit false rest
 
 
@@ -784,7 +866,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             //        let fffffff() = function 1 ->
             //           0
             //          | 2 -> ...       <---- not allowed
-            | _, (CtxtFunction _ :: rest)
+            | _, CtxtFunction _ :: rest
                       -> undentationLimit false rest
 
             // 'module ... : sig'    limited by 'module' 
@@ -798,35 +880,35 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'if ... else {'       limited by 'if' 
             // 'if ... else ['       limited by 'if' 
             // 'if ... else [|'       limited by 'if' 
-            | _, (CtxtParen ((SIG | STRUCT | BEGIN), _) :: CtxtSeqBlock _ :: (CtxtModuleBody (_, false) as limitCtxt) :: _)
-            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: CtxtSeqBlock _ :: CtxtThen _ :: (CtxtIf _ as limitCtxt) :: _)
-            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR | LBRACK_LESS), _) :: CtxtSeqBlock _ :: CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _)
+            | _, CtxtParen ((SIG | STRUCT | BEGIN), _) :: CtxtSeqBlock _ :: (CtxtModuleBody (_, false) as limitCtxt) :: _
+            | _, CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: CtxtSeqBlock _ :: CtxtThen _ :: (CtxtIf _ as limitCtxt) :: _
+            | _, CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR | LBRACK_LESS), _) :: CtxtSeqBlock _ :: CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _
 
             // 'f ... ('  in seqblock     limited by 'f' 
             // 'f ... {'  in seqblock     limited by 'f'  NOTE: this is covered by the more generous case above 
             // 'f ... ['  in seqblock     limited by 'f' 
             // 'f ... [|' in seqblock      limited by 'f' 
             // 'f ... Foo<' in seqblock      limited by 'f' 
-            | _, (CtxtParen ((BEGIN | LPAREN | LESS true | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
+            | _, CtxtParen ((BEGIN | LPAREN | LESS true | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _
 
             // 'type C = class ... '       limited by 'type' 
             // 'type C = interface ... '       limited by 'type' 
             // 'type C = struct ... '       limited by 'type' 
-            | _, (CtxtParen ((CLASS | STRUCT | INTERFACE), _) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ as limitCtxt) ::  _)
+            | _, CtxtParen ((CLASS | STRUCT | INTERFACE), _) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ as limitCtxt) ::  _
                 -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // 'type C(' limited by 'type'
-            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtTypeDefns _ as limitCtxt) :: _ )
+            | _, CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtTypeDefns _ as limitCtxt) :: _
             // 'static member C(' limited by 'static', likewise others
-            | _, (CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _ )
+            | _, CtxtSeqBlock _ :: CtxtParen(LPAREN, _) :: (CtxtMemberHead _ as limitCtxt) :: _
             // 'static member P with get() = ' limited by 'static', likewise others
-            | _, (CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _ )
+            | _, CtxtWithAsLet _ :: (CtxtMemberHead _ as limitCtxt) :: _
                  when lexbuf.SupportsFeature LanguageFeature.RelaxWhitespace
                  -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // REVIEW: document these 
-            | _, (CtxtSeqBlock _ :: CtxtParen((BEGIN | LPAREN | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
-            | (CtxtSeqBlock _), (CtxtParen ((BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: ((CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _) as limitCtxt) :: _)
+            | _, CtxtSeqBlock _ :: CtxtParen((BEGIN | LPAREN | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _
+            | CtxtSeqBlock _, CtxtParen ((BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: (CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _ as limitCtxt) :: _
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // Permitted inner-construct (e.g. "then" block and "else" block in overall 
@@ -842,16 +924,16 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             //           while  ... 
             //           do expr
             //           done   
-            | (CtxtDo _), ((CtxtFor _ | CtxtWhile _) as limitCtxt) :: _rest  
+            | CtxtDo _, (CtxtFor _ | CtxtWhile _ as limitCtxt) :: _rest  
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol)
 
 
             // These contexts all require indentation by at least one space 
-            | _, ((CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _) as limitCtxt :: _) 
+            | _, (CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_, false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _ as limitCtxt :: _) 
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // These contexts can have their contents exactly aligning 
-            | _, ((CtxtParen _ | CtxtFor _ | CtxtWhen _ | CtxtWhile _ | CtxtTypeDefns _ | CtxtMatch _ | CtxtModuleBody (_, true) | CtxtNamespaceBody _ | CtxtTry _ | CtxtMatchClauses _ | CtxtSeqBlock _) as limitCtxt :: _)
+            | _, (CtxtParen _ | CtxtFor _ | CtxtWhen _ | CtxtWhile _ | CtxtTypeDefns _ | CtxtMatch _ | CtxtModuleBody (_, true) | CtxtNamespaceBody _ | CtxtTry _ | CtxtMatchClauses _ | CtxtSeqBlock _ as limitCtxt :: _)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol) 
        
         match newCtxt with 
@@ -867,19 +949,24 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 warn tokenTup 
                     (if debug then 
                         sprintf "possible incorrect indentation: this token is offside of context at position %s, newCtxt = %A, stack = %A, newCtxtPos = %s, c1 = %d, c2 = %d" 
-                            (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos (newCtxt.StartPos)) p1.Column c2 
+                            (warningStringOfPosition p1.Position) newCtxt offsideStack (stringOfPos newCtxt.StartPos) p1.Column c2 
                      else
                         FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPosition p1.Position))
         let newOffsideStack = newCtxt :: offsideStack
         if debug then dprintf "--> pushing, stack = %A\n" newOffsideStack
         offsideStack <- newOffsideStack
 
-    let popCtxt() = 
-        match offsideStack with 
+    let rec popCtxt() =
+        match offsideStack with
         | [] -> ()
-        | h :: rest -> 
-             if debug then dprintf "<-- popping Context(%A), stack = %A\n" h rest
-             offsideStack <- rest
+        | h :: rest ->
+            if debug then dprintf "<-- popping Context(%A), stack = %A\n" h rest
+            offsideStack <- rest
+            // For CtxtMatchClauses, also pop the CtxtMatch, if present (we expect it always will be).
+            if relaxWhitespace2 then
+                match h, rest with
+                | CtxtMatchClauses _ , CtxtMatch _ :: _ -> popCtxt()
+                | _ -> ()
 
     let replaceCtxt p ctxt = popCtxt(); pushCtxt p ctxt
 
@@ -904,13 +991,17 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         let tokenEndPos = leftTokenTup.LexbufState.EndPos
         (tokenEndPos = lparenStartPos)
     
-    let nextTokenIsAdjacentLParenOrLBrack (tokenTup: TokenTup) =
+    let nextTokenIsAdjacentLBrack (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
-        | (LPAREN | LBRACK) -> 
-            if isAdjacent tokenTup lookaheadTokenTup then Some(lookaheadTokenTup.Token) else None
-        | _ -> 
-            None
+        | LBRACK -> isAdjacent tokenTup lookaheadTokenTup
+        | _ -> false
+
+    let nextTokenIsAdjacentLParen (tokenTup: TokenTup) =
+        let lookaheadTokenTup = peekNextTokenTup()
+        match lookaheadTokenTup.Token with 
+        | LPAREN -> isAdjacent tokenTup lookaheadTokenTup
+        | _ -> false
 
     let nextTokenIsAdjacent firstTokenTup =
         let lookaheadTokenTup = peekNextTokenTup()
@@ -929,9 +1020,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     stack <- (lookaheadTokenTup, true) :: stack
                     let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
                     match lookaheadToken with 
-                    | Parser.EOF _ | SEMICOLON_SEMICOLON -> false 
+                    | EOF _ | SEMICOLON_SEMICOLON -> false 
                     | _ when indentation && lookaheadTokenStartPos < tokenEndPos -> false
-                    | (RPAREN | RBRACK) ->
+                    | RPAREN | RBRACK ->
                         let nParen = nParen - 1
                         if nParen > 0 then 
                             scanAhead nParen 
@@ -948,7 +1039,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
                             //    M<int>(args)
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
-                            if not hasAfterOp && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
+                            if not hasAfterOp && nextTokenIsAdjacentLParen lookaheadTokenTup then
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
@@ -962,11 +1053,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
                             //    M<C<int>>(args)
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
-                            if afterOp.IsNone && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
+                            if afterOp.IsNone && nextTokenIsAdjacentLParen lookaheadTokenTup then
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
-                    | (LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</") -> 
+                    | LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</" -> 
                         scanAhead (nParen+1)
                         
                     // These tokens CAN occur in non-parenthesized positions in the grammar of types or type parameter definitions 
@@ -1033,7 +1124,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                         | GREATER _ ->
                             delayToken (pool.UseLocation(tokenTup, GREATER res))
                             pool.Return tokenTup
-                        | (INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr)) -> 
+                        | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp) as opstr) -> 
                             match afterOp with
                             | None -> ()
                             | Some tok -> delayToken (pool.UseShiftedLocation(tokenTup, tok, greaters.Length, 0))
@@ -1061,19 +1152,19 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
     let tokenBalancesHeadContext token stack = 
         match token, stack with 
-        | END, (CtxtWithAsAugment(_) :: _)
-        | (ELSE | ELIF), (CtxtIf _ :: _)
-        | DONE, (CtxtDo _ :: _)
+        | END, CtxtWithAsAugment _ :: _
+        | (ELSE | ELIF), CtxtIf _ :: _
+        | DONE, CtxtDo _ :: _
         // WITH balances except in the following contexts.... Phew - an overused keyword! 
-        | WITH, ( ((CtxtMatch _ | CtxtException _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtTry _ | CtxtTypeDefns _ | CtxtMemberBody _) :: _)
+        | WITH, ( (CtxtMatch _ | CtxtException _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtTry _ | CtxtTypeDefns _ | CtxtMemberBody _) :: _
                                 // This is the nasty record/object-expression case 
-                                | (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _) )
-        | FINALLY, (CtxtTry _ :: _) -> 
+                                | CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _ )
+        | FINALLY, CtxtTry _ :: _ -> 
             true
 
         // for x in ienum ... 
         // let x = ... in
-        | IN, ((CtxtFor _ | CtxtLetDecl _) :: _) ->
+        | IN, (CtxtFor _ | CtxtLetDecl _) :: _ ->
             true
         // 'query { join x in ys ... }'
         // 'query { ... 
@@ -1084,13 +1175,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             true
 
         // NOTE: ;; does not terminate a 'namespace' body. 
-        | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtNamespaceBody _ :: _) -> 
+        | SEMICOLON_SEMICOLON, CtxtSeqBlock _ :: CtxtNamespaceBody _ :: _ -> 
             true
 
-        | SEMICOLON_SEMICOLON, (CtxtSeqBlock _ :: CtxtModuleBody (_, true) :: _) -> 
+        | SEMICOLON_SEMICOLON, CtxtSeqBlock _ :: CtxtModuleBody (_, true) :: _ -> 
             true
 
-        | t2, (CtxtParen(t1, _) :: _) -> 
+        | t2, CtxtParen(t1, _) :: _ -> 
             parenTokensBalance t1 t2
 
         | _ -> 
@@ -1103,7 +1194,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     //--------------------------------------------------------------------------
 
               
-    let rec hwTokenFetch (useBlockRule) =
+    let rec hwTokenFetch useBlockRule =
         let tokenTup = popNextTokenTup()
         let tokenReplaced = rulesForBothSoftWhiteAndHardWhite tokenTup
         if tokenReplaced then hwTokenFetch useBlockRule else 
@@ -1115,12 +1206,12 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         let isSameLine() = 
             match token with 
-            | Parser.EOF _ -> false
+            | EOF _ -> false
             | _ -> (startPosOfTokenTup (peekNextTokenTup())).OriginalLine = tokenStartPos.OriginalLine
 
         let isControlFlowOrNotSameLine() = 
             match token with 
-            | Parser.EOF _ -> false
+            | EOF _ -> false
             | _ -> 
                 not (isSameLine()) ||  
                 (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE -> true | _ -> false) 
@@ -1128,18 +1219,18 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // Look for '=' or '.Id.id.id = ' after an identifier
         let rec isLongIdentEquals token = 
             match token with 
-            | Parser.GLOBAL
-            | Parser.IDENT _ -> 
+            | GLOBAL
+            | IDENT _ -> 
                 let rec loop() = 
                     let tokenTup = popNextTokenTup()
                     let res = 
                         match tokenTup.Token with 
-                        | Parser.EOF _ -> false
+                        | EOF _ -> false
                         | DOT -> 
                             let tokenTup = popNextTokenTup()
                             let res = 
                                 match tokenTup.Token with 
-                                | Parser.EOF _ -> false
+                                | EOF _ -> false
                                 | IDENT _ -> loop()
                                 | _ -> false
                             delayToken tokenTup
@@ -1176,6 +1267,34 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken (lexbufStateForInsertedDummyTokens (startPosOfTokenTup tokenTup, tokenTup.LexbufState.EndPos)) tok
 
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
+        let relaxWhitespace2OffsideRule =
+            // Offside rule for CtxtLetDecl (in types or modules) / CtxtMemberHead / CtxtTypeDefns... (given RelaxWhitespace2)
+            // This should not be applied to contexts with optional closing tokens! (CtxtFun, CtxtFunction, CtxtDo, CtxtMemberBody, CtxtSeqBlock etc)
+            // let (         member Foo (       for x in (       while (
+            //     ...           ...                ...              ...
+            // ) = ...       ) = ...            ) do ...         ) do ...
+            // let [         member Foo [       for x in [       while f [
+            //     ...           ...                ...              ...
+            // ] = ...       ] = ...            ] do ...         ] do ...
+            // let {         member Foo {       for x in {       while f {
+            //     ...           ...                ...              ...
+            // } = ...       } = ...            } do ...         } do ...
+            // let [|        member Foo [|      for x in [|      while f [|
+            //     ...           ...                ...              ...
+            // |] = ...      |] = ...           |] do ...        |] do ...
+            // let x : {|    member Foo : {|    for x in f {|    while f {|
+            //     ...           ...                ...              ...
+            // |} = ...      |} = ...           |} do ...        |} do ...
+            // let x : Foo<  member x : Foo<    for x in foo<    for x in foo<
+            //     ...           ...                ...              ...
+            // > = ...       > = ...            > = ...          > = ...
+            // type Foo(
+            //     ...
+            // ) = ...
+            // ODUMMY is a context closer token, after its context is closed
+            match token with
+            | ODUMMY TokenRExprParen -> relaxWhitespace2
+            | _ -> false
 
         // If you see a 'member' keyword while you are inside the body of another member, then it usually means there is a syntax error inside this method
         // and the upcoming 'member' is the start of the next member in the class. For better parser recovery and diagnostics, it is best to pop out of the 
@@ -1228,24 +1347,17 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         let tokenForcesHeadContextClosure token stack = 
             not (isNil stack) &&
             match token with 
-            | Parser.EOF _ -> true
+            | EOF _ -> true
             | SEMICOLON_SEMICOLON -> not (tokenBalancesHeadContext token stack) 
-            | END 
+            | TokenRExprParen
             | ELSE 
             | ELIF 
             | DONE 
             | IN 
-            | RPAREN
-            | GREATER true 
-            | RBRACE _
-            | BAR_RBRACE 
-            | RBRACK 
-            | BAR_RBRACK 
             | WITH 
             | FINALLY 
             | INTERP_STRING_PART _
-            | INTERP_STRING_END _
-            | RQUOTE _ ->
+            | INTERP_STRING_END _ ->
                 not (tokenBalancesHeadContext token stack) && 
                 // Only close the context if some context is going to match at some point in the stack.
                 // If none match, the token will go through, and error recovery will kick in in the parser and report the extra token,
@@ -1271,7 +1383,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     | _ :: (CtxtNamespaceBody _ | CtxtModuleBody _) :: _ -> true
                     // The context pair below is created a namespace/module scope when user explicitly uses 'begin'...'end',
                     // and these can legally contain type definitions, so ignore this combo as uninteresting and recurse deeper
-                    | _ :: CtxtParen((BEGIN|STRUCT), _) :: CtxtSeqBlock(_, _, _) :: _ -> nextOuterMostInterestingContextIsNamespaceOrModule(offsideStack.Tail.Tail) 
+                    | _ :: CtxtParen((BEGIN|STRUCT), _) :: CtxtSeqBlock _ :: _ -> nextOuterMostInterestingContextIsNamespaceOrModule(offsideStack.Tail.Tail) 
                     // at the top of the stack there is an implicit module
                     | _ :: [] -> true 
                     // anything else is a non-namespace/module
@@ -1279,7 +1391,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 while not offsideStack.IsEmpty && (not(nextOuterMostInterestingContextIsNamespaceOrModule offsideStack)) &&
                                                     (match offsideStack.Head with 
                                                     // open-parens of sorts
-                                                    | CtxtParen((LPAREN|LBRACK|LBRACE _ |LBRACE_BAR|LBRACK_BAR), _) -> true
+                                                    | CtxtParen(TokenLExprParen, _) -> true
                                                     // seq blocks
                                                     | CtxtSeqBlock _ -> true 
                                                     // vanillas
@@ -1359,7 +1471,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         // Balancing rule. Encountering an 'in' balances with a 'let'. i.e. even a non-offside 'in' closes a 'let' 
         // The 'IN' token is thrown away and becomes an ODECLEND 
-        | IN, (CtxtLetDecl (blockLet, offsidePos) :: _) -> 
+        | IN, CtxtLetDecl (blockLet, offsidePos) :: _ -> 
             if debug then dprintf "IN at %a (becomes %s)\n" outputPos tokenStartPos (if blockLet then "ODECLEND" else "IN")
             if tokenStartCol < offsidePos.Column then warn tokenTup (FSComp.SR.lexfltIncorrentIndentationOfIn())
             popCtxt()
@@ -1369,7 +1481,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         // Balancing rule. Encountering a 'done' balances with a 'do'. i.e. even a non-offside 'done' closes a 'do' 
         // The 'DONE' token is thrown away and becomes an ODECLEND 
-        | DONE, (CtxtDo offsidePos :: _) -> 
+        | DONE, CtxtDo offsidePos :: _ -> 
             if debug then dprintf "DONE at %a terminates CtxtDo(offsidePos=%a)\n" outputPos tokenStartPos outputPos offsidePos
             popCtxt()
             // reprocess as the DONE may close a DO context 
@@ -1378,7 +1490,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             hwTokenFetch useBlockRule
 
         // Balancing rule. Encountering a ')' or '}' balances with a '(' or '{', even if not offside 
-        | ((END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _) 
+        | ((TokenRExprParen | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _) 
                 when parenTokensBalance t1 t2 ->
             if debug then dprintf "RPAREN/RBRACE/BAR_RBRACE/RBRACK/BAR_RBRACK/RQUOTE/END at %a terminates CtxtParen()\n" outputPos tokenStartPos
             popCtxt()
@@ -1395,7 +1507,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken tokenLexbufState token
 
         // Balancing rule. Encountering a 'end' can balance with a 'with' but only when not offside 
-        | END, (CtxtWithAsAugment offsidePos :: _) 
+        | END, CtxtWithAsAugment offsidePos :: _ 
                     when not (tokenStartCol + 1 <= offsidePos.Column) -> 
             if debug then dprintf "END at %a terminates CtxtWithAsAugment()\n" outputPos tokenStartPos
             popCtxt()
@@ -1404,7 +1516,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         //  Transition rule. CtxtNamespaceHead ~~~> CtxtSeqBlock 
         //  Applied when a token other then a long identifier is seen 
-        | _, (CtxtNamespaceHead (namespaceTokenPos, prevToken) :: _) -> 
+        | _, CtxtNamespaceHead (namespaceTokenPos, prevToken) :: _ -> 
             match prevToken, token with 
             | (NAMESPACE | DOT | REC | GLOBAL), (REC | IDENT _ | GLOBAL) when namespaceTokenPos.Column < tokenStartPos.Column -> 
                 replaceCtxt tokenTup (CtxtNamespaceHead (namespaceTokenPos, token))
@@ -1417,7 +1529,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popCtxt()
                 // Don't push a new context if next token is EOF, since that raises an offside warning
                 match tokenTup.Token with 
-                | Parser.EOF _ -> 
+                | EOF _ -> 
                     returnToken tokenLexbufState token
                 | _ -> 
                     delayToken tokenTup
@@ -1430,7 +1542,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  Otherwise it's a 'head' module declaration, so ignore it
 
         //  Here prevToken is either 'module', 'rec', 'global' (invalid), '.', or ident, because we skip attribute tokens and access modifier tokens
-        | _, (CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: _) ->
+        | _, CtxtModuleHead (moduleTokenPos, prevToken, lexingModuleAttributes) :: _ ->
             match prevToken, token with
             | _, GREATER_RBRACK when lexingModuleAttributes = LexingModuleAttributes
                                      && moduleTokenPos.Column < tokenStartPos.Column ->
@@ -1460,7 +1572,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popCtxt()
                 // Don't push a new context if next token is EOF, since that raises an offside warning
                 match tokenTup.Token with 
-                | Parser.EOF _ -> 
+                | EOF _ -> 
                     returnToken tokenLexbufState token
                 | _ ->
                     // We have reached other tokens without encountering '=' or ':', so this is a module declaration spanning the whole file
@@ -1472,7 +1584,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //      f x
         //      g x
         //    ...
-        | _, (CtxtSeqBlock(_, offsidePos, addBlockEnd) :: rest) when 
+        | _, CtxtSeqBlock(_, offsidePos, addBlockEnd) :: rest when 
                             
                 // NOTE: ;; does not terminate a 'namespace' body. 
                 ((isSemiSemi && not (match rest with (CtxtNamespaceBody _ | CtxtModuleBody (_, true)) :: _ -> true | _ -> false)) || 
@@ -1482,7 +1594,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             //  type x = 
                             //      A of string    <-- note missing '|' here - bad style, and perhaps should be disallowed
                             //    | B of int 
-                        | BAR, (CtxtTypeDefns _ :: _) -> 2
+                        | BAR, CtxtTypeDefns _ :: _ -> 2
 
                             // This ensures we close a type context seq block when the '|' marks
                             // of a type definition are aligned with the 'type' token. 
@@ -1492,7 +1604,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             //  | B 
                             //  
                             //  <TOKEN>    <-- close the type context sequence block here *)
-                        | _, (CtxtTypeDefns posType :: _) when offsidePos.Column = posType.Column && not (isTypeSeqBlockElementContinuator token) -> -1
+                        | _, CtxtTypeDefns posType :: _ when offsidePos.Column = posType.Column && not (isTypeSeqBlockElementContinuator token) -> -1
 
                             // This ensures we close a namespace body when we see the next namespace definition 
                             // 
@@ -1500,7 +1612,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             //  ...
                             //  
                             //  namespace <-- close the namespace body context here 
-                        | _, (CtxtNamespaceBody posNamespace :: _) when offsidePos.Column = posNamespace.Column && (match token with NAMESPACE -> true | _ -> false) -> -1
+                        | _, CtxtNamespaceBody posNamespace :: _ when offsidePos.Column = posNamespace.Column && (match token with NAMESPACE -> true | _ -> false) -> -1
 
                         | _ -> 
                             // Allow a grace of >2 column positions for infix tokens, permits 
@@ -1537,7 +1649,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //    fff
         //       eeeee
         //  <tok>
-        | _, (CtxtVanilla(offsidePos, _) :: _) when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtVanilla(offsidePos, _) :: _ when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
             if debug then dprintf "offside token at column %d indicates end of CtxtVanilla started at %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
@@ -1546,14 +1658,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  [< ... >]
         //  decl
 
-        | _, (CtxtSeqBlock(NotFirstInSeqBlock, offsidePos, addBlockEnd) :: _) 
+        | _, CtxtSeqBlock(NotFirstInSeqBlock, offsidePos, addBlockEnd) :: _ 
                     when (match token with GREATER_RBRACK -> true | _ -> false) -> 
             // Attribute-end tokens mean CtxtSeqBlock rule is NOT applied to the next token
             replaceCtxt tokenTup (CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd))
             reprocessWithoutBlockRule()
 
         //  Offside rule for SeqBlock - avoiding inserting OBLOCKSEP on first item in block
-        | _, (CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd) :: _) when useBlockRule -> 
+        | _, CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd) :: _ when useBlockRule -> 
             // This is the first token in a block, or a token immediately 
             // following an infix operator (see above). 
             // Return the token, but only after processing any additional rules 
@@ -1581,11 +1693,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //    let x3 = expr
         //    ...
         // ~~> insert OBLOCKSEP
-        | _, (CtxtSeqBlock (NotFirstInSeqBlock, offsidePos, addBlockEnd) :: rest) 
+        | _, CtxtSeqBlock (NotFirstInSeqBlock, offsidePos, addBlockEnd) :: rest 
                 when useBlockRule 
-                    && not (let isTypeCtxt = (match rest with | (CtxtTypeDefns _ :: _) -> true | _ -> false)
+                    && not (let isTypeCtxt = (match rest with | CtxtTypeDefns _ :: _ -> true | _ -> false)
                             // Don't insert 'OBLOCKSEP' between namespace declarations
-                            let isNamespaceCtxt = (match rest with | (CtxtNamespaceBody _ :: _) -> true | _ -> false)
+                            let isNamespaceCtxt = (match rest with | CtxtNamespaceBody _ :: _ -> true | _ -> false)
                             if isNamespaceCtxt then (match token with NAMESPACE -> true | _ -> false)
                             elif isTypeCtxt then isTypeSeqBlockElementContinuator token
                             else isSeqBlockElementContinuator token)
@@ -1608,14 +1720,18 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //   let .... =
         //       ...
         //  <*>
-        | _, (CtxtLetDecl (true, offsidePos) :: _) when 
-                        isSemiSemi || (if isLetContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtLetDecl (true, offsidePos) :: _ when 
+                        isSemiSemi || (if relaxWhitespace2OffsideRule || isLetContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from LET(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
-
-        | _, (CtxtDo offsidePos :: _) 
-                when isSemiSemi || (if isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+            
+        // do ignore (
+        //     1
+        // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
+        | _, CtxtDo offsidePos :: _
+                when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
@@ -1625,14 +1741,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  ...
         // ...
 
-        | _, (CtxtInterfaceHead offsidePos :: _) 
-                when isSemiSemi || (if isInterfaceContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtInterfaceHead offsidePos :: _
+                when isSemiSemi || (if relaxWhitespace2OffsideRule || isInterfaceContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from INTERFACE(offsidePos=%a)! pop and reprocess\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
 
-        | _, (CtxtTypeDefns offsidePos :: _) 
-                when isSemiSemi || (if isTypeContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtTypeDefns offsidePos :: _
+                when isSemiSemi || (if relaxWhitespace2OffsideRule || isTypeContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from TYPE(offsidePos=%a)! pop and reprocess\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
@@ -1644,89 +1760,102 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  module M = ...
         // ...
         // NOTE: ;; does not terminate a whole file module body. 
-        | _, ((CtxtModuleBody (offsidePos, wholeFile)) :: _) when (isSemiSemi && not wholeFile) || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtModuleBody (offsidePos, wholeFile) :: _ when (isSemiSemi && not wholeFile) || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MODULE with offsidePos %a! delaying token\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
 
         // NOTE: ;; does not terminate a 'namespace' body. 
-        | _, ((CtxtNamespaceBody offsidePos) :: _) when (* isSemiSemi || *) (if isNamespaceContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtNamespaceBody offsidePos :: _ when (* isSemiSemi || *) (if relaxWhitespace2OffsideRule || isNamespaceContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from NAMESPACE with offsidePos %a! delaying token\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
 
-        | _, ((CtxtException offsidePos) :: _) when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtException offsidePos :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from EXCEPTION with offsidePos %a! delaying token\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
 
-        // Pop CtxtMemberBody when offside. Insert an ODECLEND to indicate the end of the member 
-        | _, ((CtxtMemberBody offsidePos) :: _) when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        // Pop CtxtMemberBody when offside. Insert an ODECLEND to indicate the end of the member
+        //     member _.d() = seq {
+        //         1
+        //     }; static member e() = [
+        //         1 // This is not offside for backcompat, don't apply relaxWhitespace2OffsideRule
+        //     ]
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
+        | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
 
         // Pop CtxtMemberHead when offside 
-        | _, ((CtxtMemberHead offsidePos) :: _) when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtMemberHead offsidePos :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             reprocess()
 
-        | _, (CtxtIf offsidePos :: _) 
-                    when isSemiSemi || (if isIfBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtIf offsidePos :: _
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isIfBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtIf\n"
             popCtxt()
             reprocess()
                 
-        | _, (CtxtWithAsLet offsidePos :: _) 
-                    when isSemiSemi || (if isLetContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtWithAsLet offsidePos :: _
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isLetContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtWithAsLet\n"
             popCtxt()
             insertToken OEND
                 
-        | _, (CtxtWithAsAugment offsidePos :: _) 
-                    when isSemiSemi || (if isWithAugmentBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtWithAsAugment offsidePos :: _
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isWithAugmentBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtWithAsAugment, isWithAugmentBlockContinuator = %b\n" (isWithAugmentBlockContinuator token)
             popCtxt()
             insertToken ODECLEND 
                 
-        | _, (CtxtMatch offsidePos :: _) 
-                    when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtMatch offsidePos :: _
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || relaxWhitespace2 && isMatchBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtMatch\n"
             popCtxt()
             reprocess()
                 
-        | _, (CtxtFor offsidePos :: _) 
-                    when isSemiSemi || (if isForLoopContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtFor offsidePos :: _ 
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isForLoopContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtFor\n"
             popCtxt()
             reprocess()
                 
-        | _, (CtxtWhile offsidePos :: _) 
-                    when isSemiSemi || (if isWhileBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtWhile offsidePos :: _ 
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isWhileBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtWhile\n"
             popCtxt()
             reprocess()
                 
-        | _, (CtxtWhen offsidePos :: _) 
-                    when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtWhen offsidePos :: _ 
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtWhen\n"
             popCtxt()
             reprocess()
                 
-        | _, (CtxtFun offsidePos :: _) 
-                    when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtFun offsidePos :: _
+        // fun () -> async {
+        //     1
+        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
+                    when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtFun\n"
             popCtxt()
             insertToken OEND
-                
-        | _, (CtxtFunction offsidePos :: _) 
-                    when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        // function () -> async {
+        //     1
+        // }, 2 // This is a '(unit -> seq<int>) * int', so for backwards compatibility, do not treat '}' as a continuator, don't apply relaxWhitespace2OffsideRule
+        // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
+        | _, CtxtFunction offsidePos :: _
+                    when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             popCtxt()
             reprocess()
                 
-        | _, (CtxtTry offsidePos :: _) 
-                    when isSemiSemi || (if isTryBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtTry offsidePos :: _
+                    when isSemiSemi || (if relaxWhitespace2OffsideRule || isTryBlockContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtTry\n"
             popCtxt()
             reprocess()
@@ -1737,7 +1866,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //
         //  then 
         //     ...
-        | _, (CtxtThen offsidePos :: _) when isSemiSemi || (if isThenBlockContinuator token then tokenStartCol + 1 else tokenStartCol)<= offsidePos.Column -> 
+        | _, CtxtThen offsidePos :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule || isThenBlockContinuator token then tokenStartCol + 1 else tokenStartCol)<= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtThen, popping\n"
             popCtxt()
             reprocess()
@@ -1745,13 +1874,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  else ...
         // ....
         //
-        | _, (CtxtElse (offsidePos) :: _) when isSemiSemi || tokenStartCol <= offsidePos.Column -> 
+        | _, CtxtElse (offsidePos) :: _ when isSemiSemi || (if relaxWhitespace2OffsideRule then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "offside from CtxtElse, popping\n"
             popCtxt()
             reprocess()
 
         // leadingBar=false permits match patterns without an initial '|' 
-        | _, (CtxtMatchClauses (leadingBar, offsidePos) :: _) 
+        | _, CtxtMatchClauses (leadingBar, offsidePos) :: _ 
                   when (isSemiSemi || 
                         (match token with 
                             // BAR occurs in pattern matching 'with' blocks 
@@ -1769,13 +1898,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 
 
         //  namespace ... ~~~> CtxtNamespaceHead 
-        | NAMESPACE, (_ :: _) -> 
+        | NAMESPACE, _ :: _ -> 
             if debug then dprintf "NAMESPACE: entering CtxtNamespaceHead, awaiting end of long identifier to push CtxtSeqBlock\n" 
             pushCtxt tokenTup (CtxtNamespaceHead (tokenStartPos, token))
             returnToken tokenLexbufState token
                 
         //  module ... ~~~> CtxtModuleHead 
-        | MODULE, (_ :: _) -> 
+        | MODULE, _ :: _ -> 
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token, NotLexingModuleAttributes))
@@ -1783,7 +1912,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             hwTokenFetch useBlockRule
                 
         // exception ... ~~~> CtxtException 
-        | EXCEPTION, (_ :: _) -> 
+        | EXCEPTION, _ :: _ -> 
             if debug then dprintf "EXCEPTION: entering CtxtException(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtException tokenStartPos)
             returnToken tokenLexbufState token
@@ -1791,7 +1920,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  let ... ~~~> CtxtLetDecl 
         //     -- this rule only applies to 
         //              - 'static let' 
-        | LET isUse, (ctxt :: _) when (match ctxt with CtxtMemberHead _ -> true | _ -> false) -> 
+        | LET isUse, ctxt :: _ when (match ctxt with CtxtMemberHead _ -> true | _ -> false) -> 
             if debug then dprintf "LET: entering CtxtLetDecl(), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             let startPos = match ctxt with CtxtMemberHead startPos -> startPos | _ -> tokenStartPos
             popCtxt() // get rid of the CtxtMemberHead
@@ -1802,7 +1931,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //     -- this rule only applies to 
         //              - 'let' 'right-on' a SeqBlock line 
         //              - 'let' in a CtxtMatchClauses, which is a parse error, but we need to treat as OLET to get various O...END tokens to enable parser to recover
-        | LET isUse, (ctxt :: _) -> 
+        | LET isUse, ctxt :: _ -> 
             let blockLet = match ctxt with | CtxtSeqBlock _ -> true 
                                             | CtxtMatchClauses _ -> true 
                                             | _ -> false
@@ -1811,14 +1940,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken tokenLexbufState (if blockLet then OLET isUse else token)
                 
         //  let!  ... ~~~> CtxtLetDecl 
-        | BINDER b, (ctxt :: _) -> 
+        | BINDER b, ctxt :: _ -> 
             let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
             if debug then dprintf "LET: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" blockLet outputPos tokenStartPos
             pushCtxt tokenTup (CtxtLetDecl(blockLet, tokenStartPos))
             returnToken tokenLexbufState (if blockLet then OBINDER b else token)
 
         //  and!  ... ~~~> CtxtLetDecl 
-        | AND_BANG isUse, (ctxt :: _) -> 
+        | AND_BANG isUse, ctxt :: _ -> 
             let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
             if debug then dprintf "AND!: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" blockLet outputPos tokenStartPos
             pushCtxt tokenTup (CtxtLetDecl(blockLet,tokenStartPos))
@@ -1848,13 +1977,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  override ... ~~~> CtxtMemberHead 
         //  default ... ~~~> CtxtMemberHead 
         //  val ... ~~~> CtxtMemberHead 
-        | (VAL | STATIC | ABSTRACT | MEMBER | OVERRIDE | DEFAULT), (ctxt :: _) when (match ctxt with CtxtMemberHead _ -> false | _ -> true) -> 
+        | (VAL | STATIC | ABSTRACT | MEMBER | OVERRIDE | DEFAULT), ctxt :: _ when (match ctxt with CtxtMemberHead _ -> false | _ -> true) -> 
             if debug then dprintf "STATIC/MEMBER/OVERRIDE/DEFAULT: entering CtxtMemberHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtMemberHead tokenStartPos)
             returnToken tokenLexbufState token
 
         //  public new... ~~~> CtxtMemberHead 
-        | (PUBLIC | PRIVATE | INTERNAL), (_ctxt :: _) when (match peekNextToken() with NEW -> true | _ -> false) -> 
+        | (PUBLIC | PRIVATE | INTERNAL), _ctxt :: _ when (match peekNextToken() with NEW -> true | _ -> false) -> 
             if debug then dprintf "PUBLIC/PRIVATE/INTERNAL NEW: entering CtxtMemberHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtMemberHead tokenStartPos)
             returnToken tokenLexbufState token
@@ -1866,12 +1995,12 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken tokenLexbufState token
                                      
         //  'let ... = ' ~~~> CtxtSeqBlock 
-        | EQUALS, (CtxtLetDecl _ :: _) ->  
+        | EQUALS, CtxtLetDecl _ :: _ ->  
             if debug then dprintf "CtxtLetDecl: EQUALS, pushing CtxtSeqBlock\n"
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState token
 
-        | EQUALS, (CtxtTypeDefns _ :: _) ->  
+        | EQUALS, CtxtTypeDefns _ :: _ ->  
             if debug then dprintf "CtxType: EQUALS, pushing CtxtSeqBlock\n"
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState token
@@ -1897,8 +2026,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //     id2 = ... ' ~~~> CtxtSeqBlock 
         //  '{ id1 = 1
         //     M.id2 = ... ' ~~~> CtxtSeqBlock 
-        | EQUALS, ((CtxtWithAsLet _) :: _)  // This detects 'with = '. 
-        | EQUALS, ((CtxtVanilla (_, true)) :: (CtxtSeqBlock _) :: (CtxtWithAsLet _ | CtxtParen((LBRACE _ | LBRACE_BAR), _)) :: _) ->  
+        | EQUALS, CtxtWithAsLet _ :: _  // This detects 'with = '. 
+        | EQUALS, CtxtVanilla (_, true) :: CtxtSeqBlock _ :: (CtxtWithAsLet _ | CtxtParen((LBRACE _ | LBRACE_BAR), _)) :: _ ->  
             if debug then dprintf "CtxtLetDecl/CtxtWithAsLet: EQUALS, pushing CtxtSeqBlock\n"
             // We don't insert begin/end block tokens for single-line bindings since we can't properly distinguish single-line *)
             // record update expressions such as "{ t with gbuckets=Array.copy t.gbuckets; gcount=t.gcount }" *)
@@ -1915,9 +2044,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  'static member ... =' ~~~> CtxtMemberBody, CtxtSeqBlock 
         //  'default ... =' ~~~> CtxtMemberBody, CtxtSeqBlock 
         //  'override ... =' ~~~> CtxtMemberBody, CtxtSeqBlock 
-        | EQUALS, ((CtxtMemberHead offsidePos) :: _) ->  
+        | EQUALS, CtxtMemberHead offsidePos :: _ ->  
             if debug then dprintf "CtxtMemberHead: EQUALS, pushing CtxtSeqBlock\n"
-            replaceCtxt tokenTup (CtxtMemberBody (offsidePos))
+            replaceCtxt tokenTup (CtxtMemberBody offsidePos)
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState token
 
@@ -1925,7 +2054,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // $".... { ... }  ... { ....} " pushes a block context at first {
         // ~~~~~~~~
         //    ^---------INTERP_STRING_BEGIN_PART
-        | (BEGIN | LPAREN | SIG | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | INTERP_STRING_BEGIN_PART _), _ ->
+        | (TokenLExprParen | SIG | INTERP_STRING_BEGIN_PART _), _ ->
             if debug then dprintf "LPAREN etc., pushes CtxtParen, pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             let pos = match token with
                       | INTERP_STRING_BEGIN_PART _ -> tokenTup.LexbufState.EndPos
@@ -1954,9 +2083,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                         // comprehension/match 
                         | (CtxtWhile _ | CtxtFor _ | CtxtWhen _ | CtxtMatchClauses _ | CtxtFun _) :: _ -> true 
                         // comprehension 
-                        | (CtxtSeqBlock _ :: CtxtParen ((LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: _) -> true  
+                        | CtxtSeqBlock _ :: CtxtParen ((LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: _ -> true  
                         // comprehension 
-                        | (CtxtSeqBlock _ :: (CtxtDo _ | CtxtWhile _ | CtxtFor _ | CtxtWhen _ | CtxtMatchClauses _ | CtxtTry _ | CtxtThen _ | CtxtElse _) :: _) -> true 
+                        | CtxtSeqBlock _ :: (CtxtDo _ | CtxtWhile _ | CtxtFor _ | CtxtWhen _ | CtxtMatchClauses _ | CtxtTry _ | CtxtThen _ | CtxtElse _) :: _ -> true 
                         | _ -> false) ->
             if debug then dprintf "RARROW, pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             pushCtxtSeqBlock(false, AddOneSidedBlockEnd)
@@ -1970,7 +2099,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  do  ~~> CtxtDo;CtxtSeqBlock  (unconditionally) 
         | (DO | DO_BANG), _ -> 
             if debug then dprintf "DO: pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtDo (tokenStartPos))
+            pushCtxt tokenTup (CtxtDo tokenStartPos)
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState (match token with DO -> ODO | DO_BANG -> ODO_BANG | _ -> failwith "unreachable")
 
@@ -1991,7 +2120,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             pushCtxtSeqBlock(false, NoAddBlockEnd)
             returnToken tokenLexbufState token
 
-        | WITH, ((CtxtTry _ | CtxtMatch _) :: _) -> 
+        | WITH, (CtxtTry _ | CtxtMatch _) :: _ -> 
             let lookaheadTokenTup = peekNextTokenTup()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
             let leadingBar = match (peekNextToken()) with BAR -> true | _ -> false
@@ -1999,13 +2128,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             pushCtxt lookaheadTokenTup (CtxtMatchClauses(leadingBar, lookaheadTokenStartPos))
             returnToken tokenLexbufState OWITH 
 
-        | FINALLY, (CtxtTry _ :: _) -> 
+        | FINALLY, CtxtTry _ :: _ -> 
             if debug then dprintf "FINALLY, pushing pushCtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             pushCtxtSeqBlock(true, AddBlockEnd)
             returnToken tokenLexbufState token
 
-        | WITH, (((CtxtException _ | CtxtTypeDefns _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtMemberBody _) as limCtxt) :: _) 
-        | WITH, ((CtxtSeqBlock _) as limCtxt :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _) -> 
+        | WITH, (CtxtException _ | CtxtTypeDefns _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtMemberBody _ as limCtxt) :: _ 
+        | WITH, (CtxtSeqBlock _ as limCtxt :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _) -> 
             let lookaheadTokenTup = peekNextTokenTup()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
             match lookaheadTokenTup.Token with 
@@ -2127,7 +2256,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         | ELSE, _ -> 
             let lookaheadTokenTup = peekNextTokenTup()
-            let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
+            let lookaheadTokenStartPos, lookaheadTokenEndPos = posOfTokenTup lookaheadTokenTup
             match peekNextToken() with 
             | IF when isSameLine() ->
                 // We convert ELSE IF to ELIF since it then opens the block at the right point,
@@ -2138,8 +2267,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 popNextTokenTup() |> pool.Return
                 if debug then dprintf "ELSE IF: replacing ELSE IF with ELIF, pushing CtxtIf, CtxtVanilla(%a)\n" outputPos tokenStartPos
                 pushCtxt tokenTup (CtxtIf tokenStartPos)
-                returnToken tokenLexbufState ELIF
-                  
+                // Combine the original range of both tokens as the range for the ELIF keyword.
+                let correctedTokenLexbufState = LexbufState(tokenStartPos, lookaheadTokenEndPos, false)
+                returnToken correctedTokenLexbufState ELIF
+
             | _ -> 
                 if debug then dprintf "ELSE: replacing ELSE with OELSE, pushing CtxtSeqBlock, CtxtElse(%a)\n" outputPos lookaheadTokenStartPos
                 pushCtxt tokenTup (CtxtElse tokenStartPos)
@@ -2148,32 +2279,32 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         | (ELIF | IF), _ -> 
             if debug then dprintf "IF, pushing CtxtIf(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtIf (tokenStartPos))
+            pushCtxt tokenTup (CtxtIf tokenStartPos)
             returnToken tokenLexbufState token
 
         | (MATCH | MATCH_BANG), _ -> 
             if debug then dprintf "MATCH, pushing CtxtMatch(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtMatch (tokenStartPos))
+            pushCtxt tokenTup (CtxtMatch tokenStartPos)
             returnToken tokenLexbufState token
 
         | FOR, _ -> 
             if debug then dprintf "FOR, pushing CtxtFor(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtFor (tokenStartPos))
+            pushCtxt tokenTup (CtxtFor tokenStartPos)
             returnToken tokenLexbufState token
 
         | WHILE, _ -> 
             if debug then dprintf "WHILE, pushing CtxtWhile(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtWhile (tokenStartPos))
+            pushCtxt tokenTup (CtxtWhile tokenStartPos)
             returnToken tokenLexbufState token
 
-        | WHEN, ((CtxtSeqBlock _) :: _) -> 
+        | WHEN, CtxtSeqBlock _ :: _ -> 
             if debug then dprintf "WHEN, pushing CtxtWhen(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtWhen (tokenStartPos))
+            pushCtxt tokenTup (CtxtWhen tokenStartPos)
             returnToken tokenLexbufState token
 
         | FUN, _ -> 
             if debug then dprintf "FUN, pushing CtxtFun(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtFun (tokenStartPos))
+            pushCtxt tokenTup (CtxtFun tokenStartPos)
             returnToken tokenLexbufState OFUN
 
         | INTERFACE, _ -> 
@@ -2208,7 +2339,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
         | TRY, _ -> 
             if debug then dprintf "Try, pushing CtxtTry(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtTry (tokenStartPos))
+            pushCtxt tokenTup (CtxtTry tokenStartPos)
             // The ideal spec would be to push a begin/end block pair here, but we can only do that 
             // if we are able to balance the WITH with the TRY. We can't do that because of the numerous ways 
             // WITH is used in the grammar (see what happens when we hit a WITH below. 
@@ -2220,10 +2351,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         | OBLOCKBEGIN, _ -> 
             returnToken tokenLexbufState token  
                 
-        | ODUMMY(_), _ -> 
+        | ODUMMY _, _ -> 
             if debug then dprintf "skipping dummy token as no offside rules apply\n"
             pool.Return tokenTup
-            hwTokenFetch (useBlockRule) 
+            hwTokenFetch useBlockRule 
                 
         // Ordinary tokens start a vanilla block 
         | _, CtxtSeqBlock _ :: _ -> 
@@ -2234,44 +2365,55 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         | _ -> 
             returnToken tokenLexbufState token  
 
+    and insertHighPrecedenceApp (tokenTup: TokenTup) = 
+        let dotTokenTup = peekNextTokenTup()
+        if debug then dprintf "inserting HIGH_PRECEDENCE_PAREN_APP at dotTokenPos = %a\n" outputPos (startPosOfTokenTup dotTokenTup)
+        let hpa = 
+            if nextTokenIsAdjacentLParen tokenTup then
+                HIGH_PRECEDENCE_PAREN_APP
+            elif nextTokenIsAdjacentLBrack tokenTup then
+                HIGH_PRECEDENCE_BRACK_APP
+            else
+                failwith "unreachable"
+        delayToken(pool.UseLocation(dotTokenTup, hpa))
+        delayToken tokenTup
+        true
+
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
-          | HASH_IDENT (ident) ->
-              let hashPos = new LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
-              let identPos = new LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
-              delayToken(new TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
-              delayToken(new TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
+          | HASH_IDENT ident ->
+              let hashPos = LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
+              let identPos = LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
+              delayToken(TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
+              delayToken(TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
               true
+
+          // Insert HIGH_PRECEDENCE_BRACK_APP if needed 
+          //    ident[3]
+          | IDENT _ when nextTokenIsAdjacentLBrack tokenTup ->
+              insertHighPrecedenceApp tokenTup
 
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
-          | IDENT _ when (nextTokenIsAdjacentLParenOrLBrack tokenTup).IsSome ->
-              let dotTokenTup = peekNextTokenTup()
-              if debug then dprintf "inserting HIGH_PRECEDENCE_PAREN_APP at dotTokenPos = %a\n" outputPos (startPosOfTokenTup dotTokenTup)
-              let hpa = 
-                  match nextTokenIsAdjacentLParenOrLBrack tokenTup with 
-                  | Some LPAREN -> HIGH_PRECEDENCE_PAREN_APP
-                  | Some LBRACK -> HIGH_PRECEDENCE_BRACK_APP
-                  | _ -> failwith "unreachable"
-              delayToken(pool.UseLocation(dotTokenTup, hpa))
-              delayToken tokenTup
-              true
+          //    ident(3)
+          | IDENT _ when nextTokenIsAdjacentLParen tokenTup ->
+              insertHighPrecedenceApp tokenTup
 
           // Insert HIGH_PRECEDENCE_TYAPP if needed 
-          | (DELEGATE | IDENT _ | IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _ | BIGNUM _) when peekAdjacentTypars false tokenTup ->
+          | DELEGATE | IDENT _ | IEEE64 _ | IEEE32 _ | DECIMAL _ | INT8 _ | INT16 _ | INT32 _ | INT64 _ | NATIVEINT _ | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _ | BIGNUM _ when peekAdjacentTypars false tokenTup ->
               let lessTokenTup = popNextTokenTup()
               delayToken (pool.UseLocation(lessTokenTup, match lessTokenTup.Token with LESS _ -> LESS true | _ -> failwith "unreachable")) 
 
               if debug then dprintf "softwhite inserting HIGH_PRECEDENCE_TYAPP at dotTokenPos = %a\n" outputPos (startPosOfTokenTup lessTokenTup)
 
               delayToken (pool.UseLocation(lessTokenTup, HIGH_PRECEDENCE_TYAPP))
-              delayToken (tokenTup)
+              delayToken tokenTup
               pool.Return lessTokenTup
               true
 
           // ..^1 will get parsed as DOT_DOT_HAT 1 while 1..^2 will get parsed as 1 DOT_DOT HAT 2
           // because of processing rule underneath this.
-          | (DOT_DOT_HAT) -> 
-              let hatPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+          | DOT_DOT_HAT -> 
+              let hatPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- INFIX_AT_HAT_OP("^"); rented.LexbufState <- hatPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, DOT_DOT, 0, -1))
               pool.Return tokenTup
@@ -2279,14 +2421,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
           // Split this token to allow "1..2" for range specification 
           | INT32_DOT_DOT (i, v) ->
-              let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
+              let dotDotPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT_DOT; rented.LexbufState <- dotDotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, INT32(i, v), 0, -2))
               pool.Return tokenTup
               true
           // Split @>. and @@>. into two 
           | RQUOTE_DOT (s, raw) ->
-              let dotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+              let dotPos = LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT; rented.LexbufState <- dotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, RQUOTE(s, raw), 0, -1))
               pool.Return tokenTup
@@ -2315,7 +2457,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               let delayMergedToken tok = 
                   let rented = pool.Rent()
                   rented.Token <- tok
-                  rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
+                  rented.LexbufState <- LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
                   rented.LastTokenPos <- tokenTup.LastTokenPos
                   delayToken(rented)
                   pool.Return nextTokenTup
@@ -2391,11 +2533,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
 type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: UnicodeLexing.Lexbuf) = 
-    let inner = new LexFilterImpl (lightStatus, compilingFsLib, lexer, lexbuf)
+    let inner = LexFilterImpl(lightStatus, compilingFsLib, lexer, lexbuf)
 
     // We don't interact with lexbuf state at all, any inserted tokens have same state/location as the real one read, so
     // we don't have to do any of the wrapped lexbuf magic that you see in LexFilterImpl.
-    let delayedStack = System.Collections.Generic.Stack<token>()
+    let delayedStack = Stack<token>()
     let delayToken tok = delayedStack.Push tok 
 
     let popNextToken() = 
@@ -2413,18 +2555,16 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
 
     member _.LexBuffer = inner.LexBuffer 
 
-    member _.GetToken () = 
-        let rec loop() =
-            let token = popNextToken()
-            match token with
-            | RBRACE _ -> 
-                insertComingSoonTokens RBRACE_COMING_SOON RBRACE_IS_HERE
-                loop()
-            | RPAREN -> 
-                insertComingSoonTokens RPAREN_COMING_SOON RPAREN_IS_HERE
-                loop()
-            | OBLOCKEND -> 
-                insertComingSoonTokens OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE
-                loop()
-            | _ -> token
-        loop()
+    member lexer.GetToken () = 
+        let token = popNextToken()
+        match token with
+        | RBRACE _ -> 
+            insertComingSoonTokens RBRACE_COMING_SOON RBRACE_IS_HERE
+            lexer.GetToken()
+        | RPAREN -> 
+            insertComingSoonTokens RPAREN_COMING_SOON RPAREN_IS_HERE
+            lexer.GetToken()
+        | OBLOCKEND -> 
+            insertComingSoonTokens OBLOCKEND_COMING_SOON OBLOCKEND_IS_HERE
+            lexer.GetToken()
+        | _ -> token

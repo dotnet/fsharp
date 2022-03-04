@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// Write Abstract IL structures at runtime using Reflection.Emit
-module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter    
+module internal FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter    
 
 open System.Reflection
 open System.Reflection.Emit
@@ -15,28 +15,25 @@ type cenv =
       emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
-      resolveAssemblyRef: (ILAssemblyRef -> Choice<string, Assembly> option) }
+      resolveAssemblyRef: ILAssemblyRef -> Choice<string, Assembly> option }
 
-type emEnv
+type ILDynamicAssemblyEmitEnv
 
-val emEnv0: emEnv
+val emEnv0: ILDynamicAssemblyEmitEnv
 
-val emitModuleFragment: 
+val EmitDynamicAssemblyFragment: 
     ilg: ILGlobals *
     emitTailcalls: bool *
-    emEnv: emEnv *
+    emEnv: ILDynamicAssemblyEmitEnv *
     asmB: AssemblyBuilder *
     modB: ModuleBuilder *
     modul: ILModuleDef *
     debugInfo: bool *
     resolveAssemblyRef: (ILAssemblyRef -> Choice<string,Assembly> option) *
     tryFindSysILTypeRef: (string -> ILTypeRef option) ->
-      emEnv * (unit -> exn option) list
+      ILDynamicAssemblyEmitEnv * (unit -> exn option) list
 
-val LookupTypeRef: cenv: cenv -> emEnv: emEnv -> tref: ILTypeRef -> System.Type
+val LookupTypeRef: cenv: cenv -> emEnv: ILDynamicAssemblyEmitEnv -> tref: ILTypeRef -> System.Type
 
-val LookupType: cenv: cenv -> emEnv: emEnv -> ty: ILType -> System.Type
+val LookupType: cenv: cenv -> emEnv: ILDynamicAssemblyEmitEnv -> ty: ILType -> System.Type
 
-val LookupFieldRef: emEnv: emEnv -> fref: ILFieldRef -> FieldInfo option
-
-val LookupMethodRef: emEnv: emEnv -> mref: ILMethodRef -> MethodInfo option

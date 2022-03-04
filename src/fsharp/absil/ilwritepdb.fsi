@@ -11,55 +11,90 @@ open System.Reflection.Metadata
 type PdbDocumentData = ILSourceDocument
 
 type PdbLocalVar = 
-    { Name: string
+    { 
+      Name: string
+      
       Signature: byte[] 
+
       /// the local index the name corresponds to
-      Index: int32  }
+      Index: int32  
+    }
+
+/// Defines the set of 'imports' - that is, opened namespaces, types etc. - at each code location
+///
+/// Note the C# debug evaluation engine used for F# will give C# semantics to these.  That in general
+/// is very close to F# semantics, except for things like union type.
+type PdbImport =
+
+    /// Represents an 'open type XYZ' opening a type
+    | ImportType of targetTypeToken: int32 (* alias: string option *)
+
+    /// Represents an 'open XYZ' opening a namespace
+    | ImportNamespace of targetNamespace: string (* assembly: ILAssemblyRef option * alias: string option *) 
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
+
+type PdbImports =
+    {
+      Parent: PdbImports option
+      Imports: PdbImport[]
+    }
 
 type PdbMethodScope = 
-    { Children: PdbMethodScope[]
+    {
+      Children: PdbMethodScope[]
       StartOffset: int
       EndOffset: int
-      Locals: PdbLocalVar array
-      (* REVIEW open_namespaces: pdb_namespace array *) }
+      Locals: PdbLocalVar[]
+      Imports: PdbImports option
+    }
 
 type PdbSourceLoc = 
-    { Document: int
+    {
+      Document: int
       Line: int
-      Column: int }
+      Column: int
+    }
       
-type PdbSequencePoint = 
-    { Document: int
+type PdbDebugPoint = 
+    {
+      Document: int
       Offset: int
       Line: int
       Column: int
       EndLine: int
-      EndColumn: int }
-     override ToString: unit -> string
+      EndColumn: int
+    }
 
 type PdbMethodData = 
-    { MethToken: int32
+    {
+      MethToken: int32
       MethName:string
       LocalSignatureToken: int32
-      Params: PdbLocalVar array
+      Params: PdbLocalVar[]
       RootScope: PdbMethodScope option
-      Range: (PdbSourceLoc * PdbSourceLoc) option
-      SequencePoints: PdbSequencePoint array }
+      DebugRange: (PdbSourceLoc * PdbSourceLoc) option
+      DebugPoints: PdbDebugPoint[]
+    }
 
 [<NoEquality; NoComparison>]
 type PdbData = 
-    { EntryPoint: int32 option
+    {
+      EntryPoint: int32 option
       Timestamp: int32
-      ModuleID: byte[]                                              // MVID of the generated .NET module (used by MDB files to identify debug info)
+      /// MVID of the generated .NET module (used by MDB files to identify debug info)
+      ModuleID: byte[]
       Documents: PdbDocumentData[]
       Methods: PdbMethodData[] 
-      TableRowCounts: int[] }
+      TableRowCounts: int[]
+    }
 
 /// Takes the output file name and returns debug file name.
 val getDebugFileName: string -> bool -> string
 
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 val sizeof_IMAGE_DEBUG_DIRECTORY : System.Int32
+
 val logDebugInfo : string -> PdbData -> unit
 
 #if ENABLE_MONO_SUPPORT
@@ -83,11 +118,22 @@ type HashAlgorithm =
     | Sha1
     | Sha256
 
-val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> (int64 * BlobContentId * MemoryStream * string * byte[])
-val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> (int64 * BlobContentId * MemoryStream)
-val embedPortablePdbInfo: uncompressedLength: int64 -> contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
-val writePortablePdbInfo: contentId: BlobContentId -> stream: MemoryStream -> showTimes: bool -> fpdb: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
+val generatePortablePdb : embedAllSource: bool -> embedSourceList: string list -> sourceLink: string -> checksumAlgorithm: HashAlgorithm -> showTimes: bool -> info: PdbData -> pathMap:PathMap -> int64 * BlobContentId * MemoryStream * string * byte[]
+
+val compressPortablePdbStream: stream:MemoryStream -> MemoryStream
+
+val getInfoForEmbeddedPortablePdb: uncompressedLength: int64 -> contentId: BlobContentId -> compressedStream: MemoryStream -> pdbfile: string -> cvChunk: BinaryChunk -> pdbChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> deterministic: bool -> idd[]
+
+val getInfoForPortablePdb: contentId: BlobContentId -> pdbfile: string -> pathMap: PathMap -> cvChunk: BinaryChunk -> deterministicPdbChunk: BinaryChunk -> checksumPdbChunk: BinaryChunk -> algorithmName: string -> checksum: byte[] -> embeddedPdb: bool -> deterministic: bool -> idd[]
 
 #if !FX_NO_PDB_WRITER
-val writePdbInfo : showTimes:bool -> f:string -> fpdb:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
+val writePdbInfo : showTimes:bool -> outfile:string -> pdbfile:string -> info:PdbData -> cvChunk:BinaryChunk -> idd[]
 #endif
+
+/// Check to see if a scope has a local with the same name as any of its children
+/// 
+/// If so, do not emit 'scope' itself. Instead, 
+///  1. Emit a copy of 'scope' in each true gap, with all locals
+///  2. Adjust each child scope to also contain the locals from 'scope', 
+///     adding the text " (shadowed)" to the names of those with name conflicts.
+val unshadowScopes: PdbMethodScope -> PdbMethodScope[]

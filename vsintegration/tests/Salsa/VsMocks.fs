@@ -321,12 +321,12 @@ module internal VsMocks =
             }
             
         static member MakeTextLineMarker() =
-            let markerSpan = ref (new TextSpan(iStartLine = 0, iEndLine = 0, iStartIndex = 0, iEndIndex = 0))
+            let mutable markerSpan = new TextSpan(iStartLine = 0, iEndLine = 0, iStartIndex = 0, iEndIndex = 0)
             {new IVsTextLineMarker with
                 member tl.DrawGlyph(hdc, pRect) = notimpl()
                 member tl.ExecMarkerCommand(iItem) = notimpl()
                 member tl.GetBehavior(pdwBehavior) = notimpl()
-                member tl.GetCurrentSpan(pSpan) = pSpan.[0] <- !markerSpan ; 0
+                member tl.GetCurrentSpan(pSpan) = pSpan.[0] <- markerSpan ; 0
                 member tl.GetLineBuffer(ppBuffer) = notimpl()
                 member tl.GetMarkerCommandInfo(iItem, pbstrText, pcmdf) = notimpl()
                 member tl.GetPriorityIndex(piPriorityIndex) = notimpl()
@@ -335,7 +335,7 @@ module internal VsMocks =
                 member tl.GetVisualStyle(pdwFlags) = notimpl()
                 member tl.Invalidate() = 0
                 member tl.ResetSpan(iSL, iSI, iEL, iEI) = 
-                    markerSpan := new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ; 
+                    markerSpan <- new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ; 
                     0
                 member tl.SetBehavior(dwBehavior) = notimpl()
                 member tl.SetType(iMarkerType) = notimpl()
@@ -695,42 +695,42 @@ module internal VsMocks =
             }
             
         static member DelegateHierarchy(oldh:IVsHierarchy, ?getCanonicalName, ?getProperty) = 
-            let inner = ref oldh
+            let mutable inner = oldh
             {new IVsHierarchy with            
-                member h.SetSite(psp) = (!inner).SetSite(psp)
-                member h.GetSite(ppSP) = (!inner).GetSite(ref ppSP)
-                member h.QueryClose(pfCanClose) = (!inner).QueryClose(ref pfCanClose)
-                member h.Close() = (!inner).Close()
-                member h.GetGuidProperty(itemid, propid, pguid) = (!inner).GetGuidProperty(itemid, propid, ref pguid)
-                member h.SetGuidProperty(itemid, propid, rguid) = (!inner).SetGuidProperty(itemid, propid, ref rguid)
+                member h.SetSite(psp) = inner.SetSite(psp)
+                member h.GetSite(ppSP) = inner.GetSite(ref ppSP)
+                member h.QueryClose(pfCanClose) = inner.QueryClose(ref pfCanClose)
+                member h.Close() = inner.Close()
+                member h.GetGuidProperty(itemid, propid, pguid) = inner.GetGuidProperty(itemid, propid, ref pguid)
+                member h.SetGuidProperty(itemid, propid, rguid) = inner.SetGuidProperty(itemid, propid, ref rguid)
                 member h.GetProperty(itemid, propid, pvar) = 
                     let propid:__VSHPROPID  = enum propid
-                    let next itemid propid = (!inner).GetProperty(itemid, int32 propid)
+                    let next itemid propid = inner.GetProperty(itemid, int32 propid)
                     let hr,var = impl2 getProperty next itemid propid
                     pvar<-var
                     hr
-                member h.SetProperty(itemid, propid, var) = (!inner).SetProperty(itemid, propid, var)
-                member h.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = (!inner).GetNestedHierarchy(itemid,ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
+                member h.SetProperty(itemid, propid, var) = inner.SetProperty(itemid, propid, var)
+                member h.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = inner.GetNestedHierarchy(itemid,ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
                 /// For project files, returns the fully qualified path to the file including the filename itself.
                 member h.GetCanonicalName(itemid, pbstrName) = 
-                    let next itemid = (!inner).GetCanonicalName(itemid)
+                    let next itemid = inner.GetCanonicalName(itemid)
                     let hr,n = impl1 getCanonicalName next itemid
                     pbstrName<-n
                     hr                     
-                member h.ParseCanonicalName(pszName, pitemid) = (!inner).ParseCanonicalName(pszName, ref pitemid)
-                member h.Unused0() = (!inner).Unused0()
-                member h.AdviseHierarchyEvents(pEventSink, pdwCookie) = (!inner).AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-                member h.UnadviseHierarchyEvents(dwCookie) = (!inner).UnadviseHierarchyEvents(dwCookie)
-                member h.Unused1() = (!inner).Unused1()
-                member h.Unused2() = (!inner).Unused2()
-                member h.Unused3() = (!inner).Unused3()
-                member h.Unused4() = (!inner).Unused4()
+                member h.ParseCanonicalName(pszName, pitemid) = inner.ParseCanonicalName(pszName, ref pitemid)
+                member h.Unused0() = inner.Unused0()
+                member h.AdviseHierarchyEvents(pEventSink, pdwCookie) = inner.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+                member h.UnadviseHierarchyEvents(dwCookie) = inner.UnadviseHierarchyEvents(dwCookie)
+                member h.Unused1() = inner.Unused1()
+                member h.Unused2() = inner.Unused2()
+                member h.Unused3() = inner.Unused3()
+                member h.Unused4() = inner.Unused4()
              interface IDelegable<IVsHierarchy> with
-                member id.GetInner() = !inner
-                member id.SetInner(i) = inner := i
+                member id.GetInner() = inner
+                member id.SetInner(i) = inner <- i
                 
              interface IProvideProjectSite with
-                member x.GetProjectSite() = ((!inner) :?> IProvideProjectSite).GetProjectSite()
+                member x.GetProjectSite() = (inner :?> IProvideProjectSite).GetProjectSite()
 
              }       
              
@@ -1130,7 +1130,7 @@ module internal VsMocks =
 
     // peekhole to IVsTrackProjectDocuments2 - allows to receive notifications about removed files
     type public IVsTrackProjectDocuments2Listener = 
-        abstract member OnAfterRemoveFiles : IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
+        abstract member OnAfterRemoveFiles: IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
 
 
     let vsTrackProjectDocuments2 = 
@@ -1647,12 +1647,12 @@ module internal VsActual =
     let vsInstallDir =
         // use the environment variable to find the VS installdir
         let vsvar =
-            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+            let var = Environment.GetEnvironmentVariable("VS170COMNTOOLS")
             if String.IsNullOrEmpty var then
                 Environment.GetEnvironmentVariable("VSAPPIDDIR")
             else
                 var
-        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
+        if String.IsNullOrEmpty vsvar then failwith "VS170COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =

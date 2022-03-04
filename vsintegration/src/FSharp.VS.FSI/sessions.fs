@@ -6,8 +6,7 @@ open System
 open System.IO
 open System.Text
 open System.Diagnostics
-open System.Runtime.Remoting
-open System.Runtime.Remoting.Lifetime
+open System.Threading
 
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
 
@@ -17,18 +16,18 @@ let mutable timeoutAppShowMessageOnTimeOut = true
 open Microsoft.FSharp.Control
 // Wrapper around ManualResetEvent which will ignore Sets on disposed object
 type internal EventWrapper() =
-    let waitHandle = new System.Threading.ManualResetEvent(false)
+    let waitHandle = new ManualResetEvent(false)
     let guard = new obj()
     
     let mutable disposed = false
     
-    member this.Set() =
+    member _.Set() =
         lock guard (fun () -> if not disposed then waitHandle.Set() |> ignore)
     
-    member this.Dispose() =
+    member _.Dispose() =
         lock guard (fun () -> disposed <- true; (waitHandle :> IDisposable).Dispose())
     
-    member this.WaitOne(timeout : int) =
+    member _.WaitOne(timeout : int) =
         waitHandle.WaitOne(timeout, true)
         
     interface IDisposable with
@@ -40,7 +39,7 @@ type internal EventWrapper() =
 let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     use ev = new EventWrapper()
     let mutable r = None
-    System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
+    ThreadPool.QueueUserWorkItem(fun _ ->
         r <-
             try
                 f arg |> Some
@@ -63,8 +62,8 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     r
 
 module SessionsProperties = 
-    let mutable useAnyCpuVersion = true // 64-bit by default
-    let mutable fsiUseNetCore = false
+    let mutable useAnyCpuVersion = true     // 64-bit by default
+    let mutable fsiUseNetCore = true        // NetCore by default
     let mutable fsiArgs = "--optimize"
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false
@@ -220,6 +219,7 @@ let fsiStartInfo channelName sourceFile =
     let fsiPath, fsiFirstArgs, fsiSupportsServer, fsiSupportsShadowcopy  = determineFsiPath () 
 
     procInfo.FileName  <- fsiPath
+
     // Mismatched encoding on I/O streams between VS addin and it's FSI session.
     // Fix: pin down the input/output encodings precisely (force I/O to use UTF8 regardless).
     // Send codepage preferences to the FSI.
@@ -233,8 +233,7 @@ let fsiStartInfo channelName sourceFile =
         fsiFirstArgs
         |> addStringOption true "fsi-server-output-codepage" outCP
         |> addStringOption true "fsi-server-input-codepage" inCP
-        |> addStringOption true "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
-        //|> addStringOption true "fsi-server-association-file" sourceFile
+        |> addStringOption true "fsi-server-lcid" Thread.CurrentThread.CurrentUICulture.LCID
         |> addStringOption true "fsi-server" channelName
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
@@ -257,8 +256,10 @@ let fsiStartInfo channelName sourceFile =
         match sourceFile with 
         | path when path <> null && Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
         | _ -> Path.GetTempPath()
+
     if Directory.Exists(initialPath) then
         procInfo.WorkingDirectory <- initialPath
+
     procInfo, fsiSupportsServer
 
 
@@ -274,19 +275,46 @@ type FsiSession(sourceFile: string) =
         sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
     let procInfo, fsiSupportsServer = fsiStartInfo channelName sourceFile
+
+    let usingNetCore = SessionsProperties.fsiUseNetCore
+
     let cmdProcess = new Process(StartInfo=procInfo)
     let fsiOutput = Event<_>()
     let fsiError = Event<_>()
 
     do cmdProcess.Start() |> ignore
 
+    let mutable cmdProcessPid = cmdProcess.Id
+    let mutable trueProcessPid = if usingNetCore then None else Some cmdProcessPid
+    let trueProcessIdFile = Path.GetTempFileName() + ".pid"
+
+    let mutable seenPidJunkOutput = false
+    let mutable skipLines = 0
+
     // hook up stdout\stderr data events
-    do readLinesAsync cmdProcess.StandardOutput (catchAll fsiOutput.Trigger)
+    do readLinesAsync cmdProcess.StandardOutput (fun line ->
+           // For .NET Core, the "dotnet fsi ..." starts a second process "dotnet ..../fsi.dll ..."
+           // So the first thing we ask a .NET Core F# Interactive to do is report its true process ID.
+           // 
+           // After it executes the request it will print:
+           //    LINE1 -->  val it: unit = ()
+           //    LINE2 -->  
+           //    LINE3 -->  SERVER-PROMPT>
+           //
+           // We skip these lines.
+           if usingNetCore && not seenPidJunkOutput && line.StartsWith("val ") then
+               skipLines <- 2
+               seenPidJunkOutput <- true
+           elif skipLines > 0 then
+               skipLines <- skipLines - 1
+           else
+               catchAll fsiOutput.Trigger line)
+
     do readLinesAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
 
     let inputQueue = 
         // Write the input asynchronously, freeing up the IDE thread to contrinue doing work
-        // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
+        // Force input to be written in UTF8 regardless of the apparent encoding.
         let inputWriter = new StreamWriter(cmdProcess.StandardInput.BaseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier=false), AutoFlush = false)
         MailboxProcessor<string>.Start(fun inbox -> 
             async { 
@@ -297,6 +325,9 @@ type FsiSession(sourceFile: string) =
                     inputWriter.Flush()
                 with _ -> () // if writing or flushing fails then just give up on this F# Interactive session
             })
+
+    do if usingNetCore then
+        inputQueue.Post($"""System.IO.File.WriteAllText(@"{trueProcessIdFile}", string (System.Diagnostics.Process.GetCurrentProcess().Id));;""")
 
     do cmdProcess.EnableRaisingEvents <- true
 
@@ -310,47 +341,46 @@ type FsiSession(sourceFile: string) =
     /// interrupt timeout in miliseconds 
     let interruptTimeoutMS   = 1000 
 
-    let checkLeaseStatus myService =
-        if false then
-            let myLease = RemotingServices.GetLifetimeService(myService) :?> ILease
-            match myLease with 
-            | null -> printf "Cannot get lease.\n"
-            | _ -> 
-              ignore (System.Windows.Forms.MessageBox.Show
-                        (sprintf "Initial lease time is %s\n"  (myLease.InitialLeaseTime  .ToString()) +
-                         sprintf "Current lease time is %s\n"  (myLease.CurrentLeaseTime  .ToString()) +
-                         sprintf "Renew on call time is %s\n"  (myLease.RenewOnCallTime   .ToString()) +
-                         sprintf "Sponsorship timeout is %s\n" (myLease.SponsorshipTimeout.ToString()) +
-                         sprintf "Current lease state is %s\n" (myLease.CurrentState      .ToString())))
-
-
     // Create session object 
-    member x.Interrupt() = 
+    member _.Interrupt() = 
        match clientConnection with
        | None -> false
        | Some client ->
-           checkLeaseStatus client
            match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
            | Some () -> true
            | None    -> false
 
-    member x.SendInput (str: string) = inputQueue.Post(str)
+    member _.SendInput (str: string) = inputQueue.Post(str)
 
-    member x.Output      = Observable.filter nonNull fsiOutput.Publish
+    member _.Output      = Observable.filter nonNull fsiOutput.Publish
 
-    member x.Error       = Observable.filter nonNull fsiError.Publish
+    member _.Error       = Observable.filter nonNull fsiError.Publish
 
-    member x.Exited      = (cmdProcess.Exited |> Observable.map id)
+    member _.Exited      = (cmdProcess.Exited |> Observable.map id)
 
-    member x.Alive       = not cmdProcess.HasExited
+    member _.Alive       = not cmdProcess.HasExited
 
-    member x.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome // clientConnection not on .NET Core
+    member _.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome // clientConnection not on .NET Core
 
-    member x.ProcessID   = cmdProcess.Id
+    member _.ProcessID   =
+        // When using .NET Core, allow up to 2 seconds to allow detection of process ID
+        // of inner process to complete on startup.  The only scenario where we ask for the process ID immediately after
+        // process startup is when the user clicks "Start Debugging" before the process has started.
+        for i in 0..10 do
+            if SessionsProperties.fsiUseNetCore && trueProcessPid.IsNone then
+                if File.Exists(trueProcessIdFile) then 
+                    trueProcessPid <- Some (File.ReadAllText trueProcessIdFile |> int)
+                    File.Delete(trueProcessIdFile)
+                else
+                    System.Threading.Thread.Sleep(200)
+                
+        match trueProcessPid with 
+        | None -> cmdProcessPid
+        | Some pid -> pid
 
-    member x.ProcessArgs = procInfo.Arguments
+    member _.ProcessArgs = procInfo.Arguments
 
-    member x.Kill()         = 
+    member _.Kill()         = 
         let verboseSession = false
         try 
             if verboseSession then fsiOutput.Trigger ("Kill process " + cmdProcess.Id.ToString())
@@ -397,36 +427,36 @@ type FsiSessions() =
     let ensure(sourceFile) =
         if sessionR.IsNone then restart(sourceFile)
 
-    member x.Interrupt()    = 
+    member _.Interrupt() = 
         sessionR |> Option.forall (fun session -> session.Interrupt())
 
-    member x.SendInput s    = 
+    member _.SendInput s = 
         sessionR |> Option.iter (fun session -> session.SendInput s)
 
-    member x.Output         = fsiOut.Publish
+    member _.Output = fsiOut.Publish
 
-    member x.Error          = fsiError.Publish
+    member _.Error = fsiError.Publish
 
-    member x.Alive          = 
+    member _.Alive = 
         sessionR |> Option.exists (fun session -> session.Alive)
 
-    member x.SupportsInterrupt          = 
+    member _.SupportsInterrupt = 
         sessionR |> Option.exists (fun session -> session.SupportsInterrupt)
 
-    member x.ProcessID      = 
+    member _.ProcessID = 
         match sessionR with
         | None -> -1 (* -1 assumed to never be a valid process ID *)
         | Some session -> session.ProcessID
 
-    member x.ProcessArgs    = 
+    member _.ProcessArgs    = 
         match sessionR with
         | None -> ""
         | Some session -> session.ProcessArgs
 
-    member x.Kill()         = kill()
+    member _.Kill()         = kill()
     
-    member x.Ensure(sourceFile) = ensure(sourceFile)
+    member _.Ensure(sourceFile) = ensure(sourceFile)
 
-    member x.Restart(sourceFile) = restart(sourceFile)
+    member _.Restart(sourceFile) = restart(sourceFile)
     
-    member x.Exited         = fsiExited.Publish
+    member _.Exited         = fsiExited.Publish

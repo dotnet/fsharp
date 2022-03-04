@@ -10,23 +10,42 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
 
 type OptimizationSettings = 
-    { abstractBigTargets: bool
-      jitOptUser: bool option
-      localOptUser: bool option
-      crossModuleOptUser: bool option
-      bigTargetSize: int
-      veryBigExprSize: int 
-      lambdaInlineThreshold: int
-      reportingPhase: bool
+    { 
+      abstractBigTargets : bool
+      
+      jitOptUser : bool option
+      
+      localOptUser : bool option
+      
+      debugPointsForPipeRight: bool option
+      
+      crossAssemblyOptimizationUser : bool option 
+      
+      /// size after which we start chopping methods in two, though only at match targets 
+      bigTargetSize : int   
+      
+      /// size after which we start enforcing splitting sub-expressions to new methods, to avoid hitting .NET IL limitations 
+      veryBigExprSize : int 
+      
+      /// The size after which we don't inline
+      lambdaInlineThreshold : int  
+      
+      /// For unit testing
+      reportingPhase : bool
+      
       reportNoNeedToTailcall: bool
-      reportFunctionSizes: bool
-      reportHasEffect: bool
-      reportTotalSizes: bool
+      
+      reportFunctionSizes : bool 
+      
+      reportHasEffect : bool 
+      
+      reportTotalSizes : bool
     }
 
-    member jitOpt: unit -> bool 
 
-    member localOpt: unit -> bool 
+    member JitOptimizationsEnabled: bool 
+
+    member LocalOptimizationsEnabled: bool 
 
     static member Defaults: OptimizationSettings
 
@@ -55,6 +74,7 @@ val internal OptimizeImplFile:
     Import.ImportMap *
     IncrementalOptimizationEnv *
     isIncrementalFragment: bool *
+    fsiMultiAssemblyEmit: bool *
     emitTailcalls: bool *
     SignatureHidingInfo * 
     TypedImplFile 

@@ -2,6 +2,7 @@ use vs
 
 package name=Microsoft.FSharp.SDK
         version=$(VsixVersion)
+        vs.package.productArch=neutral
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpSdk"
 

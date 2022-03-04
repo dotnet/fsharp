@@ -259,7 +259,7 @@ type internal FSharpSignatureHelpProvider
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLineText, lexerSymbol.FullIsland)
 
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
-                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                not (PrettyNaming.IsOperatorDisplayName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
 
@@ -271,7 +271,7 @@ type internal FSharpSignatureHelpProvider
                 | ToolTipText [ToolTipElement.None] -> return! None
                 | _ ->                    
                     let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.Range.Start
-                    let numArgsAlreadyApplied =
+                    let numArgsAlreadyAppliedViaPipeline =
                         match possiblePipelineIdent with
                         | None -> 0
                         | Some (_, numArgsApplied) -> numArgsApplied
@@ -326,7 +326,7 @@ type internal FSharpSignatureHelpProvider
                             match possibleNextIndex with
                             | Some index -> Some index
                             | None ->
-                                if numDefinedArgs - numArgsAlreadyApplied > curriedArgsInSource.Length then
+                                if numDefinedArgs - numArgsAlreadyAppliedViaPipeline > curriedArgsInSource.Length then
                                     Some (numDefinedArgs - (numDefinedArgs - curriedArgsInSource.Length))
                                 else
                                     None
@@ -354,7 +354,7 @@ type internal FSharpSignatureHelpProvider
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
-                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
+                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyAppliedViaPipeline] |> Array.iteri (fun index argument ->
                         let tt = ResizeArray()
 
                         if argument.Count = 1 then
@@ -512,6 +512,7 @@ type internal FSharpSignatureHelpProvider
             let caretLineColumn = caretLinePos.Character
 
             let adjustedColumnInSource =
+
                 let rec loop ch pos =
                     if Char.IsWhiteSpace(ch) then
                         loop sourceText.[pos - 1] (pos - 1)

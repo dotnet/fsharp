@@ -50,10 +50,10 @@ type internal TypeProviderError
 
     member _.MapText(f, tpDesignation, m) = 
         let (errNum: int), _ = f ""
-        new TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
+        TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
     member _.WithContext(typeNameContext:string, methodNameContext:string) = 
-        new TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
+        TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
 
     // .Message is just the error, whereas .ContextualErrorMessage has contextual prefix information
     // for example if InvokeCode in provided method is not set or has value that cannot be translated -then initial TPE will be wrapped in
@@ -75,7 +75,7 @@ type internal TypeProviderError
         | [_] -> f this
         | errors ->
             for msg in errors do
-                f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
+                f (TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
 type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
 
@@ -144,12 +144,14 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
         | Some x -> Some (Tainted(context,x))
 
     member this.PUntaint(f,range:range) = this.Protect f range
+
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
+
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
     static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
-        [for (tp,nm) in providerSpecs do
+        [for tp,nm in providerSpecs do
              yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
 
     member this.OfType<'U> () =
@@ -164,7 +166,7 @@ module internal Tainted =
     let (|Null|_|) (p:Tainted<'T>) =
         if p.PUntaintNoFailure(fun p -> match p with null -> true | _ -> false) then Some() else None
 
-    let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure((fun pv -> pv = v))
+    let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 
     let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
         t1.PUntaintNoFailure(fun t1 -> t1 === t2.AccessObjectDirectly)

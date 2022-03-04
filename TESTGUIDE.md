@@ -12,7 +12,6 @@ Where this guide mentions the command `build` it means either `build.cmd` in the
 * [Solving common errors](#solving-common-errors)
 * [Approximate running times](#approximate-running-times)
 
-
 ## Quick start: Running Tests
 
 Tests are grouped as noted below. Some test groups can only be run in `CI` configuration, for that, you need to pass the `-ci -bl` or `-ci -nobl` arguments. Some test groups can only be run in Release mode, this is indicated below. Some tests can only be run on Windows.
@@ -25,17 +24,21 @@ The following testsets can be run in Release or Debug mode, with or without the 
 
 Run the tests in Release mode:
 
-    build -testCompiler -c Release
-    build -testFSharpCore -c Release    
-    build -testScripting -c Release
-    build -testVS -c Release
-    
+```shell
+build -testCompiler -c Release
+build -testFSharpCore -c Release
+build -testScripting -c Release
+build -testVS -c Release
+```
+
 Run the tests in Debug mode, add `-c Debug` or leave it out:
 
-    build -testCompiler -c Debug
-    build -testFSharpCore -c Debug
-    build -testScripting -c Debug
-    build -testVS -c Debug
+```shell
+build -testCompiler -c Debug
+build -testFSharpCore -c Debug
+build -testScripting -c Debug
+build -testVS -c Debug
+```
 
 ### Tests that can be run on Linux and MacOS
 
@@ -45,19 +48,22 @@ If you're using Linux or MacOS to develop, the group of tests that are known to 
 
 The following tests **must** be run in Release mode with `-c Release`:
 
-    build -testAll -c Release
-    build -test -c Release
-    build -testDesktop -c Release
-    build -testCoreClr -c Release
-    
+```shell
+build -testAll -c Release
+build -test -c Release
+build -testDesktop -c Release
+build -testCoreClr -c Release
+```
+
 ### Tests that can only run with `-ci`
 
 The following tests **must** be run in Release mode and **must** have  the CI argument like `-ci -bl` or `-ci -nobl`:
 
-    build -testCambridge -c Release -ci -nobl
-    build -testFSharpQA -c Release -ci -nobl
+```shell
+build -testCambridge -c Release -ci -nobl
+build -testFSharpQA -c Release -ci -nobl
+```
 
-    
 ### Tests that open other windows
 
 The following testsets open other windows and may interfere with you using your workstation, or change focus while you're doing something else:
@@ -115,6 +121,8 @@ The F# tests are split as follows:
 
 * [FSharp.Compiler.UnitTests](tests/FSharp.Compiler.UnitTests) - Validation of compiler internals.
 
+* [FSharp.Compiler.ComponentTests](tests/FSharp.Compiler.ComponentTests) - Validation of compiler APIs.
+
 * [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
   This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
 
@@ -124,7 +132,9 @@ The F# tests are split as follows:
 
 This is compiled using [tests\fsharp\FSharp.Tests.FSharpSuite.fsproj](tests/fsharp/FSharp.Tests.FSharpSuite.fsproj) to a unit test DLL which acts as a driver script. Each individual test is an NUnit test case, and so you can run it like any other NUnit test.
 
-    .\build.cmd net40 test-net40-fsharp
+```shell
+.\build.cmd net40 test-net40-fsharp
+```
 
 Tests are grouped in folders per area. Each test compiles and executes a `test.fsx|fs` file in its folder using some combination of compiler or FSI flags specified in the FSharpSuite test project.  
 If the compilation and execution encounter no errors, the test is considered to have passed. 
@@ -133,7 +143,7 @@ There are also negative tests checking code expected to fail compilation. See no
 
 ### FSharpQA Suite
 
-The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl package from nuget is used automatically by the test suite.
+The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl package from https://strawberryperl.com.
 
 These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `.\build` script, see [usage examples](#quick-start-running-tests).
 
@@ -149,7 +159,9 @@ Read more at [tests/fsharpqa/readme.md](tests/fsharpqa/readme.md).
 
 For the FSharpQA suite, the list of test areas and their associated "tags" is stored at
 
-    tests\fsharpqa\source\test.lst   // FSharpQA suite
+```shell
+tests\fsharpqa\source\test.lst   // FSharpQA suite
+```
 
 Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
 
@@ -157,22 +169,23 @@ If you want to re-run a particular test area, the easiest way to do so is to set
 
 ### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests
 
-These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner 
+These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner
 extension or the command line via `nunit3-console.exe`.
 
-Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
+Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process,
 using the `--x86` flag to `nunit3-console.exe`
-
 
 ### Logs and output
 
 All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching
 
+```shell
     net40-fsharp-suite-*.*
     net40-fsharpqa-suite-*.*
     net40-compilerunit-suite-*.*
     net40-coreunit-suite-*.*
     vs-ideunit-suite-*.*
+```
 
 ### Working with baseline tests
 
@@ -183,11 +196,15 @@ The `.bslpp` (for: baseline pre-process) files are specially designed to enable 
 
 To update baselines use this:
 
-    fsi tests\scripts\update-baselines.fsx
+```shell
+fsi tests\scripts\update-baselines.fsx
+```
 
 Use `-n` to dry-run:
 
-    fsi tests\scripts\update-baselines.fsx -n
+```shell
+fsi tests\scripts\update-baselines.fsx -n
+```
 
 ## Other Tips and gotchas
 
@@ -225,8 +242,10 @@ Running tests should now be possible without admin privileges. If you find tests
 
 When you switch branches, certain temporary files, as well as the .NET version (downloaded to `.dotnet` folder) are likely to not be in sync anymore and can lead to curious build errors. Fix this by running `git clean` like this (this will leave your VS settings intact):
 
-    git clean -xdf -e .vs
-    
+```shell
+git clean -xdf -e .vs
+```
+
 If you get "file in use" errors during cleaning, make sure to close Visual Studio and any running `dotnet.exe` and `VBCSCompiler.exe`, esp those that show up at the bottom of [Process Explorer](https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer) without parent process.
 
 #### Running tests on release/dev16.6 etc branches

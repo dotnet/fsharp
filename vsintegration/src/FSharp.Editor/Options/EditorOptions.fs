@@ -94,7 +94,7 @@ type AdvancedOptions =
 type FormattingOptions =
     { FormatOnPaste: bool }
     static member Default =
-        { FormatOnPaste = true }
+        { FormatOnPaste = false }
 
 [<Export>]
 [<Export(typeof<IPersistSettings>)>]

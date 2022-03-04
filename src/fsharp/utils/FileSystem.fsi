@@ -6,26 +6,25 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection
-open System.Runtime.InteropServices
 open System.Text
 open System.Runtime.CompilerServices
 
-open FSharp.NativeInterop
-
-open Internal.Utilities.Library
-
-exception IllegalFileNameChar of string * char
+exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255
     val get: byte[] -> int -> int
+
     val zeroCreate: int -> byte[]
+
     /// each int must be 0 <= x <= 255
     val ofInt32Array: int[] ->  byte[]
+
     /// each int will be 0 <= x <= 255
     val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
     val stringAsUnicodeNullTerminated: string -> byte[]
+
     val stringAsUtf8NullTerminated: string -> byte[]
 
 /// A view over bytes.
@@ -96,7 +95,9 @@ type internal ReadOnlyByteMemory =
 /// MemoryMapped extensions
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
+
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+
         static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
     
 /// Filesystem helpers
@@ -133,10 +134,10 @@ module internal FileSystemUtils =
 /// Type which we use to load assemblies.
 type public IAssemblyLoader =
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
-    abstract member AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly
+    abstract AssemblyLoad: assemblyName:AssemblyName -> Assembly
 
     /// Used to load type providers and located assemblies in F# Interactive
-    abstract member AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly
+    abstract AssemblyLoadFrom: fileName:string -> Assembly
 
 /// Default implementation for IAssemblyLoader
 type DefaultAssemblyLoader =
@@ -147,138 +148,139 @@ type DefaultAssemblyLoader =
 type public IFileSystem =
 
     // Assembly loader.
-    abstract member AssemblyLoader : IAssemblyLoader
+    abstract AssemblyLoader : IAssemblyLoader
     
     /// Open the file for read, returns ByteMemory, uses either FileStream (for smaller files) or MemoryMappedFile (for potentially big files, such as dlls).
-    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
 
     /// Open the file for writing. Returns a Stream.
-    abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
 
     /// Take in a filename with an absolute path, and return the same filename
     /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt)
     /// and '..' portions
-    abstract member GetFullPathShim: fileName:string -> string
+    abstract GetFullPathShim: fileName:string -> string
 
     /// Take in a directory, filename, and return canonicalized path to the filename in directory.
     /// If filename path is rooted, ignores directory and returns filename path.
     /// Otherwise, combines directory with filename and gets full path via GetFullPathShim(string).
-    abstract member GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
 
     /// A shim over Path.IsPathRooted
-    abstract member IsPathRootedShim: path:string -> bool
+    abstract IsPathRootedShim: path:string -> bool
 
     /// Removes relative parts from any full paths
-    abstract member NormalizePathShim: path: string -> string
+    abstract NormalizePathShim: path: string -> string
 
     /// A shim over Path.IsInvalidPath
-    abstract member IsInvalidPathShim: path:string -> bool
+    abstract IsInvalidPathShim: path:string -> bool
 
     /// A shim over Path.GetTempPath
-    abstract member GetTempPathShim: unit -> string
+    abstract GetTempPathShim: unit -> string
 
     /// A shim for getting directory name from path
-    abstract member GetDirectoryNameShim: path: string -> string
+    abstract GetDirectoryNameShim: path: string -> string
 
     /// Utc time of the last modification
-    abstract member GetLastWriteTimeShim: fileName:string -> DateTime
+    abstract GetLastWriteTimeShim: fileName:string -> DateTime
 
     // Utc time of creation
-    abstract member GetCreationTimeShim: path: string -> DateTime
+    abstract GetCreationTimeShim: path: string -> DateTime
 
     // A shim over file copying.
-    abstract member CopyShim: src: string * dest: string * overwrite: bool -> unit
+    abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
 
     /// A shim over File.Exists
-    abstract member FileExistsShim: fileName: string -> bool
+    abstract FileExistsShim: fileName: string -> bool
 
     /// A shim over File.Delete
-    abstract member FileDeleteShim: fileName: string -> unit
+    abstract FileDeleteShim: fileName: string -> unit
+
+    /// A shim over Directory.Exists, but returns a string, the FullName of the resulting
+    /// DirectoryInfo.
+    abstract DirectoryCreateShim: path: string -> string
 
     /// A shim over Directory.Exists
-    abstract member DirectoryCreateShim: path: string -> DirectoryInfo
-
-    /// A shim over Directory.Exists
-    abstract member DirectoryExistsShim: path: string -> bool
+    abstract DirectoryExistsShim: path: string -> bool
 
     /// A shim over Directory.Delete
-    abstract member DirectoryDeleteShim: path: string -> unit
+    abstract DirectoryDeleteShim: path: string -> unit
 
     /// A shim over Directory.EnumerateFiles
-    abstract member EnumerateFilesShim: path: string * pattern: string -> string seq
+    abstract EnumerateFilesShim: path: string * pattern: string -> string seq
 
     /// A shim over Directory.EnumerateDirectories
-    abstract member EnumerateDirectoriesShim: path: string -> string seq
+    abstract EnumerateDirectoriesShim: path: string -> string seq
 
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
-    abstract member IsStableFileHeuristic: fileName:string -> bool
+    abstract IsStableFileHeuristic: fileName:string -> bool
 
 
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
     /// Create a default implementation of the file system
     new: unit -> DefaultFileSystem
-    abstract member AssemblyLoader: IAssemblyLoader
+    abstract AssemblyLoader: IAssemblyLoader
     override AssemblyLoader: IAssemblyLoader
     
-    abstract member OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
+    abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     override OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     
-    abstract member OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
+    abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     override OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
     
-    abstract member GetFullPathShim: fileName: string -> string
+    abstract GetFullPathShim: fileName: string -> string
     override GetFullPathShim: fileName: string -> string
     
-    abstract member GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
+    abstract GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     override GetFullFilePathInDirectoryShim: dir: string -> fileName: string -> string
     
-    abstract member IsPathRootedShim: path: string -> bool
+    abstract IsPathRootedShim: path: string -> bool
     override IsPathRootedShim: path: string -> bool
     
-    abstract member NormalizePathShim: path: string -> string
+    abstract NormalizePathShim: path: string -> string
     override NormalizePathShim: path: string -> string
     
-    abstract member IsInvalidPathShim: path: string -> bool
+    abstract IsInvalidPathShim: path: string -> bool
     override IsInvalidPathShim: path: string -> bool
     
-    abstract member GetTempPathShim: unit -> string
+    abstract GetTempPathShim: unit -> string
     override GetTempPathShim: unit -> string
     
-    abstract member GetDirectoryNameShim: path: string -> string
+    abstract GetDirectoryNameShim: path: string -> string
     override GetDirectoryNameShim: path: string -> string
     
-    abstract member GetLastWriteTimeShim: fileName: string -> DateTime
+    abstract GetLastWriteTimeShim: fileName: string -> DateTime
     override GetLastWriteTimeShim: fileName: string -> DateTime
     
-    abstract member GetCreationTimeShim: path: string -> DateTime
+    abstract GetCreationTimeShim: path: string -> DateTime
     override GetCreationTimeShim: path: string -> DateTime
     
-    abstract member CopyShim: src: string * dest: string * overwrite: bool -> unit
+    abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
     override CopyShim: src: string * dest: string * overwrite: bool -> unit
     
-    abstract member FileExistsShim: fileName: string -> bool
+    abstract FileExistsShim: fileName: string -> bool
     override FileExistsShim: fileName: string -> bool
     
-    abstract member FileDeleteShim: fileName: string -> unit
+    abstract FileDeleteShim: fileName: string -> unit
     override FileDeleteShim: fileName: string -> unit
     
-    abstract member DirectoryCreateShim: path: string -> DirectoryInfo
-    override DirectoryCreateShim: path: string -> DirectoryInfo
+    abstract DirectoryCreateShim: path: string -> string
+    override DirectoryCreateShim: path: string -> string
     
-    abstract member DirectoryExistsShim: path: string -> bool
+    abstract DirectoryExistsShim: path: string -> bool
     override DirectoryExistsShim: path: string -> bool
     
-    abstract member DirectoryDeleteShim: path: string -> unit
+    abstract DirectoryDeleteShim: path: string -> unit
     override DirectoryDeleteShim: path: string -> unit
     
-    abstract member EnumerateFilesShim: path: string * pattern: string -> string seq
+    abstract EnumerateFilesShim: path: string * pattern: string -> string seq
     override EnumerateFilesShim: path: string * pattern: string -> string seq
     
-    abstract member EnumerateDirectoriesShim: path: string -> string seq
+    abstract EnumerateDirectoriesShim: path: string -> string seq
     override EnumerateDirectoriesShim: path: string -> string seq
     
-    abstract member IsStableFileHeuristic: fileName: string -> bool
+    abstract IsStableFileHeuristic: fileName: string -> bool
     override IsStableFileHeuristic: fileName: string -> bool
     
     interface IFileSystem

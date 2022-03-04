@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction24
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000748 Length: 0x00000228
 }
 .module TestFunction24.exe
-// MVID: {60B68B97-A643-4587-A745-0383978BB660}
+// MVID: {61EFEE1F-A643-4587-A745-03831FEEEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06EA0000
+// Image base: 0x07110000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -172,6 +172,7 @@
       IL_0019:  ldarg.1
       IL_001a:  ldfld      int32 TestFunction24/Point::x@
       IL_001f:  stloc.3
+      .line 16707566,16707566 : 0,0 ''
       IL_0020:  ldloc.2
       IL_0021:  ldloc.3
       IL_0022:  bge.s      IL_0028
@@ -190,6 +191,7 @@
       IL_002c:  nop
       .line 16707566,16707566 : 0,0 ''
       IL_002d:  stloc.0
+      .line 16707566,16707566 : 0,0 ''
       IL_002e:  ldloc.0
       IL_002f:  ldc.i4.0
       IL_0030:  bge.s      IL_0034
@@ -216,6 +218,7 @@
       IL_0049:  ldarg.1
       IL_004a:  ldfld      int32 TestFunction24/Point::y@
       IL_004f:  stloc.s    V_6
+      .line 16707566,16707566 : 0,0 ''
       IL_0051:  ldloc.s    V_5
       IL_0053:  ldloc.s    V_6
       IL_0055:  bge.s      IL_0059
@@ -255,7 +258,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  TestFunction24/Point
@@ -279,12 +281,13 @@
                [6] class [mscorlib]System.Collections.IComparer V_6,
                [7] int32 V_7,
                [8] int32 V_8)
-      .line 4,4 : 6,11 ''
+      .line 16707566,16707566 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  TestFunction24/Point
       IL_0006:  stloc.0
       IL_0007:  ldloc.0
       IL_0008:  stloc.1
+      .line 16707566,16707566 : 0,0 ''
       IL_0009:  ldarg.0
       IL_000a:  ldnull
       IL_000b:  cgt.un
@@ -306,6 +309,7 @@
       IL_0024:  ldloc.1
       IL_0025:  ldfld      int32 TestFunction24/Point::x@
       IL_002a:  stloc.s    V_5
+      .line 16707566,16707566 : 0,0 ''
       IL_002c:  ldloc.s    V_4
       IL_002e:  ldloc.s    V_5
       IL_0030:  bge.s      IL_0036
@@ -324,6 +328,7 @@
       IL_003c:  nop
       .line 16707566,16707566 : 0,0 ''
       IL_003d:  stloc.2
+      .line 16707566,16707566 : 0,0 ''
       IL_003e:  ldloc.2
       IL_003f:  ldc.i4.0
       IL_0040:  bge.s      IL_0044
@@ -350,6 +355,7 @@
       IL_0055:  ldloc.1
       IL_0056:  ldfld      int32 TestFunction24/Point::y@
       IL_005b:  stloc.s    V_8
+      .line 16707566,16707566 : 0,0 ''
       IL_005d:  ldloc.s    V_7
       IL_005f:  ldloc.s    V_8
       IL_0061:  bge.s      IL_0065
@@ -446,7 +452,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 4,4 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  callvirt   instance int32 TestFunction24/Point::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -474,12 +479,14 @@
       IL_0006:  ldarg.1
       IL_0007:  isinst     TestFunction24/Point
       IL_000c:  stloc.0
+      .line 16707566,16707566 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  brfalse.s  IL_0037
 
       .line 16707566,16707566 : 0,0 ''
       IL_0010:  ldloc.0
       IL_0011:  stloc.1
+      .line 16707566,16707566 : 0,0 ''
       IL_0012:  ldarg.2
       IL_0013:  stloc.2
       IL_0014:  ldarg.0
@@ -573,10 +580,11 @@
       // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class TestFunction24/Point V_0)
-      .line 4,4 : 6,11 ''
+      .line 16707566,16707566 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     TestFunction24/Point
       IL_0006:  stloc.0
+      .line 16707566,16707566 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 
@@ -728,6 +736,7 @@
     .line 18,18 : 5,23 ''
     IL_0067:  ldloc.0
     IL_0068:  stloc.2
+    .line 16707566,16707566 : 0,0 ''
     IL_0069:  ldloc.2
     IL_006a:  brfalse.s  IL_0086
 
@@ -880,6 +889,7 @@
     .line 30,30 : 5,26 ''
     IL_0006:  ldloc.0
     IL_0007:  stloc.2
+    .line 16707566,16707566 : 0,0 ''
     IL_0008:  ldloc.2
     IL_0009:  brfalse.s  IL_0016
 

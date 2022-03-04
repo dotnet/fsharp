@@ -1866,7 +1866,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 Array contextParamsAsArray = contextParams;
 
-                int result = ivsExtensibility.RunWizardFile(wizardToRun, (int)dlgOwner, ref contextParamsAsArray, out wizResultAsInt);
+                int result = ivsExtensibility.RunWizardFile(wizardToRun, dlgOwner, ref contextParamsAsArray, out wizResultAsInt);
 
                 if (!ErrorHandler.Succeeded(result) && result != VSConstants.OLE_E_PROMPTSAVECANCELLED)
                 {
@@ -6467,7 +6467,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     Guid outputPaneGuid = VSConstants.GUID_BuildOutputWindowPane;
                     if (outputWindow.GetPane(ref outputPaneGuid, out outputPane) >= 0 && outputPane != null)
                     {
-                        Marshal.ThrowExceptionForHR(outputPane.OutputString(message));
+                        Marshal.ThrowExceptionForHR(outputPane.OutputStringThreadSafe(message));
                     }
                 }
  

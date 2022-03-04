@@ -44,7 +44,7 @@ type internal QueueList<'T>(firstElementsIn:'T list, lastElementsRevIn: 'T list,
         let lastElementsRevIn = List.rev newElements @ lastElementsRev
         QueueList(firstElements, lastElementsRevIn, numLastElementsIn + newLength)
     
-    /// This operation is O(n) anyway, so executing ToList() here is OK
+    // This operation is O(n) anyway, so executing ToList() here is OK
     interface IEnumerable<'T> with 
         member x.GetEnumerator() : IEnumerator<'T> = (x.ToList() :> IEnumerable<_>).GetEnumerator()
 
@@ -74,7 +74,7 @@ module internal QueueList =
 
     let tryFind f (x:QueueList<_>) = Seq.tryFind f x
 
-    let one(x) = QueueList [x]
+    let one x = QueueList [x]
 
     let appendOne (x:QueueList<_>) y = x.AppendOne(y)
 

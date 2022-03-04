@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly EqualsOnUnions01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000640 Length: 0x000001C7
 }
 .module EqualsOnUnions01.exe
-// MVID: {60B68B7F-BBFB-14A0-A745-03837F8BB660}
+// MVID: {61EFEE1F-BBFB-14A0-A745-03831FEEEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07200000
+// Image base: 0x06940000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -386,6 +386,7 @@
 
       IL_002b:  ldc.i4.0
       IL_002c:  stloc.2
+      .line 100001,100001 : 0,0 ''
       IL_002d:  ldloc.0
       IL_002e:  ldloc.2
       IL_002f:  bne.un.s   IL_0073
@@ -410,6 +411,7 @@
       IL_0059:  ldloc.s    V_5
       IL_005b:  ldfld      int32 EqualsOnUnions01/U/B::item
       IL_0060:  stloc.s    V_8
+      .line 100001,100001 : 0,0 ''
       IL_0062:  ldloc.s    V_7
       IL_0064:  ldloc.s    V_8
       IL_0066:  bge.s      IL_006a
@@ -459,7 +461,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 6,6 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  EqualsOnUnions01/U
@@ -484,10 +485,11 @@
                [7] class [mscorlib]System.Collections.IComparer V_7,
                [8] int32 V_8,
                [9] int32 V_9)
-      .line 6,6 : 6,7 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  EqualsOnUnions01/U
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
@@ -523,6 +525,7 @@
 
       IL_0039:  ldc.i4.0
       IL_003a:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_003b:  ldloc.1
       IL_003c:  ldloc.3
       IL_003d:  bne.un.s   IL_007d
@@ -547,6 +550,7 @@
       IL_0063:  ldloc.s    V_6
       IL_0065:  ldfld      int32 EqualsOnUnions01/U/B::item
       IL_006a:  stloc.s    V_9
+      .line 100001,100001 : 0,0 ''
       IL_006c:  ldloc.s    V_8
       IL_006e:  ldloc.s    V_9
       IL_0070:  bge.s      IL_0074
@@ -610,6 +614,7 @@
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldc.i4.0
       IL_0007:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0008:  ldarg.0
       IL_0009:  isinst     EqualsOnUnions01/U/B
       IL_000e:  brfalse.s  IL_0032
@@ -662,7 +667,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 6,6 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  callvirt   instance int32 EqualsOnUnions01/U::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -695,6 +699,7 @@
       IL_0006:  ldarg.1
       IL_0007:  isinst     EqualsOnUnions01/U
       IL_000c:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  brfalse.s  IL_0068
 
@@ -723,6 +728,7 @@
 
       IL_0030:  ldc.i4.0
       IL_0031:  stloc.s    V_4
+      .line 100001,100001 : 0,0 ''
       IL_0033:  ldloc.2
       IL_0034:  ldloc.s    V_4
       IL_0036:  bne.un.s   IL_0066
@@ -816,6 +822,7 @@
 
       IL_0028:  ldc.i4.0
       IL_0029:  stloc.2
+      .line 100001,100001 : 0,0 ''
       IL_002a:  ldloc.0
       IL_002b:  ldloc.2
       IL_002c:  bne.un.s   IL_0059
@@ -867,10 +874,11 @@
       // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class EqualsOnUnions01/U V_0)
-      .line 6,6 : 6,7 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     EqualsOnUnions01/U
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 

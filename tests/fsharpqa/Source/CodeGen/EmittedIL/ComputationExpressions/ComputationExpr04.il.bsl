@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 6:0:0:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.ComputationExpr04
 {
-  // Offset: 0x00000000 Length: 0x000001F8
+  // Offset: 0x00000000 Length: 0x0000020E
 }
 .mresource public FSharpOptimizationData.ComputationExpr04
 {
-  // Offset: 0x00000200 Length: 0x0000007D
+  // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr04.exe
-// MVID: {5A1F62A7-366A-E566-A745-0383A7621F5A}
+// MVID: {61F2D6A5-366A-E566-A745-0383A5D6F261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04DD0000
+// Image base: 0x06E30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,42 +80,46 @@
     .method public strict virtual instance class [ComputationExprLibrary]Library.Eventually`1<int32> 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       67 (0x43)
+      // Code size       69 (0x45)
       .maxstack  6
       .locals init ([0] int32 x,
                [1] string V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 7,7 : 22,37 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr04.fs'
-      IL_0000:  ldstr      "hello"
-      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_000f:  pop
+      .line 6,6 : 9,12 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr04.fs'
+      IL_0000:  nop
+      .line 7,7 : 13,54 ''
+      IL_0001:  nop
+      .line 7,7 : 22,37 ''
+      IL_0002:  ldstr      "hello"
+      IL_0007:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_000c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0011:  pop
       .line 7,7 : 39,53 ''
-      IL_0010:  ldstr      "hello"
-      IL_0015:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_001a:  stloc.0
+      IL_0012:  ldstr      "hello"
+      IL_0017:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_001c:  stloc.0
       .line 8,8 : 13,28 ''
-      IL_001b:  ldstr      "fail"
-      IL_0020:  stloc.1
-      IL_0021:  ldc.i4.0
-      IL_0022:  brfalse.s  IL_002c
+      IL_001d:  ldstr      "fail"
+      IL_0022:  stloc.1
+      IL_0023:  ldc.i4.0
+      IL_0024:  brfalse.s  IL_002e
 
-      IL_0024:  ldnull
-      IL_0025:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_002a:  br.s       IL_0033
+      IL_0026:  ldnull
+      IL_0027:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_002c:  br.s       IL_0035
 
-      IL_002c:  ldloc.1
-      IL_002d:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
-      IL_0032:  throw
+      IL_002e:  ldloc.1
+      IL_002f:  call       class [mscorlib]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+      IL_0034:  throw
 
-      IL_0033:  pop
+      IL_0035:  pop
       .line 9,9 : 13,21 ''
-      IL_0034:  ldarg.0
-      IL_0035:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr04/'res4@7-1'::builder@
-      IL_003a:  ldloc.0
-      IL_003b:  tail.
-      IL_003d:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
-      IL_0042:  ret
+      IL_0036:  ldarg.0
+      IL_0037:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr04/'res4@7-1'::builder@
+      IL_003c:  ldloc.0
+      IL_003d:  tail.
+      IL_003f:  callvirt   instance class [ComputationExprLibrary]Library.Eventually`1<!!0> [ComputationExprLibrary]Library.EventuallyBuilder::Return<int32>(!!0)
+      IL_0044:  ret
     } // end of method 'res4@7-1'::Invoke
 
   } // end of class 'res4@7-1'
@@ -149,7 +153,7 @@
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] int32 x)
-      .line 6,12 : 9,21 ''
+      .line 10,10 : 9,13 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 11,11 : 13,54 ''
@@ -201,7 +205,6 @@
     {
       // Code size       47 (0x2f)
       .maxstack  8
-      .line 6,6 : 9,12 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class [ComputationExprLibrary]Library.EventuallyBuilder ComputationExpr04/res4@6::builder@
       IL_0006:  ldarg.0
@@ -250,11 +253,12 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       37 (0x25)
+    // Code size       39 (0x27)
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res4,
-             [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1)
-    .line 100001,100001 : 0,0 ''
+             [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1,
+             [2] class [ComputationExprLibrary]Library.Eventually`1<int32> 'Pipe #1 input at line 14')
+    .line 5,5 : 5,15 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
     IL_0006:  ldloc.1
@@ -264,11 +268,14 @@
     IL_0012:  dup
     IL_0013:  stsfld     class [ComputationExprLibrary]Library.Eventually`1<int32> '<StartupCode$ComputationExpr04>'.$ComputationExpr04::res4@4
     IL_0018:  stloc.0
-    .line 14,14 : 1,25 ''
+    .line 14,14 : 1,5 ''
     IL_0019:  call       class [ComputationExprLibrary]Library.Eventually`1<int32> ComputationExpr04::get_res4()
-    IL_001e:  call       !!0 [ComputationExprLibrary]Library.EventuallyModule::force<int32>(class [ComputationExprLibrary]Library.Eventually`1<!!0>)
-    IL_0023:  pop
-    IL_0024:  ret
+    IL_001e:  stloc.2
+    .line 14,14 : 9,25 ''
+    IL_001f:  ldloc.2
+    IL_0020:  call       !!0 [ComputationExprLibrary]Library.EventuallyModule::force<int32>(class [ComputationExprLibrary]Library.Eventually`1<!!0>)
+    IL_0025:  pop
+    IL_0026:  ret
   } // end of method $ComputationExpr04::main@
 
 } // end of class '<StartupCode$ComputationExpr04>'.$ComputationExpr04

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly AnonRecd
 {
@@ -36,13 +36,13 @@
   // Offset: 0x000001C8 Length: 0x0000006B
 }
 .module AnonRecd.exe
-// MVID: {60B68B7F-C42F-5208-A745-03837F8BB660}
+// MVID: {61E07031-C42F-5208-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05160000
+// Image base: 0x07100000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -186,6 +186,7 @@
                                                                                                                                    !!0,
                                                                                                                                    !!0)
     IL_0022:  stloc.0
+    .line 100001,100001 : 0,0 ''
     IL_0023:  ldloc.0
     IL_0024:  ldc.i4.0
     IL_0025:  bge.s      IL_0029
@@ -240,7 +241,6 @@
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       15 (0xf)
     .maxstack  8
-    .line 1,1 : 1,1 ''
     IL_0000:  ldarg.0
     IL_0001:  ldarg.1
     IL_0002:  unbox.any  class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
@@ -259,12 +259,13 @@
     .locals init ([0] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0,
              [1] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_1,
              [2] int32 V_2)
-    .line 1,1 : 1,1 ''
+    .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.1
     IL_0001:  unbox.any  class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
+    .line 100001,100001 : 0,0 ''
     IL_0009:  ldarg.0
     IL_000a:  ldnull
     IL_000b:  cgt.un
@@ -287,6 +288,7 @@
                                                                                                                                    !!0,
                                                                                                                                    !!0)
     IL_002c:  stloc.2
+    .line 100001,100001 : 0,0 ''
     IL_002d:  ldloc.2
     IL_002e:  ldc.i4.0
     IL_002f:  bge.s      IL_0033
@@ -398,7 +400,6 @@
     .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       14 (0xe)
     .maxstack  8
-    .line 1,1 : 1,1 ''
     IL_0000:  ldarg.0
     IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
     IL_0006:  tail.
@@ -425,12 +426,14 @@
     IL_0006:  ldarg.1
     IL_0007:  isinst     class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
     IL_000c:  stloc.0
+    .line 100001,100001 : 0,0 ''
     IL_000d:  ldloc.0
     IL_000e:  brfalse.s  IL_003d
 
     .line 100001,100001 : 0,0 ''
     IL_0010:  ldloc.0
     IL_0011:  stloc.1
+    .line 100001,100001 : 0,0 ''
     IL_0012:  ldarg.2
     IL_0013:  ldarg.0
     IL_0014:  ldfld      !0 class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>::A@
@@ -531,10 +534,11 @@
     // Code size       22 (0x16)
     .maxstack  4
     .locals init ([0] class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0)
-    .line 1,1 : 1,1 ''
+    .line 100001,100001 : 0,0 ''
     IL_0000:  ldarg.1
     IL_0001:  isinst     class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>
     IL_0006:  stloc.0
+    .line 100001,100001 : 0,0 ''
     IL_0007:  ldloc.0
     IL_0008:  brfalse.s  IL_0014
 

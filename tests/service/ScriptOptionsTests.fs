@@ -14,6 +14,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
+open TestFramework
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported
@@ -27,36 +28,15 @@ let pi = Math.PI
 [<Test>]
 let ``can generate options for different frameworks regardless of execution environment``(assumeNetFx, useSdk, flags) =
     let path = Path.GetTempPath()
-    let file = Path.GetTempFileName()
+    let file = tryCreateTemporaryFileName ()
     let tempFile = Path.Combine(path, file)
-    let (_, errors) =
+    let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunImmediate
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
 
-[<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
-[<TestCase(false, true, [| "--targetprofile:netcore" |])>]
-[<Test>]
-let ``all default assembly references are system assemblies``(assumeNetFx, useSdkRefs, flags) =
-    let tempFile = Path.GetTempFileName() + ".fsx"
-    let (options, errors) =
-        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdkRefs, otherFlags = flags)
-        |> Async.RunImmediate
-    match errors with
-    | [] -> ()
-    | errors -> failwithf "Error while parsing script with assumeNetFx:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdkRefs flags errors
-    for r in options.OtherOptions do
-        if r.StartsWith("-r:") then
-            let ref = Path.GetFullPath(r.[3..])
-            let baseName = Path.GetFileNameWithoutExtension(ref)
-            let projectDir = System.Environment.CurrentDirectory
-            if not (FSharp.Compiler.FxResolver(assumeNetFx, projectDir, rangeForErrors=range0, useSdkRefs=useSdkRefs, isInteractive=false, sdkDirOverride=None).GetSystemAssemblies().Contains(baseName)) then
-                printfn "Failing, printing options from GetProjectOptionsFromScript..."
-                for opt in options.OtherOptions do
-                    printfn "option: %s" opt
-                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdkRefs, flags)
 
 // This test atempts to use a bad SDK number 666.666.666
 //
@@ -70,11 +50,11 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
 // Because of this the test has been manually verified by running locally.
 //[<Test>]
 let ``sdk dir with dodgy global json gives warning``() =
-    let tempFile = Path.GetTempFileName() + ".fsx"
+    let tempFile = tryCreateTemporaryFileName () + ".fsx"
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
     FileSystem.OpenFileForWriteShim(globalJsonPath).Write("""{ "sdk": { "version": "666.666.666" } }""")
-    let (options, errors) =
+    let options, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
         |> Async.RunImmediate
     FileSystem.FileDeleteShim(globalJsonPath)

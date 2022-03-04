@@ -51,7 +51,7 @@ let rec private evalILAttribElem e =
     | ILAttribElem.TypeRef None     -> null
 
 let rec private evalFSharpAttribArg g e = 
-    match e with
+    match stripDebugPoints e with
     | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
@@ -100,7 +100,7 @@ type AttribInfo =
                     ty, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let parms, _args = decodeILAttribData cattr 
-              [ for (argty, argval) in Seq.zip cattr.Method.FormalArgTypes parms ->
+              [ for argty, argval in Seq.zip cattr.Method.FormalArgTypes parms ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
                     ty, obj ]
@@ -115,7 +115,7 @@ type AttribInfo =
                     ty, nm, isField, obj) 
          | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
               let _parms, namedArgs = decodeILAttribData cattr 
-              [ for (nm, argty, isProp, argval) in namedArgs ->
+              [ for nm, argty, isProp, argval in namedArgs ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
                     let isField = not isProp 
@@ -125,7 +125,7 @@ type AttribInfo =
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
 let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
-    attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+    attribs.AsList()  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
 
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -214,9 +214,9 @@ let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) m
 /// This is just used for the 'ConditionalAttribute' attribute
 let TryFindMethInfoStringAttribute g (m: range) attribSpec minfo  =
     TryBindMethInfoAttribute g m attribSpec minfo 
-                    (function ([ILAttribElem.String (Some msg) ], _) -> Some msg | _ -> None) 
-                    (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
-                    (function ([ Some ((:? string as msg) : obj) ], _) -> Some msg | _ -> None)
+                    (function [ILAttribElem.String (Some msg) ], _ -> Some msg | _ -> None) 
+                    (function Attrib(_, _, [ AttribStringArg msg ], _, _, _, _) -> Some msg | _ -> None)
+                    (function [ Some (:? string as msg : obj) ], _ -> Some msg | _ -> None)
 
 /// Check if a method has a specific attribute.
 let MethInfoHasAttribute g m attribSpec minfo  =
@@ -362,7 +362,7 @@ let CheckFSharpAttributesForUnseen g attribs _m =
 #if !NO_EXTENSIONTYPING
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
-    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<System.ObsoleteAttribute>.FullName).IsSome), m)
+    provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<ObsoleteAttribute>.FullName).IsSome), m)
 #endif
 
 /// Check the attributes associated with a property, returning warnings and errors as data.
@@ -434,7 +434,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> 
+        | TProvidedTypeRepr info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
         | _ -> 
         // This attribute check is done by name to ensure compilation doesn't take a dependency 
@@ -443,7 +443,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsArray 
+                tcref.ILTyconRawMetadata.CustomAttrs.AsArray()
                 |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
@@ -452,9 +452,7 @@ let MethInfoIsUnseen g (m: range) (ty: TType) minfo =
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
-
-    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
+    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
@@ -497,7 +495,6 @@ let CheckValAttributes g (x:ValRef) m =
 let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
-    
 // Identify any security attributes
 let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
     // There's no CAS on Silverlight, so we have to be careful here
@@ -518,3 +515,10 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
 
+// Identify any AssemblyVersion attributes
+let IsAssemblyVersionAttribute (g: TcGlobals) (Attrib(tcref, _, _, _, _, _, _)) =
+
+    match g.TryFindSysAttrib("System.Reflection.AssemblyVersionAttribute") with
+    | None -> false
+    | Some attr ->
+        attr.TyconRef.CompiledRepresentationForNamedType.QualifiedName = tcref.CompiledRepresentationForNamedType.QualifiedName

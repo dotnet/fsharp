@@ -5,7 +5,6 @@
 module rec FSharp.Compiler.AbstractIL.IL
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open System.Collections.Generic
 open System.Reflection
 
@@ -38,8 +37,8 @@ type ILSourceDocument =
     member File: string
 
 [<Sealed>]
-type internal ILSourceMarker =
-    static member Create: document: ILSourceDocument * line: int * column: int * endLine:int * endColumn: int-> ILSourceMarker
+type internal ILDebugPoint =
+    static member Create: document: ILSourceDocument * line: int * column: int * endLine:int * endColumn: int-> ILDebugPoint
     member Document: ILSourceDocument
     member Line: int
     member Column: int
@@ -70,7 +69,7 @@ type ILVersionInfo =
 type ILAssemblyRef =
     static member Create: name: string * hash: byte[] option * publicKey: PublicKey option * retargetable: bool * version: ILVersionInfo option * locale: string option -> ILAssemblyRef
 
-    static member FromAssemblyName: System.Reflection.AssemblyName -> ILAssemblyRef
+    static member FromAssemblyName: AssemblyName -> ILAssemblyRef
 
     member Name: string
 
@@ -560,10 +559,10 @@ type internal ILInstr =
     // The IL writer then reverses this when emitting the binary.
     | I_ldelem      of ILBasicType
     | I_stelem      of ILBasicType
-    | I_ldelema     of ILReadonly * bool * ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_ldelem_any  of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_stelem_any  of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
-    | I_newarr      of ILArrayShape * ILType (* ILArrayShape = ILArrayShape.SingleDimensional for single dimensional arrays *)
+    | I_ldelema     of ILReadonly * bool * ILArrayShape * ILType
+    | I_ldelem_any  of ILArrayShape * ILType
+    | I_stelem_any  of ILArrayShape * ILType
+    | I_newarr      of ILArrayShape * ILType
     | I_ldlen
 
     // "System.TypedReference" related instructions: almost
@@ -580,7 +579,7 @@ type internal ILInstr =
     // statement covered by the given range - this is a
     // dummy instruction and is not emitted
     | I_break
-    | I_seqpoint of ILSourceMarker
+    | I_seqpoint of ILDebugPoint
 
     // Varargs - C++ only
     | I_arglist
@@ -603,7 +602,7 @@ type internal ILExceptionClause =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILExceptionSpec =
-    { Range: (ILCodeLabel * ILCodeLabel)
+    { Range: ILCodeLabel * ILCodeLabel
       Clause: ILExceptionClause }
 
 /// Indicates that a particular local variable has a particular source
@@ -616,7 +615,7 @@ type internal ILLocalDebugMapping =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal ILLocalDebugInfo =
-    { Range: (ILCodeLabel * ILCodeLabel);
+    { Range: ILCodeLabel * ILCodeLabel;
       DebugMappings: ILLocalDebugMapping list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -747,16 +746,48 @@ type internal ILLocal =
 
 type internal ILLocals = list<ILLocal>
 
+/// Defines an opened namespace, type relevant to a code location.
+/// 
+/// Emitted to the PortablePDB format. Note the format supports additional variations on
+/// imported things that are not yet emitted in F#.
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILDebugImport =
+
+    /// Represents an 'open type XYZ' opening a type
+    | ImportType of targetType: ILType // * alias: string option 
+
+    /// Represents an 'open XYZ' opening a namespace
+    | ImportNamespace of targetNamespace: string // * assembly: ILAssemblyRef option * alias: string option
+
+    //| ReferenceAlias of string
+    //| OpenXmlNamespace of prefix: string * xmlNamespace: string
+
+/// Defines a set of opened namespace, type relevant to a code location.
+/// 
+/// Emitted to the PortablePDB format.
+type ILDebugImports =
+    {
+      Parent: ILDebugImports option
+      Imports: ILDebugImport[]
+    }
+
 /// IL method bodies
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal ILMethodBody =
-    { IsZeroInit: bool
+    {
+      IsZeroInit: bool
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
       Locals: ILLocals
       Code: ILCode
-      SourceMarker: ILSourceMarker option }
+      
+      /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
+      /// Additionally, if the range is not set, then no debug points are emitted.
+      DebugRange: ILDebugPoint option
+
+      DebugImports: ILDebugImports option
+    }
 
 /// Member Access
 [<RequireQualifiedAccess>]
@@ -813,9 +844,9 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
-    member AsArray: ILAttribute []
+    member AsArray: unit -> ILAttribute []
 
-    member AsList: ILAttribute list
+    member AsList: unit -> ILAttribute list
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
@@ -880,7 +911,7 @@ type internal ILSecurityDecl =
 /// below to construct/destruct these.
 [<NoComparison; NoEquality; Struct>]
 type internal ILSecurityDecls =
-    member AsList: ILSecurityDecl list
+    member AsList: unit -> ILSecurityDecl list
 
 /// Represents the efficiency-oriented storage of ILSecurityDecls in another item.
 [<NoEquality; NoComparison>]
@@ -1070,8 +1101,8 @@ type ILMethodDef =
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
-    member AsArray: ILMethodDef[]
-    member AsList: ILMethodDef list
+    member AsArray: unit -> ILMethodDef[]
+    member AsList: unit -> ILMethodDef list
     member FindByName: string -> ILMethodDef list
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
@@ -1123,7 +1154,8 @@ type ILFieldDef =
 /// a form to allow efficient looking up fields by name.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
-    member internal AsList: ILFieldDef list
+    member internal AsList: unit -> ILFieldDef list
+
     member internal LookupByName: string -> ILFieldDef list
 
 /// Event definitions.
@@ -1161,7 +1193,8 @@ type ILEventDef =
 /// Table of those events in a type definition.
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs =
-    member internal AsList: ILEventDef list
+    member internal AsList: unit -> ILEventDef list
+
     member internal LookupByName: string -> ILEventDef list
 
 /// Property definitions
@@ -1201,7 +1234,9 @@ type ILPropertyDef =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILPropertyDefs =
-    member internal AsList: ILPropertyDef list
+
+    member internal AsList: unit -> ILPropertyDef list
+
     member internal LookupByName: string -> ILPropertyDef list
 
 /// Method Impls
@@ -1211,7 +1246,7 @@ type ILMethodImplDef =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodImplDefs =
-    member internal AsList: ILMethodImplDef list
+    member internal AsList: unit -> ILMethodImplDef list
 
 /// Type Layout information.
 [<RequireQualifiedAccess>]
@@ -1258,12 +1293,12 @@ type ILTypeDefKind =
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
 
-    member internal AsArray: ILTypeDef[]
+    member internal AsArray: unit -> ILTypeDef[]
 
-    member internal AsList: ILTypeDef list
+    member internal AsList: unit -> ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member internal AsArrayOfPreTypeDefs: ILPreTypeDef[]
+    member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
     /// Calls to <c>FindByName</c> will result in any laziness in the overall
     /// set of ILTypeDefs being read in in addition
@@ -1364,7 +1399,7 @@ val internal mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
-    member internal AsList: ILNestedExportedType  list
+    member internal AsList: unit -> ILNestedExportedType list
 
 /// "Classes Elsewhere" - classes in auxiliary modules.
 ///
@@ -1422,7 +1457,7 @@ type ILExportedTypeOrForwarder =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILExportedTypesAndForwarders =
-    member internal AsList: ILExportedTypeOrForwarder list
+    member internal AsList: unit -> ILExportedTypeOrForwarder list
     member internal TryFindByName: string -> ILExportedTypeOrForwarder option
 
 [<RequireQualifiedAccess>]
@@ -1462,7 +1497,7 @@ type internal ILResource =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILResources =
-    member internal AsList: ILResource  list
+    member internal AsList: unit -> ILResource list
 
 [<RequireQualifiedAccess>]
 type ILAssemblyLongevity =
@@ -1807,20 +1842,32 @@ val internal mkILLocal: ILType -> (string * int * int) option -> ILLocal
 val internal mkILEmptyGenericParams: ILGenericParameterDefs
 
 /// Make method definitions.
-val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
-val internal mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
+val internal mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> ILMethodBody
+
+val internal mkMethodBody: bool * ILLocals * int * ILCode * ILDebugPoint option * ILDebugImports option -> MethodBody
+
 val internal methBodyNotAvailable: Lazy<MethodBody>
+
 val internal methBodyAbstract: Lazy<MethodBody>
+
 val internal methBodyNative: Lazy<MethodBody>
 
 val internal mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
+
 val internal mkILClassCtor: MethodBody -> ILMethodDef
-val internal mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
+
+val internal mkILNonGenericEmptyCtor: ILType * ILDebugPoint option * ILDebugImports option -> ILMethodDef
+
 val internal mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
 val internal mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 /// Make field definitions.
@@ -1852,12 +1899,14 @@ val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 /// Injecting initialization code into a class.
 /// Add some code to the end of the .cctor for a type.  Create a .cctor
 /// if one doesn't exist already.
-val internal prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
+val internal prependInstrsToClassCtor: ILInstr list -> ILDebugPoint option -> ILDebugImports option -> ILTypeDef -> ILTypeDef
 
 /// Derived functions for making some simple constructors
-val internal mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val internal mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val internal mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val internal mkILStorageCtor: ILInstr list * ILType * (string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
+
+val internal mkILSimpleStorageCtor: ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
+
+val internal mkILSimpleStorageCtorWithParamNames: ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess * ILDebugPoint option * ILDebugImports option -> ILMethodDef
 
 val internal mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
@@ -1966,23 +2015,27 @@ val NoMetadataIdx: int32
 //                        become ILScopeRef.Assembly m
 // --------------------------------------------------------------------
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILScopeRef: ILScopeRef -> ILScopeRef -> ILScopeRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
+/// the new scope.
+val internal rescopeILTypeRef: ILScopeRef -> ILTypeRef -> ILTypeRef
+
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILTypeSpec: ILScopeRef -> ILTypeSpec -> ILTypeSpec
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILType: ILScopeRef -> ILType -> ILType
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILMethodRef: ILScopeRef -> ILMethodRef -> ILMethodRef
 
-/// Rescoping. The first argument tells the function how to reference the original scope from
+/// Rescoping. The first argument indicates how to reference the original scope from
 /// the new scope.
 val internal rescopeILFieldRef: ILScopeRef -> ILFieldRef -> ILFieldRef
 
@@ -2055,11 +2108,15 @@ type internal ILPropertyRef =
      member Name: string
      interface System.IComparable
 
-type internal ILReferences =
-    { AssemblyReferences: ILAssemblyRef list
-      ModuleReferences: ILModuleRef list }
+type ILReferences =
+    { AssemblyReferences: ILAssemblyRef[]
+      ModuleReferences: ILModuleRef[]
+      TypeReferences: ILTypeRef[]
+      MethodReferences: ILMethodRef[]
+      FieldReferences: ILFieldRef[] }
 
 /// Find the full set of assemblies referenced by a module.
 val internal computeILRefs: ILGlobals -> ILModuleDef -> ILReferences
+
 val internal emptyILRefs: ILReferences
 

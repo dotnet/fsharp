@@ -100,9 +100,3 @@ neg107.fsx(66,34,66,38): typecheck error FS3232: Struct members cannot return th
 neg107.fsx(70,19,70,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
 neg107.fsx(70,14,70,18): typecheck error FS0437: A type would store a byref typed value. This is not permitted by Common IL.
-
-neg107.fsx(70,19,70,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
-neg107.fsx(70,19,70,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
-
-neg107.fsx(70,19,70,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.

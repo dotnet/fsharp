@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 6:0:0:0
 }
 .assembly Equals06
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Equals06
 {
-  // Offset: 0x00000000 Length: 0x00000896
+  // Offset: 0x00000000 Length: 0x00000886
 }
 .mresource public FSharpOptimizationData.Equals06
 {
-  // Offset: 0x000008A0 Length: 0x0000068E
+  // Offset: 0x00000890 Length: 0x00000688
 }
 .module Equals06.dll
-// MVID: {59B18AEE-0759-31EC-A745-0383EE8AB159}
+// MVID: {61E0712B-0759-31EC-A745-03832B71E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01B90000
+// Image base: 0x07210000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] !a V_4,
                  [5] !a V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals06.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals06.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -222,6 +222,7 @@
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_0032:  stloc.2
+        .line 16707566,16707566 : 0,0 ''
         IL_0033:  ldloc.2
         IL_0034:  ldc.i4.0
         IL_0035:  bge.s      IL_0039
@@ -282,7 +283,6 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       15 (0xf)
         .maxstack  8
-        .line 4,4 : 10,20 ''
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
@@ -304,10 +304,11 @@
                  [3] int32 V_3,
                  [4] !a V_4,
                  [5] !a V_5)
-        .line 4,4 : 10,20 ''
+        .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  unbox.any  class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0007:  ldarg.0
         IL_0008:  ldnull
         IL_0009:  cgt.un
@@ -341,6 +342,7 @@
                                                                                                                                                  !!0,
                                                                                                                                                  !!0)
         IL_0038:  stloc.3
+        .line 16707566,16707566 : 0,0 ''
         IL_0039:  ldloc.3
         IL_003a:  ldc.i4.0
         IL_003b:  bge.s      IL_003f
@@ -412,6 +414,7 @@
         .line 16707566,16707566 : 0,0 ''
         IL_0006:  ldc.i4.0
         IL_0007:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0008:  ldarg.0
         IL_0009:  pop
         .line 16707566,16707566 : 0,0 ''
@@ -469,7 +472,6 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
-        .line 4,4 : 10,20 ''
         IL_0000:  ldarg.0
         IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
         IL_0006:  callvirt   instance int32 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -498,6 +500,7 @@
         IL_0006:  ldarg.1
         IL_0007:  isinst     class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_000c:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_000d:  ldloc.0
         IL_000e:  brfalse.s  IL_004d
 
@@ -509,6 +512,7 @@
         IL_0013:  stloc.1
         IL_0014:  ldloc.0
         IL_0015:  stloc.2
+        .line 16707566,16707566 : 0,0 ''
         IL_0016:  ldloc.1
         IL_0017:  ldfld      !0 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_001c:  stloc.3
@@ -586,6 +590,7 @@
         IL_000f:  stloc.0
         IL_0010:  ldarg.1
         IL_0011:  stloc.1
+        .line 16707566,16707566 : 0,0 ''
         IL_0012:  ldloc.0
         IL_0013:  ldfld      !0 class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_0018:  stloc.2
@@ -636,10 +641,11 @@
         // Code size       22 (0x16)
         .maxstack  4
         .locals init ([0] class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)
-        .line 4,4 : 10,20 ''
+        .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  isinst     class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a>
         IL_0006:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0007:  ldloc.0
         IL_0008:  brfalse.s  IL_0014
 
@@ -705,7 +711,7 @@
       IL_000c:  call       class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!0> class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<int32>::NewGenericKey(!0,
                                                                                                                                                                                          !0)
       IL_0011:  stloc.2
-      .line 9,9 : 8,32 ''
+      .line 9,9 : 8,11 ''
       IL_0012:  ldc.i4.0
       IL_0013:  stloc.3
       IL_0014:  br.s       IL_0027
@@ -721,7 +727,7 @@
       IL_0024:  ldc.i4.1
       IL_0025:  add
       IL_0026:  stloc.3
-      .line 9,9 : 8,32 ''
+      .line 9,9 : 18,20 ''
       IL_0027:  ldloc.3
       IL_0028:  ldc.i4     0x989681
       IL_002d:  blt.s      IL_0016

@@ -5,13 +5,16 @@ module internal FSharp.Compiler.Detuple
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Xml
+
+let DetupleRewriteStackGuardDepth = StackGuard.GetDepthOption "DetupleRewrite"
 
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
@@ -150,7 +153,7 @@ open FSharp.Compiler.TypedTreeOps
 let (|TyappAndApp|_|) e = 
     match e with 
     | Expr.App (f, fty, tys, args, m)       -> 
-        match stripExpr f with
+        match stripDebugPoints (stripExpr f) with
         | Expr.App (f2, fty2, tys2, [], m2) -> Some(f2, fty2, tys2 @ tys, args, m2)
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
@@ -174,16 +177,23 @@ module GlobalUsageAnalysis =
     ///      where first accessor in list applies first to the v/app.
     ///   (b) log it's binding site representation.
     type Results =
-       { ///  v -> context / APP inst args 
+       {
+         ///  v -> context / APP inst args 
          Uses     : Zmap<Val, (accessor list * TType list * Expr list) list>
+
          /// v -> binding repr 
          Defns     : Zmap<Val, Expr>                                        
+
          /// bound in a decision tree? 
-         DecisionTreeBindings    : Zset<Val>                                    
+         DecisionTreeBindings: Zset<Val>                                    
+
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val, bool * Vals>
-         TopLevelBindings : Zset<Val>
-         IterationIsAtTopLevel      : bool }
+         RecursiveBindings: Zmap<Val, bool * Vals>
+
+         TopLevelBindings: Zset<Val>
+
+         IterationIsAtTopLevel: bool
+       }
 
     let z0 =
        { Uses     = Zmap.empty valOrder
@@ -300,7 +310,6 @@ module GlobalUsageAnalysis =
          tmethodIntercept = tmethodIntercept
       }
 
-
     //-------------------------------------------------------------------------
     // GlobalUsageAnalysis - entry point
     //-------------------------------------------------------------------------
@@ -309,7 +318,6 @@ module GlobalUsageAnalysis =
         let folder = UsageFolders g
         let z = FoldImplFile folder z0 expr
         z
-
 
 let internalError str = raise(Failure(str))
 
@@ -392,7 +400,7 @@ let rec minimalCallPattern callPattern =
         match minimalCallPattern tss with
         | []  -> []              (* drop trailing UnknownTS *)
         | tss -> UnknownTS :: tss (* non triv tss tail *)
-    | (TupleTS ts) :: tss -> TupleTS ts :: minimalCallPattern tss
+    | TupleTS ts :: tss -> TupleTS ts :: minimalCallPattern tss
 
 /// Combines a list of callpatterns into one common callpattern.
 let commonCallPattern callPatterns =
@@ -692,7 +700,7 @@ let rec collapseArg env bindings ts (x: Expr) =
         let bindings, xs = buildProjections env bindings x xtys
         collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
-and collapseArgs env bindings n (callPattern) args =
+and collapseArgs env bindings n callPattern args =
     match callPattern, args with
     | [], args        -> bindings, args
     | ts :: tss, arg :: args -> 
@@ -715,7 +723,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
 
     // Is it a val app, where the val has a transform? 
     match fx with
-    | Expr.Val (vref, _, m) -> 
+    | Expr.Val (vref, _, vm) -> 
         let f = vref.Deref
         match hasTransfrom penv f with
         | Some trans -> 
@@ -723,7 +731,7 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
             let callPattern       = trans.transformCallPattern 
             let transformedVal       = trans.transformedVal         
             let fCty     = transformedVal.Type
-            let fCx      = exprForVal m transformedVal
+            let fCx      = exprForVal vm transformedVal
             (* [[f tps args ]] -> transformedVal tps [[COLLAPSED: args]] *)
             let env      = {prefix = "arg";m = m;eg=penv.g}
             let bindings = []
@@ -843,10 +851,13 @@ let postTransformExpr (penv: penv) expr =
     | _ -> None
   
 let passImplFile penv assembly = 
-    assembly |> RewriteImplFile { PreIntercept =None
-                                  PreInterceptBinding=None
-                                  PostTransform= postTransformExpr penv
-                                  IsUnderQuotations=false } 
+    let rwenv =
+        { PreIntercept = None
+          PreInterceptBinding = None
+          PostTransform = postTransformExpr penv
+          RewriteQuotations = false
+          StackGuard = StackGuard(DetupleRewriteStackGuardDepth) } 
+    assembly |> RewriteImplFile rwenv
 
 //-------------------------------------------------------------------------
 // entry point

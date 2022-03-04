@@ -18,11 +18,11 @@ open System.Diagnostics
 open System.Threading
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
+open TestFramework
 
 type FSharpCore =
     | FC45
@@ -50,24 +50,22 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with Path.GetTempFileName()
+    /// Returns the filename part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
-        let tempFileName = Path.GetTempFileName()
+        let tempFileName = tryCreateTemporaryFileName ()
         try
             let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
             let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
             String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
         finally
             try
-                // Since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up.
-                // This also prevents a system to run out of available randomized temp files (the pool is only 64k large).
                 FileSystem.FileDeleteShim tempFileName
             with _ -> ()
 
     /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
     let cleanupTempFiles files =
-        { new System.IDisposable with
+        { new IDisposable with
             member _.Dispose() =
                 for fileName in files do
                     try
@@ -103,7 +101,7 @@ module internal Utils =
         | AddressOf(e1) -> "&"+printExpr 0 e1
         | AddressSet(e1,e2) -> printExpr 0 e1 + " <- " + printExpr 0 e2
         | Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
-        | BaseValue(_) -> "base"
+        | BaseValue _ -> "base"
         | CallWithWitnesses(Some obj,v,tyargs1,tyargs2,witnessL,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs (witnessL @ argsL)
         | CallWithWitnesses(None,v,tyargs1,tyargs2,witnessL,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs (witnessL @ argsL)
         | Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
@@ -116,7 +114,7 @@ module internal Utils =
         | ILFieldSet _ -> "ILFieldSet"
         | IfThenElse (a,b,c) -> "(if " + printExpr 0 a + " then " + printExpr 0 b + " else " + printExpr 0 c + ")"
         | Lambda(v,e1) -> "fun " + v.CompiledName + " -> " + printExpr 0 e1
-        | Let((v,e1),b) -> "let " + (if v.IsMutable then "mutable " else "") + v.CompiledName + ": " + printTy v.FullType + " = " + printExpr 0 e1 + " in " + printExpr 0 b
+        | Let((v,e1, _dp),b) -> "let " + (if v.IsMutable then "mutable " else "") + v.CompiledName + ": " + printTy v.FullType + " = " + printExpr 0 e1 + " in " + printExpr 0 b
         | LetRec(vse,b) -> "let rec ... in " + printExpr 0 b
         | NewArray(ty,es) -> "[|" + (es |> Seq.map (printExpr 0) |> String.concat "; ") +  "|]"
         | NewDelegate(ty,es) -> "new-delegate"
@@ -135,8 +133,8 @@ module internal Utils =
         | FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
         | Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
         | ThisValue _ -> "this"
-        | TryFinally(e1,e2) -> "try " + printExpr 0 e1 + " finally " + printExpr 0 e2
-        | TryWith(e1,_,_,vC,eC) -> "try " + printExpr 0 e1 + " with " + vC.CompiledName + " -> " + printExpr 0 eC
+        | TryFinally(e1,e2, _dp1, _dp2) -> "try " + printExpr 0 e1 + " finally " + printExpr 0 e2
+        | TryWith(e1,_,_,vC,eC, _dp1, _dp2) -> "try " + printExpr 0 e1 + " with " + vC.CompiledName + " -> " + printExpr 0 eC
         | TupleGet(ty,n,e1) -> printExpr 10 e1 + ".Item" + string n
         | DecisionTree(dtree,targets) -> "match " + printExpr 10 dtree + " targets ..."
         | DecisionTreeSuccess (tg,es) -> "$" + string tg
@@ -155,7 +153,8 @@ module internal Utils =
             | _ -> string obj
         | Value(v) -> v.CompiledName
         | ValueSet(v,e1) -> quote low (v.CompiledName + " <- " + printExpr 0 e1)
-        | WhileLoop(e1,e2) -> "while " + printExpr 0 e1 + " do " + printExpr 0 e2 + " done"
+        | WhileLoop(e1,e2, _dp) -> "while " + printExpr 0 e1 + " do " + printExpr 0 e2 + " done"
+        | DebugPoint(_dp, innerExpr) -> printExpr low innerExpr
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
     and quote low s = if low > 0 then "(" + s + ")" else s
@@ -196,7 +195,7 @@ module internal Utils =
                     // if not meth.IsCompilerGenerated then
                     yield sprintf "%sbody: %A" prefix body
                     yield ""
-                | FSharpImplementationFileDeclaration.InitAction (expr) ->
+                | FSharpImplementationFileDeclaration.InitAction expr ->
                     yield sprintf "%s%i) ACTION" prefix i
                     yield sprintf "%s%A" prefix expr
                     yield ""
@@ -285,12 +284,12 @@ module internal Utils =
         | AddressOf(e) -> collectMembers e
         | AddressSet(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
         | Application(f,_,args) -> Seq.append (collectMembers f) (Seq.collect collectMembers args)
-        | BaseValue(_) -> Seq.empty
+        | BaseValue _ -> Seq.empty
         | Call(Some obj,v,_,_,argsL) -> Seq.concat [ collectMembers obj; Seq.singleton v; Seq.collect collectMembers argsL ]
         | Call(None,v,_,_,argsL) -> Seq.concat [ Seq.singleton v; Seq.collect collectMembers argsL ]
         | Coerce(_,e) -> collectMembers e
-        | DefaultValue(_) -> Seq.empty
-        | FastIntegerForLoop (fromArg, toArg, body, _) -> Seq.collect collectMembers [ fromArg; toArg; body ]
+        | DefaultValue _ -> Seq.empty
+        | FastIntegerForLoop (fromArg, toArg, body, _, _dp1, _dp2) -> Seq.collect collectMembers [ fromArg; toArg; body ]
         | ILAsm(_,_,args) -> Seq.collect collectMembers args
         | ILFieldGet (Some e,_,_) -> collectMembers e
         | ILFieldGet _ -> Seq.empty
@@ -298,8 +297,8 @@ module internal Utils =
         | ILFieldSet _ -> Seq.empty
         | IfThenElse (a,b,c) -> Seq.collect collectMembers [ a; b; c ]
         | Lambda(v,e1) -> collectMembers e1
-        | Let((v,e1),b) -> Seq.append (collectMembers e1) (collectMembers b)
-        | LetRec(vse,b) -> Seq.append (vse |> Seq.collect (snd >> collectMembers)) (collectMembers b)
+        | Let((v,e1, _dp),b) -> Seq.append (collectMembers e1) (collectMembers b)
+        | LetRec(vse,b) -> Seq.append (vse |> Seq.collect (fun (_, a, _) -> a |> collectMembers)) (collectMembers b)
         | NewArray(_,es) -> Seq.collect collectMembers es
         | NewDelegate(ty,es) -> collectMembers es
         | NewObject(v,tys,args) -> Seq.append (Seq.singleton v) (Seq.collect collectMembers args)
@@ -313,8 +312,8 @@ module internal Utils =
         | FSharpFieldSet(None,_,_,arg) -> collectMembers arg
         | Sequential(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
         | ThisValue _ -> Seq.empty
-        | TryFinally(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
-        | TryWith(e1,_,f,_,eC) -> Seq.collect collectMembers [ e1; f; eC ]
+        | TryFinally(e1,e2, _dp1, _dp2) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | TryWith(e1,_,f,_,eC, _dp1, _dp2) -> Seq.collect collectMembers [ e1; f; eC ]
         | TupleGet(ty,n,e1) -> collectMembers e1
         | DecisionTree(dtree,targets) -> Seq.append (collectMembers dtree) (targets |> Seq.collect (snd >> collectMembers))
         | DecisionTreeSuccess (tg,es) -> Seq.collect collectMembers es
@@ -337,7 +336,8 @@ module internal Utils =
         | Const(obj,ty) -> Seq.empty
         | Value(v) -> Seq.singleton v
         | ValueSet(v,e1) -> Seq.append (Seq.singleton v) (collectMembers e1)
-        | WhileLoop(e1,e2) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | WhileLoop(e1,e2,_dp) -> Seq.append (collectMembers e1) (collectMembers e2)
+        | DebugPoint(_dp, innerExpr) -> collectMembers innerExpr
         | _ -> failwith (sprintf "unrecognized %+A" e)
 
     let rec printMembersOfDeclatations ds =
@@ -362,7 +362,7 @@ let createOptionsAux fileSources extraArgs =
     let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj"
 
     Utils.createTempDir()
-    for (fileSource: string, fileName) in List.zip fileSources fileNames do
+    for fileSource: string, fileName in List.zip fileSources fileNames do
          FileSystem.OpenFileForWriteShim(fileName).Write(fileSource)
     let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
@@ -951,15 +951,15 @@ let ``Test Optimized Declarations Project1`` () =
          "let start(name) = (name,name) @ (217,4--217,14)";
          "let last(name,values) = Operators.Identity<Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string> ((name,values)) @ (220,4--220,21)";
          "let last2(name) = Operators.Identity<Microsoft.FSharp.Core.string> (name) @ (223,4--223,11)";
-         "let test7(s) = let tupledArg: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = M.start (s) in let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (226,4--226,19)";
+         "let test7(s) = let Pipe #1 input at line 226: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = M.start (s) in let name: Microsoft.FSharp.Core.string = Pipe #1 input at line 226.Item0 in let values: Microsoft.FSharp.Core.string = Pipe #1 input at line 226.Item1 in M.last (name,values) @ (226,4--226,19)";
          "let test8(unitVar0) = fun tupledArg -> let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (229,4--229,8)";
-         "let test9(s) = M.last (s,s) @ (232,4--232,17)";
+         "let test9(s) = let Pipe #1 input at line 232: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = (s,s) in let name: Microsoft.FSharp.Core.string = Pipe #1 input at line 232.Item0 in let values: Microsoft.FSharp.Core.string = Pipe #1 input at line 232.Item1 in M.last (name,values) @ (232,4--232,17)";
          "let test10(unitVar0) = fun name -> M.last2 (name) @ (235,4--235,9)";
-         "let test11(s) = M.last2 (s) @ (238,4--238,14)";
+         "let test11(s) = let Pipe #1 input at line 238: Microsoft.FSharp.Core.string = s in M.last2 (Pipe #1 input at line 238) @ (238,4--238,14)";
          "let badLoop = badLoop@240.Force<Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int>(()) @ (240,8--240,15)";
          "type LetLambda";
          "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),a,b) @ (247,8--247,24)";
-         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+         "let letLambdaRes = let Pipe #1 input at line 249: (Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list = Cons((1,2),Empty()) in ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Pipe #1 input at line 249) @ (249,19--249,71)";
          "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)";
          "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"]
     let expected2 =
@@ -1005,7 +1005,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     begin
         use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
         createTempDir()
-        let source = System.String.Format(Project1.operatorTests, dnName, fsName)
+        let source = String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
         FileSystem.OpenFileForWriteShim(filePath).Write(fileSource)
@@ -3004,7 +3004,7 @@ module StressBigExpressions
 let BigListExpression =
 
    [("C", "M.C", "file1", ((3, 5), (3, 6)), ["class"]);
-    ("( .ctor )", "M.C.( .ctor )", "file1", ((3, 5), (3, 6)),["member"; "ctor"]);
+    ("``.ctor``", "M.C.``.ctor``", "file1", ((3, 5), (3, 6)),["member"; "ctor"]);
     ("P", "M.C.P", "file1", ((4, 13), (4, 14)), ["member"; "getter"]);
     ("x", "x", "file1", ((4, 11), (4, 12)), []);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1",((6, 12), (6, 13)), ["val"]);
@@ -3020,13 +3020,13 @@ let BigListExpression =
     ("CAbbrev", "M.CAbbrev", "file1", ((9, 5), (9, 12)), ["abbrev"]);
     ("M", "M", "file1", ((1, 7), (1, 8)), ["module"]);
     ("D1", "N.D1", "file2", ((5, 5), (5, 7)), ["class"]);
-    ("( .ctor )", "N.D1.( .ctor )", "file2", ((5, 5), (5, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D1.``.ctor``", "file2", ((5, 5), (5, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D1.SomeProperty", "file2", ((6, 13), (6, 25)),["member"; "getter"]);
     ("x", "x", "file2", ((6, 11), (6, 12)), []);
     ("M", "M", "file2", ((6, 28), (6, 29)), ["module"]);
     ("xxx", "M.xxx", "file2", ((6, 28), (6, 33)), ["val"]);
     ("D2", "N.D2", "file2", ((8, 5), (8, 7)), ["class"]);
-    ("( .ctor )", "N.D2.( .ctor )", "file2", ((8, 5), (8, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D2.``.ctor``", "file2", ((8, 5), (8, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D2.SomeProperty", "file2", ((9, 13), (9, 25)),["member"; "getter"]); ("x", "x", "file2", ((9, 11), (9, 12)), []);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",((9, 36), (9, 37)), ["val"]);
     ("M", "M", "file2", ((9, 28), (9, 29)), ["module"]);
@@ -3045,7 +3045,7 @@ let BigListExpression =
     ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),["field"; "default"; "mutable"]);
     ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
     ("int", "Microsoft.FSharp.Core.int", "file2", ((15, 10), (15, 13)),["abbrev"]); ("a", "a", "file2", ((15, 8), (15, 9)), []);
-    ("( .ctor )", "N.D3.( .ctor )", "file2", ((15, 5), (15, 7)),["member"; "ctor"]);
+    ("``.ctor``", "N.D3.``.ctor``", "file2", ((15, 5), (15, 7)),["member"; "ctor"]);
     ("SomeProperty", "N.D3.SomeProperty", "file2", ((21, 13), (21, 25)),["member"; "getter"]);
     ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",((16, 14), (16, 15)), ["val"]);
     ("a", "a", "file2", ((16, 12), (16, 13)), []);

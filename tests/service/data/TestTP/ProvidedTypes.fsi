@@ -509,7 +509,7 @@ type TypeProviderForNamespaces =
 
 #if !NO_GENERATIVE
     /// Register that a given file is a provided generated target assembly, e.g. an assembly produced by an external
-    /// code generation tool.  This assembly should be a target assembly, i.e. use the same asssembly references
+    /// code generation tool.  This assembly should be a target assembly, i.e. use the same assembly references
     /// as given by TargetContext.ReferencedAssemblyPaths
     member RegisterGeneratedTargetAssembly: fileName: string -> Assembly
 #endif
@@ -546,7 +546,7 @@ module internal UncheckedQuotations =
         static member NewRecordUnchecked : ty:Type * args:Expr list -> Expr
 
     type Shape
-        val ( |ShapeCombinationUnchecked|ShapeVarUnchecked|ShapeLambdaUnchecked| ): e:Expr -> Choice<(Shape * Expr list),Var, (Var * Expr)>
+        val ( |ShapeCombinationUnchecked|ShapeVarUnchecked|ShapeLambdaUnchecked| ): e:Expr -> Choice<Shape * Expr list,Var, Var * Expr>
         val RebuildShapeCombinationUnchecked: Shape * args:Expr list -> Expr
 
 module internal AssemblyReader =
@@ -555,6 +555,6 @@ module internal AssemblyReader =
 
         type ILModuleReader = class end
     
-        val GetWeakReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<(string * string), DateTime * WeakReference<ILModuleReader>>
-        val GetStrongReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<(string * string), DateTime * int * ILModuleReader>
+        val GetWeakReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<string * string, DateTime * WeakReference<ILModuleReader>>
+        val GetStrongReaderCache : unit -> System.Collections.Concurrent.ConcurrentDictionary<string * string, DateTime * int * ILModuleReader>
     

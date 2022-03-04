@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module ``Type Mismatch`` =
 
@@ -125,6 +125,6 @@ type Derived3() =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-                (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract member Base.Member : int * string -> string")
-                (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract member Base.Member : int * string -> string")
+                (Error 856, Line 8,  Col 16, Line 8,  Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
+                (Error 856, Line 12, Col 16, Line 12, Col 22, "This override takes a different number of arguments to the corresponding abstract member. The following abstract members were found:" + System.Environment.NewLine + "   abstract Base.Member: int * string -> string")
                 (Error 1,   Line 16, Col 24, Line 16, Col 34, "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    ")]

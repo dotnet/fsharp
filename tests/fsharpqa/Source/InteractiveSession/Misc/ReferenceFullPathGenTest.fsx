@@ -3,8 +3,8 @@ let fwkdir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirecto
 let path = System.IO.Path.Combine(fwkdir, "System.Security.dll")
 
 printfn "//<Expects status=\"success\">.+System\\.Security\\.dll</Expects>"
-printfn "//<Expects status=\"success\">val f : unit -> System\\.Security\\.Cryptography\\.Xml\\.Signature</Expects>"
-printfn "//<Expects status=\"success\">val it : System\\.Security\\.Cryptography\\.Xml\\.Signature =</Expects>"
+printfn "//<Expects status=\"success\">val f: unit -> System\\.Security\\.Cryptography\\.Xml\\.Signature</Expects>"
+printfn "//<Expects status=\"success\">val it: System\\.Security\\.Cryptography\\.Xml\\.Signature =</Expects>"
 //printfn "//<Expects status=\"success\">System\\.Security\\.Cryptography\\.Xml\\.Signature {Id = null;</Expects>"
 printfn "//<Expects status=\"success\">KeyInfo = seq \\[\\];</Expects>"
 printfn "//<Expects status=\"success\">ObjectList = seq \\[\\];</Expects>"

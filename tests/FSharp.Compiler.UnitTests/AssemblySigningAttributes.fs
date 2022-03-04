@@ -3,9 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
-open FSharp.Test.Utilities
+open FSharp.Test
+open FSharp.Test.Compiler
 
 module AssemblySigning =
 

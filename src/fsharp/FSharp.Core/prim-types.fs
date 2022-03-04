@@ -108,7 +108,7 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.Value = value
 
-    [<AttributeUsage (AttributeTargets.Field, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field ||| AttributeTargets.Method, AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute(check:bool) = 
         inherit System.Attribute()
@@ -261,6 +261,11 @@ namespace Microsoft.FSharp.Core
 
         member x.Message = message
 
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type InlineIfLambdaAttribute() = 
+        inherit System.Attribute()
+
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int[]) =
@@ -370,36 +375,30 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type nativeint<[<Measure>] 'Measure> = nativeint
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type uint<[<Measure>] 'Measure> = uint
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type byte<[<Measure>] 'Measure> = byte
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type uint16<[<Measure>] 'Measure> = uint16
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type uint64<[<Measure>] 'Measure> = uint64
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     [<MeasureAnnotatedAbbreviation>] 
     type unativeint<[<Measure>] 'Measure> = unativeint
     
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type double<[<Measure>] 'Measure> = float<'Measure>
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type single<[<Measure>] 'Measure> = float32<'Measure>
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int8<[<Measure>] 'Measure> = sbyte<'Measure>
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int32<[<Measure>] 'Measure> = int<'Measure>
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint8<[<Measure>] 'Measure> = byte<'Measure>
-    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint32<[<Measure>] 'Measure> = uint<'Measure>
+    type double<[<Measure>] 'Measure> = float<'Measure>
+    type single<[<Measure>] 'Measure> = float32<'Measure>
+    type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    type int32<[<Measure>] 'Measure> = int<'Measure>
+    type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
     type byref<'T> = (# "!0&" #)
@@ -2281,29 +2280,29 @@ namespace Microsoft.FSharp.Core
         //------------------------------------------------------------------------- 
 
         let inline FloatWithMeasure (f : float) : float<'Measure> = retype f
+
         let inline Float32WithMeasure (f : float32) : float32<'Measure> = retype f
+
         let inline DecimalWithMeasure (f : decimal) : decimal<'Measure> = retype f
+
         let inline Int32WithMeasure (f : int) : int<'Measure> = retype f
+
         let inline Int16WithMeasure (f : int16) : int16<'Measure> = retype f
+
         let inline SByteWithMeasure (f : sbyte) : sbyte<'Measure> = retype f
+
         let inline Int64WithMeasure (f : int64) : int64<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline IntPtrWithMeasure (f : nativeint) : nativeint<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt32WithMeasure (f : uint) : uint<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt16WithMeasure (f : uint16) : uint16<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt64WithMeasure (f : uint64) : uint64<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline ByteWithMeasure (f : byte) : byte<'Measure> = retype f
         
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UIntPtrWithMeasure (f : unativeint) : unativeint<'Measure> = retype f
 
         let inline formatError() = raise (new System.FormatException(SR.GetString(SR.badFormatString)))
@@ -4791,7 +4790,7 @@ namespace Microsoft.FSharp.Core
                 System.Threading.Monitor.Exit(lockobj)
 #else
         [<CompiledName("Lock")>]
-        let inline lock (lockObject : 'T when 'T : not struct) action  = 
+        let inline lock (lockObject : 'T when 'T : not struct) ([<InlineIfLambda>] action)  = 
             let mutable lockTaken = false
             try 
                 System.Threading.Monitor.Enter(lockObject, &lockTaken);
@@ -5659,13 +5658,10 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle1 (source: _[,,]) index1 start2 finish2 start3 finish3 = GetArraySlice3DFixedSingle source start2 finish2 start3 finish3 index1 1 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle2 (source: _[,,]) start1 finish1 index2 start3 finish3 = GetArraySlice3DFixedSingle source start1 finish1 start3 finish3 index2 0 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle3 (source: _[,,]) start1 finish1 start2 finish2 index3 = GetArraySlice3DFixedSingle source start1 finish1 start2 finish2 index3 0 1
 
             let inline GetArraySlice3DFixedDouble (source: _[,,]) start finish index1 index2 nonFixedDim = 
@@ -5683,15 +5679,12 @@ namespace Microsoft.FSharp.Core
                     SetArray dst j (getArrayElem j)
                 dst
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble1 (source: _[,,]) index1 index2 start3 finish3 = 
                 GetArraySlice3DFixedDouble source start3 finish3 index1 index2 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble2 (source: _[,,]) index1 start2 finish2 index3 = 
                 GetArraySlice3DFixedDouble source start2 finish2 index1 index3 1
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble3 (source: _[,,]) start1 finish1 index2 index3 = 
                 GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
 
@@ -5725,15 +5718,12 @@ namespace Microsoft.FSharp.Core
                     for j = 0 to len2 - 1 do
                         setArrayElem i j
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle1 (target: _[,,]) index start2 finish2 start3 finish3 (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start2 finish2 start3 finish3 1 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle2 (target: _[,,]) start1 finish1 index start3 finish3 (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start1 finish1 start3 finish3 0 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle3 (target: _[,,]) start1 finish1 start2 finish2 index (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start1 finish1 start2 finish2 0 1
 
@@ -5750,15 +5740,12 @@ namespace Microsoft.FSharp.Core
                 for j = 0 to len - 1 do 
                     setArrayElem j
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble1 (target: _[,,]) index1 index2 start3 finish3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble2 (target: _[,,]) index1 start2 finish2 index3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble3 (target: _[,,]) start1 finish1 index2 index3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
 
@@ -5803,19 +5790,15 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle1 (source: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 =
                 GetArraySlice4DFixedSingle source start2 finish2 start3 finish3 start4 finish4 index1 1 2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle2 (source: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start3 finish3 start4 finish4 index2 0 2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle3 (source: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start4 finish4 index3 0 1 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle4 (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start3 finish3 index4 0 1 2
 
@@ -5843,27 +5826,21 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble1 (source: _[,,,]) index1 index2 start3 finish3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start3 finish3 start4 finish4 index1 index2 2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble2 (source: _[,,,]) index1 start2 finish2 index3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start2 finish2 start4 finish4 index1 index3 1 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble3 (source: _[,,,]) index1 start2 finish2 start3 finish3 index4 =
                 GetArraySlice4DFixedDouble source start2 finish2 start3 finish3 index1 index4 1 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble4 (source: _[,,,]) start1 finish1 index2 index3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start1 finish1 start4 finish4 index2 index3 0 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble5 (source: _[,,,]) start1 finish1 index2 start3 finish3 index4 = 
                 GetArraySlice4DFixedDouble source start1 finish1 start3 finish3 index2 index4 0 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble6 (source: _[,,,]) start1 finish1 start2 finish2 index3 index4 = 
                 GetArraySlice4DFixedDouble source start1 finish1 start2 finish2 index3 index4 0 1
 
@@ -5884,19 +5861,15 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple1 (source: _[,,,]) start1 finish1 index2 index3 index4 = 
                 GetArraySlice4DFixedTriple source start1 finish1 index2 index3 index4 0
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple2 (source: _[,,,]) index1 start2 finish2 index3 index4 =
                 GetArraySlice4DFixedTriple source start2 finish2 index1 index3 index4 1
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple3 (source: _[,,,]) index1 index2 start3 finish3 index4 =
                 GetArraySlice4DFixedTriple source start3 finish3 index1 index2 index4 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple4 (source: _[,,,]) index1 index2 index3 start4 finish4 = 
                 GetArraySlice4DFixedTriple source start4 finish4 index1 index2 index3 3
 
@@ -5939,19 +5912,15 @@ namespace Microsoft.FSharp.Core
                         for k = 0 to len3 - 1 do
                             setArrayElem i j k
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle1 (target: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index1 start2 finish2 start3 finish3 start4 finish4 1 2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle2 (target: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index2 start1 finish1 start3 finish3 start4 finish4 0 2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle3 (target: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index3 start1 finish1 start2 finish2 start4 finish4 0 1 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle4 (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index4 start1 finish1 start2 finish2 start3 finish3 0 1 2
 
@@ -5977,27 +5946,21 @@ namespace Microsoft.FSharp.Core
                     for j = 0 to len2 - 1 do
                         setArrayElem i j 
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble1 (target: _[,,,]) index1 index2 start3 finish3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index1 index2 start3 finish3 start4 finish4  2 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble2 (target: _[,,,]) index1 start2 finish2 index3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index1 index3 start2 finish2 start4 finish4 1 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble3 (target: _[,,,]) index1 start2 finish2 start3 finish3 index4 (source: _[,]) = 
                 SetArraySlice4DFixedDouble target source index1 index4 start2 finish2 start3 finish3 1 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble4 (target: _[,,,]) start1 finish1 index2 index3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index2 index3 start1 finish1 start4 finish4 0 3
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble5 (target: _[,,,]) start1 finish1 index2 start3 finish3 index4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index2 index4 start1 finish1 start3 finish3 0 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble6 (target: _[,,,]) start1 finish1 start2 finish2 index3 index4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index3 index4 start1 finish1 start2 finish2 0 1
 
@@ -6015,19 +5978,15 @@ namespace Microsoft.FSharp.Core
                 for i = 0 to len1 - 1 do
                     setArrayElem i
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple1 (target: _[,,,]) start1 finish1 index2 index3 index4 (source: _[]) = 
                 SetArraySlice4DFixedTriple target source index2 index3 index4 start1 finish1 0
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple2 (target: _[,,,]) index1 start2 finish2 index3 index4 (source: _[]) = 
                 SetArraySlice4DFixedTriple target source index1 index3 index4 start2 finish2 1
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple3 (target: _[,,,]) index1 index2 start3 finish3 index4 (source: _[]) =
                 SetArraySlice4DFixedTriple target source index1 index2 index4 start3 finish3 2
 
-            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple4 (target: _[,,,]) index1 index2 index3 start4 finish4 (source: _[]) =
                 SetArraySlice4DFixedTriple target source index1 index2 index3 start4 finish4 3
 

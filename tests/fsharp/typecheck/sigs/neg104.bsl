@@ -7,7 +7,7 @@ neg104.fs(20,23,20,24): parse error FS0010: Incomplete structured construct at o
 
 neg104.fs(23,25,23,26): parse error FS0010: Incomplete structured construct at or before this point in expression
 
-neg104.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern
+neg104.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern matching. Expected '->' or other token.
 
 neg104.fs(29,31,29,32): parse error FS0010: Incomplete structured construct at or before this point in pattern matching
 

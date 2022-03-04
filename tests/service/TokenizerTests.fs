@@ -8,7 +8,6 @@
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Tokenization
 
 open NUnit.Framework
@@ -16,14 +15,14 @@ open NUnit.Framework
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 
 let rec parseLine(line: string, state: FSharpTokenizerLexState ref, tokenizer: FSharpLineTokenizer) = seq {
-  match tokenizer.ScanToken(!state) with
+  match tokenizer.ScanToken(state.Value) with
   | Some(tok), nstate ->
       let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
       yield str, tok
-      state := nstate
+      state.Value <- nstate
       yield! parseLine(line, state, tokenizer)
   | None, nstate -> 
-      state := nstate }
+      state.Value <- nstate }
 
 let tokenizeLines (lines:string[]) =
   [ let state = ref FSharpTokenizerLexState.Initial

@@ -5,7 +5,8 @@ open System
 open System.Threading
 open System.Runtime.CompilerServices
 open Xunit
-open FSharp.Test.Utilities
+open FSharp.Test
+open FSharp.Test.Compiler
 open FSharp.Compiler.BuildGraph
 open Internal.Utilities.Library
 

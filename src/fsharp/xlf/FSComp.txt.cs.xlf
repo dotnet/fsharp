@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidSourceFileExtensionML">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript. Pokud chcete povolit použití zastaralých přípon .ml nebo .mli, použijte parametry --langversion:5.0 a --mlcompatibility.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidSourceFileExtensionUpdated">
+        <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
+        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">Funkce {0} není v jazyce F# {1} dostupná. Použijte prosím jazyk verze {2} nebo vyšší.</target>
@@ -15,6 +25,26 @@
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
         <target state="translated">Funkce {0} vyžaduje knihovnu F# pro verzi jazyka {1} nebo novější.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellAssign">
+        <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
+        <target state="translated">Použití := z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například cell := expr na cell.Value &lt;- expr.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDecr">
+        <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
+        <target state="translated">Použití decr z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například decr cell na cell.Value &lt;- cell.Value - 1.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellDeref">
+        <source>The use of '!' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change '!cell' to 'cell.Value'.</source>
+        <target state="translated">Použití ! z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například ! cell na cell.Value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInfoRefcellIncr">
+        <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
+        <target state="translated">Použití incr z knihovny F# je zastaralé. Více informací: https://aka.ms/fsharp-refcell-ops. Změňte prosím například incr cell na cell.Value &lt;- cell.Value + 1.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -87,6 +117,11 @@
         <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst nebo neexistuje. Ohlášená výjimka: {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>additional type-directed conversions</source>
+        <target state="translated">další převody orientované na typ</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">aplikativní výpočetní výrazy</target>
@@ -95,6 +130,11 @@
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">atributy napravo od klíčového slova Module</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">automatické generování vlastnosti Message pro deklarace exception</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
@@ -132,9 +172,19 @@
         <target state="translated">implicitní yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureIndexerNotationWithoutDot">
+        <source>expr[idx] notation for indexing and slicing</source>
+        <target state="translated">Notace expr[idx] pro indexování a vytváření řezů</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">rozhraní s vícenásobným obecným vytvářením instancí</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMLCompatRevisions">
+        <source>ML compatibility revisions</source>
+        <target state="translated">Revize kompatibility ML</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -172,9 +222,24 @@
         <target state="translated">formátování typu binary pro integery</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRefCellNotationInformationals">
+        <source>informational messages related to reference cells</source>
+        <target state="translated">informační zprávy související s referenčními buňkami</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">uvolnění prázdných znaků</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="translated">relaxace whitespace v2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureResumableStateMachines">
+        <source>resumable state machines</source>
+        <target state="translated">obnovitelné stavové stroje</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -228,13 +293,33 @@
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
-        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Vytváření průřezů od konce vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
+        <source>The 'from the end slicing' feature requires language version 'preview'.</source>
+        <target state="translated">Funkce vytváření průřezů od konce vyžaduje jazykovou verzi preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Neplatná direktiva #{0} {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">Neznámý bod ladění {0}. Dostupné body ladění jsou {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
+        <target state="translated">Konstruktor obnovitelného kódu {0} se dá použít jenom ve vloženém kódu chráněném příkazem if __useResumableCode then ... a celkové složení musí tvořit platný obnovitelný kód.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingInlineIfLambda">
+        <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
+        <target state="translated">Atribut InlineIfLambda se nachází v signatuře, ale ne v implementaci.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">Komentář XML není umístěn v platném prvku jazyka.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -245,6 +330,11 @@
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">Bajtový řetězec se nedá interpolovat.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexIfOCaml">
+        <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
+        <target state="translated">Oblasti IF-FSHARP/IF-CAML už nejsou podporovány.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -262,6 +352,41 @@
         <target state="translated">Neplatný interpolovaný řetězec. V interpolovaných výrazech se nedají použít řetězcové literály s trojitými uvozovkami. Zvažte možnost použít pro interpolovaný výraz explicitní vazbu let.</target>
         <note />
       </trans-unit>
+      <trans-unit id="mlCompatError">
+        <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
+        <target state="translated">Tento konstruktor je zastaralý. {0}. Tuto funkci můžete povolit pomocí parametrů --langversion:5.0 a --mlcompatibility.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatKeyword">
+        <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
+        <target state="translated">V předchozích verzích jazyka F# bylo {0} rezervovaným klíčovým slovem, ale použití tohoto klíčového slova je nyní zastaralé.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatLightOffNoLongerSupported">
+        <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">Použití #light \"off\" nebo #indent \"off\" je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
+        <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
+        <target state="translated">Použití několika parametrů typu v závorkách před názvem obecného typu, například (int, int) Map, je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigColonNoLongerSupported">
+        <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Změňte : na =, odeberte sig a end použijte místo toho odsazení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatSigEndNoLongerSupported">
+        <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
+        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte sig a end použijte místo toho odsazení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mlCompatStructEndNoLongerSupported">
+        <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
+        <target state="translated">Použití modulu M: struct ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte struct a end použijte místo toho odsazení.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Stream nezačíná zdrojem s hodnotou null a není ve formátu .RES.</target>
@@ -270,6 +395,21 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">Hlavička zdroje začínající na posunu {0} má chybný formát.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexer2">
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr[index]'?</source>
+        <target state="translated">Tento výraz není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes expr[index]?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionButMaybeIndexerWithName2">
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}[index]'?</source>
+        <target state="translated">Tato hodnota není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes {0}[index]?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optFailedToInlineSuggestedValue">
+        <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
+        <target state="translated">Hodnota {0} byla označena jako InlineIfLambda, ale nemá hodnotu lambda. Toto upozornění slouží pouze pro informační účely.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsAllSigs">
@@ -303,8 +443,8 @@
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
+        <source>The 'package management' feature requires language version 5.0 or above</source>
+        <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0 nebo vyšší.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -337,6 +477,11 @@
         <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Tento přístup člena je nejednoznačný. Při vytváření objektu použijte závorky, např. (new SomeType(args)).MemberName'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Neočekávaný symbol . v definici členu. Očekávalo se with, = nebo jiný token.</target>
@@ -352,9 +497,64 @@
         <target state="translated">Algoritmus {0} není podporovaný.</target>
         <note />
       </trans-unit>
+      <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
+        <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="translated">Cílový popisek pro __resumeAt nebyl staticky určen. __resumeAt s nestatickým cílovým popiskem se může objevit jenom na začátku metody obnovitelného kódu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
+        <source>A fast integer for loop may not contain resumption points</source>
+        <target state="translated">Rychlý integer pro smyčku nesmí obsahovat body obnovení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsLetRec">
+        <source>A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">Ve specifikaci obnovitelného kódu došlo k „let rec“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
+        <source>The 'with' block of a try/with may not contain resumption points</source>
+        <target state="translated">Blok „with“ try/with nesmí obsahovat body obnovení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
+        <source>A try/finally may not contain resumption points</source>
+        <target state="translated">try/finally nesmí obsahovat body obnovení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeDefinitionWasGeneric">
+        <source>A delegate or function producing resumable code in a state machine has type parameters</source>
+        <target state="translated">Delegát nebo funkce vytvářející obnovitelný kód ve stavovém stroji má parametry typu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeInvokeNotReduced">
+        <source>A resumable code invocation at '{0}' could not be reduced</source>
+        <target state="translated">Nepovedlo se snížit vyvolání obnovitelného kódu v {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeValueHasNoDefinition">
+        <source>The resumable code value(s) '{0}' does not have a definition</source>
+        <target state="translated">Hodnoty obnovitelného kódu {0} nemají definici.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">Registrovaní správci PackageManagers nepodporují #i.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineInvalidForm">
+        <source>The state machine has an unexpected form</source>
+        <target state="translated">Stavový stroj má neočekávaný tvar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilable">
+        <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
+        <target state="translated">Tento stavový stroj není staticky kompilovatelný. {0}. Použije se alternativní dynamická implementace, která může být pomalejší. Zvažte úpravu kódu tak, aby byl stavový stroj staticky kompilovatelný, nebo toto upozornění potlačte.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilableNoAlternative">
+        <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
+        <target state="translated">Tento stavový stroj není staticky kompilovatelný a není k dispozici žádná alternativa. {0}. Pokud chcete zadat alternativu, použijte „if __useResumableCode“ then &lt;state-machine&gt; else &lt;alternative&gt;“.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -370,6 +570,11 @@
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '{0}'.</source>
         <target state="translated">Sadu .NET SDK pro tento skript nešlo určit. Pokud se skript nachází v adresáři používajícím global.json, zkontrolujte, jestli je nainstalovaná odpovídající sada .NET SDK. Neočekávaná chyba {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="translated">Tento výraz má typ {0} a je kompatibilní pouze s typem {1} prostřednictvím nejednoznačného implicitního převodu. Zvažte použití explicitního volání op_Implicit. Použitelnými implicitními převody jsou: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -402,9 +607,44 @@
         <target state="translated">Atributy nejde použít pro rozšíření typů.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
+        <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
+        <target state="translated">Syntaxe expr1[expr2] se používá pro indexování. Pokud chcete povolit indexování, zvažte možnost přidat anotaci typu, nebo pokud voláte funkci, přidejte mezeru, třeba expr1 [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcHighPrecedenceFunctionApplicationToListReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing. See https://aka.ms/fsharp-index-notation. If calling a function, add a space between the function and argument, e.g. 'someFunction [expr]'.</source>
+        <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci, přidejte mezi funkci a argument mezeru, třeba someFunction [expr].</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Typy Byref nejsou v deklaraci otevřeného typu povolené.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Please update your code.</source>
+        <target state="translated">Syntaxe arr.[idx] je teď revidována na arr[idx]. Aktualizujte prosím svůj kód.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcBuiltInImplicitConversionUsed">
+        <source>This expression uses a built-in implicit conversion to convert type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Tento výraz používá integrovaný implicitní převod pro převod typu {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'.</source>
+        <target state="translated">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsedForNonMethodArg">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn \"3391\".</source>
+        <target state="translated">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs. Toto upozornění může být vypnuté pomocí '#nowarn \"3391\".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
+        <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
+        <target state="translated">Atribut InlineIfLambda je možné použít pouze u parametrů vložených funkcí metod s typem funkce nebo typem delegáta F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -417,6 +657,16 @@
         <target state="translated">Neplatné zarovnání v interpolovaném řetězci</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidMemberDeclNameMissingOrHasParen">
+        <source>Invalid member declaration. The name of the member is missing or has parentheses.</source>
+        <target state="translated">Neplatná deklarace člena. Jeho jméno chybí nebo obsahuje závorky.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidResumableConstruct">
+        <source>The construct '{0}' may only be used in valid resumable code.</source>
+        <target state="translated">Konstruktor {0} je možné použít jenom v platném obnovitelném kódu.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
         <target state="translated">Použití [&lt;Struct&gt;] u hodnot, funkcí a metod je povolené jenom u částečných aktivních definic vzorů.</target>
@@ -425,6 +675,21 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! se nedá kombinovat s and!.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="translated">Neplatné použití zpětného indexu ve výrazu seznamu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '[expr1][expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">Syntaxe [expr1][expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít (expr1).[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction [expr1] [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcListThenAdjacentListArgumentReserved">
+        <source>The syntax '[expr1][expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction [expr1] [expr2]'.</source>
+        <target state="translated">Syntaxe [expr1][expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction [expr1] [expr2].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -442,9 +707,89 @@
         <target state="translated">K hodnotě označené jako literál se {0} nedá přiřadit.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
+        <target state="translated">Použití metod s atributem NoEagerConstraintApplicationAttribute vyžaduje /langversion:6.0 nebo novější.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
+        <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">Tento výraz podporuje indexování, třeba expr.[index]. Syntaxe expr[index] vyžaduje /langversion:preview. Více informací: https://aka.ms/fsharp-index-notation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAFunctionButIndexerNamedIndexingNotYetEnabled">
+        <source>This value supports indexing, e.g. '{0}.[index]'. The syntax '{1}[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
+        <target state="translated">Tato hodnota podporuje indexování, třeba {0}.[index]. Syntaxe {1}[index] vyžaduje /langversion:preview. Více informací: https://aka.ms/fsharp-index-notation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerIndexingNotYetEnabled">
+        <source>This expression is not a function and does not support index notation.</source>
+        <target state="translated">Tento výraz není funkce a nepodporuje zápis indexu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNotAnIndexerNamedIndexingNotYetEnabled">
+        <source>The value '{0}' is not a function and does not support index notation.</source>
+        <target state="translated">Hodnota {0} není funkce a nepodporuje zápis indexu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">Syntaxe expr1[expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít expr1.[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOtherThenAdjacentListArgumentReserved">
+        <source>The syntax 'expr1[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
+        <target state="translated">Syntaxe expr1[expr2] je teď vyhrazena pro indexování a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentNeedsAdjustment">
+        <source>The syntax '(expr1)[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use '(expr1).[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">Syntaxe (expr1)[expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít (expr1).[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction (expr1) [expr2].</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcParenThenAdjacentListArgumentReserved">
+        <source>The syntax '(expr1)[expr2]' is now reserved for indexing and is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction (expr1) [expr2]'.</source>
+        <target state="translated">Syntaxe (expr1)[expr2] je teď pro indexování vyhrazená a je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction (expr1) [expr2].</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">Konstrukt let! ... and! ... se dá použít jen v případě, že tvůrce výpočetních výrazů definuje buď metodu {0}, nebo vhodné metody MergeSource a Bind.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightKind">
+        <source>Invalid resumable code. A resumable code parameter must be of delegate or function type</source>
+        <target state="translated">Neplatný obnovitelný kód. Parametr obnovitelného kódu musí být typu delegát nebo funkce.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightName">
+        <source>Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</source>
+        <target state="translated">Neplatný obnovitelný kód. Parametr obnovitelného kódu musí mít název, která začíná na „__expand“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeContainsLetRec">
+        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">Neplatný obnovitelný kód. Ve specifikaci obnovitelného kódu došlo k „let rec“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeFunctionMustBeInline">
+        <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
+        <target state="translated">Neplatný obnovitelný kód. Jakákoli metoda funkce, která přijímá nebo vrací obnovitelný kód, musí být označena jako „inline“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeInvocation">
+        <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
+        <target state="translated">Vyvolání obnovitelného kódu. Toto upozornění potlačte, pokud definujete nový obnovitelný kód nižší úrovně v rámci existujícího obnovitelného kódu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeNotSupported">
+        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
+        <target state="translated">Použití obnovitelného kódu nebo obnovitelných stavových strojů vyžaduje /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSubsumptionImplicitConversionUsed">
+        <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
+        <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -553,13 +898,13 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Všechny elementy výrazu konstruktoru seznamu musí být implicitně převoditelné na typ prvního elementu. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="translated">Všechny elementy výrazu konstruktoru pole musí být implicitně převoditelné na typ prvního elementu. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -573,13 +918,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Všechny větve výrazu if musí vracet hodnoty implicitně převoditelné na typ první větve. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Všechny větve výrazu porovnání vzorů musí vracet hodnoty stejného typu. První větev vrátila hodnotu typu {0}, ale tato větev vrátila hodnotu typu {1}.</target>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="translated">Všechny větve výrazu porovnání vzorů musí vracet hodnoty implicitně převoditelné na typ první větve. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -3378,8 +3723,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">Neplatný výraz indexeru</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="translated">Neúplný výraz nebo neplatné použití syntaxe indexeru</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">
@@ -3988,8 +4333,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
-        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Pokud se definuje také hodnota konstanty, třeba val x : int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
+        <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
+        <target state="translated">Pokud se definuje také konstantní hodnota, například val x: int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -7293,8 +7638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">Slouží k deklaraci typu struktury. Používá se také v omezeních obecných parametrů. V definicích modulů se používá kvůli kompatibilitě s OCaml.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">Slouží k deklaraci typu struktury. Používá se také v omezeních obecných parametrů.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">
@@ -7418,13 +7763,13 @@
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexerWithName">
-        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via {0}.[index] instead?</source>
-        <target state="translated">Tato hodnota není funkcí a nedá se použít. Nechtěli jste místo toho získat k indexeru přístup přes {0}.[index]?</target>
+        <source>This value is not a function and cannot be applied. Did you intend to access the indexer via '{0}.[index]'?</source>
+        <target state="translated">Tato hodnota není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes {0}.[index]?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeIndexer">
-        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?</source>
-        <target state="translated">Tento výraz není funkcí a nedá se použít. Nechtěli jste místo toho získat k indexeru přístup přes expr.[index]?</target>
+        <source>This expression is not a function and cannot be applied. Did you intend to access the indexer via 'expr.[index]'?</source>
+        <target state="translated">Tento výraz není funkcí a nedá se použít. Nechtěli jste získat k indexeru přístup přes expr.[index]?</target>
         <note />
       </trans-unit>
       <trans-unit id="notAFunctionButMaybeDeclaration">

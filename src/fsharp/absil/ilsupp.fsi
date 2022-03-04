@@ -7,16 +7,9 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal FSharp.Compiler.AbstractIL.Support
 
-open System
-open System.Runtime.InteropServices
 #if !FX_NO_SYMBOLSTORE
 open System.Diagnostics.SymbolStore
 #endif
-
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL 
 
 #if !FX_NO_PDB_WRITER
 type PdbWriter
@@ -46,7 +39,7 @@ type PdbMethod
 type PdbVariable
 type PdbMethodScope
 
-type PdbSequencePoint = 
+type PdbDebugPoint = 
     { pdbSeqPointOffset: int;
       pdbSeqPointDocument: PdbDocument;
       pdbSeqPointLine: int;
@@ -68,7 +61,7 @@ val pdbDocumentGetLanguageVendor: PdbDocument -> byte[] (* guid *)
 val pdbDocumentFindClosestLine: PdbDocument -> int -> int
 
 val pdbMethodGetToken: PdbMethod -> int32
-val pdbMethodGetSequencePoints: PdbMethod -> PdbSequencePoint array
+val pdbMethodGetDebugPoints: PdbMethod -> PdbDebugPoint array
 
 val pdbScopeGetChildren: PdbMethodScope -> PdbMethodScope array
 val pdbScopeGetOffsets: PdbMethodScope -> int * int

@@ -50,7 +50,7 @@ module internal PervasiveAutoOpens =
         // See http://www.mono-project.com/FAQ:_Technical
         // "How can I detect if am running in Mono?" section
         try
-            System.Type.GetType ("Mono.Runtime") <> null
+            Type.GetType "Mono.Runtime" <> null
         with _ ->
             // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
             // that is not reliable.
@@ -70,7 +70,7 @@ module internal PervasiveAutoOpens =
             x.EndsWith(value, StringComparison.Ordinal)
 
     /// Get an initialization hole 
-    let getHole r = match !r with None -> failwith "getHole" | Some x -> x
+    let getHole (r: _ ref) = match r.Value with None -> failwith "getHole" | Some x -> x
 
     let reportTime =
         let mutable tFirst =None
@@ -100,8 +100,8 @@ module internal PervasiveAutoOpens =
                 cancellationToken)
             task.Result
 
-[<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
+[<Struct>]
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
@@ -325,7 +325,7 @@ module List =
         | _ -> true
 
     let mapq (f: 'T -> 'T) inp =
-        assert not (typeof<'T>.IsValueType) 
+        assert not typeof<'T>.IsValueType 
         match inp with
         | [] -> inp
         | [h1a] -> 
@@ -395,17 +395,17 @@ module List =
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
 
-    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
         | [] -> indexNotFound()
-        | ((h, r) :: t) -> if x = h then r else assoc x t
+        | (h, r) :: t -> if x = h then r else assoc x t
 
     let rec memAssoc x l = 
         match l with 
         | [] -> false
-        | ((h, _) :: t) -> x = h || memAssoc x t
+        | (h, _) :: t -> x = h || memAssoc x t
 
     let rec memq x l = 
         match l with 
@@ -504,8 +504,8 @@ module ResizeArray =
         // rounding down here is good because it ensures we don't go over
         let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
 
-        /// chunk the provided input into arrays that are smaller than the LOH limit
-        /// in order to prevent long-term storage of those values
+        // chunk the provided input into arrays that are smaller than the LOH limit
+        // in order to prevent long-term storage of those values
         chunkBySize maxArrayItemCount f inp
 
 module ValueOptionInternal =
@@ -515,7 +515,7 @@ module ValueOptionInternal =
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String =
-    let make (n: int) (c: char) : string = new String(c, n)
+    let make (n: int) (c: char) : string = String(c, n)
 
     let get (str: string) i = str.[i]
 
@@ -622,7 +622,7 @@ module Dictionary =
 
     let inline ofList (xs: ('Key * 'Value) list) = 
         let t = Dictionary<_, _>(List.length xs, HashIdentity.Structural)
-        for (k,v) in xs do
+        for k,v in xs do
            t.Add(k,v)
         t
 
@@ -854,7 +854,7 @@ module CancellableAutoOpens =
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let gate = obj ()
-    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
+    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
@@ -894,7 +894,7 @@ exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =
 
-    static let undefined = new LazyWithContextFailure(UndefinedException)
+    static let undefined = LazyWithContextFailure(UndefinedException)
 
     member _.Exception = exn
 
@@ -915,7 +915,7 @@ type LazyWithContext<'T, 'ctxt> =
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }
 
-    static member Create(f: ('ctxt->'T), findOriginalException) : LazyWithContext<'T, 'ctxt> = 
+    static member Create(f: 'ctxt->'T, findOriginalException) : LazyWithContext<'T, 'ctxt> = 
         { value = Unchecked.defaultof<'T>
           funcOrException = box f
           findOriginalException = findOriginalException }
@@ -954,7 +954,7 @@ type LazyWithContext<'T, 'ctxt> =
                   x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e))
+                  x.funcOrException <- box(LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -962,7 +962,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
+        let t = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res
@@ -1127,16 +1127,16 @@ type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 [<AutoOpen>]
 module MapAutoOpens =
     type Map<'Key, 'Value when 'Key : comparison> with
-
+        
         static member Empty : Map<'Key, 'Value> = Map.empty
+    
+#if USE_SHIPPED_FSCORE        
+        member x.Values = [ for KeyValue(_, v) in x -> v ]
+#endif
 
-        member x.Values = [ for (KeyValue(_, v)) in x -> v ]
+        member x.AddMany (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-        member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-
-        member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
-
-        member x.MarkAsCollapsible () = x
+        member x.AddOrModify (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -1144,19 +1144,15 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
 
     member x.Add (k, v) = LayeredMultiMap(contents.Add(k, v :: x.[k]))
 
-    member x.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
+    member _.Item with get k = match contents.TryGetValue k with true, l -> l | _ -> []
 
-    member x.AddAndMarkAsCollapsible (kvs: _[]) = 
-        let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
-        x.MarkAsCollapsible()
+    member x.AddMany (kvs: _[]) = 
+        (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
-    member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member _.TryFind k = contents.TryFind k
 
-    member x.TryFind k = contents.TryFind k
+    member _.TryGetValue k = contents.TryGetValue k
 
-    member x.TryGetValue k = contents.TryGetValue k
-
-    member x.Values = contents.Values |> List.concat
+    member _.Values = contents.Values |> List.concat
 
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
-

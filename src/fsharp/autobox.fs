@@ -15,6 +15,8 @@ open FSharp.Compiler.TypeRelations
 //----------------------------------------------------------------------------
 // Decide the set of mutable locals to promote to heap-allocated reference cells
 
+let AutoboxRewriteStackGuardDepth = StackGuard.GetDepthOption "AutoboxRewrite"
+
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }
@@ -30,12 +32,12 @@ let DecideEscapes syntacticArgs body =
         v.ValReprInfo.IsNone &&
         not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
-    let frees = freeInExpr CollectLocals body
+    let frees = freeInExpr (CollectLocalsWithStackGuard()) body
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
 let DecideLambda exprF cenv topValInfo expr ety z   = 
-    match expr with 
+    match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
         let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
@@ -60,7 +62,7 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         exprF (exprF z e1) e2
 
-    | TOp.For (_), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         exprF (exprF (exprF z e1) e2) e3
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
@@ -73,7 +75,7 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF noInterceptF z expr  = 
-    match expr with 
+    match stripDebugPoints expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy m argvs rty 
@@ -190,6 +192,7 @@ let TransformImplFile g amap implFile =
               { PreIntercept = Some(TransformExpr g nvs)
                 PreInterceptBinding = Some(TransformBinding g nvs)
                 PostTransform = (fun _ -> None)
-                IsUnderQuotations = false } 
+                RewriteQuotations = false
+                StackGuard = StackGuard(AutoboxRewriteStackGuardDepth) } 
 
 

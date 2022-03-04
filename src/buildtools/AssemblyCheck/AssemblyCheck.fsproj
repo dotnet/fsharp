@@ -2,12 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyCheck.fs" />
+    <Content Include="SkipVerifyEmbeddedPdb.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

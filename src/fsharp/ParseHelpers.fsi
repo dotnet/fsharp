@@ -3,6 +3,8 @@
 module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open Internal.Utilities.Text.Lexing
@@ -45,7 +47,13 @@ module LexbufLocalXmlDocStore =
     val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
 
     val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> PreXmlDoc
-  
+
+    val AddGrabPoint: lexbuf:UnicodeLexing.Lexbuf -> unit
+
+    val AddGrabPointDelayed: lexbuf:UnicodeLexing.Lexbuf -> unit
+
+    val ReportInvalidXmlDocPositions: lexbuf:UnicodeLexing.Lexbuf -> unit
+
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
@@ -72,7 +80,7 @@ type LexerStringStyle =
     | TripleQuote
     | SingleQuote
 
-[<RequireQualifiedAccess; StructAttribute>]
+[<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool
@@ -108,6 +116,10 @@ type LexerContinuation =
     
 and LexCont = LexerContinuation
 
-val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILInstr[]
+val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m:range -> ILInstr[]
 
-val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILType
+val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
+
+val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list * elemIdx: int -> PreXmlDoc
+
+val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m:range -> ILType

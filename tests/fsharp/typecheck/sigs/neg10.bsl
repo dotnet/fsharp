@@ -57,10 +57,10 @@ neg10.fs(131,23,131,29): typecheck error FS0906: Type abbreviations cannot have 
 
 neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: This form of object expression is not used in F#. Use 'member this.MemberName ... = ...' to define member implementations in object expressions.
 
-neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X : unit -> 'a' matches multiple overloads of the same method.
+neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X: unit -> 'a' matches multiple overloads of the same method.
 Please restrict it to one of the following:
-   X : unit -> 'a
-   X : unit -> 'a.
+   X: unit -> 'a
+   X: unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
@@ -70,7 +70,7 @@ neg10.fs(180,10,180,11): typecheck error FS0866: Interfaces cannot contain defin
 
 neg10.fs(193,39,193,46): typecheck error FS0767: The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement.
 
-neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX : unit -> int' does not have the correct type to override any given virtual method
+neg10.fs(193,41,193,44): typecheck error FS0017: The member 'MyX: unit -> int' does not have the correct type to override any given virtual method
 
 neg10.fs(193,20,193,23): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
 
@@ -146,7 +146,7 @@ neg10.fs(324,17,324,29): typecheck error FS1187: An indexer property must be giv
 
 neg10.fs(333,17,333,29): typecheck error FS1187: An indexer property must be given at least one argument
 
-neg10.fs(335,17,335,39): typecheck error FS0501: The member or object constructor 'X' takes 2 argument(s) but is here given 3. The required signature is 'member T3.X : a:int -> int * int with set'.
+neg10.fs(335,17,335,39): typecheck error FS0501: The member or object constructor 'X' takes 2 argument(s) but is here given 3. The required signature is 'member T3.X: a: int -> int * int with set'.
 
 neg10.fs(345,23,345,24): typecheck error FS0001: The type 'SqlDecimal' does not support a conversion to the type 'float'
 
@@ -198,9 +198,9 @@ neg10.fs(407,27,407,42): typecheck error FS0093: The type 'C' does not support a
 
 neg10.fs(408,27,408,42): typecheck error FS0093: The type 'C' does not support a conversion to the type 'uint64'
 
-neg10.fs(409,26,409,41): typecheck error FS0093: The type 'C' does not support a conversion to the type 'int64'
+neg10.fs(410,28,410,43): typecheck error FS3391: This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
-neg10.fs(410,28,410,43): typecheck error FS0093: The type 'C' does not support a conversion to the type 'decimal'
+neg10.fs(410,28,410,43): typecheck error FS3391: This expression uses the implicit conversion 'System.Decimal.op_Implicit(value: int) : decimal' to convert type 'int' to type 'decimal'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391".
 
 neg10.fs(422,24,422,25): typecheck error FS0001: The type 'C' does not support a conversion to the type 'float'
 

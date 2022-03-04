@@ -56,7 +56,23 @@ type Position(code:int64) =
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
+    member p.IsAdjacentTo(otherPos: Position) =
+        p.Line = otherPos.Line && p.Column + 1 = otherPos.Column
+
 and pos = Position
+
+[<RequireQualifiedAccess>]
+type NotedSourceConstruct =
+    | None
+    | While
+    | For
+    | InOrTo
+    | Try
+    | Binding
+    | Finally
+    | With
+    | Combine
+    | DelayOrQuoteOrRun
 
 [<AutoOpen>]
 module RangeImpl =
@@ -79,6 +95,9 @@ module RangeImpl =
     let isSyntheticBitCount = 1
 
     [<Literal>]
+    let debugPointKindBitCount = 4
+
+    [<Literal>]
     let fileIndexShift   = 0
 
     [<Literal>]
@@ -97,33 +116,40 @@ module RangeImpl =
     let isSyntheticShift = 58
 
     [<Literal>]
-    let fileIndexMask =   0b0000000000000000000000000000000000000000111111111111111111111111L
+    let debugPointKindShift = 59
 
     [<Literal>]
-    let startColumnMask = 0b0000000000000000000011111111111111111111000000000000000000000000L
+    let fileIndexMask =     0b0000000000000000000000000000000000000000111111111111111111111111L
 
     [<Literal>]
-    let endColumnMask =   0b1111111111111111111100000000000000000000000000000000000000000000L
+    let startColumnMask =   0b0000000000000000000011111111111111111111000000000000000000000000L
 
     [<Literal>]
-    let startLineMask =   0b0000000000000000000000000000000001111111111111111111111111111111L
+    let endColumnMask =     0b1111111111111111111100000000000000000000000000000000000000000000L
 
     [<Literal>]
-    let heightMask =      0b0000001111111111111111111111111110000000000000000000000000000000L
+    let startLineMask =     0b0000000000000000000000000000000001111111111111111111111111111111L
 
     [<Literal>]
-    let isSyntheticMask = 0b0000010000000000000000000000000000000000000000000000000000000000L
+    let heightMask =        0b0000001111111111111111111111111110000000000000000000000000000000L
+
+    [<Literal>]
+    let isSyntheticMask =   0b0000010000000000000000000000000000000000000000000000000000000000L
+
+    [<Literal>]
+    let debugPointKindMask= 0b0111100000000000000000000000000000000000000000000000000000000000L
 
     #if DEBUG
     let _ = assert (posBitCount <= 64)
     let _ = assert (fileIndexBitCount + startColumnBitCount + endColumnBitCount <= 64)
-    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount <= 64)
+    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount + debugPointKindBitCount <= 64)
 
     let _ = assert (startColumnShift   = fileIndexShift   + fileIndexBitCount)
     let _ = assert (endColumnShift = startColumnShift   + startColumnBitCount)
 
     let _ = assert (heightShift      = startLineShift + startLineBitCount)
     let _ = assert (isSyntheticShift = heightShift      + heightBitCount)
+    let _ = assert (debugPointKindShift = isSyntheticShift + isSyntheticBitCount)
 
     let _ = assert (fileIndexMask =   mask64 fileIndexShift   fileIndexBitCount)
     let _ = assert (startLineMask =   mask64 startLineShift   startLineBitCount)
@@ -131,13 +157,14 @@ module RangeImpl =
     let _ = assert (heightMask =      mask64 heightShift      heightBitCount)
     let _ = assert (endColumnMask =   mask64 endColumnShift   endColumnBitCount)
     let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
+    let _ = assert (debugPointKindMask = mask64 debugPointKindShift debugPointKindBitCount)
     #endif
 
 
 /// A unique-index table for file names.
 type FileIndexTable() =
-    let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new ConcurrentDictionary<string, int>()
+    let indexToFileTable = ResizeArray<_>(11)
+    let fileToIndexTable = ConcurrentDictionary<string, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -191,7 +218,7 @@ module FileIndex =
 
     // ++GLOBAL MUTABLE STATE
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
-    let fileIndexTable = new FileIndexTable()
+    let fileIndexTable = FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex
@@ -219,61 +246,102 @@ type Range(code1:int64, code2: int64) =
 
     new (fIdx, b:pos, e:pos) = range(fIdx, b.Line, b.Column, e.Line, e.Column)
 
-    member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
+    member _.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 
-    member r.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift)
+    member _.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift)
 
-    member r.EndLine     = int32((code2 &&& heightMask)      >>> heightShift) + r.StartLine
+    member m.EndLine     = int32((code2 &&& heightMask)      >>> heightShift) + m.StartLine
 
-    member r.EndColumn   = int32((code1 &&& endColumnMask)   >>> endColumnShift)
+    member _.EndColumn   = int32((code1 &&& endColumnMask)   >>> endColumnShift)
 
-    member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
+    member _.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
-    member r.Start = pos (r.StartLine, r.StartColumn)
+    member _.NotedSourceConstruct = 
+        match int32((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
+        | 1 -> NotedSourceConstruct.While
+        | 2 -> NotedSourceConstruct.For
+        | 3 -> NotedSourceConstruct.Try
+        | 4 -> NotedSourceConstruct.Finally
+        | 5 -> NotedSourceConstruct.Binding
+        | 6 -> NotedSourceConstruct.InOrTo
+        | 7 -> NotedSourceConstruct.With
+        | 8 -> NotedSourceConstruct.Combine
+        | 9 -> NotedSourceConstruct.DelayOrQuoteOrRun
+        | _ -> NotedSourceConstruct.None
 
-    member r.End = pos (r.EndLine, r.EndColumn)
+    member m.Start = pos (m.StartLine, m.StartColumn)
 
-    member r.FileIndex = int32(code1 &&& fileIndexMask)
+    member m.End = pos (m.EndLine, m.EndColumn)
+
+    member _.FileIndex = int32(code1 &&& fileIndexMask)
 
     member m.StartRange = range (m.FileIndex, m.Start, m.Start)
 
     member m.EndRange = range (m.FileIndex, m.End, m.End)
 
-    member r.FileName = fileOfFileIndex r.FileIndex
+    member m.FileName = fileOfFileIndex m.FileIndex
 
-    member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
+    member m.ShortFileName = Path.GetFileName(fileOfFileIndex m.FileIndex)
 
-    member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+    member _.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
-    member r.Code1 = code1
+    member m.IsAdjacentTo(otherRange: Range) =
+        m.FileIndex = otherRange.FileIndex && m.End.Encoding = otherRange.Start.Encoding
 
-    member r.Code2 = code2
+    member _.NoteSourceConstruct(kind) = 
+        let code = 
+            match kind with 
+            | NotedSourceConstruct.None -> 0 
+            | NotedSourceConstruct.While -> 1
+            | NotedSourceConstruct.For -> 2
+            | NotedSourceConstruct.Try -> 3
+            | NotedSourceConstruct.Finally -> 4
+            | NotedSourceConstruct.Binding -> 5
+            | NotedSourceConstruct.InOrTo -> 6
+            | NotedSourceConstruct.With -> 7
+            | NotedSourceConstruct.Combine -> 8
+            | NotedSourceConstruct.DelayOrQuoteOrRun -> 9
+        range(code1, (code2 &&& ~~~debugPointKindMask) ||| (int64 code <<< debugPointKindShift))
 
-    member r.DebugCode =
-        let name = r.FileName
+    member _.Code1 = code1
+
+    member _.Code2 = code2
+
+    member m.DebugCode =
+        let name = m.FileName
         if name = unknownFileName || name = startupFileName || name = commandLineArgsFileName then name else
 
         try
-            let endCol = r.EndColumn - 1
-            let startCol = r.StartColumn - 1
-            if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
-            elif not (FileSystem.FileExistsShim r.FileName) then "non existing file: " + r.FileName
+            let endCol = m.EndColumn - 1
+            let startCol = m.StartColumn - 1
+            if FileSystem.IsInvalidPathShim m.FileName then "path invalid: " + m.FileName
+            elif not (FileSystem.FileExistsShim m.FileName) then "non existing file: " + m.FileName
             else
-              FileSystem.OpenFileForReadShim(r.FileName).ReadLines()
-              |> Seq.skip (r.StartLine - 1)
-              |> Seq.take (r.EndLine - r.StartLine + 1)
+              FileSystem.OpenFileForReadShim(m.FileName).ReadLines()
+              |> Seq.skip (m.StartLine - 1)
+              |> Seq.take (m.EndLine - m.StartLine + 1)
               |> String.concat "\n"
               |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()
 
-    member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
+    member m.ToShortString() = sprintf "(%d,%d--%d,%d)" m.StartLine m.StartColumn m.EndLine m.EndColumn
 
-    override r.Equals(obj) = match obj with :? range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
+    member _.Equals(m2: range) =
+        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        let rcode2 = m2.Code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        code1 = m2.Code1 && code2 = rcode2
 
-    override r.GetHashCode() = hash code1 + hash code2
+    override m.Equals(obj) =
+        match obj with
+        | :? range as m2 -> m.Equals(m2)
+        | _ -> false
 
-    override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+    override _.GetHashCode() =
+        let code2 = code2 &&& ~~~(debugPointKindMask ||| isSyntheticMask)
+        hash code1 + hash code2
+
+    override r.ToString() = sprintf "%s (%d,%d--%d,%d)" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn
 
 and range = Range
 
@@ -327,39 +395,43 @@ module Range =
     let mkRange filePath startPos endPos = range (fileIndexOfFileAux true filePath, startPos, endPos)
 
     let equals (r1: range) (r2: range) =
-        r1.Code1 = r2.Code1 && r1.Code2 = r2.Code2
+        r1.Equals(r2)
 
     let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
     let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
 
-    /// rangeOrder: not a total order, but enough to sort on ranges
-    let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
+    let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, (r.Start, r.End)) (Pair.order (String.order, Pair.order(posOrder, posOrder)))
 
-    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
 
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) =
         if m1.FileIndex <> m2.FileIndex then m2 else
+        
+        // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
+        if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then m1 else 
+
         let b =
           if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
           else m1
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
-        Position.posGeq m2.Start m1.Start &&
-        Position.posGeq m1.End m2.End
+        posGeq m2.Start m1.Start &&
+        posGeq m1.End m2.End
 
     let rangeContainsPos (m1:range) p =
-        Position.posGeq p m1.Start &&
-        Position.posGeq m1.End p
+        posGeq p m1.Start &&
+        posGeq m1.End p
 
     let rangeBeforePos (m1:range) p =
-        Position.posGeq p m1.End
+        posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
@@ -378,9 +450,9 @@ module Range =
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
           range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Position.stringOfPos r.Start) (Position.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (stringOfPos r.Start) (stringOfPos r.End)
 
-    let toZ (m:range) = Position.toZ m.Start, Position.toZ m.End
+    let toZ (m:range) = toZ m.Start, toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
 

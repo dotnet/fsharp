@@ -9,7 +9,6 @@ open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.Xml
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
@@ -86,7 +85,7 @@ and IProjectReference =
     ///
     /// The operation returns None only if it is not possible to create an IncrementalBuilder for the project at all, e.g. if there
     /// are fatal errors in the options for the project.
-    abstract TryGetLogicalTimeStamp: TimeStampCache -> System.DateTime option
+    abstract TryGetLogicalTimeStamp: TimeStampCache -> DateTime option
 
 type AssemblyReference =
     | AssemblyReference of range * string  * IProjectReference option
@@ -262,7 +261,7 @@ type TcConfigBuilder =
 #endif
       mutable pause: bool
       mutable alwaysCallVirt: bool
-      mutable noDebugData: bool
+      mutable noDebugAttributes: bool
 
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool
@@ -273,6 +272,7 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
       mutable fxResolver: FxResolver option
+      mutable fsiMultiAssemblyEmit: bool
       rangeForErrors: range
       sdkDirOverride: string option
 
@@ -453,11 +453,14 @@ type TcConfig =
 #endif
     member pause: bool
     member alwaysCallVirt: bool
-    member noDebugData: bool
+    member noDebugAttributes: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
     member isInvalidationSupported: bool
+
+    /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
+    member fsiMultiAssemblyEmit: bool
 
     member xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 

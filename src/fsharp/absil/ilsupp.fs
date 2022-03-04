@@ -9,16 +9,13 @@ open System.Reflection
 open System.Diagnostics.SymbolStore
 #endif
 open System.Runtime.InteropServices
-open System.Runtime.CompilerServices
-open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
 #if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.StrongNameSign
 #endif
 
-let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
+let DateTime1970Jan01 = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
@@ -27,22 +24,22 @@ let inline ignore _x = ()
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
 
-let check _action (hresult) =
+let check _action hresult =
   if uint32 hresult >= 0x80000000ul then
-    System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
+    Marshal.ThrowExceptionForHR hresult
   //printf "action = %s, hresult = 0x%nx \n" action hresult
 
 let MAX_PATH = 260
 
 let E_FAIL = 0x80004005
 
-let bytesToWord ((b0: byte), (b1: byte)) =
+let bytesToWord (b0: byte, b1: byte) =
     int16 b0 ||| (int16 b1 <<< 8)
 
-let bytesToDWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte)) =
+let bytesToDWord (b0: byte, b1: byte, b2: byte, b3: byte) =
     int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
 
-let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b5: byte), (b6: byte), (b7: byte)) =
+let bytesToQWord (b0: byte, b1: byte, b2: byte, b3: byte, b4: byte, b5: byte, b6: byte, b7: byte) =
     int64 b0 ||| (int64 b1 <<< 8) ||| (int64 b2 <<< 16) ||| (int64 b3 <<< 24) ||| (int64 b4 <<< 32) ||| (int64 b5 <<< 40) ||| (int64 b6 <<< 48) ||| (int64 b7 <<< 56)
 
 let dwToBytes n = [| byte (n &&& 0xff) ; byte ((n >>> 8) &&& 0xff) ; byte ((n >>> 16) &&& 0xff) ; byte ((n >>> 24) &&& 0xff) |], 4
@@ -505,7 +502,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         else
             resHdr.NameID <- (0xffff ||| ((nid &&& 0xffff) <<< 16))
 
-        resHdr.LangID <- (int16)lid
+        resHdr.LangID <- int16 lid
         dataEntry <- bytesToIRDataE pbLinkedResource dataOffset
         resHdr.DataSize <- dataEntry.Size
 
@@ -517,8 +514,8 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
     member x.Save(ulLinkedResourceBaseRVA: int32, pbLinkedResource: byte[], pUnlinkedResource: byte[], offset: int) =
         // Dump them to pUnlinkedResource
         // For each resource write header and data
-        let size = ref 0
-        let unlinkedResourceOffset = ref 0
+        let mutable size = 0
+        let mutable unlinkedResourceOffset = 0
         //resHdr.HeaderSize <- 32
         if Unchecked.defaultof<byte[]> <> wzType then
             resHdr.HeaderSize <- resHdr.HeaderSize + ((cType + 1) * 2) - 4
@@ -527,9 +524,9 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         let SaveChunk(p: byte[], sz: int) =
             if Unchecked.defaultof<byte[]> <>  pUnlinkedResource then
-                Bytes.blit p 0 pUnlinkedResource (!unlinkedResourceOffset + offset) sz
-                unlinkedResourceOffset := !unlinkedResourceOffset + sz
-            size := !size + sz
+                Bytes.blit p 0 pUnlinkedResource (unlinkedResourceOffset + offset) sz
+                unlinkedResourceOffset <- unlinkedResourceOffset + sz
+            size <- size + sz
 
             ()
 
@@ -572,7 +569,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         if dwFiller <> 0 then
             SaveChunk(bNil, 4 - dwFiller)
 
-        !size
+        size
 
 let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
    let resources =
@@ -588,7 +585,7 @@ let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
            Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId,
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
-   let bb = new System.Reflection.Metadata.BlobBuilder()
+   let bb = System.Reflection.Metadata.BlobBuilder()
    NativeResourceWriter.SerializeWin32Resources(bb, resources, rva)
    bb.ToArray()
 
@@ -656,7 +653,7 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
 
                         if pirdeLang.DataIsDirectory then
                             // Resource hierarchy exceeds three levels
-                            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
+                            Marshal.ThrowExceptionForHR(E_FAIL)
                         else
                             if (not skipResource) then
                                 let rfn = ResFormatNode(dwTypeID, dwNameID, dwLangID, pirdeLang.OffsetToData, pbLinkedResource)
@@ -1000,7 +997,7 @@ type PdbMethod  = { symMethod: ISymbolMethod }
 type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
-type PdbSequencePoint =
+type PdbDebugPoint =
     { pdbSeqPointOffset: int
       pdbSeqPointDocument: PdbDocument
       pdbSeqPointLine: int
@@ -1075,7 +1072,7 @@ let pdbMethodGetToken (meth: PdbMethod) : int32 =
     let token = meth.symMethod.Token
     token.GetToken()
 
-let pdbMethodGetSequencePoints (meth: PdbMethod) : PdbSequencePoint[] =
+let pdbMethodGetDebugPoints (meth: PdbMethod) : PdbDebugPoint[] =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize
     let docs = Array.zeroCreate pSize

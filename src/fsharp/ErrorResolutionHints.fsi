@@ -3,7 +3,6 @@
 /// Functions to format error message details
 module internal FSharp.Compiler.ErrorResolutionHints
 
-open System
 open System.Collections
 open System.Collections.Generic
 

@@ -176,7 +176,7 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.CanRead = viewStream.CanRead
     override x.CanWrite = viewStream.CanWrite
     override x.CanSeek = viewStream.CanSeek
-    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Position with get() = viewStream.Position and set v = viewStream.Position <- v
     override x.Length = viewStream.Length
     override x.Flush() = viewStream.Flush()
     override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
@@ -361,7 +361,7 @@ module MemoryMappedFileExtensions =
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =
-        let chars = new System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
+        let chars = System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
         (fun (path:string) ->
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
@@ -369,7 +369,7 @@ module internal FileSystemUtils =
     let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
 
     let hasExtensionWithValidate (validate:bool) (s:string) =
-        if validate then (checkPathForIllegalChars s) |> ignore
+        if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
         (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
@@ -380,7 +380,7 @@ module internal FileSystemUtils =
         checkPathForIllegalChars s
         if s = "." then "" else // for OCaml compatibility
         if not (hasExtensionWithValidate false s) then
-            raise (System.ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
+            raise (ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
         Path.Combine (Path.GetDirectoryName s, Path.GetFileNameWithoutExtension(s))
 
     let fileNameOfPath s =
@@ -388,7 +388,7 @@ module internal FileSystemUtils =
         Path.GetFileName(s)
 
     let fileNameWithoutExtensionWithValidate (validate:bool) s =
-        if validate then checkPathForIllegalChars s |> ignore
+        if validate then checkPathForIllegalChars s
         Path.GetFileNameWithoutExtension(s)
 
     let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
@@ -430,7 +430,7 @@ type IFileSystem =
     abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
     abstract FileExistsShim: fileName: string -> bool
     abstract FileDeleteShim: fileName: string -> unit
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
+    abstract DirectoryCreateShim: path: string -> string
     abstract DirectoryExistsShim: path: string -> bool
     abstract DirectoryDeleteShim: path: string -> unit
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
@@ -567,8 +567,10 @@ type DefaultFileSystem() as this =
     abstract FileDeleteShim: fileName: string -> unit
     default _.FileDeleteShim (fileName: string) = File.Delete fileName
 
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
-    default _.DirectoryCreateShim (path: string) = Directory.CreateDirectory path
+    abstract DirectoryCreateShim: path: string -> string
+    default _.DirectoryCreateShim (path: string) =
+        let dir = Directory.CreateDirectory path
+        dir.FullName
 
     abstract DirectoryExistsShim: path: string -> bool
     default _.DirectoryExistsShim (path: string) = Directory.Exists path
@@ -626,8 +628,8 @@ type DefaultFileSystem() as this =
 
 [<AutoOpen>]
 module public StreamExtensions =
-    let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
-    type System.IO.Stream with
+    let utf8noBOM = UTF8Encoding(false, true) :> Encoding
+    type Stream with
         member s.GetWriter(?encoding: Encoding) : TextWriter =
             let encoding = defaultArg encoding utf8noBOM
             new StreamWriter(s, encoding) :> TextWriter
@@ -663,7 +665,7 @@ module public StreamExtensions =
                        //   FileLoadException
                        //   PathTooLongException
                        if retryNumber < numRetries then
-                           System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                           Thread.Sleep retryDelayMilliseconds
                            getSource (retryNumber + 1)
                        else
                            reraise()

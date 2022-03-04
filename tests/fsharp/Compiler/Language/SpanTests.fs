@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 
 #if NETCOREAPP
 [<TestFixture>]
@@ -88,9 +88,7 @@ let test () : unit =
 test ()
             """
     
-        // We expect this error until System.Reflection.Emit gets fixed for emitting `modreq` on method calls.
-        // See: https://github.com/dotnet/corefx/issues/29254
-        CompilerAssert.RunScript script [ "Method not found: '!0 ByRef System.ReadOnlySpan`1.get_Item(Int32)'." ]
+        CompilerAssert.RunScript script []
 
     [<Test>]
     let Script_ReadOnlySpanForInBoundsDo() =
@@ -110,9 +108,7 @@ let test () : unit =
 test ()
             """
     
-        // We expect this error until System.Reflection.Emit gets fixed for emitting `modreq` on method calls.
-        // See: https://github.com/dotnet/corefx/issues/29254
-        CompilerAssert.RunScript script [ "Method not found: '!0 ByRef System.ReadOnlySpan`1.get_Item(Int32)'."  ]
+        CompilerAssert.RunScript script []
 
 
     [<Test>]
@@ -164,4 +160,19 @@ let f (x: TA) = ()
             [|
                 FSharpDiagnosticSeverity.Error, 3300, (6, 8, 6, 9), "The parameter 'x' has an invalid type 'TA'. This is not permitted by the rules of Common IL."
             |]
+
+    [<Test>]
+    let ``A custom IsByRefLikeAttribute can define a ref struct``() =
+        CompilerAssert.TypeCheckWithErrors """
+namespace System.Runtime.CompilerServices
+
+open System
+
+[<AttributeUsage(AttributeTargets.Struct)>]
+type IsByRefLikeAttribute() = inherit Attribute()
+
+[<IsByRefLike>]
+type T(span: Span<byte>) = struct end
+             """
+             [| |]
 #endif

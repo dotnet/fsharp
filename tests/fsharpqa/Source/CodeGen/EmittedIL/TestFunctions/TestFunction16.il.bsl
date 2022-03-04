@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TestFunction16
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000688 Length: 0x000001CD
 }
 .module TestFunction16.exe
-// MVID: {60B68B97-A624-45C5-A745-0383978BB660}
+// MVID: {61EFEE1F-A624-45C5-A745-03831FEEEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E30000
+// Image base: 0x069E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -214,6 +214,7 @@
       IL_0020:  ldloc.1
       IL_0021:  ldfld      int32 TestFunction16/U::item1
       IL_0026:  stloc.s    V_5
+      .line 100001,100001 : 0,0 ''
       IL_0028:  ldloc.s    V_4
       IL_002a:  ldloc.s    V_5
       IL_002c:  bge.s      IL_0032
@@ -232,6 +233,7 @@
       IL_0038:  nop
       .line 100001,100001 : 0,0 ''
       IL_0039:  stloc.2
+      .line 100001,100001 : 0,0 ''
       IL_003a:  ldloc.2
       IL_003b:  ldc.i4.0
       IL_003c:  bge.s      IL_0040
@@ -258,6 +260,7 @@
       IL_0055:  ldloc.1
       IL_0056:  ldfld      int32 TestFunction16/U::item2
       IL_005b:  stloc.s    V_8
+      .line 100001,100001 : 0,0 ''
       IL_005d:  ldloc.s    V_7
       IL_005f:  ldloc.s    V_8
       IL_0061:  bge.s      IL_0065
@@ -297,7 +300,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  TestFunction16/U
@@ -322,10 +324,11 @@
                [7] class [mscorlib]System.Collections.IComparer V_7,
                [8] int32 V_8,
                [9] int32 V_9)
-      .line 4,4 : 6,7 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  TestFunction16/U
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
@@ -354,6 +357,7 @@
       IL_0029:  ldloc.2
       IL_002a:  ldfld      int32 TestFunction16/U::item1
       IL_002f:  stloc.s    V_6
+      .line 100001,100001 : 0,0 ''
       IL_0031:  ldloc.s    V_5
       IL_0033:  ldloc.s    V_6
       IL_0035:  bge.s      IL_003b
@@ -372,6 +376,7 @@
       IL_0041:  nop
       .line 100001,100001 : 0,0 ''
       IL_0042:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_0043:  ldloc.3
       IL_0044:  ldc.i4.0
       IL_0045:  bge.s      IL_0049
@@ -398,6 +403,7 @@
       IL_005a:  ldloc.2
       IL_005b:  ldfld      int32 TestFunction16/U::item2
       IL_0060:  stloc.s    V_9
+      .line 100001,100001 : 0,0 ''
       IL_0062:  ldloc.s    V_8
       IL_0064:  ldloc.s    V_9
       IL_0066:  bge.s      IL_006a
@@ -451,6 +457,7 @@
       .line 100001,100001 : 0,0 ''
       IL_0006:  ldc.i4.0
       IL_0007:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0008:  ldarg.0
       IL_0009:  pop
       .line 100001,100001 : 0,0 ''
@@ -502,7 +509,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 4,4 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  callvirt   instance int32 TestFunction16/U::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -532,12 +538,14 @@
       IL_0006:  ldarg.1
       IL_0007:  isinst     TestFunction16/U
       IL_000c:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  brfalse.s  IL_003f
 
       .line 100001,100001 : 0,0 ''
       IL_0010:  ldloc.0
       IL_0011:  stloc.1
+      .line 100001,100001 : 0,0 ''
       IL_0012:  ldarg.0
       IL_0013:  pop
       .line 100001,100001 : 0,0 ''
@@ -545,6 +553,7 @@
       IL_0015:  stloc.2
       IL_0016:  ldloc.1
       IL_0017:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_0018:  ldarg.2
       IL_0019:  stloc.s    V_4
       IL_001b:  ldloc.2
@@ -609,6 +618,7 @@
       IL_000f:  stloc.0
       IL_0010:  ldarg.1
       IL_0011:  stloc.1
+      .line 100001,100001 : 0,0 ''
       IL_0012:  ldloc.0
       IL_0013:  ldfld      int32 TestFunction16/U::item1
       IL_0018:  ldloc.1
@@ -647,10 +657,11 @@
       // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class TestFunction16/U V_0)
-      .line 4,4 : 6,7 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     TestFunction16/U
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 

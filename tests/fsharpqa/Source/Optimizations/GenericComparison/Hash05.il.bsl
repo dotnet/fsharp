@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 6:0:0:0
 }
 .assembly Hash05
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Hash05
 {
-  // Offset: 0x00000000 Length: 0x000006E0
+  // Offset: 0x00000000 Length: 0x000006D0
 }
 .mresource public FSharpOptimizationData.Hash05
 {
-  // Offset: 0x000006E8 Length: 0x000003B1
+  // Offset: 0x000006D8 Length: 0x000003B1
 }
 .module Hash05.dll
-// MVID: {59B18AEE-9642-7857-A745-0383EE8AB159}
+// MVID: {61F0294F-9642-7857-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01AC0000
+// Image base: 0x06A20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] int32 V_4,
                  [5] int32 V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash05.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash05.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -215,6 +215,7 @@
         IL_0020:  ldloc.1
         IL_0021:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item1
         IL_0026:  stloc.s    V_5
+        .line 16707566,16707566 : 0,0 ''
         IL_0028:  ldloc.s    V_4
         IL_002a:  ldloc.s    V_5
         IL_002c:  bge.s      IL_0032
@@ -233,6 +234,7 @@
         IL_0038:  nop
         .line 16707566,16707566 : 0,0 ''
         IL_0039:  stloc.2
+        .line 16707566,16707566 : 0,0 ''
         IL_003a:  ldloc.2
         IL_003b:  ldc.i4.0
         IL_003c:  bge.s      IL_0040
@@ -259,6 +261,7 @@
         IL_0054:  ldloc.1
         IL_0055:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item2
         IL_005a:  stloc.s    V_5
+        .line 16707566,16707566 : 0,0 ''
         IL_005c:  ldloc.s    V_4
         IL_005e:  ldloc.s    V_5
         IL_0060:  bge.s      IL_0064
@@ -298,7 +301,6 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
-        .line 5,5 : 10,13 ''
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
         IL_0002:  unbox.any  Hash05/HashMicroPerfAndCodeGenerationTests/Key
@@ -319,10 +321,11 @@
                  [3] int32 V_3,
                  [4] int32 V_4,
                  [5] int32 V_5)
-        .line 5,5 : 10,13 ''
+        .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  unbox.any  Hash05/HashMicroPerfAndCodeGenerationTests/Key
         IL_0006:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0007:  ldarg.0
         IL_0008:  ldnull
         IL_0009:  cgt.un
@@ -349,6 +352,7 @@
         IL_0026:  ldloc.2
         IL_0027:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item1
         IL_002c:  stloc.s    V_5
+        .line 16707566,16707566 : 0,0 ''
         IL_002e:  ldloc.s    V_4
         IL_0030:  ldloc.s    V_5
         IL_0032:  bge.s      IL_0038
@@ -367,6 +371,7 @@
         IL_003e:  nop
         .line 16707566,16707566 : 0,0 ''
         IL_003f:  stloc.3
+        .line 16707566,16707566 : 0,0 ''
         IL_0040:  ldloc.3
         IL_0041:  ldc.i4.0
         IL_0042:  bge.s      IL_0046
@@ -391,6 +396,7 @@
         IL_0054:  ldloc.2
         IL_0055:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item2
         IL_005a:  stloc.s    V_5
+        .line 16707566,16707566 : 0,0 ''
         IL_005c:  ldloc.s    V_4
         IL_005e:  ldloc.s    V_5
         IL_0060:  bge.s      IL_0064
@@ -442,6 +448,7 @@
         .line 16707566,16707566 : 0,0 ''
         IL_0006:  ldc.i4.0
         IL_0007:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0008:  ldarg.0
         IL_0009:  pop
         .line 16707566,16707566 : 0,0 ''
@@ -489,7 +496,6 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
-        .line 5,5 : 10,13 ''
         IL_0000:  ldarg.0
         IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
         IL_0006:  callvirt   instance int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -516,6 +522,7 @@
         IL_0006:  ldarg.1
         IL_0007:  isinst     Hash05/HashMicroPerfAndCodeGenerationTests/Key
         IL_000c:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_000d:  ldloc.0
         IL_000e:  brfalse.s  IL_0035
 
@@ -527,6 +534,7 @@
         IL_0013:  stloc.1
         IL_0014:  ldloc.0
         IL_0015:  stloc.2
+        .line 16707566,16707566 : 0,0 ''
         IL_0016:  ldloc.1
         IL_0017:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item1
         IL_001c:  ldloc.2
@@ -586,6 +594,7 @@
         IL_000f:  stloc.0
         IL_0010:  ldarg.1
         IL_0011:  stloc.1
+        .line 16707566,16707566 : 0,0 ''
         IL_0012:  ldloc.0
         IL_0013:  ldfld      int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::item1
         IL_0018:  ldloc.1
@@ -624,10 +633,11 @@
         // Code size       20 (0x14)
         .maxstack  4
         .locals init ([0] class Hash05/HashMicroPerfAndCodeGenerationTests/Key V_0)
-        .line 5,5 : 10,13 ''
+        .line 16707566,16707566 : 0,0 ''
         IL_0000:  ldarg.1
         IL_0001:  isinst     Hash05/HashMicroPerfAndCodeGenerationTests/Key
         IL_0006:  stloc.0
+        .line 16707566,16707566 : 0,0 ''
         IL_0007:  ldloc.0
         IL_0008:  brfalse.s  IL_0012
 
@@ -671,33 +681,35 @@
 
     .method public static void  f5() cil managed
     {
-      // Code size       35 (0x23)
+      // Code size       36 (0x24)
       .maxstack  4
       .locals init ([0] int32 i,
                [1] int32 V_1)
-      .line 8,8 : 8,32 ''
-      IL_0000:  ldc.i4.0
-      IL_0001:  stloc.0
-      IL_0002:  br.s       IL_001a
+      .line 7,7 : 8,25 ''
+      IL_0000:  nop
+      .line 8,8 : 8,11 ''
+      IL_0001:  ldc.i4.0
+      IL_0002:  stloc.0
+      IL_0003:  br.s       IL_001b
 
       .line 9,9 : 12,37 ''
-      IL_0004:  ldc.i4.1
-      IL_0005:  ldc.i4.2
-      IL_0006:  call       class Hash05/HashMicroPerfAndCodeGenerationTests/Key Hash05/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
+      IL_0005:  ldc.i4.1
+      IL_0006:  ldc.i4.2
+      IL_0007:  call       class Hash05/HashMicroPerfAndCodeGenerationTests/Key Hash05/HashMicroPerfAndCodeGenerationTests/Key::NewKey(int32,
                                                                                                                                        int32)
-      IL_000b:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
-      IL_0010:  callvirt   instance int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
-      IL_0015:  stloc.1
-      IL_0016:  ldloc.0
-      IL_0017:  ldc.i4.1
-      IL_0018:  add
-      IL_0019:  stloc.0
-      .line 8,8 : 8,32 ''
-      IL_001a:  ldloc.0
-      IL_001b:  ldc.i4     0x989681
-      IL_0020:  blt.s      IL_0004
+      IL_000c:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityERComparer()
+      IL_0011:  callvirt   instance int32 Hash05/HashMicroPerfAndCodeGenerationTests/Key::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0016:  stloc.1
+      IL_0017:  ldloc.0
+      IL_0018:  ldc.i4.1
+      IL_0019:  add
+      IL_001a:  stloc.0
+      .line 8,8 : 18,20 ''
+      IL_001b:  ldloc.0
+      IL_001c:  ldc.i4     0x989681
+      IL_0021:  blt.s      IL_0005
 
-      IL_0022:  ret
+      IL_0023:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f5
 
   } // end of class HashMicroPerfAndCodeGenerationTests

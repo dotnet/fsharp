@@ -10,6 +10,23 @@ open Scripting
 open NUnit.Framework
 open FSharp.Compiler.IO
 
+let inline getTestsDirectory src dir = src ++ dir
+
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
+// Throws exception if it Fails
+let tryCreateTemporaryDirectory () =
+    let date() = DateTime.Now.ToString("yyyy-MM-dd")
+    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
+    Directory.CreateDirectory(directory).FullName
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileName () =
+    let directory = tryCreateTemporaryDirectory ()
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
 [<RequireQualifiedAccess>]
 module Commands =
 
@@ -39,6 +56,9 @@ module Commands =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            // When running tests, we want to roll forward to minor versions (including previews).
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -178,11 +198,10 @@ module Commands =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
     let createTempDir () =
-        let path = Path.GetTempFileName ()
+        let path = tryCreateTemporaryFileName  ()
         File.Delete path
         Directory.CreateDirectory path |> ignore
         path
-
 
 type TestConfig =
     { EnvironmentVariables : Map<string, string>
@@ -197,6 +216,7 @@ type TestConfig =
       FSI : string
 #if !NETCOREAPP
       FSIANYCPU : string
+      FSCANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
@@ -271,9 +291,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net5.0"
-    let fsiArchitecture = "net5.0"
-    let peverifyArchitecture = "net5.0"
+    let fscArchitecture = "net6.0"
+    let fsiArchitecture = "net6.0"
+    let peverifyArchitecture = "net6.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -316,8 +336,9 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
-    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
+    let FSCANYCPU = requireArtifact ("fscAnyCpu" ++ configurationName ++ fscArchitecture ++ "fscAnyCpu.exe")
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
@@ -341,6 +362,7 @@ let config configurationName envVars =
       FSC = FSC
       FSI = FSI
 #if !NETCOREAPP
+      FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -373,6 +395,7 @@ let logConfig (cfg: TestConfig) =
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
+    log "FSCANYCPU                = %s" cfg.FSCANYCPU
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags
@@ -602,7 +625,7 @@ let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s:string) = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
     if not <| FileSystem.FileExistsShim(path1) then

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Hash03
 {
-  // Offset: 0x00000000 Length: 0x0000021A
+  // Offset: 0x00000000 Length: 0x0000021C
 }
 .mresource public FSharpOptimizationData.Hash03
 {
   // Offset: 0x00000220 Length: 0x000000B0
 }
 .module Hash03.dll
-// MVID: {5F1FBE49-9642-788D-A745-038349BE1F5F}
+// MVID: {61F0294F-9642-788D-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05560000
+// Image base: 0x050A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,37 +62,39 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f4_tuple4() cil managed
     {
-      // Code size       39 (0x27)
+      // Code size       40 (0x28)
       .maxstack  5
       .locals init ([0] int32 x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,25 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash03.fsx'
+      .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash03.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
-      .line 7,7 : 8,32 ''
-      IL_0002:  ldc.i4.0
-      IL_0003:  stloc.1
-      IL_0004:  br.s       IL_001e
+      .line 6,6 : 8,28 ''
+      IL_0002:  nop
+      .line 7,7 : 8,11 ''
+      IL_0003:  ldc.i4.0
+      IL_0004:  stloc.1
+      IL_0005:  br.s       IL_001f
 
       .line 8,8 : 12,24 ''
-      IL_0006:  ldc.i4     0x483
-      IL_000b:  ldc.i4.s   99
-      IL_000d:  ldstr      "5"
-      IL_0012:  callvirt   instance int32 [netstandard]System.Object::GetHashCode()
-      IL_0017:  xor
+      IL_0007:  ldc.i4     0x483
+      IL_000c:  ldc.i4.s   99
+      IL_000e:  ldstr      "5"
+      IL_0013:  callvirt   instance int32 [netstandard]System.Object::GetHashCode()
       IL_0018:  xor
-      IL_0019:  stloc.0
-      IL_001a:  ldloc.1
-      IL_001b:  ldc.i4.1
-      IL_001c:  add
-      IL_001d:  stloc.1
-      .line 7,7 : 8,32 ''
-      IL_001e:  ldloc.1
-      IL_001f:  ldc.i4     0x989681
-      IL_0024:  blt.s      IL_0006
+      IL_0019:  xor
+      IL_001a:  stloc.0
+      IL_001b:  ldloc.1
+      IL_001c:  ldc.i4.1
+      IL_001d:  add
+      IL_001e:  stloc.1
+      .line 7,7 : 18,20 ''
+      IL_001f:  ldloc.1
+      IL_0020:  ldc.i4     0x989681
+      IL_0025:  blt.s      IL_0007
 
-      IL_0026:  ret
+      IL_0027:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f4_tuple4
 
   } // end of class HashMicroPerfAndCodeGenerationTests

@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Compiler.Diagnostics
-open FSharp.Test.Utilities
+open FSharp.Test
 
 [<TestFixture>]
 module StringInterpolationTests =
@@ -541,7 +541,7 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             """printf "%B" 10"""
             [|(FSharpDiagnosticSeverity.Error, 3350, (1, 8, 1, 12),
-                   "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 'preview' or greater.")|]
+                   "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """

@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.ComponentTests.ErrorMessages
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 
 module Modules =
@@ -50,26 +50,19 @@ module Modules =
     [<Fact>]
     let ``Right Attribute Module Abbreviation``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
                                  "Ignoring attributes on module abbreviation")
                                  
     [<Fact>]
-    let ``Right Attribute Module Abbreviation without preview (typecheck)``() =
+    let ``Right Attribute Module Abbreviation with version 5.0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
-        |> typecheck
-        |> shouldFail
-        |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
-                                 "Ignoring attributes on module abbreviation")
-    [<Fact>]
-    let ``Right Attribute Module Abbreviation without preview (compile)``() =
-        FSharp """module [<Experimental "Hello">] L1 = List"""
+        |> withLangVersion50
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            Error 3350, Line 1, Col 33, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+            Error 3350, Line 1, Col 33, Line 1, Col 35, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 6.0 or greater."
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
             Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
         ]
@@ -77,7 +70,6 @@ module Modules =
     [<Fact>]
     let ``Attribute Module Abbreviation``() =
         FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] internal L1 = List"""
-        |> withLangVersionPreview
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
@@ -93,7 +85,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if experimental.Message <> "Hello" then failwithf "Experimental attribute did not contain the correct message: %s" experimental.Message
 | t -> failwithf "Attribute array is not of length 3 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     [<Fact>]
@@ -122,7 +113,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %O" compilationMapping.SourceConstructFlags
 | t -> failwithf "Attribute array is not of length 9 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     [<Fact>]
@@ -176,7 +166,6 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
     if compilationMapping.SourceConstructFlags <> SourceConstructFlags.Module then failwithf "CompilationMapping attribute did not contain the correct SourceConstructFlags: %O" compilationMapping.SourceConstructFlags
 | t -> failwithf "Attribute array is not of length 9 and correct types: %A" t
          """
-        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
     
@@ -188,17 +177,20 @@ AutoOpen>] L1 = do ()
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 10, Line 3, Col 1, Line 3, Col 9,
-                                 "Unexpected start of structured construct in attribute list")
+        |> withDiagnostics [
+            Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
+        ]
+
     [<Fact>]
-    let ``Offside rule works for attributes inside module declarations without preview``() =
+    let ``Offside rule works for attributes inside module declarations in F# 5.0``() =
         Fsx """
 module [<
 AutoOpen>] L1 = do ()
         """
+        |> withLangVersion50
         |> compile
         |> shouldFail
         |> withDiagnostics [
             Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
-            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 'preview' or greater."
+            Error 3350, Line 3, Col 1, Line 3, Col 9, "Feature 'attributes to the right of the 'module' keyword' is not available in F# 5.0. Please use language version 6.0 or greater."
         ]

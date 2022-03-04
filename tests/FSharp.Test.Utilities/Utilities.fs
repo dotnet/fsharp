@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open System
 open System.IO
@@ -10,7 +10,6 @@ open System.Diagnostics
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.Test.Utilities
 open TestFramework
 open NUnit.Framework
 
@@ -30,6 +29,20 @@ module Utilities =
                 (fun _ -> ts.SetCanceled()),
                 cancellationToken)
             task.Result
+
+    /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.
+    type AlreadyLoadedAppDomainResolver () =
+        let resolveHandler =
+            ResolveEventHandler(fun _ args ->
+                let assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                let assembly = assemblies |> Array.tryFind(fun a -> String.Compare(a.FullName, args.Name,StringComparison.OrdinalIgnoreCase) = 0)
+                assembly |> Option.defaultValue Unchecked.defaultof<Assembly>
+                )
+        do AppDomain.CurrentDomain.add_AssemblyResolve(resolveHandler)
+
+        interface IDisposable with
+            member this.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(resolveHandler)
+
 
     [<RequireQualifiedAccess>]
     type TargetFramework =
@@ -52,6 +65,8 @@ module Utilities =
         use memoryStream = new MemoryStream (bytes)
         stream.CopyTo(memoryStream)
         bytes
+
+    let inline getTestsDirectory src dir = src ++ dir
 
     let private getOrCreateResource (resource: byref<byte[]>) (name: string) =
         match resource with
@@ -92,7 +107,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module TargetFrameworkUtil =
+    module public TargetFrameworkUtil =
 
         let private config = TestFramework.initializeSuite ()
 
@@ -153,7 +168,7 @@ let main argv = 0"""
             let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
             if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
             let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-            let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
+            let projectDirectory = Path.Combine(pathToTemp,Guid.NewGuid().ToString() + ".tmp")
             let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
             try
                 try
@@ -164,7 +179,7 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #else
                     File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
@@ -284,8 +299,8 @@ let main argv = 0"""
         static member CreateILCompilation (source: string) =
             let compute =
                 lazy
-                    let ilFilePath = Path.GetTempFileName ()
-                    let tmp = Path.GetTempFileName()
+                    let ilFilePath = tryCreateTemporaryFileName ()
+                    let tmp = tryCreateTemporaryFileName ()
                     let dllFilePath = Path.ChangeExtension (tmp, ".dll")
                     try
                         File.WriteAllText (ilFilePath, source)

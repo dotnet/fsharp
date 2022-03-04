@@ -78,7 +78,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
                 p.BeginErrorReadLine()
                 if not(p.WaitForExit(timeout)) then
                     // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+                    raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
                     p.WaitForExit()
 #if DEBUG
@@ -277,7 +277,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             |> Array.map (fun di -> computeVersion di.Name, di)
             |> Array.filter(fun (v, _) -> (compareVersion v targetVersion) <= 0)
             |> Array.sortWith (fun (v1,_) (v2,_) -> compareVersion v1 v2)
-            |> Array.map (fun (_, di) -> di)
+            |> Array.map snd
             |> Array.tryLast
         else
             None
@@ -346,7 +346,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         let pattern = "\"name\": \"" + tfmPrefix
         let startPos =
             let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-            if startPos >= 0  then startPos + (pattern.Length) else startPos
+            if startPos >= 0  then startPos + pattern.Length else startPos
         let length =
             if startPos >= 0 then
                 let ep = file.IndexOf("\"", startPos)
@@ -356,8 +356,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         | -1, _
         | _, -1 ->
             if isRunningOnCoreClr then
-                // Running on coreclr but no deps.json was deployed with the host so default to 5.0
-                Some "net5.0"
+                // Running on coreclr but no deps.json was deployed with the host so default to 6.0
+                Some "net6.0"
             else
                 // Running on desktop
                 None
@@ -466,7 +466,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
     let tryGetSdkRefsPackDirectory() = trySdkRefsPackDirectory.Force()
 
     let getDependenciesOf assemblyReferences =
-        let assemblies = new Dictionary<string, string>()
+        let assemblies = Dictionary<string, string>()
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
@@ -848,7 +848,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure.
-    member _.GetDefaultReferences (useFsiAuxLib) =
+    member _.GetDefaultReferences useFsiAuxLib =
       fxlock.AcquireLock <| fun fxtok -> 
         RequireFxResolverLock(fxtok, "assuming all member require lock")
         let defaultReferences =

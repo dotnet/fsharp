@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Structs02
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000780 Length: 0x00000237
 }
 .module Structs02.exe
-// MVID: {60B68B7F-7040-5E27-A745-03837F8BB660}
+// MVID: {61EFEE1F-7040-5E27-A745-03831FEEEF61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05320000
+// Image base: 0x07400000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,7 +83,7 @@
                [2] int32 V_2,
                [3] int32 V_3)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 6,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -94,6 +94,7 @@
       IL_0010:  ldloc.0
       IL_0011:  ldfld      int32 Experiment.Test/Repro::hash@
       IL_0016:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_0017:  ldloc.2
       IL_0018:  ldloc.3
       IL_0019:  bge.s      IL_001d
@@ -115,7 +116,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 6,6 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  Experiment.Test/Repro
@@ -135,7 +135,7 @@
                [2] class [mscorlib]System.Collections.IComparer V_2,
                [3] int32 V_3,
                [4] int32 V_4)
-      .line 6,6 : 6,11 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  Experiment.Test/Repro
       IL_0006:  stloc.0
@@ -149,6 +149,7 @@
       IL_0013:  ldloc.1
       IL_0014:  ldfld      int32 Experiment.Test/Repro::hash@
       IL_0019:  stloc.s    V_4
+      .line 100001,100001 : 0,0 ''
       IL_001b:  ldloc.3
       IL_001c:  ldloc.s    V_4
       IL_001e:  bge.s      IL_0022
@@ -170,9 +171,8 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       27 (0x1b)
       .maxstack  7
-      .locals init ([0] int32 V_0,
-               [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
-      .line 6,6 : 6,11 ''
+      .locals init (int32 V_0,
+               class [mscorlib]System.Collections.IEqualityComparer V_1)
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
       IL_0002:  ldc.i4     0x9e3779b9
@@ -200,7 +200,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 6,6 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  call       instance int32 Experiment.Test/Repro::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -259,7 +258,7 @@
       IL_0001:  ldc.i4.0
       IL_0002:  stloc.0
       IL_0003:  stloc.1
-      .line 11,11 : 9,31 ''
+      .line 11,11 : 9,12 ''
       IL_0004:  ldc.i4.0
       IL_0005:  stloc.3
       IL_0006:  ldarg.1
@@ -279,7 +278,7 @@
       IL_0014:  ldc.i4.1
       IL_0015:  add
       IL_0016:  stloc.3
-      .line 11,11 : 9,31 ''
+      .line 11,11 : 17,19 ''
       IL_0017:  ldloc.3
       IL_0018:  ldloc.2
       IL_0019:  ldc.i4.1
@@ -299,8 +298,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       18 (0x12)
       .maxstack  4
-      .locals init ([0] valuetype Experiment.Test/Repro& V_0)
-      .line 6,6 : 6,11 ''
+      .locals init (valuetype Experiment.Test/Repro& V_0)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldarg.0

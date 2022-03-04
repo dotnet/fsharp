@@ -1,4 +1,4 @@
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 module Assert =
     open FluentAssertions

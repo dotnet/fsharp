@@ -15,28 +15,28 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
+open TestFramework
 
 // Create an interactive checker instance
 let internal checker = FSharpChecker.Create()
 
 module internal Project1 =
 
-    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
-    let base2 = Path.GetTempFileName()
+    let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")) ]
+    let base2 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
-    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
+    let fileSources = [ for i,f in fileNamesI -> (f, "module M" + string i) ]
+    for f,text in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
+    let fileSources2 = [ for i,f in fileSources -> SourceText.ofString f ]
 
-    let fileNames = [ for (_,f) in fileNamesI -> f ]
+    let fileNames = [ for _,f in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
 
 [<Test>]
-[<Ignore("https://github.com/dotnet/fsharp/issues/11184")>]
 let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "starting test..."

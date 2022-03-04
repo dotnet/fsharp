@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
 
 #if NETCOREAPP
 [<TestFixture>]
@@ -11,7 +11,7 @@ module SpanOptimizationTests =
 
     [<Test>]
     let SpanForInDo() =
-        let source = 
+        let source =
             """
 module Test
 
@@ -40,7 +40,7 @@ let test () =
     IL_0006:  ldc.i4.0
     IL_0007:  stloc.1
     IL_0008:  br.s       IL_0022
-        
+
     IL_000a:  ldloca.s   V_0
     IL_000c:  ldloc.1
     IL_000d:  call       instance !0& valuetype [runtime]System.Span`1<object>::get_Item(int32)
@@ -56,14 +56,14 @@ let test () =
     IL_0023:  ldloca.s   V_0
     IL_0025:  call       instance int32 valuetype [runtime]System.Span`1<object>::get_Length()
     IL_002a:  blt.s      IL_000a
-        
+
     IL_002c:  ret
   }"""
                                 ])
 
     [<Test>]
     let ReadOnlySpanForInDo() =
-        let source = 
+        let source =
             """
 module Test
 
@@ -115,7 +115,7 @@ let test () =
     [<Test>]
     let ExplicitSpanTypeForInDo() =
 
-        let source = 
+        let source =
             """
 namespace System.Runtime.CompilerServices
 
@@ -141,9 +141,7 @@ type Span<'T>(arr: 'T []) =
 
     static member Empty = Span<'T>([||])
 
-    interface IEnumerable with
-
-        member _.GetEnumerator() = null
+    member _.GetEnumerator() = arr.AsSpan().GetEnumerator()
 
 module Test =
 
@@ -158,59 +156,49 @@ module Test =
             (fun verifier ->
                 verifier.VerifyIL
                             [
-                            """.method public static void  test() cil managed
-  {
+                            """
+      .method public static void  test() cil managed
+      {
 
-    .maxstack  3
-    .locals init (valuetype System.Span`1<object> V_0,
-             class [System.Runtime]System.Collections.IEnumerator V_1,
-             class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
-             class [System.Runtime]System.IDisposable V_3)
-    IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
-    IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
-    IL_000a:  stloc.0
-    IL_000b:  ldloc.0
-    IL_000c:  box        valuetype System.Span`1<object>
-    IL_0011:  unbox.any  [System.Runtime]System.Collections.IEnumerable
-    IL_0016:  callvirt   instance class [System.Runtime]System.Collections.IEnumerator [System.Runtime]System.Collections.IEnumerable::GetEnumerator()
-    IL_001b:  stloc.1
-    .try
-    {
-      IL_001c:  ldloc.1
-      IL_001d:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0022:  brfalse.s  IL_0031
+        .maxstack  3
+        .locals init (valuetype System.Span`1<object> V_0,
+                 valuetype [runtime]System.Span`1/Enumerator<object> V_1,
+                 valuetype [runtime]System.Span`1<object> V_2,
+                 object& V_3)
+        IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
+        IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
+        IL_000a:  stloc.0
+        IL_000b:  ldloca.s   V_0
+        IL_000d:  ldfld      !0[] valuetype System.Span`1<object>::arr
+        IL_0012:  call       valuetype [runtime]System.Span`1<!!0> [runtime]System.MemoryExtensions::AsSpan<object>(!!0[])
+        IL_0017:  stloc.2
+        IL_0018:  ldloca.s   V_2
+        IL_001a:  call       instance valuetype [runtime]System.Span`1/Enumerator<!0> valuetype [runtime]System.Span`1<object>::GetEnumerator()
+        IL_001f:  stloc.1
+        .try
+        {
+          IL_0020:  ldloca.s   V_1
+          IL_0022:  call       instance bool valuetype [runtime]System.Span`1/Enumerator<object>::MoveNext()
+          IL_0027:  brfalse.s  IL_003e
 
-      IL_0024:  ldloc.1
-      IL_0025:  callvirt   instance object [System.Runtime]System.Collections.IEnumerator::get_Current()
-      IL_002a:  call       void [System.Console]System.Console::WriteLine(object)
-      IL_002f:  br.s       IL_001c
+          IL_0029:  ldloca.s   V_1
+          IL_002b:  call       instance !0& valuetype [runtime]System.Span`1/Enumerator<object>::get_Current()
+          IL_0030:  stloc.3
+          IL_0031:  ldloc.3
+          IL_0032:  ldobj      [runtime]System.Object
+          IL_0037:  call       void [runtime]System.Console::WriteLine(object)
+          IL_003c:  br.s       IL_0020
 
-      IL_0031:  ldnull
-      IL_0032:  stloc.2
-      IL_0033:  leave.s    IL_004b
+          IL_003e:  leave.s    IL_0041
 
-    }
-    finally
-    {
-      IL_0035:  ldloc.1
-      IL_0036:  isinst     [System.Runtime]System.IDisposable
-      IL_003b:  stloc.3
-      IL_003c:  ldloc.3
-      IL_003d:  brfalse.s  IL_0048
-
-      IL_003f:  ldloc.3
-      IL_0040:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
-      IL_0045:  ldnull
-      IL_0046:  pop
-      IL_0047:  endfinally
-      IL_0048:  ldnull
-      IL_0049:  pop
-      IL_004a:  endfinally
-    }
-    IL_004b:  ldloc.2
-    IL_004c:  pop
-    IL_004d:  ret
-  }"""
+        }
+        finally
+        {
+          IL_0040:  endfinally
+        }
+        IL_0041:  ret
+      }
+"""
                         ])
 
     [<Test>]
@@ -243,7 +231,7 @@ for i in 0 .. span.Length-1 do
     IL_0006:  ldc.i4.0
     IL_0007:  stloc.1
     IL_0008:  br.s       IL_0022
-        
+
     IL_000a:  ldloca.s   V_0
     IL_000c:  ldloc.1
     IL_000d:  call       instance !0& valuetype [runtime]System.Span`1<object>::get_Item(int32)
@@ -259,7 +247,7 @@ for i in 0 .. span.Length-1 do
     IL_0023:  ldloca.s   V_0
     IL_0025:  call       instance int32 valuetype [runtime]System.Span`1<object>::get_Length()
     IL_002a:  blt.s      IL_000a
-        
+
     IL_002c:  ret
   }"""
                             ])

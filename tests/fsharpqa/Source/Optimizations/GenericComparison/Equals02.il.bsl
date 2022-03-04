@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly extern netstandard
 {
@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Equals02
 {
-  // Offset: 0x00000000 Length: 0x0000022E
+  // Offset: 0x00000000 Length: 0x00000230
 }
 .mresource public FSharpOptimizationData.Equals02
 {
   // Offset: 0x00000238 Length: 0x000000B6
 }
 .module Equals02.dll
-// MVID: {5F1FBE49-0759-B6D8-A745-038349BE1F5F}
+// MVID: {61F0294F-0759-B6D8-A745-03834F29F061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x054B0000
+// Image base: 0x07610000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,37 +62,41 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static bool  f4_tuple4() cil managed
     {
-      // Code size       36 (0x24)
+      // Code size       38 (0x26)
       .maxstack  4
       .locals init ([0] bool x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,29 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals02.fsx'
+      .line 5,5 : 8,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals02.fsx'
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
-      .line 8,8 : 8,32 ''
-      IL_0002:  ldc.i4.0
-      IL_0003:  stloc.1
-      IL_0004:  br.s       IL_001a
+      .line 6,6 : 8,31 ''
+      IL_0002:  nop
+      .line 7,7 : 8,28 ''
+      IL_0003:  nop
+      .line 8,8 : 8,11 ''
+      IL_0004:  ldc.i4.0
+      IL_0005:  stloc.1
+      IL_0006:  br.s       IL_001c
 
       .line 9,9 : 12,26 ''
-      IL_0006:  ldstr      "five"
-      IL_000b:  ldstr      "5"
-      IL_0010:  call       bool [netstandard]System.String::Equals(string,
+      IL_0008:  ldstr      "five"
+      IL_000d:  ldstr      "5"
+      IL_0012:  call       bool [netstandard]System.String::Equals(string,
                                                                    string)
-      IL_0015:  stloc.0
-      IL_0016:  ldloc.1
-      IL_0017:  ldc.i4.1
-      IL_0018:  add
-      IL_0019:  stloc.1
-      .line 8,8 : 8,32 ''
-      IL_001a:  ldloc.1
-      IL_001b:  ldc.i4     0x989681
-      IL_0020:  blt.s      IL_0006
+      IL_0017:  stloc.0
+      IL_0018:  ldloc.1
+      IL_0019:  ldc.i4.1
+      IL_001a:  add
+      IL_001b:  stloc.1
+      .line 8,8 : 18,20 ''
+      IL_001c:  ldloc.1
+      IL_001d:  ldc.i4     0x989681
+      IL_0022:  blt.s      IL_0008
 
       .line 10,10 : 8,9 ''
-      IL_0022:  ldloc.0
-      IL_0023:  ret
+      IL_0024:  ldloc.0
+      IL_0025:  ret
     } // end of method EqualsMicroPerfAndCodeGenerationTests::f4_tuple4
 
   } // end of class EqualsMicroPerfAndCodeGenerationTests

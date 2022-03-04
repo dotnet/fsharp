@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #LetBindings 
-//<Expects status="error" span="(12,1)" id="FS0876">A declaration may only be the \[<Literal>\] attribute if a constant value is also given, e\.g\. 'val x : int = 1'$</Expects>
-//<Expects status="error" span="(15,1)" id="FS0876">A declaration may only be the \[<Literal>\] attribute if a constant value is also given, e\.g\. 'val x : int = 1'$</Expects>
+//<Expects status="error" span="(12,1)" id="FS0876">A declaration may only be the \[<Literal>\] attribute if a constant value is also given, e\.g\. 'val x: int = 1'$</Expects>
+//<Expects status="error" span="(15,1)" id="FS0876">A declaration may only be the \[<Literal>\] attribute if a constant value is also given, e\.g\. 'val x: int = 1'$</Expects>
 
 
 // FSB 1981, Signature must contain the literal value

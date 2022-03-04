@@ -201,7 +201,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                 None,true
                             | FSharpCheckFileAnswer.Succeeded results -> Some results, false
 
-                        sr := None
+                        sr.Value <- None
                         parseResults,typedResults,true,aborted,int64 req.Timestamp
                 
                 // Now that we have the parseResults, we can SetDependencyFiles().
@@ -251,7 +251,6 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                     | FSharpDiagnosticSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
                                     | FSharpDiagnosticSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
                                 req.ResultSink.AddError(req.FileName, error.Subcategory, error.Message, span, sev)
-                          
 
                         let provideMethodList = (req.Reason = BackgroundRequestReason.MethodTip || req.Reason = BackgroundRequestReason.MatchBracesAndMethodTip)
 

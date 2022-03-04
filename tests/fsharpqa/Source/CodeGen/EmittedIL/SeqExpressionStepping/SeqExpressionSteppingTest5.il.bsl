@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionSteppingTest5
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {60B78A59-2432-9401-A745-0383598AB760}
+// MVID: {61FD4A6D-2432-9401-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A80000
+// Image base: 0x06FD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -136,6 +136,7 @@
         IL_0033:  ldc.i4.0
         IL_0034:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
         IL_0039:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
+        .line 6,6 : 15,18 ''
         IL_003e:  ldarg.0
         IL_003f:  ldc.i4.1
         IL_0040:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
@@ -212,11 +213,10 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       162 (0xa2)
+        // Code size       156 (0x9c)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
-                 [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-                 [2] class [mscorlib]System.Exception e)
+                 [1] class [mscorlib]System.Exception e)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
@@ -228,10 +228,11 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0013:  nop
-        IL_0014:  br         IL_0099
+        IL_0014:  br         IL_0093
 
         .line 100001,100001 : 0,0 ''
         IL_0019:  nop
+        .line 100001,100001 : 0,0 ''
         .try
         {
           IL_001a:  ldarg.0
@@ -272,6 +273,7 @@
 
           .line 100001,100001 : 0,0 ''
           IL_004e:  nop
+          .line 12,12 : 15,22 ''
           IL_004f:  ldarg.0
           IL_0050:  ldc.i4.4
           IL_0051:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
@@ -293,41 +295,34 @@
           IL_007a:  ldarg.0
           IL_007b:  ldc.i4.0
           IL_007c:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::current
-          IL_0081:  ldnull
-          IL_0082:  stloc.1
-          IL_0083:  leave.s    IL_0091
+          IL_0081:  leave.s    IL_008d
 
         }  // end .try
         catch [mscorlib]System.Object 
         {
-          IL_0085:  castclass  [mscorlib]System.Exception
-          IL_008a:  stloc.2
-          .line 5,5 : 19,20 ''
-          IL_008b:  ldloc.2
-          IL_008c:  stloc.0
-          IL_008d:  ldnull
-          IL_008e:  stloc.1
-          IL_008f:  leave.s    IL_0091
+          IL_0083:  castclass  [mscorlib]System.Exception
+          IL_0088:  stloc.1
+          IL_0089:  ldloc.1
+          IL_008a:  stloc.0
+          IL_008b:  leave.s    IL_008d
 
           .line 100001,100001 : 0,0 ''
         }  // end handler
-        IL_0091:  ldloc.1
-        IL_0092:  pop
-        .line 100001,100001 : 0,0 ''
-        IL_0093:  nop
-        IL_0094:  br         IL_0000
+        IL_008d:  nop
+        IL_008e:  br         IL_0000
 
+        .line 100001,100001 : 0,0 ''
+        IL_0093:  ldloc.0
+        IL_0094:  ldnull
+        IL_0095:  cgt.un
+        IL_0097:  brfalse.s  IL_009b
+
+        .line 100001,100001 : 0,0 ''
         IL_0099:  ldloc.0
-        IL_009a:  ldnull
-        IL_009b:  cgt.un
-        IL_009d:  brfalse.s  IL_00a1
+        IL_009a:  throw
 
         .line 100001,100001 : 0,0 ''
-        IL_009f:  ldloc.0
-        IL_00a0:  throw
-
-        .line 100001,100001 : 0,0 ''
-        IL_00a1:  ret
+        IL_009b:  ret
       } // end of method f4@5::Close
 
       .method public strict virtual instance bool 
@@ -444,13 +439,17 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
-    .maxstack  8
-    .line 16,16 : 13,30 ''
+    // Code size       14 (0xe)
+    .maxstack  3
+    .locals init ([0] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 'Pipe #1 input at line 16')
+    .line 16,16 : 13,17 ''
     IL_0000:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5::f4()
-    IL_0005:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_000a:  pop
-    IL_000b:  ret
+    IL_0005:  stloc.0
+    .line 16,16 : 20,30 ''
+    IL_0006:  ldloc.0
+    IL_0007:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_000c:  pop
+    IL_000d:  ret
   } // end of method $SeqExpressionSteppingTest5::main@
 
 } // end of class '<StartupCode$SeqExpressionSteppingTest5>'.$SeqExpressionSteppingTest5

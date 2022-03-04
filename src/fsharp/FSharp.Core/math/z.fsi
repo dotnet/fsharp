@@ -17,10 +17,10 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types</category>
     type bigint = System.Numerics.BigInteger
 
-    [<AutoOpen>]
     /// <summary>Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' </summary>
     ///
     /// <category>Language Primitives</category>
+    [<AutoOpen>]
     module NumericLiterals =
 
         /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 

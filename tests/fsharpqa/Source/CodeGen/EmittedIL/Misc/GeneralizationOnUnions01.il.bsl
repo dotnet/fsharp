@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly GeneralizationOnUnions01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000690 Length: 0x000001F4
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {60B68B7F-4CA2-8CD1-A745-03837F8BB660}
+// MVID: {61E07031-4CA2-8CD1-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C00000
+// Image base: 0x070E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -189,7 +189,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,12 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  GeneralizationOnUnions01/Weirdo
@@ -205,10 +204,11 @@
       // Code size       43 (0x2b)
       .maxstack  3
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 4,4 : 6,12 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  GeneralizationOnUnions01/Weirdo
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
@@ -277,7 +277,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 4,4 : 6,12 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  callvirt   instance int32 GeneralizationOnUnions01/Weirdo::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -303,6 +302,7 @@
       IL_0006:  ldarg.1
       IL_0007:  isinst     GeneralizationOnUnions01/Weirdo
       IL_000c:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  brfalse.s  IL_0014
 
@@ -359,10 +359,11 @@
       // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class GeneralizationOnUnions01/Weirdo V_0)
-      .line 4,4 : 6,12 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     GeneralizationOnUnions01/Weirdo
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 
@@ -452,7 +453,6 @@
     .line 7,7 : 4,13 ''
     IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
-    .line 100001,100001 : 0,0 ''
     IL_0002:  ldloc.0
     IL_0003:  newobj     instance void GeneralizationOnUnions01/f@8::.ctor(int32)
     IL_0008:  stloc.1

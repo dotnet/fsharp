@@ -8,18 +8,15 @@ open HandleExpects
 open FSharp.Compiler.IO
 
 type Permutation =
-    | FSC_CORECLR
-    | FSC_CORECLR_OPT_MINUS
-    | FSC_CORECLR_BUILDONLY
-    | FSI_CORECLR
-#if !NETCOREAPP
-    | FSI_FILE
-    | FSI_STDIN
-    | GENERATED_SIGNATURE
-    | FSC_BUILDONLY
-    | FSC_OPT_MINUS_DEBUG
-    | FSC_OPT_PLUS_DEBUG
-    | AS_DLL
+#if NETCOREAPP
+    | FSC_NETCORE of optimized: bool * buildOnly: bool
+    | FSI_NETCORE
+#else
+    | FSC_NETFX of optimized: bool * buildOnly: bool
+    | FSI_NETFX
+    | FSI_NETFX_STDIN
+    | FSC_NETFX_TEST_GENERATED_SIGNATURE
+    | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 #endif
 
 // Because we build programs ad dlls the compiler will copy an fsharp.core.dll into the build directory
@@ -151,6 +148,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->
@@ -210,7 +208,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
     let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
-    let framework = "net5.0"
+    let framework = "net6.0"
 
     // Arguments:
     //    outputType = OutputType.Exe, OutputType.Library or OutputType.Script
@@ -226,7 +224,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                     let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
                     if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "FSharp.Cambridge did not find artifacts directory --- has the location changed????"
                     let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
-                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Path.GetRandomFileName())
+                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Guid.NewGuid().ToString() + ".tmp")
                     if Directory.Exists(projectDirectory) then
                         loop ()
                     else
@@ -257,10 +255,11 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let targetsBody = generateTargets
         let overridesBody = generateOverrides
+        
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")
-        let projectFileName = Path.Combine(directory, Path.GetRandomFileName() + ".fsproj")
+        let projectFileName = Path.Combine(directory, Guid.NewGuid().ToString() + ".tmp" + ".fsproj")
         try
             // Clean up directory
             Directory.CreateDirectory(directory) |> ignore
@@ -304,19 +303,15 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 printfn "Filename: %s" projectFileName
 
     match p with
-    | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true false
-    | FSC_CORECLR_OPT_MINUS -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" false false
-    | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true true
-    | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
+#if NETCOREAPP
+    | FSC_NETCORE (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net6.0" optimized buildOnly
+    | FSI_NETCORE -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net6.0" true false
+#else
+    | FSC_NETFX (optimized, buildOnly) -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" optimized buildOnly
+    | FSI_NETFX -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
 
-#if !NETCOREAPP
-    | FSC_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false true
-    | FSC_OPT_PLUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" true false
-    | FSC_OPT_MINUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false false
-    | FSI_FILE -> executeSingleTestBuildAndRun OutputType.Script "net40" "net472" true false
-
-    | FSI_STDIN ->
-        use cleanup = (cleanUpFSharpCore cfg)
+    | FSI_NETFX_STDIN ->
+        use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         let sources = extraSources |> List.filter (fileExists cfg)
 
@@ -324,8 +319,8 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         testOkFile.CheckExists()
 
-    | GENERATED_SIGNATURE ->
-        use cleanup = (cleanUpFSharpCore cfg)
+    | FSC_NETFX_TEST_GENERATED_SIGNATURE ->
+        use _cleanup = (cleanUpFSharpCore cfg)
 
         let source1 =
             ["test.ml"; "test.fs"; "test.fsx"]
@@ -335,21 +330,19 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
 
         log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
+        fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-        (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
 
-    | AS_DLL ->
+    | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
-        use cleanup = (cleanUpFSharpCore cfg)
+        use _cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         let sources = extraSources |> List.filter (fileExists cfg)
@@ -368,6 +361,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 let singleTestBuildAndRunAux cfg p =
     singleTestBuildAndRunCore cfg "" p "latest"
 
+
 let singleTestBuildAndRunWithCopyDlls  cfg copyFiles p =
     singleTestBuildAndRunCore cfg copyFiles p "latest"
 
@@ -377,6 +371,7 @@ let singleTestBuildAndRun dir p =
 
 let singleTestBuildAndRunVersion dir p version =
     let cfg = testConfig dir
+
     singleTestBuildAndRunCore cfg "" p version
 
 let singleVersionedNegTest (cfg: TestConfig) version testname =
@@ -450,4 +445,6 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
         failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
 
-let singleNegTest (cfg: TestConfig) testname = singleVersionedNegTest (cfg: TestConfig) "" testname
+
+let singleNegTest (cfg: TestConfig) testname =
+    singleVersionedNegTest (cfg: TestConfig) "" testname

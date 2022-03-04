@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SteppingMatch07
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000680 Length: 0x000001D9
 }
 .module SteppingMatch07.dll
-// MVID: {60B68B90-D373-07F3-A745-0383908BB660}
+// MVID: {61E07031-D373-07F3-A745-03833170E061}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07270000
+// Image base: 0x073B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -229,6 +229,7 @@
       IL_0013:  ldarg.1
       IL_0014:  ldfld      int32 SteppingMatch07/Discr::_tag
       IL_0019:  stloc.1
+      .line 100001,100001 : 0,0 ''
       IL_001a:  ldloc.0
       IL_001b:  ldloc.1
       IL_001c:  bne.un.s   IL_0020
@@ -268,7 +269,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 4,4 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  SteppingMatch07/Discr
@@ -286,10 +286,11 @@
       .locals init ([0] class SteppingMatch07/Discr V_0,
                [1] int32 V_1,
                [2] int32 V_2)
-      .line 4,4 : 6,11 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  SteppingMatch07/Discr
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
@@ -309,6 +310,7 @@
       IL_001f:  ldloc.0
       IL_0020:  ldfld      int32 SteppingMatch07/Discr::_tag
       IL_0025:  stloc.2
+      .line 100001,100001 : 0,0 ''
       IL_0026:  ldloc.1
       IL_0027:  ldloc.2
       IL_0028:  bne.un.s   IL_002c
@@ -374,7 +376,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 4,4 : 6,11 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  callvirt   instance int32 SteppingMatch07/Discr::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -402,6 +403,7 @@
       IL_0006:  ldarg.1
       IL_0007:  isinst     SteppingMatch07/Discr
       IL_000c:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_000d:  ldloc.0
       IL_000e:  brfalse.s  IL_0025
 
@@ -414,6 +416,7 @@
       IL_0019:  ldloc.1
       IL_001a:  ldfld      int32 SteppingMatch07/Discr::_tag
       IL_001f:  stloc.3
+      .line 100001,100001 : 0,0 ''
       IL_0020:  ldloc.2
       IL_0021:  ldloc.3
       IL_0022:  ceq
@@ -459,6 +462,7 @@
       IL_0013:  ldarg.1
       IL_0014:  ldfld      int32 SteppingMatch07/Discr::_tag
       IL_0019:  stloc.1
+      .line 100001,100001 : 0,0 ''
       IL_001a:  ldloc.0
       IL_001b:  ldloc.1
       IL_001c:  ceq
@@ -484,10 +488,11 @@
       // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class SteppingMatch07/Discr V_0)
-      .line 4,4 : 6,11 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  isinst     SteppingMatch07/Discr
       IL_0006:  stloc.0
+      .line 100001,100001 : 0,0 ''
       IL_0007:  ldloc.0
       IL_0008:  brfalse.s  IL_0012
 
@@ -543,25 +548,27 @@
 
   .method public static void  funcE(class SteppingMatch07/Discr n) cil managed
   {
-    // Code size       33 (0x21)
+    // Code size       34 (0x22)
     .maxstack  8
     .line 6,6 : 9,21 ''
-    IL_0000:  ldarg.0
-    IL_0001:  call       instance int32 SteppingMatch07/Discr::get_Tag()
-    IL_0006:  ldc.i4.1
-    IL_0007:  bne.un.s   IL_000b
+    IL_0000:  nop
+    .line 100001,100001 : 0,0 ''
+    IL_0001:  ldarg.0
+    IL_0002:  call       instance int32 SteppingMatch07/Discr::get_Tag()
+    IL_0007:  ldc.i4.1
+    IL_0008:  bne.un.s   IL_000c
 
-    IL_0009:  br.s       IL_0016
+    IL_000a:  br.s       IL_0017
 
     .line 8,8 : 13,35 ''
-    IL_000b:  ldstr      "A"
-    IL_0010:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_0015:  ret
+    IL_000c:  ldstr      "A"
+    IL_0011:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0016:  ret
 
     .line 10,10 : 13,35 ''
-    IL_0016:  ldstr      "B"
-    IL_001b:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_0020:  ret
+    IL_0017:  ldstr      "B"
+    IL_001c:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0021:  ret
   } // end of method SteppingMatch07::funcE
 
 } // end of class SteppingMatch07
