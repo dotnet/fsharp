@@ -5954,4 +5954,3 @@ type Construct() =
             let pos = Position.mkPos line (max 0 (column - 1)) 
             mkRange filePath pos pos |> Some
 #endif
-

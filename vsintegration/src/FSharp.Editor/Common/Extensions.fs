@@ -24,6 +24,11 @@ open Microsoft.VisualStudio.FSharp.Editor
 let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
 let inline nonNull<'T when 'T : null> (x: 'T) = x
 let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+let inline nullArgCheck (argumentName:string) (value: 'T when 'T : not struct) = 
+    match box value with 
+    | null -> raise (new System.ArgumentNullException(argumentName))        
+    | _ ->  value
+let inline withNull<'T when 'T: not struct> (value : 'T) = value
 #endif
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph

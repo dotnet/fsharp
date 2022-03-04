@@ -436,7 +436,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
-#if NO_CHECKNULLS
+#if BUILDING_WITH_LKG
     val ofObj: value: 'T -> 'T option  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
@@ -456,7 +456,7 @@ module Option =
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
-#if NO_CHECKNULLS
+#if BUILDING_WITH_LKG
     val toObj: value: 'T option -> 'T when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
@@ -889,7 +889,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("OfObj")>]
-#if NO_CHECKNULLS
+#if BUILDING_WITH_LKG
     val ofObj: value: 'T -> 'T voption  when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
@@ -909,7 +909,7 @@ module ValueOption =
     /// </code>
     /// </example>
     [<CompiledName("ToObj")>]
-#if NO_CHECKNULLS
+#if BUILDING_WITH_LKG
     val toObj: value: 'T voption -> 'T when 'T : null
 #else
     // TODO NULLNESS: assess this change - is it a breaking change?
