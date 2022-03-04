@@ -1,0 +1,9 @@
+FSharp.Build.UnitTests.dll
+FSharp.Compiler.Benchmarks.dll
+FSharp.Compiler.ComponentTests.dll
+FSharp.Test.Utilities.dll
+FSharp.Compiler.Private.Scripting.UnitTests.dll
+FSharp.Compiler.Service.Tests.dll
+FSharp.Compiler.UnitTests.dll
+FSharp.Core.UnitTests.dll
+FSharpSuite.Tests.dll

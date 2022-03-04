@@ -27,6 +27,7 @@ open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
@@ -2493,7 +2494,7 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding cenv (env: TcEnv) binding =
         match binding with
-        | SynBinding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, _, rhsExpr, mBinding, spBind) ->
+        | SynBinding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind, _) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) =
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData p (NormalizedBindingRhs ([], retInfo, rhsExpr))
             let paramNames = Some valSynData.SynValInfo.ArgNames
@@ -2560,7 +2561,7 @@ module EventDeclarationNormalization =
 
                    match rhsExpr with
                    // Detect 'fun () -> e' which results from the compilation of a property getter
-                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), _, trueRhsExpr, _, m) ->
+                   | SynExpr.Lambda (args=SynSimplePats.SimplePats([], _); body=trueRhsExpr; range=m) ->
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
 
                        // reconstitute rhsExpr
@@ -4992,7 +4993,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             TcAttributes cenv env Unchecked.defaultof<_> attrList.Attributes |> ignore
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
 
-    | SynPat.Or (pat1, pat2, m) ->
+    | SynPat.Or (pat1, pat2, m, _) ->
         let pat1', (tpenv, names1, takenNames1) = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty pat1
         let pat2', (tpenv, names2, takenNames2) = TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty pat2
         if not (takenNames1 = takenNames2) then
@@ -5773,7 +5774,8 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
       )
 
-    | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, extraImpls, mNewExpr, m) ->
+    | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, members, extraImpls, mNewExpr, m) ->
+      let binds = unionBindingAndMembers binds members
       TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
 
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) ->
@@ -5806,10 +5808,10 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
 
-    | SynExpr.TryWith (_mTry, synBodyExpr, _mTryToWith, _mWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
-        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith)
+    | SynExpr.TryWith (synBodyExpr, synWithClauses, mTryToLast, spTry, spWith, trivia) ->
+        TcExprTryWith cenv overallTy env tpenv (synBodyExpr, synWithClauses, trivia.WithToEndRange, mTryToLast, spTry, spWith)
 
-    | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally) ->
+    | SynExpr.TryFinally (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally, _trivia) ->
         TcExprTryFinally cenv overallTy env tpenv (synBodyExpr, synFinallyExpr, mTryToLast, spTry, spFinally)
 
     | SynExpr.JoinIn (e1, mInToken, e2, mAll) ->
@@ -6034,7 +6036,8 @@ and TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImp
 
     // Work out the type of any interfaces to implement
     let extraImpls, tpenv =
-        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, overrides, m)) ->
+        (tpenv, extraImpls) ||> List.mapFold (fun tpenv (SynInterfaceImpl(synIntfTy, _mWith, bindings, members, m)) ->
+            let overrides = unionBindingAndMembers bindings members
             let intfTy, tpenv = TcType cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synIntfTy
             if not (isInterfaceTy cenv.g intfTy) then
                 error(Error(FSComp.SR.tcExpectedInterfaceType(), m))
@@ -6076,14 +6079,14 @@ and TcExprIntegerForLoop cenv overallTy env tpenv (spBind, id, start, dir, finis
     let bodyExpr, tpenv = TcStmt cenv envinner tpenv body
     mkFastForLoop cenv.g (spBind, m, idv, startExpr, dir, finishExpr, bodyExpr), tpenv
 
-and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) =
+and TcExprTryWith cenv overallTy env tpenv (synBodyExpr, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) =
     let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
     // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block.
     let filterClauses =
         synWithClauses |> List.map (fun clause ->
-            let (SynMatchClause(pat, optWhenExpr, arrow, _, m, _)) = clause
+            let (SynMatchClause(pat, optWhenExpr, _, m, _, trivia)) = clause
             let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
-            SynMatchClause(pat, optWhenExpr, arrow, oneExpr, m, DebugPointAtTarget.No))
+            SynMatchClause(pat, optWhenExpr, oneExpr, m, DebugPointAtTarget.No, trivia))
     let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty (MustEqual cenv.g.int_ty) env tpenv filterClauses
     let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
     let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
@@ -6255,7 +6258,7 @@ and RewriteRangeExpr expr =
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
-    | SynExpr.Lambda (isMember, isSubsequent, spats, _, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m, _) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy.Commit
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
@@ -6788,7 +6791,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo, bind) =
             | SynPat.Named (id, _, _, _), None ->
                 let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar (ident (CompilerGeneratedName "this", id.idRange))) bindingRhs
                 let logicalMethId = id
-                let memberFlags = OverrideMemberFlags SynMemberKind.Member
+                let memberFlags = OverrideMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member
                 bindingRhs, logicalMethId, memberFlags
 
             | SynPat.InstanceMember(thisId, memberId, _, _, _), Some memberFlags ->
@@ -8492,7 +8495,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
 
     let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
 
-    let memberFlags = StaticMemberFlags SynMemberKind.Member
+    let memberFlags = StaticMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member
     let logicalCompiledName = ComputeLogicalName id memberFlags
     let traitInfo = TTrait(argTys, logicalCompiledName, memberFlags, argTys, Some retTy, sln)
 
@@ -8524,7 +8527,7 @@ and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
         | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
         | SynExpr.Record (copyInfo=copyOpt; recordFields=fields) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall ((fun (SynExprRecordField(expr=e)) -> e) >> Option.forall isSimpleArgument)
         | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
-        | SynExpr.IfThenElse (_, _, synExpr, _, synExpr2, _, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
+        | SynExpr.IfThenElse (ifExpr=synExpr; thenExpr=synExpr2; elseExpr=synExprOpt) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
         | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
         | SynExpr.ObjExpr _
         | SynExpr.AnonRecd _
@@ -9733,7 +9736,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) ->
             cont (Expr.Sequential (e1', e2', NormalSeq, sp, m), tpenv))
 
-    | SynExpr.LetOrUse (isRec, isUse, binds, body, m) when not (isUse && isCompExpr) ->
+    | SynExpr.LetOrUse (isRec, isUse, binds, body, m, _) when not (isUse && isCompExpr) ->
         if isRec then
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -9751,7 +9754,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) ->
                 cont (fst (mkf (x, overallTy.Commit)), tpenv))
 
-    | SynExpr.IfThenElse (_, _, synBoolExpr, _, synThenExpr, _, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
+    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, m, trivia) when not isCompExpr ->
         let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv (MustEqual cenv.g.bool_ty) env tpenv synBoolExpr
         let thenExpr, tpenv =
             let env =
@@ -9769,7 +9772,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
 
         match synElseExprOpt with
         | None ->
-            let elseExpr = mkUnit cenv.g mIfToThen
+            let elseExpr = mkUnit cenv.g trivia.IfToThenRange
             let spElse = DebugPointAtTarget.No  // the fake 'unit' value gets exactly the same range as spIfToThen
             let overallExpr = primMkCond spIfToThen DebugPointAtTarget.Yes spElse m overallTy.Commit boolExpr thenExpr elseExpr
             cont (overallExpr, tpenv)
@@ -9809,7 +9812,7 @@ and TcMatchClauses cenv inputTy (resultTy: OverallTy) env tpenv clauses =
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
 and TcMatchClause cenv inputTy (resultTy: OverallTy) env isFirst tpenv synMatchClause =
-    let (SynMatchClause(pat, optWhenExpr, _, e, patm, spTgt)) = synMatchClause
+    let (SynMatchClause(pat, optWhenExpr, e, patm, spTgt, _)) = synMatchClause
     let pat', optWhenExprR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e

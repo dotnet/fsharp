@@ -409,8 +409,8 @@ type AsyncModule() =
     [<Fact>]
     member _.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
-            let old = System.Threading.SynchronizationContext.Current
-            System.Threading.SynchronizationContext.SetSynchronizationContext(syncContext)
+            let old = SynchronizationContext.Current
+            SynchronizationContext.SetSynchronizationContext(syncContext)
             let longRunningTask = async { sleep(5000) }
             let mutable failed = false
             try
@@ -418,10 +418,30 @@ type AsyncModule() =
                 failed <- true
             with
                 :? System.TimeoutException -> ()
-            System.Threading.SynchronizationContext.SetSynchronizationContext(old)
+            SynchronizationContext.SetSynchronizationContext(old)
             if failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
+
+    [<Fact>]
+    // See https://github.com/dotnet/fsharp/issues/12637#issuecomment-1020199383
+    member _.``RunSynchronously.ThreadJump.IfSyncCtxtNonNull``() = 
+        async {
+            do! Async.SwitchToThreadPool()
+            let old = SynchronizationContext.Current
+            SynchronizationContext.SetSynchronizationContext(SynchronizationContext())
+            Assert.NotNull(SynchronizationContext.Current)
+            Assert.True(Thread.CurrentThread.IsThreadPoolThread)
+            let computation =
+                async {
+                    let ctxt = SynchronizationContext.Current
+                    Assert.Null(ctxt)
+                    Assert.True(Thread.CurrentThread.IsThreadPoolThread)
+                }
+            Async.RunSynchronously(computation)
+            SynchronizationContext.SetSynchronizationContext(old)
+        }
+        |> Async.RunSynchronously
 
     [<Fact>]
     member _.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
