@@ -716,9 +716,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             let formalTypeInst = generalizeTypars formalTypars
             let ty = TType_app(entity, formalTypeInst, cenv.g.knownWithoutNull)
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
-            tdef.Fields.AsList
-            |> List.map (fun tdef -> let ilFieldInfo = ILFieldInfo(formalTypeInfo, tdef)
-                                     FSharpField(cenv, FSharpFieldData.ILField ilFieldInfo ))
+            tdef.Fields.AsList()
+            |> List.map (fun tdef ->
+                let ilFieldInfo = ILFieldInfo(formalTypeInfo, tdef)
+                FSharpField(cenv, FSharpFieldData.ILField ilFieldInfo ))
             |> makeReadOnlyCollection
 
         else

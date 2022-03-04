@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Symbols
 
 open FSharp.Compiler
 open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
@@ -96,8 +97,8 @@ type E =
     | DecisionTreeSuccess of int * FSharpExpr list
     | Call of FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list * FSharpExpr list 
     | NewObject of FSharpMemberOrFunctionOrValue * FSharpType list * FSharpExpr list 
-    | LetRec of ( FSharpMemberOrFunctionOrValue * FSharpExpr) list * FSharpExpr  
-    | Let of (FSharpMemberOrFunctionOrValue * FSharpExpr) * FSharpExpr 
+    | LetRec of (FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) list * FSharpExpr  
+    | Let of (FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtBinding) * FSharpExpr 
     | NewRecord of FSharpType * FSharpExpr list 
     | ObjectExpr of FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list
     | FSharpFieldGet of  FSharpExpr option * FSharpType * FSharpField 
@@ -121,16 +122,17 @@ type E =
     | DefaultValue of FSharpType  
     | Const of obj * FSharpType
     | AddressOf of FSharpExpr 
-    | Sequential of FSharpExpr * FSharpExpr  
-    | FastIntegerForLoop of FSharpExpr * FSharpExpr * FSharpExpr * bool
-    | WhileLoop of FSharpExpr * FSharpExpr  
-    | TryFinally of FSharpExpr * FSharpExpr  
-    | TryWith of FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr  
+    | Sequential of FSharpExpr * FSharpExpr
+    | IntegerForLoop of FSharpExpr * FSharpExpr * FSharpExpr * bool * DebugPointAtFor * DebugPointAtInOrTo
+    | WhileLoop of FSharpExpr * FSharpExpr  * DebugPointAtWhile
+    | TryFinally of FSharpExpr * FSharpExpr * DebugPointAtTry * DebugPointAtFinally
+    | TryWith of FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * FSharpMemberOrFunctionOrValue * FSharpExpr * DebugPointAtTry * DebugPointAtWith
     | NewDelegate of FSharpType * FSharpExpr  
     | ILFieldGet of FSharpExpr option * FSharpType * string 
     | ILFieldSet of FSharpExpr option * FSharpType * string  * FSharpExpr 
     | ILAsm of string * FSharpType list * FSharpExpr list
     | WitnessArg of int
+    | DebugPoint of DebugPointAtLeafExpr * FSharpExpr
 
 /// Used to represent the information at an object expression member 
 and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args: FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
@@ -157,8 +159,8 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.Lambda (_v, body) -> [body]
         | E.Application (f, _tyargs, arg) -> f :: arg
         | E.IfThenElse (e1, e2, e3) -> [e1;e2;e3]
-        | E.Let ((_bindingVar, bindingExpr), b) -> [bindingExpr;b]
-        | E.LetRec (ves, b) -> (List.map snd ves) @ [b]
+        | E.Let ((_bindingVar, bindingExpr, _dp), b) -> [bindingExpr;b]
+        | E.LetRec (ves, b) -> (List.map p23 ves) @ [b]
         | E.NewRecord (_recordType, es) -> es
         | E.NewAnonRecord (_recordType, es) -> es
         | E.AnonRecordGet (e, _recordType, _n) -> [e]
@@ -177,10 +179,10 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.Quote a -> [a]
         | E.TypeTest (_ty, b) -> [b]
         | E.Sequential (a, b) -> [a;b]
-        | E.FastIntegerForLoop (a, b, c, _dir) -> [a;b;c]
-        | E.WhileLoop (guard, body) -> [guard; body]
-        | E.TryFinally (body, b) -> [body; b]
-        | E.TryWith (body, _b, _c, _d, handler) -> [body; handler]
+        | E.IntegerForLoop (a, b, c, _dir, _dp, _dp2) -> [a;b;c]
+        | E.WhileLoop (guard, body, _dp) -> [guard; body]
+        | E.TryFinally (body, b, _dp, _dp2) -> [body; b]
+        | E.TryWith (body, _b, _c, _d, handler, _dp, _dp2) -> [body; handler]
         | E.NewDelegate (_ty, body) -> [body]
         | E.DefaultValue _ty -> []
         | E.AddressSet (lvalueExpr, rvalueExpr) -> [lvalueExpr; rvalueExpr]
@@ -203,6 +205,7 @@ and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range,
         | E.TraitCall (_sourceTypes, _traitName, _memberFlags, _paramTypes, _retTypes, args) -> args
         | E.Unused -> [] // unexpected
         | E.WitnessArg _n -> []
+        | E.DebugPoint (_, e) -> [e]
 
 /// The implementation of the conversion operation
 module FSharpExprConvert =
@@ -216,7 +219,7 @@ module FSharpExprConvert =
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(_, Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
         // Match "init@41 <- 6"
@@ -390,18 +393,18 @@ module FSharpExprConvert =
         // Put in ConvExprPrimLinear because of the overlap with Expr.Sequential below
         //
         // TODO: allow clients to see static initialization checks if they want to
-        | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) 
-        | Expr.Sequential (StaticInitializationCount, x1, NormalSeq, _, _)              
-        | Expr.Sequential (StaticInitializationCheck, x1, NormalSeq, _, _) ->
+        | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _) 
+        | Expr.Sequential (StaticInitializationCount, x1, NormalSeq, _)              
+        | Expr.Sequential (StaticInitializationCheck, x1, NormalSeq, _) ->
             ConvExprPrim cenv env x1 |> contF
 
         // Large sequences of sequential code
-        | Expr.Sequential (e1, e2, NormalSeq, _, _)  -> 
+        | Expr.Sequential (e1, e2, NormalSeq, _)  -> 
             let e1R = ConvExpr cenv env e1
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
-        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->
+        | Expr.Sequential (x0, x1, ThenDoSeq, _) ->
             E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) |> contF
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
@@ -520,7 +523,7 @@ module FSharpExprConvert =
     and ConvExprPrim (cenv: SymbolEnv) (env: ExprTranslationEnv) expr = 
         let g = cenv.g
         // Eliminate integer 'for' loops 
-        let expr = DetectAndOptimizeForExpression g OptimizeIntRangesOnly expr
+       let expr = DetectAndOptimizeForEachExpression g OptimizeIntRangesOnly expr
 
         // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
         // complete inference types.
@@ -558,11 +561,12 @@ module FSharpExprConvert =
             ConvConst cenv env m c ty
 
         | Expr.LetRec (binds, body, _, _) -> 
+            let dps = binds |> List.map (fun bind -> bind.DebugPoint)
             let vs = valsOfBinds binds
             let vsR = vs |> List.map (ConvVal cenv)
             let env = env.BindVals vs
             let bodyR = ConvExpr cenv env body 
-            let bindsR = List.zip vsR (binds |> List.map (fun b -> b.Expr |> ConvExpr cenv env))
+            let bindsR = List.zip3 vsR (binds |> List.map (fun b -> b.Expr |> ConvExpr cenv env)) dps
             E.LetRec(bindsR, bodyR) 
   
         | Expr.Lambda (_, _, _, vs, b, _, _) -> 
@@ -848,34 +852,34 @@ module FSharpExprConvert =
             | TOp.Array, [ty], xa -> 
                     E.NewArray(ConvType cenv ty, ConvExprs cenv env xa)                             
 
-            | TOp.While _, [], [Expr.Lambda (_, _, _, [_], test, _, _);Expr.Lambda (_, _, _, [_], body, _, _)]  -> 
-                    E.WhileLoop(ConvExpr cenv env test, ConvExpr cenv env body) 
+            | TOp.While (dp, _), [], [Expr.Lambda (_, _, _, [_], test, _, _);Expr.Lambda (_, _, _, [_], body, _, _)]  -> 
+                    E.WhileLoop(ConvExpr cenv env test, ConvExpr cenv env body, dp) 
         
-            | TOp.For (_, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody g (arr, elemTy, body)] ->
+            | TOp.IntegerForLoop (dpFor, dpEquals, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody cenv.g (arr, elemTy, body)] ->
                 let lim1 = 
-                    let len = mkCallArrayLength g lm elemTy arr // Array.length arr
-                    mkCallSubtractionOperator g lm g.int32_ty len (mkOne g lm) // len - 1
-                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
+                    let len = mkCallArrayLength cenv.g lm elemTy arr // Array.length arr
+                    mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty len (mkOne cenv.g lm) // len - 1
+                E.IntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown, dpFor, dpEquals) 
 
-            | TOp.For (_, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], lim1, lm, _); body]  -> 
+            | TOp.IntegerForLoop (doFor, doEquals, dir), [], [Expr.Lambda (_, _, _, [_], lim0, _, _); Expr.Lambda (_, _, _, [_], lim1, lm, _); body]  -> 
                 let lim1 =
                     if dir = CSharpForLoopUp then
                         mkCallSubtractionOperator g lm g.int32_ty lim1 (mkOne g lm) // len - 1
                     else lim1
-                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
+                E.IntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown, doFor, doEquals) 
 
             | TOp.ILCall (_, _, _, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), [], callArgs -> 
                 ConvILCall cenv env (isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, callArgs, m)
 
-            | TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
-                E.TryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2) 
+            | TOp.TryFinally (dpTry, dpFinally), [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
+                E.TryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2, dpTry, dpFinally) 
 
-            | TOp.TryWith _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
+            | TOp.TryWith (dpTry, dpWith), [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
                 let vfR = ConvVal cenv vf
                 let envf = env.BindVal vf
                 let vhR = ConvVal cenv vh
                 let envh = env.BindVal vh
-                E.TryWith(ConvExpr cenv env e1, vfR, ConvExpr cenv envf ef, vhR, ConvExpr cenv envh eh) 
+                E.TryWith(ConvExpr cenv env e1, vfR, ConvExpr cenv envf ef, vhR, ConvExpr cenv envh eh, dpTry, dpWith) 
 
             | TOp.Bytes bytes, [], [] -> E.Const(box bytes, ConvType cenv (tyOfExpr g expr))
 
@@ -898,8 +902,13 @@ module FSharpExprConvert =
                 ConvExprPrim cenv env replExpr
 
             | _ -> wfail (sprintf "unhandled construct in AST", m)
+
         | Expr.WitnessArg (traitInfo, _m) ->
             ConvWitnessInfoPrim cenv env traitInfo
+
+        | Expr.DebugPoint (_, innerExpr) ->
+            ConvExprPrim cenv env innerExpr
+
         | _ -> 
             wfail (sprintf "unhandled construct in AST", expr.Range)
 
@@ -950,7 +959,7 @@ module FSharpExprConvert =
             let vR = ConvVal cenv v 
             let rhsR = ConvExpr cenv env bind.Expr
             let envinner = env.BindVal v
-            Some(vR, rhsR), envinner
+            Some(vR, rhsR, bind.DebugPoint), envinner
 
     and ConvILCall (cenv: SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
         let g = cenv.g
@@ -1187,7 +1196,7 @@ module FSharpExprConvert =
     and ConvTargetsLinear cenv env tgs contF = 
         match tgs with 
         | [] -> contF []
-        | TTarget(vars, rhs, _, _) :: rest -> 
+        | TTarget(vars, rhs, _) :: rest -> 
             let varsR = (List.rev vars) |> List.map (ConvVal cenv)
             ConvExprLinear cenv env rhs (fun targetR -> 
             ConvTargetsLinear cenv env rest (fun restR -> 
@@ -1208,7 +1217,7 @@ module FSharpExprConvert =
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 
 
-    and ConvVal cenv (v: Val) =  
+    and ConvVal cenv (v: Val) : FSharpMemberOrFunctionOrValue =  
         let vref = mkLocalValRef v 
         FSharpMemberOrFunctionOrValue(cenv, vref) 
 
@@ -1242,7 +1251,7 @@ module FSharpExprConvert =
 
     and ConvDecisionTreePrim cenv env dtreeRetTy x = 
         match x with 
-        | TDSwitch(_, e1, csl, dfltOpt, m) -> 
+        | TDSwitch(e1, csl, dfltOpt, m) -> 
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
@@ -1324,7 +1333,7 @@ and FSharpImplementationFileDeclaration =
     | InitAction of action: FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
-    let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
+    let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
     let rec getDecls2 (ModuleOrNamespaceExprWithSig(_mty, def, _m)) = getDecls def
     and getBind (bind: Binding) = 
         let v = bind.Var
@@ -1383,7 +1392,7 @@ module FSharpExprPatterns =
 
     let (|IfThenElse|_|) (e: FSharpExpr) = match e.E with E.IfThenElse (e1, e2, e3) -> Some (e1, e2, e3) | _ -> None
 
-    let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((v, e), b) -> Some ((v, e), b) | _ -> None
+    let (|Let|_|) (e: FSharpExpr) = match e.E with E.Let ((dp, v, e), b) -> Some ((dp, v, e), b) | _ -> None
 
     let (|LetRec|_|) (e: FSharpExpr) = match e.E with E.LetRec (ves, b) -> Some (ves, b) | _ -> None
 
@@ -1423,15 +1432,17 @@ module FSharpExprPatterns =
 
     let (|TypeTest|_|) (e: FSharpExpr) = match e.E with E.TypeTest (a, b) -> Some (a, b) | _ -> None
 
-    let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (a, b) -> Some (a, b) | _ -> None
+    let (|Sequential|_|) (e: FSharpExpr) = match e.E with E.Sequential (dp, a) -> Some (dp, a) | _ -> None
 
-    let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.FastIntegerForLoop (a, b, c, d) -> Some (a, b, c, d) | _ -> None
+    let (|DebugPoint|_|) (e: FSharpExpr) = match e.E with E.DebugPoint (dp, a) -> Some (dp, a) | _ -> None
 
-    let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (a, b) -> Some (a, b) | _ -> None
+    let (|FastIntegerForLoop|_|) (e: FSharpExpr) = match e.E with E.IntegerForLoop (dpFor, dpEquals, a, b, c, d) -> Some (dpFor, dpEquals, a, b, c, d) | _ -> None
 
-    let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (a, b) -> Some (a, b) | _ -> None
+    let (|WhileLoop|_|) (e: FSharpExpr) = match e.E with E.WhileLoop (dpWhile, a, b) -> Some (dpWhile, a, b) | _ -> None
 
-    let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (a, b, c, d, e) -> Some (a, b, c, d, e) | _ -> None
+    let (|TryFinally|_|) (e: FSharpExpr) = match e.E with E.TryFinally (dpTry, dpFinally, a, b) -> Some (dpTry, dpFinally, a, b) | _ -> None
+
+    let (|TryWith|_|) (e: FSharpExpr) = match e.E with E.TryWith (dpTry, dpWith, a, b, c, d, e) -> Some (dpTry, dpWith, a, b, c, d, e) | _ -> None
 
     let (|NewDelegate|_|) (e: FSharpExpr) = match e.E with E.NewDelegate (ty, e) -> Some (ty, e) | _ -> None
 

@@ -2214,14 +2214,19 @@ let ``Test Project13 all symbols`` () =
 
     let dtType = dtSymbol.Symbol:?> FSharpEntity
 
-    set [ for i in dtType.DeclaredInterfaces -> i.ToString() ] |> shouldEqual
-        (set
-          ["type System.IComparable";
-           "type System.IFormattable";
-           "type System.IConvertible";
-           "type System.Runtime.Serialization.ISerializable";
-           "type System.IComparable<System.DateTime>";
-           "type System.IEquatable<System.DateTime>"])
+    set [ for i in dtType.DeclaredInterfaces -> i.ToString() ] |> shouldEqual (
+        set
+            [
+                "type System.IComparable"
+                "type System.IFormattable"
+                "type System.IConvertible"
+#if NETCOREAPP
+                "type System.ISpanFormattable"
+#endif
+                "type System.Runtime.Serialization.ISerializable"
+                "type System.IComparable<System.DateTime>"
+                "type System.IEquatable<System.DateTime>"
+            ])
 
     dtType.BaseType.ToString() |> shouldEqual "Some(type System.ValueType)"
 
@@ -4199,12 +4204,22 @@ let ``Test project31 C# method attributes`` () =
 
         objMethodsAttributes
         |> set
-        |> shouldEqual
-              (set [
+        |> shouldEqual (set
+            [
 #if !NETCOREAPP
-                   "(SecuritySafeCriticalAttribute, [], [])";
+                "(SecuritySafeCriticalAttribute, [], [])"
+#else
+                "(NullableAttribute, [(type Microsoft.FSharp.Core.byte, 2uy)], [])";
+                "(NullableContextAttribute, [(type Microsoft.FSharp.Core.byte, 0uy)], [])"
+                "(NullableContextAttribute, [(type Microsoft.FSharp.Core.byte, 2uy)], [])"
+                "(SupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"windows\")],\n [])"
+                "(UnsupportedOSPlatformAttribute,\n [(type Microsoft.FSharp.Core.string, \"android\")], [])"
+                "(UnsupportedOSPlatformAttribute,\n [(type Microsoft.FSharp.Core.string, \"browser\")], [])"
+                "(UnsupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"ios\")],\n [])"
+                "(UnsupportedOSPlatformAttribute, [(type Microsoft.FSharp.Core.string, \"tvos\")],\n [])"
 #endif
-                   "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
+                "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"
+            ])
 
 [<Test>]
 #if NETCOREAPP
@@ -4240,12 +4255,23 @@ let ``Test project31 Format C# method attributes`` () =
 
         objMethodsAttributes
         |> set
-        |> shouldEqual
-              (set ["[<CLSCompliantAttribute (false)>]";
+        |> shouldEqual(
+            set
+                [
+                    "[<CLSCompliantAttribute (false)>]"
 #if !NETCOREAPP
-                    "[<Security.SecuritySafeCriticalAttribute ()>]";
+                    "[<Security.SecuritySafeCriticalAttribute ()>]"
+#else
+                    "[<Runtime.CompilerServices.NullableAttribute (2uy)>]"
+                    "[<Runtime.CompilerServices.NullableContextAttribute (0uy)>]"
+                    "[<Runtime.CompilerServices.NullableContextAttribute (2uy)>]"
+                    "[<Runtime.Versioning.SupportedOSPlatformAttribute (\"windows\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"android\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"browser\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"ios\")>]"
+                    "[<Runtime.Versioning.UnsupportedOSPlatformAttribute (\"tvos\")>]"
 #endif
-                    ])
+                ])
 
 module internal Project32 =
 
@@ -4365,25 +4391,26 @@ let ``Test Project33 extension methods`` () =
              ("GetValue", ["member"; "extmem"])]
 
 module internal Project34 =
+    let directoryPath = tryCreateTemporaryDirectory ()
+    let sourceFileName = Path.Combine(directoryPath, "Program.fs")
+    let dllName = Path.ChangeExtension(sourceFileName, ".dll")
+    let projFileName = Path.ChangeExtension(sourceFileName, ".fsproj")
+    let fileSource = """
+    module Dummy
+    """
+    FileSystem.OpenFileForWriteShim(sourceFileName).Write(fileSource)
+    let cleanFileName a = if a = sourceFileName then "file1" else "??"
 
-    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
-    let base2 = tryCreateTemporaryFileName ()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
-module Dummy
-"""
-    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let cleanFileName a = if a = fileName1 then "file1" else "??"
-
-    let fileNames = [fileName1]
+    let fileNames = [sourceFileName]
     let args =
         [|
             yield! mkProjectCommandLineArgs (dllName, fileNames)
-            // We use .NET-buit version of System.Data.dll since the tests depend on implementation details
+            // We use .NET-built version of System.Data.dll since the tests depend on implementation details
             // i.e. the private type System.Data.Listeners may not be available on Mono.
             yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "System.Data.dll"))
         |]
+        |> Array.filter(fun arg -> not((arg.Contains("System.Data")) && not (arg.Contains(@"service\data\System.Data.dll"))))
+
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 [<Test>]
@@ -4398,21 +4425,29 @@ let ``Test Project34 whole project errors`` () =
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test project34 should report correct accessibility for System.Data.Listeners`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project34.options) |> Async.RunImmediate
+    let options = Project34.options
+    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     let rec getNestedEntities (entity: FSharpEntity) =
         seq { yield entity
               for e in entity.NestedEntities do
                   yield! getNestedEntities e }
     let listenerEntity =
-        wholeProjectResults.ProjectContext.GetReferencedAssemblies()
-        |> List.tryPick (fun asm -> if asm.SimpleName.Contains("System.Data") then Some asm.Contents.Entities else None)
-        |> Option.get
-        |> Seq.collect getNestedEntities
-        |> Seq.tryFind (fun entity ->
-            entity.TryFullName
-            |> Option.map (fun s -> s.Contains("System.Data.Listeners"))
-            |> fun arg -> defaultArg arg false)
-        |> Option.get
+        let refs = wholeProjectResults.ProjectContext.GetReferencedAssemblies()
+        let picked = refs |> List.tryPick (fun asm -> if asm.SimpleName.Contains("System.Data") then Some asm.Contents.Entities else None)
+        let v =
+            let nestedEntities =
+                picked
+                |> Option.get
+                |> Seq.collect getNestedEntities
+            nestedEntities
+            |> Seq.tryFind (fun entity ->
+                entity.TryFullName
+                |> Option.map (fun s ->
+                    let x = s
+                    x.Contains("System.Data.Listeners"))
+                |> fun arg -> defaultArg arg false)
+            |> Option.get
+        v
     listenerEntity.Accessibility.IsPrivate |> shouldEqual true
 
     let listenerFuncEntity =
@@ -4621,7 +4656,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     // ThisValue in these cases, this is only used when the symbol
     // is implicit in the constructor
     match getExpr 4 with
-    | Let((b,_),_) ->
+    | Let((b,_, _),_) ->
         b.IsConstructorThisValue && not b.IsMemberThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
@@ -5653,7 +5688,7 @@ let checkContentAsScript content =
     let tempDir = Path.GetTempPath()
     let scriptFullPath = Path.Combine(tempDir, scriptName)
     let sourceText = SourceText.ofString content
-    let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |> Async.RunImmediate
+    let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |>    Async.RunImmediate
     let parseOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
     let parseResults = checker.ParseFile(scriptFullPath, sourceText, parseOptions) |> Async.RunImmediate
     let checkResults = checker.CheckFileInProject(parseResults, scriptFullPath, 0, sourceText, projectOptions) |> Async.RunImmediate

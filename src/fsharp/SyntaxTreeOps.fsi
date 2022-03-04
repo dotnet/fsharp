@@ -49,6 +49,10 @@ val (|SingleIdent|_|): inp:SynExpr -> Ident option
 /// This affects placement of sequence points
 val IsControlFlowExpression: e:SynExpr -> bool
 
+// The debug point for a 'let' extends to include the 'let' if we're not defining a function and the r.h.s. is not a control-flow
+// expression. Otherwise, there is no debug point at the binding.
+val IsDebugPointBinding: synPat: SynPat -> synExpr: SynExpr -> bool
+
 val mkSynAnonField: ty:SynType * xmlDoc:PreXmlDoc -> SynField
 
 val mkSynNamedField: ident:Ident * ty:SynType * xmlDoc:PreXmlDoc * m:range -> SynField
@@ -282,8 +286,17 @@ val synExprContainsError: inpExpr:SynExpr -> bool
 
 val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list
 
+/// 'e1 && e2'
+val (|SynAndAlso|_|): SynExpr -> (SynExpr * SynExpr) option
+
+/// 'e1 || e2'
+val (|SynOrElse|_|): SynExpr -> (SynExpr * SynExpr) option
+
+/// 'e1 |> e2'
 val (|SynPipeRight|_|): SynExpr -> (SynExpr * SynExpr) option
 
+/// 'e1 ||> e2'
 val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 
+/// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option

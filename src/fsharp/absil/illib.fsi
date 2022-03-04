@@ -602,12 +602,9 @@ module internal MapAutoOpens =
         member Values: 'Value list
 #endif
 
-        member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
+        member AddMany: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
-        member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
-
-    type internal Map<'Key,'Value when 'Key: comparison> with
-        member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
+        member AddOrModify: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
 [<Sealed>]
@@ -617,9 +614,7 @@ type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     member Add: k:'Key * v:'Value -> LayeredMultiMap<'Key,'Value>
 
-    member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
-
-    member MarkAsCollapsible: unit -> LayeredMultiMap<'Key,'Value>
+    member AddMany: kvs:KeyValuePair<'Key,'Value> [] -> LayeredMultiMap<'Key,'Value>
 
     member TryFind: k:'Key -> 'Value list option
 

@@ -349,13 +349,10 @@ type
             |]
 
             match parseResults.ParseTree with
-            | Types(range, [TypeRange(typeRange, synComponentRange)]) ->
+            | Types(range, [TypeRange(typeRange, synComponentRange)])
+            | TypeSigs(range, [TypeSigRange(typeRange, synComponentRange)]) ->
                 assertRange (4, 0) (10, 14) range
                 assertRange (4, 0) (10, 14) typeRange
-                assertRange (10, 13) (10, 14) synComponentRange
-            | TypeSigs(range, [TypeSigRange(typeRange, synComponentRange)]) ->
-                assertRange (4, 0) (11, 0) range
-                assertRange (4, 0) (11, 0) typeRange
                 assertRange (10, 13) (10, 14) synComponentRange
             | x ->
                 failwith $"Unexpected ParsedInput %A{x}")
@@ -483,6 +480,29 @@ type A = class end
                 assertRange (6, 5) (6, 6) synComponentRange
             | x ->
                 failwith $"Unexpected ParsedInput %A{x}")
+
+[<Test>]
+let ``types 07``(): unit =
+    let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
+module Test
+
+type A
+
+///B
+and B = int -> int
+"""
+    checkResults
+    |> checkXmls ["B", [|"B"|]]
+
+    parseResults
+    |> checkParsingErrors [||]
+
+    match parseResults.ParseTree with
+    | TypeSigs(_, [SynTypeDefnSig(range = range1); SynTypeDefnSig(range = range2)]) ->
+        assertRange (4, 5) (4, 6) range1
+        assertRange (6, 0) (7, 18) range2
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
 
 [<Test>]
 let ``let bindings 01 - allowed positions``(): unit =
@@ -865,9 +885,11 @@ type B =
     |]
 
     match parseResults.ParseTree with
-    | Members(SynMemberDefn.Member(range = range; memberDefn = binding) :: _) ->
+    | Members(SynMemberDefn.Member(range = range; memberDefn = SynBinding(xmlDoc = xmlDoc) as binding) :: _) ->
         assertRange (3, 4) (10, 37) range
         assertRange (3, 4) (8, 37) binding.RangeOfBindingWithRhs
+        assertRange (3, 4) (4, 9) xmlDoc.Range
+        assertRange (3, 4) (4, 9) (xmlDoc.ToXmlDoc(false, None).Range)
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 
@@ -914,6 +936,30 @@ type A ///CTOR1
     match parseResults.ParseTree with
     | Members([SynMemberDefn.ImplicitCtor(range = range)]) ->
         assertRange (2, 5) (2, 6) range
+    | x ->
+        failwith $"Unexpected ParsedInput %A{x}"
+
+[<Test>]
+let ``type members 07 - explicit ctor``(): unit =
+    let parseResults, checkResults = getParseAndCheckResultsOfSignatureFile """
+module Test
+
+type A =
+    ///ctor
+    new: unit -> A
+"""
+    checkResults
+    |> checkXmls [
+        "A", [||]
+        ".ctor", [|"ctor"|]
+       ]
+
+    parseResults
+    |> checkParsingErrors [||]
+
+    match parseResults.ParseTree with
+    | MemberSigs([SynMemberSig.Member(range = range)]) ->
+        assertRange (5, 4) (6, 18) range
     | x ->
         failwith $"Unexpected ParsedInput %A{x}"
 
@@ -1008,7 +1054,7 @@ module M2 = type A
     match parseResults.ParseTree with
     | NestedModulesSigs(range1, range2) ->
         assertRange (2, 0) (6, 30) range1
-        assertRange (8, 0) (11, 0) range2
+        assertRange (8, 0) (10, 18) range2
     | x ->
         failwith $"Unexpected ParsedInput: %A{x}"
 

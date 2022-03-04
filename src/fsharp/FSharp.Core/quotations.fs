@@ -1039,7 +1039,7 @@ module Patterns =
     let getNumGenericArguments(tc: Type) =
         if tc.IsGenericType then tc.GetGenericArguments().Length else 0
 
-    let bindMethodBySearch (parentT: Type, nm, marity, argtys, rty) =
+    let bindMethodBySearch (knownArgCount: int voption, parentT: Type, nm, marity, argtys, rty) =
         let methInfos = parentT.GetMethods staticOrInstanceBindingFlags |> Array.toList
         // First, filter on name, if unique, then binding "done"
         let tyargTs = getGenericArguments parentT
@@ -1062,8 +1062,17 @@ module Patterns =
                     let parameters = Array.toList (methInfo.GetParameters())
                     parameters |> List.map (fun param -> param.ParameterType)
                 let haveResT  = methInfo.ReturnType
+                
+                let nargTs = argTs.Length
+                
                 // check for match
-                if argTs.Length <> haveArgTs.Length then false (* method argument length mismatch *) else
+                if nargTs <> haveArgTs.Length then false (* method argument length mismatch *) else
+
+                // If a known-number-of-arguments-including-object-argument has been given then check that
+                if (match knownArgCount with 
+                    | ValueNone -> false
+                    | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs) then false else
+
                 let res = typesEqual (resT :: argTs) (haveResT :: haveArgTs)
                 res
             // return MethodInfo for (generic) type's (generic) method
@@ -1071,7 +1080,7 @@ module Patterns =
             | None          -> invalidOp (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
-    let bindMethodHelper (parentT: Type, nm, marity, argtys, rty) =
+    let bindMethodHelper (knownArgCount, (parentT: Type, nm, marity, argtys, rty)) =
       if isNull parentT then invalidArg "parentT" (SR.GetString(SR.QparentCannotBeNull))
       if marity = 0 then
           let tyargTs = if parentT.IsGenericType then parentT.GetGenericArguments() else [| |]
@@ -1085,9 +1094,9 @@ module Patterns =
                with :? AmbiguousMatchException -> None
           match methInfo with
           | Some methInfo when (typeEquals resT methInfo.ReturnType) -> methInfo
-          | _ -> bindMethodBySearch(parentT, nm, marity, argtys, rty)
+          | _ -> bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
       else
-          bindMethodBySearch(parentT, nm, marity, argtys, rty)
+          bindMethodBySearch(knownArgCount, parentT, nm, marity, argtys, rty)
 
     let bindModuleProperty (ty: Type, nm) =
         match ty.GetProperty(nm, staticBindingFlags) with
@@ -1256,14 +1265,14 @@ module Patterns =
         if ngmeth.GetGenericArguments().Length = 0 then ngmeth(* non generic *)
         else ngmeth.MakeGenericMethod(Array.ofList methTypeArgs)
 
-    let bindGenericMeth (tc: Type, argTypes, retType, methName, numMethTyargs) =
-        bindMethodHelper(tc, methName, numMethTyargs, argTypes, retType)
+    let bindGenericMeth (knownArgCount, (tc: Type, argTypes, retType, methName, numMethTyargs)) =
+        bindMethodHelper(knownArgCount, (tc, methName, numMethTyargs, argTypes, retType))
 
-    let bindMeth ((tc: Type, argTypes, retType, methName, numMethTyargs), tyargs) =
+    let bindMeth (knownArgCount, (tc: Type, argTypes, retType, methName, numMethTyargs), tyargs) =
         let ntyargs = tc.GetGenericArguments().Length
         let enclTypeArgs, methTypeArgs = chop ntyargs tyargs
         let ty = mkNamedType (tc, enclTypeArgs)
-        let ngmeth = bindMethodHelper(ty, methName, numMethTyargs, argTypes, retType)
+        let ngmeth = bindMethodHelper(knownArgCount, (ty, methName, numMethTyargs, argTypes, retType))
         instMeth(ngmeth, methTypeArgs)
 
     let pinfoIsStatic (pinfo: PropertyInfo) =
@@ -1498,7 +1507,7 @@ module Patterns =
                         let argTys = List.map typeOf args
                         f argTys
                 let tyargs = b env.typeInst
-                E (CombTerm (a tyargs, args)))
+                E (CombTerm (a tyargs (ValueSome args.Length), args)))
         | 1 ->
             let x = u_VarRef st
             (fun env -> E(VarTerm (x env)))
@@ -1603,7 +1612,7 @@ module Patterns =
                 let cinfo = bindGenericCctor tc
                 (cinfo :> MethodBase)
             else
-                let minfo = bindGenericMeth data
+                let minfo = bindGenericMeth (ValueNone, data)
                 (minfo :> MethodBase)
         | 2 ->
             let data = u_CtorInfoData st
@@ -1621,7 +1630,7 @@ module Patterns =
         | _ -> failwith "u_MethodBase"
 
 
-    and instModuleDefnOp r tyargs =
+    and instModuleDefnOp r tyargs _ =
         match r with
         | StaticMethodCallOp(minfo) -> StaticMethodCallOp(instMeth(minfo, tyargs))
         | StaticMethodCallWOp(minfo, minfoW, n) -> StaticMethodCallWOp(instMeth(minfo, tyargs), instMeth(minfoW, tyargs), n)
@@ -1643,62 +1652,62 @@ module Patterns =
         else
         let constSpec =
             match tag with
-            | 0 -> u_void st |> (fun () NoTyArgs -> IfThenElseOp)
+            | 0 -> u_void st |> (fun () NoTyArgs _ -> IfThenElseOp)
             // 1 taken above
-            | 2 -> u_void st |> (fun () NoTyArgs -> LetRecOp)
-            | 3 -> u_NamedType st |> (fun x tyargs -> NewRecordOp (mkNamedType (x, tyargs)))
-            | 4 -> u_RecdField st |> (fun prop tyargs -> InstancePropGetOp(prop tyargs))
-            | 5 -> u_UnionCaseInfo st |> (fun unionCase tyargs -> NewUnionCaseOp(unionCase tyargs))
-            | 6 -> u_UnionCaseField st |> (fun prop tyargs -> InstancePropGetOp(prop tyargs) )
-            | 7 -> u_UnionCaseInfo st |> (fun unionCase tyargs -> UnionCaseTestOp(unionCase tyargs))
-            | 8 -> u_void st |> (fun () (OneTyArg tyarg) -> NewTupleOp tyarg)
-            | 9 -> u_int st |> (fun x (OneTyArg tyarg) -> TupleGetOp (tyarg, x))
+            | 2 -> u_void st |> (fun () NoTyArgs _ -> LetRecOp)
+            | 3 -> u_NamedType st |> (fun x tyargs _ -> NewRecordOp (mkNamedType (x, tyargs)))
+            | 4 -> u_RecdField st |> (fun prop tyargs _ -> InstancePropGetOp(prop tyargs))
+            | 5 -> u_UnionCaseInfo st |> (fun unionCase tyargs _ -> NewUnionCaseOp(unionCase tyargs))
+            | 6 -> u_UnionCaseField st |> (fun prop tyargs _ -> InstancePropGetOp(prop tyargs) )
+            | 7 -> u_UnionCaseInfo st |> (fun unionCase tyargs _ -> UnionCaseTestOp(unionCase tyargs))
+            | 8 -> u_void st |> (fun () (OneTyArg tyarg) _ -> NewTupleOp tyarg)
+            | 9 -> u_int st |> (fun x (OneTyArg tyarg) _ -> TupleGetOp (tyarg, x))
             // Note, these get type args because they may be the result of reading literal field constants
-            | 11 -> u_bool st |> (fun x (OneTyArg tyarg) -> mkLiftedValueOpG (x, tyarg))
-            | 12 -> u_string st |> (fun x (OneTyArg tyarg) -> mkLiftedValueOpG (x, tyarg))
-            | 13 -> u_float32 st |> (fun x (OneTyArg tyarg) -> mkLiftedValueOpG (x, tyarg))
-            | 14 -> u_double st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 15 -> u_char st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 16 -> u_sbyte st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 17 -> u_byte st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 18 -> u_int16 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 19 -> u_uint16 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 20 -> u_int32 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 21 -> u_uint32 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 22 -> u_int64 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 23 -> u_uint64 st |> (fun a (OneTyArg tyarg) -> mkLiftedValueOpG (a, tyarg))
-            | 24 -> u_void st |> (fun () NoTyArgs -> mkLiftedValueOpG ((), typeof<unit>))
-            | 25 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs -> let pinfo = bindProp(a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropGetOp pinfo else InstancePropGetOp pinfo)
-            | 26 -> u_CtorInfoData st |> (fun (a, b) tyargs  -> NewObjectOp (bindCtor(a, b, tyargs)))
-            | 28 -> u_void st |> (fun () (OneTyArg ty) -> CoerceOp ty)
-            | 29 -> u_void st |> (fun () NoTyArgs -> SequentialOp)
-            | 30 -> u_void st |> (fun () NoTyArgs -> ForIntegerRangeLoopOp)
-            | 31 -> u_MethodInfoData st |> (fun p tyargs -> let minfo = bindMeth(p, tyargs) in if minfo.IsStatic then StaticMethodCallOp minfo else InstanceMethodCallOp minfo)
-            | 32 -> u_void st |> (fun () (OneTyArg ty) -> NewArrayOp ty)
-            | 33 -> u_void st |> (fun () (OneTyArg ty) -> NewDelegateOp ty)
-            | 34 -> u_void st |> (fun () NoTyArgs -> WhileLoopOp)
-            | 35 -> u_void st |> (fun () NoTyArgs -> LetOp)
-            | 36 -> u_RecdField st |> (fun prop tyargs -> InstancePropSetOp(prop tyargs))
-            | 37 -> u_tup2 u_NamedType u_string st |> (fun (a, b) tyargs -> let finfo = bindField(a, b, tyargs) in if finfo.IsStatic then StaticFieldGetOp finfo else InstanceFieldGetOp finfo)
-            | 38 -> u_void st |> (fun () NoTyArgs -> LetRecCombOp)
-            | 39 -> u_void st |> (fun () NoTyArgs -> AppOp)
-            | 40 -> u_void st |> (fun () (OneTyArg ty) -> ValueOp(null, ty, None))
-            | 41 -> u_void st |> (fun () (OneTyArg ty) -> DefaultValueOp ty)
-            | 42 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs -> let pinfo = bindProp(a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropSetOp pinfo else InstancePropSetOp pinfo)
-            | 43 -> u_tup2 u_NamedType u_string st |> (fun (a, b) tyargs -> let finfo = bindField(a, b, tyargs) in if finfo.IsStatic then StaticFieldSetOp finfo else InstanceFieldSetOp finfo)
-            | 44 -> u_void st |> (fun () NoTyArgs -> AddressOfOp)
-            | 45 -> u_void st |> (fun () NoTyArgs -> AddressSetOp)
-            | 46 -> u_void st |> (fun () (OneTyArg ty) -> TypeTestOp ty)
-            | 47 -> u_void st |> (fun () NoTyArgs -> TryFinallyOp)
-            | 48 -> u_void st |> (fun () NoTyArgs -> TryWithOp)
-            | 49 -> u_void st |> (fun () NoTyArgs -> VarSetOp)
+            | 11 -> u_bool st |> (fun x (OneTyArg tyarg) _ -> mkLiftedValueOpG (x, tyarg))
+            | 12 -> u_string st |> (fun x (OneTyArg tyarg) _ -> mkLiftedValueOpG (x, tyarg))
+            | 13 -> u_float32 st |> (fun x (OneTyArg tyarg) _ -> mkLiftedValueOpG (x, tyarg))
+            | 14 -> u_double st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 15 -> u_char st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 16 -> u_sbyte st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 17 -> u_byte st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 18 -> u_int16 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 19 -> u_uint16 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 20 -> u_int32 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 21 -> u_uint32 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 22 -> u_int64 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 23 -> u_uint64 st |> (fun a (OneTyArg tyarg) _ -> mkLiftedValueOpG (a, tyarg))
+            | 24 -> u_void st |> (fun () NoTyArgs _ -> mkLiftedValueOpG ((), typeof<unit>))
+            | 25 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs _ -> let pinfo = bindProp(a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropGetOp pinfo else InstancePropGetOp pinfo)
+            | 26 -> u_CtorInfoData st |> (fun (a, b) tyargs _ -> NewObjectOp (bindCtor(a, b, tyargs)))
+            | 28 -> u_void st |> (fun () (OneTyArg ty) _ -> CoerceOp ty)
+            | 29 -> u_void st |> (fun () NoTyArgs _ -> SequentialOp)
+            | 30 -> u_void st |> (fun () NoTyArgs _ -> ForIntegerRangeLoopOp)
+            | 31 -> u_MethodInfoData st |> (fun p tyargs knownArgCount -> let minfo = bindMeth(knownArgCount, p, tyargs) in if minfo.IsStatic then StaticMethodCallOp minfo else InstanceMethodCallOp minfo)
+            | 32 -> u_void st |> (fun () (OneTyArg ty) _ -> NewArrayOp ty)
+            | 33 -> u_void st |> (fun () (OneTyArg ty) _ -> NewDelegateOp ty)
+            | 34 -> u_void st |> (fun () NoTyArgs _ -> WhileLoopOp)
+            | 35 -> u_void st |> (fun () NoTyArgs _ -> LetOp)
+            | 36 -> u_RecdField st |> (fun prop tyargs _ -> InstancePropSetOp(prop tyargs))
+            | 37 -> u_tup2 u_NamedType u_string st |> (fun (a, b) tyargs _ -> let finfo = bindField(a, b, tyargs) in if finfo.IsStatic then StaticFieldGetOp finfo else InstanceFieldGetOp finfo)
+            | 38 -> u_void st |> (fun () NoTyArgs _ -> LetRecCombOp)
+            | 39 -> u_void st |> (fun () NoTyArgs _ -> AppOp)
+            | 40 -> u_void st |> (fun () (OneTyArg ty) _ -> ValueOp(null, ty, None))
+            | 41 -> u_void st |> (fun () (OneTyArg ty) _ -> DefaultValueOp ty)
+            | 42 -> u_PropInfoData st |> (fun (a, b, c, d) tyargs _ -> let pinfo = bindProp(a, b, c, d, tyargs) in if pinfoIsStatic pinfo then StaticPropSetOp pinfo else InstancePropSetOp pinfo)
+            | 43 -> u_tup2 u_NamedType u_string st |> (fun (a, b) tyargs _ -> let finfo = bindField(a, b, tyargs) in if finfo.IsStatic then StaticFieldSetOp finfo else InstanceFieldSetOp finfo)
+            | 44 -> u_void st |> (fun () NoTyArgs _ -> AddressOfOp)
+            | 45 -> u_void st |> (fun () NoTyArgs _ -> AddressSetOp)
+            | 46 -> u_void st |> (fun () (OneTyArg ty) _ -> TypeTestOp ty)
+            | 47 -> u_void st |> (fun () NoTyArgs _ -> TryFinallyOp)
+            | 48 -> u_void st |> (fun () NoTyArgs _ -> TryWithOp)
+            | 49 -> u_void st |> (fun () NoTyArgs _ -> VarSetOp)
             | 50 ->
                 let m1 = u_MethodInfoData st
                 let m2 = u_MethodInfoData st
                 let n = u_int st
-                (fun tyargs ->
-                    let minfo = bindMeth (m1, tyargs)
-                    let minfoW = bindMeth (m2, tyargs)
+                (fun tyargs _ ->
+                    let minfo = bindMeth (ValueNone, m1, tyargs)
+                    let minfoW = bindMeth (ValueNone, m2, tyargs)
                     if minfo.IsStatic then StaticMethodCallWOp(minfo, minfoW, n)
                     else InstanceMethodCallWOp(minfo, minfoW, n))
             // 51 taken above

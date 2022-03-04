@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly TryWith_NoFilterBlocks01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x0000005F
 }
 .module TryWith_NoFilterBlocks01.exe
-// MVID: {611C4D7C-3DEF-9A40-A745-03837C4D1C61}
+// MVID: {61F2AFF9-3DEF-9A40-A745-0383F9AFF261}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x066A0000
+// Image base: 0x057D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       30 (0x1e)
+    // Code size       29 (0x1d)
     .maxstack  4
     .locals init ([0] class [mscorlib]System.Exception V_0,
              [1] class [mscorlib]System.Exception e,
@@ -74,7 +74,7 @@
     {
       IL_0000:  nop
       .line 4,4 : 3,5 ''
-      IL_0001:  leave.s    IL_001d
+      IL_0001:  leave.s    IL_001c
 
       .line 5,5 : 2,6 ''
     }  // end .try
@@ -82,29 +82,28 @@
     {
       IL_0003:  castclass  [mscorlib]System.Exception
       IL_0008:  stloc.0
-      .line 6,6 : 12,31 ''
-      IL_0009:  nop
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldloc.0
-      IL_000b:  stloc.1
-      IL_000c:  ldloc.1
-      IL_000d:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
-      IL_0012:  ldc.i4.0
-      IL_0013:  ceq
-      IL_0015:  brfalse.s  IL_001b
+      IL_0009:  ldloc.0
+      IL_000a:  stloc.1
+      .line 6,6 : 12,31 ''
+      IL_000b:  ldloc.1
+      IL_000c:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
+      IL_0011:  ldc.i4.0
+      IL_0012:  ceq
+      IL_0014:  brfalse.s  IL_001a
 
       .line 100001,100001 : 0,0 ''
-      IL_0017:  ldloc.0
-      IL_0018:  stloc.2
+      IL_0016:  ldloc.0
+      IL_0017:  stloc.2
       .line 6,6 : 35,37 ''
-      IL_0019:  leave.s    IL_001d
+      IL_0018:  leave.s    IL_001c
 
       .line 7,7 : 10,12 ''
-      IL_001b:  leave.s    IL_001d
+      IL_001a:  leave.s    IL_001c
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_001d:  ret
+    IL_001c:  ret
   } // end of method $TryWith_NoFilterBlocks01::main@
 
 } // end of class '<StartupCode$TryWith_NoFilterBlocks01>'.$TryWith_NoFilterBlocks01

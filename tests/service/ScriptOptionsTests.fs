@@ -37,27 +37,6 @@ let ``can generate options for different frameworks regardless of execution envi
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
 
-[<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
-[<TestCase(false, true, [| "--targetprofile:netcore" |])>]
-[<Test>]
-let ``all default assembly references are system assemblies``(assumeNetFx, useSdkRefs, flags) =
-    let tempFile = tryCreateTemporaryFileName () + ".fsx"
-    let options, errors =
-        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdkRefs, otherFlags = flags)
-        |> Async.RunImmediate
-    match errors with
-    | [] -> ()
-    | errors -> failwithf "Error while parsing script with assumeNetFx:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdkRefs flags errors
-    for r in options.OtherOptions do
-        if r.StartsWith("-r:") then
-            let ref = Path.GetFullPath(r.[3..])
-            let baseName = Path.GetFileNameWithoutExtension(ref)
-            let projectDir = System.Environment.CurrentDirectory
-            if not (FSharp.Compiler.FxResolver(assumeNetFx, projectDir, rangeForErrors=range0, useSdkRefs=useSdkRefs, isInteractive=false, sdkDirOverride=None).GetSystemAssemblies().Contains(baseName)) then
-                printfn "Failing, printing options from GetProjectOptionsFromScript..."
-                for opt in options.OtherOptions do
-                    printfn "option: %s" opt
-                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdkRefs, flags)
 
 // This test atempts to use a bad SDK number 666.666.666
 //

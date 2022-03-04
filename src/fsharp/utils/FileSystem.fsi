@@ -9,18 +9,22 @@ open System.Reflection
 open System.Text
 open System.Runtime.CompilerServices
 
-exception IllegalFileNameChar of string * char
+exception internal IllegalFileNameChar of string * char
 
 module internal Bytes =
     /// returned int will be 0 <= x <= 255
     val get: byte[] -> int -> int
+
     val zeroCreate: int -> byte[]
+
     /// each int must be 0 <= x <= 255
     val ofInt32Array: int[] ->  byte[]
+
     /// each int will be 0 <= x <= 255
     val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
     val stringAsUnicodeNullTerminated: string -> byte[]
+
     val stringAsUtf8NullTerminated: string -> byte[]
 
 /// A view over bytes.
@@ -91,7 +95,9 @@ type internal ReadOnlyByteMemory =
 /// MemoryMapped extensions
 module internal MemoryMappedFileExtensions =
     type MemoryMappedFile with
+
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+
         static member TryFromMemory : bytes: ReadOnlyMemory<byte> -> MemoryMappedFile option
     
 /// Filesystem helpers

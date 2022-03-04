@@ -86,3 +86,15 @@ type SynMemberFlagsTrivia =
 type SynExprAndBangTrivia =
     { EqualsRange: range
       InKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynModuleDeclNestedModuleTrivia =
+    { ModuleKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynModuleSigDeclNestedModuleTrivia =
+    { ModuleKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }

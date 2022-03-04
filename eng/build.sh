@@ -257,8 +257,8 @@ function BuildSolution {
         /p:Configuration=$bootstrap_config
 
       mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net5.0 $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net5.0 $bootstrap_dir/fsyacc
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net6.0 $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net6.0 $bootstrap_dir/fsyacc
     fi
     if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
       BuildMessage="Error building bootstrap"
@@ -266,7 +266,7 @@ function BuildSolution {
         /restore \
         /p:Configuration=$bootstrap_config
 
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net5.0 $bootstrap_dir/fsc
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net6.0 $bootstrap_dir/fsc
     fi
   fi
 
@@ -309,7 +309,7 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=net5.0
+  coreclrtestframework=net6.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework

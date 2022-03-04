@@ -688,7 +688,7 @@ let MakeScopeRefForILModule (ilModule: ILModuleDef) =
     | None -> ILScopeRef.Module (mkRefToILModule ilModule)
 
 let GetCustomAttributesOfILModule (ilModule: ILModuleDef) =
-    (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList
+    (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList()
 
 let GetAutoOpenAttributes ilModule =
     ilModule |> GetCustomAttributesOfILModule |> List.choose TryFindAutoOpenAttr
@@ -707,7 +707,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
          member _.TryGetILModuleDef() = Some ilModule
 
          member _.GetRawFSharpSignatureData(m, ilShortAssemName, filename) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             let sigDataReaders =
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then
@@ -735,7 +735,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             sigDataReaders
 
          member _.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             let optDataReaders =
                 resources
                 |> List.choose (fun r ->
@@ -797,7 +797,7 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
          member _.TryGetILModuleDef() = Some ilModule
 
          member _.GetRawFSharpSignatureData(_, _, _) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             let sigDataReaders =
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then
@@ -815,7 +815,7 @@ type RawFSharpAssemblyData (ilModule: ILModuleDef, ilAssemblyRefs) =
             sigDataReaders
 
          member _.GetRawFSharpOptimizationData(_, _, _) =
-            let resources = ilModule.Resources.AsList
+            let resources = ilModule.Resources.AsList()
             let optDataReaders =
                 [ for iresource in resources do
                     if IsOptimizationDataResource iresource then
@@ -1597,7 +1597,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
         let phase2 () =
 #if !NO_EXTENSIONTYPING
-            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList(), ccu.Contents, invalidateCcu, m)
 #endif
             [ResolvedImportedAssembly ccuinfo]
         phase2
@@ -1691,7 +1691,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                      match ilModule.TryGetILModuleDef() with
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
-                         let tps = tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+                         let tps = tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList(), ccu.Contents, invalidateCcu, m)
                          ccuinfo.TypeProviders <- tps
 #else
                      ()
@@ -2011,7 +2011,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
                                   tcConfig.isInteractive, tcConfig.checkNullness, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
-                                  tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
+                                  tcConfig.noDebugAttributes, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing

@@ -3049,11 +3049,11 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     |> ErrorD
 
 and ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup =
-    let isSequential e = match e with | Expr.Sequential _ -> true | _ -> false
+    let isSequential e = match stripDebugPoints e with Expr.Sequential _ -> true | _ -> false
     ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMethGroup =
-    let isSequential e = match e with | SynExpr.Sequential _ -> true | _ -> false
+    let isSequential e = match e with SynExpr.Sequential _ -> true | _ -> false
     ReportNoCandidatesError csenv callerArgCounts methodName ad calledMethGroup isSequential
 
 /// When checking whether a method solves a trait constraint, we can assume the trait is solved

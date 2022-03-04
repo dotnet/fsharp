@@ -1089,8 +1089,12 @@ module CoreTests =
     // Debug with
     //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
     // then
-    ///    windiff z.output.test.default.stdout.bsl a.out
-    let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr =
+    ///    windiff output.stdout.bsl a.out
+    let runPrintingTest flag baseFile =
+       let diffFileOut = baseFile + ".stdout.txt"
+       let expectedFileOut = baseFile + ".stdout.bsl"
+       let diffFileErr = baseFile + ".stderr.txt"
+       let expectedFileErr = baseFile + ".stderr.bsl"
        let cfg = testConfig "core/printing"
 
        if requireENCulture () then
@@ -1134,40 +1138,47 @@ module CoreTests =
         | diffs -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" diffFileErr expectedFileErr diffs)
 
     [<Test>]
-    let ``printing-default-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7" "z.output.test.default.stdout.47.txt" "z.output.test.default.stdout.47.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
+    let ``printing`` () =
+         runPrintingTest "--multiemit- --debug+" "output"
+
+    // F# 5.0 changed some things printing output
+    [<Test>]
+    let ``printing-langversion47`` () =
+         runPrintingTest "--langversion:4.7" "output.47"
+
+    // Output should not change with optimization off
+    [<Test>]
+    let ``printing-optimizeoff`` () =
+         runPrintingTest "--multiemit- --debug+ --optimize-" "output"
+
+    // Legacy one-dynamic-assembly emit is the default for .NET Framework, which these tests are using
+    // Turning that off enables multi-assembly-emit.  The printing test is useful for testing multi-assembly-emit
+    // as it feeds in many incremental fragments into stdin of the FSI process.
+    [<Test>]
+    let ``printing-legacyemitoff`` () =
+         runPrintingTest "--multiemit+ --debug+" "output.legacyemitoff"
+
+    // Multi-assembly-emit establishes some slightly different rules regarding internals, and this
+    // needs to be tested with optimizations off.  The output should not change.
+    [<Test>]
+    let ``printing-legacyemitoff-optimizeoff`` () =
+         runPrintingTest "--multiemit+ --debug+ --optimize-" "output.legacyemitoff"
 
     [<Test>]
-    let ``printing-default-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
+    let ``printing-width-1000`` () =
+         runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-1000-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.47.txt" "z.output.test.1000.stdout.47.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
+    let ``printing-width-200`` () =
+         runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
-    let ``printing-1000-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
+    let ``printing-off`` () =
+         runPrintingTest "--use:preludeShowDeclarationValuesFalse.fsx" "output.off"
 
     [<Test>]
-    let ``printing-200-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.47.txt" "z.output.test.200.stdout.47.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
-
-    [<Test>]
-    let ``printing-200-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
-
-    [<Test>]
-    let ``printing-off-stdout-47 --langversion:4_7`` () =
-         printing "--langversion:4.7 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.47.txt" "z.output.test.off.stdout.47.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
-
-    [<Test>]
-    let ``printing-off-stdout-50 --langversion:5_0`` () =
-         printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
-
-    [<Test>]
-    let ``printing-quiet-stdout`` () =
-         printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
+    let ``printing-quiet`` () =
+         runPrintingTest "--quiet" "output.quiet"
 
     type SigningType =
         | DelaySigned

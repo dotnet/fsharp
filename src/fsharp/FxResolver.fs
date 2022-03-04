@@ -368,8 +368,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
         | -1, _
         | _, -1 ->
             if isRunningOnCoreClr then
-                // Running on coreclr but no deps.json was deployed with the host so default to 5.0
-                Some "net5.0"
+                // Running on coreclr but no deps.json was deployed with the host so default to 6.0
+                Some "net6.0"
             else
                 // Running on desktop
                 None

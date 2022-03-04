@@ -2513,7 +2513,7 @@ and u_const st =
 
 and p_dtree x st =
     match x with
-    | TDSwitch (_sp, a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
+    | TDSwitch (a, b, c, d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a, b, c, d) st
     | TDSuccess (a, b)    -> p_byte 1 st; p_tup2 p_Exprs p_int (a, b) st
     | TDBind (a, b)       -> p_byte 2 st; p_tup2 p_bind p_dtree (a, b) st
 
@@ -2529,7 +2529,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"
 
-and p_target (TTarget(a, b, _, _)) st = p_tup2 p_Vals p_expr (a, b) st
+and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
 and p_lval_op_kind x st =
@@ -2545,7 +2545,7 @@ and u_dtree st =
     match tag with
     | 0 ->
         let a,b,c,d = u_tup4 u_expr (u_list u_dtree_case) (u_option u_dtree) u_dummy_range st
-        TDSwitch(DebugPointAtSwitch.No, a, b, c, d)
+        TDSwitch(a, b, c, d)
     | 1 -> u_tup2 u_Exprs u_int st |> TDSuccess
     | 2 -> u_tup2 u_bind u_dtree st |> TDBind
     | _ -> ufailwith st "u_dtree"
@@ -2562,7 +2562,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointAtTarget.No, None))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
@@ -2607,7 +2607,7 @@ and p_op x st =
                                      -> p_byte 18 st; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
     | TOp.Array                      -> p_byte 19 st
     | TOp.While _                    -> p_byte 20 st
-    | TOp.For (_, dir)                 -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
+    | TOp.IntegerForLoop (_, _, dir)            -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
     | TOp.TryWith _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
@@ -2673,7 +2673,7 @@ and u_op st =
     | 19 -> TOp.Array
     | 20 -> TOp.While (DebugPointAtWhile.No, NoSpecialWhileLoopMarker)
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
-            TOp.For (DebugPointAtFor.No, dir)
+            TOp.IntegerForLoop (DebugPointAtFor.No, DebugPointAtInOrTo.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
     | 23 -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
     | 24 -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
@@ -2700,7 +2700,7 @@ and p_expr expr st =
     | Expr.Const (x, m, ty)              -> p_byte 0 st; p_tup3 p_const p_dummy_range p_ty (x, m, ty) st
     | Expr.Val (a, b, m)                 -> p_byte 1 st; p_tup3 (p_vref "val") p_vrefFlags p_dummy_range (a, b, m) st
     | Expr.Op (a, b, c, d)                 -> p_byte 2 st; p_tup4 p_op  p_tys p_Exprs p_dummy_range (a, b, c, d) st
-    | Expr.Sequential (a, b, c, _, d)      -> p_byte 3 st; p_tup4 p_expr p_expr p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
+    | Expr.Sequential (a, b, c, d)      -> p_byte 3 st; p_tup4 p_expr p_expr p_int p_dummy_range (a, b, (match c with NormalSeq -> 0 | ThenDoSeq -> 1), d) st
     | Expr.Lambda (_, a1, b0, b1, c, d, e)   -> p_byte 4 st; p_tup6 (p_option p_Val) (p_option p_Val) p_Vals p_expr p_dummy_range p_ty (a1, b0, b1, c, d, e) st
     | Expr.TyLambda (_, b, c, d, e)        -> p_byte 5 st; p_tup4 p_tyar_specs p_expr p_dummy_range p_ty (b, c, d, e) st
     | Expr.App (a1, a2, b, c, d)           -> p_byte 6 st; p_tup5 p_expr p_ty p_tys p_Exprs p_dummy_range (a1, a2, b, c, d) st
@@ -2712,6 +2712,7 @@ and p_expr expr st =
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
     | Expr.WitnessArg (traitInfo, m) -> p_byte 14 st; p_trait traitInfo st; p_dummy_range m st
+    | Expr.DebugPoint (_, innerExpr) -> p_expr innerExpr st
 
 and u_expr st =
     let tag = u_byte st
@@ -2734,7 +2735,7 @@ and u_expr st =
            let c = u_int st
            let d = u_dummy_range  st
            let dir = match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"
-           Expr.Sequential (a, b, dir, DebugPointAtSequential.SuppressStmt, d)
+           Expr.Sequential (a, b, dir, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st

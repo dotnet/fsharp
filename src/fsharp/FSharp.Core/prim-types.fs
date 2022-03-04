@@ -4871,7 +4871,7 @@ namespace Microsoft.FSharp.Core
                 System.Threading.Monitor.Exit(lockobj)
 #else
         [<CompiledName("Lock")>]
-        let inline lock (lockObject : 'T when 'T : not struct) action  = 
+        let inline lock (lockObject : 'T when 'T : not struct) ([<InlineIfLambda>] action)  = 
             let mutable lockTaken = false
             try 
                 System.Threading.Monitor.Enter(lockObject, &lockTaken);

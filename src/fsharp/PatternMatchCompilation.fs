@@ -79,7 +79,7 @@ and TypedMatchClause =
     member c.Pattern = let (TClause(p, _, _, _)) = c in p
     member c.Range = let (TClause(_, _, _, m)) = c in m
     member c.Target = let (TClause(_, _, tg, _)) = c in tg
-    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _, _), _m)) = c in vs
+    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
 
 let debug = false
 
@@ -270,7 +270,7 @@ let RefuteDiscrimSet g m path discrims =
                     let enumValues =
                         if tcref.IsILEnumTycon then
                             let (TILObjectReprData(_, _, tdef)) = tcref.ILTyconInfo
-                            tdef.Fields.AsList
+                            tdef.Fields.AsList()
                             |> Seq.choose (fun ilField ->
                                 if ilField.IsStatic then
                                     ilField.LiteralValue |> Option.map (fun ilValue ->
@@ -583,11 +583,11 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     // In this case the 'expr' already holds the result of the 'isinst' test.
 
     | TCase(DecisionTreeTest.IsInst _, success) :: edges, dflt  when Option.isSome inpExprOpt ->
-        TDSwitch(DebugPointAtSwitch.No, expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
+        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, BuildSwitch None g expr edges dflt m)], Some success, m)
 
     // isnull and isinst tests
     | TCase((DecisionTreeTest.IsNull | DecisionTreeTest.IsInst _), _) as edge :: edges, dflt  ->
-        TDSwitch(DebugPointAtSwitch.No, expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
+        TDSwitch(expr, [edge], Some (BuildSwitch inpExprOpt g expr edges dflt m), m)
 
 #if OPTIMIZE_LIST_MATCHING
     // 'cons/nil' tests where we have stored the result of the cons test in an 'isinst' in a variable
@@ -597,7 +597,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
     | [TCase(ListEmptyDiscrim g _, emptyCase); TCase(ListConsDiscrim g tinst, consCase)], None
     | [TCase(ListConsDiscrim g tinst, consCase); TCase(ListEmptyDiscrim g _, emptyCase)], None
                      when Option.isSome inpExprOpt ->
-        TDSwitch(DebugPointAtSwitch.No, expr, [TCase(DecisionTreeTest.IsNull, emptyCase)], Some consCase, m)
+        TDSwitch(expr, [TCase(DecisionTreeTest.IsNull, emptyCase)], Some consCase, m)
 #endif
 
     // All these should also always have default cases
@@ -621,7 +621,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                     | DecisionTreeTest.Const (Const.Double _ | Const.Single _ | Const.Int64 _ | Const.UInt64 _ | Const.IntPtr _ | Const.UIntPtr _ as c)   ->
                         mkILAsmCeq g m testexpr (Expr.Const (c, m, tyOfExpr g testexpr))
                     | _ -> error(InternalError("strange switch", m))
-                mkBoolSwitch DebugPointAtSwitch.No m testexpr tree sofar)
+                mkBoolSwitch m testexpr tree sofar)
           edges
           dflt
 
@@ -663,7 +663,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
 
             | _ -> failwith "internal error: compactify"
         let edgeGroups = compactify None edges'
-        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(DebugPointAtSwitch.No, expr, edgeGroup, Some sofar, m))
+        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(expr, edgeGroup, Some sofar, m))
 
     // For a total pattern match, run the active pattern, bind the result and
     // recursively build a switch in the choice type
@@ -671,10 +671,10 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
        error(InternalError("DecisionTreeTest.ActivePatternCase should have been eliminated", m))
 
     // For a complete match, optimize one test to be the default
-    | TCase(_, tree) :: rest, None -> TDSwitch (DebugPointAtSwitch.No, expr, rest, Some tree, m)
+    | TCase(_, tree) :: rest, None -> TDSwitch (expr, rest, Some tree, m)
 
     // Otherwise let codegen make the choices
-    | _ -> TDSwitch (DebugPointAtSwitch.No, expr, edges, dflt, m)
+    | _ -> TDSwitch (expr, edges, dflt, m)
 
 #if DEBUG
 let rec layoutPat pat =
@@ -853,7 +853,7 @@ let CompilePatternBasic
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget([], throwExpr, DebugPointAtTarget.No, None)
+            let tg = TTarget([], throwExpr, None)
             let _ = matchBuilder.AddTarget tg
             let clause = TClause(TPat_wild matchm, None, tg, matchm)
             incompleteMatchClauseOnce <- Some clause
@@ -939,7 +939,7 @@ let CompilePatternBasic
             let m = whenExpr.Range
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
             let failureTree = (InvestigateFrontiers (RefutedWhenClause :: refuted) rest)
-            mkBoolSwitch (DebugPointAtSwitch.Yes m) m whenExprWithBindings successTree failureTree
+            mkBoolSwitch m whenExprWithBindings successTree failureTree
 
         | None -> successTree
 
@@ -1406,14 +1406,8 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
             // Make the expression that represents the remaining cases of the pattern match.
             let expr = mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible exprm matchm resultTy decisionTree targets
 
-            // If the remainder of the match boiled away to nothing interesting.
-            // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
-            let spTarget =
-                if equals expr.Range matchm then DebugPointAtTarget.No
-                else DebugPointAtTarget.Yes
-
             // Make the clause that represents the remaining cases of the pattern match
-            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget, None), matchm)
+            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, None), matchm)
 
             CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
 

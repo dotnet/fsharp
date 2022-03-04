@@ -44,7 +44,7 @@ let rec accExpr (cenv:cenv) (env:env) expr =
 
     let expr = stripExpr expr 
     match expr with
-    | Expr.Sequential (e1, e2, _, _, _) -> 
+    | Expr.Sequential (e1, e2, _, _) -> 
         accExpr cenv env e1 
         accExpr cenv env e2
 
@@ -119,7 +119,11 @@ let rec accExpr (cenv:cenv) (env:env) expr =
     | Expr.WitnessArg (traitInfo, _m) ->
         accTraitInfo cenv env traitInfo
 
-    | Expr.Link _eref -> failwith "Unexpected Expr.Link"
+    | Expr.Link eref ->
+        accExpr cenv env eref.Value
+
+    | Expr.DebugPoint (_, innerExpr) ->
+        accExpr cenv env innerExpr
 
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l
@@ -158,7 +162,7 @@ and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
     tys |> List.iter (accTy cenv env)
 
 and accLambdas cenv env topValInfo e ety =
-    match e with
+    match stripDebugPoints e with
     | Expr.TyChoose (_tps, e1, _m)  -> accLambdas cenv env topValInfo e1 ety      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
@@ -177,14 +181,14 @@ and accExprs cenv env exprs =
 and accTargets cenv env m ty targets = 
     Array.iter (accTarget cenv env m ty) targets
 
-and accTarget cenv env _m _ty (TTarget(_vs, e, _, _)) = 
+and accTarget cenv env _m _ty (TTarget(_vs, e, _)) = 
     accExpr cenv env e
 
 and accDTree cenv env x =
     match x with 
     | TDSuccess (es, _n) -> accExprs cenv env es
     | TDBind(bind, rest) -> accBind cenv env bind; accDTree cenv env rest 
-    | TDSwitch (_, e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
+    | TDSwitch (e, cases, dflt, m) -> accSwitch cenv env (e, cases, dflt, m)
 
 and accSwitch cenv env (e, cases, dflt, _m) =
     accExpr cenv env e

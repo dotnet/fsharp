@@ -502,7 +502,7 @@ namespace ProviderImplementation.ProvidedTypes
 
 #if !NO_GENERATIVE
         /// Register that a given file is a provided generated target assembly, e.g. an assembly produced by an external
-        /// code generation tool.  This assembly should be a target assembly, i.e. use the same asssembly references
+        /// code generation tool.  This assembly should be a target assembly, i.e. use the same assembly references
         /// as given by TargetContext.ReferencedAssemblyPaths
         member RegisterGeneratedTargetAssembly: fileName: string -> Assembly
 #endif
