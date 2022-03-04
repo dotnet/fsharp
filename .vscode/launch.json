@@ -19,7 +19,7 @@
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net5.0/fsi.dll",
             "cwd": "${workspaceFolder}/src/fsharp",
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
             "stopAtEntry": false,
             "justMyCode": false,
             "enableStepFiltering": false,
@@ -45,7 +45,7 @@
                 "${input:argsPrompt}"
             ],
             "cwd": "${workspaceFolder}",
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
             "stopAtEntry": false,
             "justMyCode": false,
             "enableStepFiltering": false,
