@@ -37,8 +37,8 @@ type internal IParseState =
     member LexBuffer : LexBuffer<char>
 
 
-[<Sealed>]
 /// The context provided when a parse error occurs.
+[<Sealed>]
 type internal ParseErrorContext<'tok> =
       /// The stack of state indexes active at the parse error .
       member StateStack  : int list

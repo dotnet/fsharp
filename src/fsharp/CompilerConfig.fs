@@ -864,8 +864,8 @@ type TcConfigBuilder =
 // TcConfig
 //--------------------------------------------------------------------------
 
-[<Sealed>]
 /// This type is immutable and must be kept as such. Do not extract or mutate the underlying data except by cloning it.
+[<Sealed>]
 type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     // Validate the inputs - this helps ensure errors in options are shown in visual studio rather than only when built

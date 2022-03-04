@@ -111,8 +111,8 @@ let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty =
     TType_app(g.tcref_System_Collections_Generic_IList, [ty], g.knownWithoutNull)
         
 
-[<RequireQualifiedAccess>]
 /// Indicates whether we can skip interface types that lie outside the reference set
+[<RequireQualifiedAccess>]
 type SkipUnrefInterfaces = Yes | No
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
@@ -617,8 +617,8 @@ type ReflectedArgInfo =
 //-------------------------------------------------------------------------
 // ParamNameAndType, ParamData
 
-[<NoComparison; NoEquality>]
 /// Partial information about a parameter returned for use by the Language Service
+[<NoComparison; NoEquality>]
 type ParamNameAndType =
     | ParamNameAndType of Ident option * TType
 
@@ -627,8 +627,8 @@ type ParamNameAndType =
     static member Instantiate inst p = let (ParamNameAndType(nm, ty)) = p in ParamNameAndType(nm, instType inst ty)
     static member InstantiateCurried inst paramTypes = paramTypes |> List.mapSquared (ParamNameAndType.Instantiate inst)
 
-[<NoComparison; NoEquality>]
 /// Full information about a parameter returned for use by the type checker and language service.
+[<NoComparison; NoEquality>]
 type ParamData =
     ParamData of
         isParamArray: bool *

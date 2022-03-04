@@ -371,7 +371,8 @@ module rec Compiler =
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
-        let parseResults = CompilerAssert.Parse source
+        let fileName = if fsSource.SourceKind = SourceKind.Fsx then "test.fsx" else "test.fs"
+        let parseResults = CompilerAssert.Parse(source, fileName = fileName)
         let failed = parseResults.ParseHadErrors
 
         let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic

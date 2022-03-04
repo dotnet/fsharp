@@ -350,14 +350,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// The ShowIEnumerable is set the printing process will force the evaluation of IEnumerable objects
     /// to a small, finite depth, as determined by the printing parameters.
     /// This may lead to additional computation being performed during printing.
-    ///
-    /// <example>
-    /// From F# Interactive the default settings can be adjusted using, for example, 
-    /// <pre>
-    ///   open FSharp.Compiler.Interactive.Settings;;
-    ///   setPrintWidth 120;;
-    /// </pre>
-    /// </example>
     [<NoEquality; NoComparison>]
     type internal FormatOptions =
         { FloatingPointFormat: string

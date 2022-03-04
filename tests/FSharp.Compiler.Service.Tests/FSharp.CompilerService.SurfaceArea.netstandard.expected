@@ -4032,7 +4032,7 @@ FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[S
 FSharp.Compiler.IO.DefaultFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.DefaultFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
+FSharp.Compiler.IO.DefaultFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.DefaultFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
 FSharp.Compiler.IO.DefaultFileSystem: System.String GetDirectoryNameShim(System.String)
@@ -4063,7 +4063,7 @@ FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.
 FSharp.Compiler.IO.IFileSystem: System.Collections.Generic.IEnumerable`1[System.String] EnumerateFilesShim(System.String, System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetCreationTimeShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.DateTime GetLastWriteTimeShim(System.String)
-FSharp.Compiler.IO.IFileSystem: System.IO.DirectoryInfo DirectoryCreateShim(System.String)
+FSharp.Compiler.IO.IFileSystem: System.String DirectoryCreateShim(System.String)
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForReadShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.IO.IFileSystem: System.IO.Stream OpenFileForWriteShim(System.String, Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileMode], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileAccess], Microsoft.FSharp.Core.FSharpOption`1[System.IO.FileShare])
 FSharp.Compiler.IO.IFileSystem: System.String GetDirectoryNameShim(System.String)
@@ -10474,6 +10474,8 @@ FSharp.Compiler.Xml.PreXmlDoc
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(FSharp.Compiler.Xml.PreXmlDoc)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object)
 FSharp.Compiler.Xml.PreXmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.Xml.PreXmlDoc: Boolean IsEmpty
+FSharp.Compiler.Xml.PreXmlDoc: Boolean get_IsEmpty()
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Create(System.String[], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Empty
 FSharp.Compiler.Xml.PreXmlDoc: FSharp.Compiler.Xml.PreXmlDoc Merge(FSharp.Compiler.Xml.PreXmlDoc, FSharp.Compiler.Xml.PreXmlDoc)

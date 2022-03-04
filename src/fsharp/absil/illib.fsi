@@ -23,7 +23,7 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l:'a list -> bool
 
-    val inline isNonNull: x:'a -> bool when 'a: null
+    val inline isNotNull: x:'a -> bool when 'a: null
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     val inline (|NonNullQuick|): 'T -> 'T when 'T : null
@@ -597,7 +597,11 @@ module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
         
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-        
+
+#if USE_SHIPPED_FSCORE        
+        member Values: 'Value list
+#endif
+
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
         member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison

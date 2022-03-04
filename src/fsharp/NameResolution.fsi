@@ -30,8 +30,8 @@ type NameResolver =
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
@@ -45,8 +45,8 @@ val (|AbbrevOrAppTy|_|): TType -> TyconRef option
 
 type EnclosingTypeInst = TypeInst
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type Item = 
     /// Represents the resolution of a name to an F# value or function.
     | Value of  ValRef
@@ -138,9 +138,9 @@ type Item =
     /// This includes backticks, parens etc.
     member DisplayName: string
 
-[<RequireQualifiedAccess>]
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
 /// a particular usage point.
+[<RequireQualifiedAccess>]
 type ItemWithInst = 
     { Item: Item
       TyparInst: TyparInst }
@@ -383,8 +383,8 @@ type TcSymbolUseData =
      DisplayEnv: DisplayEnv
      Range: range }
 
-[<Class>]
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
+[<Class>]
 type internal TcSymbolUses = 
 
     /// Get all the uses of a particular item within the file
@@ -608,4 +608,3 @@ val GetVisibleNamespacesAndModulesAtPoint: NameResolver -> NameResolutionEnv -> 
 val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 
 val TrySelectExtensionMethInfoOfILExtMem: range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option 
- 

@@ -120,8 +120,8 @@ type ImportedAssembly =
     }
 
 
-[<Sealed>] 
 /// Tables of assembly resolutions
+[<Sealed>]
 type TcAssemblyResolutions = 
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list

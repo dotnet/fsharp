@@ -574,6 +574,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
       AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
+  let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
+      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, FSharpLib.Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)
   // Build the memoization table for files
   let v_memoize_file = MemoizationTable<int, ILSourceDocument>((fileOfFileIndex >> FileSystem.GetFullFilePathInDirectoryShim directoryToResolveRelativePaths >> mk_doc), keyComparer=HashIdentity.Structural)
@@ -1246,6 +1249,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ThreadStaticAttribute   = tryFindSysAttrib "System.ThreadStaticAttribute"
   member val attrib_SpecialNameAttribute   = tryFindSysAttrib "System.Runtime.CompilerServices.SpecialNameAttribute"
   member val attrib_VolatileFieldAttribute   = mk_MFCore_attrib "VolatileFieldAttribute"
+  member val attrib_NoEagerConstraintApplicationAttribute = mk_MFCompilerServices_attrib "NoEagerConstraintApplicationAttribute"
   member val attrib_ContextStaticAttribute  = tryFindSysAttrib "System.ContextStaticAttribute"
   member val attrib_FlagsAttribute          = findSysAttrib "System.FlagsAttribute"
   member val attrib_DefaultMemberAttribute  = findSysAttrib "System.Reflection.DefaultMemberAttribute"

@@ -38,7 +38,7 @@ module OffsideExceptions =
         |> withLangVersionPreview
         |> verifyBaseline
         |> ignore
-        
+
     [<Fact>]
     let RelaxWhitespace2_Indentation() =
         Fsx """
@@ -5167,3 +5167,36 @@ exit 1
           Message =
            "Possible incorrect indentation: this token is offside of context started at position (3901:16). Try indenting this token further or using standard formatting conventions." }
         |]
+
+    [<Fact>]
+    let ``RelaxedWhitespaces2 - match expression regression (https://github.com/dotnet/fsharp/issues/12011)`` () =
+        Fsx """
+match
+    match "" with
+    | null -> ""
+    | s -> s
+    with
+| "" -> ""
+| _ -> failwith ""
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:20"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``RelaxedWhitespaces2 - try expression regression (https://github.com/dotnet/fsharp/issues/12011)`` () =
+        Fsx """
+try
+    match true with
+    | true -> "true"
+    | false -> "false"
+    with
+    | ex -> ex.Message
+        """
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:20"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

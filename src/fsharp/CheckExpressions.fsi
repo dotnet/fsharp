@@ -46,10 +46,10 @@ val InitialImplicitCtorInfo: unit -> CtorInfo
 [<NoEquality; NoComparison>]
 type UngeneralizableItem
 
-[<NoEquality; NoComparison>]
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
+[<NoEquality; NoComparison>]
 type TcEnv =
     { /// Name resolution information 
       eNameResEnv: NameResolutionEnv 
@@ -180,9 +180,6 @@ type TcFileState =
       /// we infer type parameters 
       mutable recUses: ValMultiMap<Expr ref * range * bool>
       
-      /// Checks to run after all inference is complete. 
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 

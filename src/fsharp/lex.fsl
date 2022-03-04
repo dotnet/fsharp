@@ -677,6 +677,7 @@ rule token args skip = parse
  | "////" op_char*
      { // 4+ slash are 1-line comments, online 3 slash are XmlDoc
        let m = lexbuf.LexemeRange
+       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
        else singleLineComment (None,1,m,args) skip lexbuf }
 
@@ -691,6 +692,7 @@ rule token args skip = parse
  | "//" op_char*
      { // Need to read all operator symbols too, otherwise it might be parsed by a rule below
        let m = lexbuf.LexemeRange
+       LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m))
        else singleLineComment (None,1,m,args) skip lexbuf }
 
@@ -1457,6 +1459,7 @@ and comment cargs skip = parse
 
  | "(*)"
     { let n, m, args = cargs
+      LexbufLocalXmlDocStore.AddGrabPoint(lexbuf)
       if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n, m))
       else comment cargs skip lexbuf }
 
@@ -1477,6 +1480,7 @@ and comment cargs skip = parse
           if not skip then COMMENT (LexCont.Comment(args.ifdefStack, args.stringNest, n-1, m))
           else comment (n-1,m,args) skip lexbuf
       else
+          LexbufLocalXmlDocStore.AddGrabPointDelayed(lexbuf)
           if not skip then COMMENT (LexCont.Token(args.ifdefStack, args.stringNest))
           else token args skip lexbuf }
 

@@ -772,7 +772,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
 #endif
             // This can fail if there is an ambiguity w.r.t. return type
             with _ -> null
-        if (isNonNull methInfo && equalTypes resT methInfo.ReturnType) then
+        if (isNotNull methInfo && equalTypes resT methInfo.ReturnType) then
              methInfo
         else
              queryableTypeGetMethodBySearch cenv emEnv parentT mref

@@ -185,7 +185,7 @@ module CompileHelpers =
                 Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
         // Save the result
-        assemblyBuilderRef := Some assemblyBuilder
+        assemblyBuilderRef.Value <- Some assemblyBuilder
         
     let setOutputStreams execute = 
         // Set the output streams, if requested
@@ -1135,7 +1135,7 @@ type FSharpChecker(legacyReferenceResolver,
         // References used to capture the results of compilation
         let tcImportsRef = ref None
         let assemblyBuilderRef = ref None
-        let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
+        let tcImportsCapture = Some (fun tcImports -> tcImportsRef.Value <- Some tcImports)
 
         // Function to generate and store the results of compilation 
         let debugInfo =  otherFlags |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
@@ -1162,7 +1162,7 @@ type FSharpChecker(legacyReferenceResolver,
         // References used to capture the results of compilation
         let tcImportsRef = ref (None: TcImports option)
         let assemblyBuilderRef = ref None
-        let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
+        let tcImportsCapture = Some (fun tcImports -> tcImportsRef.Value <- Some tcImports)
 
         let debugInfo = defaultArg debug false
         let noframework = defaultArg noframework false

@@ -1388,7 +1388,7 @@ let rec ExprHasEffect g expr =
     | Expr.Lambda _
     | Expr.TyLambda _ 
     | Expr.Const _ -> false
-    /// type applications do not have effects, with the exception of type functions
+    // type applications do not have effects, with the exception of type functions
     | Expr.App (f0, _, _, [], _) -> (IsTyFuncValRefExpr f0) || ExprHasEffect g f0
     | Expr.Op (op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
     | Expr.LetRec (binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
@@ -3383,9 +3383,9 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
         
-        /// Set the flag on the value indicating that direct calls can avoid a tailcall (which are expensive on .NET x86)
-        /// MightMakeCriticalTailcall is true whenever the body of the method may itself do a useful tailcall, e.g. has
-        /// an application in the last position.
+        // Set the flag on the value indicating that direct calls can avoid a tailcall (which are expensive on .NET x86)
+        // MightMakeCriticalTailcall is true whenever the body of the method may itself do a useful tailcall, e.g. has
+        // an application in the last position.
         match vspec with 
         | Some v -> 
             if not bodyinfo.MightMakeCriticalTailcall then 

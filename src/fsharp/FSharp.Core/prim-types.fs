@@ -3837,8 +3837,8 @@ namespace Microsoft.FSharp.Core
             | null -> true 
             | _ -> false
 
-        [<CompiledName("IsNonNull")>]
-        let inline internal isNonNull (value : 'T) = 
+        [<CompiledName("IsNotNull")>]
+        let inline internal isNotNull (value : 'T) = 
             match value with 
             | null -> false 
             | _ -> true

@@ -1995,7 +1995,7 @@ let unionFreeTypars s1 s2 =
 
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
-      /// The summary of values used as trait solutions
+      // The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars}
 

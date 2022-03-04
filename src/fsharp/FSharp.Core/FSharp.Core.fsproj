@@ -5,7 +5,9 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
-    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);62</NoWarn> <!-- ML Compat -->
+    <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
+    <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
@@ -20,6 +22,12 @@
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+	<!-- 1182: Unused variables -->
+	<OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+	<!-- 3390: xmlDocBadlyFormed -->
+	<OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- 3520: invalidXmlDocPosition -->
+    <OtherFlags>$(OtherFlags) --warnon:3520</OtherFlags>
     <!-- Turn off 57: Use of construct with Experimental attribute -->
     <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
     <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->

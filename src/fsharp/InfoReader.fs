@@ -541,7 +541,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
               // Remove any virtuals that are signature-equivalent to virtuals in subtypes, except for newslots
               // That is, keep if it's 
-              ///      (a) not virtual
+              //       (a) not virtual
               //       (b) is a new slot or 
               //       (c) not equivalent
               // We keep virtual finals around for error detection later on
@@ -943,18 +943,18 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
 /// Indicates if an event info is associated with a delegate type that is a "standard" .NET delegate type
 /// with a sender parameter.
 //
-/// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the 
-/// of the "Add" methods associated with events.  If you want to access it you
-/// can use AddHandler instead.
+// In the F# design, we take advantage of the following idiom to simplify away the bogus "object" parameter of the
+// of the "Add" methods associated with events.  If you want to access it you
+// can use AddHandler instead.
    
-/// The .NET Framework guidelines indicate that the delegate type used for
-/// an event should take two parameters, an "object source" parameter
-/// indicating the source of the event, and an "e" parameter that
-/// encapsulates any additional information about the event. The type of
-/// the "e" parameter should derive from the EventArgs class. For events
-/// that do not use any additional information, the .NET Framework has
-/// already defined an appropriate delegate type: EventHandler.
-/// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp) 
+// The .NET Framework guidelines indicate that the delegate type used for
+// an event should take two parameters, an "object source" parameter
+// indicating the source of the event, and an "e" parameter that
+// encapsulates any additional information about the event. The type of
+// the "e" parameter should derive from the EventArgs class. For events
+// that do not use any additional information, the .NET Framework has
+// already defined an appropriate delegate type: EventHandler.
+// (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp)
 let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let dty = einfo.GetDelegateType(infoReader.amap, m)
     match TryDestStandardDelegateType infoReader m ad dty with

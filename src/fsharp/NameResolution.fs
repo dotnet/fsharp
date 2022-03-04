@@ -135,8 +135,8 @@ let (|AbbrevOrAppTy|_|) (ty: TType) =
     | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
@@ -151,8 +151,8 @@ let emptyTypeInst : TypeInst = []
 type EnclosingTypeInst = TypeInst
 let emptyEnclosingTypeInst : EnclosingTypeInst = emptyTypeInst
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type Item =
 
     /// Represents the resolution of a name to an F# value or function.
@@ -294,9 +294,9 @@ let valRefHash (vref: ValRef) =
     | ValueNone -> 0
     | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
-[<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
 /// a particular usage point.
+[<RequireQualifiedAccess>]
 type ItemWithInst =
     { Item: Item
       TyparInst: TyparInst }
@@ -353,8 +353,8 @@ type FullyQualifiedFlag =
 
 type UnqualifiedItems = LayeredMap<string, Item>
 
-[<NoEquality; NoComparison>]
 /// The environment of information used to resolve names
+[<NoEquality; NoComparison>]
 type NameResolutionEnv =
     { /// Display environment information for output
       eDisplayEnv: DisplayEnv
@@ -829,12 +829,12 @@ type TypeNameResolutionFlag =
     | ResolveTypeNamesToCtors
     | ResolveTypeNamesToTypeRefs
 
-[<RequireQualifiedAccess>]
-[<NoEquality; NoComparison>]
 /// Represents information about the generic argument count of a type name when resolving it.
 ///
 /// In some situations we resolve "List" to any type definition with that name regardless of the number
 /// of generic arguments. In others, we know precisely how many generic arguments are needed.
+[<RequireQualifiedAccess>]
+[<NoEquality; NoComparison>]
 type TypeNameResolutionStaticArgsInfo =
     /// Indicates indefinite knowledge of type arguments
     | Indefinite
@@ -855,8 +855,8 @@ type TypeNameResolutionStaticArgsInfo =
         if x.NumStaticArgs = 0 || TryDemangleGenericNameAndPos nm <> ValueNone then nm
         else nm + "`" + string x.NumStaticArgs
 
-[<NoEquality; NoComparison>]
 /// Represents information which guides name resolution of types.
+[<NoEquality; NoComparison>]
 type TypeNameResolutionInfo =
     | TypeNameResolutionInfo of TypeNameResolutionFlag * TypeNameResolutionStaticArgsInfo
 
@@ -4915,7 +4915,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
         |  [] ->
 
-           /// Include all the entries in the eUnqualifiedItems table.
+           // Include all the entries in the eUnqualifiedItems table.
            for uitem in nenv.eUnqualifiedItems.Values do
                match uitem with
                | Item.UnqualifiedType _ -> ()

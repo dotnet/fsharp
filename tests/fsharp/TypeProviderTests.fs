@@ -300,7 +300,9 @@ let splitAssembly subdir project =
 
     // check a few load locations
     let someLoadPaths =
-        [ subdir ++ "fsharp41" ++ "net461"
+        [ subdir ++ "fsharp41" ++ "net48"
+          subdir ++ "fsharp41" ++ "net472"
+          subdir ++ "fsharp41" ++ "net461"
           subdir ++ "fsharp41" ++ "net45"
           // include up one directory
           ".." ++ subdir ++ "fsharp41" ++ "net45"

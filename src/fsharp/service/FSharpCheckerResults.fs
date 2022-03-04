@@ -1919,10 +1919,10 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
     member _.AccessibilityRights = FSharpAccessibilityRights(thisCcu, ad)
 
 
-[<Sealed>]
 /// A live object of this type keeps the background corresponding background builder (and type providers) alive (through reference-counting).
 //
 // Note: objects returned by the methods of this type do not require the corresponding background builder to be alive.
+[<Sealed>]
 type FSharpCheckFileResults
         (filename: string,
          errors: FSharpDiagnostic[],

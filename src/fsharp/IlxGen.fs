@@ -146,9 +146,9 @@ let ReportStatistics (oc: TextWriter) =
     reports oc
 
 let NewCounter nm =
-    let count = ref 0
-    AddReport (fun oc -> if !count <> 0 then oc.WriteLine (string !count + " " + nm))
-    (fun () -> incr count)
+    let mutable count = 0
+    AddReport (fun oc -> if count <> 0 then oc.WriteLine (string count + " " + nm))
+    (fun () -> count <- count + 1)
 
 let CountClosure = NewCounter "closures"
 
@@ -395,13 +395,15 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
-type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILType * TyparInst) option) =
+type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInst) option) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
+
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
     member __.TemplateReplacement = templateReplacement
 
-    member __.WithTemplateReplacement(tcref, ilty, tpinst) = TypeReprEnv(reprs, count, Some (tcref, ilty, tpinst)) 
+    member __.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
+        TypeReprEnv(reprs, count, Some (tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst)) 
 
     /// Lookup a type parameter
     member _.Item (tp: Typar, m: range) =
@@ -514,7 +516,10 @@ and GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst =
 and GenNamedTyAppAux (amap: ImportMap) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = amap.g
     match tyenv.TemplateReplacement with
-    | Some (tcref2, ilty, _) when tyconRefEq g tcref tcref2 -> ilty
+    | Some (tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 -> 
+        let cloInst = List.map mkTyparTy cloFreeTyvars
+        let ilTypeInst = GenTypeArgsAux amap m tyenv cloInst
+        mkILValueTy ilCloTyRef ilTypeInst
     | _ ->
     let tinst = DropErasedTyargs tinst
     // See above note on ptrsOK
@@ -687,11 +692,25 @@ let GenFieldSpecForStaticField (isInteractive, g, ilContainerTy, vspec: Val, nm,
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     // Fixup references to the fields of a struct machine template
+    // templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
+    // templateTyconRef = ResumableStateMachine<'Data>
+    // templateTypeArgs = <TaskStateMachineData<SomeType['FreeTyVars]>
+    // templateTypeInst = 'Data -> TaskStateMachineData<SomeType['FreeTyVars]>
+    // cloFreeTyvars = <'FreeTyVars>
+    // ilCloTy = clo<'FreeTyVars> w.r.t envinner
+    // rfref = ResumableStateMachine<'Data>::Result
+    // rfref.RecdField.FormalType = 'Data
     match tyenv.TemplateReplacement with
-    | Some (tcref2, ilty, inst) when tyconRefEq cenv.g rfref.TyconRef tcref2 -> 
-        mkILFieldSpecInTy(ilty,
+    | Some (tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 -> 
+        let ilCloTy = 
+            let cloInst = List.map mkTyparTy cloFreeTyvars
+            let ilTypeInst = GenTypeArgsAux cenv.amap m tyenv cloInst
+            mkILValueTy ilCloTyRef ilTypeInst
+
+        let tyenvinner = TypeReprEnv.Empty.ForTypars cloFreeTyvars
+        mkILFieldSpecInTy(ilCloTy,
                       ComputeFieldName rfref.Tycon rfref.RecdField,
-                      GenType cenv.amap m tyenv (instType inst rfref.RecdField.FormalType))
+                      GenType cenv.amap m tyenvinner (instType templateTypeInst rfref.RecdField.FormalType))
     | _ -> 
         let tyenvinner = TypeReprEnv.Empty.ForTycon rfref.Tycon
         let ilty = GenTyApp cenv.amap m tyenv rfref.TyconRef.CompiledRepresentation tyargs
@@ -1096,8 +1115,8 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
 let AddStorageForLocalVals g vals eenv =
     List.foldBack (fun (v, s) acc -> AddStorageForVal g (v, notlazy s) acc) vals eenv
 
-let AddTemplateReplacement eenv (tcref, ilty, inst) =
-    { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ilty, inst) }
+let AddTemplateReplacement eenv (tcref, ftyvs, ilty, inst) =
+    { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ftyvs, ilty, inst) }
 
 let AddStorageForLocalWitness eenv (w,s) =
     { eenv with witnessesInScope = eenv.witnessesInScope.SetItem (w, s) }
@@ -1474,7 +1493,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 let GenILSourceMarker (g: TcGlobals) (m: range) =
     ILDebugPoint.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
-                          /// NOTE: .NET && VS measure first column as column 1
+                          // NOTE: .NET && VS measure first column as column 1
                           column= m.StartColumn+1,
                           endLine= m.EndLine,
                           endColumn=m.EndColumn+1)
@@ -4835,7 +4854,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     let templateTyconRef, templateTypeArgs = destAppTy g templateStructTy
     let templateTypeInst = mkTyconRefInst templateTyconRef templateTypeArgs
-    let eenvinner = AddTemplateReplacement eenvinner (templateTyconRef, ilCloTy, templateTypeInst)
+    let eenvinner =
+        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
 
@@ -4951,13 +4971,15 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     CountClosure()
     LocalScope "machine" cgbuf (fun scopeMarks ->
+        let eenvouter = AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
         let ilMachineAddrTy = ILType.Byref ilCloTy
 
         // The local for the state machine
-        let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
+        let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvouter true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
 
         // The local for the state machine address
-        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterCodeThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvouter true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterCodeThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let eenvouter = eenvouter |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Zero-initialize the machine 
         EmitInitLocal cgbuf ilCloTy locIdx
@@ -4965,8 +4987,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         // Initialize the address-of-machine local
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
         CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
-
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
         for fv, ilv in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
@@ -4982,8 +5002,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 GenGetLocalVal cenv cgbuf eenvouter m fv None
                 CG.EmitInstr cgbuf (pop 2) (Push [ ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
-        // Generate the start expression - eenvinner is used as it contains the binding for machineAddrVar
-        GenExpr cenv cgbuf eenvinner SPSuppress afterCodeBody sequel
+        // Generate the start expression 
+        GenExpr cenv cgbuf eenvouter SPSuppress afterCodeBody sequel
    
     )
 
@@ -5133,7 +5153,7 @@ and GenSequenceExpr
 
     GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
     for fv in cloFreeVars do
-       /// State variables always get zero-initialized
+       // State variables always get zero-initialized
        if stateVarsSet.Contains fv then
            GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
        else
@@ -5753,7 +5773,8 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         
         let genTargetInfoOpt =
             if generateTargetNow then
-                incr targetNext // generate the targets in-order only
+                // Fenerate the targets in-order only
+                targetNext.Value <- targetNext.Value + 1
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
                 None
@@ -5795,7 +5816,8 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
         let genTargetInfoOpt =
             if generateTargetNow then
                 // Here we are generating the target immediately
-                incr targetNext // generate the targets in-order only
+                // Generate the targets in-order only
+                targetNext.Value <- targetNext.Value + 1
                 cgbuf.SetMarkToHereIfNecessary inplabOpt
                 Some(GenDecisionTreeTarget cenv cgbuf stackAtTargets targetInfo sequel)
             else
@@ -6075,23 +6097,27 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             | Null -> false
             | _ -> true)
 
-    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet fixups thisVars access set e =
+    let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
         match e with
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
             let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
             let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
             let canUseStaticField = (match e with Expr.Obj _ -> false | _ -> true)
             let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars {eenv with letBoundVars=(mkLocalValRef boundv) :: eenv.letBoundVars} e
-            clo.cloFreeVars |> List.iter (fun fv ->
+            for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
                     match StorageForVal cenv.g m fv eenvclo with
-                    | Env (_, ilField, _) -> fixups := (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m))) :: !fixups
-                    | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment", m)) )
+                    | Env (_, ilField, _) ->
+                        let fixup = (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec, access, ilField, exprForVal m fv, m)))
+                        fixups.Value <- fixup :: fixups.Value
+                    | _ -> error (InternalError("GenLetRec: " + fv.LogicalName + " was not in the environment", m))
 
         | Expr.Val (vref, _, _) ->
             let fv = vref.Deref
             let needsFixup = Zset.contains fv forwardReferenceSet
-            if needsFixup then fixups := (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv SPSuppress (set e) discard)) :: !fixups
+            if needsFixup then
+                let fixup = (boundv, fv, (fun () -> GenExpr cenv cgbuf eenv SPSuppress (set e) discard))
+                fixups.Value <- fixup :: fixups.Value
         | _ -> failwith "compute real fixup vars"
 
 
@@ -6117,7 +6143,14 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
 
             // Execute and discard any fixups that can now be committed
-            fixups := !fixups |> List.filter (fun (boundv, fv, action) -> if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then true else (action(); false))
+            let newFixups =
+                fixups.Value |> List.filter (fun (boundv, fv, action) ->
+                    if (Zset.contains boundv forwardReferenceSet || Zset.contains fv forwardReferenceSet) then
+                        true
+                    else
+                        action()
+                        false)
+            fixups.Value <- newFixups
 
             forwardReferenceSet)
     ()
@@ -7256,9 +7289,11 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
            match repr with
            | Local(_, _, Some (_, g))
            | Env(_, _, Some (_, g)) ->
-               match !g with
-               | NamedLocalIlxClosureInfoGenerator f -> g := NamedLocalIlxClosureInfoGenerated (f eenv)
-               | NamedLocalIlxClosureInfoGenerated _ -> ()
+               match g.Value with
+               | NamedLocalIlxClosureInfoGenerator f ->
+                   g.Value <- NamedLocalIlxClosureInfoGenerated (f eenv)
+               | NamedLocalIlxClosureInfoGenerated _ ->
+                   ()
            | _ -> ()
        | _ -> ())
 

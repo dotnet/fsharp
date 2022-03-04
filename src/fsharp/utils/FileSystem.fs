@@ -437,7 +437,7 @@ type IFileSystem =
     abstract CopyShim: src: string * dest: string * overwrite: bool -> unit
     abstract FileExistsShim: fileName: string -> bool
     abstract FileDeleteShim: fileName: string -> unit
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
+    abstract DirectoryCreateShim: path: string -> string
     abstract DirectoryExistsShim: path: string -> bool
     abstract DirectoryDeleteShim: path: string -> unit
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
@@ -592,8 +592,10 @@ type DefaultFileSystem() as this =
     abstract FileDeleteShim: fileName: string -> unit
     default _.FileDeleteShim (fileName: string) = File.Delete fileName
 
-    abstract DirectoryCreateShim: path: string -> DirectoryInfo
-    default _.DirectoryCreateShim (path: string) = Directory.CreateDirectory path
+    abstract DirectoryCreateShim: path: string -> string
+    default _.DirectoryCreateShim (path: string) =
+        let dir = Directory.CreateDirectory path
+        dir.FullName
 
     abstract DirectoryExistsShim: path: string -> bool
     default _.DirectoryExistsShim (path: string) = Directory.Exists path

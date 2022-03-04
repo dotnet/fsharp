@@ -179,7 +179,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _)
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
-      | ConstraintSolverRelatedInformation(_, m, _)
       | SelfRefObjCtor(_, m) ->
           Some m
 
@@ -381,6 +380,7 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
     match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3186 -> false // pickleMissingDefinition - off by default
     | 3366 -> false //tcIndexNotationDeprecated - currently off by default
     | 3517 -> false // optFailedToInlineSuggestedValue - off by default
     | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
@@ -393,9 +393,6 @@ let IsWarningOrInfoEnabled (err, severity) n level specificWarnOn =
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | ConstraintSolverRelatedInformation(fopt, m2, e) ->
-          let e, related = SplitRelatedException e
-          ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromAddingTypeEquation(g, denv, t1, t2, e.Exception, m)|>ToPhased, related
@@ -709,12 +706,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
          os.Append msg |> ignore
          if m.StartLine <> m2.StartLine then
             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
-
-      | ConstraintSolverRelatedInformation(fopt, _, e) ->
-          match e with
-          | ConstraintSolverError _ -> OutputExceptionR os e
-          | _ -> ()
-          fopt |> Option.iter (Printf.bprintf os " %s")
 
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, t1', t2', m, _, contextInfo), _)
          when typeEquiv g t1 t1'
