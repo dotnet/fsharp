@@ -305,7 +305,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
     let docs =
         match info.Documents with
         | Null -> Array.empty
-        | NotNull docs -> docs
+        | NonNull docs -> docs
 
     // The metadata to wite to the PoortablePDB (Roslyn = _debugMetadataOpt)
 
@@ -572,7 +572,7 @@ type PortablePdbGenerator (embedAllSource: bool, embedSourceList: string list, s
             let sps =
                 match minfo.DebugPoints with
                 | Null -> Array.empty
-                | NotNull pts ->
+                | NonNull pts ->
                     match minfo.DebugRange with
                     | None -> Array.empty
                     | Some _ -> pts
