@@ -514,14 +514,11 @@ module InterfaceStubGenerator =
     // On merged properties (consisting both getters and setters), they have the same range values,
     // so we use 'get_' and 'set_' prefix to ensure corresponding symbols are retrieved correctly.
     let internal (|MemberNameAndRange|_|) = function
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertyGet ->
+        | SynBinding(valData=SynValData(memberFlags=Some mf); headPat=LongIdentPattern(name, range)) when mf.MemberKind = SynMemberKind.PropertyGet ->
             if name.StartsWithOrdinal("get_") then Some(name, range) else Some("get_" + name, range)
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, SynValData(Some mf, _, _), LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) when mf.MemberKind = SynMemberKind.PropertySet ->
+        | SynBinding(valData=SynValData(memberFlags=Some mf); headPat=LongIdentPattern(name, range)) when mf.MemberKind = SynMemberKind.PropertySet ->
             if name.StartsWithOrdinal("set_") then Some(name, range) else Some("set_" + name, range)
-        | SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, LongIdentPattern(name, range), 
-                     _retTy, _expr, _bindingRange, _seqPoint) ->
+        | SynBinding(headPat=LongIdentPattern(name, range)) ->
             Some(name, range)
         | _ ->
             None
@@ -694,7 +691,7 @@ module InterfaceStubGenerator =
                     None
                 | SynModuleDecl.NamespaceFragment(fragment) ->
                     walkSynModuleOrNamespace fragment
-                | SynModuleDecl.NestedModule(_, _, modules, _, _) ->
+                | SynModuleDecl.NestedModule(decls = modules) ->
                     List.tryPick walkSynModuleDecl modules
                 | SynModuleDecl.Types(typeDefs, _range) ->
                     List.tryPick walkSynTypeDefn typeDefs
@@ -705,7 +702,7 @@ module InterfaceStubGenerator =
                 | SynModuleDecl.Open _ -> 
                     None
 
-        and walkSynTypeDefn(SynTypeDefn(_componentInfo, representation, members, _, range)) = 
+        and walkSynTypeDefn(SynTypeDefn(typeRepr=representation; members=members; range=range)) = 
             if not <| rangeContainsPos range pos then
                 None
             else
@@ -730,7 +727,7 @@ module InterfaceStubGenerator =
                 match memberDefn with
                 | SynMemberDefn.AbstractSlot(_synValSig, _memberFlags, _range) ->
                     None
-                | SynMemberDefn.AutoProperty(_attributes, _isStatic, _id, _type, _memberKind, _memberFlags, _xmlDoc, _access, expr, _r1, _r2) ->
+                | SynMemberDefn.AutoProperty(synExpr=expr) ->
                     walkExpr expr
                 | SynMemberDefn.Interface(interfaceType, members, _range) ->
                     if rangeContainsPos interfaceType.Range pos then
@@ -750,7 +747,7 @@ module InterfaceStubGenerator =
                 | SynMemberDefn.Inherit _ -> None
                 | SynMemberDefn.ImplicitInherit (_, expr, _, _) -> walkExpr expr
 
-        and walkBinding (SynBinding(_access, _bindingKind, _isInline, _isMutable, _attrs, _xmldoc, _valData, _headPat, _retTy, expr, _bindingRange, _seqPoint)) =
+        and walkBinding (SynBinding(expr=expr)) =
             walkExpr expr
 
         and walkExpr expr =
@@ -774,7 +771,7 @@ module InterfaceStubGenerator =
                     List.tryPick walkExpr synExprList
 
                 | SynExpr.Record (_inheritOpt, _copyOpt, fields, _range) -> 
-                    List.tryPick (fun (_, e, _) -> Option.bind walkExpr e) fields
+                    List.tryPick (fun (SynExprRecordField(expr=e)) -> Option.bind walkExpr e) fields
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
@@ -798,7 +795,7 @@ module InterfaceStubGenerator =
                 | SynExpr.ForEach (_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, _synPat, synExpr1, synExpr2, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr1, _, synExpr2, synExpr3, _range) -> 
+                | SynExpr.For (identBody=synExpr1; toBody=synExpr2; doBody=synExpr3) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
 
                 | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->
@@ -900,10 +897,10 @@ module InterfaceStubGenerator =
                 | SynExpr.DoBang (synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
+                | SynExpr.LetOrUseBang (rhs=synExpr1; andBangs=synExprAndBangs; body=synExpr2) -> 
                     [
                         yield synExpr1
-                        for _,_,_,_,eAndBang,_ in synExprAndBangs do
+                        for SynExprAndBang(body=eAndBang) in synExprAndBangs do
                             yield eAndBang
                         yield synExpr2
                     ]

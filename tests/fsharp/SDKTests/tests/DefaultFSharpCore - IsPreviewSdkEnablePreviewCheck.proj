@@ -13,7 +13,7 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableFSharpCorePreviewCheck>false</DisableFSharpCorePreviewCheck>
     <ExpectsFSharpCore>true</ExpectsFSharpCore>
-    <ExpectedFSharpCorePackageVersion>$(FSharpCorePreviewPackageVersion)</ExpectedFSharpCorePackageVersion>
+    <ExpectedFSharpCorePackageVersion>$(FSharpCorePreviewPackageVersionValue)</ExpectedFSharpCorePackageVersion>
   </PropertyGroup>
 
   <Import Project="PackageTest.targets" />

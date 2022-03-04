@@ -83,7 +83,6 @@
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="QuickInfo\NavigableTextRun.fs" />
     <Compile Include="QuickInfo\WpfNagivableTextRunViewElementFactory.fs" />
-    <Compile Include="QuickInfo\Navigation.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />

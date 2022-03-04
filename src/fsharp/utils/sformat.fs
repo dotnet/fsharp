@@ -1269,6 +1269,10 @@ module Display =
                 | _ when showMode = ShowTopLevelBinding && typeUsesSystemObjectToString ty ->
                     emptyL 
 
+                | :? Enum ->
+                    countNodes 1
+                    Layout.objL obj
+
                 | _ when opts.ShowProperties -> 
                     countNodes 1
                     objectValueWithPropertiesL depthLim (ty: Type) (obj: obj)

@@ -321,6 +321,15 @@ module CoreTests =
     let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
 
     [<Test>]
+    let ``forexpression-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
+    let ``forexpression-FSC_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC
+
+    [<Test>]
+    let ``forexpression-FSI_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSI_BASIC
+
+    [<Test>]
     let ``letrec (mutrec variations part two) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC_OPT_MINUS
 
     [<Test>]
@@ -2207,6 +2216,9 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
+    [<Test >]
+    let ``12383-FSC_BASIC`` () = singleTestBuildAndRun "regression/12383" FSC_BASIC
+
 #if !NETCOREAPP
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
@@ -2554,7 +2566,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos40`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --langversion:preview --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+        fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
 
@@ -3114,7 +3126,7 @@ module TypecheckTests =
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
 
     [<Test>]
-    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
+    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg131"
 
     [<Test>]
     let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"

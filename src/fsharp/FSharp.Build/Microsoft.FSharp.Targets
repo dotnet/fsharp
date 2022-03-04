@@ -61,6 +61,12 @@ this file.
 
       If Shim helpers are present then the values are valid and set by the Microsoft.FSharp.Helpers.props
     -->
+
+    <!-- Here we set the default value to true when nothing is set, it will be removed in a future release when we default to the net sdk compiler -->
+    <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
+        <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
+    </PropertyGroup>
+
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
         <FscToolExe Condition="'$(FSharpPrefer64BitTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
@@ -359,7 +365,7 @@ this file.
               WarningLevel="$(WarningLevel)"
               WarningsAsErrors="$(WarningsAsErrors)"
               WarnOn="$(WarnOn)"
-              Win32IconFile ="$(ApplicationIcon)"
+              Win32IconFile="$(ApplicationIcon)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)">
           <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />

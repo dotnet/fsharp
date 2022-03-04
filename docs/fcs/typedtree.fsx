@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Expressions
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 500
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -45,7 +53,7 @@ let parseAndCheckSingleFile (input) =
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
     let projOptions, _errors = 
-        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 

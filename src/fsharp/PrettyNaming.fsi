@@ -149,7 +149,7 @@ val IsPunctuation: s:string -> bool
 
 val IsTernaryOperator: s:string -> bool
 
-val IsInfixOperator: string -> bool
+val IsMangledInfixOperator: string -> bool
 
 val internal ( |Control|Equality|Relational|Indexer|FixedTypes|Other| ):
     opName:string -> Choice<unit,unit,unit,unit,unit,unit>

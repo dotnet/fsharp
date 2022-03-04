@@ -45,6 +45,7 @@ type internal RoamingProfileStorageLocation(keyName: string) =
 type internal FSharpWorkspaceServiceFactory
     [<System.Composition.ImportingConstructor>]
     (
+        metadataAsSourceService: FSharpMetadataAsSourceService
     ) =
 
     // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
@@ -120,7 +121,8 @@ type internal FSharpWorkspaceServiceFactory
                     match checkerSingleton with
                     | Some checker -> checker.Value
                     | _ -> failwith "Checker not set."
-                member _.FSharpProjectOptionsManager = optionsManager.Value } :> _
+                member _.FSharpProjectOptionsManager = optionsManager.Value
+                member _.MetadataAsSource = metadataAsSourceService } :> _
 
 [<Sealed>]
 type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, metadataAsSource: FSharpMetadataAsSourceService) =

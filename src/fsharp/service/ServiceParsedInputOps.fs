@@ -436,7 +436,7 @@ module ParsedInput =
     let GetEntityKind (pos: pos, parsedInput: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
+            | SynArgPats.NamePatPairs(xs, _) -> List.map (fun (_, _, pat) -> pat) xs
 
         /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) = function
@@ -505,7 +505,7 @@ module ParsedInput =
 
         and walkPat = walkPatWithKind None
 
-        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) =
             List.tryPick walkAttribute attrs
             |> Option.orElseWith (fun () -> walkPat pat)
             |> Option.orElseWith (fun () -> walkExpr e)
@@ -558,14 +558,14 @@ module ParsedInput =
             | SynExpr.ArrayOrList (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.Record (_, _, fields, r) -> 
                 ifPosInRange r (fun _ ->
-                    fields |> List.tryPick (fun (_, e, _) -> e |> Option.bind (walkExprWithKind parentKind)))
+                    fields |> List.tryPick (fun (SynExprRecordField(expr=e)) -> e |> Option.bind (walkExprWithKind parentKind)))
             | SynExpr.New (_, t, e, _) -> walkExprWithKind parentKind e |> Option.orElseWith (fun () -> walkType t)
             | SynExpr.ObjExpr (ty, _, bindings, ifaces, _, _) -> 
                 walkType ty
                 |> Option.orElseWith (fun () -> List.tryPick walkBinding bindings)
                 |> Option.orElseWith (fun () -> List.tryPick walkInterfaceImpl ifaces)
             | SynExpr.While (_, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
-            | SynExpr.For (_, _, e1, _, e2, e3, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2; e3]
+            | SynExpr.For (identBody=e1; toBody=e2; doBody=e3) -> List.tryPick (walkExprWithKind parentKind) [e1; e2; e3]
             | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListComputed (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.ComputationExpr (_, e, _) -> walkExprWithKind parentKind e
@@ -607,10 +607,10 @@ module ParsedInput =
             | SynExpr.Match (_, e, synMatchClauseList, _)
             | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElseWith (fun () -> List.tryPick walkClause synMatchClauseList)
-            | SynExpr.LetOrUseBang(_, _, _, _, e1, es, e2, _) ->
+            | SynExpr.LetOrUseBang(rhs=e1; andBangs=es; body=e2) ->
                 [
                     yield e1
-                    for _,_,_,_,eAndBang,_ in es do
+                    for SynExprAndBang(body=eAndBang) in es do
                         yield eAndBang
                     yield e2
                 ]
@@ -641,7 +641,7 @@ module ParsedInput =
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.Interface(t, _) -> walkType t
             | SynMemberSig.ValField(f, _) -> walkField f
-            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, repr, memberSigs, _), _) -> 
+            | SynMemberSig.NestedType(nestedType=SynTypeDefnSig.SynTypeDefnSig (typeInfo=info; typeRepr=repr; members=memberSigs)) -> 
                 walkComponentInfo false info
                 |> Option.orElseWith (fun () -> walkTypeDefnSigRepr repr)
                 |> Option.orElseWith (fun () -> List.tryPick walkMemberSig memberSigs)
@@ -658,13 +658,13 @@ module ParsedInput =
             | SynMemberDefn.Inherit(t, _, _) -> walkType t
             | SynMemberDefn.ValField(field, _) -> walkField field
             | SynMemberDefn.NestedType(tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty(Attributes attrs, _, _, t, _, _, _, _, e, _, _) -> 
+            | SynMemberDefn.AutoProperty(attributes=Attributes attrs; typeOpt=t; synExpr=e) -> 
                 List.tryPick walkAttribute attrs
                 |> Option.orElseWith (fun () -> Option.bind walkType t)
                 |> Option.orElseWith (fun () -> walkExpr e)
             | _ -> None
 
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.tryPick walkAttribute attrs
+        and walkEnumCase (SynEnumCase(attributes = Attributes attrs)) = List.tryPick walkAttribute attrs
 
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.tryPick walkField fields
@@ -698,7 +698,7 @@ module ParsedInput =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> None
 
-        and walkTypeDefn (SynTypeDefn (info, repr, members, _, _)) =
+        and walkTypeDefn (SynTypeDefn (typeInfo=info; typeRepr=repr; members=members)) =
             walkComponentInfo false info
             |> Option.orElseWith (fun () -> walkTypeDefnRepr repr)
             |> Option.orElseWith (fun () -> List.tryPick walkMember members)
@@ -706,7 +706,7 @@ module ParsedInput =
         and walkSynModuleDecl isTopLevel (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace isTopLevel fragment
-            | SynModuleDecl.NestedModule(info, _, modules, _, range) ->
+            | SynModuleDecl.NestedModule(moduleInfo=info; decls=modules; range=range) ->
                 walkComponentInfo true info
                 |> Option.orElseWith (fun () -> ifPosInRange range (fun _ -> List.tryPick (walkSynModuleDecl false) modules))
             | SynModuleDecl.Open _ -> None
@@ -955,7 +955,7 @@ module ParsedInput =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(SynComponentInfo(_, _, _, [id], _, _, _, _), _, _, _, _)) :: _ ->  
+                            | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo=SynComponentInfo(longId=[id]))) :: _ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New completionPath
                         match field with
@@ -1149,7 +1149,7 @@ module ParsedInput =
 
     let (|ConstructorPats|) = function
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.NamePatPairs(xs, _) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
@@ -1227,7 +1227,7 @@ module ParsedInput =
     
         and walkTypar (SynTypar _) = ()
     
-        and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding(attributes=Attributes attrs; headPat=pat; returnInfo=returnInfo; expr=e)) =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
@@ -1290,7 +1290,7 @@ module ParsedInput =
             | SynExpr.TryFinally (e1, e2, _, _, _)
             | SynExpr.While (_, e1, e2, _) -> List.iter walkExpr [e1; e2]
             | SynExpr.Record (_, _, fields, _) ->
-                fields |> List.iter (fun ((ident, _), e, _) ->
+                fields |> List.iter (fun (SynExprRecordField(fieldName=(ident, _); expr=e)) ->
                             addLongIdentWithDots ident
                             e |> Option.iter walkExpr)
             | SynExpr.Ident ident -> addIdent ident
@@ -1302,7 +1302,7 @@ module ParsedInput =
                 List.iter walkBinding bindings
                 List.iter walkInterfaceImpl ifaces
             | SynExpr.LongIdent (_, ident, _, _) -> addLongIdentWithDots ident
-            | SynExpr.For (_, ident, e1, _, e2, e3, _) ->
+            | SynExpr.For (ident=ident; identBody=e1; toBody=e2; doBody=e3) ->
                 addIdent ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.ForEach (_, _, _, pat, e1, e2, _) ->
@@ -1352,10 +1352,10 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
+            | SynExpr.LetOrUseBang (pat=pat; rhs=e1; andBangs=es; body=e2) ->
                 walkPat pat
                 walkExpr e1
-                for _,_,_,patAndBang,eAndBang,_ in es do
+                for SynExprAndBang(pat = patAndBang; body = eAndBang) in es do
                     walkPat patAndBang
                     walkExpr eAndBang
                 walkExpr e2
@@ -1401,7 +1401,7 @@ module ParsedInput =
             | SynMemberSig.Interface(t, _) -> walkType t
             | SynMemberSig.Member(vs, _, _) -> walkValSig vs
             | SynMemberSig.ValField(f, _) -> walkField f
-            | SynMemberSig.NestedType(SynTypeDefnSig.SynTypeDefnSig (info, repr, memberSigs, _), _) ->
+            | SynMemberSig.NestedType(nestedType=SynTypeDefnSig.SynTypeDefnSig (typeInfo=info; typeRepr=repr; members=memberSigs)) ->
                 let isTypeExtensionOrAlias =
                     match repr with
                     | SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.TypeAbbrev _, _)
@@ -1427,13 +1427,13 @@ module ParsedInput =
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
             | SynMemberDefn.ValField (field, _) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty (Attributes attrs, _, _, t, _, _, _, _, e, _, _) ->
+            | SynMemberDefn.AutoProperty (attributes=Attributes attrs; typeOpt=t; synExpr=e) ->
                 List.iter walkAttribute attrs
                 Option.iter walkType t
                 walkExpr e
             | _ -> ()
     
-        and walkEnumCase (SynEnumCase(Attributes attrs, _, _, _, _, _)) = List.iter walkAttribute attrs
+        and walkEnumCase (SynEnumCase(attributes=Attributes attrs)) = List.iter walkAttribute attrs
     
         and walkUnionCaseType = function
             | SynUnionCaseKind.Fields fields -> List.iter walkField fields
@@ -1468,7 +1468,7 @@ module ParsedInput =
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> ()
     
-        and walkTypeDefn (SynTypeDefn (info, repr, members, implicitCtor, _)) =
+        and walkTypeDefn (SynTypeDefn (typeInfo=info; typeRepr=repr; members=members; implicitConstructor=implicitCtor)) =
             let isTypeExtensionOrAlias =
                 match repr with
                 | SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Augmentation, _, _)
@@ -1483,7 +1483,7 @@ module ParsedInput =
         and walkSynModuleDecl (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace fragment
-            | SynModuleDecl.NestedModule (info, _, modules, _, _) ->
+            | SynModuleDecl.NestedModule (moduleInfo=info; decls=modules) ->
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
@@ -1553,13 +1553,13 @@ module ParsedInput =
             | [] -> None
             | firstDecl :: _ -> 
                 match firstDecl with
-                | SynModuleDecl.NestedModule (_, _, _, _, r)
-                | SynModuleDecl.Let (_, _, r)
-                | SynModuleDecl.DoExpr (_, _, r)
-                | SynModuleDecl.Types (_, r)
-                | SynModuleDecl.Exception (_, r)
-                | SynModuleDecl.Open (_, r)
-                | SynModuleDecl.HashDirective (_, r) -> Some r
+                | SynModuleDecl.NestedModule (range=r)
+                | SynModuleDecl.Let (range=r)
+                | SynModuleDecl.DoExpr (range=r)
+                | SynModuleDecl.Types (range=r)
+                | SynModuleDecl.Exception (range=r)
+                | SynModuleDecl.Open (range=r)
+                | SynModuleDecl.HashDirective (range=r) -> Some r
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
@@ -1597,7 +1597,7 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(SynComponentInfo(_, _, _, ident, _, _, _, _), _, decls, _, range) ->
+            | SynModuleDecl.NestedModule(moduleInfo=SynComponentInfo(longId=ident); decls=decls; range=range) ->
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
                 if range.EndLine >= currentLine then

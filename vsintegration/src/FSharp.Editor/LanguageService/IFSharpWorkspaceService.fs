@@ -13,3 +13,4 @@ type internal IFSharpWorkspaceService =
     inherit IWorkspaceService
     abstract Checker: FSharpChecker
     abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
+    abstract MetadataAsSource: FSharpMetadataAsSourceService

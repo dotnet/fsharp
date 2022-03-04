@@ -626,23 +626,24 @@ let ignoredChars = [| '.'; '?' |]
 // The lexer defines the strings that lead to those tokens.
 //------
 // This function recognises these "infix operator" names.
-let IsInfixOperator s = (* where s is assumed to be a compiled name *) 
-    let s = DecompileOpName s
+let IsMangledInfixOperator mangled  = (* where mangled is assumed to be a compiled name *) 
+    let s = DecompileOpName mangled 
     let skipIgnoredChars = s.TrimStart(ignoredChars)
     let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWithOrdinal(prefix)
     let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
     // The following conditions follow the declExpr infix clauses.
     // The test corresponds to the lexer definition for the token.
-    s = ":=" ||                                    // COLON_EQUALS
-    afterSkipStartsWith "|" ||                     // BAR_BAR, INFIX_BAR_OP
-    afterSkipStartsWith "&"  ||                    // AMP, AMP_AMP, INFIX_AMP_OP
-    afterSkipStarts relational ||                  // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
-    s = "$" ||                                     // DOLLAR
-    afterSkipStarts concat ||                      // INFIX_AT_HAT_OP
-    s = "::" ||                                    // COLON_COLON
-    afterSkipStarts plusMinus ||                   // PLUS_MINUS_OP, MINUS
-    afterSkipStarts otherMath ||                   // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
-    s = "**"                                       // INFIX_STAR_STAR_OP
+    s <> mangled && 
+    (s = ":=" ||                                    // COLON_EQUALS
+     afterSkipStartsWith "|" ||                     // BAR_BAR, INFIX_BAR_OP
+     afterSkipStartsWith "&"  ||                    // AMP, AMP_AMP, INFIX_AMP_OP
+     afterSkipStarts relational ||                  // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+     s = "$" ||                                     // DOLLAR
+     afterSkipStarts concat ||                      // INFIX_AT_HAT_OP
+     s = "::" ||                                    // COLON_COLON
+     afterSkipStarts plusMinus ||                   // PLUS_MINUS_OP, MINUS
+     afterSkipStarts otherMath ||                   // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+     s = "**")                                      // INFIX_STAR_STAR_OP
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
