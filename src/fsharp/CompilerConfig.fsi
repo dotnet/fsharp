@@ -8,6 +8,7 @@ open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
+open FSharp.Compiler.Xml
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter

@@ -9,16 +9,13 @@ open System.Reflection
 open System.Diagnostics.SymbolStore
 #endif
 open System.Runtime.InteropServices
-open System.Runtime.CompilerServices
-open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.NativeRes
 open FSharp.Compiler.IO
 #if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.StrongNameSign
 #endif
 
-let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
+let DateTime1970Jan01 = DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
@@ -588,7 +585,7 @@ let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
            Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId,
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
-   let bb = new System.Reflection.Metadata.BlobBuilder()
+   let bb = System.Reflection.Metadata.BlobBuilder()
    NativeResourceWriter.SerializeWin32Resources(bb, resources, rva)
    bb.ToArray()
 
@@ -1004,7 +1001,7 @@ type PdbMethod  = { symMethod: ISymbolMethod }
 type PdbVariable = { symVariable: ISymbolVariable }
 type PdbMethodScope = { symScope: ISymbolScope }
 
-type PdbSequencePoint =
+type PdbDebugPoint =
     { pdbSeqPointOffset: int
       pdbSeqPointDocument: PdbDocument
       pdbSeqPointLine: int
@@ -1076,7 +1073,7 @@ let pdbMethodGetToken (meth: PdbMethod) : int32 =
     let token = meth.symMethod.Token
     token.GetToken()
 
-let pdbMethodGetSequencePoints (meth: PdbMethod) : PdbSequencePoint[] =
+let pdbMethodGetDebugPoints (meth: PdbMethod) : PdbDebugPoint[] =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize
     let docs = Array.zeroCreate pSize

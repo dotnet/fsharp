@@ -127,9 +127,9 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             if not (String.IsNullOrEmpty(dotNetVersion)) then
                 try
                     let v = if dotNetVersion.StartsWith("v") then dotNetVersion.Substring(1) else dotNetVersion
-                    let frameworkName = new System.Runtime.Versioning.FrameworkName(".NETFramework", new Version(v))
+                    let frameworkName = System.Runtime.Versioning.FrameworkName(".NETFramework", Version(v))
                     match ToolLocationHelper.GetPathToReferenceAssemblies(frameworkName) |> Seq.tryHead with
-                    | Some p -> if FileSystem.DirectoryExistsShim(p) then true else false
+                    | Some p -> FileSystem.DirectoryExistsShim(p)
                     | None -> false
                 with _ -> false
             else false
@@ -303,7 +303,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             
         let assemblies = 
             [| for referenceName,baggage in references -> 
-               let item = new TaskItem(referenceName) :> ITaskItem
+               let item = TaskItem(referenceName) :> ITaskItem
                item.SetMetadata("Baggage", baggage)
                item |]
         let rar = 

@@ -6,7 +6,6 @@ open System
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Syntax
@@ -924,7 +923,7 @@ type ILMethInfo =
 
 
 /// Describes an F# use of a method
-[<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
+[<System.Diagnostics.DebuggerDisplay("{DebuggerDisplayName}")>]
 [<NoComparison; NoEquality>]
 type MethInfo =
     /// Describes a use of a method declared in F# code and backed by F# metadata.
@@ -1025,7 +1024,13 @@ type MethInfo =
     member x.DisplayName =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayName
-        | _ -> x.LogicalName
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValNameToDisplayName false
+
+     /// Get the method name in DisplayName form
+    member x.DisplayNameCore =
+        match x with
+        | FSMeth(_, _, vref, _) -> vref.DisplayNameCore
+        | _ -> x.LogicalName |> PrettyNaming.DecompileOpName
 
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
@@ -1832,22 +1837,25 @@ type RecdFieldInfo =
     /// Get the F# metadata for the F#-declared record, class or struct type
     member x.Tycon = x.RecdFieldRef.Tycon
 
-    /// Get the name of the field in an F#-declared record, class or struct type
-    member x.Name = x.RecdField.Name
+    /// Get the logical name of the field in an F#-declared record, class or struct type
+    member x.LogicalName = x.RecdField.LogicalName
+
+    member x.DisplayNameCore = x.RecdField.DisplayNameCore
+
+    member x.DisplayName = x.RecdField.DisplayName
 
     /// Get the (instantiated) type of the field in an F#-declared record, class or struct type
     member x.FieldType = actualTyOfRecdFieldRef x.RecdFieldRef x.TypeInst
 
-    /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type 
+    /// Get the enclosing (declaring) type of the field in an F#-declared record, class or struct type
     member x.DeclaringType = TType_app (x.RecdFieldRef.TyconRef, x.TypeInst, KnownWithoutNull) // TODO NULLNESS - qualify this 
 
-    override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
-
+    override x.ToString() = x.TyconRef.ToString() + "::" + x.LogicalName
 
 /// Describes an F# use of a union case
 [<NoComparison; NoEquality>]
 type UnionCaseInfo =
-    | UnionCaseInfo of TypeInst * UnionCaseRef
+    | UnionCaseInfo of typeInst: TypeInst * unionCaseRef: UnionCaseRef
 
     /// Get the list of types for the instantiation of the type parameters of the declaring type of the union case
     member x.TypeInst = let (UnionCaseInfo(tinst, _)) = x in tinst
@@ -1864,13 +1872,27 @@ type UnionCaseInfo =
     /// Get the F# metadata for the declaring union type
     member x.Tycon = x.UnionCaseRef.Tycon
 
-    /// Get the name of the union case
-    member x.Name = x.UnionCase.DisplayName
+    /// Get the logical name of the union case. 
+    member x.LogicalName = x.UnionCase.LogicalName
+
+    /// Get the core of the display name of the union case
+    ///
+    /// Backticks and parens are not added for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    member x.DisplayNameCore = x.UnionCase.DisplayNameCore
+
+    /// Get the display name of the union case
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    ///
+    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
     member x.GetTyparInst m =  mkTyparInst (x.TyconRef.Typars m) x.TypeInst
 
-    override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
+    override x.ToString() = x.TyconRef.ToString() + "::" + x.DisplayNameCore
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -2327,11 +2349,12 @@ type ILEventInfo =
     member x.TypeRef = x.ILTypeInfo.ILTypeRef
 
     /// Get the name of the event
-    member x.Name = x.RawMetadata.Name
+    member x.EventName = x.RawMetadata.Name
 
     /// Indicates if the property is static
     member x.IsStatic = x.AddMethod.IsStatic
-    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.Name
+
+    override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers for EventInfo
@@ -2430,7 +2453,7 @@ type EventInfo =
     /// Get the logical name of the event.
     member x.EventName =
         match x with
-        | ILEvent ileinfo -> ileinfo.Name
+        | ILEvent ileinfo -> ileinfo.EventName
         | FSEvent (_, p, _, _) -> p.PropertyName
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, m) -> ei.PUntaint((fun ei -> ei.Name), m)

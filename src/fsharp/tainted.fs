@@ -50,10 +50,10 @@ type internal TypeProviderError
 
     member _.MapText(f, tpDesignation, m) = 
         let (errNum: int), _ = f ""
-        new TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
+        TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
     member _.WithContext(typeNameContext:string, methodNameContext:string) = 
-        new TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
+        TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
 
     // .Message is just the error, whereas .ContextualErrorMessage has contextual prefix information
     // for example if InvokeCode in provided method is not set or has value that cannot be translated -then initial TPE will be wrapped in
@@ -75,7 +75,7 @@ type internal TypeProviderError
         | [_] -> f this
         | errors ->
             for msg in errors do
-                f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
+                f (TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
 type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
 

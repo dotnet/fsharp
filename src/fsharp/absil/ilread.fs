@@ -15,7 +15,6 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
-open System.IO.MemoryMappedFiles
 open System.Text
 open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -161,7 +160,7 @@ type PEFile(fileName: string, peReader: PEReader) as this =
 
     // We store a weak byte memory reference so we do not constantly create a lot of byte memory objects.
     // We could just have a single ByteMemory stored in the PEFile, but we need to dispose of the stream via the finalizer; we cannot have a cicular reference.
-    let mutable weakMemory = new WeakReference<ByteMemory>(Unchecked.defaultof<_>)
+    let mutable weakMemory = WeakReference<ByteMemory>(Unchecked.defaultof<_>)
 
     member _.FileName = fileName
 
@@ -190,7 +189,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     let fileStamp = FileSystem.GetLastWriteTimeShim fileName
 
     /// The weak handle to the bytes for the file
-    let weakBytes = new WeakReference<byte[]> (null)
+    let weakBytes = WeakReference<byte[]>(null)
 
     member _.FileName = fileName
 
@@ -746,11 +745,9 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         let cache =
             match !cache with
             | null -> 
-                let c = new ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
-                cache :=  c
-                c
-            | NonNullQuick c -> c 
-
+                cache := ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
+            | _ -> ()
+            !cache
         match cache.TryGetValue idx with
         | true, res ->
             incr count
@@ -774,13 +771,10 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     fun f (idx :'T) ->
         let cache =
             match !cache with
-            | null ->
-                let c = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
-                cache := c
-                c
-            | NonNullQuick c -> c
-
-        match cache.TryGetValue(idx) with
+            | null -> cache := ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) )
+            | _ -> ()
+            !cache
+        match cache.TryGetValue idx with
         | true, v ->
             incr count
             v
@@ -2602,8 +2596,8 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
               Where = seekReadModuleRef ctxt mdv scopeIdx })
 
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints =
-   let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
-   let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
+   let labelsOfRawOffsets = Dictionary<_, _>(sz/2)
+   let ilOffsetsOfLabels = Dictionary<_, _>(sz/2)
 
    let rawToLabel rawOffset =
        match labelsOfRawOffsets.TryGetValue rawOffset with
@@ -2617,7 +2611,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
        let lab = rawToLabel rawOffset
        ilOffsetsOfLabels.[lab] <- ilOffset
 
-   let ibuf = new ResizeArray<_>(sz/2)
+   let ibuf = ResizeArray<_>(sz/2)
    let curr = ref 0
    let prefixes = { al=Aligned; tl= Normalcall; vol= Nonvolatile;ro=NormalAddress;constrained=None }
    let lastb = ref 0x0
@@ -2885,7 +2879,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                try
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
-                 let sps = pdbMethodGetSequencePoints pdbm
+                 let sps = pdbMethodGetDebugPoints pdbm
                  (* let roota, rootb = pdbScopeGetOffsets rootScope in *)
                  let seqpoints =
                     let arr =
@@ -2895,16 +2889,17 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                            // reader API. They should return an index into the array of documents for the reader
                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
                            let source =
-                             ILSourceMarker.Create(document = sourcedoc,
-                                                 line = sp.pdbSeqPointLine,
-                                                 column = sp.pdbSeqPointColumn,
-                                                 endLine = sp.pdbSeqPointEndLine,
-                                                 endColumn = sp.pdbSeqPointEndColumn)
+                               ILDebugPoint.Create(document = sourcedoc,
+                                   line = sp.pdbSeqPointLine,
+                                   column = sp.pdbSeqPointColumn,
+                                   endLine = sp.pdbSeqPointEndLine,
+                                   endColumn = sp.pdbSeqPointEndColumn)
                            (sp.pdbSeqPointOffset, source))
 
                     Array.sortInPlaceBy fst arr
 
                     Array.toList arr
+
                  let rec scopes scp =
                        let a, b = pdbScopeGetOffsets scp
                        let lvs = pdbScopeGetLocals scp
@@ -2940,16 +2935,21 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
            let codeSize = (int32 b >>>& 2)
            // tiny format for "+nm+", code size = " + string codeSize)
            let instrs, _, lab2pc, raw2nextLab = seekReadTopCode ctxt pev mdv numtypars codeSize codeBase seqpoints
-           (* Convert the linear code format to the nested code format *)
+
+           // Convert the linear code format to the nested code format
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            let code = buildILCode nm lab2pc instrs [] localPdbInfos2
-           { IsZeroInit=false
+
+           { 
+             IsZeroInit=false
              MaxStack= 8
              NoInlining=noinline
              AggressiveInlining=aggressiveinline
              Locals=List.empty
-             SourceMarker=methRangePdbInfo
-             Code=code }
+             Code=code
+             DebugPoint=methRangePdbInfo
+             DebugImports=None
+           }
 
        else
            let hasMoreSections = (b &&& e_CorILMethod_MoreSects) <> 0x0uy
@@ -3060,19 +3060,22 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
              nextSectionBase := sectionBase + sectionSize
            done (* while *)
 
-           (* Convert the linear code format to the nested code format *)
+           // Convert the linear code format to the nested code format 
            if logging then dprintn "doing localPdbInfos2"
            let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
            if logging then dprintn "done localPdbInfos2, checking code..."
            let code = buildILCode nm lab2pc instrs !seh localPdbInfos2
            if logging then dprintn "done checking code."
-           { IsZeroInit=initlocals
+           { 
+             IsZeroInit=initlocals
              MaxStack= maxstack
              NoInlining=noinline
              AggressiveInlining=aggressiveinline
              Locals = locals
              Code=code
-             SourceMarker=methRangePdbInfo})
+             DebugPoint=methRangePdbInfo
+             DebugImports = None
+           })
 
 and int32AsILVariantType (ctxt: ILMetadataReader) (n: int32) =
     if List.memAssoc n (Lazy.force ILVariantTypeRevMap) then
@@ -3899,14 +3902,14 @@ type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
 let ilModuleReaderCache1 =
-    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
-           (stronglyHeldReaderCacheSize,
-            keepMax=stronglyHeldReaderCacheSize, // only strong entries
-            areSimilar=(fun (x, y) -> x = y))
+    AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+       (stronglyHeldReaderCacheSize,
+        keepMax=stronglyHeldReaderCacheSize, // only strong entries
+        areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCache1Lock = Lock()
 
 // // Cache to reuse readers that have already been created and are not yet GC'd
-let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
+let ilModuleReaderCache2 = ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
 let stableFileHeuristicApplies fileName =
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false

@@ -5,7 +5,6 @@
 module internal FSharp.Compiler.CompilerImports
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -19,7 +18,6 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
@@ -248,7 +246,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 #endif
 
 #if DEBUG
-[<DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
+[<DebuggerDisplay("AssemblyResolution({resolvedPath})")>]
 #endif
 type AssemblyResolution =
     {  /// The original reference to the assembly.
@@ -952,7 +950,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let disposeTypeProviderActions = ResizeArray()
 
 #if !NO_EXTENSIONTYPING
-    let mutable generatedTypeRoots = new Dictionary<ILTypeRef, int * ProviderGeneratedType>()
+    let mutable generatedTypeRoots = Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let tcImportsWeak = TcImportsWeakHack (tciLock, WeakReference<_> this)
 #endif
 
@@ -1200,7 +1198,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let ccuData: CcuData =
               { IsFSharp=false
                 UsesFSharp20PlusQuotations=false
-                InvalidateEvent=(new Event<_>()).Publish
+                InvalidateEvent=(Event<_>()).Publish
                 IsProviderGenerated = true
                 QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m))
                 Contents = ccuContents
@@ -1341,7 +1339,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
 #endif
              }
-        new ImportMap (tcImports.GetTcGlobals(), loaderInterface)
+        ImportMap(tcImports.GetTcGlobals(), loaderInterface)
 
     // Note the tcGlobals are only available once mscorlib and fslib have been established. For TcImports,
     // they are logically only needed when converting AbsIL data structures into F# data structures, and
@@ -1403,12 +1401,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 match entity.TypeReprInfo with
                 // This is the first extension
                 | TNoRepr ->
-                    TProvidedNamespaceExtensionPoint(typeProviderEnvironment, [provider])
+                    TProvidedNamespaceRepr(typeProviderEnvironment, [provider])
 
                 // Add to the existing list of extensions
-                | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr ->
+                | TProvidedNamespaceRepr(resolutionFolder, prior) as repr ->
                     if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then
-                        TProvidedNamespaceExtensionPoint(resolutionFolder, provider :: prior)
+                        TProvidedNamespaceRepr(resolutionFolder, provider :: prior)
                     else
                         repr
 
@@ -1582,7 +1580,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let nm = aref.Name
         if verbose then dprintn ("Converting IL assembly to F# data structures "+nm)
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
-        let invalidateCcu = new Event<_>()
+        let invalidateCcu = Event<_>()
         let ccu = ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, tcConfig.xmlDocInfoLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
 
         let ccuinfo =
@@ -1627,7 +1625,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                 let mspec = minfo.mspec
 
 #if !NO_EXTENSIONTYPING
-                let invalidateCcu = new Event<_>()
+                let invalidateCcu = Event<_>()
 #endif
 
                 let codeDir = minfo.compileTimeWorkingDir
@@ -1671,7 +1669,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                                 RequireTcImportsLock(tcitok, ccuThunks)
                                 for ccuThunk in data.FixupThunks do
                                     if ccuThunk.IsUnresolvedReference then
-                                        ccuThunks.Add(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+                                        ccuThunks.Add(ccuThunk, fun () -> fixupThunk () |> ignore)
                             )
 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName
@@ -1713,7 +1711,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     if ccuThunk.IsUnresolvedReference then
                       tciLock.AcquireLock <| fun tcitok ->
                         RequireTcImportsLock(tcitok, ccuThunks)
-                        ccuThunks.Add(ccuThunk, fixupThunk) |> ignore
+                        ccuThunks.Add(ccuThunk, fixupThunk)
                 )
 #if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
@@ -2077,7 +2075,5 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let buildTcEnv tcEnv asm =
-        AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-    let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
+    let _openDecls, tcEnv = (tcEnv, asms) ||> List.collectFold (fun tcEnv asm -> AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes))
     tcEnv, (dllinfos, asms)

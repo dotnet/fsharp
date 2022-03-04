@@ -2,13 +2,7 @@
 namespace FSharp.DependencyManager.Nuget
 
 open System
-open System.Collections
-open System.Collections.Generic
-open System.Diagnostics
 open System.IO
-open System.Reflection
-open System.Runtime.CompilerServices
-open System.Runtime.Versioning
 
 // Package reference information
 type PackageReference =
@@ -96,7 +90,7 @@ module internal ProjectFile =
 
         [| for line in lines do
             let fields = line.Split(',')
-            if fields.Length < 8 then raise (new InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+            if fields.Length < 8 then raise (InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
                 { NugetPackageId = fields.[0]
                   NugetPackageVersion = fields.[1]

@@ -5,7 +5,6 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 open System.Collections.Generic
-open System.Diagnostics
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -59,7 +58,7 @@ module internal PervasiveAutoOpens =
 
     val notFound: unit -> 'a
 
-[<StructAttribute>]
+[<Struct>]
 type internal InlineDelayInit<'T when 'T: not struct> =
 
     new: f:(unit -> 'T) -> InlineDelayInit<'T>
@@ -346,7 +345,7 @@ module internal ResultOrException =
 
     val otherwise : f:(unit -> ResultOrException<'a>) -> x:ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccessAttribute; Struct>]
+[<RequireQualifiedAccess; Struct>]
 type internal ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
@@ -477,7 +476,7 @@ module internal Tables =
 /// Interface that defines methods for comparing objects using partial equality relation
 type internal IPartialEqualityComparer<'T> =
     inherit IEqualityComparer<'T>
-    abstract member InEqualityRelation: 'T -> bool
+    abstract InEqualityRelation: 'T -> bool
   
 /// Interface that defines methods for comparing objects using partial equality relation
 module internal IPartialEqualityComparer =
@@ -596,11 +595,9 @@ type internal LayeredMap<'Key,'Value when 'Key: comparison> = Map<'Key,'Value>
 [<AutoOpen>]
 module internal MapAutoOpens =
     type internal Map<'Key,'Value when 'Key: comparison> with
-
+        
         static member Empty: Map<'Key,'Value> when 'Key: comparison
-
-        member Values: 'Value list
-
+        
         member AddAndMarkAsCollapsible: kvs:KeyValuePair<'Key,'Value> [] -> Map<'Key,'Value> when 'Key: comparison
 
         member LinearTryModifyThenLaterFlatten: key:'Key * f:('Value option -> 'Value) -> Map<'Key,'Value> when 'Key: comparison
@@ -609,7 +606,7 @@ module internal MapAutoOpens =
         member MarkAsCollapsible: unit -> Map<'Key,'Value> when 'Key: comparison
 
 /// Immutable map collection, with explicit flattening to a backing dictionary 
-[<SealedAttribute>]
+[<Sealed>]
 type internal LayeredMultiMap<'Key,'Value when 'Key: comparison> =
 
     new: contents:LayeredMap<'Key,'Value list> -> LayeredMultiMap<'Key,'Value>

@@ -210,8 +210,8 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 
-let evalIfDefExpression startPos reportLibraryOnlyFeatures isFeatureSupported errorIfFeatureUnsupported args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, isFeatureSupported, errorIfFeatureUnsupported, lexed.ToCharArray ())
+let evalIfDefExpression startPos reportLibraryOnlyFeatures langVersion args (lookup:string->bool) (lexed:string) =
+    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, langVersion, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
@@ -565,7 +565,9 @@ rule token args skip = parse
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
 
  | "(*IF-FSHARP"
-     { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
+     { if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+          mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
+       if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))
        else token args skip lexbuf }
 
  | "(*F#"
@@ -928,7 +930,10 @@ rule token args skip = parse
 
  | ("#indent" | "#light") anywhite+ "\"off\""
    { args.lightStatus.Status <- false
-     mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
+     if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
+         mlCompatError (FSComp.SR.mlCompatLightOffNoLongerSupported()) lexbuf.LexemeRange
+     else
+         mlCompatWarning (FSComp.SR.lexIndentOffForML()) lexbuf.LexemeRange
      if not skip then HASH_LIGHT (LexCont.Token (args.ifdefStack, args.stringNest))
      else token args skip lexbuf }
 
@@ -936,7 +941,7 @@ rule token args skip = parse
    { let m = lexbuf.LexemeRange
      let lookup id = List.contains id args.defines
      let lexed = lexeme lexbuf
-     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.SupportsFeature lexbuf.CheckLanguageFeatureErrorRecover args lookup lexed
+     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.LanguageVersion args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
 
      // Get the token; make sure it starts at zero position & return

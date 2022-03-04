@@ -43,7 +43,7 @@ type AssemblyLoader =
 /// There is normally only one ImportMap for any assembly compilation, though additional instances can be created
 /// using tcImports.GetImportMap() if needed, and it is not harmful if multiple instances are used. The object 
 /// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs. 
-[<SealedAttribute>]
+[<Sealed>]
 type ImportMap =
     new : g:TcGlobals * assemblyLoader:AssemblyLoader -> ImportMap
     

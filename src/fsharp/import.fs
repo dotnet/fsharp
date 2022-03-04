@@ -11,7 +11,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -117,7 +116,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
 #if !NO_EXTENSIONTYPING
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
-    | TProvidedTypeExtensionPoint info ->
+    | TProvidedTypeRepr info ->
             //printfn "ImportTypeRefData: validating type: typeLogicalName = %A" typeName
             ValidateProvidedTypeAfterStaticInstantiation(m, info.ProvidedType, path, typeName)
     | _ -> 
@@ -488,7 +487,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
     // Find all the items with a non-empty key list. Bucket them together by
     // the first key. For each bucket, call 'nodef' on that head key and the bucket.
     let nodes = 
-        let buckets = new Dictionary<_, _>(10)
+        let buckets = Dictionary<_, _>(10)
         for keylist, v in items do
             match keylist with 
             | [] -> ()

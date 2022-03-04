@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.LowerCallsAndSeqs
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text

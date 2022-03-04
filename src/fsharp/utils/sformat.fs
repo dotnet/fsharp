@@ -89,7 +89,7 @@ type Joint =
 [<NoEquality; NoComparison>]
 type Layout =
     | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
-    | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+    | Leaf of juxtLeft: bool * text: TaggedText * juxtRight: bool
     | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
     | Attr of text: string * attributes: (string * string) list * layout: Layout
 
@@ -233,6 +233,7 @@ module TaggedText =
     let keywordStruct = tagKeyword "struct"
     let keywordInherit = tagKeyword "inherit"
     let keywordEnd = tagKeyword "end"
+    let keywordBegin = tagKeyword "begin"
     let keywordNested = tagKeyword "nested"
     let keywordType = tagKeyword "type"
     let keywordDelegate = tagKeyword "delegate"
@@ -275,6 +276,15 @@ module Layout =
         match layout with 
         | Leaf(true, s, true) -> s.Text = ""
         | _ -> false
+
+#if COMPILER
+    let rec endsWithL (text: string) layout = 
+        match layout with 
+        | Leaf(_, s, _) -> s.Text.EndsWith(text)
+        | Node(_, r, _) -> endsWithL text r
+        | Attr(_, _, l) -> endsWithL text l
+        | ObjLeaf _ -> false
+#endif
 
     let mkNode l r joint =
         if isEmptyL l then r else
@@ -327,7 +337,7 @@ module Layout =
 
     let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL semicolon) layouts
 
-    let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+    let spaceListL layouts = tagListL id layouts
 
     let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
 
@@ -680,7 +690,7 @@ module Display =
         let index   (_, i)          = i
         let extract rstrs = combine(List.rev rstrs) 
         let newLine (rstrs, _) n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             let rstrs = push "\n"   rstrs
             let rstrs = push indent rstrs
             rstrs, n
@@ -725,7 +735,7 @@ module Display =
         let index i = i
         let addText z text = write text;  (z + length text)
         let newLine _ n = // \n then spaces... 
-            let indent = new String(' ', n)
+            let indent = String(' ', n)
             chan.WriteLine();
             write (tagText indent);
             n

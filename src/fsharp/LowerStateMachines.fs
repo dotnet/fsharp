@@ -5,9 +5,7 @@ module internal FSharp.Compiler.LowerStateMachines
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -24,7 +22,7 @@ type StateMachineConversionFirstPhaseResult =
 
      /// The second phase of the transformation.  It is run after all code labels and their mapping to program counters have been determined
      /// after the first phase. 
-     phase2: (Map<int, ILCodeLabel> -> Expr)
+     phase2: Map<int, ILCodeLabel> -> Expr
 
      /// The labels allocated for this portion of the computation
      entryPoints: int list
@@ -93,7 +91,7 @@ let RepresentBindingAsStateVar g (bind: Binding) (resBody: StateMachineConversio
                     // Within all resumable code, a return value of 'true' indicates success/completion path, when we can clear
                     // state machine locals.
                     (if typeEquiv g (tyOfExpr g generateBody) g.bool_ty then
-                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointForTarget.No m g.bool_ty generateBody
+                        mkCond DebugPointAtBinding.NoneAtInvisible DebugPointAtTarget.No m g.bool_ty generateBody
                             (mkCompGenSequential m 
                                 (mkValSet m vref (mkDefault (m, vref.Type)))
                                 (mkTrue g m))
@@ -115,8 +113,7 @@ let isExpandVar g (v: Val) =
 let isStateMachineBindingVar g (v: Val) = 
     isExpandVar g v  ||
     (let nm = v.LogicalName
-     (nm.StartsWith "builder@" 
-      || (v.BaseOrThisInfo = MemberThisVal)) &&
+     (nm.StartsWith "builder@" || v.IsMemberThisVal) &&
      not v.IsCompiledAsTopLevel)
 
 type env = 
@@ -276,10 +273,10 @@ type LowerStateMachine(g: TcGlobals) =
                     // type in the IL
                     let targetExpr2Opt = 
                         match targetExpr, newTyOpt with 
-                        | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_oldTy]), a, b, c), Some newTy -> 
-                            let targetExpr2 = Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [newTy]), a, b, c) 
+                        | Expr.Op (TOp.ILAsm ([ I_throw ], [_oldTy]), a, b, c), Some newTy -> 
+                            let targetExpr2 = Expr.Op (TOp.ILAsm ([ I_throw ], [newTy]), a, b, c) 
                             Some targetExpr2
-                        | Expr.Sequential ((Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1), Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
+                        | Expr.Sequential (Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1, Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
                             let targetExpr2 = Expr.Sequential (e1, Expr.Const (Const.Zero, m, newTy), a, b, c)
                             Some targetExpr2
                         | _ ->
@@ -413,17 +410,19 @@ type LowerStateMachine(g: TcGlobals) =
         if pcs.IsEmpty then 
             expr
         else
-            let initLabel = IL.generateCodeLabel()
-            let mbuilder = new MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
-            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
+            let initLabel = generateCodeLabel()
+            let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
+            let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointAtTarget.No)
             let dtree =
-                TDSwitch(pcExpr,
-                        [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
-                            for pc in pcs do
-                                yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
-                        // The default is to go to pcInit
-                        Some(mkGotoLabelTarget initLabel),
-                        m)
+                TDSwitch(
+                    DebugPointAtSwitch.No, 
+                    pcExpr,
+                    [   // Yield one target for each PC, where the action of the target is to goto the appropriate label
+                        for pc in pcs do
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab.[pc]) ],
+                    // The default is to go to pcInit
+                    Some(mkGotoLabelTarget initLabel),
+                    m)
 
             let table = mbuilder.Close(dtree, m, g.int_ty)
             mkCompGenSequential m table (mkLabelled m initLabel expr)
@@ -538,8 +537,8 @@ type LowerStateMachine(g: TcGlobals) =
             let resumableVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.resumableVars 
             let m = someBranchExpr.Range
             let recreate reenterLabOpt e1 e2 = 
-                let lab = (match reenterLabOpt with Some l -> l | _ -> IL.generateCodeLabel())
-                mkCond DebugPointAtBinding.NoneAtSticky DebugPointForTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
+                let lab = (match reenterLabOpt with Some l -> l | _ -> generateCodeLabel())
+                mkCond DebugPointAtBinding.NoneAtSticky DebugPointAtTarget.No  m (tyOfExpr g noneBranchExpr) (mkFalse g m) (mkLabelled m lab e1) e2
             { phase1 = recreate None resNone.phase1 resSome.phase1
               phase2 = (fun ctxt ->
                 let generate2 = resSome.phase2 ctxt
@@ -560,7 +559,7 @@ type LowerStateMachine(g: TcGlobals) =
         match pcExprVal with
         | Int32Expr contIdPC ->
             let recreate contLabOpt =
-                Expr.Op (TOp.Goto (match contLabOpt with Some l -> l | _ -> IL.generateCodeLabel()), [], [], m)
+                Expr.Op (TOp.Goto (match contLabOpt with Some l -> l | _ -> generateCodeLabel()), [], [], m)
 
             { phase1 = recreate None 
               phase2 = (fun ctxt ->
@@ -715,7 +714,7 @@ type LowerStateMachine(g: TcGlobals) =
                     let innerPcSet = innerPcs |> Set.ofList
                     let outerLabsForInnerPcs = pcsAndLabs |> List.filter (fun (pc, _outerLab) -> innerPcSet.Contains pc) |> List.map snd
                     // generate the inner labels
-                    let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then IL.generateCodeLabel() else l))
+                    let pcsAndInnerLabs = pcsAndLabs |> List.map (fun (pc, l) -> (pc, if innerPcSet.Contains pc then generateCodeLabel() else l))
                     let innerPc2Lab = Map.ofList pcsAndInnerLabs
 
                     let vBodyR = resBody.phase2 innerPc2Lab
@@ -753,7 +752,7 @@ type LowerStateMachine(g: TcGlobals) =
             let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
             let resumableVars =
                 (emptyFreeVars, Array.zip targets tglArray)
-                ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
+                ||> Array.fold (fun fvs (TTarget(_vs, _, _spTarget, _), res) ->
                     if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.resumableVars)
             let stateVars = 
                 (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
@@ -868,7 +867,7 @@ type LowerStateMachine(g: TcGlobals) =
 
                 // Work out the initial mapping of pcs to labels
                 let pcs = [ 1 .. pcCount ]
-                let labs = pcs |> List.map (fun _ -> IL.generateCodeLabel())
+                let labs = pcs |> List.map (fun _ -> generateCodeLabel())
                 let pc2lab  = Map.ofList (List.zip pcs labs)
 
                 // Execute phase2, building the core of the method

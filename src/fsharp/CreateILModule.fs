@@ -8,7 +8,6 @@ open System.Reflection
 
 open Internal.Utilities
 open Internal.Utilities.Library
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.NativeRes
@@ -271,7 +270,7 @@ module MainModuleBuilder =
             let isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target = CompilerTarget.Module)
             mkILSimpleModule assemblyName ilModuleName isDLL tcConfig.subsystemVersion tcConfig.useHighEntropyVA ilTypeDefs hashAlg locale flags (mkILExportedTypes exportedTypesList) metadataVersion
 
-        let disableJitOptimizations = not (tcConfig.optSettings.jitOpt())
+        let disableJitOptimizations = not tcConfig.optSettings.JitOptimizationsEnabled
 
         let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
 
@@ -469,7 +468,8 @@ module MainModuleBuilder =
                                                  yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
-                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileForWriteShim(tcConfig.win32icon))
+                  use iconStream = FileSystem.OpenFileForReadShim(tcConfig.win32icon)
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, iconStream)
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
 

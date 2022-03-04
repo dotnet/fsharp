@@ -5,7 +5,6 @@ module internal FSharp.Compiler.QuotationPickler
 open System
 open System.Text
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library.Extras
 

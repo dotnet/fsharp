@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.BinaryResourceFormats
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 
 // Helpers for generating binary blobs

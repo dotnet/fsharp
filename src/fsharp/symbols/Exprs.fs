@@ -211,12 +211,12 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWithOrdinal("init") 
+        rfref.RecdField.LogicalName.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
         match e with 
-        | Expr.Match (_, _, TDSwitch(Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
+        | Expr.Match (_, _, TDSwitch(_, Expr.Op (TOp.ILAsm ([ AI_clt ], _), _, [Expr.Op (TOp.ValFieldGet rfref, _, _, _) ;_], _), _, _, _), _, _, _) when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
         // Match "init@41 <- 6"
@@ -401,7 +401,8 @@ module FSharpExprConvert =
             // tail recursive 
             ConvExprLinear cenv env e2 (contF << (fun e2R -> E.Sequential(e1R, e2R)))
 
-        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->  E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) 
+        | Expr.Sequential (x0, x1, ThenDoSeq, _, _) ->
+            E.Sequential(ConvExpr cenv env x0, ConvExpr cenv env x1) |> contF
 
         | ModuleValueOrMemberUse cenv.g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (nonNil tyargs || nonNil curriedArgs) && vref.IsMemberOrModuleBinding ->
             ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) contF
@@ -540,11 +541,11 @@ module FSharpExprConvert =
         | Expr.Let _   // big linear sequences of 'let'
         | Expr.Match _   // big linear sequences of 'match ... -> ....' 
         | Expr.Sequential _ ->
-            ConvExprPrimLinear cenv env expr (fun e -> e)
+            ConvExprPrimLinear cenv env expr id
 
         | ModuleValueOrMemberUse g (vref, vFlags, _f, _fty, tyargs, curriedArgs) when (* (nonNil tyargs || nonNil curriedArgs) && *) vref.IsMemberOrModuleBinding ->
             // Process applications of top-level values in a tail-recursive way
-            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) (fun e -> e)
+            ConvModuleValueOrMemberUseLinear cenv env (expr, vref, vFlags, tyargs, curriedArgs) id
 
         | Expr.Val (vref, _vFlags, m) -> 
             ConvValRef cenv env m vref 
@@ -809,7 +810,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldGet (tcref, i), [], [obj] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
                 E.FSharpFieldGet(Some objR, typR, ConvRecdFieldRef cenv fref) 
@@ -817,7 +818,7 @@ module FSharpExprConvert =
             | TOp.ExnFieldSet (tcref, i), [], [obj;e2] -> 
                 let exnc = stripExnEqns tcref
                 let fspec = exnc.TrueInstanceFieldsAsList.[i]
-                let fref = mkRecdFieldRef tcref fspec.Name
+                let fref = mkRecdFieldRef tcref fspec.LogicalName
                 let typR = ConvType cenv (mkAppTy tcref tyargs)
                 let objR = ConvExpr cenv env (mkCoerceExpr (obj, mkAppTy tcref [], m, g.exn_ty))
                 E.FSharpFieldSet(Some objR, typR, ConvRecdFieldRef cenv fref, ConvExpr cenv env e2) 
@@ -1200,9 +1201,9 @@ module FSharpExprConvert =
         elif env.substVals.ContainsVal v then 
             let e = env.substVals.[v]
             ConvExprPrim cenv env e
-        elif v.BaseOrThisInfo = CtorThisVal then 
+        elif v.IsCtorThisVal then 
             E.ThisValue(ConvType cenv v.Type) 
-        elif v.BaseOrThisInfo = BaseVal then 
+        elif v.IsBaseVal then 
             E.BaseValue(ConvType cenv v.Type) 
         else 
             E.Value(FSharpMemberOrFunctionOrValue(cenv, vref)) 
@@ -1241,7 +1242,7 @@ module FSharpExprConvert =
 
     and ConvDecisionTreePrim cenv env dtreeRetTy x = 
         match x with 
-        | TDSwitch(e1, csl, dfltOpt, m) -> 
+        | TDSwitch(_, e1, csl, dfltOpt, m) -> 
             let acc = 
                 match dfltOpt with 
                 | Some d -> ConvDecisionTreePrim cenv env dtreeRetTy d 
@@ -1340,7 +1341,7 @@ and FSharpImplementationFileContents(cenv, mimpl) =
 
     and getDecls mdef = 
         match mdef with 
-        | TMDefRec(_isRec, tycons, mbinds, _m) ->
+        | TMDefRec(_isRec, _opens, tycons, mbinds, _m) ->
             [ for tycon in tycons do 
                   let entity = FSharpEntity(cenv, mkLocalEntityRef tycon)
                   yield FSharpImplementationFileDeclaration.Entity(entity, []) 
@@ -1354,6 +1355,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMAbstract mexpr -> getDecls2 mexpr
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
+        | TMDefOpens _ ->
+            [ ]
         | TMDefDo(expr, _m)  ->
             [ let expr = FSharpExprConvert.ConvExprOnDemand cenv (ExprTranslationEnv.Empty(cenv.g)) expr
               yield FSharpImplementationFileDeclaration.InitAction expr  ]

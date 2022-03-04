@@ -9,7 +9,7 @@
 // The error currently looks like this:
 // The type 'unit' is not compatible with the type 'GrowingArray<int>'. See also C:\Users\t\AppData\Local\Temp\1\ConsoleApplication4\ConsoleApplication4\Program.fs(9,41)-(9,46).
 
-//<Expects status="error" span="(19,33-19,45)" id="FS0001">.+'unit'.+'GrowingArray<int>'.+\(18,41\)-\(18,46\)</Expects>
+//<Expects status="error" span="(19,33-19,45)" id="FS0193">.+'unit'.+'GrowingArray<int>'.+\(18,41\)-\(18,46\)</Expects>
 module M
 type GrowingArray<'a> = System.Collections.Generic.List<'a>
 let nextPrime (sofar : GrowingArray<int>) n = failwith "nyi"

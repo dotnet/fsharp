@@ -56,8 +56,6 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
-  - name: DotNetSdkVersion
-    value: '5.0.300'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -369,28 +367,36 @@ stages:
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
         # Plain build Windows
-        # Disabled until the Windows Proto compiler is coreclr
-        # - job: Plain_Build_Windows
-        #   pool:
-        #     vmImage: windows-latest
-        #   variables:
-        #   - name: _BuildConfig
-        #     value: Debug
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: .\Build.cmd
-        #     displayName: Initial build
-        #   - script: dotnet --list-sdks
-        #     displayName: Report dotnet SDK versions
-        #   - task: UseDotNet@2
-        #       displayName: install SDK
-        #       inputs:
-        #         packageType: sdk
-        #         version: $(DotNetSdkVersion)
-        #         installationPath: $(Agent.ToolsDirectory)/dotnet
-        #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-        #     displayName: Regular rebuild
+        - job: Plain_Build_Windows
+          pool:
+            vmImage: windows-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build .\FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Linux
         - job: Plain_Build_Linux
@@ -410,10 +416,19 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: $(DotNetSdkVersion)
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
         # Plain build Mac
         - job: Plain_Build_MacOS
@@ -433,10 +448,19 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
-              version: $(DotNetSdkVersion)
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
-            displayName: Regular rebuild
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.sln
+          - script: dotnet build ./FSharp.Compiler.Service.sln /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+            workingDirectory: $(Build.SourcesDirectory)/service
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
@@ -471,8 +495,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.9
-      insertTargetBranch: rel/d16.9
+      componentBranchName: refs/heads/release/dev17.0
+      insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

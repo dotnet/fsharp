@@ -5,16 +5,14 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
-open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open TestFramework
 open FsUnit
 open NUnit.Framework
 
@@ -68,7 +66,7 @@ let readRefs (folder : string) (projectFile: string) =
 let checker = FSharpChecker.Create()
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(Path.GetTempFileName() , ext)
+    let tmpFile =  Path.ChangeExtension(tryCreateTemporaryFileName (), ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
     interface IDisposable with
@@ -174,8 +172,8 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
 #endif
 
 let mkTestFileAndOptions source additionalArgs =
-    let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let project = Path.GetTempFileName()
+    let fileName = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let project = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(project, ".dll")
     let projFileName = Path.ChangeExtension(project, ".fsproj")
     let fileSource1 = "module M"
@@ -227,6 +225,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
     | res -> failwithf "Parsing did not finish... (%A)" res
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
+let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let parseSourceCode (name: string, code: string) =
@@ -254,6 +253,21 @@ let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
+
+let getSingleModuleMemberDecls (input: ParsedInput) =
+    let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl input
+    decls
+
+let getSingleDeclInModule (input: ParsedInput) =
+    match getSingleModuleMemberDecls input with
+    | [ decl ] -> decl
+    | _ -> failwith "Can't get single module member declaration"
+
+let getSingleExprInModule (input: ParsedInput) =
+    match getSingleDeclInModule input with
+    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | _ -> failwith "Unexpected expression"
+
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -369,6 +383,10 @@ let getParseAndCheckResults (source: string) =
 
 let getParseAndCheckResultsPreview (source: string) =
     parseAndCheckScriptPreview("/home/user/Test.fsx", source)
+
+let getParseAndCheckResults50 (source: string) =
+    parseAndCheckScript50("/home/user/Test.fsx", source)
+
 
 let inline dumpErrors results =
     (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)

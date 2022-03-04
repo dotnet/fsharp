@@ -64,15 +64,12 @@ and [<AbstractClass>]
 type ResumableCode<'Data, 'T> = delegate of byref<ResumableStateMachine<'Data>> -> bool
 
 /// Defines the implementation of the MoveNext method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type MoveNextMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> -> unit
 
 /// Defines the implementation of the SetStateMachine method for a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type SetStateMachineMethodImpl<'Data> = delegate of byref<ResumableStateMachine<'Data>> * IAsyncStateMachine -> unit
 
 /// Defines the implementation of the code reun after the creation of a struct state machine.
-[<Experimental("Experimental library feature, requires '--langversion:preview'")>]
 type AfterCode<'Data, 'Result> = delegate of byref<ResumableStateMachine<'Data>> -> 'Result
 
 [<AutoOpen>]

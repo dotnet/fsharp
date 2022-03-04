@@ -56,6 +56,9 @@ type Position(code:int64) =
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
+    member p.IsAdjacentTo(otherPos: Position) =
+        p.Line = otherPos.Line && p.Column + 1 = otherPos.Column
+
 and pos = Position
 
 [<RequireQualifiedAccess>]
@@ -156,8 +159,8 @@ module RangeImpl =
 
 /// A unique-index table for file names.
 type FileIndexTable() =
-    let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new ConcurrentDictionary<string, int>()
+    let indexToFileTable = ResizeArray<_>(11)
+    let fileToIndexTable = ConcurrentDictionary<string, int>()
 
     // Note: we should likely adjust this code to always normalize. However some testing (and possibly some
     // product behaviour) appears to be sensitive to error messages reporting un-normalized file names.
@@ -211,7 +214,7 @@ module FileIndex =
 
     // ++GLOBAL MUTABLE STATE
     // WARNING: Global Mutable State, holding a mapping between integers and filenames
-    let fileIndexTable = new FileIndexTable()
+    let fileIndexTable = FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
     let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex
@@ -273,6 +276,9 @@ type Range(code1:int64, code2: int64) =
     member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
 
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+
+    member r.IsAdjacentTo(otherRange: Range) =
+        r.FileIndex = otherRange.FileIndex && r.End.Encoding = otherRange.Start.Encoding
 
     member r.NoteDebugPoint(kind) = 
         let code = 
@@ -391,7 +397,8 @@ module Range =
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&

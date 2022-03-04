@@ -70,7 +70,7 @@ module NativePtr =
     
     [<NoDynamicInvocation>]
     [<CompiledName("NullPointer")>]
-    let inline nullPtr<'T when 'T : unmanaged> : nativeptr<'T> = (# "ldnull" : nativeptr<'T> #)
+    let inline nullPtr<'T when 'T : unmanaged> : nativeptr<'T> = (# "" 0n : nativeptr<'T> #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("IsNullPointer")>]

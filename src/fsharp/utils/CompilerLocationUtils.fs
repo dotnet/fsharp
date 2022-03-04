@@ -7,8 +7,11 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.Win32
 open Microsoft.FSharp.Core
+
+#if !FX_NO_WIN_REGISTRY
+open Microsoft.Win32
+#endif
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
@@ -59,7 +62,7 @@ module internal FSharpEnvironment =
     // MaxPath accounts for the null-terminating character, for example, the maximum path on the D drive is "D:\<256 chars>\0".
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
-    let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+    let maxDataLength = (System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
 #if !FX_NO_WIN_REGISTRY
     let KEY_WOW64_DEFAULT = 0x0000
@@ -369,19 +372,13 @@ module internal FSharpEnvironment =
     let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
 
-    // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<TypeInThisAssembly>.GetTypeInfo().Assembly.Location), "Tools")
-
     let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
     let dotnet = if isWindows then "dotnet.exe" else "dotnet"
 
     let fileExists pathToFile =
         try
-            if File.Exists(pathToFile) then
-                true
-            else
-                false
+            File.Exists(pathToFile)
         with | _ -> false
 
     // Look for global install of dotnet sdk

@@ -368,7 +368,7 @@ module internal FileSystemHelpers =
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =
-        let chars = new System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
+        let chars = System.Collections.Generic.HashSet<_>(Path.GetInvalidPathChars())
         (fun (path:string) ->
             for c in path do
                 if chars.Contains c then raise(IllegalFileNameChar(path, c)))
@@ -376,7 +376,7 @@ module internal FileSystemUtils =
     let checkSuffix (x:string) (y:string) = x.EndsWithOrdinal(y)
 
     let hasExtensionWithValidate (validate:bool) (s:string) =
-        if validate then (checkPathForIllegalChars s) |> ignore
+        if validate then (checkPathForIllegalChars s)
         let sLen = s.Length
         (sLen >= 1 && s.[sLen - 1] = '.' && s <> ".." && s <> ".")
         || Path.HasExtension(s)
@@ -395,7 +395,7 @@ module internal FileSystemUtils =
         Path.GetFileName(s)
 
     let fileNameWithoutExtensionWithValidate (validate:bool) s =
-        if validate then checkPathForIllegalChars s |> ignore
+        if validate then checkPathForIllegalChars s
         Path.GetFileNameWithoutExtension(s)
 
     let fileNameWithoutExtension s = fileNameWithoutExtensionWithValidate true s
@@ -651,7 +651,7 @@ type DefaultFileSystem() as this =
 
 [<AutoOpen>]
 module public StreamExtensions =
-    let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
+    let utf8noBOM = UTF8Encoding(false, true) :> Encoding
     type Stream with
         member s.GetWriter(?encoding: Encoding) : TextWriter =
             let encoding = defaultArg encoding utf8noBOM

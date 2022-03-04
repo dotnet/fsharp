@@ -22,4 +22,4 @@ type SomeEDF () =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 17, Line 6, Col 21, Line 6, Col 26,
-                                 "The member 'Apply : int -> unit' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.")
+                                 "The member 'Apply: int -> unit' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.")

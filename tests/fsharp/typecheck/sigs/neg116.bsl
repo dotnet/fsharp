@@ -6,5 +6,5 @@ Known return type:  ^a
 Known type parameters: < float , Polynomial >
 
 Available overloads:
- - static member Polynomial.( * ) : s:Complex * p:Polynomial -> Polynomial // Argument 's' doesn't match
- - static member Polynomial.( * ) : s:decimal * p:Polynomial -> Polynomial // Argument 's' doesn't match
+ - static member Polynomial.( * ) : s: Complex * p: Polynomial -> Polynomial // Argument 's' doesn't match
+ - static member Polynomial.( * ) : s: decimal * p: Polynomial -> Polynomial // Argument 's' doesn't match

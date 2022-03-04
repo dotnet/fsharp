@@ -4,7 +4,6 @@
 module internal FSharp.Compiler.AbstractIL.ILRuntimeWriter
 
 open System
-open System.IO
 open System.Reflection
 open System.Reflection.Emit
 open System.Runtime.InteropServices
@@ -12,7 +11,6 @@ open System.Collections.Generic
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
@@ -295,7 +293,7 @@ let getTypeConstructor (ty: Type) =
 //----------------------------------------------------------------------------
 
 let convAssemblyRef (aref: ILAssemblyRef) =
-    let asmName = new AssemblyName()
+    let asmName = AssemblyName()
     asmName.Name <- aref.Name
     (match aref.PublicKey with
      | None -> ()
@@ -2049,8 +2047,8 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
     let emEnv = { emEnv with delayedFieldInits = [] }
 
     let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass3 cenv modB)
-    let visited = new Dictionary<_, _>(10)
-    let created = new Dictionary<_, _>(10)
+    let visited = Dictionary<_, _>(10)
+    let created = Dictionary<_, _>(10)
     tdefs |> List.iter (buildModuleTypePass4 (visited, created) emEnv)
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs
@@ -2090,7 +2088,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
     let filename = assemblyName + ".dll"
     let asmDir = "."
-    let asmName = new AssemblyName()
+    let asmName = AssemblyName()
     asmName.Name <- assemblyName
     let asmAccess =
         if collectible then AssemblyBuilderAccess.RunAndCollect
@@ -2103,7 +2101,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collect
     if not optimize then
         let daType = typeof<System.Diagnostics.DebuggableAttribute>
         let daCtor = daType.GetConstructor [| typeof<System.Diagnostics.DebuggableAttribute.DebuggingModes> |]
-        let daBuilder = new CustomAttributeBuilder(daCtor, [| System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations ||| System.Diagnostics.DebuggableAttribute.DebuggingModes.Default |])
+        let daBuilder = CustomAttributeBuilder(daCtor, [| System.Diagnostics.DebuggableAttribute.DebuggingModes.DisableOptimizations ||| System.Diagnostics.DebuggableAttribute.DebuggingModes.Default |])
         asmB.SetCustomAttributeAndLog daBuilder
 
     let modB = asmB.DefineDynamicModuleAndLog (assemblyName, filename, debugInfo)

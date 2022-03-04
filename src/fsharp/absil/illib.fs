@@ -400,7 +400,7 @@ module List =
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
 
-    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
@@ -520,7 +520,7 @@ module ValueOptionInternal =
     let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String =
-    let make (n: int) (c: char) : string = new String(c, n)
+    let make (n: int) (c: char) : string = String(c, n)
 
     let get (str: string) i = str.[i]
 
@@ -852,7 +852,7 @@ module CancellableAutoOpens =
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let gate = obj ()
-    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
+    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
@@ -892,7 +892,7 @@ exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =
 
-    static let undefined = new LazyWithContextFailure(UndefinedException)
+    static let undefined = LazyWithContextFailure(UndefinedException)
 
     member _.Exception = exn
 
@@ -952,7 +952,7 @@ type LazyWithContext<'T, 'ctxt> =
                   x.funcOrException <- null
                   res
               with e -> 
-                  x.funcOrException <- box(new LazyWithContextFailure(e))
+                  x.funcOrException <- box(LazyWithContextFailure(e))
                   reraise()
         | _ -> 
             failwith "unreachable"
@@ -960,7 +960,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
+        let t = ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res
@@ -1125,11 +1125,9 @@ type LayeredMap<'Key, 'Value when 'Key : comparison> = Map<'Key, 'Value>
 [<AutoOpen>]
 module MapAutoOpens =
     type Map<'Key, 'Value when 'Key : comparison> with
-
+        
         static member Empty : Map<'Key, 'Value> = Map.empty
-
-        member x.Values = [ for KeyValue(_, v) in x -> v ]
-
+    
         member x.AddAndMarkAsCollapsible (kvs: _[]) = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
 
         member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))

@@ -88,7 +88,7 @@ type SuggestionBuffer(idText: string) =
                     suggestion.EndsWithOrdinal dotIdText ||
                     (similarity >= minThresholdForSuggestions && IsInEditDistanceProximity uppercaseText suggestedText)
                 then
-                    insert(similarity, suggestion) |> ignore
+                    insert(similarity, suggestion)
     
     member _.Disabled with get () = disableSuggestions
 

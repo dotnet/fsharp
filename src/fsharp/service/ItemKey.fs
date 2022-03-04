@@ -12,7 +12,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -302,18 +301,17 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.UnionCase(info, _) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
-            writeString info.Name
+            writeString info.LogicalName
 
         | Item.ActivePatternResult(info, _, _, _) ->
             writeString ItemKeyTags.itemActivePattern
-            info.ActiveTagsWithRanges
-            |> List.iter (fun (nm, _) ->
-                writeString nm)
+            info.ActiveTags
+            |> List.iter writeString
 
         | Item.ActivePatternCase elemRef ->
             writeString ItemKeyTags.itemActivePattern
-            elemRef.ActivePatternInfo.ActiveTagsWithRanges
-            |> List.iter (fun (nm, _) -> writeString nm)
+            elemRef.ActivePatternInfo.ActiveTags
+            |> List.iter writeString
 
         | Item.ExnCase tcref ->
             writeString ItemKeyTags.itemExnCase
@@ -322,13 +320,13 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.RecdField info ->
             writeString ItemKeyTags.itemRecordField
             writeEntityRef info.TyconRef
-            writeString info.Name
+            writeString info.LogicalName
             writeType false info.FieldType
 
         | Item.UnionCaseField(info, fieldIndex) ->
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
-            writeString info.Name
+            writeString info.LogicalName
             writeInt32 fieldIndex
 
         | Item.AnonRecdField(info, tys, i, _) ->

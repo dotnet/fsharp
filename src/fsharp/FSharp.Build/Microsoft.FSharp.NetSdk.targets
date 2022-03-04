@@ -161,4 +161,37 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <Target Name="_InitializeSourceRootMappedPathsFromSourceControl"
           DependsOnTargets="InitializeSourceControlInformation"
           Condition="'$(SourceControlInformationFeatureSupported)' == 'true'" />
+
+  <!--
+    =======
+    PathMap
+    =======
+    If DeterministicSourcePaths is true sets PathMap based on SourceRoot.MappedPaths.
+    This target requires SourceRoot to be initialized in order to calculate the PathMap.
+    If SourceRoot doesn't contain any top-level roots an error is reported.
+  -->
+
+  <Target Name="_SetPathMapFromSourceRoots"
+          DependsOnTargets="InitializeSourceRootMappedPaths"
+          BeforeTargets="CoreCompile"
+          Condition="'$(DeterministicSourcePaths)' == 'true'">
+
+    <ItemGroup>
+      <_TopLevelSourceRoot Include="@(SourceRoot)" Condition="'%(SourceRoot.NestedRoot)' == ''">
+        <EscapedKey>$([MSBuild]::ValueOrDefault('%(Identity)', '').Replace(',', ',,').Replace('=', '=='))</EscapedKey>
+        <EscapedValue>$([MSBuild]::ValueOrDefault('%(MappedPath)', '').Replace(',', ',,').Replace('=', '=='))</EscapedValue>
+      </_TopLevelSourceRoot>
+    </ItemGroup>
+
+    <PropertyGroup Condition="'@(_TopLevelSourceRoot)' != ''">
+      <!--
+        Prepend the SourceRoot.MappedPath values to PathMap, if it already has a value.
+        For each emitted source path the compiler applies the first mapping that matches the path.
+        PathMap values set previously will thus only be applied if the mapping provided by
+        SourceRoot.MappedPath doesn't match. Since SourceRoot.MappedPath is also used by SourceLink
+        preferring it over manually set PathMap ensures that PathMap is consistent with SourceLink.
+      -->
+      <PathMap>@(_TopLevelSourceRoot->'%(EscapedKey)=%(EscapedValue)', ','),$(PathMap)</PathMap>
+    </PropertyGroup>
+  </Target>
 </Project>

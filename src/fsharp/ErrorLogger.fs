@@ -385,6 +385,9 @@ module ErrorLoggerExtensions =
         member x.Warning exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Warning)
 
+        member x.InformationalWarning exn = 
+            x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Info)
+
         member x.Error   exn = 
             x.ErrorR exn
             raise (ReportedError (Some exn))
@@ -465,6 +468,9 @@ let errorR exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 /// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 
+/// Raises a warning with error recovery and returns unit.
+let informationalWarning exn = CompileThreadStatic.ErrorLogger.InformationalWarning exn
+
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn = CompileThreadStatic.ErrorLogger.Error exn
 
@@ -495,6 +501,8 @@ let libraryOnlyWarning m = warning(LibraryUseOnly m)
 let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()) m
 
 let mlCompatWarning s m = warning(UserCompilerMessage(FSComp.SR.mlCompatMessage s, 62, m))
+
+let mlCompatError s m = errorR(UserCompilerMessage(FSComp.SR.mlCompatError s, 62, m))
 
 let suppressErrorReporting f =
     let errorLogger = CompileThreadStatic.ErrorLogger
@@ -543,9 +551,9 @@ let ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res = 
     match res with 
-    | OkResult (warns, _) -> Some warns
+    | OkResult (warns, res2) -> Some (warns, res2)
     | ErrorResult _ -> None 
-
+    
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue. 
 let (++) res f = 
     match res with 
@@ -616,7 +624,13 @@ let TryD f g =
 
 let rec RepeatWhileD nDeep body = body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep+1) body else CompleteD) 
 
-let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+let inline AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+
+let inline AtLeastOne2D f xs ys = List.zip xs ys |> AtLeastOneD (fun (x,y) -> f x y)
+
+let inline MapReduceD mapper zero reducer l = MapD mapper l ++ (fun res -> ResultD (match res with [] -> zero | _ -> List.reduce reducer res))
+
+let inline MapReduce2D mapper zero reducer xs ys = List.zip xs ys |> MapReduceD (fun (x,y) -> mapper x y) zero reducer
 
 [<RequireQualifiedAccess>]
 module OperationResult =
@@ -626,7 +640,7 @@ module OperationResult =
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
-let stringThatIsAProxyForANewlineInFlatErrors = new String [|char 29 |]
+let stringThatIsAProxyForANewlineInFlatErrors = String [|char 29 |]
 
 let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine)
 

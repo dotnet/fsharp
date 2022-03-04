@@ -101,6 +101,3 @@ let ``Test ranges - global namespace`` () =
     let res = parseAndExtractRanges input3 
     printfn "Test ranges - global namespace, res = %A" res
     res |> shouldEqual [("Sample", ((4, 9), (4, 15)))]
-
-open System.Threading
-

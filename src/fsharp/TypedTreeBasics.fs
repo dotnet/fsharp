@@ -355,7 +355,7 @@ let tyconRefUsesLocalXmlDoc compilingFslib (x: TyconRef) =
     | ERefNonLocal _ ->
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint _ -> true
+        | TProvidedTypeRepr _ -> true
         | _ -> 
 #endif
         compilingFslib

@@ -6,7 +6,7 @@ namespace FSharp.Compiler
     open Microsoft.FSharp.Reflection
 
     module internal SR =
-        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
+        let private resources = lazy (System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
 
         let GetString(name:string) =
             let s = resources.Force().GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
@@ -64,7 +64,7 @@ namespace FSharp.Compiler
             /// Function to capture the arguments and then run.
             let rec capture args ty i = 
                 if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then 
-                    let b = new System.Text.StringBuilder()    
+                    let b = System.Text.StringBuilder()    
                     b.AppendFormat(messageString, (Array.ofList (List.rev args))) |> ignore
                     box(b.ToString())
                 // REVIEW: For these purposes, this should be a nop, but I'm leaving it

@@ -4,13 +4,11 @@ namespace FSharp.Compiler.CodeAnalysis
 
 open System
 open System.Collections.Generic
-open System.Collections.Immutable
 open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CheckExpressions
@@ -66,7 +64,7 @@ module IncrementalBuilderEventTesting =
         // called by unit tests, returns 'n' most recent additions.
         member this.MostRecentList(n: int) : list<'T> =
             if n < 0 || n > MAX then
-                raise <| new ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
+                raise <| ArgumentOutOfRangeException("n", sprintf "n must be between 0 and %d, inclusive, but got %d" MAX n)
             let mutable remaining = n
             let mutable s = []
             let mutable i = curIndex - 1
@@ -86,7 +84,7 @@ module IncrementalBuilderEventTesting =
         | IBECreated
 
     // ++GLOBAL MUTABLE STATE FOR TESTING++
-    let MRU = new FixedLengthMRU<IBEvent>()
+    let MRU = FixedLengthMRU<IBEvent>()
     let GetMostRecentIncrementalBuildEvents n = MRU.MostRecentList n
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum
 
@@ -783,8 +781,8 @@ module IncrementalBuilderHelpers =
                 return frameworkTcImports
           }
 
-        let tcInitial = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial)
+        let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -1406,7 +1404,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             // Create the builder.
             // Share intern'd strings across all lexing/parsing
-            let resourceManager = new Lexhelp.LexResourceManager()
+            let resourceManager = Lexhelp.LexResourceManager()
 
             /// Create a type-check configuration
             let tcConfigB, sourceFiles =
@@ -1537,11 +1535,11 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             // Start importing
 
             let tcConfigP = TcConfigProvider.Constant tcConfig
-            let beforeFileChecked = new Event<string>()
-            let fileChecked = new Event<string>()
+            let beforeFileChecked = Event<string>()
+            let fileChecked = Event<string>()
 
 #if !NO_EXTENSIONTYPING
-            let importsInvalidatedByTypeProvider = new Event<unit>()
+            let importsInvalidatedByTypeProvider = Event<unit>()
 #endif
 
             // Check for the existence of loaded sources and prepend them to the sources list if present.

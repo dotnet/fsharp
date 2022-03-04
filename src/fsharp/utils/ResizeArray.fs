@@ -13,9 +13,9 @@ module internal ResizeArray =
 
     let set (arr: ResizeArray<'T>) (n: int) (x:'T) =  arr.[n] <- x
 
-    let create  (n: int) x = new ResizeArray<_> (seq { for _ in 1 .. n -> x })
+    let create  (n: int) x = ResizeArray<_>(seq { for _ in 1 .. n -> x })
 
-    let init (n: int) (f: int -> 'T) =  new ResizeArray<_> (seq { for i in 0 .. n-1 -> f i })
+    let init (n: int) (f: int -> 'T) =  ResizeArray<_>(seq { for i in 0 .. n-1 -> f i })
 
     let blit (arr1: ResizeArray<'T>) start1 (arr2: ResizeArray<'T>) start2 len =
         if start1 < 0 then invalidArg "start1" "index must be positive"
@@ -26,7 +26,7 @@ module internal ResizeArray =
         for i = 0 to len - 1 do 
             arr2.[start2+i] <- arr1.[start1 + i]
 
-    let concat (arrs: ResizeArray<'T> list) = new ResizeArray<_> (seq { for arr in arrs do for x in arr do yield x })
+    let concat (arrs: ResizeArray<'T> list) = ResizeArray<_>(seq { for arr in arrs do for x in arr do yield x })
 
     let append (arr1: ResizeArray<'T>) (arr2: ResizeArray<'T>) = concat [arr1; arr2]
 
@@ -34,7 +34,7 @@ module internal ResizeArray =
         if start < 0 then invalidArg "start" "index must be positive"
         if len < 0 then invalidArg "len" "length must be positive"
         if start + len > length arr then invalidArg "len" "length must be positive"
-        new ResizeArray<_> (seq { for i in start .. start+len-1 -> arr.[i] })
+        ResizeArray<_>(seq { for i in start .. start+len-1 -> arr.[i] })
 
     let fill (arr: ResizeArray<'T>) (start: int) (len: int) (x:'T) =
         if start < 0 then invalidArg "start" "index must be positive"
@@ -43,7 +43,7 @@ module internal ResizeArray =
         for i = start to start + len - 1 do 
             arr.[i] <- x
 
-    let copy      (arr: ResizeArray<'T>) = new ResizeArray<_>(arr)
+    let copy      (arr: ResizeArray<'T>) = ResizeArray<_>(arr)
 
     let toList (arr: ResizeArray<_>) =
         let mutable res = []
@@ -53,7 +53,7 @@ module internal ResizeArray =
 
     let ofList (l: _ list) =
         let len = l.Length
-        let res = new ResizeArray<_>(len)
+        let res = ResizeArray<_>(len)
         let rec add = function
           | [] -> ()
           | e :: l -> res.Add(e); add l
@@ -66,7 +66,7 @@ module internal ResizeArray =
 
     let map f (arr: ResizeArray<_>) =
         let len = length arr
-        let res = new ResizeArray<_>(len)
+        let res = ResizeArray<_>(len)
         for i = 0 to len - 1 do
             res.Add(f arr.[i])
         res
@@ -74,7 +74,7 @@ module internal ResizeArray =
     let mapi f (arr: ResizeArray<_>) =
         let f = FSharpFunc<_,_,_>.Adapt(f)
         let len = length arr
-        let res = new ResizeArray<_>(len)
+        let res = ResizeArray<_>(len)
         for i = 0 to len - 1 do
             res.Add(f.Invoke(i, arr.[i]))
         res
@@ -94,7 +94,7 @@ module internal ResizeArray =
         let rec loop i = i >= len || (f arr.[i] && loop (i+1))
         loop 0
 
-    let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let find f (arr: ResizeArray<_>) = 
         let rec loop i = 
@@ -129,13 +129,13 @@ module internal ResizeArray =
         let f = FSharpFunc<_,_,_>.Adapt(f)
         let len1 = length arr1
         if len1 <> length arr2 then invalidArg "arr2" "the arrays have different lengths"
-        let res = new ResizeArray<_>(len1)
+        let res = ResizeArray<_>(len1)
         for i = 0 to len1 - 1 do
             res.Add(f.Invoke(arr1.[i], arr2.[i]))
         res
 
     let choose f (arr: ResizeArray<_>) = 
-        let res = new ResizeArray<_>() 
+        let res = ResizeArray<_>() 
         for i = 0 to length arr - 1 do
             match f arr.[i] with 
             | None -> ()
@@ -143,15 +143,15 @@ module internal ResizeArray =
         res
 
     let filter f (arr: ResizeArray<_>) = 
-        let res = new ResizeArray<_>() 
+        let res = ResizeArray<_>() 
         for i = 0 to length arr - 1 do 
             let x = arr.[i] 
             if f x then res.Add(x)
         res
 
     let partition f (arr: ResizeArray<_>) = 
-      let res1 = new ResizeArray<_>()
-      let res2 = new ResizeArray<_>()
+      let res1 = ResizeArray<_>()
+      let res2 = ResizeArray<_>()
       for i = 0 to length arr - 1 do 
           let x = arr.[i] 
           if f x then res1.Add(x) else res2.Add(x)
@@ -159,7 +159,7 @@ module internal ResizeArray =
 
     let rev (arr: ResizeArray<_>) = 
       let len = length arr 
-      let res = new ResizeArray<_>(len)
+      let res = ResizeArray<_>(len)
       for i = len - 1 downto 0 do 
           res.Add(arr.[i])
       res
@@ -180,7 +180,7 @@ module internal ResizeArray =
 
     let toArray (arr: ResizeArray<'T>) = arr.ToArray()
 
-    let ofArray (arr: 'T[]) = new ResizeArray<_>(arr)
+    let ofArray (arr: 'T[]) = ResizeArray<_>(arr)
 
     let toSeq (arr: ResizeArray<'T>) = Seq.readonly arr
 
@@ -291,7 +291,7 @@ module internal ResizeArray =
         scanBackSub f arr 0 (arrn - 1) acc
 
     let singleton x =
-        let res = new ResizeArray<_>(1)
+        let res = ResizeArray<_>(1)
         res.Add(x)
         res
 
@@ -310,8 +310,8 @@ module internal ResizeArray =
 
     let unzip (arr: ResizeArray<_>) = 
         let len = length arr
-        let res1 = new ResizeArray<_>(len)
-        let res2 = new ResizeArray<_>(len)
+        let res1 = ResizeArray<_>(len)
+        let res2 = ResizeArray<_>(len)
         for i = 0 to len - 1 do 
             let x,y = arr.[i] 
             res1.Add(x)

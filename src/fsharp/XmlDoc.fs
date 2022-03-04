@@ -145,8 +145,8 @@ and XmlDocStatics() =
 
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
-    let mutable savedLines = new ResizeArray<string * range>()
-    let mutable savedGrabPoints = new ResizeArray<pos>()
+    let mutable savedLines = ResizeArray<string * range>()
+    let mutable savedGrabPoints = ResizeArray<pos>()
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
     let savedGrabPointsAsArray =
         lazy (savedGrabPoints.ToArray() |> Array.sortWith posCompare)

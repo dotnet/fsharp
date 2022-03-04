@@ -6,7 +6,6 @@ open System.IO
 open System.Reflection
 
 open FSharp.Compiler.IO
-open Internal.Utilities
 open Internal.Utilities.Library
 
 open FSharp.Compiler.AbstractIL.AsciiConstants
@@ -584,7 +583,7 @@ let goutput_freevar env os l =
 let goutput_freevars env os ps =
   output_parens (output_seq ", " (goutput_freevar env)) os ps
 
-let output_source os (s:ILSourceMarker) =
+let output_source os (s:ILDebugPoint) =
   if s.Document.File <> "" then
     output_string os " .line "
     output_int os s.Line

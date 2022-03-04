@@ -3,8 +3,6 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
-open System.Threading
-open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.CheckDeclarations

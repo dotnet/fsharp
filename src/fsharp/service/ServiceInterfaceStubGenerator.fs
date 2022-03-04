@@ -7,7 +7,6 @@ open System.Diagnostics
 open Internal.Utilities.Library 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
-open FSharp.Compiler.Symbols.FSharpSymbolPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -53,13 +52,6 @@ module internal CodeGenerationUtils =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
-    let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, _, e2, _, _, _) -> [e1; e2]
-        | SynIndexerArg.One (e, _, _) -> [e]
-
-    let (|IndexerArgList|) xs =
-        List.collect (|IndexerArg|) xs
-        
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential (_, _, e, Sequentials es, _) ->
@@ -157,7 +149,7 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _)  -> 
                     Some (ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array(dimension, TypeIdent typeName, _) ->
-                    Some (sprintf "%s [%s]" typeName (new String(',', dimension-1)))
+                    Some (sprintf "%s [%s]" typeName (String(',', dimension-1)))
                 | SynType.MeasurePower(TypeIdent typeName, RationalConst power, _) ->
                     Some (sprintf "%s^%s" typeName power)
                 | SynType.MeasureDivide(TypeIdent numerator, TypeIdent denominator, _) ->
@@ -809,18 +801,18 @@ module InterfaceStubGenerator =
                 | SynExpr.For (_sequencePointInfoForForLoop, _ident, synExpr1, _, synExpr2, synExpr3, _range) -> 
                     List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
 
-                | SynExpr.ArrayOrListOfSeqExpr (_, synExpr, _range) ->
+                | SynExpr.ArrayOrListComputed (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.CompExpr (_, _, synExpr, _range) ->
+                | SynExpr.ComputationExpr (_, synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Lambda (_, _, _synSimplePats, synExpr, _, _range) ->
+                | SynExpr.Lambda (_, _, _synSimplePats, _, synExpr, _, _range) ->
                      walkExpr synExpr
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
-                    synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e)
+                    synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
                 | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
                     walkExpr synExpr
-                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(_, _, e, _, _)) -> walkExpr e))
+                    |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
@@ -847,7 +839,7 @@ module InterfaceStubGenerator =
                 | Sequentials exprs  -> 
                     List.tryPick walkExpr exprs
 
-                | SynExpr.IfThenElse (synExpr1, synExpr2, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (_, _, synExpr1, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
                     match synExprOpt with
                     | Some synExpr3 ->
                         List.tryPick walkExpr [synExpr1; synExpr2; synExpr3]
@@ -872,13 +864,11 @@ module InterfaceStubGenerator =
                 | SynExpr.Set (synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
-                | SynExpr.DotIndexedGet (synExpr, IndexerArgList synExprList, _range, _range2) -> 
-                    Option.orElse (walkExpr synExpr) (List.tryPick walkExpr synExprList) 
+                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> 
+                    Option.orElse (walkExpr synExpr) (walkExpr indexArgs)
 
-                | SynExpr.DotIndexedSet (synExpr1, IndexerArgList synExprList, synExpr2, _, _range, _range2) -> 
-                    [ yield synExpr1
-                      yield! synExprList
-                      yield synExpr2 ]
+                | SynExpr.DotIndexedSet (synExpr1, indexArgs, synExpr2, _, _range, _range2) -> 
+                    [ synExpr1; indexArgs; synExpr2 ]
                     |> List.tryPick walkExpr
 
                 | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) ->

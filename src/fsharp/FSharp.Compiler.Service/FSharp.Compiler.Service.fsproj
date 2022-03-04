@@ -30,7 +30,7 @@
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
-    <PackageDescription>The F# Compiler Services package For F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
+    <PackageDescription>The F# Compiler Services package for F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
     <PreReleaseVersionLabel>preview</PreReleaseVersionLabel>
@@ -69,6 +69,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="fscAnyCpu" />
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
@@ -79,7 +80,7 @@
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -413,7 +414,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <None Include="..\pplex.fsl">
@@ -507,7 +508,7 @@
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="..\TypedTree.fs">
-      <Link>TypedTree\TypedTreeBasics.fs</Link>
+      <Link>TypedTree\TypedTree.fs</Link>
     </Compile>
     <Compile Include="..\TypedTreeBasics.fsi">
       <Link>TypedTree\TypedTreeBasics.fsi</Link>

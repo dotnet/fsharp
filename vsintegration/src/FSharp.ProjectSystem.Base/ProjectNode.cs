@@ -1866,7 +1866,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 Array contextParamsAsArray = contextParams;
 
-                int result = ivsExtensibility.RunWizardFile(wizardToRun, (int)dlgOwner, ref contextParamsAsArray, out wizResultAsInt);
+                int result = ivsExtensibility.RunWizardFile(wizardToRun, dlgOwner, ref contextParamsAsArray, out wizResultAsInt);
 
                 if (!ErrorHandler.Succeeded(result) && result != VSConstants.OLE_E_PROMPTSAVECANCELLED)
                 {

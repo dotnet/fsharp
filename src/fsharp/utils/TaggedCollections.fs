@@ -358,8 +358,8 @@ namespace Internal.Utilities.Collections.Tagged
             // true when MoveNext has been called   
             let mutable started = false 
 
-            let notStarted() = raise (new System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
-            let alreadyFinished() = raise (new System.InvalidOperationException("Enumeration already finished."))
+            let notStarted() = raise (System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
+            let alreadyFinished() = raise (System.InvalidOperationException("Enumeration already finished."))
 
             member _.Current =
                 if started then
@@ -582,14 +582,14 @@ namespace Internal.Utilities.Collections.Tagged
                 let mutable res = 0
                 for x in this do
                     res <- combineHash res (Unchecked.hash x)
-                abs res
+                res
 
         override this.GetHashCode() = this.ComputeHashCode()
           
         interface ICollection<'T> with 
-            member s.Add _ = raise (new System.NotSupportedException("ReadOnlyCollection"))
-            member s.Clear() = raise (new System.NotSupportedException("ReadOnlyCollection"))
-            member s.Remove _ = raise (new System.NotSupportedException("ReadOnlyCollection"))
+            member s.Add _ = raise (System.NotSupportedException("ReadOnlyCollection"))
+            member s.Clear() = raise (System.NotSupportedException("ReadOnlyCollection"))
+            member s.Remove _ = raise (System.NotSupportedException("ReadOnlyCollection"))
             member s.Contains(x) = SetTree.contains comparer x tree
             member s.CopyTo(arr,i) = SetTree.copyToArray tree arr i
             member s.IsReadOnly = true
@@ -699,7 +699,7 @@ namespace Internal.Utilities.Collections.Tagged
                     elif c = 0 then MapTree(k,v)
                     else            MapTreeNode (k,v,m,empty,2) :> MapTree<'Key, 'Value> 
 
-        let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+        let indexNotFound() = raise (KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
         let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =                     
             if isEmpty m then false
@@ -962,8 +962,8 @@ namespace Internal.Utilities.Collections.Tagged
                /// true when MoveNext has been called   
             let mutable started = false
 
-            let notStarted() = raise (new System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
-            let alreadyFinished() = raise (new System.InvalidOperationException("Enumeration already finished."))
+            let notStarted() = raise (System.InvalidOperationException("Enumeration has not started. Call MoveNext."))
+            let alreadyFinished() = raise (System.InvalidOperationException("Enumeration already finished."))
 
             member _.Current =
                 if started then
@@ -972,7 +972,7 @@ namespace Internal.Utilities.Collections.Tagged
                     | m :: _ ->
                         match m with
                         | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for current"
-                        | _ -> new KeyValuePair<_, _>(m.Key, m.Value)
+                        | _ -> KeyValuePair<_, _>(m.Key, m.Value)
                 else
                     notStarted()
 
@@ -1072,7 +1072,7 @@ namespace Internal.Utilities.Collections.Tagged
             for KeyValue(x,y) in this do
                 res <- combineHash res (Unchecked.hash x)
                 res <- combineHash res (Unchecked.hash y)
-            abs res
+            res
 
         override this.GetHashCode() = this.ComputeHashCode()
 

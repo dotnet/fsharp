@@ -350,7 +350,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         let inline SetFreshConsTail cons tail = cons.( :: ).1 <- tail
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         let inline FreshConsNoTail head = head :: (# "ldnull" : 'T list #)
 
     [<AbstractClass>]

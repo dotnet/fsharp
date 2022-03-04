@@ -10,6 +10,23 @@ open Scripting
 open NUnit.Framework
 open FSharp.Compiler.IO
 
+let inline getTestsDirectory src dir = src ++ dir
+
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
+// Throws exception if it Fails
+let tryCreateTemporaryDirectory () =
+    let path = Path.GetTempPath()
+    let now = DateTime.Now.ToString("yyyy-MM-dd")
+    let directory = Path.Combine(path, "FSharp.Test.Utilities", now)
+    Directory.CreateDirectory(directory).FullName
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileName () =
+    let directory = tryCreateTemporaryDirectory ()
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
 [<RequireQualifiedAccess>]
 module Commands =
 
@@ -39,6 +56,9 @@ module Commands =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            // When running tests, we want to roll forward to minor versions (including previews).
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -178,7 +198,7 @@ module Commands =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
     let createTempDir () =
-        let path = Path.GetTempFileName ()
+        let path = tryCreateTemporaryFileName  ()
         File.Delete path
         Directory.CreateDirectory path |> ignore
         path

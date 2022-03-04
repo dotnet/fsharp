@@ -10,10 +10,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
     open System.Reflection.PortableExecutable
     open System.Security.Cryptography
     open System.Reflection
-    open System.Runtime.CompilerServices
     open System.Runtime.InteropServices
 
-    open Internal.Utilities
     open Internal.Utilities.Library
     open FSharp.Compiler.IO
 
@@ -125,7 +123,7 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
 
         member x.ReadBigInteger (length:int):byte[] =
             let arr:byte[] = Array.zeroCreate<byte> length
-            Array.Copy(x._blob, x._offset, arr, 0, length) |> ignore
+            Array.Copy(x._blob, x._offset, arr, 0, length)
             x._offset <- x._offset  + length
             arr |> Array.rev
 
@@ -300,6 +298,8 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
 
 #if !FX_NO_CORHOST_SIGNER
+    open System.Runtime.CompilerServices
+
     // New mscoree functionality
     // This type represents methods that we don't currently need, so I'm leaving unimplemented
     type UnusedCOMMethod = unit -> unit

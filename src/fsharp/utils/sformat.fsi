@@ -22,7 +22,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open System.IO
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
 
 #if COMPILER
 
@@ -91,7 +90,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     [<NoEquality; NoComparison>]
     type internal Layout =
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
-        | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+        | Leaf of juxtLeft: bool * text: TaggedText * juxtRight: bool
         | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 
@@ -191,6 +190,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val internal bar: TaggedText
         val internal keywordStruct: TaggedText
         val internal keywordInherit: TaggedText
+        val internal keywordBegin: TaggedText
         val internal keywordEnd: TaggedText
         val internal keywordNested: TaggedText
         val internal keywordType: TaggedText
@@ -237,6 +237,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         /// Is it the empty layout?
         val isEmptyL: layout:Layout -> bool
+
+#if COMPILER
+        /// Check if the last character in the layout is the given character
+        val endsWithL: text: string -> layout: Layout -> bool
+#endif
 
         /// An uninterpreted leaf, to be interpreted into a string
         /// by the layout engine. This allows leaf layouts for numbers, strings and

@@ -47,12 +47,10 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
-open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.StaticLinking
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDocFileWriter
@@ -78,7 +76,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
     override x.ErrorCount = errors
 
     override x.DiagnosticSink(err, severity) =
-      if severity = FSharpDiagnosticSeverity.Error || ReportWarningAsError tcConfigB.errorSeverityOptions err then
+      if ReportDiagnosticAsError tcConfigB.errorSeverityOptions (err, severity) then
         if errors >= tcConfigB.maxErrors then
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
@@ -93,7 +91,10 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportWarning tcConfigB.errorSeverityOptions err then
+      elif ReportDiagnosticAsWarning tcConfigB.errorSeverityOptions (err, severity) then
+          x.HandleIssue(tcConfigB, err, FSharpDiagnosticSeverity.Warning)
+
+      elif ReportDiagnosticAsInfo tcConfigB.errorSeverityOptions (err, severity) then
           x.HandleIssue(tcConfigB, err, severity)
 
 
@@ -175,11 +176,11 @@ let AbortOnError (errorLogger: ErrorLogger, exiter : Exiter) =
     if errorLogger.ErrorCount > 0 then
         exiter.Exit 1
 
-let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
+let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, openDecls0, inputs, exiter: Exiter) =
     try
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), rangeStartup))
         let ccuName = assemblyName
-        let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
+        let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0, openDecls0)
         TypeCheckClosedInputSet (ctok, (fun () -> errorLogger.ErrorCount > 0), tcConfig, tcImports, tcGlobals, None, tcInitialState, inputs)
     with e ->
         errorRecovery e rangeStartup
@@ -256,7 +257,7 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
 
 let SetProcessThreadLocals tcConfigB =
     match tcConfigB.preferredUiLang with
-    | Some s -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(s)
+    | Some s -> Thread.CurrentThread.CurrentUICulture <- CultureInfo(s)
     | None -> ()
     if tcConfigB.utf8output then
         Console.OutputEncoding <- Encoding.UTF8
@@ -329,7 +330,7 @@ module InterfaceFileWriter =
                 if tcConfig.printSignatureFile = "" then
                     Console.Out
                 else
-                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.OpenOrCreate).GetWriter()
+                    FileSystem.OpenFileForWriteShim(tcConfig.printSignatureFile, FileMode.Create).GetWriter()
 
             writeHeader tcConfig.printSignatureFile os
 
@@ -348,7 +349,7 @@ module InterfaceFileWriter =
             for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
                 let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
-                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.OpenOrCreate).GetWriter()
+                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
                 writeHeader filename os
                 writeToFile os impl
 
@@ -422,7 +423,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         if (Console.OutputEncoding.CodePage <> 65001) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
            (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
-                Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
+                Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
                 Some 1033
         else
             None
@@ -456,7 +457,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
 
     // Share intern'd strings across all lexing/parsing
-    let lexResourceManager = new Lexhelp.LexResourceManager()
+    let lexResourceManager = Lexhelp.LexResourceManager()
 
     let dependencyProvider = new DependencyProvider()
 
@@ -578,13 +579,13 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
-    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    let tcEnv0, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -699,11 +700,11 @@ let main1OfAst
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    let tcEnv0, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"

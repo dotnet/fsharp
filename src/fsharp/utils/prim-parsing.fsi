@@ -4,10 +4,7 @@
 
 namespace Internal.Utilities.Text.Parsing
 
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
-
-open System.Collections.Generic
 
 [<Sealed>]
 type internal IParseState = 

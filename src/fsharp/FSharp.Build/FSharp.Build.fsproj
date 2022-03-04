@@ -14,6 +14,7 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>$(NoWarn);NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,7 +37,7 @@
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
+      <Replacement1>$(FSharpCoreShippedPackageVersionProperty)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
       <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
       <Pattern3>{{FSCorePackageVersion}}</Pattern3>

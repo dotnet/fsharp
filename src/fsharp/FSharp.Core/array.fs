@@ -1278,6 +1278,88 @@ namespace Microsoft.FSharp.Collections
                 let count' = Operators.min count len
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count' array
 
+        [<CompiledName("RemoveAt")>]
+        let removeAt (index: int) (source: 'T[]) : 'T[] =
+            checkNonNull "source" source
+            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+            
+            let length = source.Length - 1
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+            if index > 0 then 
+                Array.Copy(source, result, index)
+            if length - index > 0 then
+                Array.Copy(source, index + 1, result, index, length - index)
+        
+            result
+        
+        [<CompiledName("RemoveManyAt")>]
+        let removeManyAt (index: int) (count: int) (source: 'T[]) : 'T[] =
+            checkNonNull "source" source
+            if index < 0 || index > source.Length - count then invalidArg "index" "index must be within bounds of the array"
+            
+            let length = source.Length - count
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+
+            if index > 0 then
+                Array.Copy(source, result, index)
+            if length - index > 0 then
+                Array.Copy(source, index + count, result, index, length - index)
+            
+            result
+        
+        [<CompiledName("UpdateAt")>]
+        let updateAt (index: int) (value: 'T) (source: 'T[]) : 'T[] =
+            checkNonNull "source" source
+            if index < 0 || index >= source.Length then invalidArg "index" "index must be within bounds of the array"
+            
+            let length = source.Length
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+
+            if length > 0 then
+                Array.Copy(source, result, length)
+            result.[index] <- value
+            
+            result
+        
+        [<CompiledName("InsertAt")>]
+        let insertAt (index: int) (value: 'T) (source: 'T[]) : 'T[] =
+            checkNonNull "source" source
+            if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+            
+            let length = source.Length + 1
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+
+            if index > 0 then
+                Array.Copy(source, result, index)
+            
+            result.[index] <- value
+            
+            if source.Length - index > 0 then
+                Array.Copy(source, index, result, index + 1, source.Length - index)
+            
+            result
+        
+        [<CompiledName("InsertManyAt")>]
+        let insertManyAt (index: int) (values: seq<'T>) (source: 'T[]) : 'T[] =
+            checkNonNull "source" source
+            if index < 0 || index > source.Length then invalidArg "index" "index must be within bounds of the array"
+            
+            let valuesArray = Seq.toArray values
+            if valuesArray.Length = 0 then source
+            else
+                let length = source.Length + valuesArray.Length
+                let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked length
+                
+                if index > 0 then
+                    Array.Copy(source, result, index)
+                    
+                Array.Copy(valuesArray, 0, result, index, valuesArray.Length)
+                
+                if source.Length - index > 0 then
+                    Array.Copy(source, index, result, index + valuesArray.Length, source.Length - index)
+                
+                result
+
         module Parallel =
             open System.Threading.Tasks
             

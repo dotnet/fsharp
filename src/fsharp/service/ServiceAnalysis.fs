@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Runtime.CompilerServices
 open Internal.Utilities.Library
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols.FSharpSymbolPatterns
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text

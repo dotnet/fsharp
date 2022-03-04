@@ -337,11 +337,11 @@ module internal TestExpose =
 
 module FSharpKeywords =
     /// Checks if adding backticks to identifier is needed.
-    val DoesIdentifierNeedQuotation : string -> bool
+    val DoesIdentifierNeedBackticks : string -> bool
 
     /// Add backticks if the identifier is a keyword.
     /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
-    val QuoteIdentifierIfNeeded : string -> string
+    val AddBackticksToIdentifierIfNeeded : string -> string
 
     /// Remove backticks if present.
     val NormalizeIdentifierBackticks : string -> string

@@ -57,7 +57,7 @@ type CvtResFile () =
 
     static member ReadResFile (stream: Stream) = 
         let mutable reader = new BinaryReader (stream, Encoding.Unicode)
-        let mutable resourceNames = new List<RESOURCE>()
+        let mutable resourceNames = List<RESOURCE>()
 
         // The stream might be empty, so let's check
         if not (reader.PeekChar () = -1) then
@@ -199,7 +199,7 @@ type COFFResourceReader() =
             raise <| ResourceException "CoffResourceInvalidSectionSize"
 
     static member ReadWin32ResourcesFromCOFF (stream: Stream) = 
-        let mutable peHeaders = new PEHeaders (stream)
+        let mutable peHeaders = PEHeaders(stream)
         let mutable rsrc1 = SectionHeader ()
         let mutable rsrc2 = SectionHeader ()
         let mutable (foundCount: int) = 0
@@ -308,7 +308,7 @@ type VersionHelper() =
     static member TryParseAssemblyVersion (s: string, allowWildcard: bool, [<Out>] version: byref<Version>) = 
         VersionHelper.TryParse (s, allowWildcard, (UInt16.MaxValue - 1us), false, ref version)
 
-    static member private NullVersion = new Version (0, 0, 0, 0)
+    static member private NullVersion = Version(0, 0, 0, 0)
 
     /// <summary>
     /// Parses a version string of the form "major [ '.' minor [ '.' ( '*' | ( build [ '.' ( '*' | revision ) ] ) ) ] ]"
@@ -390,7 +390,7 @@ type VersionHelper() =
                     while (i < values.Length) do
                         values.[i] <- UInt16.MaxValue
                         i <- i + 1
-                version <- new Version(int values.[0], int values.[1], int values.[2], int values.[3])
+                version <- Version(int values.[0], int values.[1], int values.[2], int values.[3])
                 not parseError
 
     static member private TryGetValue(s: string, [<Out>] value: byref<uint16>): bool = 
@@ -415,11 +415,11 @@ type VersionHelper() =
             let mutable (revision: int) = int time.TimeOfDay.TotalSeconds / 2
             Debug.Assert (revision < int UInt16.MaxValue)
             if pattern.Build = int UInt16.MaxValue then
-                let mutable (days: TimeSpan) = time.Date - new DateTime(2000, 1, 1)
+                let mutable (days: TimeSpan) = time.Date - DateTime(2000, 1, 1)
                 let mutable (build: int) = Math.Min (int UInt16.MaxValue, (int days.TotalDays))
-                new Version(pattern.Major, pattern.Minor, int (uint16 build), int (uint16 revision))
+                Version(pattern.Major, pattern.Minor, int (uint16 build), int (uint16 revision))
             else
-                new Version(pattern.Major, pattern.Minor, pattern.Build, int (uint16 revision))
+                Version(pattern.Major, pattern.Minor, pattern.Build, int (uint16 revision))
 
 type VersionResourceSerializer () =
     member val private _commentsContents = Unchecked.defaultof<string> with get, set
@@ -741,7 +741,7 @@ type Win32ResourceConversions () =
         resStream.Position <- resStream.Position + 3L &&& ~~~3L
         let mutable (RT_VERSION: DWORD) = 16u
         let mutable ver =
-            new VersionResourceSerializer(isDll, comments, companyName,
+            VersionResourceSerializer(isDll, comments, companyName,
                 fileDescription, fileVersion, internalName, legalCopyright,
                 legalTrademarks, originalFileName, productName, productVersion,
                 assemblyVersion)
@@ -794,7 +794,7 @@ type Directory (name, id) =
     member val ID = id
     member val NumberOfNamedEntries = Unchecked.defaultof<uint16> with get, set
     member val NumberOfIdEntries = Unchecked.defaultof<uint16> with get, set
-    member val Entries = new List<obj>()
+    member val Entries = List<obj>()
 
 type NativeResourceWriter () =
     static member private CompareResources (left: Win32Resource) (right: Win32Resource) = 
@@ -820,7 +820,7 @@ type NativeResourceWriter () =
 
     static member SerializeWin32Resources (builder: BlobBuilder, theResources: IEnumerable<Win32Resource>, resourcesRva: int) = 
         let theResources = NativeResourceWriter.SortResources theResources
-        let mutable (typeDirectory: Directory) = new Directory(String.Empty, 0)
+        let mutable (typeDirectory: Directory) = Directory(String.Empty, 0)
         let mutable (nameDirectory: Directory) = Unchecked.defaultof<_>
         let mutable (languageDirectory: Directory) = Unchecked.defaultof<_>
         let mutable (lastTypeID: int) = Int32.MinValue
@@ -839,7 +839,7 @@ type NativeResourceWriter () =
                 else 
                     typeDirectory.NumberOfIdEntries <- typeDirectory.NumberOfIdEntries + 1us
                 sizeOfDirectoryTree <- sizeOfDirectoryTree + 24u
-                nameDirectory <- new Directory(lastTypeName, lastTypeID)
+                nameDirectory <- Directory(lastTypeName, lastTypeID)
                 typeDirectory.Entries.Add nameDirectory
             if typeDifferent || r.Id < 0 && r.Name <> lastName || r.Id > lastID then 
                 lastID <- r.Id
@@ -850,12 +850,12 @@ type NativeResourceWriter () =
                 else
                     nameDirectory.NumberOfIdEntries <- nameDirectory.NumberOfIdEntries + 1us
                 sizeOfDirectoryTree <- sizeOfDirectoryTree + 24u
-                languageDirectory <- new Directory (lastName, lastID)
+                languageDirectory <- Directory(lastName, lastID)
                 nameDirectory.Entries.Add languageDirectory
             languageDirectory.NumberOfIdEntries <- languageDirectory.NumberOfIdEntries + 1us
             sizeOfDirectoryTree <- sizeOfDirectoryTree + 8u
             languageDirectory.Entries.Add r
-        let mutable dataWriter = new BlobBuilder()
+        let mutable dataWriter = BlobBuilder()
         NativeResourceWriter.WriteDirectory (typeDirectory, builder, 0u, 0u, sizeOfDirectoryTree, resourcesRva, dataWriter)
         builder.LinkSuffix dataWriter
         builder.WriteByte 0uy
@@ -904,7 +904,7 @@ type NativeResourceWriter () =
                                 else
                                     Unchecked.defaultof<_>
                         dataWriter.WriteUInt32 (uint32 virtualAddressBase + sizeOfDirectoryTree + 16u + uint32 dataWriter.Count)
-                        let mutable (data: byte[]) = (new List<byte> (r.Data)).ToArray ()
+                        let mutable (data: byte[]) = (List<byte>(r.Data)).ToArray ()
                         dataWriter.WriteUInt32 (uint32 data.Length)
                         dataWriter.WriteUInt32 r.CodePage
                         dataWriter.WriteUInt32 0u
