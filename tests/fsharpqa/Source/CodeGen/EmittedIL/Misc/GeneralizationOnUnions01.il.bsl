@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000689
 }
-.mresource public FSharpSignatureDataB.GeneralizationOnUnions01
-{
-  // Offset: 0x00000690 Length: 0x00000002
-}
 .mresource public FSharpOptimizationData.GeneralizationOnUnions01
 {
-  // Offset: 0x00000698 Length: 0x000001F4
+  // Offset: 0x00000690 Length: 0x000001F4
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {5F972A55-4CA2-8CD1-A745-0383552A975F}
+// MVID: {60B68B7F-4CA2-8CD1-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x068C0000
+// Image base: 0x06C00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

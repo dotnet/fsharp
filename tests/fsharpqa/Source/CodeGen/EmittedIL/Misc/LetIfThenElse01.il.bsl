@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x000001D9
 }
-.mresource public FSharpSignatureDataB.LetIfThenElse01
-{
-  // Offset: 0x000001E0 Length: 0x00000001
-}
 .mresource public FSharpOptimizationData.LetIfThenElse01
 {
-  // Offset: 0x000001E8 Length: 0x00000076
+  // Offset: 0x000001E0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {5F972A55-BE5A-D8FD-A745-0383552A975F}
+// MVID: {60B68B7F-BE5A-D8FD-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x09140000
+// Image base: 0x06AF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

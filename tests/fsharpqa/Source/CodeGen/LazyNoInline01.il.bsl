@@ -31,15 +31,7 @@
 {
   // Offset: 0x00000000 Length: 0x000001A8
 }
-.mresource public FSharpSignatureDataB.LazyNoInline01
-{
-  // Offset: 0x00000000 Length: 0x000001A8
-}
 .mresource public FSharpOptimizationData.LazyNoInline01
-{
-  // Offset: 0x000001B0 Length: 0x00000074
-}
-.mresource public FSharpOptimizationDataB.LazyNoInline01
 {
   // Offset: 0x000001B0 Length: 0x00000074
 }

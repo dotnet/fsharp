@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000232
 }
-.mresource public FSharpSignatureDataB.InequalityComparison05
-{
-  // Offset: 0x00000238 Length: 0x00000001
-}
 .mresource public FSharpOptimizationData.InequalityComparison05
 {
   // Offset: 0x00000238 Length: 0x00000085
 }
 .module InequalityComparison05.exe
-// MVID: {5F972A55-263A-E751-A745-0383552A975F}
+// MVID: {60B68B7E-263A-E751-A745-03837E8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x092C0000
+// Image base: 0x07350000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
