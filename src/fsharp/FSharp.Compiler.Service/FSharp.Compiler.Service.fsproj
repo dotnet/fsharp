@@ -19,9 +19,7 @@
     <Tailcalls>true</Tailcalls>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
-    <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1 --times</OtherFlags>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
-    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->

@@ -19,6 +19,13 @@ open FSharp.Compiler.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
 
+#if NO_CHECKNULLS
+// Shim to match nullness checking library support in preview
+let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
+let inline nonNull<'T when 'T : null> (x: 'T) = x
+let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
+
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
 type private FSharpRoslynGlyph = Microsoft.CodeAnalysis.ExternalAccess.FSharp.FSharpGlyph
 

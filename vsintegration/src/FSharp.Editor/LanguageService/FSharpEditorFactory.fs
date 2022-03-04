@@ -9,6 +9,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 type ShellPackage = Microsoft.VisualStudio.Shell.Package
 

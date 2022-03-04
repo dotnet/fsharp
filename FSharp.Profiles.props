@@ -5,7 +5,7 @@
     <CheckNulls>false</CheckNulls>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
-    <DefineConstants>NO_CHECKNULLS;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;NO_CHECKNULLS;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' == 'true'">
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' != 'true'">
-	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+  	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
     <!-- 3271: warning nullness annotations being ignored -->
     <NoWarn>$(NoWarn);3271</NoWarn>
     <DefineConstants>$(DefineConstants);NO_CHECKNULLS</DefineConstants>
