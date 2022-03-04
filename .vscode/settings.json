@@ -28,7 +28,7 @@
     "csharp.suppressDotnetInstallWarning": true,
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
-    "omnisharp.autoStart": false,
+    "omnisharp.autoStart": true,
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
     "razor.disabled": true,

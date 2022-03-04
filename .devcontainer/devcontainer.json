@@ -19,9 +19,9 @@
     "extensions": [
         "ms-vscode.test-adapter-converter",
         "hbenl.vscode-test-explorer",
-        "dotnet-test-explorer.testProjectPath",
-        "Ionide.Ionide-fsharp",
+        "formulahendry.dotnet-test-explorer",
         "ms-dotnettools.csharp",
+        "Ionide.Ionide-fsharp",
         "tintoy.msbuild-project-tools"
     ],
     "postCreateCommand": [
