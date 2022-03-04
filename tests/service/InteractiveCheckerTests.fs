@@ -27,7 +27,7 @@ let internal identsAndRanges (input: ParsedInput) =
     let identAndRange ident (range: range) =
         (ident, rangeToTuple range)
     let extractFromComponentInfo (componentInfo: SynComponentInfo) =
-        let ((SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range))) = componentInfo
+        let (SynComponentInfo.SynComponentInfo(_attrs, _typarDecls, _typarConstraints, longIdent, _, _, _, range)) = componentInfo
         // TODO : attrs, typarDecls and typarConstraints
         [identAndRange (longIdentToString longIdent) range]
     let extractFromTypeDefn (typeDefn: SynTypeDefn) =
@@ -101,3 +101,6 @@ let ``Test ranges - global namespace`` () =
     let res = parseAndExtractRanges input3 
     printfn "Test ranges - global namespace, res = %A" res
     res |> shouldEqual [("Sample", ((4, 9), (4, 15)))]
+
+open System.Threading
+

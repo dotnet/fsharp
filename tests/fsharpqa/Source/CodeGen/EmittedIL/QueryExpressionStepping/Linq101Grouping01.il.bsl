@@ -50,13 +50,13 @@
   // Offset: 0x00000408 Length: 0x00000129
 }
 .module Linq101Grouping01.exe
-// MVID: {60B78A59-FB79-E5BF-A745-0383598AB760}
+// MVID: {60BCC37C-FB79-E5BF-A745-03837CC3BC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06730000
+// Image base: 0x05800000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -371,7 +371,7 @@
     {
       // Code size       8 (0x8)
       .maxstack  8
-      .line 25,25 : 24,25 ''
+      .line 25,25 : 23,28 ''
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.0
       IL_0002:  callvirt   instance char [netstandard]System.String::get_Chars(int32)

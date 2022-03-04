@@ -6,6 +6,8 @@ open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
+open System.Threading.Tasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
@@ -13,14 +15,26 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
+
+type Async with
+    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+        let ts = TaskCompletionSource<'T>()
+        let task = ts.Task
+        Async.StartWithContinuations(
+            computation,
+            (fun k -> ts.SetResult k),
+            (fun exn -> ts.SetException exn),
+            (fun _ -> ts.SetCanceled()),
+            cancellationToken)
+        task.Result
 
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
-        let psi = System.Diagnostics.ProcessStartInfo()
+        let psi = ProcessStartInfo()
         psi.FileName <- exePath
         psi.WorkingDirectory <- workingDir
         psi.RedirectStandardOutput <- false
@@ -29,7 +43,7 @@ let readRefs (folder : string) (projectFile: string) =
         psi.CreateNoWindow <- true
         psi.UseShellExecute <- false
 
-        use p = new System.Diagnostics.Process()
+        use p = new Process()
         p.StartInfo <- psi
         p.Start() |> ignore
         p.WaitForExit()
@@ -54,10 +68,10 @@ let readRefs (folder : string) (projectFile: string) =
 let checker = FSharpChecker.Create()
 
 type TempFile(ext, contents: string) =
-    let tmpFile =  Path.ChangeExtension(System.IO.Path.GetTempFileName() , ext)
+    let tmpFile =  Path.ChangeExtension(Path.GetTempFileName() , ext)
     do FileSystem.OpenFileForWriteShim(tmpFile).Write(contents)
 
-    interface System.IDisposable with
+    interface IDisposable with
         member x.Dispose() = try FileSystem.FileDeleteShim tmpFile with _ -> ()
     member x.Name = tmpFile
 
@@ -65,14 +79,14 @@ type TempFile(ext, contents: string) =
 
 let getBackgroundParseResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunSynchronously
-    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
+    checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunImmediate
 
 
 let getBackgroundCheckResultsForScriptText (input: string) =
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunSynchronously
-    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, SourceText.ofString input) |> Async.RunImmediate
+    checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunImmediate
 
 
 let sysLib nm =
@@ -82,8 +96,8 @@ let sysLib nm =
         programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-        let sysDir = System.AppContext.BaseDirectory
-        let (++) a b = System.IO.Path.Combine(a,b)
+        let sysDir = AppContext.BaseDirectory
+        let (++) a b = Path.Combine(a,b)
         sysDir ++ nm + ".dll"
 
 [<AutoOpen>]
@@ -172,7 +186,7 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously with
+    match checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
@@ -197,12 +211,12 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
                 Directory.Delete(path, true)
 
 #else
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunSynchronously
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunImmediate
     //printfn "projectOptions = %A" projectOptions
 #endif
 
     let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunSynchronously
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projectOptions) |> Async.RunImmediate
 
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -222,7 +236,7 @@ let parseSourceCode (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunSynchronously
+    let parseResults = checker.ParseFile(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     parseResults.ParseTree
 
 let matchBraces (name: string, code: string) =
@@ -232,7 +246,7 @@ let matchBraces (name: string, code: string) =
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunSynchronously
+    let braces = checker.MatchBraces(filePath, SourceText.ofString code, options) |> Async.RunImmediate
     braces
 
 
@@ -447,3 +461,4 @@ let assertRange
     : unit =
     Assert.AreEqual(Position.mkPos expectedStartLine expectedStartColumn, actualRange.Start)
     Assert.AreEqual(Position.mkPos expectedEndLine expectedEndColumn, actualRange.End)
+

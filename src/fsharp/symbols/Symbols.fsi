@@ -76,13 +76,13 @@ type FSharpDisplayContext =
 /// or FSharpActivePatternCase.
 [<Class>]
 type FSharpSymbol = 
-    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: NameResolution.Item -> FSharpSymbol
-    static member internal Create: cenv: SymbolEnv * item: NameResolution.Item -> FSharpSymbol
+    static member internal Create: g: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * item: Item -> FSharpSymbol
+    static member internal Create: cenv: SymbolEnv * item: Item -> FSharpSymbol
 
     /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
-    member internal Item: NameResolution.Item
+    member internal Item: Item
         
     /// Get the assembly declaring this symbol
     member Assembly: FSharpAssembly 
@@ -716,10 +716,7 @@ type FSharpGenericParameterConstraint =
 [<RequireQualifiedAccess>] 
 type FSharpInlineAnnotation = 
 
-   /// Indicates the value is inlined and compiled code for the function does not exist
-   | PseudoValue
-
-   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is always inlined in statically compiled code
    | AlwaysInline 
 
    /// Indicates the value is optionally inlined 

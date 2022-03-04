@@ -155,7 +155,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     member this.AccessObjectDirectly = value
 
     static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
-        [for (tp,nm) in providerSpecs do
+        [for tp,nm in providerSpecs do
              yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
 
     member this.OfType<'U> () =
@@ -176,7 +176,7 @@ module internal Tainted =
         if p.PUntaintNoFailure isNull then Null else NonNull (p.PApplyNoFailure nonNull)
 #endif
 
-    let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure((fun pv -> pv = v))
+    let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 
     let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
         t1.PUntaintNoFailure(fun t1 -> t1 === t2.AccessObjectDirectly)

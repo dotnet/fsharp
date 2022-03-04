@@ -29,6 +29,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
@@ -41,6 +42,7 @@ type LanguageFeature =
     | PrintfBinaryFormat
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -83,10 +85,12 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.NullnessChecking, previewVersion
+            LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
+            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
         ]
 
     let specified =
@@ -154,6 +158,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking()
+        | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
@@ -165,6 +170,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
+        | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -176,7 +176,7 @@ type internal MemoryMappedStream(mmf: MemoryMappedFile, length: int64) =
     override x.CanRead = viewStream.CanRead
     override x.CanWrite = viewStream.CanWrite
     override x.CanSeek = viewStream.CanSeek
-    override x.Position with get() = viewStream.Position and set v = (viewStream.Position <- v)
+    override x.Position with get() = viewStream.Position and set v = viewStream.Position <- v
     override x.Length = viewStream.Length
     override x.Flush() = viewStream.Flush()
     override x.Seek(offset, origin) = viewStream.Seek(offset, origin)
@@ -353,7 +353,6 @@ module MemoryMappedFileExtensions =
             let length = int64 bytes.Length
             trymmf length
                 (fun stream ->
-                    stream.SetLength(stream.Length + length)
                     let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
                     bytes.Span.CopyTo(span)
                     stream.Position <- stream.Position + length
@@ -388,7 +387,7 @@ module internal FileSystemUtils =
         checkPathForIllegalChars s
         if s = "." then "" else // for OCaml compatibility
         if not (hasExtensionWithValidate false s) then
-            raise (System.ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
+            raise (ArgumentException("chopExtension")) // message has to be precisely this, for OCaml compatibility, and no argument name can be set
         Path.Combine (Path.GetDirectoryName s, Path.GetFileNameWithoutExtension(s))
 
     let fileNameOfPath s =
@@ -422,6 +421,7 @@ type DefaultAssemblyLoader() =
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type IFileSystem =
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
     abstract AssemblyLoader: IAssemblyLoader
     abstract OpenFileForReadShim: filePath: string * ?useMemoryMappedFile: bool * ?shouldShadowCopy: bool -> Stream
     abstract OpenFileForWriteShim: filePath: string * ?fileMode: FileMode * ?fileAccess: FileAccess * ?fileShare: FileShare -> Stream
@@ -443,6 +443,7 @@ type IFileSystem =
     abstract EnumerateFilesShim: path: string * pattern: string -> string seq
     abstract EnumerateDirectoriesShim: path: string -> string seq
     abstract IsStableFileHeuristic: fileName: string -> bool
+    // note: do not add members if you can put generic implementation under StreamExtensions below.
 
 [<Experimental("This FCS API/Type is experimental and subject to change.")>]
 type DefaultFileSystem() as this =
@@ -651,7 +652,7 @@ type DefaultFileSystem() as this =
 [<AutoOpen>]
 module public StreamExtensions =
     let utf8noBOM = new UTF8Encoding(false, true) :> Encoding
-    type System.IO.Stream with
+    type Stream with
         member s.GetWriter(?encoding: Encoding) : TextWriter =
             let encoding = defaultArg encoding utf8noBOM
             new StreamWriter(s, encoding) :> TextWriter
@@ -687,7 +688,7 @@ module public StreamExtensions =
                        //   FileLoadException
                        //   PathTooLongException
                        if retryNumber < numRetries then
-                           System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                           Thread.Sleep retryDelayMilliseconds
                            getSource (retryNumber + 1)
                        else
                            reraise()
@@ -721,6 +722,10 @@ module public StreamExtensions =
         member s.ReadAllLines(?encoding: Encoding) : string array =
             let encoding = defaultArg encoding Encoding.UTF8
             s.ReadLines(encoding) |> Seq.toArray
+
+        member s.WriteAllText(text: string) =
+            use writer = new StreamWriter(s)
+            writer.Write text
 
         /// If we are working with the view stream from mmf, we wrap it in RawByteMemory (which does zero copy, bu just using handle from the views stream).
         /// However, when we use any other stream (FileStream, MemoryStream, etc) - we just read everything from it and expose via ByteArrayMemory.

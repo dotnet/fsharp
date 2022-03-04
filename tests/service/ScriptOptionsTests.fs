@@ -29,9 +29,9 @@ let ``can generate options for different frameworks regardless of execution envi
     let path = Path.GetTempPath()
     let file = Path.GetTempFileName()
     let tempFile = Path.Combine(path, file)
-    let (_, errors) =
+    let _, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
-        |> Async.RunSynchronously
+        |> Async.RunImmediate
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
@@ -41,9 +41,9 @@ let ``can generate options for different frameworks regardless of execution envi
 [<Test>]
 let ``all default assembly references are system assemblies``(assumeNetFx, useSdkRefs, flags) =
     let tempFile = Path.GetTempFileName() + ".fsx"
-    let (options, errors) =
+    let options, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdkRefs, otherFlags = flags)
-        |> Async.RunSynchronously
+        |> Async.RunImmediate
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeNetFx:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdkRefs flags errors
@@ -74,9 +74,9 @@ let ``sdk dir with dodgy global json gives warning``() =
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
     FileSystem.OpenFileForWriteShim(globalJsonPath).Write("""{ "sdk": { "version": "666.666.666" } }""")
-    let (options, errors) =
+    let options, errors =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
-        |> Async.RunSynchronously
+        |> Async.RunImmediate
     FileSystem.FileDeleteShim(globalJsonPath)
     match errors with
     | [] ->

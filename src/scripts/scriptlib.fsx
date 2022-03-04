@@ -77,7 +77,6 @@ module Scripting =
         if Directory.Exists output then 
             Directory.Delete(output, true) 
 
-
     let log format = printfn format
 
     type FilePath = string

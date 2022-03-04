@@ -51,6 +51,10 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinal: value:string -> bool
 
+    type Async with
+        /// Runs the computation synchronously, always starting on the current thread.
+        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+
     val foldOn: p:('a -> 'b) -> f:('c -> 'b -> 'd) -> z:'c -> x:'a -> 'd
 
     val notFound: unit -> 'a
@@ -421,7 +425,7 @@ type internal CancellableBuilder =
 
     member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> System.IDisposable
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
   

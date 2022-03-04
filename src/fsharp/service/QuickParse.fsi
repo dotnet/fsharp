@@ -79,9 +79,9 @@ module public QuickParse =
     
     /// Get the partial long name of the identifier to the left of index.
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
-    val GetPartialLongName : lineStr: string * index: int -> (string list * string)
+    val GetPartialLongName : lineStr: string * index: int -> string list * string
 #else
-    val GetPartialLongName : lineStr: string? * index: int -> (string list * string)
+    val GetPartialLongName : lineStr: string? * index: int -> string list * string
 #endif
     
     /// Get the partial long name of the identifier to the left of index.

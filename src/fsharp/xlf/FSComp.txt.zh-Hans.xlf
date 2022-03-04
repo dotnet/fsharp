@@ -92,6 +92,11 @@
         <target state="translated">适用的计算表达式</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">"module" 关键字右侧的属性</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">默认接口成员消耗</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">"as" 模式右侧的非变量模式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -170,6 +175,11 @@
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">空格松弛法</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureResumableStateMachines">
+        <source>resumable state machines</source>
+        <target state="translated">可恢复状态机</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -232,6 +242,16 @@
         <target state="translated">无效的指令“#{0} {1}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code.</source>
+        <target state="translated">可恢复的代码构造 "{0}" 只能用于受 "if __useResumableCode then..." 保护的内联代码，且整体组合必须构成有效的可恢复代码。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingInlineIfLambda">
+        <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
+        <target state="translated">"InlineIfLambda" 属性存在于签名中，但实现中不存在。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">用于将常量文本指定为类型提供程序中的类型形参实参的关键字。</target>
@@ -265,6 +285,11 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">以偏移量 {0} 开始的资源标头格式不正确。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optFailedToInlineSuggestedValue">
+        <source>The value '{0}' was marked 'InlineIfLambda' but was not determined to have a lambda value. This warning is for informational purposes only.</source>
+        <target state="translated">值 "{0}" 标记为 "InlineIfLambda"，但未确定其具有 lambda 值。此警告仅供参考。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsAllSigs">
@@ -347,9 +372,64 @@
         <target state="translated">不支持算法“{0}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="reprResumableCodeContainsDynamicResumeAtInBody">
+        <source>A target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="translated">未静态确定 __resumeAt 的目标标签。具有非静态目标标签的 __resumeAt 只能出现在可恢复代码方法的开头</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsFastIntegerForLoop">
+        <source>A fast integer for loop may not contain resumption points</source>
+        <target state="translated">循环的快速整数不能包含恢复点</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsLetRec">
+        <source>A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">可恢复代码规范中出现 "let rec"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInHandlerOrFilter">
+        <source>The 'with' block of a try/with may not contain resumption points</source>
+        <target state="translated">try/with 的 "with" 块可能不包含恢复点</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeContainsResumptionInTryFinally">
+        <source>A try/finally may not contain resumption points</source>
+        <target state="translated">try/finally 不能包含恢复点</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeDefinitionWasGeneric">
+        <source>A delegate or function producing resumable code in a state machine has type parameters</source>
+        <target state="translated">在状态机中生成可恢复代码的委托或函数具有类型参数</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeInvokeNotReduced">
+        <source>A resumable code invocation at '{0}' could not be reduced</source>
+        <target state="translated">无法减少位于 "{0}" 的可恢复代码调用</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprResumableCodeValueHasNoDefinition">
+        <source>The resumable code value(s) '{0}' does not have a definition</source>
+        <target state="translated">可恢复的代码值 "{0}" 没有定义</target>
+        <note />
+      </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">注册的 PackageManager 不支持 #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineInvalidForm">
+        <source>The state machine has an unexpected form</source>
+        <target state="translated">状态机具有意外的窗体</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilable">
+        <source>This state machine is not statically compilable. {0}. An alternative dynamic implementation will be used, which may be slower. Consider adjusting your code to ensure this state machine is statically compilable, or else suppress this warning.</source>
+        <target state="translated">此状态机不可静态编译。{0}。将使用另一种动态实现，可能速度较慢。请考虑调整代码以确保此状态机是可静态编译的，或者禁止显示此警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="reprStateMachineNotCompilableNoAlternative">
+        <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
+        <target state="translated">此状态机不可静态编译，并且没有可用的替代方法。{0}。 请使用 "if __useResumableCode 然后 &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代方法。</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -359,7 +439,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">无法确定此脚本的 .NET SDK。找不到 dotnet.exe，请确保安装了 .NET SDK。</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -402,6 +482,11 @@
         <target state="translated">在开放类型声明中不允许使用 Byref 类型。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
+        <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
+        <target state="translated">"InlineIfLambda" 特性只能用于类型为函数或 F# 委托类型的方法的内联函数的参数。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">在内插字符串中不匹配。内插字符串不会使用 "%" 格式说明符，除非为每个字符串提供像 "'%d{{1+1}}" 这样的表达式</target>
@@ -410,6 +495,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">内插字符串中的对齐无效</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidResumableConstruct">
+        <source>The construct '{0}' may only be used in valid resumable code.</source>
+        <target state="translated">构造 "{0}" 只能在有效的可恢复代码中使用。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -440,6 +530,36 @@
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">仅当计算表达式生成器定义了 "{0}" 方法或适当的 "MergeSource" 和 "Bind" 方法时，才可以使用 "let! ... and! ..." 构造</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightKind">
+        <source>Invalid resumable code. A resumable code parameter must be of delegate or function type</source>
+        <target state="translated">可恢复代码无效。可恢复的代码参数必须为委托或函数类型</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeArgMustHaveRightName">
+        <source>Invalid resumable code. Resumable code parameter must have name beginning with '__expand'</source>
+        <target state="translated">可恢复代码无效。可恢复代码参数的名称必须以 "__expand" 开头</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeContainsLetRec">
+        <source>Invalid resumable code. A 'let rec' occured in the resumable code specification</source>
+        <target state="translated">可恢复代码无效。可恢复代码规范中出现 "let rec"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeFunctionMustBeInline">
+        <source>Invalid resumable code. Any method of function accepting or returning resumable code must be marked 'inline'</source>
+        <target state="translated">可恢复代码无效。接受或返回可恢复代码的任何函数方法都必须标记为 "inline"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeInvocation">
+        <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
+        <target state="translated">可恢复的代码调用。如果要根据现有可恢复代码定义新的低级别可恢复代码，请取消显示此警告。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcResumableCodeNotSupported">
+        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
+        <target state="translated">使用可恢复代码或可恢复状态机需要 /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -600,6 +720,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">考虑使用 "return!"，而非 "return"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="translated">F# 编译器当前不支持此属性。应用它不会达到预期效果。</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">

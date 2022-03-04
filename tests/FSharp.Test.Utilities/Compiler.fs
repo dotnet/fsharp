@@ -1,13 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Test.Utilities
+namespace FSharp.Test
 
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Test.Assert
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Assert
-open FSharp.Test.Utilities.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -442,10 +441,10 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
+        | Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }

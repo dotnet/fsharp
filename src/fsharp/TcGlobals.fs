@@ -65,14 +65,14 @@ module FSharpLib =
 
     let QuotationsName             = FSharpLib.Root + ".Quotations"
 
-    let ControlPath                 = IL.splitNamespace ControlName
-    let LinqPath                    = IL.splitNamespace LinqName
-    let CollectionsPath             = IL.splitNamespace CollectionsName
-    let NativeInteropPath           = IL.splitNamespace NativeInteropName |> Array.ofList
-    let CompilerServicesPath        = IL.splitNamespace CompilerServicesName |> Array.ofList
-    let LinqRuntimeHelpersPath      = IL.splitNamespace LinqRuntimeHelpersName |> Array.ofList
-    let RuntimeHelpersPath          = IL.splitNamespace RuntimeHelpersName |> Array.ofList
-    let QuotationsPath              = IL.splitNamespace QuotationsName |> Array.ofList
+    let ControlPath                 = splitNamespace ControlName
+    let LinqPath                    = splitNamespace LinqName
+    let CollectionsPath             = splitNamespace CollectionsName
+    let NativeInteropPath           = splitNamespace NativeInteropName |> Array.ofList
+    let CompilerServicesPath        = splitNamespace CompilerServicesName |> Array.ofList
+    let LinqRuntimeHelpersPath      = splitNamespace LinqRuntimeHelpersName |> Array.ofList
+    let RuntimeHelpersPath          = splitNamespace RuntimeHelpersName |> Array.ofList
+    let QuotationsPath              = splitNamespace QuotationsName |> Array.ofList
 
     let RootPathArray                    = FSharpLib.RootPath |> Array.ofList
     let CorePathArray                    = FSharpLib.CorePath |> Array.ofList
@@ -367,10 +367,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_FormattableStringFactory_ty = mkNonGenericTy v_FormattableStringFactory_tcref
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
-  let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice
-  let v_system_Type_ty = mkSysNonGenericTy sys "Type"
+  let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
+  let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
   let v_Array_tcref = findSysTyconRef sys "Array"
-
 
   let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
@@ -386,7 +385,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkForallTyIfNeeded d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
       // A table of all intrinsics that the compiler cares about
-  let v_knownIntrinsics = ConcurrentDictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
+  let v_knownIntrinsics = ConcurrentDictionary<string * string option * string * int, ValRef>(HashIdentity.Structural)
 
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
@@ -477,6 +476,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let fslib_MFStringModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "StringModule"
   let fslib_MFNativePtrModule_nleref               = mkNestedNonLocalEntityRef fslib_MFNativeInterop_nleref "NativePtrModule"
   let fslib_MFOptionModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "OptionModule"
+  let fslib_MFStateMachineHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "StateMachineHelpers"
   let fslib_MFRuntimeHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeHelpers"
   let fslib_MFQuotations_nleref                = mkNestedNonLocalEntityRef fslib_MF_nleref "Quotations"
 
@@ -533,15 +533,16 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                             fslib_MFPrintfModule_nleref
                             fslib_MFSeqModule_nleref
                             fslib_MFListModule_nleref
-                            fslib_MFArrayModule_nleref
-                            fslib_MFArray2DModule_nleref
-                            fslib_MFArray3DModule_nleref
-                            fslib_MFArray4DModule_nleref
-                            fslib_MFSetModule_nleref
-                            fslib_MFMapModule_nleref
-                            fslib_MFStringModule_nleref
-                            fslib_MFNativePtrModule_nleref
-                            fslib_MFOptionModule_nleref
+                            fslib_MFArrayModule_nleref   
+                            fslib_MFArray2DModule_nleref   
+                            fslib_MFArray3DModule_nleref   
+                            fslib_MFArray4DModule_nleref   
+                            fslib_MFSetModule_nleref   
+                            fslib_MFMapModule_nleref   
+                            fslib_MFStringModule_nleref   
+                            fslib_MFNativePtrModule_nleref   
+                            fslib_MFOptionModule_nleref   
+                            fslib_MFStateMachineHelpers_nleref 
                             fslib_MFRuntimeHelpers_nleref ] do
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
@@ -736,6 +737,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty --> (varbTy --> v_unit_ty)) --> varaTy]], TType_app (v_fslib_IEvent2_tcr, [varaTy;varbTy], v_knownWithoutNull)))
+  let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
+  let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
+  let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
+  let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1041,6 +1046,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
   member val ArrayCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ArrayCollector`1"
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr, [seqElemTy], v_knownWithoutNull)
+  member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
+  member g.mk_ResumableStateMachine_ty dataTy = TType_app(g.ResumableStateMachine_tcr,[dataTy])
+  member val IResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "IResumableStateMachine`1"
+  member g.mk_IResumableStateMachine_ty dataTy = TType_app(g.IResumableStateMachine_tcr,[dataTy])
   member g.mk_ListCollector_ty seqElemTy = TType_app(g.ListCollector_tcr, [seqElemTy], v_knownWithoutNull)
   member g.mk_ArrayCollector_ty seqElemTy = TType_app(g.ArrayCollector_tcr, [seqElemTy], v_knownWithoutNull)
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
@@ -1049,6 +1058,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2"
   member val measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1"
   member val measureone_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureOne"
+  member val ResumableCode_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableCode`2"
+
   member _.il_arr_tcr_map = v_il_arr_tcr_map
   member _.ref_tuple1_tcr     = v_ref_tuple1_tcr
   member _.ref_tuple2_tcr     = v_ref_tuple2_tcr
@@ -1143,7 +1154,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       tryMkSysNonGenericTy ["System"; "Runtime"; "ExceptionServices"] "ExceptionDispatchInfo"
 
   member _.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
-
+  member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine" 
+    
   member val system_Array_tcref = v_Array_tcref
   member val system_Object_tcref  = findSysTyconRef sys "Object"
   member val system_Value_tcref = findSysTyconRef sys "ValueType"
@@ -1240,6 +1252,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
+  member val attribs_Unsupported = [
+        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+                                   ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
@@ -1268,6 +1284,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CompilationArgumentCountsAttribute     = mk_MFCore_attrib "CompilationArgumentCountsAttribute"
   member val attrib_CompilationMappingAttribute            = mk_MFCore_attrib "CompilationMappingAttribute"
   member val attrib_CLIEventAttribute                      = mk_MFCore_attrib "CLIEventAttribute"
+  member val attrib_InlineIfLambdaAttribute                = mk_MFCore_attrib "InlineIfLambdaAttribute"
   member val attrib_CLIMutableAttribute                    = mk_MFCore_attrib "CLIMutableAttribute"
   member val attrib_AllowNullLiteralAttribute              = mk_MFCore_attrib "AllowNullLiteralAttribute"
   member val attrib_NoEqualityAttribute                    = mk_MFCore_attrib "NoEqualityAttribute"
@@ -1525,6 +1542,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.quote_to_linq_lambda_info        = v_quote_to_linq_lambda_info
 
 
+  member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
+  member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
+  member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info
+  member val cgh__resumableEntry_vref = ValRefForIntrinsic v_cgh__resumableEntry_info
+
   member val generic_hash_withc_tuple2_vref = ValRefForIntrinsic v_generic_hash_withc_tuple2_info
   member val generic_hash_withc_tuple3_vref = ValRefForIntrinsic v_generic_hash_withc_tuple3_info
   member val generic_hash_withc_tuple4_vref = ValRefForIntrinsic v_generic_hash_withc_tuple4_info
@@ -1590,7 +1612,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member _.mkDebuggerStepThroughAttribute() =
       mkILCustomAttribute (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
 
-  member _.mkDebuggableAttribute (jitOptimizerDisabled) =
+  member _.mkDebuggableAttribute jitOptimizerDisabled =
       mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
   member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
@@ -1642,7 +1664,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
     match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
-    | "get_Sign", [aty], _, (objExpr :: _) ->
+    | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
         let tyargs = [aty]

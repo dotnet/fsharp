@@ -50,7 +50,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
 
         [|
             yield name                                                                              // Bare name
-            if not (isRooted) then
+            if not isRooted then
                 for s in suffix do
                     if useSuffix s then                                                             // Suffix without prefix
                         yield (sprintf "%s%s" name s)
@@ -95,7 +95,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
     let eventInfo, handler, defaultAssemblyLoadContext =
         assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
-        Func<Assembly, string, IntPtr> (resolveUnmanagedDll),
+        Func<Assembly, string, IntPtr> resolveUnmanagedDll,
         assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
@@ -112,25 +112,26 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) 
         else
             None
 
-    let appendSemiColon (p: string) =
-        if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
-            p + ";"
+    let appendPathSeparator (p: string) =
+        let separator = string Path.PathSeparator
+        if not(p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
+            p + separator
         else
             p
 
     let addedPaths = ConcurrentBag<string>()
 
     let addProbeToProcessPath probePath =
-        let probe = appendSemiColon probePath
-        let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        let probe = appendPathSeparator probePath
+        let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
         if not (path.Contains(probe)) then
             Environment.SetEnvironmentVariable("PATH", path + probe)
             addedPaths.Add probe
 
     let removeProbeFromProcessPath probePath =
         if not(String.IsNullOrWhiteSpace(probePath)) then
-            let probe = appendSemiColon probePath
-            let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let probe = appendPathSeparator probePath
+            let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
             if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =

@@ -4,10 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.Diagnostics
 open NUnit.Framework
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 
 [<TestFixture>]
 module SignatureGenerationTests =

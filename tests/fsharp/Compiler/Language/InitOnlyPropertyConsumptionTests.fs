@@ -3,10 +3,9 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test
+open FSharp.Test.Compiler
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
-open FSharp.Tests
 
 #if NETCOREAPP
 

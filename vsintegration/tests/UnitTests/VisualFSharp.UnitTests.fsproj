@@ -38,6 +38,7 @@
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.RoslynHelpers.fs" />
+    <Compile Include="Workspace\WorkspaceTests.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
