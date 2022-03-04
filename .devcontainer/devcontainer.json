@@ -7,11 +7,13 @@
         "args": {
             // Update 'VARIANT' to pick a .NET Core version: 3.1, 5.0, 6.0
             // Append -bullseye or -focal to pin to an OS version.
-            "VARIANT": "6.0-focal"
+            "VARIANT": "6.0-bullseye"
         }
     },
     // Default settings are set in .vscode/settings.json
-    "settings": {},
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+    },
 
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
@@ -22,5 +24,10 @@
         "ms-dotnettools.csharp",
         "tintoy.msbuild-project-tools"
     ],
-    "postCreateCommand": "./build.sh -c Debug"
+    "postCreateCommand": [
+        "/bin/bash",
+        "./build.sh",
+        "-c",
+        "Debug"
+    ]
 }
