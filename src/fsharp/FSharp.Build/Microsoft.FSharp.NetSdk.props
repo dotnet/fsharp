@@ -73,8 +73,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <PropertyGroup>
-    <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
-    <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersionValue)</ValueTupleImplicitPackageVersion>
+    <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <FSCorePackageVersion>{{FSCorePackageVersionValue}}</FSCorePackageVersion>
   </PropertyGroup>
 

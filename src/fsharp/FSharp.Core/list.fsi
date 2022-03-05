@@ -120,7 +120,7 @@ module List =
     /// <summary>Applies a function to each element in a list and then returns
     /// a list of values <c>v</c> where the applied function returned <c>Some(v)</c>.
     /// 
-    /// Returns an empty list when the input list is empty or when the the applied chooser function
+    /// Returns an empty list when the input list is empty or when the applied chooser function
     /// returns <c>None</c> for all elements.
     /// </summary>
     ///
