@@ -784,11 +784,11 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: range option *
         rhs: SynExpr *
         andBangs: SynExprAndBang list *
         body:SynExpr *
-        range: range 
+        range: range *
+        trivia: SynExprLetOrUseBangTrivia
 
     | MatchBang of
         matchKeyword: range *

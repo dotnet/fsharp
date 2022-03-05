@@ -1268,8 +1268,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result of the comparison.</returns>
         val inline PhysicalEquality: e1: 'T -> e2: 'T -> bool when 'T: not struct
 
-        /// <summary>The physical hash. Hashes on the object identity, except for value types,
-        /// where we hash on the contents.</summary>
+        /// <summary>The physical hash. Hashes on the object identity.</summary>
         ///
         /// <param name="obj">The input object.</param>
         ///
