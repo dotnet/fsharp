@@ -378,13 +378,20 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         match visitAppTyOpt with 
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
+
     | TType_anon (anonInfo, tys) -> 
         RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
-    | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
-    | TType_tuple (_, tys) -> CheckTypesDeep cenv f g env tys
-    | TType_fun (s, t) -> CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+    | TType_ucase (_, tinst) ->
+        CheckTypesDeep cenv f g env tinst
+
+    | TType_tuple (_, tys) ->
+        CheckTypesDeep cenv f g env tys
+
+    | TType_fun (s, t) ->
+        CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+
     | TType_var tp -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
@@ -1341,7 +1348,7 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) context =
 
 and CheckLambda cenv env expr (argvs, m, rty) = 
     let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-    let ty = mkMultiLambdaTy m argvs rty in 
+    let ty = mkMultiLambdaTy cenv.g m argvs rty in 
     CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
 and CheckTyLambda cenv env expr (tps, m, rty) = 
@@ -2181,8 +2188,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
-                        let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
-                        let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        let minfo1 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind, v.DisplayName, v.Range)))
@@ -2242,7 +2249,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let g = cenv.g
     let m = tycon.Range 
     let tcref = mkLocalTyconRef tycon
-    let ty = generalizedTyconRef tcref
+    let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let env = BindTypars g env (tycon.Typars m)
@@ -2519,7 +2526,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 |> List.filter (isInterfaceTy g)
             CheckMultipleInterfaceInstantiations cenv ty interfaces false m
         
-        // Check struct fields. We check these late because we have to have first checked that the structs are
+        // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
         if tycon.IsStructOrEnumTycon then 
             for f in tycon.AllInstanceFieldsAsList do

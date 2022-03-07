@@ -586,32 +586,32 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
-            [ for ty in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef entity) do 
+            [ for ty in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef cenv.g entity) do 
                  yield FSharpType(cenv, ty) ])
         |> makeReadOnlyCollection
 
     member x.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
         ErrorLogger.protectAssemblyExploration [] (fun () -> 
-            [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
+            [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef cenv.g entity) do 
                  yield FSharpType(cenv, ty) ])
         |> makeReadOnlyCollection
     
     member x.IsAttributeType =
         if isUnresolved() then false else
-        let ty = generalizedTyconRef entity
+        let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
     member x.IsDisposableType =
         if isUnresolved() then false else
-        let ty = generalizedTyconRef entity
+        let ty = generalizedTyconRef cenv.g entity
         ErrorLogger.protectAssemblyExploration false <| fun () -> 
         ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
     member x.BaseType = 
         checkIsResolved()        
-        GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
+        GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef cenv.g entity) 
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
         
     member _.UsesPrefixDisplay = 
@@ -623,7 +623,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member x.MembersFunctionsAndValues = 
       if isUnresolved() then makeReadOnlyCollection [] else
       protect <| fun () -> 
-        ([ let _, entityTy = generalizeTyconRef entity
+        ([ let entityTy = generalizedTyconRef cenv.g entity
            let createMember (minfo: MethInfo) =
                if minfo.IsConstructor then FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
                else FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
@@ -654,10 +654,10 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                    yield FSharpMemberOrFunctionOrValue(cenv, V vref, Item.Value vref) 
                    match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentEnclosingEntity with
                    | SynMemberKind.PropertyGet, Parent p -> 
-                        let pinfo = FSProp(cenv.g, generalizedTyconRef p, Some vref, None)
+                        let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g p, Some vref, None)
                         yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
                    | SynMemberKind.PropertySet, Parent p -> 
-                        let pinfo = FSProp(cenv.g, generalizedTyconRef p, None, Some vref)
+                        let pinfo = FSProp(cenv.g, generalizedTyconRef cenv.g p, None, Some vref)
                         yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
                    | _ -> ()
 
@@ -1679,7 +1679,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | M m | C m -> 
                 let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
                 let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
-                mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
+                mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argtysl) rty
             | V v -> v.TauType
         FSharpType(cenv, ty)
 
@@ -1815,9 +1815,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("add_") &&
 
             let eventName = logicalName.[4..]
-            let entityTy = generalizedTyconRef m.DeclaringTyconRef
+            let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
-            let declaringTy = generalizedTyconRef m.DeclaringTyconRef
+            let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             match GetImmediateIntrinsicPropInfosOfType (Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy with 
             | pinfo :: _  -> pinfo.IsFSharpEventProperty
             | _ -> false
@@ -1832,9 +1832,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("remove_") &&
 
             let eventName = logicalName.[7..]
-            let entityTy = generalizedTyconRef m.DeclaringTyconRef
+            let entityTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
-            let declaringTy = generalizedTyconRef m.DeclaringTyconRef
+            let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             match GetImmediateIntrinsicPropInfosOfType (Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy with 
             | pinfo :: _ -> pinfo.IsFSharpEventProperty
             | _ -> false
@@ -1848,7 +1848,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("get_") &&
 
             let propName = ChopPropertyName(logicalName)
-            let declaringTy = generalizedTyconRef m.DeclaringTyconRef
+            let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertyGetterMethod
         | _ -> false
@@ -1861,7 +1861,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             logicalName.Length > 4 && logicalName.StartsWithOrdinal("set_") &&
 
             let propName = ChopPropertyName(logicalName) 
-            let declaringTy = generalizedTyconRef m.DeclaringTyconRef
+            let declaringTy = generalizedTyconRef cenv.g m.DeclaringTyconRef
             not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
         | _ -> false
@@ -2235,7 +2235,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 | M m | C m -> 
                     let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
                     let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
-                    mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
+                    mkIteratedFunTy cenv.g (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
             |> LayoutRender.toArray
