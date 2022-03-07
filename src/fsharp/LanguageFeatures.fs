@@ -102,12 +102,6 @@ type LanguageVersion (versionText) =
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.NullnessChecking, previewVersion
-            LanguageFeature.ResumableStateMachines, previewVersion
-            LanguageFeature.StructActivePattern, previewVersion
-            LanguageFeature.PrintfBinaryFormat, previewVersion
-            LanguageFeature.UseBindingValueDiscard, previewVersion
-            LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
-            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
             LanguageFeature.MLCompatRevisions,previewVersion
             LanguageFeature.BetterExceptionPrinting,previewVersion
         ]
