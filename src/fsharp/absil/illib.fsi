@@ -29,19 +29,19 @@ module internal PervasiveAutoOpens =
 #if NO_CHECKNULLS
     /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as 
     /// replacement for 'string?' to align with FS-1060.
-    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
+    type 'T MaybeNull when 'T: null and 'T: not struct = 'T
 
     /// Asserts the argument is non-null and raises an exception if it is
-    val inline (|NonNullQuick|): 'T -> 'T when 'T : null
+    val inline (|NonNullQuick|): 'T MaybeNull -> 'T
 
     /// Match on the nullness of an argument.
-    val inline (|Null|NonNull|): 'T -> Choice<unit,'T> when 'T : null
+    val inline (|Null|NonNull|): 'T MaybeNull -> Choice<unit,'T>
 
     /// Asserts the argument is non-null and raises an exception if it is
-    val inline nonNull: x:'T -> 'T when 'T : null
+    val inline nonNull: x: 'T MaybeNull -> 'T
 
     /// Checks the argument is non-null
-    val inline nullArgCheck: paramName: string -> x: MaybeNull<'T> -> 'T    
+    val inline nullArgCheck: paramName: string -> x: 'T MaybeNull -> 'T    
 #else
     /// Indicates that a type may be null. 'MaybeNull<string>' used internally in the F# compiler as unchecked
     /// replacement for 'string?'
