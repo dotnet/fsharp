@@ -128,13 +128,13 @@ this is the type that lets you implement most of the interesting F# source code 
 
 ### Getting a tool tip
 
-To get a tool tip, you can use `GetToolTip` method. The method takes a line number and character
-offset. Both of the numbers are zero-based. In the sample code, we want to get tooltip for the `foo`
+To get a tool tip, you can use the `GetToolTip` method. The method takes a line number and character
+offset. Both of the numbers are zero-based. In the sample code, we want to get a tooltip for the `foo`
 function that is defined on line 3 (line 0 is blank) and the letter `f` starts at index 7 (the tooltip
 would work anywhere inside the identifier).
 
-In addition, the method takes a tag of token which is typically `IDENT`, when getting tooltip for an
-identifier (the other option lets you get tooltip with full assembly location when using `#r "..."`).
+In addition, the method takes a tag of token which is typically `IDENT`, when getting a tooltip for an
+identifier (the other option lets you get a tooltip with full assembly location when using `#r "..."`).
 
 *)
 // Get tag of the IDENT token to be used as the last argument
@@ -153,8 +153,8 @@ printfn "%A" tip
 (**
 Aside from the location and token kind, the function also requires the current contents of the line
 (useful when the source code changes) and a `Names` value, which is a list of strings representing
-the current long name. For example to get tooltip for the `Random` identifier in a long name
-`System.Random`, you would use location somewhere in the string `Random` and you would pass
+the current long name. For example, to get a tooltip for the `Random` identifier in a long name
+`System.Random`, you would use a location somewhere in the string `Random` and you would pass
 `["System"; "Random"]` as the `Names` value.
 
 The returned value is of type `ToolTipText` which contains a discriminated union `ToolTipElement`.
@@ -203,7 +203,7 @@ for a fully qualified namespace.
 
 The next common feature of editors is to provide information about overloads of a method. In our
 sample code, we use `String.Concat` which has a number of overloads. We can get the list using
-`GetMethods` operation. As previously, this takes zero-indexed offset of the location that we are
+`GetMethods` operation. As previously, this takes the zero-indexed offset of the location that we are
 interested in (here, right at the end of the `String.Concat` identifier) and we also need to provide
 the identifier again (so that the compiler can provide up-to-date information when the source code
 changes):
@@ -232,8 +232,8 @@ and print a type annotation with the method name.
 
 You may have noticed that `CheckFileInProject` is an asynchronous operation.
 This indicates that type checking of F# code can take some time.
-The F# compiler performs the work in background (automatically) and when
-we call `CheckFileInProject` method, it returns an asynchronous operation.
+The F# compiler performs the work in the background (automatically) and when
+we call the `CheckFileInProject` method, it returns an asynchronous operation.
 
 There is also the `CheckFileInProjectIfReady` method. This returns immediately if the
 type checking operation can't be started immediately, e.g. if other files in the project
@@ -241,9 +241,9 @@ are not yet type-checked. In this case, a background worker might choose to do o
 work in the meantime, or give up on type checking the file until the `FileTypeCheckStateIsDirty` event
 is raised.
 
-> The [fsharpbinding](https://github.com/fsharp/fsharpbinding) project has more advanced
+> The [fsharpbinding](https://github.com/fsharp/fsharpbinding) project has a more advanced
 example of handling the background work where all requests are sent through an F# agent.
-This may be a more appropriate for implementing editor support.
+This may be more appropriate for implementing editor support.
 
 *)
 
@@ -260,7 +260,7 @@ Using the FSharpChecker component in multi-project, incremental and interactive 
 knowledge of the [FSharpChecker operations queue](queue.html) and the [FSharpChecker caches](caches.html).
 
 
-Finally, if you are implementing an editor support for an editor that cannot directly call .NET API,
+Finally, if you are implementing an editor support for an editor that cannot directly call the .NET API,
 you can call many of the methods discussed here via a command line interface that is available in the
 [FSharp.AutoComplete](https://github.com/fsharp/fsharpbinding/tree/master/FSharp.AutoComplete) project.
 
