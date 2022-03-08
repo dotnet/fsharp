@@ -977,7 +977,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   override x.ToString() = "<TcGlobals>"
 
-  member _.ilg=ilg
+  member _.ilg = ilg
 
   /// A table of all intrinsics that the compiler cares about
   member _.knownIntrinsics                = v_knownIntrinsics

@@ -48,6 +48,7 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let outputList = ResizeArray()
             let mutable errorslock = obj
             let mutable outputlock = obj
+
             let outputDataReceived (message: string MaybeNull) =
                 match message with
                 | Null -> ()

@@ -2991,7 +2991,7 @@ let fullNameOfParentOfValRefAsLayout vref =
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
 let fullDisplayTextOfModRef r =
-    fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName)  r
+    fullNameOfEntityRef (fun (x: EntityRef) -> x.DemangledModuleOrNamespaceName) r
 
 let fullDisplayTextOfTyconRefAsLayout r =
     fullNameOfEntityRefAsLayout (fun (tcref: TyconRef) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars) r
@@ -3039,17 +3039,17 @@ let fullMangledPathToTyconRef (tcref:TyconRef) =
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
     
 /// generates a name like 'System.IComparable<System.Int32>.Get'
-let tyconRefToFullName (tc:TyconRef) =
+let tyconRefToFullName (tcref:TyconRef) =
     let namespaceParts =
         // we need to ensure there are no collisions between (for example)
         // - ``IB<GlobalType>`` (non-generic)
         // - IB<'T> instantiated with 'T = GlobalType
         // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
         // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
-        match fullMangledPathToTyconRef tc with
+        match fullMangledPathToTyconRef tcref with
         | [||] -> [| "global`" |]
         | ns -> ns
-    seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+    seq { yield! namespaceParts; yield tcref.DisplayName } |> String.concat "."
 
 let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
     match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with

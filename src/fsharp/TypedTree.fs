@@ -3184,7 +3184,7 @@ type NonLocalEntityRef =
                 assert (j >= 0)
                 assert (j <= path.Length - 1)
                 let matched = 
-                    [ for resolver in resolvers  do
+                    [ for resolver in resolvers do
                         let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
                         let typename = path.[j]
                         let resolution = TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)

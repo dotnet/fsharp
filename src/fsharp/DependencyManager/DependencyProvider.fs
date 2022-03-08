@@ -399,7 +399,6 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
 
     /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider MaybeNull =
-
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key

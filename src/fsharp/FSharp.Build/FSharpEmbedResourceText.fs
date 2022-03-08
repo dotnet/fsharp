@@ -7,12 +7,12 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResourceText() =
-    let mutable _buildEngine : IBuildEngine MaybeNull = null
-    let mutable _hostObject : ITaskHost MaybeNull = null
-    let mutable _embeddedText : ITaskItem[] = [||]
-    let mutable _generatedSource : ITaskItem[] = [||]
-    let mutable _generatedResx : ITaskItem[] = [||]
-    let mutable _outputPath : string = ""
+    let mutable _buildEngine: IBuildEngine MaybeNull = null
+    let mutable _hostObject: ITaskHost MaybeNull = null
+    let mutable _embeddedText: ITaskItem[] = [||]
+    let mutable _generatedSource: ITaskItem[] = [||]
+    let mutable _generatedResx: ITaskItem[] = [||]
+    let mutable _outputPath: string = ""
 
     let PrintErr(filename, line, msg) =
         printfn "%s(%d): error : %s" filename line msg
@@ -182,7 +182,7 @@ type FSharpEmbedResourceText() =
         //printfn "holes.Length = %d, lineNum = %d" holes.Length //lineNum txt
         (holes, sb.ToString())
 
-    let Unquote (s : string) =
+    let Unquote (s: string) =
         if s.StartsWith "\"" && s.EndsWith "\"" then s.Substring(1, s.Length - 2)
         else failwith "error message string should be quoted"
 
@@ -278,7 +278,7 @@ open Printf
         // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
         mkFunctionValue tys (fun inp -> impl rty inp)
 
-    static let capture1 (fmt:string) i args ty (go : obj list -> System.Type -> int -> obj) : obj =
+    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
         match fmt.[i] with
         | '%' -> go args ty (i+1)
         | 'd'
@@ -288,10 +288,10 @@ open Printf
 
     // newlines and tabs get converted to strings when read from a resource file
     // this will preserve their original intention
-    static let postProcessString (s : string) =
+    static let postProcessString (s: string) =
         s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
 
-    static let createMessageString (messageString : string) (fmt : Printf.StringFormat<'T>) : 'T =
+    static let createMessageString (messageString: string) (fmt: Printf.StringFormat<'T>) : 'T =
         let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
         let len = fmt.Length
 
@@ -318,7 +318,7 @@ open Printf
 
     static let mutable swallowResourceText = false
 
-    static let GetStringFunc((messageID : string),(fmt : Printf.StringFormat<'T>)) : 'T =
+    static let GetStringFunc((messageID: string),(fmt: Printf.StringFormat<'T>)) : 'T =
         if swallowResourceText then
             sprintf fmt
         else

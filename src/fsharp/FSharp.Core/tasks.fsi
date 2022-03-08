@@ -152,6 +152,7 @@ namespace Microsoft.FSharp.Control
         /// Builds a task using computation expression syntax which switches to execute on a background thread if not
         /// already doing so.
         /// </summary>
+        ///
         /// <remarks>
         /// If the task is created on a foreground thread (where <see cref="P:System.Threading.SynchronizationContext.Current"/> is non-null)
         /// its body is executed on a background thread using <see cref="M:System.Threading.Tasks.Task.Run"/>.

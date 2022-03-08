@@ -57,13 +57,11 @@ type MapSourceRoots () =
 
     static let (|NullOrEmpty|HasValue|) (s: string) = if String.IsNullOrEmpty s then NullOrEmpty else HasValue s
     static let ensureEndsWithSlash (path: string) =
-        if path.EndsWith "/"
-        then path
+        if path.EndsWith "/" then path
         else path + "/"
 
     static let endsWithDirectorySeparator (path: string) =
-        if path.Length = 0
-        then false
+        if path.Length = 0 then false
         else
             let endChar = path.[path.Length - 1]
             endChar = Path.DirectorySeparatorChar || endChar = Path.AltDirectorySeparatorChar

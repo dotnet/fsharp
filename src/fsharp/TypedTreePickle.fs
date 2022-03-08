@@ -845,7 +845,7 @@ let pickleObjWithDanglingCcus inMem file (g: TcGlobals) scope p x =
        oInMem=inMem
        isStructThisArgPos = false }
 
-  let phase2bytes = 
+  let phase2bytes =
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
 
     // For F# 5.0 and beyond we add a 4th integer for nanoninfos, indicated by a negative 1st integer

@@ -34,21 +34,22 @@ module internal PervasiveAutoOpens =
         | [_] -> true
         | _ -> false
 
-    let inline isNotNull x = not (isNull x)
+    let inline isNotNull (x: 'T) = not (isNull x)
 
 #if NO_CHECKNULLS
-    type MaybeNull<'T when 'T : null> = 'T
+    type 'T MaybeNull when 'T : null and 'T: not struct = 'T
 
     // Shim to match nullness checking library support in preview
     let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
 
     let inline nonNull<'T when 'T : null> (x: 'T) = x
 
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+    let inline (|Null|NonNull|) (x: 'T MaybeNull) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 
     let inline nullArgCheck paramName (x: 'T MaybeNull) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
 #else
-    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T?
+    type 'T MaybeNull when 'T: not null and 'T: not struct = 'T?
+
 #endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -579,14 +580,14 @@ module String =
             String strArr
 
     let extractTrailingIndex (str: string) =
-            let charr = str.ToCharArray() 
-            Array.revInPlace charr
-            let digits = Array.takeWhile Char.IsDigit charr
-            Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+        let charr = str.ToCharArray() 
+        Array.revInPlace charr
+        let digits = Array.takeWhile Char.IsDigit charr
+        Array.revInPlace digits
+        String digits
+        |> function
+            | "" -> str, None
+            | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
