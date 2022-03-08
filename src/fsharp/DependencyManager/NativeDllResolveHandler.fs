@@ -134,6 +134,8 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) 
             let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
             if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
+    new (nativeProbingRoots: NativeResolutionProbe) = new NativeDllResolveHandler(Option.ofObj nativeProbingRoots)
+
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
         for probePath in roots do
             addProbeToProcessPath probePath

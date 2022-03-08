@@ -23,6 +23,7 @@ module internal PervasiveAutoOpens =
     /// Returns true if the list contains exactly 1 element. Otherwise false.
     val inline isSingleton: l:'a list -> bool
 
+    /// Returns true if the argument is non-null.
     val inline isNotNull: x:'a -> bool when 'a: null
 
 #if NO_CHECKNULLS
@@ -30,12 +31,19 @@ module internal PervasiveAutoOpens =
     /// replacement for 'string?' to align with FS-1060.
     type MaybeNull<'T when 'T : null> = 'T
 
+    /// Asserts the argument is non-null and raises an exception if it is
     val inline (|NonNullQuick|): 'T -> 'T when 'T : null
+
+    /// Match on the nullness of an argument.
     val inline (|Null|NonNull|): 'T -> Choice<unit,'T> when 'T : null
+
+    /// Asserts the argument is non-null and raises an exception if it is
     val inline nonNull: x:'T -> 'T when 'T : null
+
+    /// Checks the argument is non-null
     val inline nullArgCheck: paramName: string -> x: MaybeNull<'T> -> 'T    
 #else
-    type MaybeNull<'T when 'T : not null> = 'T?
+    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T?
 #endif
 
     val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct

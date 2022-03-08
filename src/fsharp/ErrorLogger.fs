@@ -657,7 +657,6 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 let NormalizeErrorString (text : string MaybeNull) =
     let text = nullArgCheck "text" text
-
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()

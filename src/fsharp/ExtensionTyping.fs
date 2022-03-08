@@ -85,9 +85,9 @@ module internal ExtensionTyping =
 
     let StripException (e: exn) =
         match e with
-        |   :? TargetInvocationException as e -> e.InnerException
-        |   :? TypeInitializationException as e -> e.InnerException
-        |   _ -> e
+        | :? TargetInvocationException as e -> e.InnerException
+        | :? TypeInitializationException as e -> e.InnerException
+        | _ -> e
 
     /// Create an instance of a type provider from the implementation type for the type provider in the
     /// design-time assembly by using reflection-invoke on a constructor for the type provider.
@@ -171,7 +171,7 @@ module internal ExtensionTyping =
                             | Null -> ()
                             | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
 
-                      |   None, _ -> 
+                      | None, _ -> 
                           () ]
 
                 with :? TypeProviderError as tpe ->
@@ -209,9 +209,10 @@ module internal ExtensionTyping =
         match TryTypeMember<'T, 'U?>(st, fullName, memberName, m, withNull recover, f) with 
 #endif
         | Tainted.Null -> 
-            errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
+            errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m))
             st.PApplyNoFailure(fun _ -> recover)
-        | Tainted.NonNull r -> r
+        | Tainted.NonNull r ->
+            r
 
     /// Try to access a property or method on a provided member, catching and reporting errors
     let TryMemberMember (mi: Tainted<_>, typeName, memberName, memberMemberName, m, recover, f) = 
@@ -1050,22 +1051,22 @@ module internal ExtensionTyping =
                         let isGenericMethod = TryMemberMember(mi, fullName, memberName, "IsGenericMethod", m, true, fun mi->mi.IsGenericMethod) |> unmarshal
                         if not isPublic || isGenericMethod then
                             errorR(Error(FSComp.SR.etMethodHasRequirements(fullName, memberName), m))   
-                    |   None ->
+                    | None ->
                     match mi.OfType<ProvidedType>() with
-                    |   Some subType -> ValidateAttributesOfProvidedType(m, subType)
-                    |   None ->
+                    | Some subType -> ValidateAttributesOfProvidedType(m, subType)
+                    | None ->
                     match mi.OfType<ProvidedPropertyInfo>() with
                     | Some pi ->
                         // Property must have a getter or setter
                         // TODO: Property must be public etc.
                         let expectRead =
                              match TryMemberMember(pi, fullName, memberName, "GetGetMethod", m, null, fun pi -> pi.GetGetMethod()) with 
-                             |  Tainted.Null -> false 
+                             | Tainted.Null -> false 
                              | _ -> true
                         let expectWrite = 
                             match TryMemberMember(pi, fullName, memberName, "GetSetMethod", m, null, fun pi-> pi.GetSetMethod()) with 
-                            |   Tainted.Null -> false 
-                            |   _ -> true
+                            | Tainted.Null -> false 
+                            | _ -> true
                         let canRead = TryMemberMember(pi, fullName, memberName, "CanRead", m, expectRead, fun pi-> pi.CanRead) |> unmarshal
                         let canWrite = TryMemberMember(pi, fullName, memberName, "CanWrite", m, expectWrite, fun pi-> pi.CanWrite) |> unmarshal
                         match expectRead, canRead with
@@ -1298,7 +1299,7 @@ module internal ExtensionTyping =
                           if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
                               match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
                               | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                              | v -> v
+                              | NonNull v -> v
                           else
                               error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
                     

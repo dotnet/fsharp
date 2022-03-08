@@ -38,16 +38,17 @@ module internal PervasiveAutoOpens =
 
 #if NO_CHECKNULLS
     type MaybeNull<'T when 'T : null> = 'T
-#else
-    type MaybeNull<'T when 'T : not null> = 'T?
-#endif
 
-#if NO_CHECKNULLS
     // Shim to match nullness checking library support in preview
     let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
+
     let inline nonNull<'T when 'T : null> (x: 'T) = x
+
     let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+
     let inline nullArgCheck paramName (x: 'T MaybeNull) = match x with null -> raise (ArgumentNullException(paramName)) | v -> v
+#else
+    type MaybeNull<'T when 'T: not null and 'T: not struct> = 'T?
 #endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
