@@ -2354,7 +2354,9 @@ namespace Microsoft.FSharp.Core
             Convert.ToUInt64(s, 8)
 
         let inline removeUnderscores (s:string) =
-            s.Replace("_", "")
+            match s with
+            | null -> null
+            | s -> s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
@@ -2429,15 +2431,9 @@ namespace Microsoft.FSharp.Core
 
         let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
 
-        let inline ParseDouble (s:string)   =
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
-            Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
+        let inline ParseDouble (s:string)   = Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
 
-        let inline ParseSingle (s:string) =
-            if Object.ReferenceEquals(s,null) then
-                raise( new ArgumentNullException("s") )
-            Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
+        let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericZeroDynamicImplTable<'T>() = 
