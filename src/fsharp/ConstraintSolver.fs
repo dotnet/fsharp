@@ -108,7 +108,7 @@ let NewInferenceType (g: TcGlobals) =
 let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
 
-let NewErrorMeasure () = 
+let NewErrorMeasure () =
     Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 

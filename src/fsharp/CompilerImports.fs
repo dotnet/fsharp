@@ -1151,6 +1151,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | Tainted.NonNull assembly ->
         let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
+
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with
         | ResolvedCcu ccu ->
             if ccu.IsProviderGenerated then
@@ -1308,7 +1309,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | ILScopeRef.Assembly a -> a.Name = nm
             | _ -> false)
 
-    member tcImports.DependencyProvider =
+    member _.DependencyProvider =
         CheckDisposed()
         match dependencyProviderOpt with
         | None ->
@@ -1320,15 +1321,18 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         CheckDisposed()
         let loaderInterface =
             { new AssemblyLoader with
-                 member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
+                 member _.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) =
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
 
-                 member x.TryFindXmlDocumentationInfo assemblyName =
+                 member _.TryFindXmlDocumentationInfo assemblyName =
                     tcImports.TryFindXmlDocumentationInfo(assemblyName)
 
 #if !NO_EXTENSIONTYPING
-                 member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
-                 member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
+                 member _.GetProvidedAssemblyInfo (ctok, m, assembly) =
+                     tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
+
+                 member _.RecordGeneratedTypeRoot root =
+                     tcImports.RecordGeneratedTypeRoot root
 #endif
              }
         ImportMap(tcImports.GetTcGlobals(), loaderInterface)
