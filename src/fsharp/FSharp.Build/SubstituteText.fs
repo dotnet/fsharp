@@ -36,8 +36,7 @@ type SubstituteText () =
 
         member _.Execute() =
             copiedFiles.Clear()
-            if not(isNull embeddedResources) then
-                for item in embeddedResources do
+            for item in embeddedResources do
                     // Update ITaskItem metadata to point to new location
                     let sourcePath = item.GetMetadata("FullPath")
 
