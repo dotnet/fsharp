@@ -105,7 +105,7 @@ let NewInferenceType (g: TcGlobals) =
     let nullness = if g.langFeatureNullness then NewNullnessVar() else KnownAmbivalentToNull
     TType_var (tp, nullness)
     
-let NewErrorType () = 
+let NewErrorType () =
     mkTyparTy (NewErrorTypar ())
 
 let NewErrorMeasure () = 
@@ -1032,7 +1032,7 @@ and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
               | ValueSome destTypar ->
                   AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.DefaultsTo(priority, dty, m))
           
-      | TyparConstraint.NotSupportsNull m2             -> SolveTypeDefnNotSupportsNull           csenv ndeep m2 trace ty
+      | TyparConstraint.NotSupportsNull m2             -> SolveTypeDefnNotSupportsNull        csenv ndeep m2 trace ty
       | TyparConstraint.SupportsNull m2                -> SolveTypeDefnSupportsNull           csenv ndeep m2 trace ty
       | TyparConstraint.IsEnum(underlying, m2)         -> SolveTypeIsEnum                     csenv ndeep m2 trace ty underlying
       | TyparConstraint.SupportsComparison(m2)         -> SolveTypeSupportsComparison         csenv ndeep m2 trace ty
@@ -1307,7 +1307,6 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
 
     | _  -> localAbortD
-
 
 and SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty1 ty2 = 
     SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace None ty1 ty2
@@ -2295,7 +2294,6 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
             trace.Exec (fun () -> tp.SetConstraints newConstraints) (fun () -> tp.SetConstraints orig)
             ()
     }
-
 
 and SolveNullnessSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty nullness = trackErrors {
     let g = csenv.g

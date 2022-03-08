@@ -1757,7 +1757,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                             Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false)))
 
             let tcref = mkLocalTyconRef tycon
-            let _, typ = generalizeTyconRef cenv.g tcref
+            let typ = generalizedTyconRef g tcref
             let tcaug = tcref.TypeContents
 
             tcaug.tcaug_interfaces <-

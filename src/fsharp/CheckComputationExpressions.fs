@@ -214,10 +214,10 @@ let RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv
         with e -> ())
 
 /// Used for all computation expressions except sequence expressions
-let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
+let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
     let overallTy = overallTy.Commit
     
-    //dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
+    let g = cenv.g
     let ad = env.eAccessRights
 
     let mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
@@ -804,13 +804,13 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let varSpaceWithFirstVars = 
                 addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (firstSourcePat, None)
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (firstSourcePat, None)
                         vspecs, envinner)
 
             let varSpaceWithSecondVars = 
                 addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (secondSourcePat, None)
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (secondSourcePat, None)
                         vspecs, envinner)
 
             let varSpaceWithGroupJoinVars = 
@@ -818,7 +818,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 | Some pat3 -> 
                     addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (pat3, None)
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (pat3, None)
                         vspecs, envinner)
                 | None -> varSpace
 
@@ -970,7 +970,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let varSpace = 
                 addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (pat, None) 
+                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (pat, None) 
                     vspecs, envinner)
 
             Some (trans CompExprTranslationPass.Initial q varSpace innerComp
@@ -1190,7 +1190,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     | [NormalizedBinding(_vis, SynBindingKind.Normal, false, false, _, _, _, _, pat, _, _, _)] -> 
                         // successful case
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (pat, None) 
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (pat, None) 
                         vspecs, envinner
                     | _ -> 
                         // error case
@@ -1223,7 +1223,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
             let varSpace = 
                 addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (pat, None) 
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (pat, None) 
                         vspecs, envinner)
 
             let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
@@ -1289,7 +1289,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                 let varSpace = 
                     addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                             use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                            let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (consumePat, None) 
+                            let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (consumePat, None) 
                             vspecs, envinner)
 
                 Some (transBind q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
@@ -1305,7 +1305,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     let varSpace = 
                         addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                 use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (consumePat, None) 
+                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (consumePat, None) 
                                 vspecs, envinner)
 
                     Some (transBind q varSpace mBind (addBindDebugPoint spBind) bindNName sources consumePat innerComp translatedCtxt)
@@ -1363,7 +1363,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
                     let varSpace = 
                         addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                 use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (consumePat, None) 
+                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType g) env tpenv (consumePat, None) 
                                 vspecs, envinner)
 
                     // Build the 'Bind' call
@@ -1787,7 +1787,7 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
         | SynExpr.YieldOrReturn ((_, true), _, _) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
         | _ -> env
 
-    let lambdaExpr, tpenv = TcExpr cenv (MustEqual (mkFunTy cenv.g builderTy overallTy)) env tpenv lambdaExpr
+    let lambdaExpr, tpenv = TcExpr cenv (MustEqual (mkFunTy g builderTy overallTy)) env tpenv lambdaExpr
 
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr = mkApps cenv.g ((lambdaExpr, tyOfExpr cenv.g lambdaExpr), [], [interpExpr], mBuilderVal)
@@ -1796,48 +1796,55 @@ let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, inter
 
 let mkSeqEmpty (cenv: cenv) env m genTy =
     // We must discover the 'zero' of the monadic algebra being generated in order to compile failing matches.
-    let genResultTy = NewInferenceType cenv.g
-    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
-    mkCallSeqEmpty cenv.g m genResultTy 
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
+    UnifyTypes cenv env m genTy (mkSeqTy g genResultTy)
+    mkCallSeqEmpty g m genResultTy 
 
 let mkSeqCollect (cenv: cenv) env m enumElemTy genTy lam enumExpr =
-    let genResultTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let enumExpr = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g enumElemTy) (tyOfExpr cenv.g enumExpr) enumExpr
     mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 
 let mkSeqUsing (cenv: cenv) (env: TcEnv) m resourceTy genTy resourceExpr lam =
+    let g = cenv.g
     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_ty resourceTy
-    let genResultTy = NewInferenceType cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
 
 let mkSeqDelay (cenv: cenv) env m genTy lam =
-    let genResultTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqDelay cenv.g m genResultTy (mkUnitDelayLambda cenv.g m lam) 
 
 let mkSeqAppend (cenv: cenv) env m genTy e1 e2 =
-    let genResultTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let e1 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e1) e1
     let e2 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e2) e2
     mkCallSeqAppend cenv.g m genResultTy e1 e2 
 
 let mkSeqFromFunctions (cenv: cenv) env m genTy e1 e2 =
-    let genResultTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let e2 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e2) e2
     mkCallSeqGenerated cenv.g m genResultTy e1 e2 
 
 let mkSeqFinally (cenv: cenv) env m genTy e1 e2 =
-    let genResultTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genResultTy = NewInferenceType g
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     let e1 = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g genResultTy) (tyOfExpr cenv.g e1) e1
     mkCallSeqFinally cenv.g m genResultTy e1 e2 
 
-let mkSeqExprMatchClauses (pat', vspecs) innerExpr = 
-    [TClause(pat', None, TTarget(vspecs, innerExpr, None), pat'.Range) ] 
+let mkSeqExprMatchClauses (pat, vspecs) innerExpr = 
+    [TClause(pat, None, TTarget(vspecs, innerExpr, None), pat.Range) ] 
 
 let compileSeqExprMatchClauses (cenv: cenv) env inputExprMark (pat: Pattern, vspecs) innerExpr inputExprOpt bindPatTy genInnerTy = 
     let patMark = pat.Range
@@ -1852,7 +1859,8 @@ let compileSeqExprMatchClauses (cenv: cenv) env inputExprMark (pat: Pattern, vsp
 /// Also "ienumerable extraction" is performed on arguments to "for".
 let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m = 
 
-    let genEnumElemTy = NewInferenceType cenv.g
+    let g = cenv.g
+    let genEnumElemTy = NewInferenceType g
     UnifyTypes cenv env m overallTy.Commit (mkSeqTy cenv.g genEnumElemTy)
 
     // Allow subsumption at 'yield' if the element type is nominal prior to the analysis of the body of the sequence expression
@@ -2010,8 +2018,8 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
         // 'use x = expr in expr'
         | SynExpr.LetOrUse (isUse=true; bindings=[SynBinding (kind=SynBindingKind.Normal; headPat=pat; expr=rhsExpr; debugPoint=spBind)]; body=innerComp; range=wholeExprMark) ->
 
-            let bindPatTy = NewInferenceType cenv.g
-            let inputExprTy = NewInferenceType cenv.g
+            let bindPatTy = NewInferenceType g
+            let inputExprTy = NewInferenceType g
             let pat', _, vspecs, envinner, tpenv = TcMatchPattern cenv bindPatTy env tpenv (pat, None)
 
             UnifyTypes cenv env m inputExprTy bindPatTy
@@ -2083,7 +2091,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
 
         | SynExpr.YieldOrReturn ((isYield, _), synYieldExpr, m) -> 
             let env = { env with eIsControlFlow = false }
-            let genResultTy = NewInferenceType cenv.g
+            let genResultTy = NewInferenceType g
 
             if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
 
@@ -2125,7 +2133,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
                 if hasTypeUnit then 
                     Choice2Of2 expr, tpenv
                 else
-                    let genResultTy = NewInferenceType cenv.g
+                    let genResultTy = NewInferenceType g
                     UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
                     let exprTy = tyOfExpr cenv.g expr
                     AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css m  NoTrace genResultTy exprTy
@@ -2163,13 +2171,15 @@ let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (has
     TcSequenceExpression cenv env tpenv comp overallTy m
 
 let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (isArray, comp) m  =
+    let g = cenv.g
+
     // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
     // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
     //
     // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 
-        let genCollElemTy = NewInferenceType cenv.g
+        let genCollElemTy = NewInferenceType g
 
         let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 
@@ -2227,7 +2237,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
 
-      let genCollElemTy = NewInferenceType cenv.g
+      let genCollElemTy = NewInferenceType g
 
       let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 

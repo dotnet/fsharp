@@ -1066,7 +1066,6 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
             
             mkLambdas g m tps [thisv;thatobjv] (equalse, g.bool_ty)  
 
-
           [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr
             mkCompGenBind objEqualsVal.Deref objEqualsExpr   ] 
     if tycon.IsExceptionDecl then mkEquals mkExnEquality 

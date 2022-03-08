@@ -587,8 +587,6 @@ module DispatchSlotChecking =
                     | meth :: _ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (NicePrint.stringOfTy denv  meth.ApparentEnclosingType) meth.LogicalName)), m))
                     | _ -> ()
 
-
-
     /// Get the slots of a type that can or must be implemented. This depends
     /// partly on the full set of interface types that are being implemented
     /// simultaneously, e.g.

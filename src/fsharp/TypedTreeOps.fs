@@ -1133,7 +1133,8 @@ let unionCaseRefOrder =
 // Make some common types
 //---------------------------------------------------------------------------
 
-let mkFunTy (g: TcGlobals) d r = TType_fun (d, r, g.knownWithoutNull)
+let mkFunTy (g: TcGlobals) d r =
+    TType_fun (d, r, g.knownWithoutNull)
 
 let mkForallTy d r = TType_forall (d, r)
 

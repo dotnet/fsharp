@@ -773,7 +773,7 @@ let AddActivePatternResultTagsToNameEnv (apinfo: ActivePatternInfo) nenv apOvera
 /// Generalize a union case, from Cons --> List<T>.Cons
 let GeneralizeUnionCaseRef (ucref: UnionCaseRef) = 
     UnionCaseInfo (generalTyconRefInst ucref.TyconRef, ucref)
-    
+
 /// Add type definitions to the sub-table of the environment indexed by name and arity
 let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
     if tcrefs.Length = 0 then tab else
@@ -4064,7 +4064,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       // e.g. <val-id>.<recdfield-id>.<more>
       (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
-      // e.g. <val-id>.<property-id>.<more> 
+      // e.g. <val-id>.<property-id>.<more>
       let FullTypeOfPinfo (pinfo: PropInfo) = 
           let rty = pinfo.GetPropertyType(amap, m) 
           let rty = 
@@ -4755,7 +4755,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           // e.g. <val-id>.<recdfield-id>.<more>
           for rfinfo in rfinfos do
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
-    
+
           // e.g. <val-id>.<property-id>.<more> 
           let fullTypeOfPinfo (pinfo: PropInfo) = 
               let rty = pinfo.GetPropertyType(amap, m) 
@@ -4765,7 +4765,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
                   else
                       rty 
               rty      
-          
+
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m

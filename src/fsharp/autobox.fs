@@ -36,7 +36,7 @@ let DecideEscapes syntacticArgs body =
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
-let DecideLambda exprF cenv topValInfo expr ety z   = 
+let DecideLambda exprF cenv topValInfo expr ety z = 
     match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
@@ -75,11 +75,12 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF noInterceptF z expr  = 
+    let g = cenv.g
     match stripDebugPoints expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy cenv.g m argvs rty 
-        DecideLambda (Some exprF)  cenv topValInfo expr ty z
+        let ty = mkMultiLambdaTy g m argvs rty 
+        DecideLambda (Some exprF) cenv topValInfo expr ty z
 
     | Expr.TyLambda (_, tps, _, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 

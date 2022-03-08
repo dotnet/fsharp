@@ -383,9 +383,16 @@ let rec CheckTypeDeep (cenv: cenv) (visitTy, visitTyconRefOpt, visitAppTyOpt, vi
         RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
-    | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
-    | TType_tuple (_, tys) -> CheckTypesDeep cenv f g env tys
-    | TType_fun (s, t, _nullness) -> CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+    | TType_ucase (_, tinst) ->
+        CheckTypesDeep cenv f g env tinst
+
+    | TType_tuple (_, tys) ->
+        CheckTypesDeep cenv f g env tys
+
+    | TType_fun (s, t, _nullness) ->
+        CheckTypeDeep cenv f g env true s
+        CheckTypeDeep cenv f g env true t
+
     | TType_var (tp, _nullness) -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 

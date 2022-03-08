@@ -614,22 +614,22 @@ module internal SymbolHelpers =
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.
         protectAssemblyExploration true (fun () -> 
-         match item with 
-         | Item.Types(it, [ty]) -> 
-            match tryTcrefOfAppTy g ty with
-            | ValueSome tcr1 ->
-                 g.suppressed_types 
-                 |> List.exists (fun supp -> 
-                    let generalizedSupp = generalizedTyconRef g supp
-                    // check the display name is precisely the one we're suppressing
-                    match tryTcrefOfAppTy g generalizedSupp with
-                    | ValueSome tcr2 ->
-                        it = supp.DisplayName &&
-                        // check if they are the same logical type (after removing all abbreviations)
-                        tyconRefEq g tcr1 tcr2
+            match item with 
+            | Item.Types(it, [ty]) -> 
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcr1 ->
+                    g.suppressed_types 
+                    |> List.exists (fun supp -> 
+                        let generalizedSupp = generalizedTyconRef g supp
+                        // check the display name is precisely the one we're suppressing
+                        match tryTcrefOfAppTy g generalizedSupp with
+                        | ValueSome tcr2 ->
+                            it = supp.DisplayName &&
+                            // check if they are the same logical type (after removing all abbreviations)
+                            tyconRefEq g tcr1 tcr2
                         | _ -> false) 
                 | _ -> false
-         | _ -> false)
+            | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) =
@@ -774,7 +774,7 @@ module internal SymbolHelpers =
             | Item.Types (_, TType_app (tcref, _, _) :: _)
             | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef g tcref
-                Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
+                ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
 

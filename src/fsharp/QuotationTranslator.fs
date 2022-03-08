@@ -1005,15 +1005,23 @@ and ConvType cenv env m ty =
 
     | TType_fun(a, b, _nullness) -> 
         QP.mkFunTy(ConvType cenv env m a, ConvType cenv env m b)
+
     | TType_tuple(tupInfo, l)  -> 
         ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+
     | TType_anon(anonInfo, tinst) -> 
         let tref = anonInfo.ILTypeRef
         let tinstR = ConvTypes cenv env m tinst
         QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
-    | TType_var(tp, _nullness) -> QP.mkVarTy(ConvTyparRef cenv env m tp)
-    | TType_forall(_spec, _ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(), m))
-    | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(), m))
+
+    | TType_var(tp, _nullness) ->
+        QP.mkVarTy(ConvTyparRef cenv env m tp)
+
+    | TType_forall(_spec, _ty) ->
+        wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(), m))
+
+    | _ ->
+        wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(), m))
 
 and ConvTypes cenv env m tys =
     List.map (ConvType cenv env m) (FilterMeasureTyargs tys)
