@@ -24,7 +24,7 @@ module internal PervasiveAutoOpens =
     val inline isSingleton: l:'a list -> bool
 
     /// Returns true if the argument is non-null.
-    val inline isNotNull: x:'T -> bool when 'a: null
+    val inline isNotNull: x:'T -> bool when 'T: null
 
 #if NO_CHECKNULLS
     /// Indicates that a type may be null. 'MaybeNull<string>' is used internally in the F# compiler as 
