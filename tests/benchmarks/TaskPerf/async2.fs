@@ -33,7 +33,7 @@ type Async2StateMachineData<'T>() =
 and IAsync2Invokable<'T> =
     abstract StartImmediate: CancellationToken -> IAsync2Invocation<'T>
 
-and IAsync2Invocation<'T> =
+and [<AllowNullLiteral>] IAsync2Invocation<'T> =
     inherit IAsyncStateMachine
     //abstract TailcallTarget: IAsync2Invocation<'T> 
     abstract CancellationToken: CancellationToken

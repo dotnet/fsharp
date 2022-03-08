@@ -130,8 +130,8 @@ let ActivePatternElemsOfModuleOrNamespace g (modref: ModuleOrNamespaceRef) : Nam
 /// Detect a use of a nominal type, including type abbreviations.
 ///
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
-let (|AbbrevOrAppTy|_|) (ty: TType) = 
-    match stripTyparEqns ty with 
+let (|AbbrevOrAppTy|_|) (ty: TType) =
+    match stripTyparEqns ty with
     | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 

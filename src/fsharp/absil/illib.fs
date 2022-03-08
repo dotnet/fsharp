@@ -912,7 +912,7 @@ type LazyWithContext<'T, 'ctxt> =
 
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-      mutable funcOrException: obj 
+      mutable funcOrException: obj
 
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }

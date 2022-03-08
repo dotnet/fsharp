@@ -1014,13 +1014,16 @@ let pdbReadOpen (moduleName: string) (path: string) : PdbReader =
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try
 #if ENABLE_MONO_SUPPORT
-        // ISymWrapper.dll is not available as a compile-time dependency for the cross-platform compiler, since it is Windows-only 
-        // Access it via reflection instead.System.Diagnostics.SymbolStore.SymBinder 
-        let isym = System.Reflection.Assembly.Load("ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") 
-        let symbolBinder = isym.CreateInstance("System.Diagnostics.SymbolStore.SymBinder") 
-        let symbolBinderTy = symbolBinder.GetType() 
-        let reader = symbolBinderTy.InvokeMember("GetReader",BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance,  null,symbolBinder,[| box importerPtr; box moduleName; box path |]) 
-        { symReader = reader :?> ISymbolReader } 
+        try
+            // ISymWrapper.dll is not available as a compile-time dependency for the cross-platform compiler, since it is Windows-only 
+            // Access it via reflection instead.System.Diagnostics.SymbolStore.SymBinder 
+            let isym = System.Reflection.Assembly.Load("ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") 
+            let symbolBinder = isym.CreateInstance("System.Diagnostics.SymbolStore.SymBinder") 
+            let symbolBinderTy = symbolBinder.GetType() 
+            let reader = symbolBinderTy.InvokeMember("GetReader",BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance,  null,symbolBinder,[| box importerPtr; box moduleName; box path |]) 
+            { symReader = reader :?> ISymbolReader } 
+        with _ ->
+            { symReader = Unchecked.defaultof<_> }
 #else 
         let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
         { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }

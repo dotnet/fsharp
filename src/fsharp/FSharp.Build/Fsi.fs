@@ -23,19 +23,28 @@ type public Fsi () as this =
 
     let mutable capturedArguments: string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames: string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable defineConstants: ITaskItem[] = [||]
+    let mutable disabledWarnings: string MaybeNull = null
+    let mutable dotnetFsiCompilerPath: string MaybeNull = null
     let mutable fsiExec = false
+    let mutable langVersion: string MaybeNull = null
     let mutable noFramework = false
     let mutable optimize = true
+    let mutable preferredUILang: string MaybeNull = null
     let mutable provideCommandLineArgs = false
+    let mutable otherFlags: string MaybeNull = null
     let mutable references: ITaskItem[] = [||]
+    let mutable referencePath: string MaybeNull = null
     let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
     let mutable sources: ITaskItem[] = [||]
     let mutable loadSources: ITaskItem[] = [||]
     let mutable useSources: ITaskItem[] = [||]
     let mutable tailcalls: bool = true
+    let mutable targetProfile: string MaybeNull = null
+    let mutable targetType: string MaybeNull = null
     let mutable toolExe: string = "fsi.exe"
     let mutable toolPath: string =
         let locationOfThisDll =
@@ -45,21 +54,11 @@ type public Fsi () as this =
         | Some s -> s
         | None -> ""
     let mutable treatWarningsAsErrors: bool = false
-    let mutable utf8output: bool = false
-
-    let mutable codePage: string MaybeNull = null
-    let mutable disabledWarnings: string MaybeNull = null
-    let mutable dotnetFsiCompilerPath: string MaybeNull = null
-    let mutable otherFlags: string MaybeNull = null
-    let mutable langVersion: string MaybeNull = null
-    let mutable preferredUILang: string MaybeNull = null
-    let mutable targetProfile: string MaybeNull = null
-    let mutable targetType: string MaybeNull = null
-    let mutable referencePath: string MaybeNull = null
     let mutable warningsAsErrors: string MaybeNull = null
     let mutable warningsNotAsErrors: string MaybeNull = null
     let mutable warningLevel: string MaybeNull = null
     let mutable vslcid: string MaybeNull = null
+    let mutable utf8output: bool = false
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true

@@ -2,7 +2,6 @@
 
 module FSharp.Compiler.ErrorLogger
 
-open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range

@@ -771,7 +771,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo MaybeNull =
+let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo MaybeNull =
     if (parentTI.IsGenericType &&
         not (equalTypes parentTI (getTypeConstructor parentTI)))
     then TypeBuilder.GetMethod(parentTI, methInfo )
@@ -813,10 +813,7 @@ let convMethodSpec cenv emEnv (mspec: ILMethodSpec) =
             methInfo
     methInfo
 
-//----------------------------------------------------------------------------
-// - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
-//----------------------------------------------------------------------------
-
+/// Get a constructor on a non-TypeBuilder type
 let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) : ConstructorInfo =
     let tyargTs  = getGenericArgumentsOfType parentT
     let reqArgTs  =
@@ -1236,15 +1233,15 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog(aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog(aty, "Set", CallingConventions.HasThis, null, Array.append (Array.create shape.Rank typeof<int>) (Array.ofList [ ety ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
         if (shape = ILArrayShape.SingleDimensional)
         then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv  (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
+            let aty = convType cenv emEnv (ILType.Array(shape, ty))
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", CallingConventions.HasThis, null, Array.create shape.Rank typeof<int>)
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen

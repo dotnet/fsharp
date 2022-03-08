@@ -2327,7 +2327,7 @@ namespace Microsoft.FSharp.Core
         // and only request AllowLeadingSign.
 
         let isOXB c = 
-            let c = System.Char.ToLowerInvariant c
+            let c = Char.ToLowerInvariant c
             charEq c 'x' || charEq c 'o' || charEq c 'b'
 
         let is0OXB (s:string) p l = 
@@ -2335,7 +2335,7 @@ namespace Microsoft.FSharp.Core
 
         let get0OXB (s:string) (p:byref<int>)  l = 
             if is0OXB s p l
-            then let r = System.Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
+            then let r = Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
             else 'd' 
 
         let getSign32 (s:string) (p:byref<int>) l = 
@@ -2358,8 +2358,8 @@ namespace Microsoft.FSharp.Core
             s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2375,8 +2375,8 @@ namespace Microsoft.FSharp.Core
         let inline int64OfUInt64 (x:uint64) = (# "" x  : int64 #)
 
         let ParseInt32 (s:string) = 
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2390,8 +2390,8 @@ namespace Microsoft.FSharp.Core
             | _ -> Int32.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseInt64 (s:string) = 
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2405,8 +2405,8 @@ namespace Microsoft.FSharp.Core
             | _ -> Int64.Parse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture)
 
         let ParseUInt64     (s:string) : uint64 = 
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             let s = removeUnderscores (s.Trim())
             let l = s.Length 
             let mutable p = 0 
@@ -2431,13 +2431,13 @@ namespace Microsoft.FSharp.Core
         let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
 
         let inline ParseDouble (s:string)   =
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
 
         let inline ParseSingle (s:string) =
-            if System.Object.ReferenceEquals(s,null) then
-                raise( new System.ArgumentNullException("s") )
+            if Object.ReferenceEquals(s,null) then
+                raise( new ArgumentNullException("s") )
             Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
@@ -2534,7 +2534,7 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '+'
             when ^T : ^T = (^T : (static member One : ^T) ())
 
-        type System.Type with
+        type Type with
     
             member inline this.GetSingleStaticMethodByTypes(name: string, parameterTypes: Type[]) =
                let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
@@ -3050,7 +3050,7 @@ namespace Microsoft.FSharp.Core
                 elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : char #) 
                 elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : char #) 
                 elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : char #) 
-                elif typeeq<'T, string> then convPrim<_,'U> (System.Char.Parse (convPrim<_,string> value)) 
+                elif typeeq<'T, string> then convPrim<_,'U> (Char.Parse (convPrim<_,string> value)) 
                 else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
             elif typeeq<'U, decimal> then 
                 if typeeq<'T, sbyte> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,sbyte> value))
@@ -3399,22 +3399,22 @@ namespace Microsoft.FSharp.Core
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(converter : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member op_Implicit(converter : Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
+        static member op_Implicit(func : ('T -> 'Res) ) =  new Func<'T,'Res>(func)
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member op_Implicit(f : Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
+        static member op_Implicit (func : ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
 
-        static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member FromConverter (converter: Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
-        static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
+        static member ToConverter (func: ('T -> 'Res) ) =  new Converter<'T,'Res>(func)
 
         static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
 
@@ -3434,31 +3434,31 @@ namespace Microsoft.FSharp.Core
 
         // Note: this is not made public in the signature, because of conflicts with the Converter overload.
         // The method remains in case someone is calling it via reflection.
-        static member  inline ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
+        static member  inline ToFSharpFunc (converter: Func<_, _>) = (fun t -> converter.Invoke(t))
 
-        static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+        static member  inline FromFunc (func: Func<_>) = (fun () -> func.Invoke())
 
-        static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+        static member  inline FromFunc (func: Func<_, _>) = (fun t -> func.Invoke(t))
 
-        static member  inline FromFunc (func: System.Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
+        static member  inline FromFunc (func: Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
 
-        static member  inline FromFunc (func: System.Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
+        static member  inline FromFunc (func: Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
 
-        static member  inline FromFunc (func: System.Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
+        static member  inline FromFunc (func: Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromFunc (func: System.Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
+        static member  inline FromFunc (func: Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
 
-        static member  inline FromAction (action: System.Action) = (fun () -> action.Invoke())
+        static member  inline FromAction (action: Action) = (fun () -> action.Invoke())
 
-        static member  inline FromAction (action: System.Action<_>) = (fun t -> action.Invoke(t))
+        static member  inline FromAction (action: Action<_>) = (fun t -> action.Invoke(t))
 
-        static member  inline FromAction (action: System.Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+        static member  inline FromAction (action: Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
 
-        static member  inline FromAction (action: System.Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+        static member  inline FromAction (action: Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
 
-        static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+        static member  inline FromAction (action: Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
 
-        static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
+        static member  inline FromAction (action: Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
 
         static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
 
@@ -3500,7 +3500,7 @@ namespace Microsoft.FSharp.Core
         | Some : Value:'T -> 'T option 
 
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
-        member x.Value = match x with Some x -> x | None -> raise (new System.InvalidOperationException("Option.Value"))
+        member x.Value = match x with Some x -> x | None -> raise (new InvalidOperationException("Option.Value"))
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member x.IsNone = match x with None -> true | _ -> false
@@ -3541,7 +3541,7 @@ namespace Microsoft.FSharp.Core
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
 
-        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new InvalidOperationException("ValueOption.Value"))
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member None : 'T voption = ValueNone
@@ -3640,9 +3640,9 @@ namespace Microsoft.FSharp.Collections
 
     module PrivateListHelpers = 
 
-        let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
-        let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
-        let outOfRange() = raise (System.IndexOutOfRangeException(SR.GetString(SR.indexOutOfBounds)))
+        let notStarted() = raise (new InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
+        let alreadyFinished() = raise (new InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+        let outOfRange() = raise (IndexOutOfRangeException(SR.GetString(SR.indexOutOfBounds)))
 
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
@@ -3692,7 +3692,7 @@ namespace Microsoft.FSharp.Collections
                       started <- false; 
                       curr <- s
 
-             interface System.IDisposable with 
+             interface IDisposable with 
                   member x.Dispose() = () 
 
         let mkListEnumerator s = (new ListEnumerator<'T>(s) :> IEnumerator<'T>)
@@ -3701,9 +3701,9 @@ namespace Microsoft.FSharp.Collections
 
         let rec nth l n = 
             match l with 
-            | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
+            | [] -> raise (new ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
             | h :: t -> 
-               if n < 0 then raise (new System.ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
+               if n < 0 then raise (new ArgumentException((SR.GetString(SR.inputMustBeNonNegative)),"n"))
                elif n = 0 then h
                else nth t (n - 1)
 
@@ -3743,11 +3743,11 @@ namespace Microsoft.FSharp.Collections
            let n = l.Length
            let txt = 
                if n > 1000 then "Length > 1000"
-               else System.String.Concat( [| "Length = "; n.ToString() |])
+               else String.Concat( [| "Length = "; n.ToString() |])
            txt
 
-        member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
-        member l.Tail   = match l with _ :: b -> b | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
+        member l.Head   = match l with a :: _ -> a | [] -> raise (InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
+        member l.Tail   = match l with _ :: b -> b | [] -> raise (InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
 
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member l.IsEmpty  = match l with [] -> true | _ -> false
@@ -3851,7 +3851,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNull")>]
         let inline nonNull (value : 'T? when 'T : not struct and 'T : not null) = 
             match box value with 
-            | null -> raise (System.NullReferenceException()) 
+            | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
 
         [<CompiledName("NonNullV")>]
@@ -3859,7 +3859,7 @@ namespace Microsoft.FSharp.Core
             if value.HasValue then 
                 value.Value
             else 
-                raise (System.NullReferenceException())
+                raise (NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
         let inline (|Null|NonNull|) (value : 'T? when 'T : not null) = 
@@ -3875,13 +3875,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NonNullQuickPattern")>]
         let inline (|NonNullQuick|) (value : 'T? when 'T : not null) =
             match box value with 
-            | null -> raise (System.NullReferenceException()) 
+            | null -> raise (NullReferenceException()) 
             | _ -> (# "" value : 'T #)
 
         [<CompiledName("NonNullQuickValuePattern")>]
         let inline (|NonNullQuickV|) (value : Nullable<'T>) =
             if value.HasValue then value.Value
-            else raise (System.NullReferenceException()) 
+            else raise (NullReferenceException()) 
 
         [<CompiledName("WithNull")>]
         let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)
@@ -3896,10 +3896,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) = (# "throw" exn : 'T #)
 
-        let Failure message = new System.Exception(message)
+        let Failure message = new Exception(message)
         
         [<CompiledName("FailurePattern")>]
-        let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
+        let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<Exception>) then Some error.Message else None
 
         let inline (<) x y = GenericLessThan x y
         let inline (>) x y = GenericGreaterThan x y
@@ -3923,32 +3923,32 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("InvalidArg")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline invalidArg (argumentName:string) (message:string) = 
-            raise (new System.ArgumentException(message,argumentName))
+            raise (new ArgumentException(message,argumentName))
 
         [<CompiledName("NullArg")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline nullArg (argumentName:string) = 
-            raise (new System.ArgumentNullException(argumentName))        
+            raise (new ArgumentNullException(argumentName))        
 
 #if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         [<CompiledName("NullArgCheck")>]
         let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : not null) = 
             match value with 
-            | null -> raise (new System.ArgumentNullException(argumentName))        
+            | null -> raise (new ArgumentNullException(argumentName))        
             | _ ->  (# "" value : 'T #)
 #endif
 
         [<CompiledName("InvalidOp")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline invalidOp message = raise (System.InvalidOperationException(message))
+        let inline invalidOp message = raise (InvalidOperationException(message))
 
         [<CompiledName("Rethrow")>]
         [<NoDynamicInvocation>]
-        let inline rethrow() = unbox(# "rethrow ldnull" : System.Object #)
+        let inline rethrow() = unbox(# "rethrow ldnull" : Object #)
 
         [<CompiledName("Reraise")>]
         [<NoDynamicInvocation>]
-        let inline reraise() = unbox(# "rethrow ldnull" : System.Object #)
+        let inline reraise() = unbox(# "rethrow ldnull" : Object #)
 
         [<CompiledName("Fst")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
@@ -3985,7 +3985,7 @@ namespace Microsoft.FSharp.Core
 
         let inline (<<) func2 func1 x = func2 (func1 x)
 
-        let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
+        let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
         let inline defaultArg arg defaultValue = 
@@ -4019,7 +4019,7 @@ namespace Microsoft.FSharp.Core
              when ^T : int16     = (# "neg" n  : int16 #)
              when ^T : nativeint = (# "neg" n  : nativeint #)
              when ^T : sbyte     = (# "neg" n  : sbyte #)
-             when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" n : decimal #))) : ^T #)
+             when ^T : decimal   = (# "" (Decimal.op_UnaryNegation((# "" n : decimal #))) : ^T #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              // That is, not in the generic implementation of '*'
@@ -4040,8 +4040,8 @@ namespace Microsoft.FSharp.Core
              when ^T : char        and ^U : char       = (# "conv.u2" (# "add" x y : uint32 #) : char #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "add" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "add" x y : uint32 #) : byte #)
-             when ^T : string      and ^U : string     = (# "" (System.String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
-             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : string      and ^U : string     = (# "" (String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
+             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
@@ -4061,7 +4061,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "sub" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "sub" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "sub" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
@@ -4080,7 +4080,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
@@ -4100,7 +4100,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "div.un" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "div" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "div.un" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (/) : ^T * ^U -> ^V) (x,y))
@@ -4120,7 +4120,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "rem.un" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "rem"    x y : int32  #) : sbyte  #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
-             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (%) : ^T * ^U -> ^V) (x,y))
@@ -4270,7 +4270,7 @@ namespace Microsoft.FSharp.Core
         let decr cell = cell.contents <- cell.contents - 1
 
         [<CompiledName("Exit")>]
-        let exit (exitcode:int) = System.Environment.Exit(exitcode); failwith "System.Environment.Exit did not exit!"
+        let exit (exitcode:int) = Environment.Exit(exitcode); failwith "System.Environment.Exit did not exit!"
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToByte")>]
@@ -4417,16 +4417,16 @@ namespace Microsoft.FSharp.Core
         let (|KeyValue|) (keyValuePair : KeyValuePair<'T,'U>) = (keyValuePair.Key, keyValuePair.Value)
 
         [<CompiledName("Infinity")>]
-        let infinity = System.Double.PositiveInfinity
+        let infinity = Double.PositiveInfinity
 
         [<CompiledName("NaN")>]
-        let nan = System.Double.NaN 
+        let nan = Double.NaN 
 
         [<CompiledName("InfinitySingle")>]
-        let infinityf = System.Single.PositiveInfinity
+        let infinityf = Single.PositiveInfinity
 
         [<CompiledName("NaNSingle")>]
-        let nanf = System.Single.NaN 
+        let nanf = Single.NaN 
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt64")>]
@@ -4522,19 +4522,19 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToDecimal")>]
         let inline decimal (value: ^T) = 
              ExplicitDynamic<(^T), decimal> value
-             when ^T : string     = (System.Decimal.Parse(castToString value,NumberStyles.Float,CultureInfo.InvariantCulture))
-             when ^T : float      = (System.Convert.ToDecimal((# "" value : float #))) 
-             when ^T : float32    = (System.Convert.ToDecimal((# "" value : float32 #))) 
-             when ^T : int64      = (System.Convert.ToDecimal((# "" value : int64 #))) 
-             when ^T : int32      = (System.Convert.ToDecimal((# "" value : int32 #))) 
-             when ^T : int16      = (System.Convert.ToDecimal((# "" value : int16 #))) 
-             when ^T : nativeint  = (System.Convert.ToDecimal(int64 (# "" value : nativeint #))) 
-             when ^T : sbyte      = (System.Convert.ToDecimal((# "" value : sbyte #))) 
-             when ^T : uint64     = (System.Convert.ToDecimal((# "" value : uint64 #))) 
-             when ^T : uint32     = (System.Convert.ToDecimal((# "" value : uint32 #))) 
-             when ^T : uint16     = (System.Convert.ToDecimal((# "" value : uint16 #))) 
-             when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
-             when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
+             when ^T : string     = (Decimal.Parse(castToString value,NumberStyles.Float,CultureInfo.InvariantCulture))
+             when ^T : float      = (Convert.ToDecimal((# "" value : float #))) 
+             when ^T : float32    = (Convert.ToDecimal((# "" value : float32 #))) 
+             when ^T : int64      = (Convert.ToDecimal((# "" value : int64 #))) 
+             when ^T : int32      = (Convert.ToDecimal((# "" value : int32 #))) 
+             when ^T : int16      = (Convert.ToDecimal((# "" value : int16 #))) 
+             when ^T : nativeint  = (Convert.ToDecimal(int64 (# "" value : nativeint #))) 
+             when ^T : sbyte      = (Convert.ToDecimal((# "" value : sbyte #))) 
+             when ^T : uint64     = (Convert.ToDecimal((# "" value : uint64 #))) 
+             when ^T : uint32     = (Convert.ToDecimal((# "" value : uint32 #))) 
+             when ^T : uint16     = (Convert.ToDecimal((# "" value : uint16 #))) 
+             when ^T : unativeint = (Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
+             when ^T : byte       = (Convert.ToDecimal((# "" value : byte #))) 
              when ^T : decimal    = (# "" value : decimal #)
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> decimal) (value))
 
@@ -4647,7 +4647,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToChar")>]
         let inline char (value: ^T) = 
              ExplicitDynamic<(^T), char> value
-             when ^T : string     = (System.Char.Parse(castToString value))
+             when ^T : string     = (Char.Parse(castToString value))
              when ^T : float      = (# "conv.u2" value  : char #)
              when ^T : float32    = (# "conv.u2" value  : char #)
              when ^T : int64      = (# "conv.u2" value  : char #)
@@ -4681,8 +4681,8 @@ namespace Microsoft.FSharp.Core
                 when ^T : float  = (# "clt" x y : bool #) 
                 when ^T : float32= (# "clt" x y : bool #) 
                 when ^T : char   = (# "clt" x y : bool #)
-                when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when ^T : decimal     = Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "clt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 when ^T : ^T = ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than with static optimizations for some well-known cases.
@@ -4702,8 +4702,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = (# "cgt" x y : bool #) 
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
-                when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "cgt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 when ^T : ^T = ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
@@ -4723,8 +4723,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "cgt.un" x y : bool #) 
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not (# "cgt" x y : bool #)
-                when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "cgt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 when ^T : ^T = ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
@@ -4744,8 +4744,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "clt.un" x y : bool #) 
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
-                when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "clt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 when ^T : ^T = ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
@@ -4785,8 +4785,8 @@ namespace Microsoft.FSharp.Core
                 when ^T : char    = not (# "ceq" x y : bool #)
                 when ^T : nativeint  = not (# "ceq" x y : bool #)
                 when ^T : unativeint  = not (# "ceq" x y : bool #)
-                when ^T : string  = not (System.String.Equals((# "" x : string #),(# "" y : string #)))
-                when ^T : decimal     = System.Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string  = not (String.Equals((# "" x : string #),(# "" y : string #)))
+                when ^T : decimal     = Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : ^T = (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
 
             // static comparison (ER mode) with static optimizations for some well-known cases
@@ -4816,22 +4816,22 @@ namespace Microsoft.FSharp.Core
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
                  when ^T : string = 
-                     // NOTE: we don't have to null check here because System.String.CompareOrdinal
+                     // NOTE: we don't have to null check here because String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
-                 when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
+                     String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
+                 when ^T : decimal     = Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
             let inline max (e1: ^T) (e2: ^T) = 
                 (if e1 < e2 then e2 else e1)
-                when ^T : float         = (System.Math.Max : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
-                when ^T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
+                when ^T : float         = (Math.Max : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+                when ^T : float32       = (Math.Max : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
             [<CompiledName("Min")>]
             let inline min (e1: ^T) (e2: ^T) = 
                 (if e1 < e2 then e1 else e2)
-                when ^T : float         = (System.Math.Min : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
-                when ^T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
+                when ^T : float         = (Math.Min : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+                when ^T : float32       = (Math.Min : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
             [<CompiledName("Hash")>]
             let inline hash (value:'T) = 

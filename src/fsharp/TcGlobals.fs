@@ -977,14 +977,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   override x.ToString() = "<TcGlobals>"
 
-  member __.ilg=ilg
+  member _.ilg=ilg
 
   /// A table of all intrinsics that the compiler cares about
-  member __.knownIntrinsics                = v_knownIntrinsics
+  member _.knownIntrinsics                = v_knownIntrinsics
 
-  member __.checkNullness = checkNullness
+  member _.checkNullness = checkNullness
 
-  member __.langFeatureNullness = v_langFeatureNullness
+  member _.langFeatureNullness = v_langFeatureNullness
 
   member g.knownWithoutNull = v_knownWithoutNull
 
@@ -1447,26 +1447,26 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val invalid_op_vref            = ValRefForIntrinsic v_invalid_op_info
   member val failwithf_vref             = ValRefForIntrinsic v_failwithf_info
 
-  member __.equals_operator_info        = v_equals_operator_info
-  member __.not_equals_operator         = v_not_equals_operator_info
-  member __.less_than_operator          = v_less_than_operator_info
-  member __.less_than_or_equals_operator = v_less_than_or_equals_operator_info
-  member __.greater_than_operator       = v_greater_than_operator_info
-  member __.greater_than_or_equals_operator = v_greater_than_or_equals_operator_info
+  member _.equals_operator_info        = v_equals_operator_info
+  member _.not_equals_operator         = v_not_equals_operator_info
+  member _.less_than_operator          = v_less_than_operator_info
+  member _.less_than_or_equals_operator = v_less_than_or_equals_operator_info
+  member _.greater_than_operator       = v_greater_than_operator_info
+  member _.greater_than_or_equals_operator = v_greater_than_or_equals_operator_info
 
-  member __.hash_info                  = v_hash_info
-  member __.box_info                   = v_box_info
-  member __.isnull_info                = v_isnull_info
-  member __.raise_info                 = v_raise_info
-  member __.failwith_info              = v_failwith_info
-  member __.invalid_arg_info           = v_invalid_arg_info
-  member __.null_arg_info              = v_null_arg_info
-  member __.invalid_op_info            = v_invalid_op_info
-  member __.failwithf_info             = v_failwithf_info
-  member __.reraise_info               = v_reraise_info
-  member __.methodhandleof_info        = v_methodhandleof_info
-  member __.typeof_info                = v_typeof_info
-  member __.typedefof_info             = v_typedefof_info
+  member _.hash_info                  = v_hash_info
+  member _.box_info                   = v_box_info
+  member _.isnull_info                = v_isnull_info
+  member _.raise_info                 = v_raise_info
+  member _.failwith_info              = v_failwith_info
+  member _.invalid_arg_info           = v_invalid_arg_info
+  member _.null_arg_info              = v_null_arg_info
+  member _.invalid_op_info            = v_invalid_op_info
+  member _.failwithf_info             = v_failwithf_info
+  member _.reraise_info               = v_reraise_info
+  member _.methodhandleof_info        = v_methodhandleof_info
+  member _.typeof_info                = v_typeof_info
+  member _.typedefof_info             = v_typedefof_info
 
   member val reraise_vref               = ValRefForIntrinsic v_reraise_info
   member val methodhandleof_vref        = ValRefForIntrinsic v_methodhandleof_info

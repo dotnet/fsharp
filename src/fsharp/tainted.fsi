@@ -101,7 +101,11 @@ type internal Tainted<'T> =
 module internal Tainted =
 
     /// Test whether the tainted value is null
-    val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>>
+#if NO_CHECKNULLS
+    val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T : null and 'T : not struct
+#else
+    val (|Null|NonNull|) : Tainted<'T MaybeNull> -> Choice<unit, Tainted<'T>> when 'T : not null
+#endif
 
     /// Test whether the tainted value equals given value. 
     /// Failure in call to equality operation will be blamed on type provider of first operand

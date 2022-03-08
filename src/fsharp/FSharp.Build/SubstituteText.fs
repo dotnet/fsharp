@@ -10,11 +10,11 @@ open Microsoft.Build.Utilities
 
 type SubstituteText () =
 
-    let mutable _buildEngine : IBuildEngine MaybeNull = null
-    let mutable _hostObject : ITaskHost MaybeNull = null
-    let mutable embeddedResources : ITaskItem[] MaybeNull = [||]
+    let mutable _buildEngine: IBuildEngine MaybeNull = null
+    let mutable _hostObject: ITaskHost MaybeNull = null
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
+    let mutable embeddedResources: ITaskItem[] = [||]
 
     [<Required>]
     member this.EmbeddedResources

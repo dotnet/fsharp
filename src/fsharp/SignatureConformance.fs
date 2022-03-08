@@ -220,7 +220,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 else
 
                 let aNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef g (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef g (mkLocalTyconRef sigTycon))
+                let fNull2 = TypeNullIsExtraValueOld g m (generalizedTyconRef g (mkLocalTyconRef implTycon)) // TODO: should be sigTycon, raises extra errors
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName), m))
                     false

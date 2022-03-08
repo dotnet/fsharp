@@ -4092,7 +4092,7 @@ type TType =
     /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of TyconRef * typeInstantiation: TypeInst * nullness: Nullness
+    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst * nullness: Nullness
 
     /// TType_anon
     ///
@@ -4117,11 +4117,10 @@ type TType =
     | TType_ucase of unionCaseRef: UnionCaseRef * typeInstantiation: TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of Typar * nullness: Nullness
+    | TType_var of typar: Typar * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
-
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561

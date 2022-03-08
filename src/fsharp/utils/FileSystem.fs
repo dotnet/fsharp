@@ -378,13 +378,6 @@ module MemoryMappedFileExtensions =
                     stream.Position <- stream.Position + length
                 )
 
-#if NO_CHECKNULLS
-[<AutoOpen>]
-module internal FileSystemHelpers =
-    // Shim to match nullness checking library support in preview
-    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
-#endif
-
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =

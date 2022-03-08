@@ -2,19 +2,13 @@
 
 namespace FSharp.Build
 
-open System.Collections
 open System.IO
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResourceText() =
-#if NO_CHECKNULLS
-    let mutable _buildEngine : IBuildEngine = null
-    let mutable _hostObject : ITaskHost = null
-#else
-    let mutable _buildEngine : IBuildEngine? = null
-    let mutable _hostObject : ITaskHost? = null
-#endif
+    let mutable _buildEngine : IBuildEngine MaybeNull = null
+    let mutable _hostObject : ITaskHost MaybeNull = null
     let mutable _embeddedText : ITaskItem[] = [||]
     let mutable _generatedSource : ITaskItem[] = [||]
     let mutable _generatedResx : ITaskItem[] = [||]

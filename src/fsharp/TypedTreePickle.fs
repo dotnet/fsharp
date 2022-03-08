@@ -1668,7 +1668,7 @@ let p_tyar_constraint x st =
     | TyparConstraint.MayResolveMember(traitInfo, _) -> p_byte 1 st; p_trait traitInfo st
     | TyparConstraint.DefaultsTo(_, rty, _)           -> p_byte 2 st; p_ty rty st
     | TyparConstraint.SupportsNull _                -> p_byte 3 st
-    | TyparConstraint.IsNonNullableStruct _         -> p_byte 4 st 
+    | TyparConstraint.IsNonNullableStruct _         -> p_byte 4 st
     | TyparConstraint.IsReferenceType _             -> p_byte 5 st
     | TyparConstraint.RequiresDefaultConstructor _  -> p_byte 6 st
     | TyparConstraint.SimpleChoice(tys, _)           -> p_byte 7 st; p_tys tys st

@@ -2549,16 +2549,15 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                     elif g.checkNullness && not (TypeHasDefaultValueNew g m ty) then 
                         // Under F# 5.0 rules with checkNullness we can now give a warning for this case 
                         warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValueNulls(), m))
-        else
-            // These are the F# 4.5 rules, mistakenly only applied to structs
-            if tycon.IsStructOrEnumTycon then 
-                for f in tycon.AllInstanceFieldsAsList do
-                    let m = f.Range
-                    // Check if it's marked unsafe 
-                    let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
-                    if zeroInitUnsafe = Some true then
-                        if not (TypeHasDefaultValueOld g m ty) then 
-                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+        // These are the F# 4.5 rules, mistakenly only applied to structs
+        elif tycon.IsStructOrEnumTycon then 
+            for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
+                // Check if it's marked unsafe 
+                let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
+                if zeroInitUnsafe = Some true then
+                    if not (TypeHasDefaultValueOld g m ty) then 
+                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations
         match tycon.TypeAbbrev with                          

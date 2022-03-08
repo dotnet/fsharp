@@ -818,7 +818,6 @@ and ConvLValueArgs cenv env args =
 and ConvLValueExpr cenv env (expr: Expr) =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
 
-// This function has to undo the work of mkExprAddrOfExpr 
 // This function has to undo the work of mkExprAddrOfExpr
 and ConvLValueExprCore cenv env expr =
     match expr with
@@ -990,8 +989,8 @@ and FilterMeasureTyargs tys =
 
 and ConvType cenv env m ty =
     let g = cenv.g
-    match stripTyEqnsAndMeasureEqns g ty with 
-    | TType_app(tcref, [tyarg],_) when isArrayTyconRef g tcref -> 
+    match stripTyEqnsAndMeasureEqns g ty with
+    | TType_app(tcref, [tyarg],_) when isArrayTyconRef g tcref ->
         QP.mkArrayTy(rankOfArrayTyconRef g tcref, ConvType cenv env m tyarg)
 
     | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
@@ -1096,7 +1095,7 @@ and ConvDecisionTree cenv env tgs typR x =
                           let eR = ConvExpr cenv env e
                           // note: reverse the branches - a null test is a failure of an isinst test
                           QP.mkCond (QP.mkTypeTest (tyR, eR), acc, ConvDecisionTree cenv env tgs typR dtree)
-                      | _ -> 
+                      | _ ->
                           let ty = tyOfExpr cenv.g e1
                           let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
                           // no need to generate witnesses for generated equality operation calls, see https://github.com/dotnet/fsharp/issues/10389 
@@ -1182,7 +1181,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
             | _ -> tr.Scope.QualifiedName
 
         QP.Named(tr.BasicQualifiedName, assemblyRef)
-  
+
 and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tcref m, [])
 
 and ConvILType cenv env m ty =

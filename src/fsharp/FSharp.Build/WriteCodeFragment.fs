@@ -13,12 +13,12 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type WriteCodeFragment() =
-    let mutable _buildEngine : IBuildEngine MaybeNull = null
-    let mutable _hostObject : ITaskHost MaybeNull = null
-    let mutable _outputDirectory : ITaskItem MaybeNull = null
-    let mutable _outputFile : ITaskItem MaybeNull = null
-    let mutable _language : string = ""
-    let mutable _assemblyAttributes : ITaskItem[] = [||]
+    let mutable _buildEngine: IBuildEngine MaybeNull = null
+    let mutable _hostObject: ITaskHost MaybeNull = null
+    let mutable _outputDirectory: ITaskItem MaybeNull = null
+    let mutable _outputFile: ITaskItem MaybeNull = null
+    let mutable _language: string = ""
+    let mutable _assemblyAttributes: ITaskItem[] = [||]
 
     static let escapeString (str:string) =
         let sb = str.ToCharArray() |> Seq.fold (fun (sb:StringBuilder) (c:char) ->
@@ -45,10 +45,11 @@ type WriteCodeFragment() =
                 |> Seq.toList
                 |> List.map (fun entry ->
                     let key = entry.Key :?> string
-                    let value = match entry.Value with
-                                | null -> "null"
-                                | :? string as value -> escapeString value
-                                | value -> value.ToString()
+                    let value =
+                        match entry.Value with
+                        | null -> "null"
+                        | :? string as value -> escapeString value
+                        | value -> value.ToString()
                     (key, value))
             let orderedParameters, namedParameters = parameterPairs |> List.partition (fun (key, _) -> key.StartsWith("_Parameter"))
             let orderedParametersWithIndex =

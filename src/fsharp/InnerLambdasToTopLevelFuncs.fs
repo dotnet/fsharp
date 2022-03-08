@@ -1047,7 +1047,7 @@ module Pass4_RewriteAssembly =
             let fHat_body = mkLetsFromBindings m shortRecBinds  fHat_body  // bind "f" if have short recursive calls (somewhere)
 
             // fHat binding, f rebinding
-            let fHatBind = mkMultiLambdaBind g fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body,rty)
+            let fHatBind = mkMultiLambdaBind g fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body, rty)
             fHatBind
 
         let rebinds = binds |> List.map fRebinding

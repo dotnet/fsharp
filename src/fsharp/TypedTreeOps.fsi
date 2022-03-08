@@ -72,10 +72,6 @@ val valsOfBinds: Bindings -> Vals
 /// Look for a use of an F# value, possibly including application of a generic thing to a set of type arguments
 val (|ExprValWithPossibleTypeInst|_|): Expr -> (ValRef * ValUseFlag * TType list * range) option
 
-//-------------------------------------------------------------------------
-// Build decision trees imperatively
-//------------------------------------------------------------------------- 
-
 /// Build decision trees imperatively
 type MatchBuilder =
 
