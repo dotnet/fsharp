@@ -9,6 +9,7 @@
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags> <!-- note checknulls is not yet enabled for this assembly -->
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <CheckNulls>true</CheckNulls>
   </PropertyGroup>
 
   <ItemGroup>

@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.Interactive
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
-    let loadPackage (guidString: string) : Lazy<Package?> =
+    let loadPackage (guidString: string) : Lazy<Package MaybeNull> =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
         let packageToBeLoadedGuid = ref (Guid(guidString))       
@@ -39,13 +39,13 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
     interface IOleCommandTarget with
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
             if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection
                 VSConstants.S_OK
             elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine
                 VSConstants.S_OK
             elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection null null
+                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)

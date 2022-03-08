@@ -25,12 +25,10 @@ let condition s =
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-#if NO_CHECKNULLS
-let dispose (x: IDisposable) =
-#else
-let dispose (x: IDisposable?) = 
-#endif
-    match x with null -> () | NonNullQuick x -> x.Dispose()
+let dispose (x: IDisposable MaybeNull) = 
+    match x with
+    | Null -> ()
+    | NonNull x -> x.Dispose()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -364,17 +362,10 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 // with care.
 //----------------------------------------------------------------------------
 
-//#if BUILDING_WITH_LKG
 type NonNullSlot<'T when 'T : not struct> = 'T
-// The following DEBUG code does not currently compile.
-//#if DEBUG
-//type 'T NonNullSlot = 'T option
-//let nullableSlotEmpty() = None
-//let nullableSlotFull(x) = Some x
-//#else
-//type NonNullSlot<'T when (* 'T : not null and *)  'T : not struct> = 'T?
-//#endif
+
 let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
+
 let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 
 //---------------------------------------------------------------------------

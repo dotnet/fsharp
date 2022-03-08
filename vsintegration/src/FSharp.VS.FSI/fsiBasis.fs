@@ -57,6 +57,16 @@ module internal Guids =
     let fsiContentTypeName              = "FSharpInteractive"
 
 module internal Util =
+
+#if NO_CHECKNULLS
+    type MaybeNull<'T when 'T : null> = 'T
+
+    // Shim to match nullness checking library support in preview
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#else
+    type MaybeNull<'T when 'T : not null> = 'T?
+#endif
+
     /// Utility function to create an instance of a class from the local registry. [From Iron Python].
     let CreateObject (globalProvider:System.IServiceProvider) (classType:Type,interfaceType:Type) =
         // Follows IronPython sample. See ConsoleWindow.CreateObject

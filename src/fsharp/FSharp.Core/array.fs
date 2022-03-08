@@ -562,7 +562,7 @@ namespace Microsoft.FSharp.Collections
                     maskArray.[maskIdx] <- mask
                 count 
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
             let private createMask<'a> (f: 'a->bool) (src: array<'a>) (maskArrayOut: byref<array<uint32>>) (leftoverMaskOut: byref<uint32>) =
 #else
             let private createMask<'a> (f: 'a->bool) (src: array<'a>) (maskArrayOut: byref<array<uint32>?>) (leftoverMaskOut: byref<uint32>) =
@@ -652,7 +652,7 @@ namespace Microsoft.FSharp.Collections
 
                 dstIdx
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
             let private filterViaMask (maskArray: array<uint32>) (leftoverMask: uint32) (count: int) (src: array<_>) =
 #else
             let private filterViaMask (maskArray: array<uint32>?) (leftoverMask: uint32) (count: int) (src: array<_>) =

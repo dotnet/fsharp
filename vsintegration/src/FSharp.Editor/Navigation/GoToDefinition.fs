@@ -29,7 +29,7 @@ open FSharp.Compiler.Tokenization
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
-        let rec inner parts (sym: ISymbol?) =
+        let rec inner parts (sym: ISymbol MaybeNull) =
             match sym with
             | Null ->
                 parts

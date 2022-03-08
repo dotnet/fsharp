@@ -696,7 +696,7 @@ let OptionalArgInfoOfProvidedParameter (amap: Import.ImportMap) m (provParam : T
 
 /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
 let GetAndSanityCheckProviderMethod m (mi: Tainted<'T :> ProvidedMemberInfo>) (get : 'T -> ProvidedMethodInfo MaybeNull) err = 
-    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase)),m) with 
+    match mi.PApply((fun mi -> (get mi :> ProvidedMethodBase MaybeNull)),m) with 
 #if NO_CHECKNULLS
     | Tainted.Null -> error(Error(err(mi.PUntaint((fun mi -> mi.Name),m),mi.PUntaint((fun mi -> mi.DeclaringType.Name), m)), m))   
 #else

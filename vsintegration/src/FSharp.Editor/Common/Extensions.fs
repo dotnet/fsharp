@@ -20,6 +20,7 @@ open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
 #if NO_CHECKNULLS
+type MaybeNull<'T when 'T : null> = 'T
 // Shim to match nullness checking library support in preview
 let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
 let inline nonNull<'T when 'T : null> (x: 'T) = x
@@ -29,6 +30,8 @@ let inline nullArgCheck (argumentName:string) (value: 'T when 'T : not struct) =
     | null -> raise (new System.ArgumentNullException(argumentName))        
     | _ ->  value
 let inline withNull<'T when 'T: not struct> (value : 'T) = value
+#else
+type MaybeNull<'T when 'T : not null> = 'T?
 #endif
 
 type private FSharpGlyph = FSharp.Compiler.EditorServices.FSharpGlyph
@@ -290,7 +293,7 @@ module Exception =
     /// messages recursively.
     let flattenMessage (root: System.Exception) =
 
-        let rec flattenInner (exc: System.Exception?) =
+        let rec flattenInner (exc: System.Exception MaybeNull) =
             match exc with
             | Null -> []
             | NonNull exc -> [exc.Message] @ (flattenInner exc.InnerException)

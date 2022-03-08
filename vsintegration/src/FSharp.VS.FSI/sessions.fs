@@ -254,7 +254,7 @@ let fsiStartInfo channelName sourceFile =
     
     let initialPath = 
         match sourceFile with 
-        | path when path <> null && Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
+        | Some path when Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
         | _ -> Path.GetTempPath()
 
     if Directory.Exists(initialPath) then
@@ -264,7 +264,7 @@ let fsiStartInfo channelName sourceFile =
 
 
 /// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
-type FsiSession(sourceFile: string) = 
+type FsiSession(sourceFile: string option) = 
     let randomSalt = System.Random()
     let channelName = 
         let pid  = System.Diagnostics.Process.GetCurrentProcess().Id

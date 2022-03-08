@@ -6,6 +6,7 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger

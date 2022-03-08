@@ -543,12 +543,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteSelection, null, null);
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteSelection);
                     return true;
                 }
                 else if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteLine, null, null);
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteLine);
                     return true;
                 }
             }
@@ -556,7 +556,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == cmdIDDebugSelection)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.DebugSelection, null, null);
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.DebugSelection);
                     return true;
                 }
             }

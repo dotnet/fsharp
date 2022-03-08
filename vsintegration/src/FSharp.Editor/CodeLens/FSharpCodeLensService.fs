@@ -36,7 +36,7 @@ type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<TaggedText> * FSharpNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
-    member val UiElement: UIElement? = uiElement with get, set
+    member val UiElement: UIElement MaybeNull = uiElement with get, set
 
 type internal FSharpCodeLensService
     (

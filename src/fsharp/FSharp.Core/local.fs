@@ -1087,7 +1087,7 @@ module internal Array =
         if array.Length > 1 then 
             Array.Sort<_>(array, fastComparerForArraySort())
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
 #else
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>?) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =

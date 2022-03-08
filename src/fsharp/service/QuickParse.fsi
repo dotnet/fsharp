@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.Tokenization
+open Internal.Utilities.Library
 
 /// Qualified long name.
 type public PartialLongName =

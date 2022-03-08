@@ -29,7 +29,7 @@ open Config
 type [<Export>] Logger [<ImportingConstructor>]
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
     let outputWindow =
-        serviceProvider.GetService<SVsOutputWindow,IVsOutputWindow?>()
+        serviceProvider.GetService<SVsOutputWindow,IVsOutputWindow MaybeNull>()
         |> Option.ofObj
 
     let createPane () =

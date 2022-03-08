@@ -16,6 +16,7 @@ open System.Reflection.Metadata
 open System.Reflection.PortableExecutable
 open System.Runtime.CompilerServices
 open System.Text
+open Internal.Utilities.Library
 
 open Checked
 

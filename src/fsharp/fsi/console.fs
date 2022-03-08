@@ -14,8 +14,12 @@ open System.Collections.Generic
 module internal ConsoleOptions =
 
 #if NO_CHECKNULLS
+  type MaybeNull<'T when 'T : null> = 'T
+
   // Shim to match nullness checking library support in preview
   let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#else
+  type MaybeNull<'T when 'T : not null> = 'T?
 #endif
 
   let readKeyFixup (c:char) =

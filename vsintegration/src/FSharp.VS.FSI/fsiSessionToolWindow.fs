@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Package
 open EnvDTE
+open Util
 
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
@@ -122,9 +123,9 @@ type internal FsiToolWindow() as this =
     let textStream = new TextBufferStream(textViewAdapter.GetDataBuffer(textLines), contentTypeRegistry)
     let synchronizationContext = System.Threading.SynchronizationContext.Current
     let win32win = { new System.Windows.Forms.IWin32Window with member _.Handle = textView.GetWindowHandle()}
-    let mutable textView       = textView
-    let mutable textLines      = textLines
-    let mutable commandService = null
+    let mutable textView : IVsTextView MaybeNull = textView
+    let mutable textLines : IVsTextLines MaybeNull = textLines
+    let mutable commandService : OleMenuCommandService MaybeNull = null
     let mutable commandList : OleMenuCommand list = []
 
     // Set a function that gets the current ReadOnly span for the text of this instance.
@@ -196,8 +197,10 @@ type internal FsiToolWindow() as this =
     do  fsiLangService.Sessions <- sessions    
 
     let writeText scroll (str:string) =
-        if str <> null && textLines <> null then
-            lock textLines (fun () ->
+        match textLines with
+        | Null -> ()
+        | NonNull lines -> 
+            lock lines (fun () ->
                 textStream.DirectWrite(fixServerPrompt str)
                 if scroll then 
                     setScrollToEndOfBuffer()
@@ -243,32 +246,34 @@ type internal FsiToolWindow() as this =
     // or else by pressing Enter in the REPL window.
     do  showInitialMessageNetCore false
         if not Session.SessionsProperties.fsiUseNetCore then 
-            sessions.Restart(null)
+            sessions.Restart(None)
 
     let clearUndoStack (textLines:IVsTextLines) = // Clear the UNDO stack.
         let undoManager = textLines.GetUndoManager() |> throwOnFailure1
         undoManager.DiscardFrom(null)
             
     let setCursorAtEndOfBuffer() =
-        if null <> textView && null <> textLines then            
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
             let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
             textView.SetCaretPos(lastLine, lastIndex)             |> throwOnFailure0                
             setScrollToEndOfBuffer()
             setScrollToStartOfLine()
+        | _ -> ()
         
     /// Returns true if the current position is inside the writable section of the buffer.
     let isCurrentPositionInInputArea() =
-        if (null = textView) (*|| (null = textStream.ReadOnlyMarker)*) then
-            false
-        else
+        match textView with
+        | Null -> false
+        | NonNull textView ->
             let span = textStream.ReadOnlyMarkerSpan
             let line,column = textView.GetCaretPos() |> throwOnFailure2
             (line > span.iEndLine) || ((line = span.iEndLine) && (column >= span.iEndIndex))
             
     let isSelectionIntersectsWithReadonly() =
-        if null = textView then
-            false
-        else
+        match textView with
+        | Null -> false
+        | NonNull textView ->
             let span = textStream.ReadOnlyMarkerSpan
             let isInInputArea (line,column) = (line > span.iEndLine) || ((line = span.iEndLine) && (column >= span.iEndIndex))
             let (anchorLine,anchorCol,endLine,endCol) = textView.GetSelection() |> throwOnFailure4
@@ -276,31 +281,37 @@ type internal FsiToolWindow() as this =
 
     /// Returns true if the current position is at the start of the writable section of the buffer.
     let isCurrentPositionAtStartOfInputArea() =
-        if (null = textView) (*|| (null = textStream.ReadOnlyMarker)*) then
-            false
-        else
+        match textView with
+        | Null -> false
+        | NonNull textView ->
             let line,column = textView.GetCaretPos() |> throwOnFailure2
             let span = textStream.ReadOnlyMarkerSpan
             (line = span.iEndLine && column <= span.iEndIndex)
             
     let getInputAreaText() = 
-        let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
-        let span = textStream.ReadOnlyMarkerSpan
-        let text = textLines.GetLineText(span.iEndLine,span.iEndIndex,lastLine,lastIndex) |> throwOnFailure1
-        text
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
+            let span = textStream.ReadOnlyMarkerSpan
+            let text = textLines.GetLineText(span.iEndLine,span.iEndIndex,lastLine,lastIndex) |> throwOnFailure1
+            text
+        | _ -> ""
 
     let setInputAreaText (str:string) =        
-        lock textLines (fun () ->
-            let  span = textStream.ReadOnlyMarkerSpan
-            let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
-            let strHandle = GCHandle.Alloc(str, GCHandleType.Pinned)
-            try 
-                textLines.ReplaceLines(span.iEndLine, span.iEndIndex, lastLine, lastIndex, strHandle.AddrOfPinnedObject(), str.Length, null) |> throwOnFailure0
-            finally
-                strHandle.Free()
-        )
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            lock textLines (fun () ->
+                let  span = textStream.ReadOnlyMarkerSpan
+                let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
+                let strHandle = GCHandle.Alloc(str, GCHandleType.Pinned)
+                try 
+                    textLines.ReplaceLines(span.iEndLine, span.iEndIndex, lastLine, lastIndex, strHandle.AddrOfPinnedObject(), str.Length, null) |> throwOnFailure0
+                finally
+                    strHandle.Free()
+            )
+        | _ -> ()
 
-    let executeTextNoHistory sourceFile (text:string) =
+    let executeTextNoHistory (sourceFile: string option) (text:string) =
         sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
         sessions.SendInput(text)
@@ -308,7 +319,7 @@ type internal FsiToolWindow() as this =
         
     let executeUserInput() = 
         if isCurrentPositionInInputArea() then
-            sessions.Ensure(null)
+            sessions.Ensure(None)
             let text = getInputAreaText()
             textStream.ExtendReadOnlyMarker()
             textStream.DirectWriteLine()
@@ -321,15 +332,13 @@ type internal FsiToolWindow() as this =
     /// Supported command when input is permitted.
     let supportWhenInInputArea (sender:obj) (args:EventArgs) =    
         let command = sender :?> MenuCommand
-        if null <> command then // are these null checks needed?
-            let enabled = not source.IsCompletorActive && isCurrentPositionInInputArea()
-            command.Supported <- enabled
+        let enabled = not source.IsCompletorActive && isCurrentPositionInInputArea()
+        command.Supported <- enabled
 
     /// Support command except when completion is active.    
     let supportUnlessCompleting (sender:obj) (args:EventArgs) =    
         let command = sender :?> MenuCommand
-        if null <> command then
-            command.Supported <- not source.IsCompletorActive
+        command.Supported <- not source.IsCompletorActive
 
     let haveTextViewSelection() =        
         let res,text = textView.GetSelectedText()
@@ -337,50 +346,54 @@ type internal FsiToolWindow() as this =
 
     /// Support when at the start of the input area (e.g. to enable NoAction on LEFT).
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
-        let command = sender :?> MenuCommand       
-        if command <> null then
-            command.Supported <- not source.IsCompletorActive && isCurrentPositionAtStartOfInputArea()
+        let command = sender :?> MenuCommand
+        command.Supported <- not source.IsCompletorActive && isCurrentPositionAtStartOfInputArea()
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand
-        if command <> null then
-            command.Supported  <- isCurrentPositionAtStartOfInputArea()
+        command.Supported  <- isCurrentPositionAtStartOfInputArea()
             
     let supportWhenSelectionIntersectsWithReadonlyOrNoSelection (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
-        if command <> null then
-            command.Supported  <- isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
+        command.Supported  <- isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
 
     // NOTE: On* are command handlers.
 
     /// Handles HOME command, move to either start of line (or end of read only region is applicable).    
     let onHome (sender:obj) (e:EventArgs) =
-        let currentLine,currentColumn = textView.GetCaretPos() |> throwOnFailure2
-        let span = textStream.ReadOnlyMarkerSpan
-        if currentLine = span.iEndLine then
-            textView.SetCaretPos(currentLine,span.iEndIndex) |> throwOnFailure0
-        else
-            textView.SetCaretPos(currentLine,0) |> throwOnFailure0            
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            let currentLine,currentColumn = textView.GetCaretPos() |> throwOnFailure2
+            let span = textStream.ReadOnlyMarkerSpan
+            if currentLine = span.iEndLine then
+                textView.SetCaretPos(currentLine,span.iEndIndex) |> throwOnFailure0
+            else
+                textView.SetCaretPos(currentLine,0) |> throwOnFailure0
+        | _ -> ()
 
     /// Handle 'Shift' + 'HOME', move to start of line (or end or readonly area if applicable).    
     let onShiftHome (sender:obj) (args:EventArgs) =        
-        let line,endColumn = textView.GetCaretPos() |> throwOnFailure2
-        let span = textStream.ReadOnlyMarkerSpan
-        let startColumn = 
-            if line = span.iEndLine (* && endColumn >= span.iEndIndex *) then
-                span.iEndIndex
-            else
-                0
-        textView.SetSelection(line, endColumn, line, startColumn) |> throwOnFailure0
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            let line,endColumn = textView.GetCaretPos() |> throwOnFailure2
+            let span = textStream.ReadOnlyMarkerSpan
+            let startColumn = 
+                if line = span.iEndLine then
+                    span.iEndIndex
+                else
+                    0
+            textView.SetSelection(line, endColumn, line, startColumn) |> throwOnFailure0
+        | _ -> ()
 
     /// Hanlde no-op, used to overwrite some standard command with an empty action.
     let onNoAction (sender:obj) (e:EventArgs) = ()
     
-    
     /// Handle "Clear Pane". Clear input and all but the last ReadOnly line (probably the prompt).    
     let onClearPane (sender:obj) (args:EventArgs) =
-        lock textLines (fun () ->        
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+          lock textLines (fun () ->        
             // ReadOnly off, then upto the last line and then the input area, then ReadOnly on.
             let span = textStream.ReadOnlyMarkerSpan
             textStream.ResetReadOnlyMarker()
@@ -396,11 +409,14 @@ type internal FsiToolWindow() as this =
             textView.SetCaretPos(0,span.iEndIndex) |> throwOnFailure0
 
             clearUndoStack textLines // ClearPane should not be an undo-able operation
-        )
+          )
+        | _ -> ()
 
     let showContextMenu (sender:obj) (args:EventArgs) =
         let uiShell = provider.GetService(typeof<SVsUIShell>) :?> IVsUIShell
-        if null <> uiShell then
+        match box uiShell with
+        | null -> ()
+        | _ ->
             let pt   = System.Windows.Forms.Cursor.Position
             let pnts = [| new POINTS(x=int16 pt.X,y=int16 pt.Y) |]
             let mutable menuGuid = Guids.guidFsiConsoleCmdSet
@@ -410,30 +426,36 @@ type internal FsiToolWindow() as this =
         sessions.Interrupt() |> ignore
   
     let onRestart (sender:obj) (args:EventArgs) =
-        sessions.Kill() // When Kill() returns there should be no more output/events from that session
-        flushResponseBuffer()  // flush output and errors from the killed session that have been buffered, but have not yet come through.
-        lock textLines (fun () ->        
-            // Clear all prior to restart
-            textStream.ResetReadOnlyMarker()            
-            textView.SetCaretPos(0,0) |> throwOnFailure0
-            let lastLine,lastColumn = textLines.GetLastLineIndex() |> throwOnFailure2
-            textLines.ReplaceLines(0, 0, lastLine, lastColumn, IntPtr.Zero, 0, null) |> throwOnFailure0
-        )
-        clearUndoStack textLines // The reset clear should not be undoable.
-        showInitialMessageNetCore true
-        if not Session.SessionsProperties.fsiUseNetCore then 
-            sessions.Restart(null)
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            sessions.Kill() // When Kill() returns there should be no more output/events from that session
+            flushResponseBuffer()  // flush output and errors from the killed session that have been buffered, but have not yet come through.
+            lock textLines (fun () ->        
+                // Clear all prior to restart
+                textStream.ResetReadOnlyMarker()            
+                textView.SetCaretPos(0,0) |> throwOnFailure0
+                let lastLine,lastColumn = textLines.GetLastLineIndex() |> throwOnFailure2
+                textLines.ReplaceLines(0, 0, lastLine, lastColumn, IntPtr.Zero, 0, null) |> throwOnFailure0
+            )
+            clearUndoStack textLines // The reset clear should not be undoable.
+            showInitialMessageNetCore true
+            if not Session.SessionsProperties.fsiUseNetCore then 
+                sessions.Restart(None)
+        | _ -> ()
 
     /// Handle RETURN, unless Intelisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    
-        lock textLines (fun () ->
-            if not sessions.Alive then
-                sessions.Restart(null)
-            else
-                if isCurrentPositionInInputArea() then                                            
-                    executeUserInput()
-                    setCursorAtEndOfBuffer()
-        )
+        match textView, textLines with
+        | NonNull textView, NonNull textLines ->
+            lock textLines (fun () ->
+                if not sessions.Alive then
+                    sessions.Restart(None)
+                else
+                    if isCurrentPositionInInputArea() then                                            
+                        executeUserInput()
+                        setCursorAtEndOfBuffer()
+            )
+        | _ -> ()
 
     let showNoActivate() = 
         let frame = this.Frame :?> IVsWindowFrame
@@ -492,7 +514,7 @@ type internal FsiToolWindow() as this =
     // if not, pops a dialog warning the user
     let checkDebuggability () =       
         if not sessions.Alive then
-            sessions.Restart(null)
+            sessions.Restart(None)
 
         // debug experience is good when optimizations are off and debug info is produced
         if ArgParsing.debugInfoEnabled sessions.ProcessArgs && not (ArgParsing.optimizationsEnabled sessions.ProcessArgs) then
@@ -531,7 +553,7 @@ type internal FsiToolWindow() as this =
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
             let text = "\n" + text + "\n" + directiveC + "\n;;\n"
-            executeTextNoHistory null text
+            executeTextNoHistory None text
         with _ -> ()
 
     let executeInteraction dbgBreak dir (filename: string) topLine text =
@@ -545,7 +567,7 @@ type internal FsiToolWindow() as this =
           + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
           + ";;" + "\n"
 
-        executeTextNoHistory filename interaction
+        executeTextNoHistory (Some(filename)) interaction
 
     let sendSelectionToFSI action =
         let dbgBreak,selectLine = 
@@ -575,13 +597,13 @@ type internal FsiToolWindow() as this =
                  // REVIEW: log error into Trace.
                  // Example errors include no active document.
 
-    let onMLSendSelection (sender:obj) (e:EventArgs) =       
+    let onMLSendSelection () =       
         sendSelectionToFSI ExecuteSelection
 
-    let onMLSendLine (sender:obj) (e:EventArgs) =       
+    let onMLSendLine () =       
         sendSelectionToFSI ExecuteLine
 
-    let onMLDebugSelection (sender:obj) (e:EventArgs) = 
+    let onMLDebugSelection () = 
         if checkDebuggability () then
             attachDebugger ()
         sendSelectionToFSI DebugSelection
@@ -589,7 +611,7 @@ type internal FsiToolWindow() as this =
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =
         let command = sender :?> OleMenuCommand
-        if null <> command && command.CommandID.Guid = typeof<VSConstants.VSStd2KCmdID>.GUID then
+        if null <> box command && command.CommandID.Guid = typeof<VSConstants.VSStd2KCmdID>.GUID then
             // sanity check command and it's group
             let current = getInputAreaText()
             let nextO =
@@ -622,9 +644,9 @@ type internal FsiToolWindow() as this =
     do  this.BitmapIndex      <- 0  
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
-    member _.MLSendSelection(obj,e) = onMLSendSelection obj e
-    member _.MLSendLine(obj,e) = onMLSendLine obj e
-    member _.MLDebugSelection(obj,e) = onMLDebugSelection obj e
+    member _.MLSendSelection() = onMLSendSelection ()
+    member _.MLSendLine() = onMLSendLine ()
+    member _.MLDebugSelection() = onMLDebugSelection ()
 
     member _.GetDebuggerState() =
         let (state, _) = getDebuggerState ()
@@ -701,10 +723,10 @@ type internal FsiToolWindow() as this =
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
-            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
-            addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       (fun _ _ -> onMLSendSelection())   None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            (fun _ _ -> onMLSendLine())        None
 
-            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection  None
+            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           (fun _ _ -> onMLDebugSelection())  None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            
@@ -744,6 +766,8 @@ type internal FsiToolWindow() as this =
 
         /// Returns the n most recent lines in the view.  After SendTextInteraction, can poll for a prompt to know when interaction finished.
         member _.GetMostRecentLines(n:int) : string[] =
+          match textView, textLines with
+          | NonNull textView, NonNull textLines ->
             lock textLines (fun () ->
                 try
                     let mutable lineCount = 0
@@ -766,7 +790,9 @@ type internal FsiToolWindow() as this =
                 | ex -> 
                     let returnVal = [| "Unhandled Exception"; ex.Message |]
                     returnVal
-            )
+              )
+          | _ ->
+            [| "Null textView" |]
             
     interface IOleCommandTarget with
         member _.QueryStatus (guid, cCmds, prgCmds, pCmdText)=

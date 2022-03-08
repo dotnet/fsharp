@@ -4,6 +4,7 @@
 namespace FSharp.Compiler.DependencyManager
 
 open System.Runtime.InteropServices
+open Internal.Utilities.Library
 
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =

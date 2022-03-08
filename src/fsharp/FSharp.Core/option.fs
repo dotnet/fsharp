@@ -85,7 +85,7 @@ module Option =
     [<CompiledName("OfNullable")>]
     let ofNullable (value:System.Nullable<'T>) = if value.HasValue then Some value.Value else None
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
     [<CompiledName("OfObj")>]
     let ofObj value = match value with null -> None | _ -> Some value
 
@@ -181,7 +181,7 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let ofNullable (value:System.Nullable<'T>) = if value.HasValue then ValueSome value.Value else ValueNone
 
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
     [<CompiledName("OfObj")>]
     let ofObj value = match value with null -> ValueNone | _ -> ValueSome value
 

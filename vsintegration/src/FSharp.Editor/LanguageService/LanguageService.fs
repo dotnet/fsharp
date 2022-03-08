@@ -33,7 +33,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
-    member _.GetKeyNameForLanguage(languageName: string?) =
+    member _.GetKeyNameForLanguage(languageName: string MaybeNull) =
         let unsubstitutedKeyName = keyName
         match languageName with
         | Null -> unsubstitutedKeyName

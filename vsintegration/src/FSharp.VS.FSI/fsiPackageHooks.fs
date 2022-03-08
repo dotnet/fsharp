@@ -60,12 +60,12 @@ module internal Hooks =
     let private withFSIToolWindow (this:Package) f =
         queryFSIToolWindow true this f ()
 
-    let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs?) =
+    let OnMLSend (this:Package) (action : FsiEditorSendAction) =
         withFSIToolWindow this (fun window ->
             match action with
-            | ExecuteSelection -> window.MLSendSelection(sender, e)
-            | ExecuteLine -> window.MLSendLine(sender, e)
-            | DebugSelection -> window.MLDebugSelection(sender, e)
+            | ExecuteSelection -> window.MLSendSelection()
+            | ExecuteLine -> window.MLSendLine()
+            | DebugSelection -> window.MLDebugSelection()
         )
 
     let AddReferencesToFSI (this:Package) references =
@@ -77,7 +77,7 @@ module internal Hooks =
     // FxCop request this function not be public
     let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
         let command = sender :?> OleMenuCommand       
-        if command <> null then                        
+        if box command <> null then                        
             let looksLikeFSharp,haveSelection = 
                 try // catch all exceptions from this block
                     let providerGlobal   = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
@@ -117,7 +117,7 @@ module internal Hooks =
     let fsiConsoleWindowPackageInitalizeSited (this:Package) (commandService : OleMenuCommandService) =
         if not hasBeenInitialized then
             hasBeenInitialized <- true
-            if null <> commandService then
+            if null <> box commandService then
 
                 // Create the command for the tool window
                 let id  = new CommandID(Guids.guidFsiPackageCmdSet,int32 Guids.cmdIDLaunchFsiToolWindow)

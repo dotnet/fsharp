@@ -1299,7 +1299,7 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T> : System.Collections.Generic.IComparer<'T> when 'T: comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || NO_NULLCHECKING_FEATURE
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 #else
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T>? when 'T : comparison 
@@ -3067,7 +3067,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultIfNone")>]
         val inline defaultIfNone : defaultValue:'T -> arg:'T option -> 'T 
 
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         /// <summary>Used to specify a default value for a nullable reference argument in the implementation of a function</summary>
         /// <param name="defaultValue">The default value of the argument.</param>
         /// <param name="arg">A nullable value representing the argument.</param>
@@ -3382,7 +3382,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNull")>]
         val inline isNull: value: 'T -> bool when 'T: null
         
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         /// <summary>Determines whether the given value is null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>A choice indicating whether the value is null or not-null.</returns>
@@ -3430,7 +3430,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull : value:'T -> bool when 'T : null
 
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         /// <summary>Get the null value for a value type.</summary>
         /// <remarks>In a future revision of nullness support this may be unified with 'null'.</remarks>
         /// <returns>The null value for a value type.</returns>
@@ -3533,7 +3533,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArg")>]
         val inline nullArg: argumentName: string -> 'T 
 
-#if !BUILDING_WITH_LKG
+#if !BUILDING_WITH_LKG && !NO_NULLCHECKING_FEATURE
         /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
         /// 
         /// <param name="argumentName">The argument name.</param>
