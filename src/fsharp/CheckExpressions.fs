@@ -2922,11 +2922,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
         let expr = mkCoerceExpr (expr, mkIteratedFunTy g (List.map (mkRefTupledTy g) curriedFlexibleTypes) retTy, m, exprTy)
         ApplicableExpr (cenv, expr, true)
 
-<<<<<<< HEAD
-///  Checks, warnings and constraint assertions for downcasts 
-=======
 ///  Checks, warnings and constraint assertions for downcasts
->>>>>>> 577f763e8c361d948fea5cc1d74b6cb9620c46a8
 let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
     let g = cenv.g
     if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
